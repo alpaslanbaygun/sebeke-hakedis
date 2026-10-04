@@ -4,3 +4,5 @@ build/
 web/tests/out/
 web/tests/ui/shots/
 __pycache__/
+dist/
+surum-gecmisi.bundle
