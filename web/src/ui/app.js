@@ -10,15 +10,15 @@ export function Hud({ compact }) {
   const s = app.gnss.snapshot();
   const none = s.source === 'none';
   const col = none ? '#475569' : s.source === 'sim' && s.fix === 'FIX' ? '#a78bfa' : FIXCOL[s.fix] || '#475569';
-  const label = none ? 'KAYNAK YOK' : s.source === 'phone' ? 'TELEFON GPS' : (s.source === 'sim' ? 'SİM · ' : '') + s.label;
+  const label = none ? 'GNSS YOK' : s.source === 'phone' ? 'TELEFON GPS' : (s.source === 'sim' ? 'SİM · ' : '') + s.label;
   const nt = s.ntrip || {};
   const ageLabel = s.source === 'phone' ? 'KAYNAK · TEST MODU' : (nt.mount || s.stationId ? (nt.mount || 'İSTASYON ' + s.stationId) + ' · YAŞ' : 'DÜZELTME YAŞI');
   const rmsCol = s.sigmaH == null ? '#94a3b8' : s.sigmaH <= app.gnss.thresholds.maxSigmaH ? '#10b981' : s.sigmaH <= 0.1 ? '#f59e0b' : s.source === 'phone' ? '#38bdf8' : '#ef4444';
   return html`<header class=${'hud' + (compact ? ' compact' : '')}>
     <div class="hud-row">
       <div class="fixchip" style=${'background:' + col} role="status" aria-label=${'Konum durumu ' + label}><i></i>${label}</div>
-      ${compact ? html`<div class="hchip"><b>${s.sigmaEst ? 'σH~' : 'σH'}</b><span style=${'color:' + rmsCol}>${s.sigmaH != null ? (s.source === 'phone' ? '±' + s.sigmaH.toFixed(1) : s.sigmaH.toFixed(3)) : '—'}</span></div>
-        ${s.source === 'phone' ? null : html`<div class="hchip"><b>UYDU</b><span>${s.sats ?? '—'}</span></div><div class="hchip"><b>YAŞ</b><span>${s.age != null ? s.age.toFixed(1) : '—'}</span></div>`}`
+      ${compact ? html`<div class="hchip"><span style=${'color:' + rmsCol}>${s.sigmaH != null ? (s.sigmaEst ? '~' : '±') + (s.source === 'phone' ? s.sigmaH.toFixed(1) : s.sigmaH.toFixed(3)) + ' m' : '±—'}</span></div>
+        ${s.source === 'phone' ? null : html`<div class="hchip"><span>${s.sats ?? '—'}</span><b>UYDU</b></div>${s.age != null && s.age > 3 ? html`<div class="hchip" style="border-color:#f59e0b"><b>YAŞ</b><span style="color:#fcd34d">${s.age.toFixed(1)}</span></div>` : html`<div class="hchip"><b>PDOP</b><span>${s.pdop != null ? s.pdop.toFixed(1) : '—'}</span></div>`}`}`
       : html`${s.source === 'phone' ? null : html`<div class="hchip"><b>PDOP</b><span>${s.pdop != null ? s.pdop.toFixed(1) : '—'}</span></div>
       <div class="hchip"><b>SAT</b><span>${s.sats ?? '—'}${s.satsInView ? '/' + s.satsInView : ''}</span></div>`}
       ${s.rateHz ? html`<div class="hchip"><span>${Math.round(s.rateHz)} Hz</span></div>` : null}`}

@@ -185,9 +185,14 @@ export class MapEngine {
       const si = d.srcInfo ? d.srcInfo(p) : null;
       if (!eqs.length) { if (this.layers.points) this.cross(g, s, si && !si.precise ? si.color : '#e2e8f0'); }
       // Hakediş görünümü: objenin çevresinde durum renginde halka
-      if (this.layers.hak && d.hakColor && eqs.length) { const hc = d.hakColor(eqs[0]); if (hc) { g.fillStyle = hc; g.globalAlpha = 0.22; g.beginPath(); g.arc(s.x, s.y, 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; g.strokeStyle = hc; g.lineWidth = 2.5; g.beginPath(); g.arc(s.x, s.y, 14, 0, Math.PI * 2); g.stroke(); } }
-      for (const e of eqs) this.symbol(g, s, e, d);
-      if (p.source === 'PHONE') { g.strokeStyle = '#38bdf8'; g.lineWidth = 1; g.setLineDash([2, 3]); g.beginPath(); g.arc(s.x, s.y, 13, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
+      // Uzak ölçekte halka küçülür; çok uzakta obje yalnız durum renginde nokta olarak çizilir (üst üste binmeyi önler)
+      const far = this.view.res > 2.5, hr = this.view.res < 0.8 ? 14 : this.view.res < 2.5 ? 10 : 5;
+      const hc = this.layers.hak && d.hakColor && eqs.length ? d.hakColor(eqs[0]) : null;
+      if (hc) { g.fillStyle = hc; g.globalAlpha = far ? 0.95 : 0.22; g.beginPath(); g.arc(s.x, s.y, hr, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; if (!far) { g.strokeStyle = hc; g.lineWidth = 2.5; g.beginPath(); g.arc(s.x, s.y, hr, 0, Math.PI * 2); g.stroke(); } }
+      if (!(far && hc)) for (const e of eqs) this.symbol(g, s, e, d);
+      // Hassas olmayan kaynak (telefon · manuel · Excel · harita · FLOAT): sağ altta kaynak renginde küçük işaret (her ölçekte)
+      if (this.layers.srcTags && si && !si.precise && eqs.length && !far) { g.fillStyle = si.color; g.strokeStyle = '#0b1326'; g.lineWidth = 1.5; g.beginPath(); g.arc(s.x + 8, s.y + 8, 3.5, 0, Math.PI * 2); g.fill(); g.stroke(); }
+      if (p.source === 'PHONE' && !far) { g.strokeStyle = '#38bdf8'; g.lineWidth = 1; g.setLineDash([2, 3]); g.beginPath(); g.arc(s.x, s.y, 18, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
       if (labels) {
         g.font = '700 11px JetBrains Mono, monospace'; g.textAlign = 'left';
         const t = (eqs[0] ? eqs[0].no : p.pointNo) || '';
@@ -196,7 +201,7 @@ export class MapEngine {
         const ri = eqs[0] && d.roles.get(eqs[0].id);
         if (ri && ri.role === 'Z' && ri.angle) { g.font = '600 10px JetBrains Mono, monospace'; g.fillStyle = '#fbbf24'; g.fillText('α ' + ri.angle.toFixed(1) + '°', s.x + 10, s.y + 16); }
         // Veri kaynağı etiketi: hassas olmayanlar her zaman, RTK FIX yalnız yakın ölçekte
-        if (this.layers.srcTags && si && (!si.precise || this.view.res < 0.12)) { g.font = '700 9px JetBrains Mono, monospace'; g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.9)'; g.strokeText('[' + si.tag + ']', s.x + 10, s.y + 3); g.fillStyle = si.color; g.fillText('[' + si.tag + ']', s.x + 10, s.y + 3); }
+        if (this.layers.srcTags && si && (si.precise ? this.view.res < 0.12 : this.view.res < 0.45)) { g.font = '700 9px JetBrains Mono, monospace'; g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.9)'; g.strokeText('[' + si.tag + ']', s.x + 10, s.y + 3); g.fillStyle = si.color; g.fillText('[' + si.tag + ']', s.x + 10, s.y + 3); }
       }
     }
     // Sürükleme

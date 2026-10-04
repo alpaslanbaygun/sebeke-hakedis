@@ -62,6 +62,10 @@ function blocks(w) {
   defs.SDK_FULL = [['PLINE', [[-4, -2.5], [4, -2.5], [4, 2.5], [-4, 2.5]], true], ['SOLID', [[-4, -2.5], [4, -2.5], [4, 2.5], [4, 2.5]]]];
   defs.MENHOL = [['PLINE', [[-2, -2], [2, -2], [2, 2], [-2, 2]], true], ['CIRCLE', { 10: 0, 20: 0, 30: 0, 40: 1.2 }]];
   defs.ABONE = [['CIRCLE', { 10: 0, 20: 0, 30: 0, 40: 1.5 }], ['LINE', [-1.5, 0, 1.5, 0]]];
+  // v2.2: pano · armatür / sokak lambası · diğer
+  defs.PANO = [['PLINE', [[-2.5, -3.5], [2.5, -3.5], [2.5, 3.5], [-2.5, 3.5]], true], ['LINE', [1, 2.5, -1, 0]], ['LINE', [-1, 0, 1, 0]], ['LINE', [1, 0, -1, -2.5]]];
+  defs.ARMATUR = [['CIRCLE', { 10: 0, 20: 0, 30: 0, 40: 1.5 }], ['LINE', [-3, 0, -2, 0]], ['LINE', [2, 0, 3, 0]], ['LINE', [0, -3, 0, -2]], ['LINE', [0, 2, 0, 3]], ['LINE', [-2.1, -2.1, -1.4, -1.4]], ['LINE', [1.4, 1.4, 2.1, 2.1]], ['LINE', [-2.1, 2.1, -1.4, 1.4]], ['LINE', [1.4, -1.4, 2.1, -2.1]]];
+  defs.DIGER = [['PLINE', [[0, -2.5], [2.5, 0], [0, 2.5], [-2.5, 0]], true]];
   defs.OLCU = [['LINE', [-1, 0, 1, 0]], ['LINE', [0, -1, 0, 1]]];
   w.g(0, 'SECTION').g(2, 'BLOCKS');
   for (const [name, ents] of Object.entries(defs)) {
@@ -160,6 +164,9 @@ export function buildDXF(model, opts = {}) {
       block = (post === 'direk' ? 'TRAFO_DIREK' : post === 'bina' || post === 'ba' ? 'TRAFO_BINA' : 'TRAFO_KOSK') + (e.state === 'yeni' ? '_FULL' : '_NONE');
     } else if (e.kind === 'sdk') { layer = 'ELEKTRIK-SDK'; block = e.state === 'YENI' ? 'SDK_FULL' : 'SDK_NONE'; }
     else if (e.kind === 'manhole') { layer = 'ELEKTRIK-KABLO'; block = 'MENHOL'; }
+    else if (e.kind === 'panel') { layer = 'ELEKTRIK-SDK'; block = 'PANO'; }
+    else if (e.kind === 'luminaire') { layer = 'ELEKTRIK-DIREK-AYD'; block = 'ARMATUR'; color = 4; }
+    else if (e.kind === 'other') { layer = 'ELEKTRIK-YAZI'; block = 'DIGER'; }
     else { layer = 'ELEKTRIK-YAZI'; block = 'ABONE'; }
     insert(layer, block, e.E, e.N, e.H, color); nIns++;
     if (e.state === 'DEMONTAJ' || e.state === 'demontaj') { w.g(0, 'LINE').g(8, 'ELEKTRIK-DEMONTAJ').g(62, 2).g(10, f(e.E - 5)).g(20, f(e.N - 5)).g(30, 0).g(11, f(e.E + 5)).g(21, f(e.N + 5)).g(31, 0); }

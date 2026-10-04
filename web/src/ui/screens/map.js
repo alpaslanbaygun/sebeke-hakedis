@@ -356,7 +356,7 @@ function TakeBtn({ label, onTake, disabled, measuring, busy, mode = 'gnss' }) {
   const none = g.source === 'none';
   const base = label || 'NOKTA AL';
   let b = mode === 'manual' ? { bg: '#fbbf24', fg: '#0b1326', t: base.replace(/ AL$/, '') + ' · ELLE', ic: 'edit' }
-    : mode === 'map' ? { bg: '#c084fc', fg: '#0b1326', t: base.replace(/ AL$/, '') + ' · ARTIYA', ic: 'pin' }
+    : mode === 'map' ? { bg: '#c084fc', fg: '#0b1326', t: base.replace(/ AL$/, '') + ' · BURAYA', ic: 'pin' }
     : none ? { bg: '#2d3449', fg: '#94a3b8', t: 'KAYNAK YOK' } : g.source === 'phone' ? { bg: '#38bdf8', fg: '#0b1326', t: base + ' · TEL.' } : g.fix === 'FIX' ? { bg: '#10b981', fg: '#0b1326', t: base } : g.fix === 'FLOAT' ? { bg: '#f59e0b', fg: '#0b1326', t: base + ' · FLOAT' } : { bg: '#ef4444', fg: '#0b1326', t: base + ' · FIX YOK' };
   let style = 'background:' + b.bg + ';border-color:' + b.bg + ';color:' + b.fg;
   let text = b.t;

@@ -63,7 +63,7 @@ async def main():
         # Nokta al (RTK FIX, gerçek köprü yolundan)
         await pg.evaluate("() => { window.__app.gnss.thresholds.minFixSeconds = 1; }")
         await pg.evaluate("() => window.__app.nav.tab('map')"); await pg.wait_for_timeout(600)
-        await pg.locator('section.sheet button.btn.huge').click(); await pg.wait_for_timeout(3000)
+        await pg.locator('.dock-take button.take').click(); await pg.wait_for_timeout(3000)
         pt = await pg.evaluate("() => { const p = window.__app.ps.data.points[0]; return p && [p.pointNo, p.source, p.quality.fix, +p.E.toFixed(3), +p.N.toFixed(3), +p.H.toFixed(3), p.quality.epochs] }")
         print('point via bridge:', pt)
         # Telefon GPS
