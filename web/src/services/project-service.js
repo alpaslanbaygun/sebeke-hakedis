@@ -255,7 +255,7 @@ export class ProjectService {
   }
   hakCounts() {
     const c = {};
-    for (const r of [...this.data.equipment, ...this.data.lines]) { const h = hakOf(r); if (h) c[h] = (c[h] || 0) + 1; }
+    for (const r of [...(this.data.equipment || []), ...(this.data.lines || [])]) { const h = hakOf(r); if (h) c[h] = (c[h] || 0) + 1; }
     return c;
   }
   // Dönem açılınca / onaylanınca objelerin durumunu ilerlet (yalnız ileri yönde; elle verilen durum geri alınmaz)

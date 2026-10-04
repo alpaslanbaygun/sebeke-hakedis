@@ -87,13 +87,16 @@ export function MapScreen() {
     const leg = ps.legacyCrossings ? ps.legacyCrossings() : [];
     if (!leg.length || (app.state.crossAsked || {})[ps.p.id]) return;
     app.state.crossAsked = Object.assign({}, app.state.crossAsked, { [ps.p.id]: true });
-    (async () => {
+    // Uygulama haritayla açıldığında pencere katmanı henüz hazır olmayabilir → kısa gecikme
+    const tm = setTimeout(async () => {
+      if (!app.modal) return;
       const r = await app.modal((close) => html`<div class="mh"><h3>Geçiş kayıtları</h3></div><div class="mb"><div class="alert info">Bu sürümde "Geçiş" özelliği kaldırıldı. Projede ${leg.length} eski geçiş kaydı var.</div><div class="note">Detay noktasına dönüştürürseniz konumları haritada "Detay noktası" olarak kalır (açıklaması not olarak yazılır). Arşivlerseniz yalnızca veritabanında saklanır, haritada görünmez.</div></div>
         <div class="mf"><button class="btn grow" onClick=${() => close('archive')}>Arşivle</button><button class="btn pri grow" onClick=${() => close('detail')}>Detay noktasına dönüştür</button></div>`);
       if (!r) return;
       const res = await ps.convertLegacyCrossings(r);
       app.toast(r === 'detail' ? res.made + ' geçiş detay noktasına dönüştürüldü' : res.archived + ' geçiş arşivlendi', 'ok', 4000);
-    })();
+    }, 400);
+    return () => clearTimeout(tm);
   }, []);
   const back = useRef(null);
   back.current = () => { if (panel) { setPanel(null); return true; } if (app.state.sel) { select(null); return true; } if (tool) { setTool(null); return true; } return false; };

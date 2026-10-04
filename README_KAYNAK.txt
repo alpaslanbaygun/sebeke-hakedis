@@ -1,4 +1,4 @@
-VOLT-EDAŞ Saha 2.1.0 — Kaynak paketi
+VOLT-EDAŞ Saha 2.2.0 — Kaynak paketi
 ====================================
 
 İçerik
@@ -6,32 +6,40 @@ VOLT-EDAŞ Saha 2.1.0 — Kaynak paketi
 - android/    Android kabuğu (Java): Bluetooth SPP/BLE, NTRIP, telefon GNSS, dosya kaydet/paylaş
 - tools/      APK derleme betikleri (Gradle gerektirmez)
 - keystore/   İmza anahtarı  voltsaha-release.jks
+- surum-gecmisi.bundle   Git geçmişi (v2.1.0 ve v2.2.0 etiketleriyle)
+
+GERİ DÖNÜŞ (v2.1.0'a)
+- Telefonda: VOLT-EDAS-Saha-2.1.0-geri-donus.apk dosyasını 2.2.0'ın ÜZERİNE kurun (silmeden). Proje verisi korunur;
+  veritabanı sürümü aynıdır (geçiş testi: tests/ui/upgrade.py). Bu APK'nın sürüm kodu 9210'dur; ondan sonra
+  kurulacak yeni sürümlerin kodu 9210'dan büyük olmalıdır (derlemeden önce AndroidManifest.xml › versionCode).
+- Kaynak kodda:  git clone surum-gecmisi.bundle voltapp && cd voltapp && git checkout v2.1.0
 
 İMZA ANAHTARI (ÖNEMLİ)
-- Dosya : keystore/voltsaha-release.jks   (2.1.0 ile yenilendi; sertifika: CN=VOLT-EDAS Saha, L=Elazig, C=TR)
+- Dosya : keystore/voltsaha-release.jks   (sertifika: CN=VOLT-EDAS Saha, L=Elazig, C=TR)
 - Alias : voltsaha
 - Şifre : VoltSaha2026!
-2.0.0 farklı bir anahtarla imzalıydı: 2.1.0 kurulmadan önce eski uygulama telefondan kaldırılmalıdır.
-Bundan sonraki sürümler AYNI anahtarla imzalanmazsa mevcut kurulumun üzerine yüklenemez;
-kullanıcı uygulamayı silmek zorunda kalır ve cihazdaki proje verisi silinir.
+2.1.0, 2.1.0-geri-donus ve 2.2.0 aynı anahtarla imzalıdır; birbirinin üzerine kurulabilir.
 Bu dosyayı ve şifreyi güvenli bir yerde saklayın, kimseyle paylaşmayın.
 
 Derleme
 1) cd web && npm install
-2) Testler: node --test tests/scenarios.test.mjs   (26/26 geçmeli)
+2) Testler: node --test tests/scenarios.test.mjs   (33/33 geçmeli)
           python3 tests/ui/smoke.py                (arayüz duman testi, 0 hata)
-3) APK : ./tools/build_apk.sh  (aapt2, d8, apksigner, ecj ve android.jar yolu betikte T= değişkeninde)
-   Çıktı: dist/VOLT-EDAS-Saha-2.1.0.apk
-   Farklı şifre için: KSPASS='...' ./tools/build_apk.sh
+          python3 tests/ui/upgrade.py              (2.1.0 ↔ 2.2.0 veri geçişi; önce v2.1.0 derlemesi gerekir)
+3) APK : ./tools/build_apk.sh  →  dist/VOLT-EDAS-Saha-2.2.0.apk
 
-2.1.0 değişiklikleri (saha testi sonrası)
-- Harita: konum her zaman haritanın GÖRÜNEN kısmının ortasına gelir (alt panelin arkasında kalmaz).
-- Alt panel küçültüldü: seçili tür + hat durumu + büyük ALIM düğmesi her zaman ekranda.
-- Tür seçimi ayrı pencerede; "Son kullanılanlar" ile tek dokunuşla direk tipi.
-- Hat: "+ HAT" → başlat → direkleri sırayla al (otomatik bağlanır) → hat düğmesi → HATTI BİTİR.
-- Son alımı geri al düğmesi; ölçüm ilerlemesi ALIM düğmesinin üstünde.
-- Android geri tuşu açık pencereyi / seçimi kapatır.
+2.2.0 değişiklikleri (Teknik Spesifikasyon v2)
+- Veri kaynağı takibi: GNSS_RTK · GNSS_FLOAT · TELEFON_GPS · MANUEL · EXCEL · HARITADAN_SECILDI; harita, liste, rapor etiketleri.
+- GEÇİŞ özelliği kaldırıldı; eski kayıtlar için "detay noktasına dönüştür / arşivle".
+- Obje bazlı hakediş durumu (6 durum), haritada renkler, karttan tek dokunuşla değiştirme, dönem motoruna bağlı.
+- Veri kaynağı seçimi: GNSS · Telefon GPS · Manuel koordinat (koordinat sistemi seçmeli) · Haritadan seç · Excel.
+- Excel toplu aktarım: 6 şablon, doğrulama, önizleme, onaylı içe alma (XLSX ve CSV).
+- Yeni obje türleri: Pano, Armatür / sokak lambası, Kanal / Kazı, Diğer (serbest).
+- Fotoğraf: çoklu çekim, {ObjeNo}_{Sıra}.jpg, üst yazı, EXIF GPS, PROJE/TÜR/OBJE klasör yapısı.
+- GNSS: kalite uyarısı onayla geçilebilir; ölçüm yöntemi seçimi; Sabit Base + Rover rehberi; her ölçümde cihaz/DOP/operatör.
+- Rapor ve teslim paketi: obje listesi, kaynak, doğruluk, hakediş, fotoğraflar; proje klasör yapısı.
 
-Standart verisi
-- web/seed/standard-tedas-2026.json (TEDAŞ 2026 · 26.23.GR.02)
-- "unverifiedTables" listesindeki tablolar kullanım öncesi doğrulanmalıdır.
+Kod yapısı (bağımsız servisler)
+- gnss/gnss-service.js (GNSS + cihaz), geo/crs.js (koordinat), services/survey-service.js (saha alımı),
+  ui/map-engine.js (harita), qty/hakedis.js + services/project-service.js (hakediş), services/photo-service.js,
+  services/excel-import.js, export/report.js + export/exporter.js (rapor), core/sync.js (offline senkron).
