@@ -63,7 +63,7 @@ async def main():
                     v = [o[0] for o in opts if o[1].startswith(types[i])][0]
                     await sel.select_option(v)
                     if i == 0: await shot(pg, '04a_picker_pole')
-                    await tap(pg, 'TAMAM')
+                    await tap(pg, 'TAMAM', exact=True)
                 await pg.wait_for_timeout(300)
             seen.add(types[i])
             await pg.locator('.dock-take button.take').click()
@@ -91,7 +91,7 @@ async def main():
         await pg.locator('button.what').click(); await pg.wait_for_timeout(300)
         await pg.locator('section.sheet').get_by_text('TRAFO', exact=True).first.click()
         await shot(pg, '07_map_trafo_form')
-        await tap(pg, 'TAMAM')
+        await tap(pg, 'TAMAM', exact=True)
         await pg.locator('.dock-take button.take').click()
         await pg.wait_for_timeout(2500)
         await shot(pg, '07b_map_after_trafo')
@@ -153,4 +153,8 @@ async def main():
     srv.terminate()
     print('ERRORS', len(errors))
     for e in errors[:30]: print(e)
-asyncio.run(main())
+try:
+    asyncio.run(main())
+finally:
+    print('ERRORS', len(errors))
+    for e in errors[:30]: print(e)

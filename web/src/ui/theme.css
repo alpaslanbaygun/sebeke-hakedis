@@ -204,3 +204,25 @@ table.t td.n,table.t th.n{text-align:right;font-family:var(--mono);font-weight:6
 .hl{color:var(--ok2)}.hw{color:var(--warn3)}.he{color:var(--err2)}.hc{color:var(--cy)}
 
 .btn.take:disabled{opacity:.9}
+
+/* v2.2: veri kaynağı, hakediş durumu */
+.dock-take .srcbtn{flex:0 0 62px;height:66px;border-radius:10px;border:2px solid var(--c);background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--tx);padding:0 2px}
+.dock-take .srcbtn small{font-size:8.5px;font-weight:700;letter-spacing:.05em;color:var(--mut)}
+.dock-take .srcbtn b{font:800 11px var(--mono);color:var(--c);letter-spacing:.02em}
+.dock-take .undo{flex:0 0 50px}
+.dock-take .btn.take{font-size:17px;padding:0 8px;letter-spacing:.02em}
+.dock-take .btn.take span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.srcopt{display:flex;align-items:center;gap:12px;min-height:62px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);text-align:left;color:var(--tx);width:100%}
+.srcopt i{width:18px;height:18px;border-radius:9px;border:2px solid var(--line3);flex-shrink:0}
+.srcopt.on{border-color:var(--c);background:var(--panel2)}
+.srcopt.on i{border-color:var(--c);background:radial-gradient(circle,var(--c) 0 45%,transparent 50%)}
+.srcopt b{display:block;font-size:15px}
+.srcopt small{display:block;font-size:12px;color:var(--mut)}
+.hakrow{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.hakrow button{min-height:40px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--tx);font:700 11px var(--mono);display:flex;align-items:center;justify-content:center;gap:6px;padding:0 4px}
+.hakrow button i{width:10px;height:10px;border-radius:5px;background:var(--c);flex-shrink:0}
+.hakrow button.on{border:2px solid var(--c);background:var(--panel2);color:var(--c)}
+.haklegend{position:absolute;left:12px;z-index:5;display:flex;flex-direction:column;gap:2px;padding:6px 8px;border-radius:6px;background:rgba(11,19,38,.88);border:1px solid var(--line);font:700 9px var(--mono);pointer-events:none}
+.haklegend span{display:flex;align-items:center;gap:6px;color:#cbd5e1}
+.haklegend i{width:9px;height:9px;border-radius:5px}
+.srctag{font:700 10px var(--mono);letter-spacing:.03em}

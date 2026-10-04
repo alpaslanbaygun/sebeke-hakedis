@@ -52,7 +52,7 @@ export const roleLabel = (r) => ({ T: 'Taşıyıcı', D: 'Durdurucu', N: 'Nihaye
 export function checkLine(l, cat, ctx = {}) {
   const out = [];
   if (!l.lineType) out.push(I('EKSİK VERİ', 'error', l, 'Hat tipi (AG/OG/AYD/ENH/ABONE) seçilmemiş'));
-  if (!(l.circuits || []).length) out.push(I('EKSİK VERİ', 'error', l, 'Hatta iletken/kablo tanımlı değil'));
+  if (!(l.circuits || []).length && !l.channelOnly) out.push(I('EKSİK VERİ', 'error', l, 'Hatta iletken/kablo tanımlı değil'));
   for (const c of l.circuits || []) {
     const cp = circuitParts(c, cat);
     if (!cp) { out.push(I('EKSİK VERİ', 'error', l, 'İletken katalogda yok: ' + c.key)); continue; }
@@ -83,7 +83,7 @@ export function checkLine(l, cat, ctx = {}) {
 export function checkPoint(p, cls) {
   const out = [];
   const critical = !!p.critical;
-  if (critical && p.source === 'PHONE') out.push(I('ÖLÇÜ KABUL EDİLMEDİ', 'error', p, 'Kritik nokta telefon GPS ile alınmış (TEST) · RTK FIX ile yeniden ölçülmeli', { group: 'Ölçü' }));
+  if (critical && p.source === 'PHONE') out.push(I('ÖLÇÜ KABUL EDİLMEDİ', p.quality && p.quality.override ? 'warn' : 'error', p, 'Kritik nokta telefon GPS ile alınmış (TEST) · RTK FIX ile yeniden ölçülmeli' + (p.quality && p.quality.override ? ' · uyarıyla kabul edildi' : ''), { group: 'Ölçü' }));
   // Harici alıcı ama FIX değil: kullanıcı uyarıyı onaylayıp kaydettiyse uyarı, aksi halde hata
   if (critical && (p.source === 'GNSS_RTK' || p.source === 'GNSS_FLOAT') && p.quality && p.quality.fix !== 'FIX') out.push(I('ÖLÇÜ KABUL EDİLMEDİ', p.quality.override ? 'warn' : 'error', p, 'Kritik nokta RTK FIX değil (' + p.quality.fix + ')' + (p.quality.override ? ' · uyarıyla kabul edildi, hassas alım için yeniden ölçülmeli' : ''), { group: 'Ölçü' }));
   if (p.source === 'SIM') out.push(I('ÖLÇÜ KABUL EDİLMEDİ', 'warn', p, 'Simülatör verisi · gerçek ölçüm değil', { group: 'Ölçü' }));

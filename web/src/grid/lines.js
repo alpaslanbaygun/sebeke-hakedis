@@ -23,7 +23,7 @@ export function circuitLabel(c, cat) { const p = circuitParts(c, cat); const l =
 export function lineLabel(line, cat) {
   const og = (line.circuits || []).filter((c) => c.role === 'OG' || c.role === 'ENH').map((c) => circuitLabel(c, cat)).join(' + ');
   const ag = (line.circuits || []).filter((c) => c.role !== 'OG' && c.role !== 'ENH').map((c) => circuitLabel(c, cat)).join(' + ');
-  return [og, ag].filter(Boolean).join(' / ');
+  return [og, ag].filter(Boolean).join(' / ') || (line.channelOnly ? 'Kanal / kazı (kablosuz)' : '');
 }
 export function isBareAG(line, cat) {
   return (line.circuits || []).some((c) => (c.role === 'AG' || c.role === 'AYD') && (c.custom || (circuitParts(c, cat) || { parts: [] }).parts.some((p) => p.kind === 'AAC')));
@@ -85,7 +85,10 @@ export function cableQuantities(line, route, endKinds, cat) {
   if (cfg.channelType === 'beton') mat('BETON', Lc * cfg.width * cfg.concreteCm / 100, 'm³', 'Beton ' + cfg.concreteCm + ' cm');
   if (cfg.pipeCount > 0) mat('BORU_' + cfg.pipeDia, Lc * cfg.pipeCount, 'm', cfg.pipeCount + ' × Ø' + cfg.pipeDia + ' boru');
   mat('MENHOL', cfg.manholes || 0, 'Ad', 'Menhol');
-  mat(og ? 'MUF_OG' : 'MUF_AG', joints * Math.max(1, ncirc) * (singleCore ? 3 : 1), 'Ad', 'Ek muf');
-  mat(og ? 'BASLIK_OG' : 'BASLIK_AG', endKinds.length * Math.max(1, ncirc) * (singleCore ? 3 : 1), 'Ad', 'Kablo başlığı');
+  // Yalnız kanal / kazı (kablosuz) hatta muf ve başlık yok
+  if (!(line.channelOnly && !ncirc)) {
+    mat(og ? 'MUF_OG' : 'MUF_AG', joints * Math.max(1, ncirc) * (singleCore ? 3 : 1), 'Ad', 'Ek muf');
+    mat(og ? 'BASLIK_OG' : 'BASLIK_AG', endKinds.length * Math.max(1, ncirc) * (singleCore ? 3 : 1), 'Ad', 'Kablo başlığı');
+  }
   return { items: out, breakdown, cfg };
 }

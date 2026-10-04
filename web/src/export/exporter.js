@@ -71,7 +71,7 @@ async function deliveryPackage(ps, model, base, opts) {
   const add = (name, data) => files.push({ name, data: typeof data === 'string' ? enc(data) : data });
   // Proje JSON (tam veri + standart kimliği)
   const full = { format: 'volt-project/1', exportedAt: new Date().toISOString(), standard: ps.cat.std, project: ps.p, data: {} };
-  for (const s of ['points', 'equipment', 'lines', 'crossings', 'materials', 'photos', 'periods', 'workPrograms', 'stakeouts', 'revisions', 'surveySessions', 'gnssObservations']) full.data[s] = ps.data[s];
+  for (const s of ['points', 'equipment', 'lines', 'materials', 'photos', 'periods', 'workPrograms', 'stakeouts', 'revisions', 'surveySessions', 'gnssObservations']) full.data[s] = ps.data[s];
   full.derived = { spans: ps.result.spans, quantities: ps.result.quantities, issues: ps.result.issues, signature: ps.result.signature };
   add('proje/project.json', JSON.stringify(full, null, 1));
   add('proje/denetim_kaydi.json', JSON.stringify(await ps.ds.auditLog(ps.p.id, 100000), null, 1));

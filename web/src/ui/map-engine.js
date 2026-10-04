@@ -14,9 +14,9 @@ export class MapEngine {
     this.dirty = true; this.pointers = new Map(); this.follow = false;
     // Görünür alan: üstte/altta panelin kapattığı pikseller. Görünüm merkezi (cE,cN) bu alanın ortasına düşer.
     this.pad = { top: 0, bottom: 0 };
-    this.layers = { basemap: true, grid: true, labels: true, spanText: true, AG: true, OG: true, AYD: true, ENH: true, ABONE: true, yeralti: true, trafo: true, mevcut: true, demontaj: true, points: true };
+    this.layers = { basemap: true, grid: true, labels: true, spanText: true, AG: true, OG: true, AYD: true, ENH: true, ABONE: true, yeralti: true, trafo: true, mevcut: true, demontaj: true, points: true, hak: true, srcTags: true };
     this.tiles = new Map(); this.tileQueue = new Set();
-    this.measure = null; this.preview = null; this.dragNode = null;
+    this.measure = null; this.preview = null; this.dragNode = null; this.crosshair = false;
     this.bind(); this.resize(); this.loop();
   }
   destroy() { this.dead = true; this.ro && this.ro.disconnect(); }
@@ -150,6 +150,9 @@ export class MapEngine {
       const on = sel.type === 'line' && sel.id === l.id;
       g.lineCap = 'round'; g.lineJoin = 'round';
       if (on) { g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = (LW[l.lineType] || 2) + 8; g.setLineDash([]); this.path(g, n); g.stroke(); }
+      // Hakediş görünümü: hattın altında durum renginde geniş bant
+      const hc = this.layers.hak && d.hakColor ? d.hakColor(l) : null;
+      if (hc) { g.strokeStyle = hc; g.globalAlpha = 0.42; g.lineWidth = (LW[l.lineType] || 2) + 9; g.setLineDash([]); this.path(g, n); g.stroke(); g.globalAlpha = 1; }
       g.strokeStyle = LCOL[l.lineType] || '#7ee08a'; g.lineWidth = LW[l.lineType] || 2;
       g.setLineDash(l.install === 'yeralti' ? [12, 6, 2, 6] : l.state === 'ILERIDE' ? [8, 6] : l.lineType === 'ABONE' ? [6, 3] : []);
       if (l.state === 'MEVCUT') g.globalAlpha = 0.6;
@@ -179,7 +182,10 @@ export class MapEngine {
       const eqs = d.eqByPoint.get(p.id) || [];
       const isSel = sel.type === 'point' && sel.id === p.id;
       if (isSel) { g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(s.x, s.y, 16, 0, Math.PI * 2); g.stroke(); }
-      if (!eqs.length) { if (this.layers.points) this.cross(g, s, p.source === 'PHONE' ? '#38bdf8' : p.source === 'DESIGN' ? '#eab308' : '#e2e8f0'); }
+      const si = d.srcInfo ? d.srcInfo(p) : null;
+      if (!eqs.length) { if (this.layers.points) this.cross(g, s, si && !si.precise ? si.color : '#e2e8f0'); }
+      // Hakediş görünümü: objenin çevresinde durum renginde halka
+      if (this.layers.hak && d.hakColor && eqs.length) { const hc = d.hakColor(eqs[0]); if (hc) { g.fillStyle = hc; g.globalAlpha = 0.22; g.beginPath(); g.arc(s.x, s.y, 14, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; g.strokeStyle = hc; g.lineWidth = 2.5; g.beginPath(); g.arc(s.x, s.y, 14, 0, Math.PI * 2); g.stroke(); } }
       for (const e of eqs) this.symbol(g, s, e, d);
       if (p.source === 'PHONE') { g.strokeStyle = '#38bdf8'; g.lineWidth = 1; g.setLineDash([2, 3]); g.beginPath(); g.arc(s.x, s.y, 13, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
       if (labels) {
@@ -189,10 +195,10 @@ export class MapEngine {
         g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.9)'; g.strokeText(t, s.x + 10, s.y - 9); g.fillStyle = col; g.fillText(t, s.x + 10, s.y - 9);
         const ri = eqs[0] && d.roles.get(eqs[0].id);
         if (ri && ri.role === 'Z' && ri.angle) { g.font = '600 10px JetBrains Mono, monospace'; g.fillStyle = '#fbbf24'; g.fillText('α ' + ri.angle.toFixed(1) + '°', s.x + 10, s.y + 16); }
+        // Veri kaynağı etiketi: hassas olmayanlar her zaman, RTK FIX yalnız yakın ölçekte
+        if (this.layers.srcTags && si && (!si.precise || this.view.res < 0.12)) { g.font = '700 9px JetBrains Mono, monospace'; g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.9)'; g.strokeText('[' + si.tag + ']', s.x + 10, s.y + 3); g.fillStyle = si.color; g.fillText('[' + si.tag + ']', s.x + 10, s.y + 3); }
       }
     }
-    // Geçişler
-    for (const cr of d.crossings) { if (cr.E == null) continue; const s = this.toScreen(cr.E, cr.N); g.strokeStyle = '#f59e0b'; g.lineWidth = 2; g.beginPath(); g.arc(s.x, s.y, 7, 0, Math.PI * 2); g.moveTo(s.x - 5, s.y - 5); g.lineTo(s.x + 5, s.y + 5); g.stroke(); }
     // Sürükleme
     if (this.dragNode) { const s = this.toScreen(this.dragNode.E, this.dragNode.N); g.strokeStyle = '#fbbf24'; g.lineWidth = 2; g.setLineDash([4, 3]); g.beginPath(); g.arc(s.x, s.y, 14, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
     // Ölçüm
@@ -219,12 +225,29 @@ export class MapEngine {
       g.fillStyle = '#0b1326'; g.beginPath(); g.arc(s.x, s.y, 9, 0, Math.PI * 2); g.fill();
       g.fillStyle = col; g.beginPath(); g.arc(s.x, s.y, 6, 0, Math.PI * 2); g.fill();
     }
+    // Haritadan nokta seçme: görünen alanın ortasında nişangâh
+    if (this.crosshair) {
+      const x = this.w / 2, y = this.cy();
+      g.strokeStyle = 'rgba(10,17,34,.9)'; g.lineWidth = 5; g.beginPath(); g.moveTo(x - 22, y); g.lineTo(x - 6, y); g.moveTo(x + 6, y); g.lineTo(x + 22, y); g.moveTo(x, y - 22); g.lineTo(x, y - 6); g.moveTo(x, y + 6); g.lineTo(x, y + 22); g.stroke();
+      g.strokeStyle = '#c084fc'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(x - 22, y); g.lineTo(x - 6, y); g.moveTo(x + 6, y); g.lineTo(x + 22, y); g.moveTo(x, y - 22); g.lineTo(x, y - 6); g.moveTo(x, y + 6); g.lineTo(x, y + 22); g.stroke();
+      g.beginPath(); g.arc(x, y, 12, 0, Math.PI * 2); g.stroke(); g.fillStyle = '#c084fc'; g.beginPath(); g.arc(x, y, 2, 0, Math.PI * 2); g.fill();
+    }
     this.drawScale(g);
   }
   path(g, pts, off = 0) { g.beginPath(); pts.forEach((p, i) => { const s = this.toScreen(p.E, p.N); if (i) g.lineTo(s.x + off, s.y + off); else g.moveTo(s.x + off, s.y + off); }); }
   cross(g, s, col) { g.strokeStyle = col; g.lineWidth = 1.6; g.beginPath(); g.moveTo(s.x - 6, s.y); g.lineTo(s.x + 6, s.y); g.moveTo(s.x, s.y - 6); g.lineTo(s.x, s.y + 6); g.stroke(); }
   symbol(g, s, e, d) {
     const st = e.state || 'YENI';
+    if (e.kind === 'luminaire') {
+      // Armatür / sokak lambası: sarı ışık halkalı lamba (yeni dolu, mevcut içi boş)
+      const Y = st === 'MEVCUT' ? '#d4a017' : '#fde047';
+      g.strokeStyle = Y; g.lineWidth = 1.6; g.beginPath();
+      for (let k = 0; k < 8; k++) { const a = (k * Math.PI) / 4; g.moveTo(s.x + Math.cos(a) * 8, s.y + Math.sin(a) * 8); g.lineTo(s.x + Math.cos(a) * 12, s.y + Math.sin(a) * 12); }
+      g.stroke();
+      g.fillStyle = st === 'MEVCUT' || st === 'ILERIDE' ? '#0b1326' : Y; g.lineWidth = 2; g.beginPath(); g.arc(s.x, s.y, 5.5, 0, Math.PI * 2); g.fill(); g.stroke();
+      if (st === 'DEMONTAJ' && this.layers.demontaj) { g.strokeStyle = '#ffff00'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(s.x - 11, s.y + 11); g.lineTo(s.x + 11, s.y - 11); g.stroke(); }
+      return;
+    }
     if (e.kind === 'pole' || e.kind === 'lighting') {
       const volt = d.groupVolt(e);
       if ((st === 'MEVCUT' && !this.layers.mevcut)) return;
@@ -238,9 +261,15 @@ export class MapEngine {
       if (mode === 'none' && sq) { g.beginPath(); g.moveTo(s.x - r, s.y - r); g.lineTo(s.x + r, s.y + r); g.moveTo(s.x + r, s.y - r); g.lineTo(s.x - r, s.y + r); g.stroke(); }
       if (st === 'DEMONTAJ' && this.layers.demontaj) { g.strokeStyle = '#ffff00'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(s.x - 11, s.y + 11); g.lineTo(s.x + 11, s.y - 11); g.stroke(); }
       if (st === 'ILERIDE') { g.fillStyle = '#0b1326'; g.beginPath(); g.arc(s.x, s.y, r / 2.2, 0, Math.PI * 2); g.fill(); }
+      // Aydınlatma direği: konsol kolu + sarı lamba başlığı (AG/OG direklerinden net ayrılır)
+      if (volt === 'AYD') {
+        g.strokeStyle = col; g.lineWidth = 2; g.beginPath(); g.moveTo(s.x + 3, s.y - 3); g.lineTo(s.x + 10, s.y - 10); g.stroke();
+        g.fillStyle = '#fde047'; g.strokeStyle = '#0b1326'; g.lineWidth = 1; g.beginPath(); g.arc(s.x + 11.5, s.y - 11.5, 4, 0, Math.PI * 2); g.fill(); g.stroke();
+        g.strokeStyle = '#fde047'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(s.x + 17, s.y - 11.5); g.lineTo(s.x + 20, s.y - 11.5); g.moveTo(s.x + 11.5, s.y - 17); g.lineTo(s.x + 11.5, s.y - 20); g.moveTo(s.x + 15.5, s.y - 15.5); g.lineTo(s.x + 17.6, s.y - 17.6); g.stroke();
+      }
       return;
     }
-    if (!this.layers.trafo && (e.kind === 'transformer' || e.kind === 'sdk' || e.kind === 'kiosk' || e.kind === 'substation')) return;
+    if (!this.layers.trafo && (e.kind === 'transformer' || e.kind === 'sdk' || e.kind === 'kiosk' || e.kind === 'substation' || e.kind === 'panel')) return;
     const T = '#6b82ff';
     g.lineWidth = 2; g.strokeStyle = T;
     const full = st === 'yeni' || st === 'YENI';
@@ -253,9 +282,12 @@ export class MapEngine {
       else { g.moveTo(s.x - 10, s.y - 1); g.lineTo(s.x, s.y - 10); g.lineTo(s.x + 10, s.y - 1); g.lineTo(s.x + 8, s.y - 1); g.lineTo(s.x + 8, s.y + 8); g.lineTo(s.x - 8, s.y + 8); g.lineTo(s.x - 8, s.y - 1); g.closePath(); }
     } else if (e.kind === 'sdk') { g.rect(s.x - 9, s.y - 6, 18, 12); }
     else if (e.kind === 'manhole') { g.rect(s.x - 6, s.y - 6, 12, 12); }
+    else if (e.kind === 'panel') { g.rect(s.x - 7, s.y - 9, 14, 18); }
+    else if (e.kind === 'other') { g.strokeStyle = '#cbd5e1'; g.fillStyle = full ? '#cbd5e1' : '#0b1326'; g.moveTo(s.x, s.y - 8); g.lineTo(s.x + 8, s.y); g.lineTo(s.x, s.y + 8); g.lineTo(s.x - 8, s.y); g.closePath(); }
     else { g.arc(s.x, s.y, 5, 0, Math.PI * 2); g.strokeStyle = '#fbbf24'; }
     g.fill(); g.stroke();
     if (e.kind === 'sdk') { g.beginPath(); g.moveTo(s.x - 9, s.y + 6); g.lineTo(s.x + 9, s.y - 6); g.stroke(); }
+    if (e.kind === 'panel') { g.strokeStyle = full ? '#0b1326' : T; g.lineWidth = 1.6; g.beginPath(); g.moveTo(s.x + 2, s.y - 6); g.lineTo(s.x - 3, s.y + 1); g.lineTo(s.x + 1, s.y + 1); g.lineTo(s.x - 2, s.y + 6); g.stroke(); }
   }
   drawGrid(g) {
     const span = this.view.res * Math.max(this.w, this.h);

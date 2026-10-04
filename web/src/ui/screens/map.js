@@ -4,7 +4,9 @@ import { app } from '../ctx.js';
 import { MapEngine } from '../map-engine.js';
 import { measure, recent, favorites, loadTile, BASEMAPS } from '../services.js';
 import { dist2, bearing, polygonArea, polylineLength, dms, segProject } from '../../geo/geom.js';
-import { STATUSES, TRAFO_STATUSES } from '../../core/schema.js';
+import { STATUSES, TRAFO_STATUSES, HAK_STATUSES, HAK_ORDER, EQUIPMENT_KINDS, hakOf } from '../../core/schema.js';
+import { sourceInfo, sourceText } from '../../core/source.js';
+import { resolveCoord, crsChoices, luminairePoz } from '../../services/survey-service.js';
 import { lineLabel } from '../../grid/lines.js';
 import { roleLabel } from '../../grid/checks.js';
 import { jobOf } from '../../grid/recipe.js';
@@ -22,7 +24,8 @@ export function mapData() {
   const bm = BASEMAPS.find((b) => b.id === (app.state.basemap || 'none'));
   const g = app.gnss.state;
   return {
-    points: d.points, equipment: d.equipment, lines: d.lines, crossings: d.crossings, pointMap, eqByPoint, roles: r ? r.roles : new Map(),
+    points: d.points, equipment: d.equipment, lines: d.lines, pointMap, eqByPoint, roles: r ? r.roles : new Map(),
+    hakColor: (rec) => { const h = hakOf(rec); return h ? HAK_STATUSES[h].color : null; }, srcInfo: (p) => sourceInfo(p),
     sel: app.state.sel, target: app.state.target, crs: ps.p.crs, basemap: bm && bm.url ? bm : null,
     gnss: g.E != null ? g : null, gnssColor: g.source === 'phone' ? '#38bdf8' : FIXCOL[g.fix] || '#475569',
     groupVolt: (e) => { if (e.kind === 'lighting' || e.group === 'ayd') return 'AYD'; const gr = ps.cat.poleGroup(e.group); return gr && gr.og ? 'OG' : 'AG'; },
@@ -35,6 +38,7 @@ export function MapScreen() {
   const cv = useRef(null), eng = useRef(null), base = useRef(null);
   const [panel, setPanel] = useState(null); // null | 'pick' (ne alınacak) | 'line' (hat)
   const [kind, setKindS] = useState(app.state.capKind || 'direk');
+  const [srcMode, setSrcModeS] = useState(app.state.srcMode || 'gnss'); // gnss (harici/telefon) | manual | map
   const [tool, setTool] = useState(null);
   if (app.state.follow === undefined) app.state.follow = true;
   const [follow, setFollow] = useState(!!app.state.follow);
@@ -78,11 +82,33 @@ export function MapScreen() {
     const off4 = app.bus.on('ui:measureProgress', (p) => setMeasuring((m) => (m ? Object.assign({}, m, p) : m)));
     return () => { off1(); off2(); off3(); off4(); off5(); if (ro) ro.disconnect(); e.destroy(); };
   }, []);
+  // v2.2: GEÇİŞ özelliği kaldırıldı → eski projede kayıt varsa bir kez sor: detay noktasına dönüştür / arşivle
+  useEffect(() => {
+    const leg = ps.legacyCrossings ? ps.legacyCrossings() : [];
+    if (!leg.length || (app.state.crossAsked || {})[ps.p.id]) return;
+    app.state.crossAsked = Object.assign({}, app.state.crossAsked, { [ps.p.id]: true });
+    (async () => {
+      const r = await app.modal((close) => html`<div class="mh"><h3>Geçiş kayıtları</h3></div><div class="mb"><div class="alert info">Bu sürümde "Geçiş" özelliği kaldırıldı. Projede ${leg.length} eski geçiş kaydı var.</div><div class="note">Detay noktasına dönüştürürseniz konumları haritada "Detay noktası" olarak kalır (açıklaması not olarak yazılır). Arşivlerseniz yalnızca veritabanında saklanır, haritada görünmez.</div></div>
+        <div class="mf"><button class="btn grow" onClick=${() => close('archive')}>Arşivle</button><button class="btn pri grow" onClick=${() => close('detail')}>Detay noktasına dönüştür</button></div>`);
+      if (!r) return;
+      const res = await ps.convertLegacyCrossings(r);
+      app.toast(r === 'detail' ? res.made + ' geçiş detay noktasına dönüştürüldü' : res.archived + ' geçiş arşivlendi', 'ok', 4000);
+    })();
+  }, []);
   const back = useRef(null);
   back.current = () => { if (panel) { setPanel(null); return true; } if (app.state.sel) { select(null); return true; } if (tool) { setTool(null); return true; } return false; };
   useEffect(() => { app.backHook = () => back.current(); return () => { app.backHook = null; }; }, []);
   useEffect(() => { if (eng.current) { eng.current.o.editNodes = tool === 'edit'; app.state.tool = tool; if (tool !== 'measure' && tool !== 'area') eng.current.measure = null; else if (!eng.current.measure) eng.current.measure = { mode: tool, pts: [] }; eng.current.invalidate(); } }, [tool]);
 
+  const setSrcMode = (m) => { setSrcModeS(m); app.state.srcMode = m; if (m === 'map') { setFollow(false); app.state.follow = false; } };
+  if (eng.current) eng.current.crosshair = srcMode === 'map' && !app.state.sel && !tool;
+  // Konum edinme: seçili veri kaynağına göre ölçüm / elle giriş / haritadan nişangâh
+  const acquire = async ({ critical = true, label = 'Nokta' } = {}) => {
+    if (srcMode === 'map') { const e = eng.current; const w = e.toWorld(e.w / 2, e.cy()); return { coord: { E: w.E, N: w.N, H: null }, source: 'MAP' }; }
+    if (srcMode === 'manual') { const c = await manualCoordModal(label); return c ? { coord: c, source: 'MANUAL' } : null; }
+    const obs = await measure({ critical, label });
+    return obs ? { obs } : null;
+  };
   // Alım modelleri (form durumu panel kapalıyken de yaşar → ALIM düğmesi her zaman hazır)
   const pole = usePole(), trafo = useTrafo(), other = useOther();
   const cur = kind === 'trafo' ? trafo : kind === 'diger' ? other : pole;
@@ -133,7 +159,7 @@ export function MapScreen() {
     if (busy) return;
     setBusy(true);
     try {
-      const r = await cur.take(active && toLine ? active : null, active);
+      const r = await cur.take(active && toLine ? active : null, active, acquire);
       if (r) { if (r.undo) { app.state.lastCap = r.undo; setLastCap(r.undo); } app.toast(r.msg, 'ok', 3500); }
     } catch (err) { app.toast(err.message || String(err), 'err', 5000); } finally { setBusy(false); }
   };
@@ -149,6 +175,8 @@ export function MapScreen() {
   const m = eng.current && eng.current.measure;
   const li = active ? ps.result.lineInfo.get(active.id) || {} : {};
   const visH = (eng.current ? eng.current.h : 700) - padB;
+  const hakOn = eng.current ? eng.current.layers.hak !== false : true;
+  const SM = { gnss: g.source === 'phone' ? ['TELEFON', '#38bdf8'] : g.source === 'none' ? ['GNSS', '#94a3b8'] : ['GNSS', '#10b981'], manual: ['ELLE', '#fbbf24'], map: ['HARİTA', '#c084fc'] }[srcMode];
   const closePanel = () => setPanel(null);
   return html`<div class="mapwrap"><canvas ref=${cv} aria-label="Harita"></canvas></div>
     <div class="fabl">
@@ -159,7 +187,9 @@ export function MapScreen() {
       <button class=${layersOpen ? 'on' : ''} aria-label="Katmanlar" onClick=${() => setLayersOpen(!layersOpen)}><${Icon} n="layers" /></button>
       <button class=${tool === 'measure' || tool === 'area' ? 'on' : ''} aria-label="Ölçüm" onClick=${() => setTool(tool === 'measure' ? 'area' : tool === 'area' ? null : 'measure')}><${Icon} n="ruler" /></button>
       <button class=${tool === 'edit' ? 'on' : ''} aria-label="Düğüm düzenle" onClick=${() => setTool(tool === 'edit' ? null : 'edit')}><${Icon} n="edit" /></button>
+      <button class=${hakOn ? 'on' : ''} aria-label="Hakediş görünümü" onClick=${() => { const e = eng.current; e.layers.hak = !e.layers.hak; app.state.layers = Object.assign({}, e.layers); e.invalidate(); force((x) => x + 1); }}><b style="font:800 14px var(--mono)">₺</b></button>
     </div>
+    ${hakOn && visH > 300 && ps.data.equipment.length + ps.data.lines.length > 0 ? html`<div class="haklegend" style=${'top:' + (active ? 156 : 124) + 'px'}>${HAK_ORDER.map((k) => html`<span><i style=${'background:' + HAK_STATUSES[k].color}></i>${HAK_STATUSES[k].short}</span>`)}</div>` : null}
     <div class="fab" style=${'bottom:' + (padB + 10) + 'px'}>
       ${visH > 380 ? html`<button aria-label="Yakınlaş" onClick=${() => eng.current.zoom(0.6)}><${Icon} n="plus" /></button>
       <button aria-label="Uzaklaş" onClick=${() => eng.current.zoom(1.6)}><${Icon} n="minus" /></button>` : null}
@@ -185,8 +215,9 @@ export function MapScreen() {
               </button>
             </div>
             <div class="dock-take">
+              <button class="srcbtn" style=${'--c:' + SM[1]} aria-label="Veri kaynağı" onClick=${() => setPanel('src')}><small>KAYNAK</small><b>${SM[0]}</b></button>
+              <${TakeBtn} label=${cur.label} mode=${srcMode} measuring=${measuring} busy=${busy} disabled=${!cur.ok} onTake=${doTake} />
               <button class="undo" aria-label="Son alımı geri al" disabled=${!lastCap || busy} onClick=${undoLast}><${Icon} n="undo" s=${22} /></button>
-              <${TakeBtn} label=${cur.label} measuring=${measuring} busy=${busy} disabled=${!cur.ok} onTake=${doTake} />
             </div>
           </div>`}
     </div>
@@ -195,11 +226,12 @@ export function MapScreen() {
         <div class="grab" onClick=${closePanel}><i></i></div>
         <div class="body">
           <div class="seg">${[['direk', 'DİREK'], ['trafo', 'TRAFO'], ['diger', 'DİĞER']].map(([k, l]) => html`<button class=${'chip' + (kind === k ? ' on' : '')} style="min-height:46px;font-size:14px;letter-spacing:.04em" onClick=${() => setKind(k)}>${l}</button>`)}</div>
-          ${kind === 'direk' ? html`<${PoleFields} m=${pole} close=${closePanel} />` : kind === 'trafo' ? html`<${TrafoFields} m=${trafo} />` : html`<${OtherFields} m=${other} active=${active} />`}
+          ${kind === 'direk' ? html`<${PoleFields} m=${pole} close=${closePanel} />` : kind === 'trafo' ? html`<${TrafoFields} m=${trafo} />` : html`<${OtherFields} m=${other} active=${active} startLine=${(preset) => { app.state.forms = Object.assign({}, app.state.forms, { line: Object.assign({}, (app.state.forms || {}).line || {}, preset) }); setPanel('line'); }} />`}
         </div>
         <div class="foot"><div class="grow" style="min-width:0"><div class="lbl">Yeşil Defter</div><div class="mono" style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cur.code || '—'}</div></div><button class="btn pri" style="flex:0 0 46%;height:52px;font-size:16px" onClick=${closePanel}><${Icon} n="check" s=${20} c="#0b1326" />TAMAM</button></div>
       </section>` : null}
-    ${panel === 'line' ? html`<${LineSheet} active=${active} close=${closePanel} rerender=${() => force((x) => x + 1)} />` : null}`;
+    ${panel === 'line' ? html`<${LineSheet} active=${active} close=${closePanel} rerender=${() => force((x) => x + 1)} />` : null}
+    ${panel === 'src' ? html`<${SourceSheet} mode=${srcMode} setMode=${(m) => { setSrcMode(m); closePanel(); }} close=${closePanel} />` : null}`;
 }
 MapScreen.flush = true;
 MapScreen.compactHud = true;
@@ -208,7 +240,7 @@ function LayerPop({ eng, close }) {
   const [, f] = useState(0);
   const L = eng.layers;
   const t = (k) => { L[k] = !L[k]; app.state.layers = Object.assign({}, L); eng.invalidate(); f((x) => x + 1); };
-  const items = [['AG', 'A.G. şebeke', '#7ee08a'], ['OG', 'O.G. şebeke', '#ff6b6b'], ['AYD', 'Aydınlatma', '#7fffff'], ['ENH', 'E.N.H.', '#ff79ff'], ['ABONE', 'Abone', '#fbbf24'], ['yeralti', 'Yeraltı kablo', '#ff6b6b'], ['trafo', 'Trafo ve box', '#6b82ff'], ['mevcut', 'Mevcut elemanlar', '#00ffbf'], ['demontaj', 'Demontaj işareti', '#ffff00'], ['points', 'Ölçü noktaları', '#e2e8f0'], ['labels', 'Etiketler', '#94a3b8'], ['spanText', 'Açıklık yazıları', '#94a3b8'], ['grid', 'Koordinat ızgarası', '#94a3b8'], ['basemap', 'Altlık harita', '#94a3b8']];
+  const items = [['AG', 'A.G. şebeke', '#7ee08a'], ['OG', 'O.G. şebeke', '#ff6b6b'], ['AYD', 'Aydınlatma', '#7fffff'], ['ENH', 'E.N.H.', '#ff79ff'], ['ABONE', 'Abone', '#fbbf24'], ['yeralti', 'Yeraltı kablo', '#ff6b6b'], ['trafo', 'Trafo ve box', '#6b82ff'], ['mevcut', 'Mevcut elemanlar', '#00ffbf'], ['demontaj', 'Demontaj işareti', '#ffff00'], ['hak', 'Hakediş durumu (renkler)', '#fbbf24'], ['srcTags', 'Veri kaynağı etiketleri', '#10b981'], ['points', 'Ölçü noktaları', '#e2e8f0'], ['labels', 'Etiketler', '#94a3b8'], ['spanText', 'Açıklık yazıları', '#94a3b8'], ['grid', 'Koordinat ızgarası', '#94a3b8'], ['basemap', 'Altlık harita', '#94a3b8']];
   return html`<div class="card" style="position:absolute;right:68px;top:12px;z-index:6;width:230px;padding:6px;max-height:60%;overflow:auto">
     ${items.map(([k, l, c]) => html`<button class="li" style="min-height:40px;padding:6px 8px" onClick=${() => t(k)}><span style=${'width:18px;height:3px;background:' + c}></span><span class="grow" style="font-size:13px">${l}</span><${Icon} n=${L[k] ? 'check' : 'minus'} s=${16} c=${L[k] ? '#10b981' : '#475569'} /></button>`)}
     <div class="row" style="padding:6px 8px"><span class="note grow">Altlık</span><select class="inp" style="height:34px;font-size:12px" value=${app.state.basemap || 'none'} onChange=${(e) => { app.state.basemap = e.target.value; app.ds.setting('basemap', e.target.value); eng.invalidate(); f((x) => x + 1); }}>${BASEMAPS.map((b) => html`<option value=${b.id}>${b.label}</option>`)}</select></div>
@@ -243,6 +275,7 @@ function SelectionPanel({ sel, select, eng, openLine }) {
         <button class="btn" onClick=${async () => { await ps.reverseLine(l.id); app.toast('Hat yönü ters çevrildi'); }}><${Icon} n="reverse" s=${18} />Ters çevir</button>
         <button class="btn" disabled=${!(sel.seg > 0)} onClick=${async () => { const nl = await ps.splitLine(l.id, sel.seg); app.toast(l.lineNo + ' bölündü → ' + nl.lineNo); select(null); }}><${Icon} n="split" s=${18} />Düğümde böl</button>
       </div>
+      <${HakRow} type="line" rec=${l} />
       <div class="note">Böl: seçilen parçanın başlangıç düğümünden ikiye ayırır. Birleştir ve ofset: Hat kaydı ekranında.</div>
     </div>`;
   }
@@ -253,37 +286,58 @@ function SelectionPanel({ sel, select, eng, openLine }) {
   const ri = e ? ps.result.roles.get(e.id) : null;
   const iss = ps.result.issues.filter((i) => i.entityId === (e ? e.id : p.id) || i.pointId === p.id);
   const act = app.state.activeLineId ? ps.lineById(app.state.activeLineId) : null;
-  const src = { GNSS_RTK: ['RTK', 'ok'], PHONE: ['TELEFON · TEST', 'cy'], MANUAL: ['MANUEL', 'warn'], DESIGN: ['TASARIM', 'm'], SIM: ['SİMÜLATÖR', 'mut'], IMPORT: ['İÇE ALINDI', 'mut'] }[p.source] || [p.source, 'mut'];
+  const si = sourceInfo(p);
   const remeasure = async () => {
     const obs = await measure({ critical: p.critical !== false, label: p.pointNo });
     if (!obs) return;
-    const why = await app.prompt('Yeniden ölçüm', 'Gerekçe', { value: p.source === 'PHONE' ? 'Telefon GPS noktası RTK ile ölçüldü' : 'Yeniden ölçüm', required: true });
+    const why = await app.prompt('Yeniden ölçüm', 'Gerekçe', { value: si.precise ? 'Yeniden ölçüm' : si.label + ' noktası GNSS ile ölçüldü', required: true });
     if (!why) return;
     await ps.remeasure(p.id, obs, why);
     const im = ps.lastImpact;
     app.toast(p.pointNo + ' revize edildi' + (im ? ' → ' + im.spans + ' açıklık, ' + im.roles + ' rol, ' + im.materials + ' reçete, ' + im.quantities + ' metraj' : ''), 'ok', 5000);
   };
+  const nPh = ps.data.photos.filter((x) => x.ownerId === (e ? e.id : p.id)).length;
+  const when = p.measuredAt || p.updatedAt || p.createdAt;
+  const note = (e && e.note) || p.note || '';
+  const kindLbl = e ? (EQUIPMENT_KINDS[e.kind] || {}).label || e.kind : p.cls === 'HAT' ? 'Hat köşe noktası' : p.cls === 'TASARIM' ? 'Tasarım noktası' : 'Detay noktası';
+  // Obje detay kartı (spesifikasyon 8.3): no · tür / koordinat / veri kaynağı / hakediş / fotoğraf / ölçüm / not
   return html`<div class="body">
-    <div class="row"><b class="grow" style="font-size:17px">${e ? e.no : p.pointNo}</b><${Badge} k=${src[1]}>${src[0]}</${Badge}><button class="btn xs" onClick=${() => select(null)}><${Icon} n="x" s=${16} /></button></div>
-    ${e ? html`<div style="font-size:13px">${eqSummary(e)}${ri && ri.role ? html` · <b class="hw">${roleLabel(ri.role)}${ri.angle ? ' α=' + dms(ri.angle) : ''}</b>` : null}</div>` : html`<div class="note">${p.cls} noktası</div>`}
-    <div class="grid3 mono" style="font-size:12px"><div class="stat"><b>Y</b><span style="font-size:13px">${fmt(p.E)}</span></div><div class="stat"><b>X</b><span style="font-size:13px">${fmt(p.N)}</span></div><div class="stat"><b>Z</b><span style="font-size:13px">${fmt(p.H)}</span></div></div>
-    ${p.quality ? html`<div class="note mono">${p.quality.fix} · σH ${fmt(p.quality.sigmaH)} · σV ${fmt(p.quality.sigmaV)} · PDOP ${fmt(p.quality.pdop, 1)} · ${p.quality.sats ?? '—'} uydu · ${p.quality.epochs ?? 1} epok</div>` : null}
-    ${iss.slice(0, 3).map((i) => html`<div class=${'alert ' + (i.severity === 'error' ? 'err' : 'warn')} style="padding:6px 10px"><b>${i.code}</b> ${i.message}</div>`)}
-    ${act ? html`<button class="btn pri blk" style="height:52px;font-size:15px" disabled=${act.nodes[act.nodes.length - 1] === p.id} onClick=${async () => { await ps.appendNode(act.id, p.id); app.toast(p.pointNo + ' → ' + act.lineNo + ' hattına eklendi'); select(null); }}><${Icon} n="plus" s=${20} c="#0b1326" />${act.nodes[act.nodes.length - 1] === p.id ? act.lineNo + ' hattının son düğümü' : act.lineNo + ' hattına ekle'}</button>`
-      : html`<button class="btn blk" onClick=${() => { app.state.lineStartPoint = p.id; select(null); openLine(); }}><${Icon} n="plus" s=${18} />Buradan hat başlat</button>`}
+    <div class="row"><b class="grow" style="font-size:17px">${e ? e.no : p.pointNo} <span style="font-weight:500;color:var(--mut)">· ${kindLbl}</span></b><${Badge} k=${si.badge}>${si.tag}</${Badge}><button class="btn xs" aria-label="Kapat" onClick=${() => select(null)}><${Icon} n="x" s=${16} /></button></div>
+    ${e ? html`<div style="font-size:13px">${eqSummary(e)}${ri && ri.role ? html` · <b class="hw">${roleLabel(ri.role)}${ri.angle ? ' α=' + dms(ri.angle) : ''}</b>` : null}</div>` : null}
+    <div class="kv" style="font-size:13px">
+      <b>Koordinat</b><span class="mono">Y ${fmt(p.E)} · X ${fmt(p.N)} · Z ${p.H != null ? fmt(p.H) : 'bilinmiyor'}</span>
+      <b>Veri kaynağı</b><span style=${'color:' + si.color}>${sourceText(p)}${p.quality && p.quality.sats != null ? ' · ' + p.quality.sats + ' uydu' : ''}</span>
+      <b>Fotoğraflar</b><span>${nPh}</span>
+      <b>Ölçüm</b><span>${when ? new Date(when).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }) : '—'}${p.operator ? ' · ' + p.operator : ''}</span>
+      ${note ? html`<b>Notlar</b><span>${note}</span>` : null}
+    </div>
+    ${e ? html`<${HakRow} type="equipment" rec=${e} />` : null}
+    ${iss.slice(0, 2).map((i) => html`<div class=${'alert ' + (i.severity === 'error' ? 'err' : 'warn')} style="padding:6px 10px"><b>${i.code}</b> ${i.message}</div>`)}
+    ${act ? html`<button class="btn pri blk" style="height:52px;font-size:15px" disabled=${act.nodes[act.nodes.length - 1] === p.id} onClick=${async () => { await ps.appendNode(act.id, p.id); app.toast(p.pointNo + ' → ' + act.lineNo + ' hattına eklendi'); select(null); }}><${Icon} n="plus" s=${20} c="#0b1326" />${act.nodes[act.nodes.length - 1] === p.id ? act.lineNo + ' hattının son düğümü' : act.lineNo + ' hattına ekle'}</button>` : null}
     <div class="grid2">
       ${e ? html`<button class=${'btn' + (act ? '' : ' pri')} onClick=${() => app.nav.go('equipment', { id: e.id })}><${Icon} n="edit" s=${18} />Kayıt</button>` : html`<button class=${'btn' + (act ? '' : ' pri')} onClick=${() => app.nav.go('point', { id: p.id })}>Nokta kaydı</button>`}
-      <button class="btn" onClick=${() => app.nav.go('photo', { ownerId: e ? e.id : p.id, pointId: p.id, ownerNo: e ? e.no : p.pointNo })}><${Icon} n="camera" s=${18} />Fotoğraf</button>
-      <button class="btn" onClick=${remeasure}><${Icon} n="cross" s=${18} />Yeniden ölç</button>
+      <button class="btn" onClick=${() => app.nav.go('photo', { ownerId: e ? e.id : p.id, pointId: p.id, ownerNo: e ? e.no : p.pointNo, ownerKind: e ? e.kind : 'point' })}><${Icon} n="camera" s=${18} />Fotoğraf</button>
+      <button class="btn" onClick=${remeasure}><${Icon} n="cross" s=${18} />${si.precise ? 'Yeniden ölç' : 'GNSS ile ölç'}</button>
       <button class="btn" onClick=${() => { app.state.target = { id: p.id }; app.nav.tab('stake'); }}><${Icon} n="target" s=${18} />Aplikasyon</button>
+      ${act ? null : html`<button class="btn" style="grid-column:1/3" onClick=${() => { app.state.lineStartPoint = p.id; select(null); openLine(); }}><${Icon} n="plus" s=${18} />Buradan hat başlat</button>`}
     </div>
   </div>`;
+}
+// Hakediş durumu: haritadaki objeye dokunup tek dokunuşla değiştirilir (spesifikasyon 8.2)
+function HakRow({ type, rec }) {
+  const ps = app.ps;
+  const cur = hakOf(rec);
+  if (!cur) return html`<div class="note">Hakediş: — (mevcut / ileride durumundaki objenin iş kalemi yok)</div>`;
+  const setH = async (k) => { if (k === cur) return; try { await ps.setHak(type, rec.id, k); app.toast((rec.no || rec.lineNo) + ' · ' + HAK_STATUSES[k].label, 'ok'); } catch (err) { app.toast(err.message, 'err'); } };
+  return html`<div><div class="lbl" style="margin-bottom:4px">Hakediş durumu · <span style=${'color:' + HAK_STATUSES[cur].color}>${HAK_STATUSES[cur].label}</span></div>
+    <div class="hakrow">${HAK_ORDER.map((k) => html`<button class=${k === cur ? 'on' : ''} style=${'--c:' + HAK_STATUSES[k].color} aria-label=${HAK_STATUSES[k].label} onClick=${() => setH(k)}><i></i>${HAK_STATUSES[k].short}</button>`)}</div></div>`;
 }
 export function eqSummary(e) {
   const ps = app.ps;
   if (e.kind === 'pole' || e.kind === 'lighting') { const t = ps.cat.poleType(e.typeId); const g = ps.cat.poleGroup(e.group); return (g ? g.short : '') + ' · ' + (t ? t.name : 'tip yok') + ' · ' + ((STATUSES[e.state] || {}).label || e.state); }
   if (e.kind === 'transformer') { const a = e.attrs || {}; const pt = ps.cat.postType(a.post); return (pt ? pt.label : 'Trafo') + ' · ' + (a.kva ? a.kva + ' kVA' : '') + ' · ' + ((TRAFO_STATUSES[e.state] || {}).label || e.state); }
   if (e.kind === 'sdk') { const t = ps.cat.sdkType((e.attrs || {}).sdkTypeId); return 'SDK · ' + (t ? t.name : '') + ' · ' + ((STATUSES[e.state] || {}).label || ''); }
+  if (e.kind === 'panel' || e.kind === 'luminaire' || e.kind === 'other' || e.kind === 'manhole') { const a = e.attrs || {}; const pz = a.servis ? ps.cat.poz(a.servis) : null; return ((EQUIPMENT_KINDS[e.kind] || {}).label || e.kind) + (a.typeName ? ' · ' + a.typeName : pz ? ' · ' + pz.name : '') + (a.kva ? ' · ' + a.kva + ' kVA' : '') + ' · ' + ((STATUSES[e.state] || {}).label || ''); }
   if (e.kind === 'subscriber') return 'Abone · ' + ((e.attrs || {}).phase === 'tek' ? 'tek faz' : 'üç faz') + ((e.attrs || {}).aboneNo ? ' · ' + e.attrs.aboneNo : '');
   return e.kind;
 }
@@ -295,19 +349,71 @@ function useForm(key, init) {
   const set = (patch) => setF((x) => { const n = Object.assign({}, x, patch); app.state.forms = Object.assign({}, app.state.forms, { [key]: n }); return n; });
   return [f, set];
 }
-// Büyük ALIM düğmesi: her zaman ekranın altında; durumu (FIX / FLOAT / kaynak yok / ölçülüyor) kendi üstünde gösterir
-function TakeBtn({ label, onTake, disabled, measuring, busy }) {
+// Büyük ALIM düğmesi: her zaman ekranın altında; durumu (FIX / FLOAT / kaynak yok / ölçülüyor) kendi üstünde gösterir.
+// mode: gnss → ölçer · manual → koordinat formu açar · map → nişangâhtaki noktayı ekler
+function TakeBtn({ label, onTake, disabled, measuring, busy, mode = 'gnss' }) {
   const g = app.gnss.state;
   const none = g.source === 'none';
-  let b = none ? { bg: '#2d3449', fg: '#94a3b8', t: 'KAYNAK YOK' } : g.source === 'phone' ? { bg: '#38bdf8', fg: '#0b1326', t: (label || 'NOKTA AL') + ' · TEST' } : g.fix === 'FIX' ? { bg: '#10b981', fg: '#0b1326', t: label || 'NOKTA AL' } : g.fix === 'FLOAT' ? { bg: '#f59e0b', fg: '#0b1326', t: 'FLOAT · BEKLE' } : { bg: '#2d3449', fg: '#94a3b8', t: 'FIX YOK' };
+  const base = label || 'NOKTA AL';
+  let b = mode === 'manual' ? { bg: '#fbbf24', fg: '#0b1326', t: base.replace(/ AL$/, '') + ' · ELLE', ic: 'edit' }
+    : mode === 'map' ? { bg: '#c084fc', fg: '#0b1326', t: base.replace(/ AL$/, '') + ' · ARTIYA', ic: 'pin' }
+    : none ? { bg: '#2d3449', fg: '#94a3b8', t: 'KAYNAK YOK' } : g.source === 'phone' ? { bg: '#38bdf8', fg: '#0b1326', t: base + ' · TEL.' } : g.fix === 'FIX' ? { bg: '#10b981', fg: '#0b1326', t: base } : g.fix === 'FLOAT' ? { bg: '#f59e0b', fg: '#0b1326', t: base + ' · FLOAT' } : { bg: '#ef4444', fg: '#0b1326', t: base + ' · FIX YOK' };
   let style = 'background:' + b.bg + ';border-color:' + b.bg + ';color:' + b.fg;
   let text = b.t;
-  if (measuring) {
+  if (measuring && mode === 'gnss') {
     const pct = Math.round(100 * Math.min(1, (measuring.n || 0) / (measuring.need || 1)));
     style = 'background:linear-gradient(90deg,#10b981 ' + pct + '%,#0f5c46 ' + pct + '%);border-color:#10b981;color:#0b1326';
     text = 'ÖLÇÜLÜYOR ' + (measuring.n || 0) + '/' + measuring.need;
   }
-  return html`<button class="btn huge take" style=${style} disabled=${disabled || busy} onClick=${onTake}><${Icon} n="cross" s=${24} c=${b.fg} w=${2.4} />${text}</button>`;
+  return html`<button class="btn huge take" style=${style} disabled=${disabled || busy} onClick=${onTake}><${Icon} n=${b.ic || 'cross'} s=${22} c=${b.fg} w=${2.4} /><span>${text}</span></button>`;
+}
+
+// Manuel koordinat girişi (spesifikasyon 3.3): sağa / yukarı / Z + koordinat sistemi; kaynak etiketi MANUEL
+function manualCoordModal(label) {
+  const ps = app.ps;
+  const choices = crsChoices(ps.p);
+  return app.modal((close) => html`<${ManualCoord} label=${label} choices=${choices} close=${close} />`);
+}
+function ManualCoord({ label, choices, close }) {
+  const ps = app.ps;
+  const last = app.state.manualLast || {};
+  const [f, setF] = useState({ x: '', y: '', z: '', zUnknown: false, crsKey: last.crsKey || 'proje' });
+  const set = (p) => setF((v) => Object.assign({}, v, p));
+  const geo = (choices.find((c) => c.key === f.crsKey) || {}).geo;
+  const r = f.x !== '' && f.y !== '' ? resolveCoord(ps.p, f) : null;
+  const ok = r && r.ok;
+  return html`<div class="mh"><h3>${label} · manuel koordinat</h3><${Badge} k="m">MANUEL</${Badge}></div>
+    <div class="mb">
+      <div class="fld"><label>Koordinat sistemi</label><${Sel} value=${f.crsKey} options=${choices.map((c) => [c.key, c.label])} onChange=${(v) => set({ crsKey: v })} /></div>
+      <div class="grid2">
+        <div class="fld"><label>${geo ? 'Boylam (°)' : 'Y · Sağa (Easting)'}</label><input class="inp mono" inputmode="decimal" autofocus value=${f.x} placeholder=${geo ? '39.230000' : '520487.364'} onInput=${(e) => set({ x: e.target.value })} /></div>
+        <div class="fld"><label>${geo ? 'Enlem (°)' : 'X · Yukarı (Northing)'}</label><input class="inp mono" inputmode="decimal" value=${f.y} placeholder=${geo ? '38.670000' : '4282048.846'} onInput=${(e) => set({ y: e.target.value })} /></div>
+      </div>
+      <div class="row"><div class="fld grow"><label>Z · Yükseklik (m)</label><input class="inp mono" inputmode="decimal" disabled=${f.zUnknown} value=${f.zUnknown ? '' : f.z} placeholder=${f.zUnknown ? 'bilinmiyor' : 'isteğe bağlı'} onInput=${(e) => set({ z: e.target.value })} /></div>
+        <div class="fld" style="align-items:center"><label>Z bilinmiyor</label><${Toggle} on=${f.zUnknown} onChange=${(v) => set({ zUnknown: v })} label="Z bilinmiyor" /></div></div>
+      ${r && !r.ok ? html`<div class="alert err">${r.error}</div>` : null}
+      ${ok ? html`<div class="alert info" style="display:block"><div class="mono" style="font-size:12px">Proje: Y ${fmt(r.E)} · X ${fmt(r.N)} · Z ${r.H != null ? fmt(r.H) : 'bilinmiyor'}</div><div class="note">${r.lat.toFixed(7)}°K · ${r.lon.toFixed(7)}°D${r.warn.length ? ' · ' + r.warn.join(' · ') : ''}</div></div>` : html`<div class="note">Sağa değer 6, yukarı değer 7 hanelidir; yerleri karışırsa otomatik düzeltilir. Nokta [MANUEL] etiketiyle kaydedilir ve sonradan GNSS ile ölçülebilir.</div>`}
+    </div>
+    <div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn pri grow" disabled=${!ok} onClick=${() => { app.state.manualLast = { crsKey: f.crsKey }; close({ E: r.E, N: r.N, H: r.H, lat: r.lat, lon: r.lon, enteredCrs: r.enteredCrs, crsLabel: r.crsLabel }); }}>Kaydet</button></div>`;
+}
+
+// Veri kaynağı seçimi (spesifikasyon 3.2): GNSS · Telefon GPS · Manuel · Haritadan seç · Excel
+function SourceSheet({ mode, setMode, close }) {
+  const g = app.gnss.state;
+  const ext = g.source === 'external' || g.source === 'sim';
+  const opt = (on, col, title, sub, tag, onClick) => html`<button class=${'srcopt' + (on ? ' on' : '')} style=${'--c:' + col} onClick=${onClick}><i></i><span class="grow"><b>${title}</b><small>${sub}</small></span><span class="badge b-mut">${tag}</span></button>`;
+  const useGnss = () => { if (ext) setMode('gnss'); else { close(); app.toast('Harici GNSS bağlı değil · alıcıyı seçin', 'warn', 4000); app.nav.tab('settings'); } };
+  const usePhone = async () => { if (g.source !== 'phone') { try { await app.gnss.usePhone(); } catch (e) { app.toast(e.message, 'err'); return; } } setMode('gnss'); app.toast('Telefon GPS · noktalar [TELEFON GPS] etiketiyle kaydedilir', 'warn', 4000); };
+  return html`<section class="sheet" aria-label="Veri kaynağı"><div class="grab" onClick=${close}><i></i></div>
+    <div class="body">
+      <b style="font-size:17px">Veri kaynağı</b>
+      ${opt(mode === 'gnss' && ext, '#10b981', 'GNSS (Harici / RTK)', ext ? ((g.receiver || {}).name || (g.source === 'sim' ? 'Simülatör' : 'Alıcı')) + ' · ' + (g.fix || '—') + (g.sigmaH != null ? ' · ±' + g.sigmaH.toFixed(3) + ' m' : '') : 'Bağlı değil · dokununca Ayarlar açılır', 'RTK FIX', useGnss)}
+      ${opt(mode === 'gnss' && g.source === 'phone', '#38bdf8', 'Telefon GPS', g.source === 'phone' ? 'Etkin' + (g.sigmaH != null ? ' · ±' + g.sigmaH.toFixed(1) + ' m' : '') : '±3–10 m · hassas alım için uygun değil', 'TELEFON GPS', usePhone)}
+      ${opt(mode === 'manual', '#fbbf24', 'Manuel koordinat', 'Sağa / yukarı / Z elle girilir, koordinat sistemi seçilir', 'MANUEL', () => setMode('manual'))}
+      ${opt(mode === 'map', '#c084fc', 'Haritadan seç', 'Haritayı kaydır, nişangâhı konuma getir · Z bilinmiyor', 'HARİTA', () => setMode('map'))}
+      ${opt(false, '#a3e635', 'Excel (toplu)', 'Şablonu indir, doldur, önizle ve içe aktar', 'EXCEL', () => { close(); app.nav.go('excel'); })}
+      <div class="note">Seçilen kaynak her objeye etiket olarak yazılır; haritada, listelerde ve raporlarda görünür.</div>
+    </div></section>`;
 }
 const ST_LBL = { YENI: 'YENİ', MEVCUT: 'MEVCUT', DMM: 'DMM', DEMONTAJ: 'DEMONTAJ', ILERIDE: 'İLERİDE' };
 const GEN_LBL = { AG: 'AG DİREK', OG: 'OG DİREK', MUS: 'MÜŞTEREK DİREK', AYD: 'AYDINLATMA DİREĞİ' };
@@ -326,11 +432,11 @@ function usePole() {
   const gr = cat.poleGroup(group);
   const job = (STATUSES[f.state] || {}).job;
   const code = !job ? 'Mevcut · hakedişe girmez' : t ? cat.jobCode(gr.kgGroup || t.servis, job) + ' · ' + (t.kg ? t.kg + ' kg' : 'Ad') : '—';
-  const take = async (line) => {
+  const take = async (line, activeLine, acq) => {
     if (!t) { app.toast('Önce direk tipini seçin', 'warn'); return null; }
-    const obs = await measure({ critical: true, label: 'Direk' });
-    if (!obs) return null;
-    const e = await ps.addEquipment(group === 'ayd' ? 'lighting' : 'pole', { group, typeId, state: f.state }, { obs });
+    const pos = await acq({ critical: true, label: 'Direk' });
+    if (!pos) return null;
+    const e = await ps.addEquipment(group === 'ayd' ? 'lighting' : 'pole', { group, typeId, state: f.state }, pos);
     if (line) await ps.appendNode(line.id, e.pointId);
     const cur = { gen: f.gen, group, typeId, state: f.state };
     await recent('form:pole', cur);
@@ -367,8 +473,8 @@ function circuitOpts(role, install) {
 }
 function LineSheet({ active, close, rerender }) {
   const ps = app.ps, cat = ps.cat;
-  const [f, set] = useForm('line', { lt: 'OG', install: 'havai', og: cat.lineDefault('OG', 'havai'), ogN: 1, ag: cat.lineDefault('AG', 'havai'), agN: 1, mus: false, bare: false, bf: 'P', bn: 'R', ba: '', phase: 'uc', channel: 'toprak', depth: null, width: 0.4 });
-  const [more, setMore] = useState(false);
+  const [f, set] = useForm('line', { lt: 'OG', install: 'havai', og: cat.lineDefault('OG', 'havai'), ogN: 1, ag: cat.lineDefault('AG', 'havai'), agN: 1, mus: false, bare: false, bf: 'P', bn: 'R', ba: '', phase: 'uc', channel: 'toprak', depth: null, width: 0.4, channelOnly: false });
+  const [more, setMore] = useState(() => ((app.state.forms || {}).line || {}).install === 'yeralti');
   const wrap = (body, foot) => html`<section class="sheet" aria-label="Hat"><div class="grab" onClick=${close}><i></i></div><div class="body">${body}</div>${foot ? html`<div class="foot">${foot}</div>` : null}</section>`;
   if (active) {
     const li = ps.result.lineInfo.get(active.id) || {};
@@ -395,11 +501,12 @@ function LineSheet({ active, close, rerender }) {
   const start = async () => {
     if (f.install === 'yeralti' && !f.depth) { setMore(true); app.toast('Yeraltı hat için kanal derinliği zorunlu', 'warn'); return; }
     const circuits = [];
-    if (ogOn) circuits.push({ role: f.lt, key: f.og, count: f.ogN });
-    if (agShow) circuits.push(f.bare && f.install === 'havai' && agRole !== 'ABONE' ? { role: agRole, custom: { f: f.bf, nt: f.bn, ay: f.ba || '' }, count: f.agN } : { role: agRole, key: f.ag, count: f.agN });
+    const chOnly = f.install === 'yeralti' && !!f.channelOnly;
+    if (ogOn && !chOnly) circuits.push({ role: f.lt, key: f.og, count: f.ogN });
+    if (agShow && !chOnly) circuits.push(f.bare && f.install === 'havai' && agRole !== 'ABONE' ? { role: agRole, custom: { f: f.bf, nt: f.bn, ay: f.ba || '' }, count: f.agN } : { role: agRole, key: f.ag, count: f.agN });
     const d = { lineType: f.lt, install: f.install, circuits, musterek: ogOn && f.mus, nodes: startPt ? [startPt.id] : [] };
     if (f.lt === 'ABONE') { d.abonePhase = f.phase; d.aboneCount = 1; }
-    if (f.install === 'yeralti') d.cable = { channelType: f.channel, depth: f.depth, width: f.width };
+    if (f.install === 'yeralti') { d.cable = { channelType: f.channel, depth: f.depth, width: f.width }; if (chOnly) d.channelOnly = true; }
     const l = await ps.createLine(d);
     app.state.activeLineId = l.id; app.state.toLine = true; app.state.lineStartPoint = null; app.state.sel = null; app.bus.emit('ui:sel');
     await recent('form:line', f);
@@ -413,12 +520,13 @@ function LineSheet({ active, close, rerender }) {
     <div class="row"><b class="grow" style="font-size:17px">Yeni hat</b>${startPt ? html`<${Badge} k="cy">İLK DÜĞÜM ${startPt.pointNo}</${Badge}>` : null}</div>
     <div class="row"><span class="lbl" style="width:64px">Hat tipi</span><div class="chips grow">${['AG', 'OG', 'AYD', 'ENH', 'ABONE'].map((k) => html`<${Chip} c=${GCOL[k]} on=${f.lt === k} onClick=${() => set({ lt: k, og: cat.lineDefault(k, f.install) || f.og, ag: cat.lineDefault(k === 'ABONE' ? 'ABONE' : 'AG', f.install) || f.ag })}>${k === 'AYD' ? 'AYD.' : k}</${Chip}>`)}</div></div>
     <div class="row"><span class="lbl" style="width:64px">Tesis</span><div class="grow"><${Seg} value=${f.install} options=${[['havai', 'Havai'], ['yeralti', 'Yeraltı']]} onChange=${(v) => { set({ install: v, og: cat.lineDefault('OG', v), ag: cat.lineDefault(f.lt === 'ABONE' ? 'ABONE' : 'AG', v) }); if (v === 'yeralti') setMore(true); }} /></div></div>
-    <button class="what" style="height:auto;min-height:52px;padding:8px 10px" onClick=${() => setMore(!more)}><span class="grow"><b>İLETKEN / KABLO</b><small style="white-space:normal">${sumr}</small></span><${Icon} n=${more ? 'up' : 'down'} s=${18} c="#94a3b8" /></button>
+    ${f.install === 'yeralti' ? html`<div class="row card" style="padding:8px 10px"><span class="grow" style="font-size:13px"><b>Yalnız kanal / kazı</b><div class="note">Kablo yok; yalnız kanal, kum, bant metrajı çıkar.</div></span><${Toggle} on=${!!f.channelOnly} onChange=${(v) => set({ channelOnly: v })} label="Yalnız kanal" /></div>` : null}
+    <button class="what" style="height:auto;min-height:52px;padding:8px 10px" onClick=${() => setMore(!more)}><span class="grow"><b>${f.install === 'yeralti' && f.channelOnly ? 'KANAL' : 'İLETKEN / KABLO'}</b><small style="white-space:normal">${f.install === 'yeralti' && f.channelOnly ? f.lt + ' · kanal ' + f.channel + ' · ' + (f.depth ?? '?') + ' × ' + f.width + ' m' : sumr}</small></span><${Icon} n=${more ? 'up' : 'down'} s=${18} c="#94a3b8" /></button>
     ${more ? html`
       ${f.lt === 'ABONE' ? html`<div class="row"><span class="lbl" style="width:64px">Faz</span><div class="grow"><${Seg} c="#fbbf24" value=${f.phase} options=${[['tek', 'Tek fazlı'], ['uc', 'Üç fazlı']]} onChange=${(v) => set({ phase: v, ag: f.install === 'havai' ? (v === 'tek' ? '2x16+25 AER' : '3x16+25 AER') : (v === 'tek' ? 'NYY 2x16' : 'NYY 4x16') })} /></div></div>` : null}
-      ${ogOn ? html`<div class="row"><span class="lbl" style="width:64px;color:#ff8a8a">${f.lt}</span><select class="inp mono" style="width:64px" value=${f.ogN} onChange=${(e) => set({ ogN: +e.target.value })}>${[1, 2, 3].map((n) => html`<option value=${n}>${n}×</option>`)}</select><div class="grow"><${Sel} mono value=${f.og} options=${circuitOpts('OG', f.install)} onChange=${(v) => set({ og: v })} /></div></div>
+      ${ogOn && !(f.install === 'yeralti' && f.channelOnly) ? html`<div class="row"><span class="lbl" style="width:64px;color:#ff8a8a">${f.lt}</span><select class="inp mono" style="width:64px" value=${f.ogN} onChange=${(e) => set({ ogN: +e.target.value })}>${[1, 2, 3].map((n) => html`<option value=${n}>${n}×</option>`)}</select><div class="grow"><${Sel} mono value=${f.og} options=${circuitOpts('OG', f.install)} onChange=${(v) => set({ og: v })} /></div></div>
         <div class="row card" style="padding:8px 10px"><span class="grow" style="font-size:13px">Aynı direklerde AG hattı da var (müşterek)</span><${Toggle} on=${f.mus} onChange=${(v) => set({ mus: v })} label="Müşterek" /></div>` : null}
-      ${agShow ? html`<div class="row"><span class="lbl" style="width:64px;color:${GCOL[f.lt === 'ABONE' ? 'ABONE' : f.lt === 'AYD' ? 'AYD' : 'AG']}">${f.lt === 'ABONE' ? 'Abone' : f.lt === 'AYD' ? 'Ayd.' : 'AG'}</span>
+      ${agShow && !(f.install === 'yeralti' && f.channelOnly) ? html`<div class="row"><span class="lbl" style="width:64px;color:${GCOL[f.lt === 'ABONE' ? 'ABONE' : f.lt === 'AYD' ? 'AYD' : 'AG']}">${f.lt === 'ABONE' ? 'Abone' : f.lt === 'AYD' ? 'Ayd.' : 'AG'}</span>
           <select class="inp mono" style="width:64px" value=${f.agN} onChange=${(e) => set({ agN: +e.target.value })}>${[1, 2, 3].map((n) => html`<option value=${n}>${n}×</option>`)}</select>
           <div class="grow">${f.bare && f.install === 'havai' && f.lt !== 'ABONE' ? html`<div class="row" style="gap:4px"><span class="mono">3</span><select class="inp mono" value=${f.bf} onChange=${(e) => set({ bf: e.target.value })}>${cat.t.conductors.filter((c) => c.kind === 'AAC').map((c) => html`<option value=${c.short}>${c.short}</option>`)}</select><span class="mono">+</span><select class="inp mono" value=${f.bn} onChange=${(e) => set({ bn: e.target.value })}>${cat.t.conductors.filter((c) => c.kind === 'AAC').map((c) => html`<option value=${c.short}>${c.short}</option>`)}</select><span class="mono">+</span><select class="inp mono" value=${f.ba} onChange=${(e) => set({ ba: e.target.value })}><option value="">—</option>${cat.t.conductors.filter((c) => c.kind === 'AAC').map((c) => html`<option value=${c.short}>${c.short}</option>`)}</select></div>` : html`<${Sel} mono value=${f.ag} options=${agOptions} onChange=${(v) => set({ ag: v })} />`}</div></div>
         ${f.install === 'havai' && f.lt !== 'ABONE' ? html`<div class="row"><span class="note grow">Çıplak Al iletken (Rose/Pansy…) — AG mesnet izolatörleri otomatik</span><${Toggle} on=${f.bare} onChange=${(v) => set({ bare: v })} label="Çıplak iletken" /></div>` : null}` : null}
@@ -450,11 +558,11 @@ function useTrafo() {
   const comp = f.post === 'direk' ? (cat.table('trafoPoleCompat') || []).find((c) => c.pole === f.poleName) : null;
   if (comp && kva > comp.maxKva) issues.push('UYUMSUZ: ' + f.poleName + ' en fazla ' + comp.maxKva + ' kVA');
   const job = ts.job;
-  const take = async (line) => {
+  const take = async (line, activeLine, acq) => {
     if (issues.length && !(await app.confirm('Uyumsuzluk', issues.join(' · ') + ' — yine de kaydedilsin mi? (Kontrol listesinde hata olarak kalır)', { ok: 'Kaydet', danger: true }))) return null;
-    const obs = await measure({ critical: true, label: 'Trafo' });
-    if (!obs) return null;
-    const e = await ps.addEquipment('transformer', Object.assign({}, e0), { obs });
+    const pos = await acq({ critical: true, label: 'Trafo' });
+    if (!pos) return null;
+    const e = await ps.addEquipment('transformer', Object.assign({}, e0), pos);
     if (line) await ps.appendNode(line.id, e.pointId);
     await recent('form:trafo', f);
     return { msg: e.no + ' kaydedildi' + (line ? ' → ' + line.lineNo : '') + ' · ' + (ps.result.matsByEq.get(e.id) || { items: [] }).items.length + ' malzeme', undo: { no: e.no, pointId: e.pointId, eqId: e.id, lineId: line ? line.id : null } };
@@ -475,46 +583,58 @@ function TrafoFields({ m }) {
 }
 function Fld({ l, children }) { return html`<div class="fld"><label>${l}</label>${children}</div>`; }
 
-const OTHER_KINDS = [['sdk', 'SDK / Box', 'SDK AL'], ['subscriber', 'Abone', 'ABONE AL'], ['manhole', 'Menhol', 'MENHOL AL'], ['linept', 'Hat köşe noktası', 'KÖŞE AL'], ['detail', 'Detay noktası', 'DETAY AL'], ['crossing', 'Geçiş', 'GEÇİŞ AL']];
+// Diğer obje türleri (GEÇİŞ v2.2'de kaldırıldı). line: hat penceresini açar (kanal/kablo çizgisel objedir).
+const OTHER_KINDS = [['sdk', 'SDK / Box', 'SDK AL'], ['panel', 'Pano', 'PANO AL'], ['manhole', 'Menhol', 'MENHOL AL'], ['luminaire', 'Armatür / lamba', 'ARMATÜR AL'], ['subscriber', 'Abone', 'ABONE AL'], ['linept', 'Hat köşe noktası', 'KÖŞE AL'], ['detail', 'Detay noktası', 'DETAY AL'], ['other', 'Diğer (serbest)', 'OBJE AL']];
 function useOther() {
   const ps = app.ps, cat = ps.cat;
-  const [f, set] = useForm('other', { kind: 'sdk', sdkTypeId: null, outputs: 4, state: 'YENI', phase: 'uc', aboneNo: '', crossKind: 'karayolu', objH: 0, label: '' });
+  const [f, set] = useForm('other', { kind: 'sdk', sdkTypeId: null, outputs: 4, state: 'YENI', phase: 'uc', aboneNo: '', panelKey: '', lumServis: '', typeName: '', note: '' });
   const K = OTHER_KINDS.find((k) => k[0] === f.kind) || OTHER_KINDS[0];
+  const kind = K[0];
   const sdkT = cat.sdkType(f.sdkTypeId) || cat.sdkTypes()[0] || {};
-  const crossT = (cat.table('crossingTypes') || []).find((c) => c.id === f.crossKind) || {};
-  const take = async (line, activeLine) => {
-    if (f.kind === 'linept' && !activeLine) { app.toast('Köşe noktası için önce hat başlatın (+ HAT)', 'warn', 4000); return null; }
-    const critical = f.kind === 'sdk' || f.kind === 'manhole' || (f.kind === 'linept' && activeLine.install === 'havai');
-    const obs = await measure({ critical, label: K[1] });
-    if (!obs) return null;
-    if (f.kind === 'linept') { const p = await ps.createPoint({ pointNo: ps.nextPointNo('P'), cls: 'HAT', critical, obs }); await ps.appendNode(activeLine.id, p.id); return { msg: p.pointNo + ' → ' + activeLine.lineNo + ' köşe noktası', undo: { no: p.pointNo, pointId: p.id, eqId: null, lineId: activeLine.id } }; }
-    if (f.kind === 'detail') { const p = await ps.createPoint({ pointNo: ps.nextPointNo('P'), cls: 'DETAY', critical: false, obs }); await ps.recompute('Detay noktası'); return { msg: p.pointNo + ' kaydedildi', undo: { no: p.pointNo, pointId: p.id, eqId: null, lineId: null } }; }
-    if (f.kind === 'crossing') {
-      let best = null;
-      for (const s of ps.result.spans) { const a = ps.pointById(s.fromId), b = ps.pointById(s.toId); const r = segProject(obs, a, b); if (!best || r.dist < best.r.dist) best = { s, r }; }
-      if (!best || best.r.dist > 60) { app.toast('Yakında (60 m) açıklık yok · geçiş bir açıklığa bağlanmalı', 'err'); return null; }
-      await ps.addCrossing({ crossKind: f.crossKind, label: f.label || crossT.label, spanId: best.s.id, distance: best.r.tc * best.s.length2D, lateral: best.r.signed, E: obs.E, N: obs.N, lat: obs.lat, lon: obs.lon, groundH: obs.H, objectHeight: f.objH || 0, source: 'GNSS' });
-      return { msg: 'Geçiş ' + best.s.fromNo + '→' + best.s.toNo + ' açıklığına bağlandı' };
-    }
-    const data = f.kind === 'sdk' ? { state: f.state, attrs: { sdkTypeId: f.sdkTypeId || sdkT.id, outputs: f.outputs, fuses: [] } } : f.kind === 'subscriber' ? { state: 'YENI', attrs: { phase: f.phase, aboneNo: f.aboneNo } } : { state: f.state, attrs: {} };
-    const e = await ps.addEquipment(f.kind, data, { obs });
-    const ln = line && f.kind !== 'subscriber' ? line : null;
+  const panels = cat.t.panels || [];
+  const panel = panels.find((p) => p.id === f.panelKey) || null;
+  const lums = luminairePoz(cat);
+  const lum = lums.find((p) => p.servis === f.lumServis) || null;
+  const take = async (line, activeLine, acq) => {
+    if (kind === 'linept' && !activeLine) { app.toast('Köşe noktası için önce hat başlatın (+ HAT)', 'warn', 4000); return null; }
+    const critical = kind === 'sdk' || kind === 'manhole' || kind === 'panel' || (kind === 'linept' && activeLine.install === 'havai');
+    const pos = await acq({ critical, label: K[1] });
+    if (!pos) return null;
+    if (kind === 'linept') { const p = await ps.createPoint(Object.assign({ pointNo: ps.nextPointNo('P'), cls: 'HAT', critical }, pos)); await ps.appendNode(activeLine.id, p.id); return { msg: p.pointNo + ' → ' + activeLine.lineNo + ' köşe noktası', undo: { no: p.pointNo, pointId: p.id, eqId: null, lineId: activeLine.id } }; }
+    if (kind === 'detail') { const p = await ps.createPoint(Object.assign({ pointNo: ps.nextPointNo('P'), cls: 'DETAY', critical: false, note: f.note || '' }, pos)); await ps.recompute('Detay noktası'); return { msg: p.pointNo + ' kaydedildi', undo: { no: p.pointNo, pointId: p.id, eqId: null, lineId: null } }; }
+    const data = kind === 'sdk' ? { state: f.state, attrs: { sdkTypeId: f.sdkTypeId || sdkT.id, outputs: f.outputs, fuses: [] } }
+      : kind === 'subscriber' ? { state: 'YENI', attrs: { phase: f.phase, aboneNo: f.aboneNo } }
+      : kind === 'panel' ? { state: f.state, attrs: panel ? { servis: panel.servis, kva: panel.kva, typeName: (panel.kind === 'harici' ? 'Harici' : 'Dahili') + ' pano' } : { typeName: f.typeName || '' } }
+      : kind === 'luminaire' ? { state: f.state, attrs: lum ? { servis: lum.servis, typeName: lum.name } : { typeName: f.typeName || '' } }
+      : kind === 'other' ? { state: f.state, attrs: { typeName: f.typeName || '' }, note: f.note || '' }
+      : { state: f.state, attrs: {} };
+    const e = await ps.addEquipment(kind, data, pos);
+    const ln = line && kind !== 'subscriber' && kind !== 'luminaire' && kind !== 'other' ? line : null;
     if (ln) await ps.appendNode(ln.id, e.pointId);
     return { msg: e.no + ' kaydedildi' + (ln ? ' → ' + ln.lineNo : ''), undo: { no: e.no, pointId: e.pointId, eqId: e.id, lineId: ln ? ln.id : null } };
   };
-  const sub = f.kind === 'sdk' ? (sdkT.name || 'SDK') + ' · ' + f.outputs + ' çıkış · ' + (ST_LBL[f.state] || f.state) : f.kind === 'subscriber' ? (f.phase === 'tek' ? 'Tek faz' : 'Üç faz') + (f.aboneNo ? ' · ' + f.aboneNo : '') : f.kind === 'crossing' ? (crossT.label || 'Geçiş') + (f.objH ? ' · ' + f.objH + ' m' : '') : f.kind === 'linept' ? 'aktif hatta güzergah noktası' : f.kind === 'detail' ? 'kritik olmayan nokta' : (ST_LBL[f.state] || f.state);
-  const code = f.kind === 'sdk' ? sdkT.servis : f.kind === 'crossing' ? 'Açıklık kontrolü (ENH)' : f.kind === 'subscriber' ? 'Abone noktası' : '—';
-  return { f, set, code, ok: true, label: K[2], title: K[1].toLocaleUpperCase('tr-TR'), sub, color: f.kind === 'subscriber' ? '#fbbf24' : f.kind === 'crossing' ? '#f59e0b' : f.kind === 'sdk' || f.kind === 'manhole' ? '#6b82ff' : '#e2e8f0', take };
+  const stL = ST_LBL[f.state] || f.state;
+  const sub = kind === 'sdk' ? (sdkT.name || 'SDK') + ' · ' + f.outputs + ' çıkış · ' + stL
+    : kind === 'subscriber' ? (f.phase === 'tek' ? 'Tek faz' : 'Üç faz') + (f.aboneNo ? ' · ' + f.aboneNo : '')
+    : kind === 'panel' ? (panel ? (panel.kind === 'harici' ? 'Harici ' : 'Dahili ') + panel.kva + ' kVA' : f.typeName || 'tip serbest') + ' · ' + stL
+    : kind === 'luminaire' ? (lum ? lum.name : f.typeName || 'tip serbest') + ' · ' + stL
+    : kind === 'other' ? (f.typeName || 'serbest obje') + ' · ' + stL
+    : kind === 'linept' ? 'aktif hatta güzergah noktası' : kind === 'detail' ? 'kritik olmayan nokta' : stL;
+  const code = kind === 'sdk' ? sdkT.servis : kind === 'panel' && panel ? panel.servis : kind === 'luminaire' && lum ? lum.servis : kind === 'subscriber' ? 'Abone noktası' : kind === 'panel' || kind === 'luminaire' || kind === 'other' || kind === 'manhole' ? 'Poz kayıttan seçilir' : '—';
+  return { f, set, kind, panels, lums, code, ok: true, label: K[2], title: K[1].toLocaleUpperCase('tr-TR'), sub, color: kind === 'subscriber' ? '#fbbf24' : kind === 'luminaire' ? '#fde047' : kind === 'sdk' || kind === 'manhole' || kind === 'panel' ? '#6b82ff' : '#e2e8f0', take };
 }
-function OtherFields({ m, active }) {
-  const cat = app.ps.cat, f = m.f, set = m.set;
+function OtherFields({ m, active, startLine }) {
+  const cat = app.ps.cat, f = m.f, set = m.set, kind = m.kind;
+  const states = html`<div class="chips">${['YENI', 'MEVCUT', 'DEMONTAJ', 'DMM'].map((k) => html`<${Chip} c=${ST_COL[k]} on=${f.state === k} onClick=${() => set({ state: k })}>${ST_LBL[k]}</${Chip}>`)}</div>`;
   return html`
-    <div class="grid2">${OTHER_KINDS.map(([k, l]) => html`<${Chip} on=${f.kind === k} onClick=${() => set({ kind: k })}>${l}</${Chip}>`)}</div>
-    ${f.kind === 'sdk' ? html`<div class="grid2"><${Fld} l="SDK tipi"><${Sel} value=${f.sdkTypeId || (cat.sdkTypes()[0] || {}).id} options=${cat.sdkTypes().map((s) => [s.id, s.name])} onChange=${(v) => set({ sdkTypeId: v })} /></${Fld}><${Fld} l="Çıkış"><${Sel} mono value=${f.outputs} options=${[2, 3, 4, 6, 8].map((n) => [n, n + ' çıkış'])} onChange=${(v) => set({ outputs: +v })} /></${Fld}></div>` : null}
-    ${f.kind === 'sdk' || f.kind === 'manhole' ? html`<div class="chips">${['YENI', 'MEVCUT', 'DEMONTAJ', 'DMM'].map((k) => html`<${Chip} c=${ST_COL[k]} on=${f.state === k} onClick=${() => set({ state: k })}>${ST_LBL[k]}</${Chip}>`)}</div>` : null}
-    ${f.kind === 'subscriber' ? html`<div class="grid2"><${Fld} l="Faz"><${Seg} c="#fbbf24" value=${f.phase} options=${[['tek', 'Tek'], ['uc', 'Üç']]} onChange=${(v) => set({ phase: v })} /></${Fld}><${Fld} l="Abone / tesisat no"><input class="inp mono" value=${f.aboneNo} onChange=${(e) => set({ aboneNo: e.target.value })} /></${Fld}></div>` : null}
-    ${f.kind === 'linept' ? html`<div class=${'alert ' + (active ? 'info' : 'warn')}>${active ? 'Direk olmayan güzergah/köşe noktası ' + active.lineNo + ' hattına eklenir (ör. yeraltı kablo dönüşü).' : 'Önce bir hat başlatın: alttaki "+ HAT" düğmesi.'}</div>` : null}
-    ${f.kind === 'crossing' ? html`<div class="chips">${(cat.table('crossingTypes') || []).map((c) => html`<${Chip} on=${f.crossKind === c.id} onClick=${() => set({ crossKind: c.id })}>${c.label}</${Chip}>`)}</div>
-      <div class="grid2"><${Fld} l="Nesne yüksekliği (m)"><input class="inp mono" type="number" step="0.1" value=${f.objH} onChange=${(e) => set({ objH: +e.target.value })} /></${Fld}><${Fld} l="Açıklama"><input class="inp" value=${f.label} placeholder="ör. D300 karayolu" onChange=${(e) => set({ label: e.target.value })} /></${Fld}></div>
-      <div class="note">Nesnenin zemininde/tepesinde ölçün; en yakın açıklığa otomatik bağlanır, yaklaşım kontrolü ENH ekranında yapılır.</div>` : null}`;
+    <div class="grid2">${OTHER_KINDS.map(([k, l]) => html`<${Chip} on=${kind === k} onClick=${() => set({ kind: k })}>${l}</${Chip}>`)}</div>
+    <div class="grid2"><button class="chip" onClick=${() => startLine({ install: 'yeralti', channelOnly: true, lt: 'AG' })}>Kanal / Kazı<small>çizgi</small></button><button class="chip" onClick=${() => startLine({ install: 'yeralti', channelOnly: false })}>Kablo (yeraltı)<small>çizgi</small></button></div>
+    ${kind === 'sdk' ? html`<div class="grid2"><${Fld} l="SDK tipi"><${Sel} value=${f.sdkTypeId || (cat.sdkTypes()[0] || {}).id} options=${cat.sdkTypes().map((s) => [s.id, s.name])} onChange=${(v) => set({ sdkTypeId: v })} /></${Fld}><${Fld} l="Çıkış"><${Sel} mono value=${f.outputs} options=${[2, 3, 4, 6, 8].map((n) => [n, n + ' çıkış'])} onChange=${(v) => set({ outputs: +v })} /></${Fld}></div>` : null}
+    ${kind === 'panel' ? html`<${Fld} l="Pano tipi"><${Sel} value=${f.panelKey || ''} options=${[['', 'Serbest (poz sonradan)'], ...m.panels.map((p) => [p.id, (p.kind === 'harici' ? 'Harici' : 'Dahili') + ' · ' + p.kva + ' kVA'])]} onChange=${(v) => set({ panelKey: v })} /></${Fld}>` : null}
+    ${kind === 'luminaire' ? html`<${Fld} l="Armatür tipi"><${Sel} value=${f.lumServis || ''} options=${[['', 'Serbest (poz sonradan)'], ...m.lums.map((p) => [p.servis, p.name])]} onChange=${(v) => set({ lumServis: v })} /></${Fld}>` : null}
+    ${(kind === 'panel' && !f.panelKey) || (kind === 'luminaire' && !f.lumServis) || kind === 'other' ? html`<${Fld} l=${kind === 'other' ? 'Obje adı / türü (serbest)' : 'Tip açıklaması (serbest)'}><input class="inp" value=${f.typeName} placeholder=${kind === 'other' ? 'ör. kamera direği, topraklama levhası' : 'ör. 100 W LED'} onChange=${(e) => set({ typeName: e.target.value })} /></${Fld}>` : null}
+    ${kind === 'sdk' || kind === 'manhole' || kind === 'panel' || kind === 'luminaire' || kind === 'other' ? states : null}
+    ${kind === 'subscriber' ? html`<div class="grid2"><${Fld} l="Faz"><${Seg} c="#fbbf24" value=${f.phase} options=${[['tek', 'Tek'], ['uc', 'Üç']]} onChange=${(v) => set({ phase: v })} /></${Fld}><${Fld} l="Abone / tesisat no"><input class="inp mono" value=${f.aboneNo} onChange=${(e) => set({ aboneNo: e.target.value })} /></${Fld}></div>` : null}
+    ${kind === 'detail' || kind === 'other' ? html`<${Fld} l="Açıklama"><input class="inp" value=${f.note} onChange=${(e) => set({ note: e.target.value })} /></${Fld}>` : null}
+    ${kind === 'linept' ? html`<div class=${'alert ' + (active ? 'info' : 'warn')}>${active ? 'Direk olmayan güzergah/köşe noktası ' + active.lineNo + ' hattına eklenir (ör. yeraltı kablo dönüşü).' : 'Önce bir hat başlatın: alttaki "+ HAT" düğmesi.'}</div>` : null}`;
 }

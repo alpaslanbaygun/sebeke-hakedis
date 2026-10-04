@@ -26,7 +26,8 @@ export function wireRawLog() {
   setInterval(() => app.gnss.flushRaw(), 15000);
 }
 
-// GNSS ile ölçüm (kalite kapısı + ilerleme penceresi). critical: kritik saha noktası
+// GNSS ile ölçüm (kalite kapısı + ilerleme). critical: kritik saha noktası.
+// Kalite yetersizse (RTK FIX yok, eşik aşımı, telefon GPS) kullanıcı uyarılır; onaylarsa kayıt "uyarıyla kabul" olarak yapılır (spesifikasyon 7.5).
 export async function measure({ critical = true, label = 'Nokta' } = {}) {
   const g = app.gnss;
   if (g.state.source === 'none') {
@@ -34,20 +35,28 @@ export async function measure({ critical = true, label = 'Nokta' } = {}) {
     return null;
   }
   const phone = g.state.source === 'phone';
-  const q = g.quality({ critical, allowTest: phone });
-  if (!q.ok) {
-    await app.modal((close) => html`<div class="mh"><h3 class="he">ÖLÇÜ KABUL EDİLMEDİ</h3></div><div class="mb"><div class="alert err">${label} kritik saha noktasıdır. Kabul için RTK FIX ve eşikler sağlanmalı.</div>${q.reasons.map((r) => html`<div class="row"><span class="badge b-err">RED</span><span>${r}</span></div>`)}<div class="note">Eşikler: Ayarlar › Hassasiyet eşikleri. FIX bekleyip tekrar deneyin.</div></div><div class="mf"><button class="btn pri grow" onClick=${() => close()}>Tamam</button></div>`);
-    return null;
+  let override = false;
+  const q = g.quality({ critical, allowTest: false });
+  if (!q.ok && phone && app.state.phoneAccepted && g.state.lat != null) override = true; // telefon GPS bu oturumda bir kez onaylandı
+  else if (!q.ok) {
+    if (g.state.lat == null) { app.toast('Konum henüz alınamadı · birkaç saniye bekleyin', 'warn', 4000); return null; }
+    const go = await app.modal((close) => html`<div class="mh"><h3 class="hw">Hassas alım için uygun değil</h3></div><div class="mb">
+        <div class="alert warn">Mevcut GNSS çözümü hassas saha alımı için uygun olmayabilir. Yine de kayıt yapmak istiyor musunuz?</div>
+        ${q.reasons.map((r) => html`<div class="row"><span class="badge b-warn">UYARI</span><span class="grow">${r}</span></div>`)}
+        <div class="note">${label} kritik saha noktasıdır. Kaydederseniz nokta <b>${phone ? '[TELEFON GPS]' : g.state.fix === 'FLOAT' ? '[RTK FLOAT]' : '[GNSS]'}</b> etiketiyle ve "uyarıyla kabul" notuyla saklanır; kontrol listesinde görünür ve sonradan RTK FIX ile yeniden ölçülebilir.</div></div>
+      <div class="mf"><button class="btn grow" onClick=${() => close(false)}>Vazgeç · FIX bekle</button><button class="btn warn grow" onClick=${() => close(true)}>Yine de kaydet</button></div>`);
+    if (!go) return null;
+    override = true; if (phone) app.state.phoneAccepted = true;
   }
   let prog = { n: 0, need: phone ? 1 : g.thresholds.epochs || 5 };
   const off = app.bus.on('gnss:observeProgress', (p) => { prog = p; app.bus.emit('ui:measureProgress', p); });
   app.bus.emit('ui:measuring', { label, need: prog.need });
   try {
-    const obs = await g.observe({ critical, allowTest: phone, epochs: phone ? 1 : undefined });
+    const obs = await g.observe({ critical, allowTest: phone && !critical, epochs: phone ? 1 : undefined, override });
     const s = await ensureSession();
     obs.sessionId = s ? s.id : null;
     // Aynı uyarı oturumda bir kez gösterilir (her alımda ekranı kapatmasın)
-    if (obs.warn && obs.warn.length) { const seen = (app.state.warned = app.state.warned || new Set()); const fresh = obs.warn.filter((w) => !seen.has(w)); fresh.forEach((w) => seen.add(w)); if (fresh.length) app.toast(fresh.join(' · '), 'warn', 4500); }
+    if (obs.warn && obs.warn.length && !override) { const seen = (app.state.warned = app.state.warned || new Set()); const fresh = obs.warn.filter((w) => !seen.has(w)); fresh.forEach((w) => seen.add(w)); if (fresh.length) app.toast(fresh.join(' · '), 'warn', 4500); }
     if (app.bridge) app.bridge.vibrate(60);
     return obs;
   } catch (e) {
