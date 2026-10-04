@@ -1,6 +1,6 @@
 // Proje servisi: veritabanı ile hesap zincirini bağlar. UI yalnızca bu servisi çağırır.
 import { ulid, nextNo } from '../core/ids.js';
-import { PROJECT_STORES, EQUIPMENT_KINDS } from '../core/schema.js';
+import { PROJECT_STORES, EQUIPMENT_KINDS, HAK_STATUSES, hakOf } from '../core/schema.js';
 import { Catalog } from '../grid/catalog.js';
 import { computeProject, impactOf } from '../engine/compute.js';
 import { makeCrs, project as projectLL, unproject } from '../geo/crs.js';
@@ -91,15 +91,18 @@ export class ProjectService {
     const src = obs.source === 'phone' ? 'PHONE' : obs.source === 'sim' ? 'SIM' : 'GNSS_RTK';
     return {
       E: obs.E, N: obs.N, h: obs.h, H: this.p.heightSystem === 'elipsoidal' ? obs.h : (obs.H ?? obs.h), lat: obs.lat, lon: obs.lon,
-      source: src, accuracyClass: obs.cls,
-      quality: { fix: obs.fix, sigmaH: obs.sigmaH, sigmaV: obs.sigmaV, pdop: obs.pdop, sats: obs.sats, age: obs.age, epochs: obs.epochs, duration: obs.duration, spread: obs.spreadH, sigmaEst: obs.sigmaEst }
+      source: src, accuracyClass: obs.cls, zUnknown: false,
+      quality: { fix: obs.fix, sigmaH: obs.sigmaH, sigmaV: obs.sigmaV, pdop: obs.pdop, hdop: obs.hdop ?? null, vdop: obs.vdop ?? null, sats: obs.sats, age: obs.age, epochs: obs.epochs, duration: obs.duration, spread: obs.spreadH, sigmaEst: obs.sigmaEst, override: !!obs.override, overrideReasons: obs.override ? obs.overrideReasons || [] : undefined },
+      // Ölçüm kaydı özeti (spesifikasyon 7.6): tam kayıt gnssObservations tablosunda
+      measuredAt: obs.timestamp || this.ds.iso(), device: obs.receiver || (obs.source === 'phone' ? 'Telefon' : null), deviceSerial: obs.receiverSerial || null,
+      method: obs.method || null, correction: obs.correctionSource || null, operator: this.ds.user.name, crsLabel: this.p.crs.label
     };
   }
   // Yeni nokta (+ isteğe bağlı ekipman) — gözlemden, elle ya da proje tasarımından
   async createPoint({ pointNo, cls, critical = true, obs, coord, source, note }) {
     let data;
     if (obs) {
-      const o = await this.saveObservation(obs, { pointNo, accepted: true });
+      const o = await this.saveObservation(obs, { pointNo, accepted: true, operator: this.ds.user.name });
       data = Object.assign(this.pointFromObs(obs), { observationId: o.id, sessionId: obs.sessionId || null });
     } else {
       const c = coord || {};
@@ -107,7 +110,9 @@ export class ProjectService {
       if ((lat == null || lon == null) && c.E != null) { const g = unproject(c.E, c.N, this.p.crs); lat = g.lat; lon = g.lon; }
       let E = c.E, N = c.N;
       if (E == null && lat != null) { const q = projectLL(lat, lon, this.p.crs); E = q.E; N = q.N; }
-      data = { E, N, H: c.H ?? null, h: c.h ?? null, lat, lon, source: source || 'MANUAL', accuracyClass: source === 'DESIGN' ? 'PROJE' : 'MANUEL', quality: null };
+      const src = source || 'MANUAL';
+      data = { E, N, H: c.H ?? null, h: c.h ?? null, lat, lon, source: src, accuracyClass: src === 'DESIGN' ? 'PROJE' : src === 'EXCEL' ? 'EXCEL' : src === 'MAP' ? 'HARITA' : 'MANUEL', quality: null,
+        zUnknown: c.H == null, measuredAt: this.ds.iso(), operator: this.ds.user.name, crsLabel: c.crsLabel || this.p.crs.label, enteredCrs: c.enteredCrs || null };
     }
     const p = await this.ds.create('points', Object.assign({ projectId: this.p.id, pointNo: pointNo || this.nextPointNo('P'), cls: cls || 'DETAY', critical, note: note || '', history: [] }, data), { reason: 'Nokta alındı (' + (data.source) + ')' });
     this.data.points.push(p);
@@ -147,9 +152,12 @@ export class ProjectService {
       pointId = pt.id;
     }
     const progress = data.progress || (this.p.mode === 'asbuilt' && (data.state === 'YENI' || data.state === 'yeni' || data.state === 'DMM' || data.state === 'DEMONTAJ' || data.state === 'demontaj' || data.state === 'tasinan') ? 'done' : 'planned');
-    const e = await this.ds.create('equipment', Object.assign({ projectId: this.p.id, kind, no, pointId, state: kind === 'transformer' ? 'yeni' : 'YENI', attrs: {}, materialOverrides: {}, progress, workDate: progress === 'done' ? this.ds.iso().slice(0, 10) : null }, data, { no, pointId, progress }), { reason: opts.reason || (EQUIPMENT_KINDS[kind] || {}).label + ' kaydı' });
+    const rec = Object.assign({ projectId: this.p.id, kind, no, pointId, state: kind === 'transformer' ? 'yeni' : 'YENI', attrs: {}, materialOverrides: {}, progress, workDate: progress === 'done' ? this.ds.iso().slice(0, 10) : null }, data, { no, pointId, progress });
+    if (!rec.hak || !HAK_STATUSES[rec.hak]) rec.hak = hakOf(rec); // obje bazlı hakediş durumu (iş kalemi yoksa null)
+    else { rec.progress = HAK_STATUSES[rec.hak].done ? 'done' : 'planned'; if (rec.progress === 'done' && !rec.workDate) rec.workDate = this.ds.iso().slice(0, 10); if (rec.progress !== 'done') rec.workDate = null; }
+    const e = await this.ds.create('equipment', rec, { reason: opts.reason || (EQUIPMENT_KINDS[kind] || {}).label + ' kaydı' });
     this.data.equipment.push(e);
-    await this.recompute(e.no + ' eklendi');
+    if (!opts.defer) await this.recompute(e.no + ' eklendi');
     return e;
   }
   async updateEquipment(id, patch, reason) {
@@ -178,10 +186,12 @@ export class ProjectService {
   async removeEquipment(id, reason) { await this.ds.remove('equipment', id, { reason }); return this._after('equipment', 'Ekipman silindi'); }
 
   // ---------------- Hat ----------------
-  async createLine(d) {
-    const l = await this.ds.create('lines', Object.assign({ projectId: this.p.id, lineNo: d.lineNo || this.nextLineNo(), state: 'YENI', nodes: [], circuits: [], install: 'havai', progress: this.p.mode === 'asbuilt' ? 'done' : 'planned', workDate: this.p.mode === 'asbuilt' ? this.ds.iso().slice(0, 10) : null }, d), { reason: 'Hat oluşturuldu' });
+  async createLine(d, opts = {}) {
+    const rec = Object.assign({ projectId: this.p.id, lineNo: d.lineNo || this.nextLineNo(), state: 'YENI', nodes: [], circuits: [], install: 'havai', progress: this.p.mode === 'asbuilt' ? 'done' : 'planned', workDate: this.p.mode === 'asbuilt' ? this.ds.iso().slice(0, 10) : null }, d);
+    if (!rec.hak || !HAK_STATUSES[rec.hak]) rec.hak = hakOf(rec);
+    const l = await this.ds.create('lines', rec, { reason: opts.reason || 'Hat oluşturuldu' });
     this.data.lines.push(l);
-    await this.recompute(l.lineNo + ' oluşturuldu');
+    if (!opts.defer) await this.recompute(l.lineNo + ' oluşturuldu');
     return l;
   }
   async updateLine(id, patch, reason) { const l = await this.ds.update('lines', id, patch, { reason }); await this._after('lines', reason || l.lineNo + ' güncellendi'); return l; }
@@ -226,9 +236,58 @@ export class ProjectService {
   }
   async removeLine(id, reason) { await this.ds.remove('lines', id, { reason }); return this._after('lines', 'Hat silindi'); }
 
-  // ---------------- Geçiş ----------------
-  async addCrossing(d) { const c = await this.ds.create('crossings', Object.assign({ projectId: this.p.id }, d), { reason: 'Geçiş tanımlandı: ' + d.crossKind }); await this._after('crossings', 'Geçiş eklendi'); return c; }
-  async updateCrossing(id, patch) { await this.ds.update('crossings', id, patch, { reason: 'Geçiş güncellendi' }); return this._after('crossings', 'Geçiş güncellendi'); }
+  // ---------------- Obje bazlı hakediş durumu ----------------
+  // type: 'equipment' | 'line'. Durum "tamamlandı" ve sonrası ise obje metraj/hakediş kümülatifine girer (iş tarihi yoksa bugün).
+  async setHak(type, id, status, reason) {
+    const st = HAK_STATUSES[status];
+    if (!st) throw new Error('Geçersiz hakediş durumu: ' + status);
+    const store = type === 'line' ? 'lines' : 'equipment';
+    const rec = type === 'line' ? this.lineById(id) : this.eqById(id);
+    if (!rec) throw new Error('Kayıt yok');
+    if (hakOf(rec) === null) throw new Error('Mevcut / ileride durumundaki objenin hakediş kalemi yok');
+    const patch = { hak: status, progress: st.done ? 'done' : 'planned' };
+    if (st.done && !rec.workDate) patch.workDate = this.ds.iso().slice(0, 10);
+    if (!st.done) patch.workDate = null;
+    await this.ds.update(store, id, patch, { reason: reason || 'Hakediş durumu: ' + st.label });
+    return this._after(store, (rec.no || rec.lineNo) + ' · ' + st.label);
+  }
+  hakCounts() {
+    const c = {};
+    for (const r of [...this.data.equipment, ...this.data.lines]) { const h = hakOf(r); if (h) c[h] = (c[h] || 0) + 1; }
+    return c;
+  }
+  // Dönem açılınca / onaylanınca objelerin durumunu ilerlet (yalnız ileri yönde; elle verilen durum geri alınmaz)
+  async _advanceHak(endDate, from, to, reason) {
+    const end = String(endDate || '9999-12-31').slice(0, 10);
+    let n = 0;
+    for (const [store, arr] of [['equipment', this.data.equipment], ['lines', this.data.lines]]) {
+      for (const r of arr) {
+        const h = hakOf(r);
+        if (!h || !from.includes(h) || r.progress !== 'done') continue;
+        if ((r.workDate || '0000-00-00').slice(0, 10) > end) continue;
+        await this.ds.update(store, r.id, { hak: to }, { reason, silent: true }); n++;
+      }
+    }
+    if (n) { await this.reload('equipment'); await this.reload('lines'); }
+    return n;
+  }
+
+  // ---------------- Eski GEÇİŞ kayıtları (v2.2'de özellik kaldırıldı) ----------------
+  legacyCrossings() { return (this.data.crossings || []).filter((c) => c.status !== 'deleted'); }
+  // mode 'detail': konumu olanlar "Detay noktası"na dönüştürülür · 'archive': yalnız arşivlenir. Kayıtlar veritabanında silinmiş (arşiv) olarak kalır.
+  async convertLegacyCrossings(mode = 'detail') {
+    let made = 0, archived = 0;
+    for (const c of this.legacyCrossings()) {
+      if (mode === 'detail' && c.E != null && c.N != null) {
+        await this.createPoint({ pointNo: this.nextPointNo('P'), cls: 'DETAY', critical: false, coord: { E: c.E, N: c.N, H: c.groundH ?? null, lat: c.lat, lon: c.lon }, source: c.source === 'GNSS' ? 'MANUAL' : 'MANUAL', note: 'Eski geçiş kaydı: ' + (c.label || c.crossKind || '') + (c.objectHeight ? ' · nesne ' + c.objectHeight + ' m' : '') });
+        made++;
+      }
+      await this.ds.remove('crossings', c.id, { reason: mode === 'detail' ? 'Geçiş kaldırıldı · detay noktasına dönüştürüldü' : 'Geçiş kaldırıldı · arşivlendi' });
+      archived++;
+    }
+    await this._after(['crossings', 'points'], 'Eski geçiş kayıtları ' + (mode === 'detail' ? 'dönüştürüldü' : 'arşivlendi'));
+    return { made, archived };
+  }
 
   // ---------------- Fotoğraf ----------------
   async addPhoto(bytes, mime, meta) {
@@ -264,6 +323,8 @@ export class ProjectService {
     if (last.length) throw new Error('Onaylanmamış taslak dönem var (' + last[0].no + ')');
     const p = await this.ds.create('periods', { projectId: this.p.id, no, start, end, status: 'taslak' }, { reason: no + '. hakediş dönemi açıldı' });
     await this.reload('periods');
+    const n = await this._advanceHak(end, ['TAMAMLANDI', 'KONTROL'], 'HAKEDISTE', no + '. hakedişe girdi');
+    if (n) await this.recompute(no + '. hakediş dönemi · ' + n + ' obje hakedişe girdi');
     return p;
   }
   periodTable(periodId) { return periodTable(this.result.quantities, this.activeProgram(), this.data.periods, periodId); }
@@ -271,6 +332,9 @@ export class ProjectService {
     const t = this.periodTable(id);
     await this.ds.update('periods', id, { status: 'onayli', snapshot: approveSnapshot(t), approvedAt: this.ds.iso(), approvedBy: this.ds.user.name, totals: t.totals }, { reason: reason || 'Hakediş onaylandı' });
     await this.reload('periods');
+    const per = this.data.periods.find((x) => x.id === id);
+    const n = await this._advanceHak(per ? per.end : null, ['HAKEDISTE'], 'ONAYLI', (per ? per.no + '. ' : '') + 'hakediş onaylandı');
+    if (n) await this.recompute('Hakediş onayı · ' + n + ' obje');
     return t;
   }
 

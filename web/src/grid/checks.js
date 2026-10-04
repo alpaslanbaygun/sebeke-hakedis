@@ -1,7 +1,8 @@
 // Otomatik uygunluk kontrolleri (kayıt öncesi ve proje geneli).
 // Kodlar: UYUMSUZ · EKSİK VERİ · ÖLÇÜ KABUL EDİLMEDİ · MALZEME EKSİK · UYARI
 import { circuitParts } from './lines.js';
-import { TRAFO_STATUSES } from '../core/schema.js';
+import { TRAFO_STATUSES, RECIPE_KINDS } from '../core/schema.js';
+import { sourceInfo } from '../core/source.js';
 
 const I = (code, severity, e, message, extra = {}) => Object.assign({ code, severity, entityId: e.id, entityNo: e.no || e.lineNo || e.pointNo || '', message }, extra);
 
@@ -83,8 +84,11 @@ export function checkPoint(p, cls) {
   const out = [];
   const critical = !!p.critical;
   if (critical && p.source === 'PHONE') out.push(I('ÖLÇÜ KABUL EDİLMEDİ', 'error', p, 'Kritik nokta telefon GPS ile alınmış (TEST) · RTK FIX ile yeniden ölçülmeli', { group: 'Ölçü' }));
-  if (critical && p.source === 'GNSS_RTK' && p.quality && p.quality.fix !== 'FIX') out.push(I('ÖLÇÜ KABUL EDİLMEDİ', 'error', p, 'Kritik nokta RTK FIX değil (' + p.quality.fix + ')', { group: 'Ölçü' }));
+  // Harici alıcı ama FIX değil: kullanıcı uyarıyı onaylayıp kaydettiyse uyarı, aksi halde hata
+  if (critical && (p.source === 'GNSS_RTK' || p.source === 'GNSS_FLOAT') && p.quality && p.quality.fix !== 'FIX') out.push(I('ÖLÇÜ KABUL EDİLMEDİ', p.quality.override ? 'warn' : 'error', p, 'Kritik nokta RTK FIX değil (' + p.quality.fix + ')' + (p.quality.override ? ' · uyarıyla kabul edildi, hassas alım için yeniden ölçülmeli' : ''), { group: 'Ölçü' }));
   if (p.source === 'SIM') out.push(I('ÖLÇÜ KABUL EDİLMEDİ', 'warn', p, 'Simülatör verisi · gerçek ölçüm değil', { group: 'Ölçü' }));
+  // Ölçülmeden girilen kritik nokta (manuel · Excel · haritadan): bilgi amaçlı uyarı
+  if (critical && (p.source === 'MANUAL' || p.source === 'EXCEL' || p.source === 'IMPORT' || p.source === 'MAP')) out.push(I('UYARI', 'warn', p, 'Konum GNSS ile ölçülmedi · kaynak ' + sourceInfo(p).tag + (p.zUnknown || p.H == null ? ' · Z bilinmiyor' : ''), { group: 'Ölçü' }));
   if (p.E == null || p.N == null) out.push(I('EKSİK VERİ', 'error', p, 'Koordinat yok'));
   return out;
 }
@@ -92,7 +96,8 @@ export function checkPoint(p, cls) {
 export function checkMaterials(e, mats) {
   const out = [];
   if (!mats.job) return out;
-  if (!mats.items.length) out.push(I('MALZEME EKSİK', 'error', e, 'Malzeme reçetesi boş (' + mats.job + ')'));
+  // Otomatik reçetesi olan türlerde boş reçete hata; serbest türlerde (pano, armatür, menhol, diğer…) poz seçilmemişse uyarı
+  if (!mats.items.length) out.push(RECIPE_KINDS.includes(e.kind) ? I('MALZEME EKSİK', 'error', e, 'Malzeme reçetesi boş (' + mats.job + ')') : I('MALZEME EKSİK', 'warn', e, 'Poz seçilmemiş · hakedişe girmez (kayıtta "Poz" ya da katalogdan malzeme ekleyin)', { group: 'Malzeme' }));
   for (const m of mats.items) {
     if (m.missing) out.push(I('MALZEME EKSİK', 'error', e, (m.why || 'Kalem') + ' · servis kodu katalogda yok' + (m.servis ? ' (' + m.servis + ')' : ''), { group: 'Malzeme' }));
     if (m.origin !== 'OTO' && !m.approved) out.push(I('UYARI', 'warn', e, 'Onay bekleyen sahada ilave: ' + m.name, { group: 'Malzeme' }));

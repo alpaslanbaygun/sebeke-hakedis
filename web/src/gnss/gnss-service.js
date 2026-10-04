@@ -25,6 +25,7 @@ export class GnssService {
     this.raw = []; this.rawBytes = 0;
     this.lastGGAt = []; this.sim = null; this.phoneWatch = null; this.web = null;
     this.lastGGA = null;
+    this.method = null; this.base = null; // Sabit Base + Rover seçimi ve base bilgisi
     if (bus) {
       bus.on('native:gnss', (d) => { if (d && d.text) this.feed(d.text); });
       bus.on('native:gnssStatus', (d) => this.onLinkStatus(d));
@@ -44,7 +45,7 @@ export class GnssService {
     return v + (a.pco || 0);
   }
   emit() { if (this.bus) this.bus.emit('gnss:state', this.snapshot()); }
-  snapshot() { return Object.assign({}, this.state, { ntrip: Object.assign({}, this.ntrip), label: FIX_LABEL[this.state.fix] || this.state.fix }); }
+  snapshot() { return Object.assign({}, this.state, { ntrip: Object.assign({}, this.ntrip), label: FIX_LABEL[this.state.fix] || this.state.fix, method: this.methodOf(), base: this.base }); }
 
   // ------- Kaynaklar -------
   async connectExternal(link) {
@@ -180,13 +181,27 @@ export class GnssService {
   }
   epoch() {
     const s = this.state;
-    return { t: s.lastUpdate, lat: s.lat, lon: s.lon, h: s.h, H: s.H, E: s.E, N: s.N, fix: s.fix, sats: s.sats, pdop: s.pdop, sigmaH: s.sigmaH, sigmaV: s.sigmaV, age: s.age };
+    return { t: s.lastUpdate, lat: s.lat, lon: s.lon, h: s.h, H: s.H, E: s.E, N: s.N, fix: s.fix, sats: s.sats, pdop: s.pdop, hdop: s.hdop, vdop: s.vdop, sigmaH: s.sigmaH, sigmaV: s.sigmaV, age: s.age };
   }
   quality(opts = {}) { return evaluateFix(this.state, this.thresholds, opts); }
+  // Ölçüm yöntemi: TELEFON_GPS · HARICI_GNSS · RTK_NTRIP · BASE_ROVER (kullanıcı seçimi yoksa bağlantıdan türetilir)
+  methodOf() {
+    const s = this.state;
+    if (s.source === 'phone') return 'TELEFON_GPS';
+    if (s.source === 'sim') return 'SIMULATOR';
+    if (s.source === 'none') return null;
+    if (this.method === 'BASE_ROVER') return 'BASE_ROVER';
+    if (this.ntrip.state === 'connected') return 'RTK_NTRIP';
+    return 'HARICI_GNSS';
+  }
+  setMethod(m, base) { this.method = m || null; if (base !== undefined) this.base = base; this.emit(); }
 
   // Epok ortalamalı ölçüm: kritik noktada FIX kaybı → ölçüm reddedilir
-  observe({ epochs, critical, timeoutMs = 60000, allowTest = false } = {}) {
+  // override: kullanıcı kalite uyarısını onayladı (spesifikasyon 7.5) → eşikler uyarıya döner, kayıt "uyarıyla kabul" işaretlenir
+  observe({ epochs, critical, timeoutMs = 60000, allowTest = false, override = false } = {}) {
     const need = epochs || this.thresholds.epochs || 5;
+    const overrideReasons = override ? this.quality({ critical, allowTest }).reasons : [];
+    if (override) { critical = false; allowTest = true; }
     return new Promise((resolve, reject) => {
       const got = [];
       const q0 = this.quality({ critical, allowTest });
@@ -196,7 +211,7 @@ export class GnssService {
         if (!q.ok) { off(); clearTimeout(to); const e = new Error('ÖLÇÜ KABUL EDİLMEDİ: ölçüm sırasında ' + q.reasons.join(' · ')); e.code = 'REJECTED'; e.reasons = q.reasons; return reject(e); }
         got.push(ep);
         if (this.bus) this.bus.emit('gnss:observeProgress', { n: got.length, need });
-        if (got.length >= need) { off(); clearTimeout(to); resolve(this.buildObservation(got, q)); }
+        if (got.length >= need) { off(); clearTimeout(to); resolve(Object.assign(this.buildObservation(got, q), override ? { override: true, overrideReasons, cls: 'UYARILI' } : {})); }
       });
       const to = setTimeout(() => { off(); reject(new Error('Ölçüm zaman aşımı (' + got.length + '/' + need + ' epok)')); }, timeoutMs);
       if (this.state.source === 'phone' && !this.bridge.isNative()) {
@@ -213,8 +228,11 @@ export class GnssService {
       source: s.source, cls: q.cls, warn: q.warn, receiver: s.receiver ? s.receiver.name : null, receiverSerial: s.receiver ? s.receiver.serial || null : null,
       antennaHeight: this.antenna.height, antennaMeasure: this.antenna.measure, antennaVertical: this.antennaVertical(),
       datum: this.crs.datum, crs: this.crs.label, epsg: this.crs.epsg, zone: this.crs.cm, stationId: s.stationId,
-      mountpoint: this.ntrip.mount, correctionSource: this.ntrip.state === 'connected' ? 'NTRIP ' + (this.ntrip.mount || '') : (s.age != null ? 'Alıcı düzeltmesi' : 'Yok'),
-      sigmaEst: s.sigmaEst, timestamp: new Date(a.t1).toISOString()
+      mountpoint: this.ntrip.mount, correctionSource: this.ntrip.state === 'connected' ? 'NTRIP ' + (this.ntrip.mount || '') : this.method === 'BASE_ROVER' && this.base ? 'Sabit base' + (this.base.link ? ' · ' + this.base.link : '') + (this.base.name ? ' · ' + this.base.name : '') : (s.age != null ? 'Alıcı düzeltmesi' : 'Yok'),
+      sigmaEst: s.sigmaEst, timestamp: new Date(a.t1).toISOString(),
+      // Ölçüm yöntemi + (varsa) sabit base bilgisi: her ölçüm kaydına yazılır
+      method: this.methodOf(), base: this.base && this.method === 'BASE_ROVER' ? Object.assign({}, this.base) : null,
+      rover: s.receiver ? { name: s.receiver.name || null, address: s.receiver.address || null, serial: s.receiver.serial || null } : null
     });
   }
 

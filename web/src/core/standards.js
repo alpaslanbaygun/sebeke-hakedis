@@ -2,7 +2,7 @@
 // veritabanına alınması ve yönetimi. Kod içinde sabit katalog tutulmaz; her şey DB'den okunur.
 
 const LIST_TABLES = ['poz', 'poleGroups', 'poleTypes', 'conductors', 'lineTypes', 'transformers', 'panels', 'kiosks', 'trafoPostTypes', 'sdkTypes', 'recipeRules', 'params'];
-const OBJ_TABLES = ['lineDefaults', 'kioskDefaults', 'trafoPoleCompat', 'gnssThresholds', 'enh', 'clearances', 'crossingTypes', 'legend', 'materialsMaster', 'cableRules'];
+const OBJ_TABLES = ['lineDefaults', 'kioskDefaults', 'trafoPoleCompat', 'gnssThresholds', 'enh', 'clearances', 'legend', 'materialsMaster', 'cableRules'];
 
 export async function listStandards(ds) {
   const all = await ds.db.getAll('standards');

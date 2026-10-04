@@ -10,7 +10,7 @@ const n = (v, d = 3) => (v == null || !Number.isFinite(+v) ? '—' : (+v).toLoca
 export function buildReportHTML(model, extra = {}) {
   const P = model.project;
   const errs = model.issues.filter((i) => i.severity === 'error'), warns = model.issues.filter((i) => i.severity === 'warn');
-  const rtk = model.points.filter((p) => p.source === 'GNSS_RTK').length, phone = model.points.filter((p) => p.source === 'PHONE').length;
+  const rtk = model.points.filter((p) => p.source === 'GNSS_RTK').length, phone = model.points.filter((p) => p.source === 'TELEFON_GPS').length;
   const table = (head, rows, cls = '') => '<table class="' + cls + '"><thead><tr>' + head.map((h) => '<th>' + esc(h) + '</th>').join('') + '</tr></thead><tbody>' + rows.map((r) => '<tr>' + r.map((c) => '<td>' + (c && c.html ? c.html : esc(c)) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
   let h = '<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>' + esc(P.name) + ' · Teknik Rapor</title><style>' +
     'body{font:11px/1.45 "Segoe UI",Arial,sans-serif;color:#111;margin:18mm 14mm}h1{font-size:20px;margin:0 0 4px}h2{font-size:14px;margin:18px 0 6px;border-bottom:2px solid #0b1326;padding-bottom:3px}h3{font-size:12px;margin:12px 0 4px}' +

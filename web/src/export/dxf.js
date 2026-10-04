@@ -63,7 +63,6 @@ function blocks(w) {
   defs.MENHOL = [['PLINE', [[-2, -2], [2, -2], [2, 2], [-2, 2]], true], ['CIRCLE', { 10: 0, 20: 0, 30: 0, 40: 1.2 }]];
   defs.ABONE = [['CIRCLE', { 10: 0, 20: 0, 30: 0, 40: 1.5 }], ['LINE', [-1.5, 0, 1.5, 0]]];
   defs.OLCU = [['LINE', [-1, 0, 1, 0]], ['LINE', [0, -1, 0, 1]]];
-  defs.GECIS = [['CIRCLE', { 10: 0, 20: 0, 30: 0, 40: 2.5 }], ['LINE', [-2.5, -2.5, 2.5, 2.5]]];
   w.g(0, 'SECTION').g(2, 'BLOCKS');
   for (const [name, ents] of Object.entries(defs)) {
     w.g(0, 'BLOCK').g(8, '0').g(2, name).g(70, 0).g(10, 0).g(20, 0).g(30, 0).g(3, name);
@@ -171,10 +170,6 @@ export function buildDXF(model, opts = {}) {
     if (p.E == null) continue;
     w.g(0, 'POINT').g(8, 'OLCU-NOKTA').g(10, f(p.E)).g(20, f(p.N)).g(30, f(p.H || 0));
     if (opts.pointText !== false && !model.equipment.some((e) => e.pointId === p.id)) { text('OLCU-NOKTA', p.E + 1, p.N + 1, p.H, p.no + ' ' + (p.H != null ? (+p.H).toFixed(2) : ''), th * 0.7); nTxt++; }
-  }
-  for (const c of model.crossings) {
-    if (c.E == null) continue;
-    insert('ELEKTRIK-GECIS', 'GECIS', c.E, c.N, c.groundH || 0); text('ELEKTRIK-GECIS', c.E + 3, c.N - 3, 0, (c.label || c.crossKind) + (c.objectHeight ? ' h=' + c.objectHeight + 'm' : ''), th * 0.8); nIns++; nTxt++;
   }
   w.g(0, 'ENDSEC').g(0, 'EOF');
   const txt = w.text();

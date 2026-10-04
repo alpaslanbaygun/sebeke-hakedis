@@ -8,14 +8,15 @@ import { analyzeLine } from '../grid/enh.js';
 import { contributionsFromEquipment, contributionsFromLine, aggregate } from '../qty/metraj.js';
 import { STATUSES } from '../core/schema.js';
 
-const posSourceOf = (p) => (!p ? 'MANUEL' : p.source === 'GNSS_RTK' ? 'GNSS' : p.source === 'PHONE' ? 'TEST' : p.source === 'SIM' ? 'SIM' : p.source === 'DESIGN' || p.source === 'IMPORT' ? 'PROJE' : 'MANUEL');
+// Metraj satırındaki konum kaynağı: GNSS (harici alıcı) · TEST (telefon) · SIM · GIS (haritadan) · EXCEL · PROJE (tasarım) · MANUEL
+const posSourceOf = (p) => (!p ? 'MANUEL' : p.source === 'GNSS_RTK' || p.source === 'GNSS_FLOAT' ? 'GNSS' : p.source === 'PHONE' ? 'TEST' : p.source === 'SIM' ? 'SIM' : p.source === 'MAP' ? 'GIS' : p.source === 'EXCEL' || p.source === 'IMPORT' ? 'EXCEL' : p.source === 'DESIGN' ? 'PROJE' : 'MANUEL');
 
 export function fnv(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); }
 
 export function computeProject(model, cat) {
   const project = model.project;
   const act = (a) => (a || []).filter((x) => x.status !== 'deleted');
-  const m = { points: act(model.points), equipment: act(model.equipment), lines: act(model.lines), crossings: act(model.crossings), materials: act(model.materials), photos: act(model.photos) };
+  const m = { points: act(model.points), equipment: act(model.equipment), lines: act(model.lines), materials: act(model.materials), photos: act(model.photos) };
   const ix = indexModel(m);
   const spans = computeSpans(m, ix);
   const roles = computePoleRoles(m, ix, { cornerThresholdDeg: project.cornerThresholdDeg ?? 3 });
@@ -71,16 +72,11 @@ export function computeProject(model, cat) {
     const poles = m.equipment.filter((e) => e.kind === 'pole').map((e) => { const t = cat.poleType(e.typeId); return Object.assign({}, e, { _heightM: (e.attrs && e.attrs.heightM) || (t && t.heightM) || null, _capacityDaN: (e.attrs && e.attrs.capacityDaN) || (t && t.capacityDaN) || null }); });
     for (const l of ix.lines) {
       if (l.install === 'yeralti' || !(l.lineType === 'OG' || l.lineType === 'ENH')) continue;
-      const r = analyzeLine({ line: l, spans, poles, pointsById: ix.pts, roles, cat, zoneId: project.enhZone || 'II', enh: enhT, clearances: clr, crossings: m.crossings, landClass: project.landClass || 'arazi' });
+      const r = analyzeLine({ line: l, spans, poles, pointsById: ix.pts, roles, cat, zoneId: project.enhZone || 'II', enh: enhT, clearances: clr, landClass: project.landClass || 'arazi' });
       enh.set(l.id, r);
       if (r.error) continue;
       for (const s of r.spans) {
         if (s.ok === false) issues.push({ code: 'UYUMSUZ', severity: 'error', entityId: l.id, entityNo: l.lineNo, group: 'ENH', message: s.from + '→' + s.to + ' zemin açıklığı ' + s.groundClear.toFixed(2) + ' m < ' + s.groundReq + ' m' });
-        for (const c of s.crossings) {
-          if (c.ok === false) issues.push({ code: 'UYUMSUZ', severity: 'error', entityId: c.id, entityNo: c.label, group: 'Geçiş', message: s.from + '→' + s.to + ' ' + c.label + ' düşey açıklık ' + c.clearance.toFixed(2) + ' m < ' + c.required + ' m' });
-          if (c.hOk === false) issues.push({ code: 'UYUMSUZ', severity: 'error', entityId: c.id, entityNo: c.label, group: 'Geçiş', message: c.label + ' yatay mesafe ' + Math.abs(c.horizontal).toFixed(2) + ' m < ' + c.horizontalReq + ' m' });
-          if (c.clearance == null) issues.push({ code: 'EKSİK VERİ', severity: 'warn', entityId: c.id, entityNo: c.label, group: 'Geçiş', message: c.label + ' için direk boyu/bağlantı yüksekliği bilinmiyor · açıklık hesaplanamadı' });
-        }
       }
       for (const p of r.poles) if (p.ok === false) issues.push({ code: 'UYUMSUZ', severity: 'error', entityId: p.id, entityNo: p.no, group: 'ENH', message: 'Direk tepe kuvveti ' + p.Ftop.toFixed(0) + ' daN > kapasite ' + p.cap.toFixed(0) + ' daN' });
       for (const s of r.sections) if (!s.edsOk) issues.push({ code: 'UYARI', severity: 'warn', entityId: l.id, entityNo: l.lineNo, group: 'ENH', message: s.from + '→' + s.to + ' EDS %' + s.edsPct.toFixed(1) + ' > %' + enhT.edsPctRTS });
@@ -91,7 +87,7 @@ export function computeProject(model, cat) {
     if (q.noPoz && q.qty > 0) issues.push({ code: 'MALZEME EKSİK', severity: 'warn', entityId: q.id, entityNo: q.name, group: 'Metraj', message: q.name + ' için poz eşlemesi yok (Tanımlar › Malzeme)' });
     else if (!q.available && q.job !== 'montaj' && q.qty > 0) issues.push({ code: 'UYARI', severity: 'warn', entityId: q.id, entityNo: q.code, group: 'Metraj', message: q.name + ' · ' + q.job + ' sayfasında yok' });
   }
-  const sig = fnv(JSON.stringify([m.points.map((p) => [p.id, p.E, p.N, p.H, p.rev]), m.equipment.map((e) => [e.id, e.rev]), m.lines.map((l) => [l.id, l.rev]), m.crossings.map((c) => [c.id, c.rev]), m.materials.map((x) => [x.id, x.rev]), cat.stdId]));
+  const sig = fnv(JSON.stringify([m.points.map((p) => [p.id, p.E, p.N, p.H, p.rev]), m.equipment.map((e) => [e.id, e.rev]), m.lines.map((l) => [l.id, l.rev]), m.materials.map((x) => [x.id, x.rev]), cat.stdId]));
   return { ix, spans, roles, matsByEq, lineInfo, quantities, issues, enh, signature: sig, counts: { points: m.points.length, equipment: m.equipment.length, lines: m.lines.length, spans: spans.length } };
 }
 

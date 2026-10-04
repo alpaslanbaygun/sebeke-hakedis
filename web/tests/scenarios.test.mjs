@@ -164,7 +164,7 @@ test('10 · Aydınlatma: poligon direkler + aydınlatma hattı, kg grubu', async
   assert.ok(poles.every((p) => p.no.startsWith('AY-')));
 });
 
-test('11 · ENH: sehim-gerilme, direk yükleri, karayolu geçişi açıklık kontrolü', async () => {
+test('11 · ENH: sehim-gerilme, direk yükleri, zemin açıklığı (geçiş özelliği kaldırıldı)', async () => {
   const { ps } = await setup(); await newProject(ps, { enhZone: 'III' });
   const r = route({ E: 520000, N: 4283000, H: 1070 }, [[10, 180, 2], [10, 190, -1], [35, 175, 1.5]]);
   const { line } = await buildPoleLine(ps, r, { group: 'bahh', typeNames: ['GN-14 (3 AWG)', 'GT-14 (3 AWG)', 'GZ-14 (3 AWG)', 'GN-14 (3 AWG)'], lineType: 'ENH', circuits: [{ role: 'ENH', key: '3xSwallow', count: 1 }] });
@@ -181,14 +181,11 @@ test('11 · ENH: sehim-gerilme, direk yükleri, karayolu geçişi açıklık kon
   for (const st of res.sections[0].states) assert.ok(st.sigma <= res.sections[0].sMax * 1.001, 'σ ≤ σmax (' + st.id + ')');
   const zp = res.poles.find((p) => p.role === 'Z');
   assert.ok(zp.Hangle > 0, 'köşe direğinde açı kuvveti');
-  // Karayolu geçişi: 4 m yüksek araç profiline göre zemin kotu yüksek bir noktada → açıklık yetersiz
-  const span = ps.result.spans.find((s) => s.lineId === line.id && s.seq === 1);
-  await ps.addCrossing({ crossKind: 'karayolu', label: 'D300 Karayolu', spanId: span.id, distance: span.length2D / 2, objectHeight: 0, groundH: 1076.5 });
-  const res2 = ps.result.enh.get(line.id);
-  const c = res2.spans[1].crossings[0];
-  assert.equal(c.required, 7.5, 'ENH karayolu düşey açıklık');
-  assert.equal(c.ok, false, 'açıklık yetersiz: ' + c.clearance);
-  assert.ok(issues(ps, 'UYUMSUZ').some((i) => /D300/.test(i.message)));
+  // v2.2: GEÇİŞ özelliği kaldırıldı → açıklık sonucunda geçiş listesi yok, servis API'si yok; zemin açıklığı kontrolü sürer
+  assert.equal(res.spans[1].crossings, undefined, 'açıklıkta geçiş alanı yok');
+  assert.equal(typeof ps.addCrossing, 'undefined', 'addCrossing kaldırıldı');
+  assert.ok(s0.groundReq > 0, 'zemin açıklığı şartı tablodan geliyor');
+  assert.ok(!issues(ps).some((i) => i.group === 'Geçiş'), 'geçiş bulgusu üretilmiyor');
 });
 
 test('12 · Montaj: yeni direk → servis öneki 0, Yeşil Defter montaj sayfası', async () => {
@@ -339,7 +336,7 @@ test('21 · DXF üretimi: katman/ACI/blok/yazı, Türkçe kodlama', async () => 
   assert.ok(t.includes('3xSwallow'));
   // Türkçe karakterler Windows-1254 (Ş=0xDE, ş=0xFE, ğ=0xF0), UTF-8 dizisi yok
   const sp = ps.result.spans[1];
-  const pa = ps.pointById(sp.fromId); await ps.addCrossing({ crossKind: 'dere', label: 'Şahinkaya deresi geçişi', spanId: sp.id, distance: 20, E: pa.E + 5, N: pa.N + 5, objectHeight: 0 });
+  const pa = ps.pointById(sp.fromId); await ps.createPoint({ pointNo: 'Şahinkaya deresi geçişi', cls: 'DETAY', critical: false, coord: { E: pa.E + 5, N: pa.N + 5, H: pa.H }, source: 'MANUAL' }); await ps.recompute('detay');
   const [f2] = await exportFormat(ps, 'dxf');
   const B = Buffer.from(f2.data);
   assert.ok(B.includes(Buffer.from([0xde, 0x61, 0x68])), 'Şah (cp1254)');

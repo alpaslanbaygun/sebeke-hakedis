@@ -1,6 +1,6 @@
 // ENH / havai hat mekanik hesap motoru.
 // Değişik haller denklemi (parabolik), ideal (ruling) açıklık, buz/rüzgar yükleri, sehim, direk yükleri,
-// iletken yerden yükseklik ve geçiş/açıklık kontrolleri. Tüm katsayılar standart tablosundan (enh, clearances) gelir.
+// iletken yerden yükseklik (zemin açıklığı) kontrolü. Tüm katsayılar standart tablosundan (enh, clearances) gelir.
 
 const G = 0.981; // 1 kg = 0.981 daN
 
@@ -67,7 +67,7 @@ export function attachmentHeight(pole, heightM) {
 }
 
 // Hat bazında tam ENH analizi
-export function analyzeLine({ line, spans, poles, pointsById, roles, cat, zoneId, enh, clearances, crossings, landClass }) {
+export function analyzeLine({ line, spans, poles, pointsById, roles, cat, zoneId, enh, clearances, landClass }) {
   const circ = (line.circuits || []).find((c) => c.role === 'OG' || c.role === 'ENH') || (line.circuits || [])[0];
   if (!circ) return { error: 'Hatta iletken tanımlı değil' };
   const lt = cat.lineType(circ.key);
@@ -110,20 +110,7 @@ export function analyzeLine({ line, spans, poles, pointsById, roles, cat, zoneId
           if (low === null || y - gnd < low) { low = y - gnd; lowX = x * s.length2D; }
         }
       }
-      const r = { spanId: s.id, from: s.fromNo, to: s.toNo, a: s.length2D, a3: s.length3D, dH: s.dH, sagMax: fMax, sagIce: fIce, Tmax: Math.max(S.S1.T, S.S2.T, S.S3.T), groundClear: low, groundClearAt: lowX, groundReq: reqGround, ok: low == null ? null : low >= reqGround, attachA: ha, attachB: hb, crossings: [] };
-      // Geçişler
-      for (const c of crossings.filter((x) => x.spanId === s.id && x.status !== 'deleted')) {
-        const x = Math.max(0, Math.min(1, (c.distance ?? s.length2D / 2) / s.length2D));
-        const req = (clearances.vertical[vClass] || {})[c.crossKind] ?? null;
-        let clr = null;
-        if (ha != null && hb != null && A && B) {
-          const y = (A.H ?? 0) + ha + ((B.H ?? 0) + hb - (A.H ?? 0) - ha) * x - 4 * f * x * (1 - x);
-          const objTop = (c.groundH ?? ((A.H ?? 0) + ((B.H ?? 0) - (A.H ?? 0)) * x)) + (c.objectHeight || 0);
-          clr = y - objTop;
-        }
-        const hReq = c.crossKind === 'bina' ? ((clearances.horizontal[vClass] || {}).bina ?? null) : null;
-        r.crossings.push({ id: c.id, kind: c.crossKind, label: c.label || c.crossKind, at: x * s.length2D, clearance: clr, required: req, ok: clr == null || req == null ? null : clr >= req, horizontal: c.lateral ?? null, horizontalReq: hReq, hOk: hReq == null || c.lateral == null ? null : Math.abs(c.lateral) >= hReq });
-      }
+      const r = { spanId: s.id, from: s.fromNo, to: s.toNo, a: s.length2D, a3: s.length3D, dH: s.dH, sagMax: fMax, sagIce: fIce, Tmax: Math.max(S.S1.T, S.S2.T, S.S3.T), groundClear: low, groundClearAt: lowX, groundReq: reqGround, ok: low == null ? null : low >= reqGround, attachA: ha, attachB: hb };
       spanRes.push(r);
       tension.set(s.id, { Tw: S.S3.T, Ti: S.S2.T, T1: S.S1.T, wind: st.loads.qw, w0: st.loads.w0, wIce: st.loads.wIce });
     }

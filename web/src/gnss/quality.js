@@ -46,7 +46,7 @@ export function averageEpochs(epochs) {
   return {
     lat, lon, h, E, N, epochs: n, stdE: sd('E', E), stdN: sd('N', N), stdH: sd('h', h),
     spreadH: Math.hypot(sd('E', E), sd('N', N)),
-    sigmaH: worst('sigmaH', Math.max), sigmaV: worst('sigmaV', Math.max), pdop: worst('pdop', Math.max), sats: worst('sats', Math.min), age: worst('age', Math.max),
+    sigmaH: worst('sigmaH', Math.max), sigmaV: worst('sigmaV', Math.max), pdop: worst('pdop', Math.max), hdop: worst('hdop', Math.max), vdop: worst('vdop', Math.max), sats: worst('sats', Math.min), age: worst('age', Math.max),
     fix: fixes.length === 1 ? fixes[0] : fixes.includes('FLOAT') ? 'FLOAT' : fixes.join('/'),
     t0: epochs[0].t, t1: epochs[n - 1].t, duration: (epochs[n - 1].t - epochs[0].t) / 1000
   };

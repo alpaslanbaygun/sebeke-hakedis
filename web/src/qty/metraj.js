@@ -8,7 +8,7 @@ export function contributionsFromEquipment(e, mats, meta) {
   for (const m of mats.items) {
     const job = m.jobOverride || mats.job;
     if (!job) continue;
-    let source = m.origin === 'OTO' ? (m.tag === 'direk' || m.tag === 'trafo' || m.tag === 'sdk' || m.tag === 'kosk' ? meta.posSource : 'OTO') : 'MANUEL';
+    let source = m.origin === 'OTO' ? (m.tag === 'direk' || m.tag === 'trafo' || m.tag === 'sdk' || m.tag === 'kosk' || m.tag === 'self' ? meta.posSource : 'OTO') : 'MANUEL';
     out.push({
       job, servis: m.servis, material: null, qty: m.qty, unit: m.unit, kgPer: m.kgPer, grp: m.grp, name: m.name, why: m.why, tag: m.tag,
       source, evidence: meta.photos > 0 ? 'FOTO' : null, missing: m.missing, overridden: !!m.overridden, origin: m.origin,

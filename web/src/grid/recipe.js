@@ -44,7 +44,10 @@ export function recipeContext(e, cat, extra = {}) {
     const t = cat.sdkType((e.attrs || {}).sdkTypeId);
     return { eq: 'sdk', self: t ? t.servis : null, tip: t ? t.name : 'SDK' };
   }
-  return { eq: e.kind };
+  // Serbest türler (pano, armatür, menhol, diğer): kayıtta seçilen poz (attrs.servis) tek kalem olarak gelir
+  const a = e.attrs || {};
+  const pz = a.servis ? cat.poz(a.servis) : null;
+  return { eq: e.kind, self: a.servis || null, tip: a.typeName || (pz ? pz.name : ''), selfName: pz ? pz.name : '' };
 }
 
 // Kural listesini bağlama uygula → malzeme satırları
@@ -80,6 +83,11 @@ export function equipmentMaterials(e, cat, opts = {}) {
   const ctx = recipeContext(e, cat, opts.ctx || {});
   const rulesEq = ctx.eq === 'pole' ? 'pole' : ctx.eq;
   let items = job ? applyRules(cat.rules(rulesEq), ctx, cat, opts.params) : [];
+  // Serbest türlerde kural yoksa seçilen poz otomatik kalemdir
+  if (job && !items.length && ctx.self && !['pole', 'trafo', 'sdk'].includes(ctx.eq)) {
+    const pz = cat.poz(ctx.self);
+    items.push({ servis: ctx.self, qty: +(e.attrs && e.attrs.qty) || 1, unit: pz ? pz.unit : 'Ad', kgPer: pz ? pz.kgPerUnit : null, name: pz ? pz.name : '(katalogda yok)', why: (ctx.tip || 'Seçilen poz'), grp: (pz && pz.kgGroup) || '', tag: 'self', origin: 'OTO', qtyFrom: 'num', missing: !pz });
+  }
   // Trafo durum filtreleri: gücü yükseltilen → yalnız trafo + pano; tadil/modül → köşk + hücre
   const ts = TRAFO_STATUSES[e.state];
   if (ctx.eq === 'trafo' && ts && ts.only) items = items.filter((m) => ts.only.includes(m.tag));

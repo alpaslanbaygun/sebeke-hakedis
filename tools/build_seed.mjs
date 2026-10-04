@@ -298,7 +298,6 @@ const legend = {
     { key: 'TOPRAK', layer: 'ELEKTRIK-TOPRAKLAMA', aci: 32 },
     { key: 'DEMONTAJ', layer: 'ELEKTRIK-DEMONTAJ', aci: 2 },
     { key: 'YAZI', layer: 'ELEKTRIK-YAZI', aci: 7 },
-    { key: 'GECIS', layer: 'ELEKTRIK-GECIS', aci: 30 },
     { key: 'OLCU', layer: 'OLCU-NOKTA', aci: 7 }
   ],
   poleColors: {
@@ -332,7 +331,7 @@ const out = {
   poz: [...poz.values()].sort((a, b) => a.servis.localeCompare(b.servis)),
   poleGroups, poleTypes, conductors, lineTypes, lineDefaults: raw.DEF,
   transformers, panels, kiosks, kioskDefaults: raw.P9_KOSKDEF, trafoPostTypes, trafoPoleCompat,
-  sdkTypes, recipeRules: rules, params, gnssThresholds, enh, clearances, crossingTypes, legend, materialsMaster, cableRules
+  sdkTypes, recipeRules: rules, params, gnssThresholds, enh, clearances, legend, materialsMaster, cableRules
 };
 fs.mkdirSync(path.join(root, 'web/seed'), { recursive: true });
 fs.writeFileSync(path.join(root, 'web/seed/standard-tedas-2026.json'), JSON.stringify(out));
