@@ -32,6 +32,7 @@ async function boot() {
     try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) { /* */ }
     const gnss = new GnssService({ bus, bridge });
     const ant = await ds.setting('antenna'); if (ant) gnss.configure({ antenna: ant });
+    const gm = await ds.setting('gnssMethod'); if (gm && gm.method) gnss.setMethod(gm.method, gm.base || null);
     const ps = new ProjectService({ ds, bus, gnss });
     Object.assign(app, { bus, ds, ps, gnss, bridge });
     window.__app = app;
@@ -46,6 +47,17 @@ async function boot() {
     render(html`<${App} />`, document.body);
     bus.on('native:gnssStatus', (d) => { if (d && d.state === 'error' && app.toast) app.toast('GNSS: ' + (d.error || 'bağlantı hatası'), 'err', 5000); if (d && d.state === 'connected' && app.toast) app.toast('GNSS bağlandı · ' + (d.name || '')); });
     bus.on('native:ntrip', (d) => { if (d && d.state === 'error' && app.toast) app.toast('NTRIP: ' + (d.error || 'hata'), 'err', 5000); });
+    // İnternet geldiğinde otomatik senkron (sunucu adresi kayıtlıysa); yoksa Senkron ekranından elle
+    const autoSync = async () => {
+      try {
+        const cfg = await ds.setting('syncServer');
+        if (!cfg || !cfg.url || !ps.p || navigator.onLine === false) return;
+        const { httpSync } = await import('./core/sync.js');
+        const r = await httpSync(ds, { url: cfg.url, token: cfg.token, projectId: ps.p.id });
+        if ((r.sent || r.applied) && app.toast) { app.toast('Senkron: ' + r.sent + ' gönderildi · ' + r.applied + ' alındı' + (r.conflicts.length ? ' · ' + r.conflicts.length + ' çakışma' : ''), r.conflicts.length ? 'warn' : 'ok', 4000); if (r.applied) await ps.open(ps.p.id); }
+      } catch (e) { /* çevrimdışı ya da sunucu yok: sessiz geç */ }
+    };
+    window.addEventListener('online', () => setTimeout(autoSync, 3000));
     window.__voltReady = true;
   } catch (e) {
     console.error(e);

@@ -226,3 +226,5 @@ table.t td.n,table.t th.n{text-align:right;font-family:var(--mono);font-weight:6
 .haklegend span{display:flex;align-items:center;gap:6px;color:#cbd5e1}
 .haklegend i{width:9px;height:9px;border-radius:5px}
 .srctag{font:700 10px var(--mono);letter-spacing:.03em}
+.hakbar{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:1px;background:var(--line2)}
+.hakbar span{min-width:3px}

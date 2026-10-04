@@ -53,6 +53,16 @@ export function SettingsScreen() {
       ${s.source === 'phone' ? html`<div class="alert warn"><${Icon} n="warn" s=${16} /><span>Telefon GPS doğruluğu ±3–10 m. Noktalar "TEST / DÜŞÜK DOĞRULUK" olarak işaretlenir; kritik noktalar RTK FIX ile yeniden ölçülene kadar kontrol listesinde "ÖLÇÜ KABUL EDİLMEDİ" kalır.</span></div>` : null}
       <div class="row"><span class="grow note">Etkin: <b style=${'color:' + (FIXCOL[s.fix] || '#94a3b8')}>${s.source === 'none' ? 'yok' : (s.receiver || {}).name || s.source}</b> ${s.connected ? '· bağlı' : ''}</span>${s.source !== 'none' ? html`<button class="btn dang sm" onClick=${() => g.stopAll()}>Kaynağı kapat</button>` : null}</div>
     </div>
+    <div class="sect">Ölçüm yöntemi</div>
+    <div class="card stack">
+      ${[['TELEFON_GPS', 'Telefon GPS', '±3–10 m · [TELEFON GPS]'], ['HARICI_GNSS', 'Harici GNSS', 'Düzeltmesiz / alıcı düzeltmesi'], ['RTK_NTRIP', 'RTK / NTRIP', 'RTCM telefondan alıcıya · [RTK FIX]'], ['BASE_ROVER', 'Sabit Base + Rover', g.base ? 'Base: ' + g.base.name + (g.base.link ? ' · ' + g.base.link : '') : 'Kendi base istasyonunla · rehberi aç'], ['MANUEL', 'Manuel', 'Koordinat elle / haritadan / Excel · haritada KAYNAK düğmesi']].map(([k, t, d]) => { const on = k === 'MANUEL' ? (app.state.srcMode === 'manual' || app.state.srcMode === 'map') : s.method === k && !(app.state.srcMode === 'manual' || app.state.srcMode === 'map'); return html`<button class=${'srcopt' + (on ? ' on' : '')} style="--c:#10b981" onClick=${async () => {
+        if (k === 'TELEFON_GPS') { app.state.srcMode = 'gnss'; await usePhone(); }
+        else if (k === 'BASE_ROVER') app.nav.go('baseRover');
+        else if (k === 'MANUEL') { app.state.srcMode = 'manual'; app.toast('Haritada KAYNAK düğmesinden Manuel / Haritadan / Excel seçilebilir', 'ok', 4000); app.nav.tab('map'); }
+        else { app.state.srcMode = 'gnss'; if (g.method === 'BASE_ROVER') { g.setMethod(null); await app.ds.setting('gnssMethod', { method: null, base: g.base }); } if (s.source !== 'external') (native ? listBt() : webConnect('web-serial')); else if (k === 'RTK_NTRIP' && nts.state !== 'connected') app.toast('NTRIP bölümünden bağlanın (aşağıda)', 'warn', 4000); }
+      }}><i></i><span class="grow"><b>${t}</b><small>${d}</small></span></button>`; })}
+      <div class="note">Etkin yöntem her ölçüm kaydına yazılır: cihaz, seri no, fix, uydu, HDOP/VDOP/PDOP, düzeltme kaynağı, base ve rover bilgisi, operatör.</div>
+    </div>
     <div class="card tight list">
       ${[['Telefon konum servisi', 'Android konum + GNSS durumu · test aşaması', s.source === 'phone'], ['Harici GNSS · Bluetooth NMEA', '$GNGGA, $GNGST, $GNGSA, $GNRMC, $GNHDT · fix tipi ve σ', s.source === 'external'], ['NTRIP düzeltmeli RTK', 'RTCM3 → alıcı · VRS/FKP/MAC · santimetre', nts.state === 'connected']].map(([t, d, on]) => html`<div class="li"><span class=${'badge ' + (on ? 'b-cy' : 'b-ok')} style="width:62px;justify-content:center">${on ? 'ŞİMDİ' : 'HAZIR'}</span><div class="grow"><div class="t" style="font-size:13px">${t}</div><div class="s">${d}</div></div></div>`)}
       <div class="note" style="padding:10px 12px">Her noktada kaynak · σH / σV · fix tipi · zaman · cihaz saklanır. Telefonla alınan nokta sonradan GNSS ile ölçülünce yeni kayıt açılmaz; aynı Point ID'nin koordinatı ve kaynağı revize edilir.</div>

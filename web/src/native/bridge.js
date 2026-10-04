@@ -50,7 +50,7 @@ export const bridge = {
   // ---- Dosya ----
   async saveFile(name, mime, u8, opts = {}) {
     if (!N()) return webDownload(name, mime, u8);
-    const id = await call('fileBegin', { name, mime, action: opts.share ? 'share' : 'save', size: u8.length });
+    const id = await call('fileBegin', { name, mime, action: opts.share ? 'share' : 'save', size: u8.length, dir: opts.dir || '' }); // dir: İndirilenler/VOLT-EDAS altındaki alt klasör
     const CH = 512 * 1024;
     for (let i = 0; i < u8.length; i += CH) await call('fileChunk', { id, b64: b64(u8.subarray(i, i + CH)) });
     return call('fileEnd', { id });

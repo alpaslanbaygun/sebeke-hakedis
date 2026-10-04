@@ -41,7 +41,19 @@ public final class VoltBridge {
     private final MainActivity act;
     private final ExecutorService ex = Executors.newCachedThreadPool();
     private final Map<String, FileSlot> files = new HashMap<>();
-    private static final class FileSlot { File f; String name, mime, action; OutputStream out; }
+    private static final class FileSlot { File f; String name, mime, action, dir = ""; OutputStream out; }
+    /** Alt klasör yolu: her parça dosya adı kurallarına göre temizlenir (.. ve boş parçalar atılır). */
+    private static String cleanDir(String d) {
+        if (d == null) return "";
+        StringBuilder b = new StringBuilder();
+        for (String part : d.split("/")) {
+            String t = part.replaceAll("[\\\\:*?\"<>|]", "_").trim();
+            if (t.isEmpty() || t.equals(".") || t.equals("..")) continue;
+            if (b.length() > 0) b.append('/');
+            b.append(t);
+        }
+        return b.toString();
+    }
 
     VoltBridge(MainActivity act) { this.act = act; }
 
@@ -192,7 +204,7 @@ public final class VoltBridge {
     @JavascriptInterface public void fileBegin(String reqId, String json) {
         async(reqId, json, (a) -> {
             FileSlot s = new FileSlot();
-            s.name = a.getString("name").replaceAll("[\\\\/:*?\"<>|]", "_"); s.mime = a.optString("mime", "application/octet-stream"); s.action = a.optString("action", "save");
+            s.name = a.getString("name").replaceAll("[\\\\/:*?\"<>|]", "_"); s.mime = a.optString("mime", "application/octet-stream"); s.action = a.optString("action", "save"); s.dir = cleanDir(a.optString("dir", ""));
             File dir = new File(act.getCacheDir(), "share"); dir.mkdirs();
             s.f = new File(dir, s.name); s.out = new FileOutputStream(s.f);
             String id = Long.toHexString(System.nanoTime());
@@ -232,13 +244,13 @@ public final class VoltBridge {
             ContentValues v = new ContentValues();
             v.put(MediaStore.MediaColumns.DISPLAY_NAME, s.name);
             v.put(MediaStore.MediaColumns.MIME_TYPE, s.mime);
-            v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/VOLT-EDAS");
+            v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/VOLT-EDAS" + (s.dir.isEmpty() ? "" : "/" + s.dir));
             Uri u = cr.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
             if (u == null) throw new Exception("İndirilenler klasörüne yazılamadı");
             try (OutputStream out = cr.openOutputStream(u); InputStream in = new FileInputStream(s.f)) { copy(in, out); }
-            return "İndirilenler/VOLT-EDAS/" + s.name;
+            return "İndirilenler/VOLT-EDAS/" + (s.dir.isEmpty() ? "" : s.dir + "/") + s.name;
         }
-        File dir = new File(act.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "VOLT-EDAS"); dir.mkdirs();
+        File dir = new File(act.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "VOLT-EDAS" + (s.dir.isEmpty() ? "" : "/" + s.dir)); dir.mkdirs();
         File dst = new File(dir, s.name);
         try (OutputStream out = new FileOutputStream(dst); InputStream in = new FileInputStream(s.f)) { copy(in, out); }
         return dst.getAbsolutePath();

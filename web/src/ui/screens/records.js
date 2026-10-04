@@ -2,10 +2,12 @@
 import { html, useState, useEffect, useRef, useBus, Icon, Chip, Seg, Sel, Badge, Title, Toggle, fmt, trn, CODE_KIND } from '../kit.js';
 import { app } from '../ctx.js';
 import { measure } from '../services.js';
-import { STATUSES } from '../../core/schema.js';
+import { STATUSES, HAK_STATUSES, HAK_ORDER, hakOf } from '../../core/schema.js';
 import { circuitLabel, lineLabel, CABLE_DEFAULTS } from '../../grid/lines.js';
 import { offsetPolyline, dms } from '../../geo/geom.js';
 import { unproject } from '../../geo/crs.js';
+import { sourceInfo, sourceText } from '../../core/source.js';
+import { overlayLines, buildExif, extractExif, resetOrientation, withExif, nextPhotoName, photoPath, projectFolder, kindLabel } from '../../services/photo-service.js';
 
 const toDMS = (v, pos, neg) => { if (v == null) return '—'; const a = Math.abs(v), d = Math.floor(a), m = Math.floor((a - d) * 60), s = ((a - d) * 60 - m) * 60; return d + '° ' + String(m).padStart(2, '0') + '′ ' + s.toFixed(4).padStart(7, '0') + '″ ' + (v >= 0 ? pos : neg); };
 
@@ -37,11 +39,11 @@ export function PointScreen({ id }) {
   return html`<${Title} title=${p.pointNo} sub=${p.cls + ' · ' + (eqs.map((e) => e.no).join(', ') || 'ekipmansız')} />
     ${iss.map((i) => html`<div class=${'alert ' + (i.severity === 'error' ? 'err' : 'warn')}><${Badge} k=${CODE_KIND[i.code]}>${i.code}</${Badge}> ${i.message}</div>`)}
     <div class="card"><div class="grid3"><div><div class="lbl">Y (sağa)</div><div class="num">${fmt(p.E)}</div></div><div><div class="lbl">X (yukarı)</div><div class="num">${fmt(p.N)}</div></div><div><div class="lbl">Z ${ps.p.heightSystem === 'elipsoidal' ? '(h)' : '(H)'}</div><div class="num">${fmt(p.H)}</div></div></div>
-      <div class="kv mono" style="font-size:12px;margin-top:10px"><b>Enlem</b><span>${toDMS(p.lat, 'K', 'G')}</span><b>Boylam</b><span>${toDMS(p.lon, 'D', 'B')}</span><b>Elipsoidal h</b><span>${fmt(p.h)} m</span><b>CRS</b><span>${ps.p.crs.label}</span><b>Kaynak</b><span>${p.source} · ${p.accuracyClass || ''}</span>
-      ${p.quality ? html`<b>Kalite</b><span>${q.fix} · σH ${fmt(q.sigmaH)} · σV ${fmt(q.sigmaV)} · PDOP ${fmt(q.pdop, 1)} · ${q.sats ?? '—'} uydu · yaş ${fmt(q.age, 1)} s · ${q.epochs ?? 1} epok${q.sigmaEst ? ' · σ tahmini' : ''}</span>` : null}</div></div>
+      <div class="kv mono" style="font-size:12px;margin-top:10px"><b>Enlem</b><span>${toDMS(p.lat, 'K', 'G')}</span><b>Boylam</b><span>${toDMS(p.lon, 'D', 'B')}</span><b>Elipsoidal h</b><span>${fmt(p.h)} m</span><b>CRS</b><span>${ps.p.crs.label}</span><b>Veri kaynağı</b><span style=${'color:' + sourceInfo(p).color}>[${sourceInfo(p).tag}] ${sourceText(p)}</span>${p.device || p.method ? html`<b>Cihaz / yöntem</b><span>${p.device || '—'}${p.deviceSerial ? ' #' + p.deviceSerial : ''}${p.method ? ' · ' + p.method : ''}${p.correction ? ' · ' + p.correction : ''}</span>` : null}${p.operator ? html`<b>Operatör</b><span>${p.operator}</span>` : null}${p.enteredCrs && p.enteredCrs !== ps.p.crs.label ? html`<b>Girilen sistem</b><span>${p.enteredCrs}</span>` : null}
+      ${p.quality ? html`<b>Kalite</b><span>${q.fix} · σH ${fmt(q.sigmaH)} · σV ${fmt(q.sigmaV)} · PDOP ${fmt(q.pdop, 1)}${q.hdop != null ? ' · HDOP ' + fmt(q.hdop, 1) : ''}${q.vdop != null ? ' · VDOP ' + fmt(q.vdop, 1) : ''} · ${q.sats ?? '—'} uydu · yaş ${fmt(q.age, 1)} s · ${q.epochs ?? 1} epok${q.sigmaEst ? ' · σ tahmini' : ''}</span>` : null}</div></div>
     <div class="grid2"><button class="btn pri" onClick=${remeasure}><${Icon} n="cross" s=${18} c="#0b1326" />Yeniden ölç</button><button class="btn" onClick=${editCoord}><${Icon} n="edit" s=${18} />Elle düzelt</button>
-      <button class="btn" onClick=${() => { app.state.target = { id }; app.nav.tab('stake'); }}><${Icon} n="target" s=${18} />Aplikasyon</button><button class="btn" onClick=${() => app.nav.go('photo', { ownerId: eqs[0] ? eqs[0].id : id, pointId: id, ownerNo: eqs[0] ? eqs[0].no : p.pointNo })}><${Icon} n="camera" s=${18} />Fotoğraf</button></div>
-    <div class="card row"><span class="grow">Kritik saha noktası (RTK FIX zorunlu)</span><${Toggle} on=${p.critical !== false} onChange=${(v) => ps.updatePoint(id, { critical: v }, v ? 'Kritik nokta' : 'Kritik değil (detay)')} label="Kritik" /></div>
+      <button class="btn" onClick=${() => { app.state.target = { id }; app.nav.tab('stake'); }}><${Icon} n="target" s=${18} />Aplikasyon</button><button class="btn" onClick=${() => app.nav.go('photo', { ownerKind: eqs[0] ? eqs[0].kind : 'point', ownerId: eqs[0] ? eqs[0].id : id, pointId: id, ownerNo: eqs[0] ? eqs[0].no : p.pointNo })}><${Icon} n="camera" s=${18} />Fotoğraf</button></div>
+    <div class="card row"><span class="grow">Kritik saha noktası (RTK FIX değilse uyarı verilir)</span><${Toggle} on=${p.critical !== false} onChange=${(v) => ps.updatePoint(id, { critical: v }, v ? 'Kritik nokta' : 'Kritik değil (detay)')} label="Kritik" /></div>
     <div class="sect">Ölçüm revizyonları</div>
     <div class="card tight list">${(p.history || []).slice().reverse().map((h) => html`<div class="li"><div class="grow"><div class="s">${new Date(h.at).toLocaleString('tr-TR')} · ${h.by || ''}${h.manualMove ? ' · elle taşındı' : ''}</div><div class="m">${h.source} · Y ${fmt(h.E)} X ${fmt(h.N)} Z ${fmt(h.H)}</div></div><span class="m">Δ ${fmt(Math.hypot((h.E ?? 0) - p.E, (h.N ?? 0) - p.N))} m</span></div>`)}${!(p.history || []).length ? html`<div class="empty">İlk ölçüm · revizyon yok</div>` : null}</div>
     <div class="sect">GNSS gözlemleri</div>
@@ -115,19 +117,27 @@ export function LineScreen({ id }) {
       ${d.lineType === 'OG' || d.lineType === 'ENH' ? html`<button class="btn" onClick=${() => app.nav.go('enh', { id })}>ENH hesabı</button>` : html`<span></span>`}
       <button class="btn dang" onClick=${async () => { const r = await app.prompt('Hattı sil', 'Gerekçe', { required: true }); if (r) { await ps.removeLine(id, r); app.nav.back(); } }}>Sil</button>
     </div>
-    <div class="card row" style="margin-top:10px"><span class="grow">İş tamamlandı (hakedişe girer)</span><${Toggle} on=${d.progress === 'done'} onChange=${(v) => set({ progress: v ? 'done' : 'planned', workDate: v ? d.workDate || new Date().toISOString().slice(0, 10) : d.workDate })} label="Tamamlandı" /></div>
+    ${hakOf(d) ? html`<div class="card stack" style="margin-top:10px"><div class="lbl">Hakediş durumu · <span style=${'color:' + HAK_STATUSES[hakOf(d)].color}>${HAK_STATUSES[hakOf(d)].label}</span></div>
+      <div class="hakrow">${HAK_ORDER.map((k) => html`<button class=${k === hakOf(d) ? 'on' : ''} style=${'--c:' + HAK_STATUSES[k].color} onClick=${() => set({ hak: k, progress: HAK_STATUSES[k].done ? 'done' : 'planned', workDate: HAK_STATUSES[k].done ? (d.workDate || new Date().toISOString().slice(0, 10)) : null })}><i></i>${HAK_STATUSES[k].short}</button>`)}</div></div>` : html`<div class="note" style="margin-top:10px">Hakediş: — (mevcut / ileride)</div>`}
     ${d.progress === 'done' ? html`<div class="fld"><label>Montaj tarihi</label><input class="inp mono" type="date" value=${d.workDate || ''} onChange=${(e) => set({ workDate: e.target.value })} /></div>` : null}
     <div class="fld" style="margin-top:8px"><label>Açıklama</label><textarea class="inp" value=${d.note || ''} onInput=${(e) => set({ note: e.target.value })}></textarea></div>
     <div class="row" style="position:sticky;bottom:-24px;background:var(--bg);padding:12px 0;border-top:1px solid var(--line2);margin-top:8px"><button class="btn" style="flex:0 0 32%" onClick=${() => (dirty ? setD(JSON.parse(JSON.stringify(l0))) : app.nav.back())}>${dirty ? 'Geri al' : 'Kapat'}</button><button class="btn pri grow" style="height:56px" disabled=${!dirty} onClick=${save}>KAYDET · ${d.lineNo}</button></div>`;
 }
 
 // Fotoğraf / kanıt: uygulama içi kamera, zaman-konum-yön damgası
-export function PhotoScreen({ ownerId, pointId, ownerNo, slot }) {
+// Fotoğraf: bir objeye çoklu çekim. Dosya adı {ObjeNo}_{Sıra}.jpg; görüntü üstüne proje/obje/tarih/koordinat/doğruluk/fix yazılır,
+// EXIF'e GPS + tarih işlenir; APK'da ayrıca İndirilenler/VOLT-EDAS/<PROJE>/<TÜR>/<ObjeNo>/ klasörüne kopyalanır.
+export function PhotoScreen({ ownerId, pointId, ownerNo, slot, ownerKind }) {
   const ps = app.ps;
   const vid = useRef(null), stream = useRef(null);
   const [err, setErr] = useState(null);
   const [heading, setHeading] = useState(null);
   const [note, setNote] = useState(slot || '');
+  const [busy, setBusy] = useState(false);
+  const [taken, setTaken] = useState([]);
+  const eq = ps.eqById(ownerId), ln = eq ? null : ps.lineById(ownerId);
+  const kind = ownerKind || (eq ? eq.kind : ln ? 'line' : 'point');
+  const existing = ps.data.photos.filter((x) => x.ownerId === ownerId).length;
   useEffect(() => {
     (async () => {
       try { stream.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 } }, audio: false }); vid.current.srcObject = stream.current; await vid.current.play(); }
@@ -137,30 +147,47 @@ export function PhotoScreen({ ownerId, pointId, ownerNo, slot }) {
     window.addEventListener('deviceorientationabsolute', onOri); window.addEventListener('deviceorientation', onOri);
     return () => { if (stream.current) stream.current.getTracks().forEach((t) => t.stop()); window.removeEventListener('deviceorientationabsolute', onOri); window.removeEventListener('deviceorientation', onOri); };
   }, []);
-  const stampAndSave = async (source) => {
-    const g = app.gnss.state;
-    const w = source.videoWidth || source.naturalWidth || source.width, h = source.videoHeight || source.naturalHeight || source.height;
-    const k = Math.min(1, 1920 / Math.max(w, h));
-    const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
-    const x = c.getContext('2d'); x.drawImage(source, 0, 0, c.width, c.height);
-    const p = pointId ? ps.pointById(pointId) : null;
-    const lines = [ps.p.name + ' · ' + (ownerNo || ''), new Date().toLocaleString('tr-TR') + ' · ' + ps.ds.user.name, p ? 'Y ' + fmt(p.E) + '  X ' + fmt(p.N) + '  Z ' + fmt(p.H) : g.E != null ? 'Y ' + fmt(g.E) + '  X ' + fmt(g.N) : 'konum yok', (heading != null ? 'Yön ' + heading.toFixed(0) + '°  ' : '') + (note || '')];
-    const fs = Math.round(c.height / 38);
-    x.fillStyle = 'rgba(11,19,38,.72)'; x.fillRect(0, c.height - fs * 1.35 * lines.length - fs * 0.6, c.width, fs * 1.35 * lines.length + fs * 0.6);
-    x.fillStyle = '#fff'; x.font = '600 ' + fs + 'px JetBrains Mono, monospace';
-    lines.forEach((t, i) => x.fillText(t, fs * 0.6, c.height - fs * 1.35 * (lines.length - i - 1) - fs * 0.6));
-    const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.86));
-    const bytes = new Uint8Array(await blob.arrayBuffer());
-    await ps.addPhoto(bytes, 'image/jpeg', { ownerId, ownerNo, pointId, pointNo: p ? p.pointNo : null, slot: slot || null, lat: g.lat ?? (p && p.lat), lon: g.lon ?? (p && p.lon), E: p ? p.E : g.E, N: p ? p.N : g.N, heading, note, width: c.width, height: c.height, gnssFix: g.fix });
-    app.toast('Fotoğraf kaydedildi · ' + (slot || ownerNo));
-    app.bridge.vibrate(40);
-    app.nav.back();
+  const stampAndSave = async (source, origBytes) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const g = app.gnss.state;
+      const w = source.videoWidth || source.naturalWidth || source.width, h = source.videoHeight || source.naturalHeight || source.height;
+      const k = Math.min(1, 1920 / Math.max(w, h));
+      const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+      const x = c.getContext('2d'); x.drawImage(source, 0, 0, c.width, c.height);
+      const p = pointId ? ps.pointById(pointId) : null;
+      const now = new Date();
+      const lines = overlayLines({ project: ps.p, ownerNo: ownerNo || '', kind, when: now, point: p, gnss: g, operator: ps.ds.user.name, heading, note });
+      const fs = Math.max(14, Math.round(Math.min(c.width, c.height) / 34));
+      x.fillStyle = 'rgba(11,19,38,.72)'; x.fillRect(0, c.height - fs * 1.35 * lines.length - fs * 0.6, c.width, fs * 1.35 * lines.length + fs * 0.6);
+      x.fillStyle = '#fff'; x.font = '600 ' + fs + 'px JetBrains Mono, monospace';
+      lines.forEach((t, i) => x.fillText(t, fs * 0.6, c.height - fs * 1.35 * (lines.length - i - 1) - fs * 0.6, c.width - fs * 1.2));
+      const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.86));
+      let bytes = new Uint8Array(await blob.arrayBuffer());
+      // EXIF: galeri fotoğrafında orijinal EXIF korunur (yön düzeltilir); yoksa GPS + tarih yazılır
+      const lat = p && p.lat != null ? p.lat : g.lat, lon = p && p.lon != null ? p.lon : g.lon;
+      const acc = p && p.quality ? p.quality.sigmaH : g.sigmaH;
+      const orig = origBytes ? extractExif(origBytes) : null;
+      bytes = withExif(bytes, orig ? resetOrientation(orig) : buildExif({ lat, lon, alt: p && p.H != null ? p.H : g.H, heading, accuracy: acc, date: now, description: ps.p.name + ' - ' + (ownerNo || '') + ' - ' + kindLabel(kind), artist: ps.ds.user.name, model: (g.receiver || {}).name || 'Telefon' }));
+      const nm = nextPhotoName(ps.data.photos, ownerId, ownerNo || 'OBJE');
+      const filepath = photoPath(kind, ownerNo || 'OBJE', nm.filename);
+      await ps.addPhoto(bytes, 'image/jpeg', { ownerId, ownerNo, ownerType: kind, pointId, pointNo: p ? p.pointNo : null, slot: slot || null, filename: nm.filename, filepath, seq: nm.seq,
+        lat: lat ?? null, lon: lon ?? null, elevation: p && p.H != null ? p.H : g.H ?? null, E: p ? p.E : g.E, N: p ? p.N : g.N, accuracy: acc ?? null, fix: p ? sourceInfo(p).tag : g.fix, heading, note, width: c.width, height: c.height, device: (g.receiver || {}).name || null, operator: ps.ds.user.name, exifKept: !!orig });
+      // Fiziksel klasör (yalnız APK): İndirilenler/VOLT-EDAS/<PROJE>/DIREKLER/D-001/D-001_01.jpg
+      if (app.bridge.isNative() && (await app.ds.setting('photoToDevice')) !== false) { try { await app.bridge.saveFile(nm.filename, 'image/jpeg', bytes, { dir: projectFolder(ps.p) + '/' + filepath.split('/').slice(0, -1).join('/') }); } catch (e) { app.toast('Telefona kopyalanamadı: ' + e.message, 'warn'); } }
+      setTaken((t) => [...t, nm.filename]);
+      app.toast(nm.filename + ' kaydedildi', 'ok', 1800);
+      app.bridge.vibrate(40);
+      if (slot) app.nav.back();
+    } catch (e) { app.toast('Fotoğraf kaydedilemedi: ' + e.message, 'err', 5000); }
+    setBusy(false);
   };
-  const fromFile = async (f) => { if (!f) return; const img = new Image(); img.src = URL.createObjectURL(f); await img.decode(); await stampAndSave(img); };
-  return html`<div class="cam"><div class="row" style="padding:10px 12px;background:#0b1326"><button class="backbtn" onClick=${() => app.nav.back()}><${Icon} n="back" /></button><div class="grow"><b>${ownerNo} · ${slot || 'Fotoğraf'}</b><div class="note mono">${heading != null ? 'Yön ' + heading.toFixed(0) + '°' : 'Pusula yok'} · ${app.gnss.state.fix}</div></div></div>
+  const fromFile = async (f) => { if (!f) return; const ob = new Uint8Array(await f.arrayBuffer()); const img = new Image(); img.src = URL.createObjectURL(f); await img.decode(); await stampAndSave(img, ob); };
+  return html`<div class="cam"><div class="row" style="padding:10px 12px;background:#0b1326"><button class="backbtn" aria-label="Geri" onClick=${() => app.nav.back()}><${Icon} n="back" /></button><div class="grow"><b>${ownerNo} · ${slot || kindLabel(kind)}</b><div class="note mono">${existing + taken.length} fotoğraf${taken.length ? ' · son: ' + taken[taken.length - 1] : ''} · ${heading != null ? 'Yön ' + heading.toFixed(0) + '°' : 'pusula yok'} · ${app.gnss.state.fix}</div></div><button class="btn pri sm" onClick=${() => app.nav.back()}>Bitti</button></div>
     ${err ? html`<div class="alert warn" style="margin:12px">${err}</div>` : null}
     <video ref=${vid} playsinline muted></video>
     <div style="padding:8px 12px;background:#0b1326"><input class="inp" placeholder="Açıklama (ör. taban, topraklama)" value=${note} onInput=${(e) => setNote(e.target.value)} /></div>
-    <div class="ctl"><label class="btn">Galeri<input type="file" accept="image/*" style="display:none" onChange=${(e) => fromFile(e.target.files[0])} /></label><button class="shutter" aria-label="Çek" disabled=${!!err} onClick=${() => stampAndSave(vid.current)}></button><span style="width:80px"></span></div></div>`;
+    <div class="ctl"><label class="btn">Galeri<input type="file" accept="image/*" multiple style="display:none" onChange=${async (e) => { for (const f of [...e.target.files]) await fromFile(f); e.target.value = ''; }} /></label><button class="shutter" aria-label="Çek" disabled=${!!err || busy} onClick=${() => stampAndSave(vid.current)}></button><span style="width:80px;text-align:center" class="mono note">${taken.length ? '+' + taken.length : ''}</span></div></div>`;
 }
 PhotoScreen.noHud = true; PhotoScreen.noTabs = true; PhotoScreen.flush = true;

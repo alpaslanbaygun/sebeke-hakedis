@@ -2,14 +2,16 @@
 // Reçete otomatik; kullanıcı yalnız miktar değiştirir (gerekçeli) ya da "sahada ilave" açar (ayrı işaretli, onaylı).
 import { html, useState, useEffect, useBus, Icon, Chip, Sel, Badge, Title, Toggle, fmt, trn, CODE_KIND } from '../kit.js';
 import { app } from '../ctx.js';
-import { STATUSES, TRAFO_STATUSES, JOB_LABEL, SOURCE_LABEL } from '../../core/schema.js';
+import { STATUSES, TRAFO_STATUSES, JOB_LABEL, SOURCE_LABEL, HAK_STATUSES, HAK_ORDER, KIND_FOLDER, hakOf } from '../../core/schema.js';
+import { sourceInfo, sourceText } from '../../core/source.js';
+import { luminairePoz } from '../../services/survey-service.js';
 import { checkPole, checkTransformer, roleLabel } from '../../grid/checks.js';
 import { jobOf } from '../../grid/recipe.js';
 import { dms } from '../../geo/geom.js';
 import { eqSummary } from './map.js';
 
-const KIND_TITLE = { pole: 'Direk Kaydı', lighting: 'Aydınlatma Direği', transformer: 'Trafo Kaydı', sdk: 'SDK / Box Kaydı', subscriber: 'Abone Kaydı', manhole: 'Menhol Kaydı', kiosk: 'Köşk Kaydı', substation: 'Dağıtım Merkezi' };
-const SLOTS = { pole: ['Taban', 'Gövde', 'Tepe', 'Çevre'], transformer: ['Plaka', 'Genel', 'Pano', 'Topraklama'], sdk: ['Ön', 'İç', 'Sigorta', 'Çevre'] };
+const KIND_TITLE = { pole: 'Direk Kaydı', lighting: 'Aydınlatma Direği', transformer: 'Trafo Kaydı', sdk: 'SDK / Box Kaydı', subscriber: 'Abone Kaydı', manhole: 'Menhol Kaydı', kiosk: 'Köşk Kaydı', substation: 'Dağıtım Merkezi', panel: 'Pano Kaydı', luminaire: 'Armatür Kaydı', other: 'Obje Kaydı' };
+const SLOTS = { panel: ['Ön', 'İç', 'Etiket', 'Çevre'], luminaire: ['Genel', 'Etiket'], pole: ['Taban', 'Gövde', 'Tepe', 'Çevre'], transformer: ['Plaka', 'Genel', 'Pano', 'Topraklama'], sdk: ['Ön', 'İç', 'Sigorta', 'Çevre'] };
 
 export function EquipmentScreen({ id }) {
   useBus(['project:computed']);
@@ -73,13 +75,18 @@ export function EquipmentScreen({ id }) {
     else ydRows.push({ code: cat.jobCode(m.servis || '', jb), name: m.name, qty: m.qty, unit: m.unit, src: m.origin === 'OTO' ? 'O' : 'M', ok: m.servis ? cat.pozAvailable(m.servis, jb) : false });
   }
   const grpRows = [...byGrp.values()].map((x) => ({ code: cat.jobCode(x.grp, x.job), name: (cat.poz(x.grp) || { name: x.grp }).name, qty: Math.round(x.kg * 100) / 100, unit: 'Kg', src: [...x.src].join('+'), ok: cat.pozAvailable(x.grp, x.job), subs: x.subs }));
-  const src = p.source === 'GNSS_RTK' ? 'GNSS RTK ' + ((p.quality || {}).fix || '') + ' · σH ' + fmt((p.quality || {}).sigmaH) + ' m' : p.source === 'PHONE' ? 'TELEFON GPS · TEST (±' + fmt((p.quality || {}).sigmaH, 1) + ' m)' : p.source;
+  const si = sourceInfo(p);
+  const src = '[' + si.tag + '] ' + sourceText(p);
+  const hk = hakOf(d);
+  const free = ['panel', 'luminaire', 'other', 'manhole'].includes(d.kind);
+  const freePoz = free ? (d.kind === 'luminaire' ? luminairePoz(cat) : d.kind === 'panel' ? (cat.t.panels || []).map((x) => ({ servis: x.servis, name: (x.kind === 'harici' ? 'Harici' : 'Dahili') + ' pano · ' + x.kva + ' kVA' })) : []) : [];
   return html`
     <${Title} title=${KIND_TITLE[d.kind] || 'Ekipman'} sub=${d.no + ' · ' + new Date(e0.createdAt).toLocaleString('tr-TR')} />
     <div class="card">
       <div class="row"><${Icon} n="lock" s=${14} c="#94a3b8" /><span class="lbl grow">Konum · ${p.pointNo || '—'}</span><button class="btn sm" onClick=${() => app.nav.go('point', { id: e0.pointId })}>Nokta kaydı</button></div>
-      <div class="grid3" style="margin:8px 0"><div><div class="lbl">Y (sağa)</div><div class="num">${fmt(p.E)}</div></div><div><div class="lbl">X (yukarı)</div><div class="num">${fmt(p.N)}</div></div><div><div class="lbl">Z (kot)</div><div class="num">${fmt(p.H)}</div></div></div>
-      <div class="kv" style="font-size:13px"><b>Konum kaynağı</b><span class=${p.source === 'GNSS_RTK' ? 'hl' : p.source === 'PHONE' ? 'hc' : 'hw'}>${src}</span>
+      <div class="grid3" style="margin:8px 0"><div><div class="lbl">Y (sağa)</div><div class="num">${fmt(p.E)}</div></div><div><div class="lbl">X (yukarı)</div><div class="num">${fmt(p.N)}</div></div><div><div class="lbl">Z (kot)</div><div class="num">${p.H != null ? fmt(p.H) : 'bilinmiyor'}</div></div></div>
+      <div class="kv" style="font-size:13px"><b>Veri kaynağı</b><span style=${'color:' + si.color}>${src}</span>
+        ${p.measuredAt || p.device ? html`<b>Ölçüm</b><span>${p.measuredAt ? new Date(p.measuredAt).toLocaleString('tr-TR') : '—'}${p.device ? ' · ' + p.device : ''}${p.operator ? ' · ' + p.operator : ''}</span>` : null}
         <b>Özet</b><span>${eqSummary(e0)}</span>
         ${isPole ? html`<b>Rol</b><span class="hw">${roleLabel(ri.role)}${ri.angle ? ' · α ' + dms(ri.angle) + ' ' + ri.side : ''}${ri.manual ? ' (elle)' : ' (otomatik)'}</span><b>Gerekçe</b><span class="note">${ri.why || '—'}</span>` : null}
         <b>Bağlı hat</b><span>${lines.map((l) => l.lineNo + ' ' + l.lineType).join(', ') || '—'}</span>
@@ -108,9 +115,15 @@ export function EquipmentScreen({ id }) {
       ${d.kind === 'sdk' ? html`<div class="grid2"><div class="fld"><label>SDK tipi</label><${Sel} value=${d.attrs.sdkTypeId} options=${cat.sdkTypes().map((s) => [s.id, s.name])} onChange=${(v) => setA({ sdkTypeId: v })} /></div><div class="fld"><label>Çıkış sayısı</label><input class="inp mono" type="number" value=${d.attrs.outputs ?? 4} onChange=${(e) => setA({ outputs: +e.target.value })} /></div></div>
         <div class="fld"><label>Sigortalar (virgülle)</label><input class="inp mono" value=${(d.attrs.fuses || []).join(', ')} placeholder="3×100 A NH, 3×63 A NH" onChange=${(e) => setA({ fuses: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} /></div>
         <div class="note">Besleyen hat: ${lines.filter((l) => l.lineType === 'AG').map((l) => l.lineNo).join(', ') || 'yok'} · Bağlı abone: ${ps.data.lines.filter((l) => l.lineType === 'ABONE' && l.nodes[0] === e0.pointId).length}</div>` : null}
+      ${free ? html`<div class="fld"><label>${d.kind === 'other' ? 'Obje adı / türü' : 'Tip açıklaması'}</label><input class="inp" value=${d.attrs.typeName || ''} onChange=${(e) => setA({ typeName: e.target.value })} /></div>
+        <div class="fld"><label>Poz (hakediş kalemi)</label>${freePoz.length ? html`<${Sel} value=${d.attrs.servis || ''} options=${[['', 'Seçilmedi'], ...freePoz.map((x) => [x.servis, x.name]), ...(d.attrs.servis && !freePoz.some((x) => x.servis === d.attrs.servis) ? [[d.attrs.servis, (cat.poz(d.attrs.servis) || {}).name || d.attrs.servis]] : [])]} onChange=${(v) => setA({ servis: v || null })} />` : html`<input class="inp mono" value=${d.attrs.servis || ''} placeholder="servis kodu (ör. 020.05.01.01-003) · boş bırakılabilir" onChange=${(e) => setA({ servis: e.target.value.trim() || null })} />`}</div>
+        ${d.kind === 'panel' ? html`<div class="fld"><label>Güç (kVA)</label><input class="inp mono" type="number" value=${d.attrs.kva ?? ''} onChange=${(e) => setA({ kva: e.target.value ? +e.target.value : null })} /></div>` : null}
+        <div class="note">Bu türün otomatik reçetesi yok: poz seçilirse 1 adet olarak metraja girer; ek malzeme aşağıdan "Sahada ilave" ile eklenir.</div>` : null}
       ${d.kind === 'subscriber' ? html`<div class="grid2"><div class="fld"><label>Faz</label><${Sel} value=${d.attrs.phase || 'uc'} options=${[['tek', 'Tek faz'], ['uc', 'Üç faz']]} onChange=${(v) => setA({ phase: v })} /></div><div class="fld"><label>Abone no</label><input class="inp mono" value=${d.attrs.aboneNo || ''} onChange=${(e) => setA({ aboneNo: e.target.value })} /></div></div>` : null}
-      <div class="row"><span class="grow">İş tamamlandı (hakedişe girer)</span><${Toggle} on=${d.progress === 'done'} onChange=${(v) => set({ progress: v ? 'done' : 'planned', workDate: v ? (d.workDate || new Date().toISOString().slice(0, 10)) : d.workDate })} label="Tamamlandı" /></div>
-      ${d.progress === 'done' ? html`<div class="fld"><label>Montaj / iş tarihi</label><input class="inp mono" type="date" value=${d.workDate || ''} onChange=${(e) => set({ workDate: e.target.value })} /></div>` : null}
+      ${hk ? html`<div class="fld"><label>Hakediş durumu · <span style=${'color:' + HAK_STATUSES[hk].color}>${HAK_STATUSES[hk].label}</span></label>
+        <div class="hakrow">${HAK_ORDER.map((k) => html`<button class=${k === hk ? 'on' : ''} style=${'--c:' + HAK_STATUSES[k].color} onClick=${() => set({ hak: k, progress: HAK_STATUSES[k].done ? 'done' : 'planned', workDate: HAK_STATUSES[k].done ? (d.workDate || new Date().toISOString().slice(0, 10)) : null })}><i></i>${HAK_STATUSES[k].short}</button>`)}</div></div>
+        <div class="note">"Tamamlandı" ve sonrası durumlar metraja ve hakediş kümülatifine girer. Dönem açılınca "Hakedişe Girdi", onaylanınca "Hakediş Onaylandı" olur.</div>` : html`<div class="note">Hakediş: — (mevcut / ileride durumundaki objenin iş kalemi yok)</div>`}
+      ${d.progress === 'done' && hk ? html`<div class="fld"><label>Montaj / iş tarihi</label><input class="inp mono" type="date" value=${d.workDate || ''} onChange=${(e) => set({ workDate: e.target.value })} /></div>` : null}
     </div>
     ${draftIssues.length && dirty ? html`<div class="stack">${draftIssues.map((i) => html`<div class=${'alert ' + (i.severity === 'error' ? 'err' : 'warn')}><b>${i.code}</b> ${i.message}</div>`)}</div>` : null}
 
@@ -132,9 +145,12 @@ export function EquipmentScreen({ id }) {
       ${ydRows.map((r) => html`<div class="li"><div class="grow"><div class="m">${r.ok ? r.code : 'sayfada yok'}</div><div style="font-size:13px;font-weight:600">${r.name}</div></div><b class="mono">${trn(r.qty, r.unit === 'Ad' ? 0 : 2)}</b><span class="note">${r.unit}</span><${Badge} k=${r.src === 'M' ? 'm' : 'ok'}>${r.src}</${Badge}></div>`)}</div>
     <div class="note"><b class="hl">O</b> tanımdan otomatik · <b class="hw">M</b> sahada elle eklendi. Ayrım kayıtta, raporda ve Yeşil Defter dışa aktarımında korunur.</div>` : null}
 
-    <div class="sect">Fotoğraflar <span class="r mono">${photos.length} / ${slots.length}</span></div>
-    <div class="grid4">${slots.map((s) => { const ph = photos.find((x) => x.slot === s); return html`<button class="photo" style=${ph ? 'border-style:solid' : ''} onClick=${() => app.nav.go('photo', { ownerId: id, pointId: e0.pointId, ownerNo: d.no, slot: s })}>${ph && thumbs[ph.id] ? html`<img src=${thumbs[ph.id]} alt=${s} />` : null}<span>${s}</span></button>`; })}</div>
-    ${photos.filter((x) => !slots.includes(x.slot)).length ? html`<div class="note">+${photos.filter((x) => !slots.includes(x.slot)).length} ek fotoğraf</div>` : null}
+    <div class="sect">Fotoğraflar <span class="r mono">${photos.length}</span></div>
+    <div class="grid4">
+      <button class="photo" style="border-color:#10b981;color:#6ffbbe;align-items:center;justify-content:center;flex-direction:column;gap:4px" onClick=${() => app.nav.go('photo', { ownerId: id, pointId: e0.pointId, ownerNo: e0.no, ownerKind: e0.kind })}><${Icon} n="camera" s=${24} /><span>Çek</span></button>
+      ${photos.map((ph) => html`<div class="photo" style="border-style:solid">${thumbs[ph.id] ? html`<img src=${thumbs[ph.id]} alt=${ph.filename || ph.slot || 'foto'} />` : null}<span style="font-size:9px">${ph.filename || ph.slot || 'foto'}</span></div>`)}
+    </div>
+    <div class="note">Öneri: ${slots.join(' · ')}. Dosya adı ${e0.no}_01.jpg, _02.jpg… · klasör ${(KIND_FOLDER[e0.kind] || 'FOTOGRAFLAR') + '/' + e0.no}</div>
 
     <div class="sect">Saha notu</div>
     <textarea class="inp" placeholder="Örn. temel kayalık zemin, erişim tarla yolundan" value=${d.note || ''} onInput=${(e) => set({ note: e.target.value })}></textarea>
