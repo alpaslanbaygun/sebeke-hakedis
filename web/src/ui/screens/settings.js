@@ -43,8 +43,8 @@ export function SettingsScreen() {
     const z0 = Math.max(12, Math.round(Math.log2(156543 / v.res)) - 1);
     try { const n = await prefetchArea(bm, { w: a.lon, s: a.lat, e: b.lon, n: b.lat }, z0, Math.min(19, z0 + 3), 1500, (d, t) => { if (d % 50 === 0) app.toast('Karo ' + d + '/' + t, 'ok', 800); }); app.toast(n + ' karo offline kaydedildi'); } catch (e) { app.toast(e.message, 'err', 6000); }
   };
-  return html`<div class="title"><div class="grow"><h1>Ayarlar</h1><div class="sub" style="font-family:Inter">Konum kaynağı, GNSS alıcı, NTRIP ve hassasiyet</div></div></div>
-    <div class="sect">Konum kaynağı</div>
+  return html`<div class="title"><div class="grow"><h1>Ayarlar</h1><div class="sub" style="font-family:Inter">${app.web ? 'Proje ayarları: kontrol eşikleri, koordinat sistemi, tanımlar' : 'Konum kaynağı, GNSS alıcı, NTRIP ve hassasiyet'}</div></div></div>
+    ${app.web ? html`<div class="alert info"><${Icon} n="info" s=${16} /><span>Web sürümü ofis içindir: ölçüm (GNSS alıcı, NTRIP, telefon GPS) telefondaki uygulamayla yapılır. Buradaki ayarlar proje verisini ilgilendirir ve buluta kaydedilir.</span></div>` : html`    <div class="sect">Konum kaynağı</div>
     <div class="card stack">
       <div class="grid2">
         <button class=${'chip' + (s.source === 'phone' ? ' on' : '')} style="min-height:62px;flex-direction:column;--c:#38bdf8" onClick=${usePhone}><b style="font-size:16px">Telefon GPS</b><small>test · ±3–10 m</small></button>
@@ -91,7 +91,7 @@ export function SettingsScreen() {
       <div class="row"><div class="grow"><b>GGA konumunu gönder</b><div class="note">Her ${nt.ggaSec || 1} s · VRS çözümü için gerekli (alıcının GGA'sı iletilir)</div></div><${Toggle} on=${nt.sendGGA} onChange=${(v) => setN({ sendGGA: v })} label="GGA gönder" /></div>
       <div class="grid2"><button class="btn" disabled=${!native} onClick=${ntripTest}>Bağlantıyı Test Et</button>${nts.state === 'connected' || nts.state === 'connecting' ? html`<button class="btn dang" onClick=${() => g.ntripDisconnect()}>NTRIP'i Kes</button>` : html`<button class="btn pri" disabled=${!native || s.source !== 'external'} onClick=${ntripConnect}>Bağlan</button>`}</div>
       ${!native ? html`<div class="note">NTRIP istemcisi APK içinde yerel TCP ile çalışır (RTCM doğrudan alıcıya iletilir). Tarayıcıda alıcının kendi NTRIP istemcisini kullanın.</div>` : s.source !== 'external' ? html`<div class="note">NTRIP için önce harici GNSS alıcısına bağlanın.</div>` : null}
-    </div>
+    </div>`}
 
     ${ps.p ? html`<div class="sect">Hassasiyet eşikleri · proje</div>
     <div class="card tight list">${[['maxSigmaH', 'Yatay σH ≤', 'm', 0.001], ['maxSigmaV', 'Düşey σV ≤', 'm', 0.001], ['maxPdop', 'PDOP ≤', '', 0.1], ['minSats', 'Uydu ≥', 'adet', 1], ['maxAge', 'RTCM yaşı ≤', 's', 0.5], ['minFixSeconds', 'Min. FIX süresi ≥', 's', 1], ['epochs', 'Ortalama epok', 'adet', 1], ['maxAxisOffset', 'Eksen ofseti ≤', 'm', 0.01], ['stakeTolerance', 'Aplikasyon toleransı ≤', 'm', 0.001]].map(([k, l, u, st]) => html`<div class="li"><b class="grow" style="font-size:14px">${l}</b><input class="inp mono" style="width:110px;text-align:right;color:#10b981" type="number" step=${st} value=${th[k]} onChange=${(e) => setTh(k, +e.target.value)} /><span class="note mono" style="width:30px">${u}</span></div>`)}
@@ -111,16 +111,16 @@ export function SettingsScreen() {
       <div class="row"><b class="grow">Koordinat ondalığı</b><span class="mono note"><${Icon} n="lock" s=${12} /> 3 basamak · mm</span></div>
     </div>` : null}
 
-    <div class="sect">Veri ve senkron</div>
-    <div class="card stack"><div class="row"><div class="grow"><b>Senkron kuyruğu</b><div class="mono" style="font-size:12px;color:${pend ? '#f59e0b' : '#10b981'}">${pend} kayıt çevrimdışı bekliyor</div></div><button class="btn sm" onClick=${() => app.nav.go('sync')}>Senkron →</button></div></div>
+    <div class="sect">${app.web ? 'Telefonla veri alışverişi' : 'Veri ve senkron'}</div>
+    <div class="card stack"><div class="row"><div class="grow"><b>${app.web ? 'Telefona gönderilmemiş değişiklik' : 'Senkron kuyruğu'}</b><div class="mono" style="font-size:12px;color:${pend ? '#f59e0b' : '#10b981'}">${pend} kayıt ${app.web ? '' : 'çevrimdışı '}bekliyor</div></div><button class="btn sm" onClick=${() => app.nav.go('sync')}>${app.web ? 'Aç →' : 'Senkron →'}</button></div></div>
 
     <div class="sect">Tanımlar ve kayıtlar</div>
     <div class="card tight list">${[['projects', 'Projeler', 'Proje merkezi, akış, yeni proje'], ['definitions', 'Tanımlar (tek veri kaynağı)', 'Reçete kuralları, parametreler, standart sürümleri'], ['poz', 'Poz kataloğu (Yeşil Defter)', 'Veritabanından · sürümlü'], ['layers', 'Katmanlar ve lejant (TEDAŞ)', 'Lejant.dxf katman/ACI eşlemesi'], ['audit', 'Denetim kaydı', 'Kim · ne · ne zaman · eski/yeni · neden'], ['user', 'Kullanıcı ve cihaz', app.ds.user.name + ' · ' + app.ds.deviceId]].map(([k, t, d]) => html`<button class="li" onClick=${() => app.nav.go(k)}><div class="grow"><div class="t">${t}</div><div class="s">${d}</div></div><${Icon} n="next" s=${16} c="#94a3b8" /></button>`)}</div>
-    <div class="sect">Offline harita</div>
+    ${app.web ? null : html`    <div class="sect">Offline harita</div>
     <div class="card stack"><div class="note">Haritada seçili altlık için ekrandaki alanı (4 yakınlaştırma seviyesi) cihaza kaydeder. Sağlayıcı kullanım koşullarına uyun.</div><button class="btn" onClick=${offline}>Görünen alanı offline indir</button></div>
     <div class="sect">Test / eğitim</div>
     <div class="card stack"><div class="note">Simülatör gerçek alıcı yokken arayüzü denemek içindir; alınan noktalar SİM olarak işaretlenir ve teslim paketinde gerçek ölçü sayılmaz.</div>
-      <div class="grid3">${['FIX', 'FLOAT', 'SINGLE'].map((p) => html`<button class="btn sm" onClick=${() => { if (g.state.source !== 'sim') { const p0 = ps.p && ps.data.points.find((x) => x.lat != null); g.startSimulator({ profile: p, base: p0 ? { lat: p0.lat, lon: p0.lon, alt: (p0.H || 1000) } : undefined }); } else g.setSimProfile(p); }}>Sim · ${p}</button>`)}</div></div>
+      <div class="grid3">${['FIX', 'FLOAT', 'SINGLE'].map((p) => html`<button class="btn sm" onClick=${() => { if (g.state.source !== 'sim') { const p0 = ps.p && ps.data.points.find((x) => x.lat != null); g.startSimulator({ profile: p, base: p0 ? { lat: p0.lat, lon: p0.lon, alt: (p0.H || 1000) } : undefined }); } else g.setSimProfile(p); }}>Sim · ${p}</button>`)}</div></div>`}
     <div class="note mono" style="margin-top:12px">VOLT-EDAŞ Saha ${ver ? ver.version || '' : ''} · ${native ? 'Android' : 'Web'} · standart ${ps.p ? ps.cat.std.name : '—'}</div>`;
 }
 

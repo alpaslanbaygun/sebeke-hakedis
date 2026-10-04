@@ -65,10 +65,12 @@ export function MapScreen() {
     eng.current = e; app.state.mapEngine = e;
     // Alt panelin kapattığı alan: konum ve sığdırma her zaman GÖRÜNEN haritanın ortasına göre yapılır
     const el = base.current;
-    const syncPad = () => { if (!el) return; const h = el.getBoundingClientRect().height; e.setPad({ bottom: h }); setPadB(Math.round(h)); };
+    const side = () => app.web && typeof matchMedia === 'function' && matchMedia('(min-width:900px)').matches;   // web geniş ekran: panel sağda yüzer, haritayı alttan kapatmaz
+    const syncPad = () => { if (!el) return; const h = side() ? 0 : el.getBoundingClientRect().height; e.setPad({ bottom: h }); setPadB(Math.round(h)); };
     syncPad();
     const ro = typeof ResizeObserver !== 'undefined' && el ? new ResizeObserver(syncPad) : null;
     if (ro) ro.observe(el);
+    if (app.web) window.addEventListener('resize', syncPad);
     const G0 = app.gnss.state;
     if (app.state.follow && G0.E != null) e.center(G0.E, G0.N, app.state.view ? app.state.view.res : 0.4);
     else if (app.state.view) e.center(app.state.view.cE, app.state.view.cN, app.state.view.res);
@@ -80,7 +82,7 @@ export function MapScreen() {
     const off2 = app.bus.on('project:computed', () => e.invalidate());
     const off3 = app.bus.on('ui:measuring', (m) => setMeasuring(m));
     const off4 = app.bus.on('ui:measureProgress', (p) => setMeasuring((m) => (m ? Object.assign({}, m, p) : m)));
-    return () => { off1(); off2(); off3(); off4(); off5(); if (ro) ro.disconnect(); e.destroy(); };
+    return () => { off1(); off2(); off3(); off4(); off5(); if (ro) ro.disconnect(); if (app.web) window.removeEventListener('resize', syncPad); e.destroy(); };
   }, []);
   // v2.2: GEÇİŞ özelliği kaldırıldı → eski projede kayıt varsa bir kez sor: detay noktasına dönüştür / arşivle
   useEffect(() => {
@@ -196,9 +198,9 @@ export function MapScreen() {
     <div class="fab" style=${'bottom:' + (padB + 10) + 'px'}>
       ${visH > 380 ? html`<button aria-label="Yakınlaş" onClick=${() => eng.current.zoom(0.6)}><${Icon} n="plus" /></button>
       <button aria-label="Uzaklaş" onClick=${() => eng.current.zoom(1.6)}><${Icon} n="minus" /></button>` : null}
-      <button class=${'loc' + (follow ? ' on' : '')} aria-label="Konumuma git" onClick=${locate}><${Icon} n="locate" s=${24} /></button>
+      ${app.web ? null : html`<button class=${'loc' + (follow ? ' on' : '')} aria-label="Konumuma git" onClick=${locate}><${Icon} n="locate" s=${24} /></button>`}
     </div>
-    <div class="maptag coord" style=${'left:12px;bottom:' + (padB + 10) + 'px'}>Y ${g.E != null ? g.E.toFixed(3) : '—'}  X ${g.N != null ? g.N.toFixed(3) : '—'}  Z ${g.H != null ? g.H.toFixed(3) : '—'}</div>
+    <div class="maptag coord" hidden=${!!app.web && g.E == null} style=${'left:12px;bottom:' + (padB + 10) + 'px'}>Y ${g.E != null ? g.E.toFixed(3) : '—'}  X ${g.N != null ? g.N.toFixed(3) : '—'}  Z ${g.H != null ? g.H.toFixed(3) : '—'}</div>
     ${active ? html`<button class="maptag" style=${'left:12px;top:124px;color:#dae2fd;border-color:' + (GCOL[active.lineType] || '#334155')} onClick=${() => setPanel('line')}>${active.lineNo} çiziliyor · ${toLine ? 'alınanlar hatta eklenir' : 'otomatik ekleme kapalı'}</button>` : null}
     ${tool === 'edit' ? html`<div class="maptag" style=${'left:12px;top:' + (active ? 156 : 124) + 'px;color:#fbbf24'}>Düğüm düzenleme: noktayı sürükleyin</div>` : null}
     ${tool === 'measure' || tool === 'area' ? html`<div class="maptag" style=${'left:12px;top:' + (active ? 156 : 124) + 'px;color:#22d3ee'}>${tool === 'area' ? 'Alan ölçümü' : 'Mesafe ölçümü'}: haritaya dokunun</div>` : null}
@@ -246,7 +248,7 @@ function LayerPop({ eng, close }) {
   const items = [['AG', 'A.G. şebeke', '#7ee08a'], ['OG', 'O.G. şebeke', '#ff6b6b'], ['AYD', 'Aydınlatma', '#7fffff'], ['ENH', 'E.N.H.', '#ff79ff'], ['ABONE', 'Abone', '#fbbf24'], ['yeralti', 'Yeraltı kablo', '#ff6b6b'], ['trafo', 'Trafo ve box', '#6b82ff'], ['mevcut', 'Mevcut elemanlar', '#00ffbf'], ['demontaj', 'Demontaj işareti', '#ffff00'], ['hak', 'Hakediş durumu (renkler)', '#fbbf24'], ['srcTags', 'Veri kaynağı etiketleri', '#10b981'], ['points', 'Ölçü noktaları', '#e2e8f0'], ['labels', 'Etiketler', '#94a3b8'], ['spanText', 'Açıklık yazıları', '#94a3b8'], ['grid', 'Koordinat ızgarası', '#94a3b8'], ['basemap', 'Altlık harita', '#94a3b8']];
   return html`<div class="card" style="position:absolute;right:68px;top:12px;z-index:6;width:230px;padding:6px;max-height:60%;overflow:auto">
     ${items.map(([k, l, c]) => html`<button class="li" style="min-height:40px;padding:6px 8px" onClick=${() => t(k)}><span style=${'width:18px;height:3px;background:' + c}></span><span class="grow" style="font-size:13px">${l}</span><${Icon} n=${L[k] ? 'check' : 'minus'} s=${16} c=${L[k] ? '#10b981' : '#475569'} /></button>`)}
-    <div class="row" style="padding:6px 8px"><span class="note grow">Altlık</span><select class="inp" style="height:34px;font-size:12px" value=${app.state.basemap || 'none'} onChange=${(e) => { app.state.basemap = e.target.value; app.ds.setting('basemap', e.target.value); eng.invalidate(); f((x) => x + 1); }}>${BASEMAPS.map((b) => html`<option value=${b.id}>${b.label}</option>`)}</select></div>
+    <div class="row" hidden=${!!app.web && !app.state.tilesOk} style="padding:6px 8px"><span class="note grow">Altlık</span><select class="inp" style="height:34px;font-size:12px" value=${app.state.basemap || 'none'} onChange=${(e) => { app.state.basemap = e.target.value; app.ds.setting('basemap', e.target.value); eng.invalidate(); f((x) => x + 1); }}>${BASEMAPS.map((b) => html`<option value=${b.id}>${b.label}</option>`)}</select></div>
     <button class="btn sm blk" onClick=${() => { close(); app.nav.go('layers'); }}>Lejant ve katman ayrıntıları</button>
   </div>`;
 }
@@ -320,8 +322,8 @@ function SelectionPanel({ sel, select, eng, openLine }) {
     <div class="grid2">
       ${e ? html`<button class=${'btn' + (act ? '' : ' pri')} onClick=${() => app.nav.go('equipment', { id: e.id })}><${Icon} n="edit" s=${18} />Kayıt</button>` : html`<button class=${'btn' + (act ? '' : ' pri')} onClick=${() => app.nav.go('point', { id: p.id })}>Nokta kaydı</button>`}
       <button class="btn" onClick=${() => app.nav.go('photo', { ownerId: e ? e.id : p.id, pointId: p.id, ownerNo: e ? e.no : p.pointNo, ownerKind: e ? e.kind : 'point' })}><${Icon} n="camera" s=${18} />Fotoğraf</button>
-      <button class="btn" onClick=${remeasure}><${Icon} n="cross" s=${18} />${si.precise ? 'Yeniden ölç' : 'GNSS ile ölç'}</button>
-      <button class="btn" onClick=${() => { app.state.target = { id: p.id }; app.nav.tab('stake'); }}><${Icon} n="target" s=${18} />Aplikasyon</button>
+      ${app.web ? html`<button class="btn" style="grid-column:1/3" onClick=${() => app.nav.go('point', { id: p.id })}><${Icon} n="cross" s=${18} />Koordinat ve ölçüm kaydı</button>` : html`<button class="btn" onClick=${remeasure}><${Icon} n="cross" s=${18} />${si.precise ? 'Yeniden ölç' : 'GNSS ile ölç'}</button>
+      <button class="btn" onClick=${() => { app.state.target = { id: p.id }; app.nav.tab('stake'); }}><${Icon} n="target" s=${18} />Aplikasyon</button>`}
       ${act ? null : html`<button class="btn" style="grid-column:1/3" onClick=${() => { app.state.lineStartPoint = p.id; select(null); openLine(); }}><${Icon} n="plus" s=${18} />Buradan hat başlat</button>`}
     </div>
   </div>`;
@@ -410,8 +412,9 @@ function SourceSheet({ mode, setMode, close }) {
   return html`<section class="sheet" aria-label="Veri kaynağı"><div class="grab" onClick=${close}><i></i></div>
     <div class="body">
       <b style="font-size:17px">Veri kaynağı</b>
-      ${opt(mode === 'gnss' && ext, '#10b981', 'GNSS (Harici / RTK)', ext ? ((g.receiver || {}).name || (g.source === 'sim' ? 'Simülatör' : 'Alıcı')) + ' · ' + (g.fix || '—') + (g.sigmaH != null ? ' · ±' + g.sigmaH.toFixed(3) + ' m' : '') : 'Bağlı değil · dokununca Ayarlar açılır', 'RTK FIX', useGnss)}
-      ${opt(mode === 'gnss' && g.source === 'phone', '#38bdf8', 'Telefon GPS', g.source === 'phone' ? 'Etkin' + (g.sigmaH != null ? ' · ±' + g.sigmaH.toFixed(1) + ' m' : '') : '±3–10 m · hassas alım için uygun değil', 'TELEFON GPS', usePhone)}
+      ${app.web ? html`<div class="alert info"><span>Web sürümünde ölçüm yapılmaz. GNSS ve telefon GPS alımı telefondaki uygulamayla yapılır; buradan koordinat girilir, haritadan seçilir ya da Excel ile aktarılır.</span></div>` : null}
+      ${app.web ? null : opt(mode === 'gnss' && ext, '#10b981', 'GNSS (Harici / RTK)', ext ? ((g.receiver || {}).name || (g.source === 'sim' ? 'Simülatör' : 'Alıcı')) + ' · ' + (g.fix || '—') + (g.sigmaH != null ? ' · ±' + g.sigmaH.toFixed(3) + ' m' : '') : 'Bağlı değil · dokununca Ayarlar açılır', 'RTK FIX', useGnss)}
+      ${app.web ? null : opt(mode === 'gnss' && g.source === 'phone', '#38bdf8', 'Telefon GPS', g.source === 'phone' ? 'Etkin' + (g.sigmaH != null ? ' · ±' + g.sigmaH.toFixed(1) + ' m' : '') : '±3–10 m · hassas alım için uygun değil', 'TELEFON GPS', usePhone)}
       ${opt(mode === 'manual', '#fbbf24', 'Manuel koordinat', 'Sağa / yukarı / Z elle girilir, koordinat sistemi seçilir', 'MANUEL', () => setMode('manual'))}
       ${opt(mode === 'map', '#c084fc', 'Haritadan seç', 'Haritayı kaydır, nişangâhı konuma getir · Z bilinmiyor', 'HARİTA', () => setMode('map'))}
       ${opt(false, '#a3e635', 'Excel (toplu)', 'Şablonu indir, doldur, önizle ve içe aktar', 'EXCEL', () => { close(); app.nav.go('excel'); })}

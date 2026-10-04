@@ -25,11 +25,18 @@ export function ExportScreen() {
       for (const k of keys) { setBusy(FORMATS[k].label + '…'); const out = await exportFormat(ps, k, { crs: crsKey === 'proje' ? null : crsAlt[crsKey] }); files.push(...out); }
     } catch (e) { app.toast('Dışa aktarım hatası: ' + e.message, 'err', 6000); setBusy(null); return; }
     const saved = [];
+    // Web: birden çok çıktı tek zip olarak indirilir (her dosyaya ayrı onay sorulmasın)
+    if (app.web && files.length > 1) {
+      setBusy('İndiriliyor…');
+      const zipName = (ps.p.code || 'proje').replace(/[^\p{L}\p{N}_-]+/gu, '_') + '_cikti_' + new Date().toISOString().slice(0, 10) + '.zip';
+      try { const r = await app.bridge.saveBundle(zipName, files); for (const f of files) saved.push({ name: f.name, size: f.data.length, uri: r && r.uri }); } catch (e) { app.toast(e.message, 'err', 5000); setBusy(null); return; }
+    } else
     for (const f of files) { setBusy('Kaydediliyor: ' + f.name); try { const r = share ? await app.bridge.shareFile(f.name, f.mime, f.data) : await app.bridge.saveFile(f.name, f.mime, f.data); saved.push({ name: f.name, size: f.data.length, uri: r && r.uri }); } catch (e) { app.toast(f.name + ': ' + e.message, 'err'); } }
+    if (!saved.length) { setBusy(null); return; }
     await ps.ds.create('exportJobs', { projectId: ps.p.id, formats: keys, crs: crsAlt[crsKey].label, files: saved, signature: ps.result.signature, stale: false, issues: errs }, { reason: 'Dışa aktarım: ' + keys.join(', '), silent: true });
     await ps.reload('exportJobs');
     setBusy(null);
-    app.toast(saved.length + ' dosya ' + (share ? 'paylaşıldı' : 'kaydedildi (İndirilenler/VOLT-EDAS)'), 'ok', 5000);
+    app.toast(saved.length + ' dosya ' + (app.web ? 'indirildi' + (saved.length > 1 ? ' (tek zip)' : '') : share ? 'paylaşıldı' : 'kaydedildi (İndirilenler/VOLT-EDAS)'), 'ok', 5000);
   };
   const toggle = (k) => { const s = Object.assign({}, sel, { [k]: !sel[k] }); setSel(s); app.state.expSel = s; };
   return html`<div class="title"><div class="grow"><h1>Dışa Aktarım</h1><div class="sub" style="font-family:Inter">CAD, CBS ve TEDAŞ teslim dosyaları</div></div></div>
@@ -44,5 +51,6 @@ export function ExportScreen() {
       ${k === 'dxf' && sel[k] ? html`<div class="row wrap" style="gap:4px;margin-top:6px">${['ELEKTRIK-DIREK-OG', 'ELEKTRIK-DIREK-AG', 'ELEKTRIK-HAT-OG', 'ELEKTRIK-TRAFO', 'ELEKTRIK-SDK'].map((x) => html`<span class="badge" style=${'background:#0e1730;border:1px solid #334155;color:' + (x.includes('OG') ? '#ff8a8a' : x.includes('AG') ? '#7ee08a' : '#8ea2ff')}>${x}</span>`)}</div>` : null}</span></button>`)}
     ${errs ? html`<div class="alert warn"><${Icon} n="warn" s=${16} /><span>${errs} kontrol hatası var · <a onClick=${() => app.nav.go('checks')}>Kontrol listesi</a></span></div>` : null}
     ${jobs.length ? html`<div class="sect">Son üretilenler</div><div class="card tight list">${jobs.map((j) => html`<div class="li"><div class="grow"><div class="s">${new Date(j.createdAt).toLocaleString('tr-TR')} · ${j.crs}</div><div class="m">${j.formats.join(', ')} · ${(j.files || []).length} dosya</div></div>${j.stale ? html`<${Badge} k="warn">ESKİDİ</${Badge}>` : html`<${Badge} k="ok">GÜNCEL</${Badge}>`}</div>`)}</div><div class="note">Veri değişince önceki çıktılar "ESKİDİ" olarak işaretlenir (DXF/rapor zinciri).</div>` : null}
-    <div class="row" style="margin-top:6px"><button class="btn pri huge grow" disabled=${!n || busy} onClick=${() => run(false)}><${Icon} n="down" s=${22} c="#0b1326" w=${2.6} />${busy || 'DIŞA AKTAR · ' + n}</button><button class="btn" style="height:64px;flex-direction:column;gap:2px;font-size:11px" disabled=${!n || busy} onClick=${() => run(true)}><${Icon} n="share" s=${20} />PAYLAŞ</button></div>`;
+    <div class="row" style="margin-top:6px"><button class="btn pri huge grow" disabled=${!n || busy} onClick=${() => run(false)}><${Icon} n="down" s=${22} c="#0b1326" w=${2.6} />${busy || 'DIŞA AKTAR · ' + n}</button>${app.web ? null : html`<button class="btn" style="height:64px;flex-direction:column;gap:2px;font-size:11px" disabled=${!n || busy} onClick=${() => run(true)}><${Icon} n="share" s=${20} />PAYLAŞ</button>`}</div>
+    ${app.web ? html`<div class="note">Dosyalar tarayıcının indirme klasörüne iner. DXF, NCN, KML, KMZ ve GeoJSON tek başına seçilirse zip içinde gelir. Rapor HTML dosyasıdır: açıp tarayıcıdan yazdırın ya da PDF olarak kaydedin.</div>` : null}`;
 }

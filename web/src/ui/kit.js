@@ -72,6 +72,7 @@ export function Stepper({ value, onChange, min = 0, step = 1 }) {
 }
 export function Badge({ k = 'mut', children }) { return html`<span class=${'badge b-' + k}>${children}</span>`; }
 export function Title({ title, sub, back = true, right }) {
+  if (app.web && (app.state.depth || 1) <= 1) back = false;   // web: menüden açılan ekranda geri düğmesi olmaz
   return html`<div class="title">${back ? html`<button class="backbtn" aria-label="Geri" onClick=${() => app.nav.back()}><${Icon} n="back" /></button>` : null}<div class="grow"><h1>${title}</h1>${sub ? html`<div class="sub">${sub}</div>` : null}</div>${right}</div>`;
 }
 export function Stat({ label, value, unit, color }) { return html`<div class="stat"><b>${label}</b><span style=${color ? 'color:' + color : ''}>${value}</span>${unit ? html`<small>${unit}</small>` : null}</div>`; }

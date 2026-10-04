@@ -228,3 +228,49 @@ table.t td.n,table.t th.n{text-align:right;font-family:var(--mono);font-weight:6
 .srctag{font:700 10px var(--mono);letter-spacing:.03em}
 .hakbar{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:1px;background:var(--line2)}
 .hakbar span{min-width:3px}
+
+/* ===== Web (ofis) sürümü — yalnız html.web altında; APK görünümünü etkilemez ===== */
+html.web{color-scheme:dark;--safe-t:0px;--safe-b:0px}
+html.web body{position:relative}
+html.web #app{position:absolute;inset:0;padding-top:0}
+html.web .screen:not(.flush){user-select:text;-webkit-user-select:text}
+html.web ::-webkit-scrollbar{width:10px;height:10px}
+html.web ::-webkit-scrollbar-thumb{border:2px solid var(--bg);border-radius:6px}
+html.web button:focus-visible,html.web a:focus-visible,html.web label.btn:focus-within{outline:2px solid var(--cy2);outline-offset:2px}
+.webbar{flex-shrink:0;display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 16px;background:var(--bg);border-bottom:1px solid var(--line);z-index:20;min-width:0}
+.wb-brand{display:flex;align-items:baseline;gap:6px;border:0;background:none;padding:0;white-space:nowrap}
+.wb-brand b{font:800 14px var(--mono);letter-spacing:.06em;color:var(--ok)}
+.wb-brand span{font:700 10px var(--mono);letter-spacing:.08em;color:var(--mut);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.wb-proj{display:flex;align-items:center;gap:8px;min-width:0;height:34px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-weight:600;font-size:13px}
+.wb-proj span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-proj small{color:var(--mut);font-size:11px;white-space:nowrap}
+.wb-cloud{display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1px solid var(--c);border-radius:6px;color:var(--c);font:800 10px var(--mono);letter-spacing:.05em;white-space:nowrap}
+.wb-cloud i{width:8px;height:8px;border-radius:4px;background:var(--c)}
+html.web .tabbar{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(74px,1fr);overflow-x:auto;scrollbar-width:none}
+html.web .tabbar::-webkit-scrollbar{display:none}
+html.web .tabbar button span{white-space:nowrap}
+@media (max-width:560px){.wb-brand span,.wb-proj small{display:none}.webbar{padding:6px 16px;gap:8px}}
+@media (min-width:900px){
+  html.web #app{display:grid;grid-template-columns:212px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  html.web .webbar{grid-column:2;grid-row:1;padding:6px 20px}
+  html.web .screen{grid-column:2;grid-row:2}
+  html.web .tabbar{grid-column:1;grid-row:1 / span 2;height:auto;display:flex;flex-direction:column;gap:2px;padding:58px 10px 12px;border-top:0;border-right:1px solid var(--line);background:var(--bg2);overflow:visible}
+  html.web .tabbar button{flex-direction:row;justify-content:flex-start;gap:12px;height:44px;padding:0 12px;border-radius:8px;font-size:14px;color:var(--lab)}
+  html.web .tabbar button:hover{background:var(--panel)}
+  html.web .tabbar button.on{background:var(--panel2);color:var(--ok2)}
+  html.web .tabbar button.on::before{top:10px;bottom:10px;left:0;right:auto;width:3px;height:auto;border-radius:0 3px 3px 0}
+  html.web .screen:not(.flush){padding:20px max(24px,calc((100% - 1040px) / 2)) 40px;display:flex;flex-direction:column;gap:10px}
+  html.web .screen:not(.flush)>*{flex-shrink:0}
+  /* Harita: alt panel yerine sağda yüzen panel */
+  html.web .base,html.web .sheet{left:auto;right:16px;bottom:16px;width:420px;max-width:calc(100% - 32px);max-height:calc(100% - 32px);border:1px solid var(--line);border-radius:14px}
+  html.web .sheet{width:460px;animation:none}
+  html.web .sheet .grab{height:14px}
+  html.web .sheet .grab i{display:none}
+  html.web .fab{right:16px}
+  html.web .fab[style*="bottom"]{right:452px}
+  html.web .fabl{left:16px}
+  html.web .modal-bg{align-items:center}
+  html.web .modal{border-radius:14px}
+  html.web .toasts{left:auto;right:20px;top:64px;width:380px}
+  html.web .cam{position:absolute}
+}

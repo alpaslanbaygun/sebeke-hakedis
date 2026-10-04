@@ -15,6 +15,17 @@ export function ProjectsScreen() {
   const load = async () => setList(await app.ps.listProjects());
   useEffect(() => { load(); listStandards(app.ds).then(setStds); }, []);
   const open = async (p) => { await app.ps.open(p.id); app.nav.tab('map'); };
+  // Web: telefondan gelen dosya (.vsync) ile proje al
+  const fromPhone = async (f) => {
+    try {
+      const cs = JSON.parse(await f.text());
+      const r = await applyChangeset(app.ds, cs, { bus: app.bus });
+      app.toast(r.applied + ' kayıt alındı' + (r.conflicts.length ? ' · ' + r.conflicts.length + ' çakışma' : ''), r.conflicts.length ? 'warn' : 'ok', 5000);
+      const all = await app.ps.listProjects();
+      const p = all.find((x) => x.id === cs.projectId);
+      if (p) await open(p); else load();
+    } catch (e) { app.toast('Dosya alınamadı: ' + e.message, 'err', 6000); }
+  };
   const create = async () => {
     if (!form.name) return app.toast('Proje adı gerekli', 'warn');
     const crs = makeCrs({ datum: form.datum, projection: 'TM3', cm: form.cm });
@@ -29,7 +40,7 @@ export function ProjectsScreen() {
         <div class="grid2"><div class="fld"><label>Proje kodu</label><input class="inp mono" value=${form.code} onInput=${(e) => set({ code: e.target.value })} /></div><div class="fld"><label>Yer</label><input class="inp" value=${form.location} onInput=${(e) => set({ location: e.target.value })} /></div></div>
         <div class="grid2"><div class="fld"><label>İdare / EDAŞ</label><input class="inp" value=${form.client} onInput=${(e) => set({ client: e.target.value })} /></div><div class="fld"><label>Yüklenici</label><input class="inp" value=${form.contractor} onInput=${(e) => set({ contractor: e.target.value })} /></div></div>
         <div class="fld"><label>Standart sürümü (değiştirilemez)</label><${Sel} value=${form.stdId} options=${stds.map((s) => [s.id, s.name])} onChange=${(v) => set({ stdId: v })} /></div>
-        <div class="grid2"><div class="fld"><label>Datum</label><${Sel} value=${form.datum} options=${[['TUREF', 'ITRF96 / TUREF'], ['ED50', 'ED50'], ['WGS84', 'WGS84']]} onChange=${(v) => set({ datum: v })} /></div><div class="fld"><label>3° dilim (DOM)</label><div class="row"><select class="inp mono" value=${form.cm} onChange=${(e) => set({ cm: +e.target.value })}>${TM_ZONES.map((z) => html`<option value=${z}>${z}°</option>`)}</select><button class="btn sm" onClick=${() => { const lon = app.gnss.state.lon; if (lon == null) return app.toast('Konum yok', 'warn'); set({ cm: zoneForLon(lon) }); }}>Oto</button></div></div></div>
+        <div class="grid2"><div class="fld"><label>Datum</label><${Sel} value=${form.datum} options=${[['TUREF', 'ITRF96 / TUREF'], ['ED50', 'ED50'], ['WGS84', 'WGS84']]} onChange=${(v) => set({ datum: v })} /></div><div class="fld"><label>3° dilim (DOM)</label><div class="row"><select class="inp mono" value=${form.cm} onChange=${(e) => set({ cm: +e.target.value })}>${TM_ZONES.map((z) => html`<option value=${z}>${z}°</option>`)}</select>${app.web ? null : html`<button class="btn sm" onClick=${() => { const lon = app.gnss.state.lon; if (lon == null) return app.toast('Konum yok', 'warn'); set({ cm: zoneForLon(lon) }); }}>Oto</button>`}</div></div></div>
         <div class="grid2"><div class="fld"><label>Yükseklik</label><${Sel} value=${form.heightSystem} options=${[['ortometrik', 'Ortometrik (H)'], ['elipsoidal', 'Elipsoidal (h)']]} onChange=${(v) => set({ heightSystem: v })} /></div><div class="fld"><label>ENH buz bölgesi</label><${Sel} value=${form.enhZone} options=${['I', 'II', 'III', 'IV']} onChange=${(v) => set({ enhZone: v })} /></div></div>
         <div class="fld"><label>Çalışma modu</label><${Seg} value=${form.mode} options=${[['asbuilt', 'Uygulama / as-built'], ['tasarim', 'Tasarım / keşif']]} onChange=${(v) => set({ mode: v })} /><span class="note">As-built: alınan yeni ekipman "iş tamamlandı" sayılır (hakedişe girer). Tasarım: planlanan olarak kalır.</span></div>
       </div>
@@ -37,7 +48,9 @@ export function ProjectsScreen() {
   }
   return html`<div class="title"><div class="grow"><h1>Projeler</h1><div class="sub" style="font-family:Inter">${app.ps.p ? 'Açık: ' + app.ps.p.name : 'Proje seçin veya oluşturun'}</div></div>${app.ps.p ? html`<button class="btn sm" onClick=${() => app.nav.go('hub')}>Proje merkezi</button>` : null}</div>
     <button class="btn pri blk" style="height:56px" onClick=${() => setForm({ name: '', code: '', location: '', client: '', contractor: '', stdId: (stds.find((s) => s.status === 'active') || stds[0] || {}).id, datum: 'TUREF', cm: 39, heightSystem: 'ortometrik', enhZone: 'II', mode: 'asbuilt' })}><${Icon} n="plus" s=${20} c="#0b1326" />Yeni proje</button>
-    ${list === null ? html`<${Empty}>Yükleniyor…</${Empty}>` : !list.length ? html`<${Empty}>Henüz proje yok. Proje oluşturup GNSS alıcısını bağlayarak sahaya çıkın.</${Empty}>` : html`<div class="card tight list">${list.map((p) => html`<button class="li" onClick=${() => open(p)}><${Icon} n="folder" c=${app.ps.p && app.ps.p.id === p.id ? '#10b981' : '#94a3b8'} /><div class="grow"><div class="t">${p.name}</div><div class="s">${p.code || ''} · ${p.crs ? p.crs.label : ''} · ${p.stdId}</div><div class="m">${new Date(p.updatedAt).toLocaleString('tr-TR')}</div></div><${Icon} n="next" s=${16} c="#94a3b8" /></button>`)}</div>`}`;
+    ${app.web ? html`<label class="btn blk" style="height:56px"><${Icon} n="sync" s=${20} />Telefondan proje al (.vsync dosyası)<input type="file" accept=".vsync,.json" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) fromPhone(f); }} /></label>
+      <div class="note">Telefonda: Ayarlar → Veri ve senkron → Senkron → "Değişiklikleri paylaş (.vsync)". Oluşan dosyayı bu bilgisayara gönderin (e-posta, Drive, kablo) ve yukarıdan seçin.</div>` : null}
+    ${list === null ? html`<${Empty}>Yükleniyor…</${Empty}>` : !list.length ? html`<${Empty}>${app.web ? 'Henüz proje yok. Telefondaki projeyi dosya ile alın ya da burada yeni proje açıp koordinatları Excel, elle giriş ya da haritadan seçerek girin.' : 'Henüz proje yok. Proje oluşturup GNSS alıcısını bağlayarak sahaya çıkın.'}</${Empty}>` : html`<div class="card tight list">${list.map((p) => html`<button class="li" onClick=${() => open(p)}><${Icon} n="folder" c=${app.ps.p && app.ps.p.id === p.id ? '#10b981' : '#94a3b8'} /><div class="grow"><div class="t">${p.name}</div><div class="s">${p.code || ''} · ${p.crs ? p.crs.label : ''} · ${p.stdId}</div><div class="m">${new Date(p.updatedAt).toLocaleString('tr-TR')}</div></div><${Icon} n="next" s=${16} c="#94a3b8" /></button>`)}</div>`}`;
 }
 ProjectsScreen.noTabs = false;
 
@@ -68,6 +81,7 @@ export function HubScreen() {
     ['Rapor', rep ? 'Güncel' : 'Üretilmedi / eskidi', !!rep, () => app.nav.tab('export')],
     ['Teslim', pkg ? 'Paket hazır · ' + new Date(pkg.createdAt).toLocaleDateString('tr-TR') : 'Teslim paketi yok', !!pkg, () => app.nav.tab('export')]
   ];
+  if (app.web) { for (const i of [10, 2, 1]) steps.splice(i, 1); steps[1][0] = 'Saha objelerini gir (telefondan al · Excel · elle · haritadan)'; }   // GNSS bağla, sahaya çık, aplikasyon: yalnız telefonda
   const firstOpen = steps.findIndex((s) => !s[2]);
   const rev = async () => { const l = await app.prompt('Revizyon', 'Revizyon adı', { value: 'Rev-' + String.fromCharCode(65 + d.revisions.length), required: true }); if (!l) return; const why = await app.prompt('Revizyon', 'Gerekçe', { required: true }); if (!why) return; await ps.createRevision(l, why); app.toast(l + ' anlık görüntüsü alındı'); };
   return html`<${Title} title=${ps.p.name} sub=${(ps.p.code || '') + ' · ' + ps.p.crs.label} right=${html`<button class="btn sm" onClick=${() => app.nav.go('projects')}>Projeler</button>`} />
@@ -116,9 +130,31 @@ export function SyncScreen() {
   const load = async () => { setPend(await pendingChanges(ds, ps.p && ps.p.id)); setCf(await listConflicts(ds)); const c = await ds.setting('syncServer'); if (c) setCfg(c); };
   useEffect(() => { load(); }, []);
   const exportFile = async () => { const cs = await exportChangeset(ds, ps.p.id); const bytes = new TextEncoder().encode(JSON.stringify(cs)); await app.bridge.shareFile((ps.p.code || 'proje') + '_' + ds.deviceId.slice(0, 6) + '_' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '') + '.vsync', 'application/json', bytes); if (await app.confirm('Senkron', 'Dosya karşı cihaza aktarıldı mı? Kuyruk "gönderildi" olarak işaretlensin mi?')) { await markSynced(ds, cs.outboxIds); load(); } };
-  const importFile = async (f) => { try { const cs = JSON.parse(await f.text()); const r = await applyChangeset(ds, cs, { bus: app.bus }); app.toast(r.applied + ' değişiklik uygulandı · ' + r.conflicts.length + ' çakışma', r.conflicts.length ? 'warn' : 'ok', 5000); if (ps.p) await ps.open(ps.p.id); load(); } catch (e) { app.toast(e.message, 'err'); } };
+  const importFile = async (f) => { try { const cs = JSON.parse(await f.text()); const r = await applyChangeset(ds, cs, { bus: app.bus }); app.toast(r.applied + ' değişiklik uygulandı · ' + r.conflicts.length + ' çakışma', r.conflicts.length ? 'warn' : 'ok', 5000); const pid = ps.p ? ps.p.id : cs.projectId; if (pid && (await ds.get('projects', pid))) await ps.open(pid); load(); } catch (e) { app.toast(e.message, 'err'); } };
   const server = async () => { if (!cfg.url) return app.toast('Sunucu adresi girin', 'warn'); setBusy(true); try { await ds.setting('syncServer', cfg); const r = await httpSync(ds, { url: cfg.url, token: cfg.token, projectId: ps.p.id }); app.toast(r.sent + ' gönderildi · ' + r.applied + ' alındı · ' + r.conflicts.length + ' çakışma'); await ps.open(ps.p.id); load(); } catch (e) { app.toast('Senkron: ' + e.message, 'err', 5000); } setBusy(false); };
   const resolve = async (c, ch) => { await resolveConflict(ds, c.id, ch); await ps.open(ps.p.id); load(); };
+  if (app.web) {
+    const st = app.cloud ? app.cloud.status : null;
+    const send = async () => {
+      const cs = await exportChangeset(ds, ps.p.id);
+      if (!cs.changes.length) return app.toast('Telefona gönderilecek yeni değişiklik yok', 'warn');
+      try { await app.bridge.saveFile((ps.p.code || 'proje').replace(/[^\p{L}\p{N}_-]+/gu, '_') + '_web_' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '') + '.vsync', 'application/json', new TextEncoder().encode(JSON.stringify(cs))); } catch (e) { return app.toast(e.message, 'err', 5000); }
+      if (await app.confirm('Telefona aktarım', 'Dosya indi. Telefonda uygulamaya aldıktan sonra "Gönderildi" deyin; böylece bir sonraki dosyada yalnız yeni değişiklikler olur.', { ok: 'Gönderildi' })) { await markSynced(ds, cs.outboxIds); load(); }
+    };
+    return html`<${Title} title="Telefonla veri alışverişi" sub=${'Bu ofis kopyası: ' + ds.deviceId} />
+      <div class=${'alert ' + (app.cloud ? 'ok' : 'warn')}><${Icon} n=${app.cloud ? 'check' : 'warn'} s=${16} /><span>${app.cloud ? 'Bu sayfadaki veriler bulutta saklanır: hangi bilgisayardan açarsanız açın aynı proje gelir' + (st && st.at ? ' · son kayıt ' + new Date(st.at).toLocaleString('tr-TR') : '') + '.' : 'Bulut kaydı kullanılamıyor: veriler yalnız bu tarayıcıda. Oturum açıp sayfayı yeniden açın.'} Telefondaki uygulama ile veri alışverişi dosya ile yapılır.</span></div>
+      <div class="card stack">
+        <div class="row"><span class="badge b-mut">1</span><b class="grow">Telefondan al</b></div>
+        <div class="note">Telefonda: Ayarlar → Veri ve senkron → Senkron → "Değişiklikleri paylaş (.vsync)". Dosyayı bu bilgisayara gönderin ve aşağıdan seçin. Sahada alınan direkler, hatlar ve ölçümler buraya eklenir. Fotoğraflar dosyaya girmez; telefonda İndirilenler/VOLT-EDAS klasöründe kalır.</div>
+        <label class="btn pri blk" style="height:52px"><${Icon} n="down" s=${18} c="#0b1326" />Telefondan gelen dosyayı seç<input type="file" accept=".vsync,.json" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) importFile(f); }} /></label>
+      </div>
+      <div class="card stack">
+        <div class="row"><span class="badge b-mut">2</span><b class="grow">Telefona gönder</b><span class="mono note" style=${'color:' + (pend.length ? '#f59e0b' : '#10b981')}>${pend.length} değişiklik bekliyor</span></div>
+        <div class="note">Burada yaptığınız düzeltmeleri (koordinat, tip, hakediş durumu, Excel ile eklenenler) telefona taşır. İnen dosyayı telefona gönderin; uygulamada Senkron → "Dosyadan al" ile seçin.</div>
+        <button class="btn blk" style="height:52px" disabled=${!ps.p || !pend.length} onClick=${send}><${Icon} n="share" s=${18} />Telefon için dosya indir</button>
+      </div>
+      ${cf.length ? html`<div class="sect">Çakışmalar</div><div class="note">Aynı kayıt hem telefonda hem burada değişmiş. Hangisinin kalacağını seçin.</div>${cf.map((c) => html`<div class="card err stack"><div><b>${c.store} · ${c.local.no || c.local.pointNo || c.local.lineNo || c.entityId}</b><div class="note">${c.from} · ${new Date(c.at).toLocaleString('tr-TR')}</div></div>${c.fields.filter((f) => !['updatedAt', 'updatedBy', 'rev'].includes(f)).map((f) => html`<div class="row" style="font-size:12px"><b style="width:90px">${f}</b><button class="btn xs grow" onClick=${() => resolve(c, { [f]: 'local' })}>Buradaki: ${sh(c.local[f])}</button><button class="btn xs grow" onClick=${() => resolve(c, { [f]: 'remote' })}>Telefondaki: ${sh(c.remote[f])}</button></div>`)}<div class="grid2"><button class="btn sm" onClick=${() => resolve(c, 'local')}>Tümü buradaki</button><button class="btn sm" onClick=${() => resolve(c, 'remote')}>Tümü telefondaki</button></div></div>`)}` : null}`;
+  }
   return html`<${Title} title="Senkron" sub=${'Cihaz ' + ds.deviceId} />
     <div class="grid2"><div class="stat"><b>Bekleyen</b><span style=${'color:' + (pend.length ? '#f59e0b' : '#10b981')}>${pend.length}</span></div><div class="stat"><b>Çakışma</b><span style=${'color:' + (cf.length ? '#ff8a8a' : '#10b981')}>${cf.length}</span></div></div>
     <div class="note">Tüm kayıtlar önce cihazda (offline) saklanır. İnternet gelince sunucuya gönderilir ya da .vsync dosyasıyla başka tablete aktarılır. Aynı kayıt iki cihazda değişirse çakışma olarak listelenir.</div>

@@ -57,7 +57,7 @@ export function ExcelScreen() {
     <div class="card stack">
       <div class="row"><span class="badge b-mut">1</span><b class="grow">Şablonu indir ve doldur</b></div>
       <div class="note">Tek dosyada ${TEMPLATES.length} sayfa: ${TEMPLATES.map((t) => t.sheet).join(' · ')}. Sütun açıklamaları "AÇIKLAMA" sayfasında.</div>
-      <div class="grid2"><button class="btn pri" disabled=${!!busy} onClick=${tpl}><${Icon} n="down" s=${18} c="#0b1326" />EXCEL ŞABLONLARINI İNDİR</button><button class="btn" disabled=${!!busy} onClick=${tplShare}><${Icon} n="share" s=${18} />Paylaş</button></div>
+      <div class=${app.web ? '' : 'grid2'}><button class="btn pri" disabled=${!!busy} onClick=${tpl}><${Icon} n="down" s=${18} c="#0b1326" />EXCEL ŞABLONLARINI İNDİR</button>${app.web ? null : html`<button class="btn" disabled=${!!busy} onClick=${tplShare}><${Icon} n="share" s=${18} />Paylaş</button>`}</div>
     </div>
     <div class="card stack">
       <div class="row"><span class="badge b-mut">2</span><b class="grow">Doldurulan dosyayı seç</b></div>

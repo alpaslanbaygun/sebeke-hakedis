@@ -4,6 +4,26 @@ import { app } from './ctx.js';
 import { SCREENS } from './screens/index.js';
 
 const TABS = [['map', 'Harita', 'map'], ['stake', 'Aplikasyon', 'target'], ['calc', 'Hesaplar', 'calc'], ['export', 'Dışa Aktar', 'share'], ['settings', 'Ayarlar', 'sliders']];
+// Web (ofis) sürümü: ölçüm yok; veri inceleme, düzeltme, toplu giriş ve çıktı
+const WEB_TABS = [['map', 'Harita', 'map'], ['objects', 'Saha objeleri', 'list'], ['excel', 'Excel aktarım', 'grid'], ['calc', 'Hesaplar', 'calc'], ['export', 'Dışa aktar', 'share'], ['hub', 'Proje', 'folder'], ['sync', 'Telefonla veri', 'sync'], ['settings', 'Ayarlar', 'sliders']];
+const NO_PROJECT_OK = new Set(['settings', 'sync']);
+
+// Web üst çubuğu: açık proje + bulut kaydı durumu
+function WebBar() {
+  useBus(['cloud:status', 'project:open', 'project:computed']);
+  const c = app.cloud, st = c ? c.status : null, p = app.ps.p;
+  const [lab, col, tip] = !c ? ['YALNIZ BU TARAYICI', '#f59e0b', 'Bulut kaydı kullanılamıyor: veriler yalnız bu tarayıcıda saklanıyor. Oturum açıp sayfayı yeniden açın.']
+    : st.state === 'saved' ? ['BULUTA KAYDEDİLDİ', '#10b981', st.at ? 'Son kayıt ' + new Date(st.at).toLocaleString('tr-TR') : 'Bulut kaydı açık']
+    : st.state === 'pending' || st.state === 'saving' ? ['KAYDEDİLİYOR…', '#38bdf8', 'Değişiklikler buluta yazılıyor']
+    : st.state === 'readonly' ? ['SALT OKUNUR', '#f59e0b', 'Bu görünümde değişiklikler buluta yazılamıyor (yalnız görüntüleme yetkisi)']
+    : ['KAYIT HATASI', '#ef4444', (st.error || 'Buluta yazılamadı') + ' · yeniden denenecek'];
+  return html`<header class="webbar">
+    <button class="wb-brand" onClick=${() => app.nav.tab(p ? 'hub' : 'projects')} aria-label="Proje merkezi"><b>VOLT-EDAŞ SAHA</b><span>WEB</span></button>
+    <button class="wb-proj" onClick=${() => app.nav.go('projects')} title="Projeler"><${Icon} n="folder" s=${16} c="#94a3b8" /><span>${p ? p.name : 'Proje açık değil'}</span>${p && p.code ? html`<small class="mono">${p.code}</small>` : null}</button>
+    <span class="grow"></span>
+    <span class="wb-cloud" style=${'--c:' + col} title=${tip} role="status"><i></i>${lab}</span>
+  </header>`;
+}
 
 export function Hud({ compact }) {
   useBus('gnss:state', 250);
@@ -66,13 +86,16 @@ export function App() {
     window.__voltBack = () => { if (app.backHook && app.backHook()) return true; let handled = false; setStack((s) => { if (s.length > 1) { handled = true; return s.slice(0, -1); } return s; }); return handled; };
   });
   const top = stack[stack.length - 1];
+  app.state.depth = stack.length;
+  const web = !!app.web;
+  const tabs = web ? WEB_TABS : TABS;
   const S = SCREENS[top.name] || SCREENS.projects;
   const flush = S.flush;
   const noHud = S.noHud;
   return html`<div id="app">
-    ${noHud ? null : html`<${Hud} compact=${S.compactHud} />`}
+    ${noHud ? null : web ? html`<${WebBar} />` : html`<${Hud} compact=${S.compactHud} />`}
     <main class=${'screen' + (flush ? ' flush' : '')} key=${top.name + stack.length}><${S} ...${top.params} /></main>
-    ${S.noTabs ? null : html`<nav class="tabbar" aria-label="Ana menü">${TABS.map(([k, l, ic]) => html`<button class=${tab === k ? 'on' : ''} aria-current=${tab === k ? 'page' : null} onClick=${() => { if (!app.ps.p && k !== 'settings') { app.toast('Önce bir proje açın', 'warn'); return; } app.nav.tab(k); }}><${Icon} n=${ic} s=${22} />${l}</button>`)}</nav>`}
+    ${S.noTabs ? null : html`<nav class="tabbar" aria-label="Ana menü">${tabs.map(([k, l, ic]) => html`<button class=${tab === k ? 'on' : ''} aria-current=${tab === k ? 'page' : null} onClick=${() => { if (!app.ps.p && !(web ? NO_PROJECT_OK.has(k) : k === 'settings')) { app.toast('Önce bir proje açın', 'warn'); return; } app.nav.tab(k); }}><${Icon} n=${ic} s=${22} /><span>${l}</span></button>`)}</nav>`}
     <${Toasts} /><${Modals} />
   </div>`;
 }
