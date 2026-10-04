@@ -419,11 +419,305 @@ test('26 · Teslim paketi: tüm dosyalar + SHA-256 manifest', async () => {
   await ps.addPhoto(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), 'image/jpeg', { ownerId: ps.data.equipment[0].id, ownerNo: ps.data.equipment[0].no, pointNo: ps.data.equipment[0].no, heading: 42, note: 'taban' });
   const [pk] = await exportFormat(ps, 'package');
   const files = await unzip(pk.data);
-  for (const n of ['proje/project.json', 'gnss/ham_nmea.nmea', 'gnss/RINEX_OKUBENI.txt', 'fotograflar/metadata.csv', 'MANIFEST.txt']) assert.ok(files[n], n);
-  assert.ok(Object.keys(files).some((n) => n.startsWith('cad/') && n.endsWith('.dxf')));
-  assert.ok(Object.keys(files).some((n) => n.startsWith('excel/')));
-  assert.ok(/[0-9a-f]{64}/.test(new TextDecoder().decode(files['MANIFEST.txt'])));
+  // v2.2: paket = proje klasörü (PROJECT_<KOD>/…)
+  const R = 'PROJECT_ELZ-2026-OG03/';
+  for (const n of ['PROJECT_INFO/project.json', 'PROJECT_INFO/MANIFEST.txt', 'SAHA_ALIMI/saha_objeleri.csv', 'HAKEDIS/hakedis_durumu.csv', 'GNSS/ham_nmea.nmea', 'GNSS/RINEX_OKUBENI.txt', 'FOTOGRAFLAR/metadata.csv', 'EXCEL_IMPORT/aktarim_gecmisi.json']) assert.ok(files[R + n], n);
+  assert.ok(Object.keys(files).some((n) => n.startsWith(R + 'EXPORT/') && n.endsWith('.dxf')));
+  assert.ok(Object.keys(files).some((n) => n.startsWith(R + 'HAKEDIS/') && n.endsWith('.xlsx')));
+  assert.ok(Object.keys(files).some((n) => n.startsWith(R + 'RAPORLAR/')) && Object.keys(files).some((n) => n.startsWith(R + 'HARITA/')));
+  assert.ok(Object.keys(files).some((n) => n.startsWith(R + 'DIREKLER/' + ps.data.equipment[0].no + '/')), 'fotoğraf obje klasöründe');
+  assert.ok(/[0-9a-f]{64}/.test(new TextDecoder().decode(files[R + 'PROJECT_INFO/MANIFEST.txt'])));
   fs.writeFileSync(OUT + 'teslim_paketi.zip', pk.data);
   const [rep] = await exportFormat(ps, 'report');
   fs.writeFileSync(OUT + 'rapor.html', rep.data);
+});
+
+// ======================= v2.2 · Teknik Spesifikasyon v2 senaryoları =======================
+import { sourceCode, sourceInfo, sourceTag } from '../src/core/source.js';
+import { resolveCoord, crsChoices, createObject } from '../src/services/survey-service.js';
+import { buildTemplates, parseTable, validateImport, applyImport, TEMPLATES } from '../src/services/excel-import.js';
+import { buildXLSX } from '../src/export/xlsx.js';
+import { buildExif, withExif, extractExif, nextPhotoName, photoPath, overlayLines } from '../src/services/photo-service.js';
+import { hakOf, HAK_STATUSES } from '../src/core/schema.js';
+import { makeCrs, project as projLL, unproject as unprojLL } from '../src/geo/crs.js';
+
+test('27 · Veri kaynağı: GNSS_RTK / GNSS_FLOAT / TELEFON_GPS / MANUEL / EXCEL / HARITADAN_SECILDI etiketleri ve dışa aktarım', async () => {
+  const { ps, gnss } = await setup(); await newProject(ps);
+  const t = ps.cat.poleTypeByName('bahh', 'GT-12 (3 AWG)').id;
+  const a = await ps.addEquipment('pole', { group: 'bahh', typeId: t }, { obs: rtkObs(519000, 4282000, 1055) });
+  const b = await ps.addEquipment('pole', { group: 'bahh', typeId: t }, { obs: rtkObs(519080, 4282010, 1056, { fix: 'FLOAT', sigmaH: 0.21, override: true, overrideReasons: ['RTK FIX yok (FLOAT)'] }) });
+  const c = await ps.addEquipment('pole', { group: 'bahh', typeId: t }, { obs: phoneObs(519160, 4282020, 1057) });
+  const d = await ps.addEquipment('pole', { group: 'bahh', typeId: t }, { coord: { E: 519240, N: 4282030, H: 1058 }, source: 'MANUAL' });
+  const e = await ps.addEquipment('pole', { group: 'bahh', typeId: t }, { coord: { E: 519320, N: 4282040, H: null }, source: 'MAP' });
+  const f = await ps.addEquipment('pole', { group: 'bahh', typeId: t }, { coord: { E: 519400, N: 4282050, H: 1060 }, source: 'EXCEL' });
+  const codes = [a, b, c, d, e, f].map((x) => sourceCode(ps.pointById(x.pointId)));
+  assert.deepEqual(codes, ['GNSS_RTK', 'GNSS_FLOAT', 'TELEFON_GPS', 'MANUEL', 'HARITADAN_SECILDI', 'EXCEL']);
+  assert.equal(sourceTag(ps.pointById(a.pointId)), '[RTK FIX]'); assert.equal(sourceTag(ps.pointById(b.pointId)), '[RTK FLOAT]');
+  assert.equal(sourceTag(ps.pointById(e.pointId)), '[HARİTA]'); assert.equal(sourceInfo(ps.pointById(a.pointId)).precise, true);
+  // Haritadan seçilen noktada Z bilinmiyor
+  assert.equal(ps.pointById(e.pointId).zUnknown, true); assert.equal(ps.pointById(e.pointId).H, null);
+  // Uyarıyla kabul edilen FLOAT: hata değil uyarı; ölçülmeden girilenler bilgi uyarısı
+  const ib = ps.result.issues.filter((i) => i.entityId === b.id && i.code === 'ÖLÇÜ KABUL EDİLMEDİ');
+  assert.equal(ib.length, 1); assert.equal(ib[0].severity, 'warn');
+  assert.ok(ps.result.issues.some((i) => i.entityId === d.id && /GNSS ile ölçülmedi/.test(i.message) && i.severity === 'warn'));
+  assert.ok(ps.result.issues.some((i) => i.entityId === e.id && /Z bilinmiyor/.test(i.message)));
+  // Her ölçümde kaydedilenler (7.6)
+  const pa = ps.pointById(a.pointId);
+  for (const k of ['measuredAt', 'device', 'deviceSerial', 'operator', 'crsLabel']) assert.ok(pa[k], k);
+  assert.equal(pa.quality.sats, 26); assert.equal(pa.operator, 'Test Operatör');
+  // Dışa aktarım modeli spesifikasyon kodlarını taşır
+  const m = buildExportModel(ps);
+  assert.deepEqual(m.equipment.map((x) => x.source), codes);
+  const [csv] = await exportFormat(ps, 'csv');
+  const txt = new TextDecoder().decode(csv.data);
+  assert.ok(txt.includes('HARITADAN_SECILDI') && txt.includes('TELEFON_GPS') && txt.includes('Operatör'));
+  const [rep] = await exportFormat(ps, 'report');
+  const html = new TextDecoder().decode(rep.data);
+  for (const s of ['[RTK FIX]', '[RTK FLOAT]', '[TELEFON GPS]', '[MANUEL]', '[EXCEL]', '[HARİTA]', 'Saha objeleri', 'Fotoğraflar', 'Hakediş durumu']) assert.ok(html.includes(s), 'raporda ' + s);
+  // GNSS servisi: uyarı onayı (override) ile FLOAT gözlem alınır
+  gnss.state.source = 'external';
+  await feedEpochs(gnss, 3, 5, [0.06, 0.1]);
+  const pr = gnss.observe({ critical: true, override: true, epochs: 3 });
+  await feedEpochs(gnss, 3, 5, [0.06, 0.1]);
+  const o = await pr;
+  assert.equal(o.override, true); assert.equal(o.fix, 'FLOAT'); assert.ok(o.overrideReasons.some((r) => /RTK FIX yok/.test(r)));
+  assert.ok(o.hdop != null && o.vdop != null && o.pdop != null, 'HDOP/VDOP/PDOP kaydedildi');
+});
+
+test('28 · Manuel koordinat ve koordinat sistemi: proje CRS, eksen düzeltme, ED50, enlem/boylam, uyumsuzluk', async () => {
+  const { ps } = await setup(); await newProject(ps);
+  const r1 = resolveCoord(ps.p, { x: '520487,364', y: '4282048,846', z: '1059.6' });
+  assert.ok(r1.ok); approx(r1.E, 520487.364, 1e-6); approx(r1.N, 4282048.846, 1e-6); approx(r1.H, 1059.6, 1e-9); assert.equal(r1.swapped, false);
+  // X/Y ters girilmiş → büyüklükten tanınır
+  const r2 = resolveCoord(ps.p, { x: 4282048.846, y: 520487.364, zUnknown: true });
+  assert.ok(r2.ok && r2.swapped); approx(r2.E, 520487.364, 1e-6); assert.equal(r2.H, null); assert.equal(r2.zUnknown, true);
+  assert.ok(r2.warn.some((w) => /yer değiştirmiş/.test(w)));
+  // ED50 TM39 girişi → proje (TUREF) koordinatına dönüşür: gidiş-dönüş tutarlı
+  const ed = makeCrs({ datum: 'ED50', projection: 'TM3', cm: 39 });
+  const g = unprojLL(520487.364, 4282048.846, ps.p.crs), q = projLL(g.lat, g.lon, ed);
+  const r3 = resolveCoord(ps.p, { x: q.E, y: q.N, z: 1000, crsKey: 'ed50' });
+  assert.ok(r3.ok); approx(r3.E, 520487.364, 0.002, 'ED50→TUREF E'); approx(r3.N, 4282048.846, 0.002, 'ED50→TUREF N');
+  assert.ok(Math.hypot(q.E - 520487.364, q.N - 4282048.846) > 20, 'ED50 ile TUREF arasında datum farkı var');
+  // Enlem / boylam (X = boylam, Y = enlem)
+  const r4 = resolveCoord(ps.p, { x: g.lon, y: g.lat, crsKey: 'geo', zUnknown: true });
+  assert.ok(r4.ok); approx(r4.E, 520487.364, 0.001); approx(r4.N, 4282048.846, 0.001);
+  // Uyumsuzluklar
+  assert.match(resolveCoord(ps.p, { x: 39.23, y: 38.67 }).error, /derece gibi/);
+  assert.match(resolveCoord(ps.p, { x: 520487, y: 9282048 }).error, /Türkiye sınırları dışında/);
+  assert.match(resolveCoord(ps.p, { x: 'abc', y: 4282048 }).error, /sayı değil/);
+  assert.match(resolveCoord(ps.p, { x: '', y: 4282048 }).error, /boş/);
+  assert.ok(crsChoices(ps.p).length >= 5 && crsChoices(ps.p)[0].key === 'proje');
+  // Manuel objeden kayıt: kaynak MANUEL, girilen sistem saklanır
+  const c = await createObject(ps, { type: 'direk', typeText: 'GT-12 (3 AWG)', groupText: 'OG', coord: r3, source: 'MANUAL' });
+  const p = ps.pointById(c.pointId);
+  assert.equal(sourceCode(p), 'MANUEL'); assert.match(p.enteredCrs, /ED50/); assert.ok(c.equipment.typeId, 'tip katalogdan eşleşti');
+});
+
+test('29 · Excel: şablonlar, 124 kayıtlık dosya, doğrulama (118 uygun / 6 hatalı), önizleme ve toplu aktarım', async () => {
+  const { ps } = await setup(); await newProject(ps);
+  // Şablon dosyası: 6 şablon + açıklama sayfası, başlıklar spesifikasyondaki gibi
+  const tpl = await buildTemplates(ps.p);
+  assert.match(tpl.name, /\.xlsx$/);
+  const tsheets = await parseTable(tpl.data);
+  assert.deepEqual(tsheets.map((s) => s.name), ['Direk', 'Trafo', 'SDK', 'Kanal', 'Armatür', 'Genel', 'AÇIKLAMA']);
+  assert.deepEqual(tsheets[0].rows[0], ['Direk No', 'Tip', 'Grup', 'X', 'Y', 'Z', 'Durum', 'Hakediş', 'Açıklama']);
+  assert.deepEqual(tsheets[3].rows[0], ['Kanal No', 'Başlangıç X', 'Başlangıç Y', 'Bitiş X', 'Bitiş Y', 'Uzunluk']);
+  assert.equal(validateImport(ps, tsheets).total, 0, 'boş şablonda kayıt yok');
+  fs.writeFileSync(OUT + 'excel_sablon.xlsx', tpl.data);
+  // Önce projede bir direk olsun (duplicate kontrolü için)
+  await ps.addEquipment('pole', { group: 'bahh', typeId: ps.cat.poleTypeByName('bahh', 'GT-12 (3 AWG)').id, no: 'D-900' }, { obs: rtkObs(518900, 4281900, 1050) });
+  // 124 kayıtlık dosya: 100 direk + 6 trafo + 6 SDK + 4 kanal + 4 armatür + 4 genel; 6'sı hatalı
+  const direk = [];
+  for (let i = 1; i <= 100; i++) direk.push(['E-' + String(i).padStart(3, '0'), i % 7 === 0 ? 'GZ-12 (3 AWG)' : 'GT-12 (3 AWG)', 'OG', 519000 + i * 40, 4282000 + i * 3, i % 10 === 0 ? null : 1050 + i * 0.1, i % 5 === 0 ? 'Mevcut' : 'Yeni', i % 4 === 0 ? 'Yapılacak' : 'Tamamlandı', i === 3 ? 'köşe başı' : '']);
+  direk[9][0] = '';                         // hata 1: eksik obje numarası
+  direk[19][3] = 'yok';                     // hata 2: geçersiz veri tipi (X)
+  direk[29][0] = 'D-900';                   // hata 3: projede var (duplicate)
+  direk[39][0] = 'E-039';                   // hata 4: dosyada duplicate
+  direk[49][4] = '';                        // hata 5: boş koordinat
+  direk[59][3] = 39.2; direk[59][4] = 38.6; // hata 6: koordinat sistemi uyumsuz (derece)
+  direk[69][3] = 4282210; direk[69][4] = 521800; // uyarı: X/Y yer değiştirmiş → düzeltilir, kayıt uygun
+  direk[79][1] = 'OLMAYAN-TIP';             // uyarı: tip katalogda yok → kayıt uygun
+  const trafo = []; for (let i = 1; i <= 6; i++) trafo.push(['ETR-' + i, [50, 100, 160, 250, 400, 250][i - 1], i === 5 ? 'Köşk' : 'Direk tipi', 519100 + i * 300, 4282100, 1055, 'Yeni', 'Başlandı', '']);
+  const sdk = []; for (let i = 1; i <= 6; i++) sdk.push(['ESDK-' + i, '', 4, 519150 + i * 250, 4282150, 1056, 'köşe']);
+  const kanal = []; for (let i = 1; i <= 4; i++) kanal.push(['K-00' + i, 519000 + i * 100, 4282300, 519000 + i * 100 + 60, 4282380, i === 1 ? 120 : 100]);
+  const arm = []; for (let i = 1; i <= 4; i++) arm.push(['EAR-' + i, i === 1 ? '150 W Sodyum' : 'LED 100 W', 519200 + i * 50, 4282400, null, '']);
+  const genel = [['Menhol', 'EMH-1', 519300, 4282500, 1050, ''], ['Pano', 'EPN-1', 519320, 4282500, 1050, ''], ['Detay', 'EDT-1', 519340, 4282500, null, 'yol kenarı'], ['Diğer', 'EX-1', 519360, 4282500, 1050, 'kamera direği']];
+  const mk = (t, rows) => ({ name: t.sheet, columns: t.columns.map((h) => ({ h })), rows });
+  const xlsx = await buildXLSX([mk(TEMPLATES[0], direk), mk(TEMPLATES[1], trafo), mk(TEMPLATES[2], sdk), mk(TEMPLATES[3], kanal), mk(TEMPLATES[4], arm), mk(TEMPLATES[5], genel)]);
+  fs.writeFileSync(OUT + 'excel_124_kayit.xlsx', xlsx);
+  const res = validateImport(ps, await parseTable(xlsx, 'saha.xlsx'));
+  assert.equal(res.total, 124); assert.equal(res.ok, 118); assert.equal(res.bad, 6);
+  const errs = res.records.filter((r) => !r.ok).map((r) => r.errors.join(' | ')).join('\n');
+  for (const re of [/Eksik obje numarası/, /Geçersiz veri tipi: X/, /Duplicate obje numarası: D-900 projede/, /Duplicate obje numarası: E-039 dosyada/, /Hatalı \/ boş koordinat/, /Koordinat sistemi uyumsuz/]) assert.match(errs, re);
+  assert.ok(res.records.find((r) => r.no === 'E-070').warnings.some((w) => /yer değiştirmiş/.test(w)));
+  assert.ok(res.records.find((r) => r.no === 'E-080').warnings.some((w) => /Tip katalogda bulunamadı/.test(w)));
+  assert.ok(res.records.find((r) => r.no === 'K-001').warnings.some((w) => /Uzunluk/.test(w)), 'kanal uzunluğu koordinatla karşılaştırıldı');
+  // Aktarım: yalnız uygun kayıtlar, kaynak EXCEL
+  const before = ps.data.equipment.length;
+  const out = await applyImport(ps, res);
+  assert.equal(out.imported, 118); assert.equal(out.skipped, 6);
+  assert.equal(ps.data.equipment.length - before, 94 + 6 + 6 + 4 + 3, 'ekipman: 94 direk + 6 trafo + 6 SDK + 4 armatür + menhol/pano/diğer');
+  assert.equal(ps.data.lines.filter((l) => l.channelOnly).length, 4);
+  const e1 = ps.data.equipment.find((e) => e.no === 'E-001');
+  assert.equal(sourceCode(ps.pointById(e1.pointId)), 'EXCEL'); assert.equal(hakOf(e1), 'TAMAMLANDI'); assert.ok(e1.typeId);
+  assert.equal(hakOf(ps.data.equipment.find((e) => e.no === 'E-004')), 'YAPILACAK');
+  assert.equal(hakOf(ps.data.equipment.find((e) => e.no === 'E-005')), null, 'mevcut direğin hakediş kalemi yok');
+  const e70 = ps.pointById(ps.data.equipment.find((e) => e.no === 'E-070').pointId);
+  approx(e70.E, 521800, 1e-6, 'eksen düzeltildi'); approx(e70.N, 4282210, 1e-6);
+  assert.equal(ps.data.equipment.find((e) => e.no === 'E-010'), undefined, 'numarası boş satır aktarılmadı');
+  assert.equal(ps.data.equipment.find((e) => e.no === 'E-020'), undefined, 'X değeri sayı olmayan satır aktarılmadı');
+  assert.equal(ps.data.equipment.find((e) => e.no === 'ETR-4').attrs.kva, 250);
+  assert.equal(ps.data.equipment.find((e) => e.no === 'ETR-2').state, 'yeni');
+  assert.equal(hakOf(ps.data.equipment.find((e) => e.no === 'ETR-2')), 'BASLANDI');
+  assert.equal(ps.data.equipment.find((e) => e.no === 'EPN-1').kind, 'panel');
+  assert.equal(ps.data.equipment.find((e) => e.no === 'EX-1').kind, 'other');
+  assert.equal(ps.data.equipment.find((e) => e.no === 'EAR-1').attrs.servis, '020.05.01.01-003', 'armatür pozu addan bulundu');
+  assert.equal(ps.pointByNo('EDT-1').cls, 'DETAY');
+  // Kanal: yalnız kanal metrajı (kablo, muf, başlık yok)
+  const k1 = ps.data.lines.find((l) => l.lineNo === 'K-001'), li = ps.result.lineInfo.get(k1.id);
+  approx(li.length2D, 100, 1e-6); assert.ok(li.items.some((x) => x.material === 'KANAL_TOPRAK')); assert.ok(!li.items.some((x) => /MUF|BASLIK/.test(x.material || '')));
+  // Aynı dosya tekrar seçilirse tüm numaralar çakışır
+  const again = validateImport(ps, await parseTable(xlsx));
+  assert.equal(again.ok, 0);
+  // CSV de okunur (noktalı virgül, ondalık virgül)
+  const csv = new TextEncoder().encode('Obje Tipi;Obje No;X;Y;Z;Açıklama\r\nDetay;C-1;519500,5;4282600,25;1051,2;"köşe; duvar"\r\n');
+  const rc = validateImport(ps, await parseTable(csv, 'genel.csv'));
+  assert.equal(rc.ok, 1); approx(rc.records[0].data.coord.E, 519500.5, 1e-9); assert.equal(rc.records[0].data.note, 'köşe; duvar');
+});
+
+test('30 · Obje bazlı hakediş durumu: 6 durum, metraja etkisi, dönem açılınca / onaylanınca otomatik ilerleme', async () => {
+  const { ps } = await setup(); await newProject(ps);
+  const { poles, line } = await buildPoleLine(ps, OG_ROUTE.slice(0, 4), { group: 'bahh', typeNames: OG_TYPES.slice(0, 4), circuits: [{ role: 'OG', key: '3xSwallow', count: 1 }] });
+  assert.deepEqual(Object.keys(HAK_STATUSES), ['YAPILACAK', 'BASLANDI', 'TAMAMLANDI', 'KONTROL', 'HAKEDISTE', 'ONAYLI']);
+  assert.equal(hakOf(ps.eqById(poles[0].id)), 'TAMAMLANDI', 'uygulama modunda alınan obje tamamlandı sayılır');
+  const grp = ps.cat.poleGroup('bahh').kgGroup;
+  const cum = () => { const t = ps.periodTable ? null : null; return ps.result.quantities.find((x) => x.job === 'montaj' && x.servis === grp).refs.filter((r) => r.done).reduce((s, r) => s + r.qty, 0); };
+  const all = cum();
+  // Yapılacak / Başlandı → hakediş kümülatifinden düşer
+  await ps.setHak('equipment', poles[3].id, 'YAPILACAK');
+  assert.equal(ps.eqById(poles[3].id).progress, 'planned'); assert.equal(ps.eqById(poles[3].id).workDate, null);
+  assert.ok(cum() < all - 1, 'yapılacak obje kümülatiften çıktı');
+  await ps.setHak('equipment', poles[2].id, 'BASLANDI');
+  await ps.setHak('equipment', poles[1].id, 'KONTROL');
+  await ps.setHak('line', line.id, 'KONTROL');
+  assert.deepEqual(ps.hakCounts(), { TAMAMLANDI: 1, KONTROL: 2, BASLANDI: 1, YAPILACAK: 1 });
+  await assert.rejects(ps.setHak('equipment', poles[0].id, 'BITTI'), /Geçersiz/);
+  // Dönem açılınca: tamamlandı + kontrol edildi → hakedişe girdi; başlandı/yapılacak yerinde kalır
+  await ps.createWorkProgram();
+  const per = await ps.createPeriod({ start: '2026-09-01', end: '2026-12-31' });
+  assert.equal(hakOf(ps.eqById(poles[0].id)), 'HAKEDISTE'); assert.equal(hakOf(ps.eqById(poles[1].id)), 'HAKEDISTE'); assert.equal(hakOf(ps.lineById(line.id)), 'HAKEDISTE');
+  assert.equal(hakOf(ps.eqById(poles[2].id)), 'BASLANDI'); assert.equal(hakOf(ps.eqById(poles[3].id)), 'YAPILACAK');
+  const t = ps.periodTable(per.id);
+  const row = t.lines.find((l) => l.servis === grp && l.job === 'montaj');
+  approx(row.current, cum(), 0.01, 'dönem miktarı = tamamlanan objeler');
+  // Onay: hakedişe giren → onaylandı
+  await ps.approvePeriod(per.id);
+  assert.equal(hakOf(ps.eqById(poles[0].id)), 'ONAYLI'); assert.equal(hakOf(ps.lineById(line.id)), 'ONAYLI');
+  assert.equal(hakOf(ps.eqById(poles[2].id)), 'BASLANDI');
+  // Sonradan tamamlanan obje bir sonraki döneme girer
+  await ps.setHak('equipment', poles[2].id, 'TAMAMLANDI');
+  const per2 = await ps.createPeriod({ start: '2027-01-01', end: '2027-03-31' });
+  const row2 = ps.periodTable(per2.id).lines.find((l) => l.servis === grp && l.job === 'montaj');
+  assert.ok(row2.current > 0 && row2.previous > 0, 'ikinci dönemde yalnız yeni tamamlanan');
+  // Mevcut objenin hakediş durumu yok
+  const mv = await ps.addEquipment('pole', { group: 'bahh', typeId: poles[0].typeId, state: 'MEVCUT' }, { obs: rtkObs(519900, 4282900, 1070) });
+  assert.equal(hakOf(mv), null); await assert.rejects(ps.setHak('equipment', mv.id, 'TAMAMLANDI'), /iş kalemi yok/);
+  // Dışa aktarım: hakediş durumu
+  const m = buildExportModel(ps);
+  assert.equal(m.equipment.find((e) => e.id === poles[0].id).hakLabel, 'Hakediş Onaylandı');
+  const gj = JSON.parse(new TextDecoder().decode((await exportFormat(ps, 'geojson'))[0].data));
+  assert.ok(gj.features.some((f) => f.properties.hakedis === 'ONAYLI'));
+});
+
+test('31 · GEÇİŞ kaldırıldı: eski kayıtlar detay noktasına dönüştürülür ya da arşivlenir; menü ve katalogda yok', async () => {
+  const { ps, ds } = await setup(); await newProject(ps);
+  await buildPoleLine(ps, OG_ROUTE.slice(0, 3), { group: 'bahh', typeNames: OG_TYPES.slice(0, 3), circuits: [{ role: 'OG', key: '3xSwallow', count: 1 }] });
+  assert.equal(ps.cat.table('crossingTypes'), undefined, 'katalogda geçiş tablosu yok');
+  assert.ok(!(SEED.legend.layers || []).some((l) => l.key === 'GECIS'));
+  // v2.1'den kalma iki geçiş kaydı (doğrudan veritabanına)
+  await ds.create('crossings', { projectId: ps.p.id, crossKind: 'karayolu', label: 'D300 Karayolu', E: 519050, N: 4282030, groundH: 1057, objectHeight: 4.5 }, { silent: true });
+  await ds.create('crossings', { projectId: ps.p.id, crossKind: 'dere', label: 'Konumsuz dere' }, { silent: true });
+  await ps.open(ps.p.id);
+  assert.equal(ps.legacyCrossings().length, 2);
+  const n0 = ps.data.points.length;
+  assert.ok(!ps.result.issues.some((i) => i.group === 'Geçiş'), 'eski kayıt hesap zincirine girmez');
+  const r = await ps.convertLegacyCrossings('detail');
+  assert.deepEqual(r, { made: 1, archived: 2 });
+  assert.equal(ps.legacyCrossings().length, 0);
+  const np = ps.data.points[ps.data.points.length - 1];
+  assert.equal(ps.data.points.length, n0 + 1); assert.equal(np.cls, 'DETAY'); assert.match(np.note, /D300 Karayolu/); approx(np.E, 519050, 1e-9);
+  assert.equal((await ds.db.getAll('crossings')).filter((c) => c.status === 'deleted').length, 2, 'kayıtlar arşivde duruyor');
+  const src = fs.readFileSync(new URL('../src/ui/screens/map.js', import.meta.url), 'utf8');
+  assert.ok(!/GEÇİŞ AL/.test(src) && !/'crossing'/.test(src), 'harita menüsünde GEÇİŞ AL yok');
+});
+
+test('32 · Fotoğraf: {ObjeNo}_{Sıra}.jpg, tür/obje klasörü, görüntü üstü satırlar, EXIF GPS, teslim paketinde klasör yapısı', async () => {
+  const { ps } = await setup(); await newProject(ps);
+  const e = await ps.addEquipment('pole', { group: 'bahh', typeId: ps.cat.poleTypeByName('bahh', 'GT-12 (3 AWG)').id, no: 'D045' }, { obs: rtkObs(519000, 4282000, 1055) });
+  const tr = await ps.addEquipment('transformer', { state: 'yeni', no: 'TR001', attrs: { post: 'direk', kva: 250, cins: 'herm', poleTypeId: ps.cat.poleTypeByName('trafo', 'G-T25').id } }, { obs: rtkObs(519050, 4282000, 1055) });
+  const p = ps.pointById(e.pointId);
+  const jpg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xff, 0xd9]);
+  for (let i = 1; i <= 3; i++) {
+    const nm = nextPhotoName(ps.data.photos, e.id, e.no);
+    assert.equal(nm.filename, 'D045_0' + i + '.jpg');
+    const bytes = withExif(jpg, buildExif({ lat: p.lat, lon: p.lon, alt: p.H, accuracy: p.quality.sigmaH, description: ps.p.name + ' - ' + e.no, date: now() }));
+    await ps.addPhoto(bytes, 'image/jpeg', { ownerId: e.id, ownerNo: e.no, ownerType: e.kind, pointId: p.id, filename: nm.filename, filepath: photoPath(e.kind, e.no, nm.filename), seq: nm.seq, lat: p.lat, lon: p.lon, elevation: p.H, accuracy: p.quality.sigmaH, fix: 'RTK FIX', operator: 'Test Operatör' });
+  }
+  const nt = nextPhotoName(ps.data.photos, tr.id, tr.no);
+  await ps.addPhoto(jpg, 'image/jpeg', { ownerId: tr.id, ownerNo: tr.no, ownerType: 'transformer', filename: nt.filename, filepath: photoPath('transformer', tr.no, nt.filename) });
+  assert.equal(photoPath('pole', 'D045', 'D045_01.jpg'), 'DIREKLER/D045/D045_01.jpg'); assert.equal(photoPath('transformer', 'TR001', 'TR001_01.jpg'), 'TRAFOLAR/TR001/TR001_01.jpg');
+  assert.equal(photoPath('sdk', 'SDK001', 'a.jpg').split('/')[0], 'SDK'); assert.equal(photoPath('panel', 'PN-1', 'a.jpg').split('/')[0], 'PANOLAR'); assert.equal(photoPath('luminaire', 'AR-1', 'a.jpg').split('/')[0], 'ARMATURLER'); assert.equal(photoPath('line', 'K001', 'a.jpg').split('/')[0], 'KANALLAR');
+  // EXIF: GPS IFD ve tarih yazıldı, JPEG bütünlüğü korunur
+  const b0 = await ps.photoBytes(ps.data.photos[0]);
+  const ex = extractExif(b0);
+  assert.ok(ex && ex[0] === 0xff && ex[1] === 0xe1); assert.equal(b0[0], 0xff); assert.equal(b0[b0.length - 1], 0xd9);
+  const exs = Buffer.from(ex).toString('latin1');
+  assert.ok(exs.includes('Exif') && exs.includes('WGS-84') && exs.includes('2026:'), 'EXIF GPS + tarih');
+  // Görüntü üstü satırlar: proje · obje no + tür · tarih saat · koordinat · doğruluk · fix
+  const ol = overlayLines({ project: ps.p, ownerNo: e.no, kind: 'pole', when: now(), point: p, gnss: {}, operator: 'Test Operatör' });
+  assert.equal(ol[0], ps.p.name); assert.match(ol[1], /D045 · Direk/); assert.match(ol[2], /2026/); assert.match(ol[3], /519000\.000.*4282000\.000.*1055\.000/); assert.match(ol[4], /±0\.009 m · RTK FIX/);
+  // Model + rapor: fotoğraf sayısı
+  const m = buildExportModel(ps);
+  assert.equal(m.equipment.find((x) => x.id === e.id).photos, 3);
+  const [pk] = await exportFormat(ps, 'package');
+  const files = await unzip(pk.data), R = 'PROJECT_ELZ-2026-OG03/';
+  for (const n of ['DIREKLER/D045/D045_01.jpg', 'DIREKLER/D045/D045_02.jpg', 'DIREKLER/D045/D045_03.jpg', 'TRAFOLAR/TR001/TR001_01.jpg']) assert.ok(files[R + n], n);
+  const meta = new TextDecoder().decode(files[R + 'FOTOGRAFLAR/metadata.csv']);
+  assert.ok(meta.includes('D045_02.jpg') && meta.includes('DIREKLER/D045/'));
+  const objs = new TextDecoder().decode(files[R + 'SAHA_ALIMI/saha_objeleri.csv']);
+  for (const k of ['object_type', 'object_number', 'coordinate_x', 'coordinate_system', 'source', 'device_id', 'accuracy', 'fix_type', 'satellite_count', 'hdop', 'vdop', 'pdop', 'operator_id', 'hakedis_status', 'progress']) assert.ok(objs.includes(k), k);
+  assert.ok(objs.includes('GNSS_RTK') && objs.includes('CHC i73'));
+});
+
+test('33 · Yeni obje türleri: pano, armatür, menhol, diğer, kanal — poz, kontrol ve klasör; Sabit Base + Rover ölçüm kaydı', async () => {
+  const { ps, gnss } = await setup(); await newProject(ps);
+  const pano = await createObject(ps, { type: 'pano', coord: { E: 519000, N: 4282000, H: 1050 }, source: 'MANUAL', attrs: { servis: ps.cat.t.panels[0].servis, kva: ps.cat.t.panels[0].kva } });
+  const arm = await createObject(ps, { type: 'armatur', typeText: '150 W Sodyum Buh. Ayd. Armatürü', obs: rtkObs(519020, 4282000, 1050) });
+  const dig = await createObject(ps, { type: 'diger', typeText: 'Kamera direği', obs: rtkObs(519040, 4282000, 1050) });
+  assert.equal(pano.equipment.kind, 'panel'); assert.match(pano.no, /^PN-/); assert.equal(arm.equipment.kind, 'luminaire'); assert.match(arm.no, /^AR-/); assert.match(dig.no, /^X-/);
+  // Poz seçili türler metraja girer; pozsuz "diğer" yalnız uyarı üretir (hata değil)
+  const mats = ps.result.matsByEq.get(arm.eqId);
+  assert.equal(mats.items.length, 1); assert.equal(mats.items[0].servis, '020.05.01.01-003');
+  assert.ok(ps.result.quantities.some((q) => q.servis === '020.05.01.01-003' && q.qty === 1));
+  assert.ok(ps.result.quantities.some((q) => q.servis === ps.cat.t.panels[0].servis));
+  const di = ps.result.issues.filter((i) => i.entityId === dig.eqId && i.code === 'MALZEME EKSİK');
+  assert.equal(di.length, 1); assert.equal(di[0].severity, 'warn');
+  assert.ok(!ps.result.issues.some((i) => i.entityId === arm.eqId && i.severity === 'error'));
+  // Sabit Base + Rover: yöntem ve base bilgisi gözleme ve noktaya yazılır
+  gnss.state.source = 'external'; gnss.state.receiver = { name: 'Meridian M20L', serial: 'M20L-7781' };
+  gnss.setMethod('BASE_ROVER', { name: 'BASE-1', link: 'UHF radyo', E: 519500, N: 4282500, H: 1062.4, device: 'M20L #2' });
+  assert.equal(gnss.methodOf(), 'BASE_ROVER'); assert.equal(gnss.snapshot().base.name, 'BASE-1');
+  await feedEpochs(gnss, 7, 4, [0.006, 0.011]);
+  const pr = gnss.observe({ critical: true, epochs: 3 });
+  await feedEpochs(gnss, 3, 4, [0.006, 0.011]);
+  const o = await pr;
+  assert.equal(o.method, 'BASE_ROVER'); assert.equal(o.base.name, 'BASE-1'); assert.match(o.correctionSource, /Sabit base · UHF radyo · BASE-1/); assert.equal(o.rover.name, 'Meridian M20L');
+  const sd = await createObject(ps, { type: 'sdk', obs: o });
+  const sp = ps.pointById(sd.pointId);
+  assert.equal(sp.method, 'BASE_ROVER'); assert.equal(sp.device, 'Meridian M20L'); assert.match(sp.correction, /BASE-1/);
+  const saved = ps.data.gnssObservations.find((x) => x.id === sp.observationId);
+  assert.equal(saved.base.E, 519500); assert.equal(saved.operator, 'Test Operatör');
+  const html = new TextDecoder().decode((await exportFormat(ps, 'report'))[0].data);
+  assert.ok(html.includes('BASE_ROVER') && html.includes('BASE-1') && html.includes('Meridian M20L'));
+  gnss.setMethod(null); assert.equal(gnss.methodOf(), 'HARICI_GNSS');
 });

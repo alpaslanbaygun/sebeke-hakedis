@@ -85,7 +85,9 @@ export class ProjectService {
   nextLineNo() { return nextNo('H', this.data.lines.map((l) => l.lineNo), 2); }
 
   async saveObservation(obs, extra = {}) {
-    return this.ds.create('gnssObservations', Object.assign({ projectId: this.p.id }, obs, extra), { reason: 'GNSS ölçümü', silent: true });
+    const o = await this.ds.create('gnssObservations', Object.assign({ projectId: this.p.id }, obs, extra), { reason: 'GNSS ölçümü', silent: true });
+    if (this.data.gnssObservations) this.data.gnssObservations.push(o);
+    return o;
   }
   pointFromObs(obs) {
     const src = obs.source === 'phone' ? 'PHONE' : obs.source === 'sim' ? 'SIM' : 'GNSS_RTK';

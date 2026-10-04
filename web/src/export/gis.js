@@ -62,7 +62,7 @@ export function buildNCN(model) {
 }
 // Genel CSV (Excel TR ayırıcı ;)
 export function buildPointsCSV(model) {
-  const h = ['No', 'Sınıf', 'Kaynak', 'FIX', 'σH', 'σV', 'Y (Sağa)', 'X (Yukarı)', 'Z', 'Enlem', 'Boylam', 'Değişiklik'];
-  const rows = model.points.map((p) => [p.no, p.cls, p.source, p.fix || '', p.sigmaH ?? '', p.sigmaV ?? '', p.E?.toFixed(3), p.N?.toFixed(3), p.H?.toFixed(3) ?? '', p.lat?.toFixed(9), p.lon?.toFixed(9), p.updatedAt]);
+  const h = ['No', 'Sınıf', 'Kaynak', 'FIX', 'σH', 'σV', 'Y (Sağa)', 'X (Yukarı)', 'Z', 'Enlem', 'Boylam', 'Uydu', 'PDOP', 'HDOP', 'VDOP', 'Cihaz', 'Seri no', 'Yöntem', 'Düzeltme', 'Operatör', 'Ölçüm zamanı', 'Koordinat sistemi', 'Değişiklik'];
+  const rows = model.points.map((p) => [p.no, p.cls, p.source, p.fix || '', p.sigmaH ?? '', p.sigmaV ?? '', p.E?.toFixed(3), p.N?.toFixed(3), p.H?.toFixed(3) ?? '', p.lat?.toFixed(9), p.lon?.toFixed(9), p.sats ?? '', p.pdop ?? '', p.hdop ?? '', p.vdop ?? '', p.device || '', p.deviceSerial || '', p.method || '', p.correction || '', p.operator || '', p.measuredAt || '', p.crsLabel || '', p.updatedAt]);
   return '﻿' + [h, ...rows].map((r) => r.map((x) => '"' + String(x ?? '').replace(/"/g, '""') + '"').join(';')).join('\r\n');
 }

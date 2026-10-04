@@ -8,6 +8,8 @@ import { buildReportHTML } from './report.js';
 import { zip, enc, sha256Hex } from './zip.js';
 import { greenBookPage } from '../qty/metraj.js';
 import { JOB_LABEL, SOURCE_LABEL } from '../core/schema.js';
+import { photoPath, safeName, projectFolder } from '../services/photo-service.js';
+import { HAK_STATUSES, HAK_ORDER } from '../core/schema.js';
 
 export const FORMATS = {
   dxf: { label: 'AutoCAD DXF', ext: '.dxf', desc: 'Lejant katmanları, bloklar, ACI renkleri, çizgi tipleri, yazılar · 1/1000' },
@@ -17,8 +19,25 @@ export const FORMATS = {
   geojson: { label: 'GeoJSON', ext: '.geojson', desc: 'RFC 7946 (WGS84) + proje CRS sürümü' },
   xlsx: { label: 'Excel (Metraj · Yeşil Defter · Hakediş)', ext: '.xlsx', desc: 'Montaj / Demontaj / DMM sayfaları, poz, malzeme, hakediş' },
   report: { label: 'Teknik rapor', ext: '.html', desc: 'Yazdır → PDF' },
-  package: { label: 'TEDAŞ/EDAŞ teslim paketi', ext: '.zip', desc: 'project.json · ham GNSS · fotoğraflar · DXF · GIS · Excel · rapor · SHA-256' }
+  package: { label: 'TEDAŞ/EDAŞ teslim paketi', ext: '.zip', desc: 'Proje klasörü: PROJECT_INFO · SAHA_ALIMI · HAKEDIS · GNSS · fotoğraflar (tür/obje) · HARITA · EXPORT · RAPORLAR · SHA-256' }
 };
+
+// Obje satırları (ekipman + hat + ekipmansız nokta): rapor, Excel ve CSV aynı listeyi kullanır
+export function objectRows(model) {
+  const pid = model.project.id, cs = model.crs.label + (model.crs.epsg ? ' (EPSG:' + model.crs.epsg + ')' : '');
+  const r3 = (v) => (v == null ? null : Math.round(v * 1000) / 1000);
+  const rows = [];
+  for (const e of model.equipment) rows.push([e.id, pid, e.kindLabel || e.kind, e.no, r3(e.E), r3(e.N), r3(e.H), cs, e.measuredAt || '', e.source || '', e.device ? e.device + (e.deviceSerial ? ' #' + e.deviceSerial : '') : '', e.sigmaH ?? null, e.fix || '', e.sats ?? null, e.hdop ?? null, e.vdop ?? null, e.pdop ?? null, e.operator || '', e.note || '', e.hak || '', e.progress || '', e.photos || 0]);
+  for (const l of model.lines) { const a = l.coords[0] || {}; rows.push([l.id, pid, l.channelOnly ? 'Kanal / Kazı' : l.install === 'yeralti' ? 'Kablo' : 'Hat', l.no, r3(a.E), r3(a.N), r3(a.H), cs, l.workDate || '', '', '', null, '', null, null, null, null, '', (l.label || '') + ' · ' + (Math.round(l.length3D * 100) / 100) + ' m' + (l.note ? ' · ' + l.note : ''), l.hak || '', l.hak && l.hak !== 'YAPILACAK' && l.hak !== 'BASLANDI' ? 'done' : 'planned', l.photos || 0]); }
+  const eqPts = new Set(model.equipment.map((e) => e.pointId));
+  for (const p of model.points) if (!eqPts.has(p.id)) rows.push([p.id, pid, p.cls === 'HAT' ? 'Hat köşe noktası' : p.cls === 'TASARIM' ? 'Tasarım noktası' : 'Detay noktası', p.no, r3(p.E), r3(p.N), r3(p.H), cs, p.measuredAt || '', p.source || '', p.device ? p.device + (p.deviceSerial ? ' #' + p.deviceSerial : '') : '', p.sigmaH ?? null, p.fix || '', p.sats ?? null, p.hdop ?? null, p.vdop ?? null, p.pdop ?? null, p.operator || '', p.note || '', '', '', p.photos || 0]);
+  return rows;
+}
+// Fotoğrafın proje içi yolu: yeni kayıtlarda saklı; eski kayıtlarda türetilir
+export function photoFile(ph) {
+  const filename = ph.filename || safeName(ph.ownerNo || 'FOTO') + '_' + String(ph.id || '').slice(-6) + '.jpg';
+  return { filename, filepath: ph.filepath || (ph.ownerNo ? photoPath(ph.ownerType || 'pole', ph.ownerNo, filename) : 'FOTOGRAFLAR/' + filename) };
+}
 
 export function workbookSheets(model, ps) {
   const n3 = (v) => (v == null ? null : Math.round(v * 1000) / 1000);
@@ -38,7 +57,10 @@ export function workbookSheets(model, ps) {
     for (const e of ps.data.equipment) { const m = ps.result.matsByEq.get(e.id); if (!m) continue; for (const it of m.items) mrows.push([e.no, JOB_LABEL[it.jobOverride || m.job] || '—', it.servis || '', it.name, n3(it.qty), it.unit, it.origin === 'OTO' ? (it.overridden ? 'O (miktar düzeltildi)' : 'O') : 'M · ' + (it.approved ? 'onaylı' : 'onay bekliyor'), it.why]); }
     sheets.push({ name: 'Malzeme', title: 'Ekipman malzeme reçeteleri', columns: [{ h: 'Ekipman', w: 10 }, { h: 'İş', w: 10 }, { h: 'Servis', w: 18 }, { h: 'Malzeme', w: 54 }, { h: 'Miktar', w: 10, fmt: '0.000' }, { h: 'Birim', w: 7 }, { h: 'Köken', w: 22 }, { h: 'Gerekçe', w: 36 }], rows: mrows });
   }
-  sheets.push({ name: 'Noktalar', title: 'GNSS / ölçü noktaları · ' + model.crs.label, columns: [{ h: 'No', w: 10 }, { h: 'Sınıf', w: 10 }, { h: 'Kaynak', w: 10 }, { h: 'FIX', w: 8 }, { h: 'σH', w: 8, fmt: '0.000' }, { h: 'σV', w: 8, fmt: '0.000' }, { h: 'Y (Sağa)', w: 14, fmt: '0.000' }, { h: 'X (Yukarı)', w: 14, fmt: '0.000' }, { h: 'Z', w: 10, fmt: '0.000' }, { h: 'Enlem', w: 14 }, { h: 'Boylam', w: 14 }], rows: model.points.map((p) => [p.no, p.cls, p.source, p.fix || '', p.sigmaH, p.sigmaV, p.E, p.N, p.H, p.lat != null ? +p.lat.toFixed(9) : null, p.lon != null ? +p.lon.toFixed(9) : null]) });
+  // Saha objeleri: spesifikasyon veritabanı alanlarıyla (coordinate_x = sağa / Easting, coordinate_y = yukarı / Northing)
+  sheets.push({ name: 'Saha Objeleri', title: 'Saha objeleri · ' + model.crs.label + ' · X = sağa (Easting), Y = yukarı (Northing)', columns: ['id', 'project_id', 'object_type', 'object_number', 'coordinate_x', 'coordinate_y', 'coordinate_z', 'coordinate_system', 'timestamp', 'source', 'device_id', 'accuracy', 'fix_type', 'satellite_count', 'hdop', 'vdop', 'pdop', 'operator_id', 'notes', 'hakedis_status', 'progress', 'photos'].map((h) => ({ h, w: /coordinate_[xy]/.test(h) ? 14 : /notes|coordinate_system|timestamp/.test(h) ? 24 : 13, fmt: /coordinate_|accuracy/.test(h) && h !== 'coordinate_system' ? '0.000' : null })), rows: objectRows(model) });
+  sheets.push({ name: 'Fotoğraflar', title: 'Fotoğraflar · ' + (model.photos || []).length + ' adet', columns: ['photo_id', 'project_id', 'object_id', 'object_type', 'filename', 'filepath', 'timestamp', 'latitude', 'longitude', 'elevation', 'accuracy', 'device_id', 'operator_id'].map((h) => ({ h, w: /filepath/.test(h) ? 40 : /filename|timestamp/.test(h) ? 22 : 13 })), rows: (model.photos || []).map((ph) => { const f = photoFile(ph); return [ph.id, ph.projectId, ph.ownerId || '', ph.ownerType || '', f.filename, f.filepath, ph.timestamp || '', ph.lat ?? null, ph.lon ?? null, ph.elevation ?? null, ph.accuracy ?? null, ph.device || '', ph.operator || ph.user || '']; }) });
+  sheets.push({ name: 'Noktalar', title: 'GNSS / ölçü noktaları · ' + model.crs.label, columns: [{ h: 'No', w: 10 }, { h: 'Sınıf', w: 10 }, { h: 'Kaynak', w: 20 }, { h: 'FIX', w: 8 }, { h: 'σH', w: 8, fmt: '0.000' }, { h: 'σV', w: 8, fmt: '0.000' }, { h: 'Y (Sağa)', w: 14, fmt: '0.000' }, { h: 'X (Yukarı)', w: 14, fmt: '0.000' }, { h: 'Z', w: 10, fmt: '0.000' }, { h: 'Enlem', w: 14 }, { h: 'Boylam', w: 14 }], rows: model.points.map((p) => [p.no, p.cls, p.source, p.fix || '', p.sigmaH, p.sigmaV, p.E, p.N, p.H, p.lat != null ? +p.lat.toFixed(9) : null, p.lon != null ? +p.lon.toFixed(9) : null]) });
   sheets.push({ name: 'Açıklıklar', title: 'Açıklıklar', columns: [{ h: 'Hat', w: 8 }, { h: 'Başlangıç', w: 10 }, { h: 'Bitiş', w: 10 }, { h: '2B (m)', w: 10, fmt: '0.000' }, { h: '3B (m)', w: 10, fmt: '0.000' }, { h: 'ΔH (m)', w: 10, fmt: '0.000' }, { h: 'Semt (°)', w: 10, fmt: '0.000' }, { h: 'Kaynak', w: 8 }], rows: model.spans.map((s) => [s.lineNo, s.fromNo, s.toNo, s.length2D, s.length3D, s.dH, s.bearing, s.source]) });
   sheets.push({ name: 'Kontrol', title: 'Otomatik uygunluk kontrolü', columns: [{ h: 'Kod', w: 22 }, { h: 'Önem', w: 8 }, { h: 'Kayıt', w: 14 }, { h: 'Açıklama', w: 90 }], rows: model.issues.map((i) => [i.code, i.severity === 'error' ? 'HATA' : 'UYARI', i.entityNo, i.message]) });
   return sheets;
@@ -66,44 +88,64 @@ export async function exportFormat(ps, fmt, opts = {}) {
   }
 }
 
+// Teslim paketi = proje klasörü (spesifikasyon 10): PROJECT_INFO · HARITA · SAHA_ALIMI · HAKEDIS · GNSS · <TÜR>/<ObjeNo>/ fotoğraflar · FOTOGRAFLAR · EXCEL_IMPORT · RAPORLAR · EXPORT
 async function deliveryPackage(ps, model, base, opts) {
   const files = [];
   const add = (name, data) => files.push({ name, data: typeof data === 'string' ? enc(data) : data });
-  // Proje JSON (tam veri + standart kimliği)
-  const full = { format: 'volt-project/1', exportedAt: new Date().toISOString(), standard: ps.cat.std, project: ps.p, data: {} };
-  for (const s of ['points', 'equipment', 'lines', 'materials', 'photos', 'periods', 'workPrograms', 'stakeouts', 'revisions', 'surveySessions', 'gnssObservations']) full.data[s] = ps.data[s];
+  const csv = (rows) => '﻿' + rows.map((r) => r.map((x) => '"' + String(x ?? '').replace(/"/g, '""') + '"').join(';')).join('\r\n');
+  // PROJECT_INFO: proje JSON (tam veri + standart kimliği) + denetim kaydı
+  const full = { format: 'volt-project/2', exportedAt: new Date().toISOString(), standard: ps.cat.std, project: ps.p, data: {} };
+  for (const s of ['points', 'equipment', 'lines', 'materials', 'photos', 'periods', 'workPrograms', 'stakeouts', 'revisions', 'surveySessions', 'gnssObservations', 'documents']) full.data[s] = ps.data[s] || [];
   full.derived = { spans: ps.result.spans, quantities: ps.result.quantities, issues: ps.result.issues, signature: ps.result.signature };
-  add('proje/project.json', JSON.stringify(full, null, 1));
-  add('proje/denetim_kaydi.json', JSON.stringify(await ps.ds.auditLog(ps.p.id, 100000), null, 1));
-  // Ham GNSS
+  add('PROJECT_INFO/project.json', JSON.stringify(full, null, 1));
+  add('PROJECT_INFO/denetim_kaydi.json', JSON.stringify(await ps.ds.auditLog(ps.p.id, 100000), null, 1));
+  // SAHA_ALIMI: obje listesi (kaynak, doğruluk, cihaz, hakediş, fotoğraf sayısı)
+  const objHead = ['id', 'project_id', 'object_type', 'object_number', 'coordinate_x', 'coordinate_y', 'coordinate_z', 'coordinate_system', 'timestamp', 'source', 'device_id', 'accuracy', 'fix_type', 'satellite_count', 'hdop', 'vdop', 'pdop', 'operator_id', 'notes', 'hakedis_status', 'progress', 'photos'];
+  add('SAHA_ALIMI/saha_objeleri.csv', csv([objHead, ...objectRows(model)]));
+  // HAKEDIS: obje bazlı durum + metraj/hakediş Excel
+  const hk = [['Obje No', 'Tür', 'Hakediş durumu', 'İş tarihi', 'Fotoğraf']];
+  for (const e of model.equipment) if (e.hak) hk.push([e.no, e.kindLabel, HAK_STATUSES[e.hak].label, e.workDate || '', e.photos || 0]);
+  for (const l of model.lines) if (l.hak) hk.push([l.no, 'Hat', HAK_STATUSES[l.hak].label, l.workDate || '', l.photos || 0]);
+  add('HAKEDIS/hakedis_durumu.csv', csv(hk));
+  add('HAKEDIS/' + base + '_metraj_hakedis.xlsx', await buildXLSX(workbookSheets(model, ps), { title: ps.p.name }));
+  // GNSS: ham akış + gözlemler + nokta listesi
   const raws = (await ps.ds.db.query('rawLogs', 'projectId', ps.p.id)).sort((a, b) => (a.t0 || 0) - (b.t0 || 0));
-  add('gnss/ham_nmea.nmea', raws.map((r) => r.text).join(''));
-  add('gnss/gozlemler.json', JSON.stringify(ps.data.gnssObservations, null, 1));
-  add('gnss/noktalar.csv', buildPointsCSV(model));
-  add('gnss/RINEX_OKUBENI.txt', 'RINEX gözlem dosyası ham faz/kod gözlemleri gerektirir; NMEA akışından RINEX üretilemez.\r\nAlıcının dahili kaydını (ör. .DAT/.GNS/.SBF/.UBX) alıcı yazılımıyla RINEX 3.x\'e dönüştürüp bu klasöre ekleyin.\r\nBu pakette: ham NMEA akışı (ham_nmea.nmea), epok ortalamalı gözlemler (gozlemler.json) ve nokta listesi.\r\n');
-  // Fotoğraflar
-  const meta = [['Dosya', 'Zaman', 'Kullanıcı', 'Nokta', 'Ekipman', 'Enlem', 'Boylam', 'Y', 'X', 'Yön (°)', 'Açıklama']];
-  for (const ph of ps.data.photos) {
+  add('GNSS/ham_nmea.nmea', raws.map((r) => r.text).join(''));
+  add('GNSS/gozlemler.json', JSON.stringify(ps.data.gnssObservations, null, 1));
+  add('GNSS/noktalar.csv', buildPointsCSV(model));
+  add('GNSS/RINEX_OKUBENI.txt', 'RINEX gözlem dosyası ham faz/kod gözlemleri gerektirir; NMEA akışından RINEX üretilemez.\r\nAlıcının dahili kaydını (ör. .DAT/.GNS/.SBF/.UBX) alıcı yazılımıyla RINEX 3.x\'e dönüştürüp bu klasöre ekleyin.\r\nBu pakette: ham NMEA akışı (ham_nmea.nmea), epok ortalamalı gözlemler (gozlemler.json) ve nokta listesi.\r\n');
+  // Fotoğraflar: DIREKLER/D-001/D-001_01.jpg … + FOTOGRAFLAR/metadata.csv
+  const meta = [['Dosya', 'Klasör yolu', 'Obje', 'Tür', 'Zaman', 'Operatör', 'Enlem', 'Boylam', 'Yükseklik', 'Y (sağa)', 'X (yukarı)', 'Doğruluk (m)', 'Fix', 'Cihaz', 'Yön (°)', 'Açıklama']];
+  const usedPaths = new Set();
+  for (const ph of model.photos || []) {
     const bytes = await ps.photoBytes(ph);
     if (!bytes) continue;
-    const fn = 'fotograflar/' + (ph.ownerNo || 'foto') + '_' + ph.id.slice(-6) + '.jpg';
-    add(fn, bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
-    meta.push([fn, ph.timestamp, ph.user, ph.pointNo || '', ph.ownerNo || '', ph.lat ?? '', ph.lon ?? '', ph.E ?? '', ph.N ?? '', ph.heading ?? '', ph.note || '']);
+    const f = photoFile(ph);
+    let path = f.filepath; let k = 1;
+    while (usedPaths.has(path)) path = f.filepath.replace(/\.jpg$/i, '_' + ++k + '.jpg');
+    usedPaths.add(path);
+    add(path, bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
+    meta.push([f.filename, path, ph.ownerNo || '', ph.ownerType || '', ph.timestamp, ph.operator || ph.user || '', ph.lat ?? '', ph.lon ?? '', ph.elevation ?? '', ph.E ?? '', ph.N ?? '', ph.accuracy ?? '', ph.fix || ph.gnssFix || '', ph.device || '', ph.heading ?? '', ph.note || '']);
   }
-  add('fotograflar/metadata.csv', '﻿' + meta.map((r) => r.map((x) => '"' + String(x).replace(/"/g, '""') + '"').join(';')).join('\r\n'));
-  // CAD / GIS / Excel / rapor
-  add('cad/' + base + '.dxf', dxfBytes(buildDXF(model).text));
-  add('cad/' + base + '.ncn', buildNCN(model));
-  for (const L of shapefileLayers(model)) { const s = writeShapefile(L.kind, L.feats, L.fields, model.crs); for (const ext of ['shp', 'shx', 'dbf', 'prj', 'cpg']) add('gis/shp/' + L.name + '.' + ext, s[ext]); }
-  add('gis/' + base + '_wgs84.geojson', buildGeoJSON(model));
-  add('gis/' + base + '_proje.geojson', buildGeoJSON(model, { projected: true }));
-  add('gis/' + base + '.kmz', await buildKMZ(model));
-  add('excel/' + base + '_metraj_hakedis.xlsx', await buildXLSX(workbookSheets(model, ps), { title: ps.p.name }));
+  add('FOTOGRAFLAR/metadata.csv', csv(meta));
+  // EXCEL_IMPORT: toplu aktarım geçmişi
+  add('EXCEL_IMPORT/aktarim_gecmisi.json', JSON.stringify((ps.data.documents || []).filter((d) => d.kind === 'EXCEL_IMPORT'), null, 1));
+  // HARITA: GIS çıktıları
+  add('HARITA/' + base + '_wgs84.geojson', buildGeoJSON(model));
+  add('HARITA/' + base + '_proje.geojson', buildGeoJSON(model, { projected: true }));
+  add('HARITA/' + base + '.kmz', await buildKMZ(model));
+  // EXPORT: CAD + SHP
+  add('EXPORT/' + base + '.dxf', dxfBytes(buildDXF(model).text));
+  add('EXPORT/' + base + '.ncn', buildNCN(model));
+  for (const L of shapefileLayers(model)) { const s = writeShapefile(L.kind, L.feats, L.fields, model.crs); for (const ext of ['shp', 'shx', 'dbf', 'prj', 'cpg']) add('EXPORT/shp/' + L.name + '.' + ext, s[ext]); }
+  // RAPORLAR
   const t = ps.data.periods.length ? ps.periodTable() : null;
-  add('rapor/' + base + '_rapor.html', buildReportHTML(model, { period: t }));
+  add('RAPORLAR/' + base + '_rapor.html', buildReportHTML(model, { period: t }));
   // Manifest (SHA-256)
-  const lines = ['VOLT-EDAŞ Saha · TEDAŞ/EDAŞ teslim paketi', 'Proje: ' + ps.p.name + ' (' + (ps.p.code || '-') + ')', 'Standart: ' + ps.cat.std.name, 'CRS: ' + model.crs.label + (model.crs.epsg ? ' · EPSG:' + model.crs.epsg : ''), 'Üretim: ' + new Date().toISOString(), 'Veri imzası: ' + ps.result.signature, 'Kontrol: ' + ps.result.issues.filter((i) => i.severity === 'error').length + ' hata, ' + ps.result.issues.filter((i) => i.severity === 'warn').length + ' uyarı', '', 'SHA-256  boyut  dosya'];
+  const lines = ['VOLT-EDAŞ Saha · proje teslim paketi', 'Proje: ' + ps.p.name + ' (' + (ps.p.code || '-') + ')', 'Standart: ' + ps.cat.std.name, 'CRS: ' + model.crs.label + (model.crs.epsg ? ' · EPSG:' + model.crs.epsg : ''), 'Üretim: ' + new Date().toISOString(), 'Veri imzası: ' + ps.result.signature, 'Kontrol: ' + ps.result.issues.filter((i) => i.severity === 'error').length + ' hata, ' + ps.result.issues.filter((i) => i.severity === 'warn').length + ' uyarı', '', 'SHA-256  boyut  dosya'];
   for (const f of files) lines.push(((await sha256Hex(f.data)) || '-') + '  ' + f.data.length + '  ' + f.name);
-  add('MANIFEST.txt', lines.join('\r\n') + '\r\n');
+  add('PROJECT_INFO/MANIFEST.txt', lines.join('\r\n') + '\r\n');
+  const root = 'PROJECT_' + projectFolder(ps.p) + '/';
+  for (const f of files) f.name = root + f.name;
   return { name: base + '_teslim_paketi.zip', mime: 'application/zip', data: await zip(files), files: files.map((f) => f.name) };
 }
