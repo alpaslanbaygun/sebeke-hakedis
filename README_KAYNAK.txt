@@ -43,3 +43,16 @@ Kod yapısı (bağımsız servisler)
 - gnss/gnss-service.js (GNSS + cihaz), geo/crs.js (koordinat), services/survey-service.js (saha alımı),
   ui/map-engine.js (harita), qty/hakedis.js + services/project-service.js (hakediş), services/photo-service.js,
   services/excel-import.js, export/report.js + export/exporter.js (rapor), core/sync.js (offline senkron).
+
+Web (ofis) sürümü — 2.2.0-web
+- Aynı kaynak koddan derlenir: cd web && node build.mjs --web  →  web/dist/web
+  (page.html: yayınlanan sayfa parçası · index.html: tam sayfa, yerel deneme ya da kendi sunucun için)
+- Ölçüm yok (GNSS, NTRIP, telefon GPS, kamera, aplikasyon telefondaki APK'da). Web: inceleme, düzeltme, Excel aktarım,
+  manuel koordinat / haritadan seçme, hakediş durumu, hesaplar, dışa aktarım, telefonla .vsync dosya alışverişi.
+- Veri: web/src/web/cloud-adapter.js — çalışma kopyası bellekte, kalıcı kopya yayınlanan sayfanın belge deposunda
+  (m/manifest + b/<tablo>~<kova>; belge başına 256 KiB sınırı için otomatik bölme). Standart paketi, türetilmiş
+  tablolar (açıklık, metraj) ve fotoğraf baytları buluta yazılmaz.
+- Platform: web/src/web/platform.js — indirme (izinli olmayan uzantılar zip içinde), çoklu çıktı tek zip.
+- Web'e özel görünüm yalnız "html.web" sınıfı altında (ui/theme.css sonu); APK görünümü değişmez.
+- Testler: node --test tests/*.test.mjs  (42/42: 33 senaryo + 9 web)  ·  python3 tests/ui/web.py (sahte bulutla tarayıcı testi)
+- APK 2.2.0 bu değişikliklerden etkilenmedi (yeniden derlenmedi); geri dönüş noktaları: v2.1.0, v2.2.0 etiketleri.
