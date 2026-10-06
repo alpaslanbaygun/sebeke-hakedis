@@ -2,6 +2,7 @@
 import { app } from './ctx.js';
 import { ulid } from '../core/ids.js';
 import { html } from './kit.js';
+import { tileX, tileY } from '../geo/tiles.js';
 
 // Aktif ölçüm oturumu (alıcı + anten + NTRIP bilgisiyle)
 export async function ensureSession() {
@@ -37,7 +38,12 @@ export async function measure({ critical = true, label = 'Nokta' } = {}) {
   const phone = g.state.source === 'phone';
   let override = false;
   const q = g.quality({ critical, allowTest: false });
-  if (!q.ok && phone && app.state.phoneAccepted && g.state.lat != null) override = true; // telefon GPS bu oturumda bir kez onaylandı
+  // RTK FLOAT: ayar açıksa (varsayılan) soru sorulmadan alınır; nokta [RTK FLOAT] etiketiyle ve "uyarıyla kabul" notuyla saklanır
+  const floatOk = !phone && g.state.fix === 'FLOAT' && g.state.lat != null && (await app.ds.setting('floatCapture')) !== false;
+  if (!q.ok && floatOk) {
+    override = true;
+    if (!app.state.floatTold) { app.state.floatTold = true; app.toast('RTK FLOAT · noktalar [RTK FLOAT] etiketiyle kaydedilir (Ayarlar › Hassasiyet eşiklerinden kapatılabilir)', 'warn', 5000); }
+  } else if (!q.ok && phone && app.state.phoneAccepted && g.state.lat != null) override = true; // telefon GPS bu oturumda bir kez onaylandı
   else if (!q.ok) {
     if (g.state.lat == null) { app.toast('Konum henüz alınamadı · birkaç saniye bekleyin', 'warn', 4000); return null; }
     const go = await app.modal((close) => html`<div class="mh"><h3 class="hw">Hassas alım için uygun değil</h3></div><div class="mb">
@@ -81,11 +87,42 @@ export async function favorites(toggleId) {
 }
 
 // Altlık karo önbelleği (IndexedDB) → offline harita
+// Google / Yandex: Ayarlar'a anahtar girilirse resmî servis, girilmezse anahtarsız genel adresler kullanılır.
+// Yandex karoları elipsoidal Mercator'dadır (proj '3395'); harita motoru karoyu buna göre yerleştirir.
 export const BASEMAPS = [
   { id: 'none', label: 'Altlık yok' },
   { id: 'osm', label: 'OpenStreetMap', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', maxZoom: 19, note: '© OpenStreetMap katkıda bulunanlar · toplu indirme sınırlı' },
-  { id: 'esri', label: 'Esri uydu görüntüsü', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', maxZoom: 19, note: 'Esri World Imagery kullanım koşulları geçerlidir' }
+  { id: 'esri', label: 'Esri uydu görüntüsü', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', maxZoom: 19, note: 'Esri World Imagery kullanım koşulları geçerlidir' },
+  { id: 'google_m', label: 'Google Harita', provider: 'google', gType: 'roadmap', url: 'https://mt{s}.google.com/vt/lyrs=m&hl=tr&x={x}&y={y}&z={z}', sub: '0123', maxZoom: 21, note: 'Google kullanım koşulları geçerlidir' },
+  { id: 'google_s', label: 'Google Uydu', provider: 'google', gType: 'satellite', url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', sub: '0123', maxZoom: 20, note: 'Google kullanım koşulları geçerlidir' },
+  { id: 'google_h', label: 'Google Uydu + yol adları', provider: 'google', gType: 'hybrid', url: 'https://mt{s}.google.com/vt/lyrs=y&hl=tr&x={x}&y={y}&z={z}', sub: '0123', maxZoom: 20, note: 'Google kullanım koşulları geçerlidir' },
+  { id: 'yandex_m', label: 'Yandex Harita', provider: 'yandex', proj: '3395', url: 'https://core-renderer-tiles.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&scale=1&lang=tr_TR', keyUrl: 'https://tiles.api-maps.yandex.ru/v1/tiles/?x={x}&y={y}&z={z}&lang=tr_TR&l=map&apikey={key}', maxZoom: 19, note: 'Yandex kullanım koşulları geçerlidir' },
+  { id: 'yandex_s', label: 'Yandex Uydu', provider: 'yandex', proj: '3395', url: 'https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&scale=1&lang=tr_TR', maxZoom: 19, note: 'Yandex kullanım koşulları geçerlidir · resmî servis uydu vermediğinden anahtarsız adres' }
 ];
+// Google Map Tiles (resmî): harita türü başına oturum belirteci alınır, süresi dolana kadar saklanır
+const gSessions = new Map();
+async function googleSession(bm, key) {
+  const k = bm.gType + '|' + key;
+  const cur = gSessions.get(k);
+  if (cur && cur.expiry > Date.now() / 1000 + 60) return cur.session;
+  const body = bm.gType === 'hybrid' ? { mapType: 'satellite', layerTypes: ['layerRoadmap'], language: 'tr', region: 'TR' } : { mapType: bm.gType, language: 'tr', region: 'TR' };
+  const r = await fetch('https://tile.googleapis.com/v1/createSession?key=' + encodeURIComponent(key), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error('Google anahtarı kabul edilmedi (' + r.status + ')');
+  const j = await r.json();
+  gSessions.set(k, { session: j.session, expiry: +j.expiry || Date.now() / 1000 + 3600 });
+  return j.session;
+}
+// Karo adresi: anahtar varsa resmî servis; yoksa (ya da resmî servis hata verirse) genel adres
+export async function tileUrl(bm, z, x, y, keys) {
+  keys = keys || app.state.mapKeys || {};
+  const fill = (u) => u.replace('{z}', z).replace('{x}', x).replace('{y}', y).replace('{s}', bm.sub ? bm.sub[(x + y) % bm.sub.length] : '');
+  if (bm.provider === 'google' && keys.google && !app.state.googleKeyBad) {
+    try { const s = await googleSession(bm, keys.google); return 'https://tile.googleapis.com/v1/2dtiles/' + z + '/' + x + '/' + y + '?session=' + encodeURIComponent(s) + '&key=' + encodeURIComponent(keys.google); }
+    catch (e) { app.state.googleKeyBad = true; if (app.toast) app.toast(e.message + ' · anahtarsız adrese geçildi', 'warn', 6000); }
+  }
+  if (bm.provider === 'yandex' && keys.yandex && bm.keyUrl) return fill(bm.keyUrl).replace('{key}', encodeURIComponent(keys.yandex));
+  return fill(bm.url);
+}
 const inflight = new Map();
 export async function loadTile(bm, z, x, y) {
   const id = bm.id + '/' + z + '/' + x + '/' + y;
@@ -95,7 +132,7 @@ export async function loadTile(bm, z, x, y) {
     let blob = rec ? rec.blob : null;
     if (!blob && navigator.onLine !== false && bm.url) {
       try {
-        const u = bm.url.replace('{z}', z).replace('{x}', x).replace('{y}', y);
+        const u = await tileUrl(bm, z, x, y);
         // APK: yerel vekil (CORS yok, kimlik başlığı eklenir) · tarayıcı: doğrudan
         const r = await fetch(app.bridge && app.bridge.isNative() ? '/_tile?u=' + encodeURIComponent(u) : u);
         if (r.ok) { blob = await r.blob(); await app.ds.db.put('tiles', { id, blob, at: Date.now() }); }
@@ -113,10 +150,9 @@ export async function loadTile(bm, z, x, y) {
 // Görünen alanı offline indir (z..z+2, en fazla limit karo)
 export async function prefetchArea(bm, bboxLL, zMin, zMax, limit = 1200, onProg) {
   const list = [];
+  zMax = Math.min(zMax, bm.maxZoom || 19);
   for (let z = zMin; z <= zMax; z++) {
-    const n = 2 ** z;
-    const tx = (lon) => Math.floor(((lon + 180) / 360) * n), ty = (lat) => Math.floor(((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2) * n);
-    for (let x = tx(bboxLL.w); x <= tx(bboxLL.e); x++) for (let y = ty(bboxLL.n); y <= ty(bboxLL.s); y++) list.push([z, x, y]);
+    for (let x = tileX(bboxLL.w, z); x <= tileX(bboxLL.e, z); x++) for (let y = tileY(bboxLL.n, z, bm.proj); y <= tileY(bboxLL.s, z, bm.proj); y++) list.push([z, x, y]);
   }
   if (list.length > limit) throw new Error(list.length + ' karo gerekiyor (sınır ' + limit + '). Alanı daraltın ya da yakınlaşın.');
   let done = 0;

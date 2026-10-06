@@ -37,6 +37,8 @@ export function parseSentence(line) {
   const star = line.indexOf('*');
   const body = line.slice(1, star < 0 ? undefined : star);
   const p = body.split(',');
+  // Üreticiye özel cümleler (Spectra / Ashtech $PASHR, Trimble ailesi $PTNL)
+  if (p[0] === 'PASHR' || p[0] === 'PTNL') return parseProprietary(p, line);
   const talker = p[0].slice(0, 2), type = p[0].slice(2);
   const out = { talker, type, raw: line };
   switch (type) {
@@ -75,6 +77,40 @@ export function parseSentence(line) {
       out.fields = p.slice(1);
   }
   return out;
+}
+
+// Spectra Precision (SP60 / SP80 / SP85 …) ve Trimble ailesi konum cümleleri.
+// $PASHR,POS,mod,uydu,saat,enlem,N,boylam,E,elipsoit yük.,düzeltme yaşı,rota,hız,düşey hız,PDOP,HDOP,VDOP,TDOP,yazılım
+//   mod: 0 otonom · 1 kod diferansiyel / SBAS · 2 RTK float · 3 RTK fix · 9 SBAS · 22 / 23 (yumuşatılmış float / fix)
+// $PTNL,GGK,saat,tarih,enlem,N,boylam,E,kalite,uydu,DOP,EHT<elipsoit yük.>,M
+//   kalite: 0 yok · 1 otonom · 2 RTK float · 3 RTK fix · 4 DGPS · 5 SBAS · 6 ağ RTK float · 7 ağ RTK fix · 8 konum RTK
+const PASH_FIX = { 0: 'SINGLE', 1: 'DGPS', 2: 'FLOAT', 3: 'FIX', 9: 'SBAS', 12: 'FLOAT', 13: 'FIX', 22: 'FLOAT', 23: 'FIX' };
+const GGK_FIX = { 0: 'NONE', 1: 'SINGLE', 2: 'FLOAT', 3: 'FIX', 4: 'DGPS', 5: 'SBAS', 6: 'FLOAT', 7: 'FIX', 8: 'FIX' };
+function parseProprietary(p, line) {
+  const out = { talker: p[0], type: p[0] + '_' + (p[1] || ''), raw: line, proprietary: true };
+  if (p[0] === 'PASHR' && p[1] === 'POS') {
+    const m = i(p[2]);
+    Object.assign(out, { fix: PASH_FIX[m] || 'NONE', sats: i(p[3]), time: hms(p[4]), lat: ll(p[5], p[6], true), lon: ll(p[7], p[8], false), hEll: f(p[9]), age: f(p[10]), course: f(p[11]), speedKn: f(p[12]), pdop: f(p[14]), hdop: f(p[15]), vdop: f(p[16]), firmware: p[18] || null });
+  } else if (p[0] === 'PASHR' && p[1] === 'PRT') {
+    Object.assign(out, { port: p[2] || null, baudCode: i(p[3]) });
+  } else if (p[0] === 'PASHR' && p[1] === 'RID') {
+    Object.assign(out, { model: p[2] || null, firmware: p[4] || null, serial: (p[p.length - 1] || '').trim() || null, fields: p.slice(2) });
+  } else if (p[0] === 'PASHR' && (p[1] === 'ACK' || p[1] === 'NAK')) {
+    out.ack = p[1] === 'ACK';
+  } else if (p[0] === 'PTNL' && p[1] === 'GGK') {
+    const q = i(p[8]);
+    Object.assign(out, { time: hms(p[2]), date: p[3] || null, lat: ll(p[4], p[5], true), lon: ll(p[6], p[7], false), fix: GGK_FIX[q] || 'NONE', sats: i(p[9]), pdop: f(p[10]), hEll: p[11] ? parseFloat(String(p[11]).replace(/^EHT/i, '')) : null });
+  } else if (p[0] === 'PTNL' && p[1] === 'AVR') {
+    Object.assign(out, { heading: f(p[3]) });
+  } else out.fields = p.slice(1);
+  return out;
+}
+
+// Spectra (Ashtech komut dili) alıcıda NMEA çıkışını açan komutlar. port: alıcının bu bağlantı için bildirdiği port harfi ($PASHQ,PRT yanıtı)
+export const SPECTRA_QUERY = ['$PASHQ,PRT', '$PASHQ,RID'];
+export function spectraSetup(port = 'C', hz = 1) {
+  const per = (1 / hz).toFixed(hz > 1 ? 1 : 0);
+  return [['GGA', per], ['GST', per], ['GSA', per], ['RMC', per], ['GSV', 5], ['POS', per]].map(([m, t]) => '$PASHS,NME,' + m + ',' + port + ',ON,' + t);
 }
 
 // Akış tamponu: parça parça gelen metni satırlara böler

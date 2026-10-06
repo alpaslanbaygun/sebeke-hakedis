@@ -1,6 +1,6 @@
 // GNSS servisi: konum kaynağı yönetimi (harici alıcı / telefon / simülatör), NMEA durum makinesi,
 // anten yüksekliği, geoit, proje CRS'ine dönüşüm, epok ortalamalı ölçüm ve ham kayıt.
-import { NmeaStream, makeGGA, makeGST, makeGSA, withChecksum, FIX_LABEL } from './nmea.js';
+import { NmeaStream, makeGGA, makeGST, makeGSA, withChecksum, FIX_LABEL , SPECTRA_QUERY, spectraSetup } from './nmea.js';
 import { evaluateFix, averageEpochs, DEFAULT_THRESHOLDS } from './quality.js';
 import { project, geoidN, makeCrs, zoneForLon } from '../geo/crs.js';
 import { polar, bearing, dist2 } from '../geo/geom.js';
@@ -59,6 +59,24 @@ export class GnssService {
       return;
     }
     await this.bridge.gnssConnect(link);
+  }
+  // Alıcıya metin komutu gönder (satır sonu eklenir)
+  async writeLine(text) {
+    const u8 = new TextEncoder().encode(text + '\r\n');
+    if (this.web && this.web.write) return this.web.write(u8);
+    if (this.bridge && this.bridge.isNative && this.bridge.isNative()) return this.bridge.gnssWrite(u8);
+    throw new Error('Alıcıya yazılamıyor');
+  }
+  // Spectra (SP60 / SP80 / SP85): alıcıdan port harfini sor, o porta NMEA çıkışını aç. Alıcının kalıcı ayarını değiştirir.
+  async setupSpectra(hz = 1) {
+    if (this.state.source !== 'external') throw new Error('Önce alıcıya bağlanın');
+    this.spectraPort = null;
+    for (const q of SPECTRA_QUERY) await this.writeLine(q);
+    const t0 = Date.now();
+    while (!this.spectraPort && Date.now() - t0 < 2500) await new Promise((r) => setTimeout(r, 100));
+    const port = this.spectraPort || 'C';       // yanıt yoksa Bluetooth'un alışılmış portu
+    for (const c of spectraSetup(port, hz)) { await this.writeLine(c); await new Promise((r) => setTimeout(r, 120)); }
+    return { port, asked: !!this.spectraPort };
   }
   onLinkStatus(d) {
     if (!d) return;
@@ -165,6 +183,25 @@ export class GnssService {
       case 'HDT': st.heading = s.heading; break;
       case 'RMC': if (s.speedKn != null) st.speed = s.speedKn * 0.514444; if (s.course != null) st.course = s.course; break;
       case 'VTG': if (s.course != null) st.course = s.course; break;
+      // Spectra / Trimble ailesi: GGA yokken konum kaynağı; GGA varken yalnız eksik bilgiyi (DOP, yaş) tamamlar
+      case 'PASHR_POS':
+      case 'PTNL_GGK': {
+        if (s.pdop != null) st.pdop = s.pdop;
+        if (s.vdop != null) st.vdop = s.vdop;
+        const ggaFresh = this.lastGGAt.length && t - this.lastGGAt[this.lastGGAt.length - 1] < 3000;
+        if (ggaFresh || s.lat == null || s.lon == null) break;
+        const prevFix = st.fix;
+        // Elipsoit yüksekliği doğrudan gelir: jeoit ayrımı bilinmediğinden altMSL = hEll, geoidSep = 0 yazılır (recompute hAnt = hEll verir)
+        Object.assign(st, { lat: s.lat, lon: s.lon, altMSL: s.hEll, geoidSep: 0, sats: s.sats, hdop: s.hdop != null ? s.hdop : st.hdop, age: s.age != null ? s.age : st.age, fix: s.fix, lastUpdate: t });
+        if (st.fix === 'FIX') { if (prevFix !== 'FIX' || !st.fixSince) st.fixSince = t; st.fixSeconds = (t - st.fixSince) / 1000; } else { st.fixSince = null; st.fixSeconds = 0; }
+        if (!this.gotGST || t - this.gotGST > 3000) { const u = { FIX: 0.01, FLOAT: 0.1, DGPS: 0.5 }[st.fix] ?? 1.5; const d = st.hdop != null ? st.hdop : st.pdop != null ? st.pdop / 2 : null; st.sigmaH = d != null ? +(d * u).toFixed(4) : null; st.sigmaV = st.sigmaH != null ? +(st.sigmaH * 1.7).toFixed(4) : null; st.sigmaEst = true; }
+        this.recompute(); this.emit();
+        if (this.bus) this.bus.emit('gnss:epoch', this.epoch());
+        break;
+      }
+      case 'PASHR_PRT': this.spectraPort = s.port; break;
+      case 'PASHR_RID': if (st.receiver) { st.receiver = Object.assign({}, st.receiver, { model: s.model ? 'Spectra ' + s.model : st.receiver.model, serial: s.serial || st.receiver.serial, firmware: s.firmware || null }); this.emit(); } break;
+      case 'PTNL_AVR': if (s.heading != null) st.heading = s.heading; break;
       default: break;
     }
   }

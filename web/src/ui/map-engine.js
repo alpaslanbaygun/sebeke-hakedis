@@ -1,5 +1,6 @@
 // Canvas tabanlı GIS motoru: proje CRS (TM, metre) düzleminde çizim, XYZ altlık (TM'ye affine bükülerek),
 // ızgara, katmanlar, yakalama, seçim, ölçüm, GNSS konumu, aplikasyon hedefi ve düğüm düzenleme.
+import { tileX, tileY, tileLL } from '../geo/tiles.js';
 import { project as projLL, unproject } from '../geo/crs.js';
 
 const LCOL = { AG: '#7ee08a', OG: '#ff6b6b', AYD: '#7fffff', ENH: '#ff79ff', ABONE: '#fbbf24' };
@@ -317,11 +318,12 @@ export class MapEngine {
     z = Math.max(3, Math.min(d.basemap.maxZoom || 19, z));
     const corners = [[0, 0], [this.w, 0], [0, this.h], [this.w, this.h]].map(([x, y]) => { const w = this.toWorld(x, y); return unproject(w.E, w.N, crs); });
     const n = 2 ** z;
-    const tx = (lon) => Math.floor(((lon + 180) / 360) * n), ty = (lat) => Math.floor(((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2) * n);
+    const tproj = d.basemap.proj || '3857';             // Yandex: elipsoidal Mercator (3395)
+    const tx = (lon) => tileX(lon, z), ty = (lat) => tileY(lat, z, tproj);
     const x0 = Math.min(...corners.map((p) => tx(p.lon))), x1 = Math.max(...corners.map((p) => tx(p.lon)));
     const y0 = Math.min(...corners.map((p) => ty(p.lat))), y1 = Math.max(...corners.map((p) => ty(p.lat)));
     if ((x1 - x0 + 1) * (y1 - y0 + 1) > 120) return;
-    const ll = (x, y) => ({ lon: (x / n) * 360 - 180, lat: Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180 / Math.PI });
+    const ll = (x, y) => tileLL(x, y, z, tproj);
     g.globalAlpha = d.basemap.opacity ?? 0.75;
     for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
       const img = this.tile(d.basemap, z, x, y);
