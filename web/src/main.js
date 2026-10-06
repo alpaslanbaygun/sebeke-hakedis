@@ -6,7 +6,7 @@ import { App } from './ui/app.js';
 import { bus } from './core/bus.js';
 import { IDBAdapter, MemoryAdapter } from './core/db.js';
 import { DataService } from './core/data-service.js';
-import { importStandard } from './core/standards.js';
+import { importStandard, upgradeStandard, SEED_REV } from './core/standards.js';
 import { uuid4 } from './core/ids.js';
 import { GnssService } from './gnss/gnss-service.js';
 import { ProjectService } from './services/project-service.js';
@@ -47,6 +47,13 @@ async function boot() {
       const pkg = await (await fetch('seed/standard-tedas-2026.json')).json();
       const imp = () => importStandard(ds, pkg, { reason: 'İlk kurulum · standart paketi' });
       if (cloud) await cloud.seed(imp); else await imp();
+    } else {
+      // Uygulama güncellendiyse katalogdaki yeni kalemleri ekle (mevcut kayıtlara dokunmaz)
+      const stds = await db.getAll('standards');
+      if (stds.some((x) => x.id === 'TEDAS-2026-GR02' && (x.seedRev || 0) < SEED_REV)) {
+        splash('Katalog güncelleniyor…');
+        try { const pkg = await (await fetch('seed/standard-tedas-2026.json')).json(); await upgradeStandard(ds, pkg); } catch (e) { console.warn('Katalog güncellenemedi', e); }
+      }
     }
     try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) { /* */ }
     const gnss = new GnssService({ bus, bridge });

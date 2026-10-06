@@ -32,7 +32,32 @@ export function PozScreen({ pickFor }) {
     await app.ds._audit('poz', { id: cat.stdId + ':prices' }, 'import', [], 'Birim fiyat içe aktarıldı: ' + f.name + ' · ' + nOk + ' poz');
     app.toast(nOk + ' pozun fiyatı güncellendi'); await ps.recompute('Fiyatlar');
   };
-  return html`<${Title} title="Poz Kataloğu" sub=${'Kaynak: ' + cat.std.book + ' yeşil defteri · ' + cat.std.code} />
+  // Kataloğa kalem ekle / yerel kalemi düzelt (poz numarası sonradan girilebilir)
+  const editPoz = async (p0) => {
+    const d = p0 ? Object.assign({}, p0) : { name: '', unit: 'Ad', pozNo: '', category: catg || 'Aydınlatma', code: '' };
+    const r = await app.modal((close) => html`<div class="mh"><h3>${p0 ? 'Kalemi düzelt' : 'Kataloğa kalem ekle'}</h3></div><div class="mb">
+        <div class="fld"><label>Kalem adı *</label><input class="inp" value=${d.name} placeholder="ör. 90 W LED Yol Aydınlatma Armatürü" onInput=${(e) => { d.name = e.target.value; }} /></div>
+        <div class="grid2"><div class="fld"><label>Birim</label><select class="inp" value=${d.unit} onChange=${(e) => { d.unit = e.target.value; }}>${['Ad', 'm', 'Kg', 'Tk', 'm²', 'm³'].map((u) => html`<option value=${u}>${u}</option>`)}</select></div>
+          <div class="fld"><label>Poz no (varsa)</label><input class="inp mono" value=${d.pozNo || ''} placeholder="ör. 20.7.3-02" onInput=${(e) => { d.pozNo = e.target.value; }} /></div></div>
+        <div class="fld"><label>Grup</label><select class="inp" value=${d.category} onChange=${(e) => { d.category = e.target.value; }}>${cats.map((c) => html`<option value=${c}>${c}</option>`)}</select></div>
+        ${p0 ? html`<div class="note mono">Kod: ${p0.servis}</div>` : html`<div class="fld"><label>Servis kodu (Yeşil Defter'de varsa)</label><input class="inp mono" value=${d.code} placeholder="boş bırakılırsa YEREL:… kodu verilir" onInput=${(e) => { d.code = e.target.value; }} /></div>`}
+        <div class="grid2"><div class="fld"><label>Malzeme fiyatı (TL)</label><input class="inp mono" type="number" step="0.01" value=${d.priceMaterial ?? ''} onInput=${(e) => { d.priceMaterial = e.target.value === '' ? null : +e.target.value; }} /></div><div class="fld"><label>Montaj fiyatı (TL)</label><input class="inp mono" type="number" step="0.01" value=${d.priceLabor ?? ''} onInput=${(e) => { d.priceLabor = e.target.value === '' ? null : +e.target.value; }} /></div></div>
+      </div><div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn pri grow" onClick=${() => close(d)}>Kaydet</button></div>`);
+    if (!r) return;
+    if (!String(r.name || '').trim()) return app.toast('Kalem adı gerekli', 'warn');
+    let row;
+    if (p0) row = Object.assign({}, p0, { name: r.name.trim(), unit: r.unit, pozNo: String(r.pozNo || '').trim() || null, bfPoz: String(r.pozNo || '').trim() || p0.bfPoz || null, category: r.category, priceMaterial: r.priceMaterial ?? null, priceLabor: r.priceLabor ?? null, userEdited: true });
+    else {
+      const code = String(r.code || '').trim() || 'YEREL:' + r.name.trim().toLocaleUpperCase('tr-TR').replace(/[^A-Z0-9ÇĞİÖŞÜ]+/g, '-').replace(/^-|-$/g, '').slice(0, 28) + '-' + Date.now().toString(36).slice(-3).toUpperCase();
+      if (cat.poz(code)) return app.toast('Bu kod katalogda var: ' + code, 'warn', 4000);
+      row = { id: cat.stdId + ':' + code, stdId: cat.stdId, servis: code, pozNo: String(r.pozNo || '').trim() || null, name: r.name.trim(), unit: r.unit, kgPerUnit: null, supply: 'Y', montaj: true, demontaj: true, dmm: true, kgGroup: '', category: r.category, bfPoz: String(r.pozNo || '').trim() || null, priceMaterial: r.priceMaterial ?? null, priceLabor: r.priceLabor ?? null, priceUnit: null, inGreenBook: false, validFrom: cat.std.validFrom, validTo: cat.std.validTo, source: 'Kullanıcı kalemi', verified: false, isKgGroup: false, userAdded: true };
+    }
+    const saved = await app.ds.putStd('poz', row, (p0 ? 'Katalog kalemi düzeltildi: ' : 'Kataloğa kalem eklendi: ') + row.name);
+    cat.upsertPoz(saved); setSel(saved.servis); setQ(''); if (!p0) setCatg(saved.category);
+    app.toast(p0 ? 'Kalem güncellendi' : 'Kalem eklendi · artık listelerden seçilebilir', 'ok', 3500);
+    await ps.recompute('Katalog kalemi');
+  };
+  return html`<${Title} title="Poz Kataloğu" sub=${'Kaynak: ' + cat.std.book + ' yeşil defteri · ' + cat.std.code} right=${html`<button class="btn sm pri" onClick=${() => editPoz(null)}><${Icon} n="plus" s=${16} c="#0b1326" />Kalem ekle</button>`} />
     <div class="grid3">${['montaj', 'demontaj', 'dmm'].map((j) => html`<div class="stat"><b>${JOB_LABEL[j]}</b><span>${cnt(j)}</span></div>`)}</div>
     <div class="note">Veritabanındaki ${cat.t.poz.length} poz · sürüm ${cat.std.validFrom} – ${cat.std.validTo}. Birim fiyatlar CSV ile (servis;malzeme;montaj) güncellenebilir.</div>
     <div class="row"><${Icon} n="search" c="#94a3b8" /><input class="inp grow" placeholder="Servis poz no veya malzeme adı: GZ-12, 009…" value=${q} onInput=${(e) => { setQ(e.target.value); setN(80); }} /></div>
@@ -40,10 +65,12 @@ export function PozScreen({ pickFor }) {
     <div class="row" style="overflow-x:auto;gap:6px;padding-bottom:2px"><${Chip} on=${!catg} onClick=${() => setCatg(null)}>Tümü</${Chip}>${cats.map((c) => html`<${Chip} on=${catg === c} onClick=${() => setCatg(c)}>${c} <span class="mono note">${cat.t.poz.filter((p) => p.category === c).length}</span></${Chip}>`)}</div>
     <div class="row"><${Toggle} on=${only} onChange=${setOnly} label="Defterde miktarı olanlar" /><span>Yalnız bu defterde miktarı olanlar</span><span class="grow"></span><label class="btn xs">Fiyat CSV<input type="file" accept=".csv,.txt" style="display:none" onChange=${(e) => e.target.files[0] && importPrices(e.target.files[0])} /></label></div>
     <div class="row"><span class="lbl grow">${catg || 'Tüm pozlar'} · ${rows.length} poz</span><span class="mono note">önek ${{ montaj: '0', demontaj: '1', dmm: '2' }[job]}xx</span></div>
-    <div class="card tight list">${rows.slice(0, n).map((p) => html`<button class="li" style=${sel === p.servis ? 'box-shadow:inset 3px 0 0 #10b981;background:#0f2a22' : ''} onClick=${() => setSel(p.servis)}><div class="grow"><div class="m" style=${sel === p.servis ? 'color:#6ffbbe' : ''}>${cat.jobCode(p.servis, job)}${p.kgGroup ? ' · Kg grubu ' + p.kgGroup : ''}</div><div style="font-size:13px;font-weight:700">${p.name}</div><div class="m">Poz ${p.pozNo || '—'} · ${p.unit}${p.kgPerUnit ? ' · ' + p.kgPerUnit + ' kg/Ad' : ''} · Temin ${p.supply}${p.priceMaterial != null ? ' · ' + trn((p.priceMaterial || 0) + (p.priceLabor || 0), 2) + ' TL' : ''}</div></div>${p.inGreenBook ? html`<${Badge} k="ok">DEFTERDE</${Badge}>` : null}</button>`)}
+    <div class="card tight list">${rows.slice(0, n).map((p) => html`<button class="li" style=${sel === p.servis ? 'box-shadow:inset 3px 0 0 #10b981;background:#0f2a22' : ''} onClick=${() => setSel(p.servis)}><div class="grow"><div class="m" style=${sel === p.servis ? 'color:#6ffbbe' : ''}>${cat.jobCode(p.servis, job)}${p.kgGroup ? ' · Kg grubu ' + p.kgGroup : ''}</div><div style="font-size:13px;font-weight:700">${p.name}</div><div class="m">Poz ${p.pozNo || '—'} · ${p.unit}${p.kgPerUnit ? ' · ' + p.kgPerUnit + ' kg/Ad' : ''} · Temin ${p.supply}${p.priceMaterial != null ? ' · ' + trn((p.priceMaterial || 0) + (p.priceLabor || 0), 2) + ' TL' : ''}</div></div>${p.inGreenBook ? html`<${Badge} k="ok">DEFTERDE</${Badge}>` : p.userAdded ? html`<${Badge} k="cy">EKLENEN</${Badge}>` : p.verified === false ? html`<${Badge} k="warn">DOĞRULANACAK</${Badge}>` : null}</button>`)}
       ${rows.length > n ? html`<button class="li" style="justify-content:center" onClick=${() => setN(n + 150)}>Daha fazla (${rows.length - n})</button>` : null}</div>
     ${selP ? html`<div class="card ok stack" style="position:sticky;bottom:-24px"><div class="row"><b class="grow">${selP.name}</b><button class="btn xs" onClick=${() => setSel(null)}><${Icon} n="x" s=${14} /></button></div>
       <div class="kv mono" style="font-size:12px"><b>Servis</b><span>${selP.servis} → ${cat.jobCode(selP.servis, 'demontaj')} / ${cat.jobCode(selP.servis, 'dmm')}</span><b>Sayfalar</b><span>${selP.montaj !== false ? 'Montaj ' : ''}${selP.demontaj ? 'Demontaj ' : ''}${selP.dmm ? 'DMM' : ''}</span><b>BF poz</b><span>${selP.bfPoz || '—'}</span><b>Geçerlilik</b><span>${selP.validFrom} – ${selP.validTo}</span></div>
+      ${selP.verified === false && !selP.inGreenBook ? html`<div class="note hw">${selP.source || 'Doğrulanacak kalem'}${selP.pozConfirmed ? ' · TEDAŞ poz numarası kaynakta görüldü' : ''}</div>` : null}
+      ${selP.verified === false || selP.userAdded ? html`<button class="btn sm" onClick=${() => editPoz(selP)}><${Icon} n="edit" s=${16} />Ad / poz no / fiyat düzelt</button>` : null}
       ${pickFor ? html`<button class="btn pri" onClick=${() => { app.bus.emit('poz:picked', { servis: selP.servis, pickFor }); app.nav.back(); }}>KAYDA EKLE · ${selP.servis}</button>` : null}</div>` : null}`;
 }
 

@@ -88,6 +88,12 @@ export function equipmentMaterials(e, cat, opts = {}) {
     const pz = cat.poz(ctx.self);
     items.push({ servis: ctx.self, qty: +(e.attrs && e.attrs.qty) || 1, unit: pz ? pz.unit : 'Ad', kgPer: pz ? pz.kgPerUnit : null, name: pz ? pz.name : '(katalogda yok)', why: (ctx.tip || 'Seçilen poz'), grp: (pz && pz.kgGroup) || '', tag: 'self', origin: 'OTO', qtyFrom: 'num', missing: !pz });
   }
+  // Abone kofresi (v2.3): abone kaydında "kofre var" seçiliyse faz sayısına göre kofre kalemi gelir
+  if (job && e.kind === 'subscriber' && e.attrs && e.attrs.kofre) {
+    const servis = ((cat.table('cabin') || {}).kofre || {})[e.attrs.phase === 'tek' ? 'tek' : 'uc'] || null;
+    const pz = servis ? cat.poz(servis) : null;
+    items.push({ servis, qty: 1, unit: pz ? pz.unit : 'Ad', kgPer: null, name: pz ? pz.name : 'Abone kofresi (katalogda yok)', why: 'Abone kofresi · ' + (e.attrs.phase === 'tek' ? 'tek faz' : 'üç faz'), grp: '', tag: 'kofre', origin: 'OTO', qtyFrom: 'num', missing: !pz });
+  }
   // Trafo durum filtreleri: gücü yükseltilen → yalnız trafo + pano; tadil/modül → köşk + hücre
   const ts = TRAFO_STATUSES[e.state];
   if (ctx.eq === 'trafo' && ts && ts.only) items = items.filter((m) => ts.only.includes(m.tag));

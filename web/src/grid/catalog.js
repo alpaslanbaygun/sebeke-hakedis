@@ -38,7 +38,10 @@ export class Catalog {
 
   // ---- Poz ----
   poz(servis) { return this.pozMap.get(servis) || null; }
-  jobCode(servis, job) { return (JOB_PREFIX[job] || '0') + String(servis).slice(1); }
+  // İş önekli servis kodu (0xx montaj · 1xx demontaj · 2xx DMM). Yeşil Defter kodu olmayan kalemlerde (TEDAS:… / YEREL:…) kod aynen kalır, iş türü sona yazılır.
+  jobCode(servis, job) { const s = String(servis); if (!/^\d/.test(s)) return s + (job === 'demontaj' ? ' (demontaj)' : job === 'dmm' ? ' (DMM)' : ''); return (JOB_PREFIX[job] || '0') + s.slice(1); }
+  // Kataloğa satır ekle / güncelle (kullanıcı kalemi) ve dizinleri yenile
+  upsertPoz(row) { const i = this.t.poz.findIndex((p) => p.id === row.id); if (i >= 0) this.t.poz[i] = row; else this.t.poz.push(row); this.pozMap.set(row.servis, row); }
   // Poz bu iş sayfasında var mı? (demontaj/DMM sayfasında olmayan kalem ayrı işaretlenir)
   pozAvailable(servis, job) {
     const p = this.poz(servis);

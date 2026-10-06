@@ -2,7 +2,9 @@
 // veritabanına alınması ve yönetimi. Kod içinde sabit katalog tutulmaz; her şey DB'den okunur.
 
 const LIST_TABLES = ['poz', 'poleGroups', 'poleTypes', 'conductors', 'lineTypes', 'transformers', 'panels', 'kiosks', 'trafoPostTypes', 'sdkTypes', 'recipeRules', 'params'];
-const OBJ_TABLES = ['lineDefaults', 'kioskDefaults', 'trafoPoleCompat', 'gnssThresholds', 'enh', 'clearances', 'legend', 'materialsMaster', 'cableRules'];
+const OBJ_TABLES = ['lineDefaults', 'kioskDefaults', 'trafoPoleCompat', 'gnssThresholds', 'enh', 'clearances', 'legend', 'materialsMaster', 'cableRules', 'cabin'];
+// Uygulamayla gelen standart paketinin sürümü: kurulu katalog bundan eskiyse açılışta eksik kalemler eklenir
+export const SEED_REV = 23;
 
 export async function listStandards(ds) {
   const all = await ds.db.getAll('standards');
@@ -30,6 +32,32 @@ export async function importStandard(ds, pkg, opts = {}) {
   await ds.db.put('standards', Object.assign({}, std, { importedAt: ds.iso(), recordCount: n }));
   await ds._audit('standards', { id: stdId }, 'import', [], (opts.reason || 'Standart paketi içe aktarıldı') + ' · ' + n + ' kayıt');
   return { imported: n, id: stdId };
+}
+
+// Kurulu kataloğu uygulamayla gelen paketle güncelle: yalnız EKSİK satırlar eklenir (kullanıcının fiyat / poz düzeltmeleri korunur),
+// pkg.upserts[tablo] içinde kimliği verilen satırlar ise yenilenir.
+export async function upgradeStandard(ds, pkg) {
+  const std = pkg.standard, stdId = std.id;
+  const cur = await ds.db.get('standards', stdId);
+  if (!cur) return importStandard(ds, pkg, { reason: 'Standart paketi' });
+  if ((cur.seedRev || 0) >= (std.seedRev || 0)) return { skipped: true, id: stdId };
+  const ups = pkg.upserts || {};
+  let n = 0;
+  for (const t of LIST_TABLES) {
+    const have = new Set((await ds.db.query(t, 'stdId', stdId)).map((r) => r.id));
+    const force = new Set(ups[t] || []);
+    const rows = (pkg[t] || []).map((r, i) => Object.assign({}, r, { id: r.id || (stdId + ':' + t + ':' + i), stdId })).filter((r) => !have.has(r.id) || force.has(r.id));
+    if (rows.length) { await ds.db.bulkPut(t, rows); n += rows.length; }
+  }
+  for (const t of OBJ_TABLES) {
+    if (pkg[t] === undefined) continue;
+    const id = stdId + ':' + t;
+    if ((await ds.db.get('stdTables', id)) && !(ups.stdTables || []).includes(t)) continue;
+    await ds.db.put('stdTables', { id, stdId, key: t, value: pkg[t] }); n++;
+  }
+  await ds.db.put('standards', Object.assign({}, cur, { seedRev: std.seedRev, upgradedAt: ds.iso(), unverifiedTables: std.unverifiedTables || cur.unverifiedTables }));
+  await ds._audit('standards', { id: stdId }, 'import', [], 'Katalog güncellendi (sürüm ' + (cur.seedRev || 0) + ' → ' + std.seedRev + ') · ' + n + ' yeni kayıt');
+  return { upgraded: n, id: stdId };
 }
 
 // Mevcut standardı yeni sürüm olarak kopyala (ör. TEDAŞ 2027 hazırlığı) — eski projeler eski sürümde kalır

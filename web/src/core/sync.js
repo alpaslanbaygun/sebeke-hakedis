@@ -7,7 +7,7 @@ import { diffFields } from './data-service.js';
 
 export async function pendingChanges(ds, projectId) {
   const all = await ds.db.getAll('outbox');
-  return all.filter((c) => !c.synced && (!projectId || c.projectId === projectId || c.store === 'projects')).sort((a, b) => a.ts.localeCompare(b.ts));
+  return all.filter((c) => !c.synced && (!projectId || c.projectId === projectId || c.store === 'projects' || c.store === 'poz')).sort((a, b) => a.ts.localeCompare(b.ts));
 }
 export async function exportChangeset(ds, projectId) {
   const changes = await pendingChanges(ds, projectId);

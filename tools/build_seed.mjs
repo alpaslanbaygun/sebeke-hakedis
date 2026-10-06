@@ -1,6 +1,7 @@
 // Tasarım maketinden çıkarılan ham veriyi (design_raw.json) versiyonlu standart paketine
 // (TEDAŞ 2026 · Yeşil Defter 26.23.GR.02) dönüştürür. Çıktı uygulamaya ilk açılışta
 // veritabanına (IndexedDB) içe aktarılır; uygulama içinde koddan değil DB'den okunur.
+import { applyExtras } from './seed_extras_v23.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -334,6 +335,7 @@ const out = {
   sdkTypes, recipeRules: rules, params, gnssThresholds, enh, clearances, legend, materialsMaster, cableRules
 };
 fs.mkdirSync(path.join(root, 'web/seed'), { recursive: true });
+applyExtras(out);   // v2.3 ekleri (hd hücre, LED armatür, kofre, kabin eşlemesi)
 fs.writeFileSync(path.join(root, 'web/seed/standard-tedas-2026.json'), JSON.stringify(out));
 console.log('poz', out.poz.length, 'poleTypes', poleTypes.length, 'conductors', conductors.length, 'lineTypes', lineTypes.length,
   'transformers', transformers.length, 'panels', panels.length, 'kiosks', kiosks.length, 'rules', rules.length,

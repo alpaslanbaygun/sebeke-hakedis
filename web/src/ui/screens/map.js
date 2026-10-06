@@ -343,7 +343,7 @@ export function eqSummary(e) {
   if (e.kind === 'transformer') { const a = e.attrs || {}; const pt = ps.cat.postType(a.post); return (pt ? pt.label : 'Trafo') + ' · ' + (a.kva ? a.kva + ' kVA' : '') + ' · ' + ((TRAFO_STATUSES[e.state] || {}).label || e.state); }
   if (e.kind === 'sdk') { const t = ps.cat.sdkType((e.attrs || {}).sdkTypeId); return 'SDK · ' + (t ? t.name : '') + ' · ' + ((STATUSES[e.state] || {}).label || ''); }
   if (e.kind === 'panel' || e.kind === 'luminaire' || e.kind === 'other' || e.kind === 'manhole') { const a = e.attrs || {}; const pz = a.servis ? ps.cat.poz(a.servis) : null; return ((EQUIPMENT_KINDS[e.kind] || {}).label || e.kind) + (a.typeName ? ' · ' + a.typeName : pz ? ' · ' + pz.name : '') + (a.kva ? ' · ' + a.kva + ' kVA' : '') + ' · ' + ((STATUSES[e.state] || {}).label || ''); }
-  if (e.kind === 'subscriber') return 'Abone · ' + ((e.attrs || {}).phase === 'tek' ? 'tek faz' : 'üç faz') + ((e.attrs || {}).aboneNo ? ' · ' + e.attrs.aboneNo : '');
+  if (e.kind === 'subscriber') return 'Abone · ' + ((e.attrs || {}).phase === 'tek' ? 'tek faz' : 'üç faz') + ((e.attrs || {}).kofre ? ' · kofreli' : '') + ((e.attrs || {}).aboneNo ? ' · ' + e.attrs.aboneNo : '');
   return e.kind;
 }
 
@@ -593,7 +593,7 @@ function Fld({ l, children }) { return html`<div class="fld"><label>${l}</label>
 const OTHER_KINDS = [['sdk', 'SDK / Box', 'SDK AL'], ['panel', 'Pano', 'PANO AL'], ['manhole', 'Menhol', 'MENHOL AL'], ['luminaire', 'Armatür / lamba', 'ARMATÜR AL'], ['subscriber', 'Abone', 'ABONE AL'], ['linept', 'Hat köşe noktası', 'KÖŞE AL'], ['detail', 'Detay noktası', 'DETAY AL'], ['other', 'Diğer (serbest)', 'OBJE AL']];
 function useOther() {
   const ps = app.ps, cat = ps.cat;
-  const [f, set] = useForm('other', { kind: 'sdk', sdkTypeId: null, outputs: 4, state: 'YENI', phase: 'uc', aboneNo: '', panelKey: '', lumServis: '', typeName: '', note: '' });
+  const [f, set] = useForm('other', { kind: 'sdk', sdkTypeId: null, outputs: 4, state: 'YENI', phase: 'uc', aboneNo: '', kofre: false, panelKey: '', lumServis: '', typeName: '', note: '' });
   const K = OTHER_KINDS.find((k) => k[0] === f.kind) || OTHER_KINDS[0];
   const kind = K[0];
   const sdkT = cat.sdkType(f.sdkTypeId) || cat.sdkTypes()[0] || {};
@@ -609,7 +609,7 @@ function useOther() {
     if (kind === 'linept') { const p = await ps.createPoint(Object.assign({ pointNo: ps.nextPointNo('P'), cls: 'HAT', critical }, pos)); await ps.appendNode(activeLine.id, p.id); return { msg: p.pointNo + ' → ' + activeLine.lineNo + ' köşe noktası', undo: { no: p.pointNo, pointId: p.id, eqId: null, lineId: activeLine.id } }; }
     if (kind === 'detail') { const p = await ps.createPoint(Object.assign({ pointNo: ps.nextPointNo('P'), cls: 'DETAY', critical: false, note: f.note || '' }, pos)); await ps.recompute('Detay noktası'); return { msg: p.pointNo + ' kaydedildi', undo: { no: p.pointNo, pointId: p.id, eqId: null, lineId: null } }; }
     const data = kind === 'sdk' ? { state: f.state, attrs: { sdkTypeId: f.sdkTypeId || sdkT.id, outputs: f.outputs, fuses: [] } }
-      : kind === 'subscriber' ? { state: 'YENI', attrs: { phase: f.phase, aboneNo: f.aboneNo } }
+      : kind === 'subscriber' ? { state: 'YENI', attrs: { phase: f.phase, aboneNo: f.aboneNo, kofre: !!f.kofre } }
       : kind === 'panel' ? { state: f.state, attrs: panel ? { servis: panel.servis, kva: panel.kva, typeName: (panel.kind === 'harici' ? 'Harici' : 'Dahili') + ' pano' } : { typeName: f.typeName || '' } }
       : kind === 'luminaire' ? { state: f.state, attrs: lum ? { servis: lum.servis, typeName: lum.name } : { typeName: f.typeName || '' } }
       : kind === 'other' ? { state: f.state, attrs: { typeName: f.typeName || '' }, note: f.note || '' }
@@ -621,7 +621,7 @@ function useOther() {
   };
   const stL = ST_LBL[f.state] || f.state;
   const sub = kind === 'sdk' ? (sdkT.name || 'SDK') + ' · ' + f.outputs + ' çıkış · ' + stL
-    : kind === 'subscriber' ? (f.phase === 'tek' ? 'Tek faz' : 'Üç faz') + (f.aboneNo ? ' · ' + f.aboneNo : '')
+    : kind === 'subscriber' ? (f.phase === 'tek' ? 'Tek faz' : 'Üç faz') + (f.kofre ? ' · kofreli' : '') + (f.aboneNo ? ' · ' + f.aboneNo : '')
     : kind === 'panel' ? (panel ? (panel.kind === 'harici' ? 'Harici ' : 'Dahili ') + panel.kva + ' kVA' : f.typeName || 'tip serbest') + ' · ' + stL
     : kind === 'luminaire' ? (lum ? lum.name : f.typeName || 'tip serbest') + ' · ' + stL
     : kind === 'other' ? (f.typeName || 'serbest obje') + ' · ' + stL
@@ -640,7 +640,8 @@ function OtherFields({ m, active, startLine }) {
     ${kind === 'luminaire' ? html`<${Fld} l="Armatür tipi"><${Sel} value=${f.lumServis || ''} options=${[['', 'Serbest (poz sonradan)'], ...m.lums.map((p) => [p.servis, p.name])]} onChange=${(v) => set({ lumServis: v })} /></${Fld}>` : null}
     ${(kind === 'panel' && !f.panelKey) || (kind === 'luminaire' && !f.lumServis) || kind === 'other' ? html`<${Fld} l=${kind === 'other' ? 'Obje adı / türü (serbest)' : 'Tip açıklaması (serbest)'}><input class="inp" value=${f.typeName} placeholder=${kind === 'other' ? 'ör. kamera direği, topraklama levhası' : 'ör. 100 W LED'} onChange=${(e) => set({ typeName: e.target.value })} /></${Fld}>` : null}
     ${kind === 'sdk' || kind === 'manhole' || kind === 'panel' || kind === 'luminaire' || kind === 'other' ? states : null}
-    ${kind === 'subscriber' ? html`<div class="grid2"><${Fld} l="Faz"><${Seg} c="#fbbf24" value=${f.phase} options=${[['tek', 'Tek'], ['uc', 'Üç']]} onChange=${(v) => set({ phase: v })} /></${Fld}><${Fld} l="Abone / tesisat no"><input class="inp mono" value=${f.aboneNo} onChange=${(e) => set({ aboneNo: e.target.value })} /></${Fld}></div>` : null}
+    ${kind === 'subscriber' ? html`<div class="grid2"><${Fld} l="Faz"><${Seg} c="#fbbf24" value=${f.phase} options=${[['tek', 'Tek'], ['uc', 'Üç']]} onChange=${(v) => set({ phase: v })} /></${Fld}><${Fld} l="Abone / tesisat no"><input class="inp mono" value=${f.aboneNo} onChange=${(e) => set({ aboneNo: e.target.value })} /></${Fld}></div>
+      <${Fld} l="Kofre"><${Seg} c="#fbbf24" value=${f.kofre ? 'var' : 'yok'} options=${[['yok', 'Kofre yok'], ['var', 'Kofre var']]} onChange=${(v) => set({ kofre: v === 'var' })} /></${Fld}>` : null}
     ${kind === 'detail' || kind === 'other' ? html`<${Fld} l="Açıklama"><input class="inp" value=${f.note} onChange=${(e) => set({ note: e.target.value })} /></${Fld}>` : null}
     ${kind === 'linept' ? html`<div class=${'alert ' + (active ? 'info' : 'warn')}>${active ? 'Direk olmayan güzergah/köşe noktası ' + active.lineNo + ' hattına eklenir (ör. yeraltı kablo dönüşü).' : 'Önce bir hat başlatın: alttaki "+ HAT" düğmesi.'}</div>` : null}`;
 }

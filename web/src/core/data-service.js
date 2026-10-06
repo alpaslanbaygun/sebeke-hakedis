@@ -109,6 +109,16 @@ export class DataService {
     });
   }
 
+  // Katalog (standart) satırı yaz: denetim kaydı + senkron kuyruğu (kullanıcının eklediği / düzelttiği poz diğer cihaza da gitsin)
+  async putStd(store, row, reason) {
+    const before = await this.db.get(store, row.id);
+    const rec = Object.assign({}, row, { rev: ((before && before.rev) || 0) + 1, updatedAt: this.iso(), updatedBy: this.user.name });
+    await this.db.put(store, rec);
+    await this._audit(store, { id: rec.id, no: rec.servis || rec.name }, before ? 'update' : 'create', diffFields(before, rec), reason || '');
+    await this._outbox(store, rec, before ? 'update' : 'create', (before && before.rev) || 0);
+    return rec;
+  }
+
   async setting(key, value) {
     if (value === undefined) { const r = await this.db.get('settings', key); return r ? r.value : undefined; }
     await this.db.put('settings', { id: key, value, updatedAt: this.iso() });
