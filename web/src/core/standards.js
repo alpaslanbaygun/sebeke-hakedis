@@ -2,9 +2,9 @@
 // veritabanına alınması ve yönetimi. Kod içinde sabit katalog tutulmaz; her şey DB'den okunur.
 
 const LIST_TABLES = ['poz', 'poleGroups', 'poleTypes', 'conductors', 'lineTypes', 'transformers', 'panels', 'kiosks', 'trafoPostTypes', 'sdkTypes', 'recipeRules', 'params'];
-const OBJ_TABLES = ['lineDefaults', 'kioskDefaults', 'trafoPoleCompat', 'gnssThresholds', 'enh', 'clearances', 'legend', 'materialsMaster', 'cableRules', 'cabin'];
+const OBJ_TABLES = ['lineDefaults', 'kioskDefaults', 'trafoPoleCompat', 'gnssThresholds', 'enh', 'clearances', 'legend', 'materialsMaster', 'cableRules', 'cabin', 'kanal'];
 // Uygulamayla gelen standart paketinin sürümü: kurulu katalog bundan eskiyse açılışta eksik kalemler eklenir
-export const SEED_REV = 23;
+export const SEED_REV = 24;
 
 export async function listStandards(ds) {
   const all = await ds.db.getAll('standards');

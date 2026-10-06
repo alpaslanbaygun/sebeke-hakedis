@@ -6,7 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const SEED_REV = 23;
+export const SEED_REV = 24;
 
 // [servis, pozNo, ad, kategori, onaylı mı (poz numarası kaynakta görüldü)]
 const POZ = [
@@ -55,7 +55,11 @@ const POZ = [
   ['YEREL:ARM-LED-PARK', null, 'LED Park / Bahçe Armatürü', 'Aydınlatma', false],
   // --- Abone kofresi ---
   ['YEREL:KOFRE-1F', null, 'AG Abone Kofresi · tek fazlı (yapı bağlantı girişi)', 'Kablo / abone', false],
-  ['YEREL:KOFRE-3F', null, 'AG Abone Kofresi · üç fazlı (yapı bağlantı girişi)', 'Kablo / abone', false]
+  ['YEREL:KOFRE-3F', null, 'AG Abone Kofresi · üç fazlı (yapı bağlantı girişi)', 'Kablo / abone', false],
+  // --- v2.4 · Kaplamalı kablo kanalı (yeşil defterde yalnız kaplamasız toprak ve tüvenan var) ---
+  ['YEREL:KANAL-ASFALT', null, 'Standart Tüvenan Dolgulu Kablo Kanalı Yapılması - Asfalt Kaplamalı', 'Kablo / abone', false, 'm3'],
+  ['YEREL:KANAL-BETON', null, 'Standart Tüvenan Dolgulu Kablo Kanalı Yapılması - Beton Kaplamalı', 'Kablo / abone', false, 'm3'],
+  ['YEREL:KANAL-PARKE', null, 'Standart Tüvenan Dolgulu Kablo Kanalı Yapılması - Parke Taşı Kaplamalı', 'Kablo / abone', false, 'm3'],
 ];
 
 // Kabin keşfi: köşk gövdesi + her hücre ayrı kalem. Hücre sınıfı (YA, SYA, KE…) → poz; önce hücre koduna özel eşleme aranır.
@@ -72,6 +76,13 @@ const CABIN = {
   kofre: { tek: 'YEREL:KOFRE-1F', uc: 'YEREL:KOFRE-3F' }
 };
 
+// v2.4 · Yeraltı kanal hesabı: kaplamaya göre kanal kalemi (m³), yatay sondaj (m), abone bağlantı kanalı (m)
+export const KANAL = {
+  kazi: { toprak: '032.12.01.01-003', tuvenan: '032.12.01.01-002', asfalt: 'YEREL:KANAL-ASFALT', beton: 'YEREL:KANAL-BETON', parke: 'YEREL:KANAL-PARKE' },
+  sondaj: '032.12.06.01-003',
+  abone: { kaplamasiz: '032.13.03.01-001', kaplamali: '032.13.03.01-002' }
+};
+
 export function applyExtras(out) {
   const STD = out.standard.id;
   const have = new Set(out.poz.map((p) => p.servis));
@@ -81,11 +92,12 @@ export function applyExtras(out) {
     out.poz.push({
       id: STD + ':' + servis, stdId: STD, servis, pozNo: pozNo || null, name, unit: unit || 'Ad', kgPerUnit: null, supply: 'Y', montaj: true, demontaj: true, dmm: true, kgGroup: '', category,
       bfPoz: pozNo || null, priceMaterial: null, priceLabor: null, priceUnit: null, inGreenBook: false, validFrom: out.standard.validFrom, validTo: out.standard.validTo,
-      source: pozNo ? 'TEDAŞ birim fiyat poz no · EDAŞ servis kodu doğrulanacak' : 'Yerel kalem · poz numarası girilecek', verified: false, pozConfirmed: !!ok, isKgGroup: false, extra: 'v2.3'
+      source: pozNo ? 'TEDAŞ birim fiyat poz no · EDAŞ servis kodu doğrulanacak' : 'Yerel kalem · poz numarası girilecek', verified: false, pozConfirmed: !!ok, isKgGroup: false, extra: servis.startsWith('YEREL:KANAL-') ? 'v2.4' : 'v2.3'
     });
     added.push(servis);
   }
   out.cabin = CABIN;
+  out.kanal = KANAL;
   out.standard.seedRev = SEED_REV;
   if (!(out.standard.unverifiedTables || []).includes('cabin')) out.standard.unverifiedTables = [...(out.standard.unverifiedTables || []), 'cabin', 'poz.extra(v2.3)'];
   return added;

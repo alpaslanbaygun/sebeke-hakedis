@@ -106,7 +106,7 @@ export function HakedisScreen() {
   };
   const approve = async () => { if (!(await app.confirm('Onay', cur.no + '. dönem onaylanıp dondurulsun mu? Sonraki değişiklikler bir sonraki dönemde REVİZYON olarak görünür.', { ok: 'Onayla' }))) return; try { await ps.approvePeriod(cur.id); app.toast(cur.no + '. hakediş onaylandı'); } catch (e) { app.toast(e.message, 'err', 6000); } };
   const lines = t ? t.lines.filter((l) => l.job === job) : [];
-  return html`<${Title} title="Hakediş" sub=${'Proje → İş programı → Dönem → Poz'} />
+  return html`<${Title} title="Hakediş" sub=${'Proje → İş programı → Dönem → Poz'} right=${html`<button class="btn sm" onClick=${() => app.nav.go('team')}>Kullanıcılar ve onay</button>`} />
     <div class="card row"><div class="grow"><div class="lbl">İş programı</div><div style="font-size:13px">${wp ? wp.basis + ' · ' + wp.items.length + ' kalem · ' + new Date(wp.createdAt).toLocaleDateString('tr-TR') : 'Oluşturulmadı'}</div></div><button class="btn sm" onClick=${newProgram}>${wp ? 'Yenile' : 'Oluştur'}</button></div>
     <div class="row"><div class="grow"><${Sel} value=${cur && cur.id} options=${periods.map((p) => [p.id, p.no + '. dönem · ' + p.start + ' – ' + p.end + ' · ' + (p.status === 'onayli' ? 'ONAYLI' : 'taslak')])} onChange=${setPid} /></div><button class="btn sm" onClick=${newPeriod}>+ Dönem</button></div>
     ${t && t.period ? html`<div class="grid3"><${Stat} label="Kalem" value=${t.totals.lines} /><${Stat} label="Aşım" value=${t.totals.overrun} color=${t.totals.overrun ? '#ff8a8a' : null} /><${Stat} label="Program dışı" value=${t.totals.outOfProgram} color=${t.totals.outOfProgram ? '#fcd34d' : null} /></div>

@@ -6,6 +6,8 @@ import { app } from '../ctx.js';
 import { STATUSES, TRAFO_STATUSES, JOB_LABEL, SOURCE_LABEL, HAK_STATUSES, HAK_ORDER, KIND_FOLDER, hakOf } from '../../core/schema.js';
 import { sourceInfo, sourceText } from '../../core/source.js';
 import { KABIN_POSTLARI } from './cabin.js';
+import { autoRecipeOn } from '../../grid/recipe.js';
+import { koskGovdeleri } from '../../grid/cabin-recipe.js';
 import { luminairePoz } from '../../services/survey-service.js';
 import { checkPole, checkTransformer, roleLabel } from '../../grid/checks.js';
 import { jobOf } from '../../grid/recipe.js';
@@ -58,14 +60,22 @@ export function EquipmentScreen({ id }) {
     await ps.setMaterialQty(id, m.servis, +String(v).replace(',', '.'), why);
   };
   const resetQty = async (m) => { await ps.setMaterialQty(id, m.servis, null, 'Reçete miktarına dönüldü'); };
+  const auto = autoRecipeOn(ps.p);
+  const num = (v) => +String(v).replace(',', '.');
   const addManual = async (servis) => {
     const pz = cat.poz(servis);
-    const v = await app.prompt('Sahada ilave · ' + (pz ? pz.name : servis), 'Miktar (' + (pz ? pz.unit : 'Ad') + ')', { value: '1', required: true });
+    const v = await app.prompt((auto ? 'Sahada ilave · ' : 'Malzeme ekle · ') + (pz ? pz.name : servis), 'Miktar (' + (pz ? pz.unit : 'Ad') + ')', { value: '1', required: true });
     if (!v) return;
-    const why = await app.prompt('Gerekçe', 'Neden ilave?', { required: true, value: '' });
-    if (!why) return;
-    await ps.addFieldMaterial(id, servis, +String(v).replace(',', '.'), why);
+    try {
+      if (auto) { const why = await app.prompt('Gerekçe', 'Neden ilave?', { required: true, value: '' }); if (!why) return; await ps.addFieldMaterial(id, servis, num(v), why); }
+      else { await ps.addMaterial('equipment', id, servis, num(v)); app.toast((pz ? pz.name : servis) + ' eklendi', 'ok'); }
+    } catch (err) { app.toast(err.message, 'err', 6000); }
     setPick(false);
+  };
+  const manualQty = async (m) => {
+    const v = await app.prompt('Miktar · ' + m.name, 'Yeni miktar (' + m.unit + ')', { value: String(m.qty), required: true });
+    if (!v) return;
+    try { await ps.setMaterialRowQty(m.materialId, num(v)); } catch (err) { app.toast(err.message, 'err'); }
   };
   const hits = pick ? cat.searchPoz(q, { job: job || 'montaj', limit: 40 }).filter((x) => !x.isKgGroup) : [];
   const slots = SLOTS[d.kind] || ['Genel', 'Detay', 'Çevre', 'Ek'];
@@ -103,7 +113,9 @@ export function EquipmentScreen({ id }) {
       ${isPole ? html`<div class="fld"><label>Direk grubu</label><${Sel} value=${d.group} options=${cat.poleGroups().map((x) => [x.id, x.label])} onChange=${(v) => set({ group: v, typeId: (cat.poleTypes(v)[0] || {}).id })} /></div>
         <div class="fld"><label>Direk tipi</label><${Sel} mono value=${d.typeId} options=${cat.poleTypes(d.group).map((x) => [x.id, x.name + (x.kg ? ' · ' + x.kg + ' kg' : '') + (x.heightM ? ' · ' + x.heightM + ' m' : '')])} onChange=${(v) => set({ typeId: v })} /></div>
         <div class="fld"><label>Rol</label><div class="seg">${[['', 'Otomatik'], ['T', 'Taşıyıcı'], ['D', 'Durdurucu'], ['N', 'Nihayet'], ['Z', 'Köşe']].map(([k, l]) => html`<${Chip} on=${(d.roleManual || '') === k} onClick=${() => set({ roleManual: k || null })}>${l}</${Chip}>`)}</div></div>
-        <div class="grid2"><div class="fld"><label>Boy (m)</label><input class="inp mono" type="number" step="0.1" value=${(d.attrs || {}).heightM ?? (t ? t.heightM : '')} onChange=${(e) => setA({ heightM: e.target.value === '' ? null : +e.target.value })} /></div><div class="fld"><label>İletken bağlantı yük. (m)</label><input class="inp mono" type="number" step="0.1" placeholder="otomatik" value=${(d.attrs || {}).attachH ?? ''} onChange=${(e) => setA({ attachH: e.target.value === '' ? null : +e.target.value })} /></div></div>` : null}
+        <div class="grid2"><div class="fld"><label>Boy (m)</label><input class="inp mono" type="number" step="0.1" value=${(d.attrs || {}).heightM ?? (t ? t.heightM : '')} onChange=${(e) => setA({ heightM: e.target.value === '' ? null : +e.target.value })} /></div><div class="fld"><label>İletken bağlantı yük. (m)</label><input class="inp mono" type="number" step="0.1" placeholder="otomatik" value=${(d.attrs || {}).attachH ?? ''} onChange=${(e) => setA({ attachH: e.target.value === '' ? null : +e.target.value })} /></div></div>
+        ${(() => { const arm = ((d.attrs || {}).armatur || [])[0] || null; const lums = luminairePoz(cat); return html`<div class="row" style="align-items:flex-end"><div class="fld grow"><label>Armatür (direğin malzemesi)</label><${Sel} value=${arm ? arm.servis : ''} options=${[['', 'Armatür yok'], ...lums.map((x) => [x.servis, x.name]), ...(arm && !lums.some((x) => x.servis === arm.servis) ? [[arm.servis, (cat.poz(arm.servis) || {}).name || arm.servis]] : [])]} onChange=${(v) => setA({ armatur: v ? [{ servis: v, qty: arm ? arm.qty : 1 }] : [] })} /></div>
+          ${arm ? html`<div class="fld" style="width:84px"><label>Adet</label><input class="inp mono" type="number" min="1" step="1" value=${arm.qty} onChange=${(e) => setA({ armatur: [{ servis: arm.servis, qty: Math.max(1, +e.target.value || 1) }] })} /></div>` : null}</div>`; })()}` : null}
       ${d.kind === 'transformer' ? html`<div class="grid2"><div class="fld"><label>Posta tipi</label><${Sel} value=${d.attrs.post} options=${cat.postTypes().map((x) => [x.id, x.label])} onChange=${(v) => setA({ post: v })} /></div>
         <div class="fld"><label>Güç (kVA)</label><input class="inp mono" type="number" value=${d.attrs.kva ?? ''} onChange=${(e) => setA({ kva: +e.target.value })} /></div>
         <div class="fld"><label>Cins</label><${Sel} value=${d.attrs.cins || 'herm'} options=${[['herm', 'Hermetik'], ['kuru', 'Kuru tip']]} onChange=${(v) => setA({ cins: v })} /></div>
@@ -113,9 +125,10 @@ export function EquipmentScreen({ id }) {
         <div class="fld"><label>Üretici</label><input class="inp" value=${d.attrs.maker || ''} onChange=${(e) => setA({ maker: e.target.value })} /></div>
         <div class="fld"><label>Eski güç (kVA)</label><input class="inp mono" type="number" value=${d.attrs.oldKva ?? ''} onChange=${(e) => setA({ oldKva: e.target.value ? +e.target.value : null })} /></div></div>
         ${d.attrs.post === 'direk' ? html`<div class="fld"><label>Trafo direği</label><${Sel} mono value=${d.attrs.poleTypeId} options=${cat.poleTypes('trafo').map((x) => [x.id, x.name + ' · ' + x.kg + ' kg'])} onChange=${(v) => setA({ poleTypeId: v })} /></div>` : null}
-        ${KABIN_POSTLARI.includes(d.attrs.post) ? html`<button class=${'btn blk' + (d.attrs.cabin ? '' : ' pri')} style="height:52px" onClick=${() => app.nav.go('cabin', { id })}><${Icon} n="grid" s=${18} c=${d.attrs.cabin ? 'currentColor' : '#0b1326'} />${d.attrs.cabin ? 'Kabin: ' + d.attrs.cabin.kosk + ' · ' + d.attrs.cabin.hucreler.length + ' hücre · düzenle' : 'Kabini kur (hücreler · kablo kanalları)'}</button>
-          <div class="note">${d.attrs.cabin ? 'Keşifte gövde, hücreler, trafo, pano ve kanallar ayrı kalemler olarak gelir.' : d.attrs.post === 'mono' ? 'Kabin kurulmadıysa köşk gövdesi TİP1C (BOŞ) olarak keşfe eklenir; kabini kurunca tip boydan bulunur ve hücreler tek tek gelir.' : 'Kabini kurarsanız gövde, hücreler ve kablo kanalları keşfe ayrı kalemler olarak gelir.'}</div>` : null}
-        ${['mbk', 'rbk', 'mrmu', 'ind'].includes(d.attrs.post) && !d.attrs.cabin ? html`<div class="fld"><label>Köşk / hücre kodu</label><${Sel} mono value=${d.attrs.kioskServis} options=${cat.t.kiosks.map((k) => [k.servis, k.label])} onChange=${(v) => setA({ kioskServis: v })} /></div>` : null}` : null}
+        ${(() => { const gl = koskGovdeleri(cat, d.attrs.post); if (!gl.length) return null; const cur = d.attrs.govde; return html`<div class="fld"><label>Köşk tipi</label><${Sel} value=${cur || ''} options=${[['', d.attrs.post === 'mono' && cur === undefined ? 'Otomatik (TİP-1C)' : 'Köşk kalemi yok'], ...gl.map((x) => [x.servis, x.ad]), ...(cur && !gl.some((x) => x.servis === cur) ? [[cur, (cat.poz(cur) || {}).name || cur]] : [])]} onChange=${(v) => setA({ govde: v || null })} /></div>`; })()}
+        ${KABIN_POSTLARI.includes(d.attrs.post) || d.attrs.cabin ? html`<button class=${'btn blk' + (d.attrs.cabin ? '' : ' pri')} style="height:52px" onClick=${() => app.nav.go('cabin', { id })}><${Icon} n="grid" s=${18} c=${d.attrs.cabin ? 'currentColor' : '#0b1326'} />${d.attrs.cabin ? 'Kabin: ' + d.attrs.cabin.hucreler.length + ' hücre · ' + (d.attrs.cabin.kanallar || []).length + ' kanal · düzenle' : 'Kabin · hücre ve kablo kanalı ekle'}</button>
+          <div class="note">Köşk hücresiz gelir. Hücreleri ve kablo kanallarını Kabin ekranında siz eklersiniz; eklediğiniz her hücre keşfe ayrı kalem olarak yazılır.</div>` : null}
+        ${(['mrmu', 'ind'].includes(d.attrs.post) || (d.attrs.kioskServis && ['mbk', 'rbk'].includes(d.attrs.post))) && !d.attrs.cabin ? html`<div class="fld"><label>${['mbk', 'rbk'].includes(d.attrs.post) ? 'Hazır köşk paketi (eski kayıt)' : 'Köşk / hücre kodu'}</label><${Sel} mono value=${d.attrs.kioskServis || ''} options=${[...(['mbk', 'rbk'].includes(d.attrs.post) ? [['', 'Paket yok · köşk tipini kullan']] : []), ...cat.t.kiosks.map((k) => [k.servis, k.label])]} onChange=${(v) => setA({ kioskServis: v || null })} /></div>` : null}` : null}
       ${d.kind === 'sdk' ? html`<div class="grid2"><div class="fld"><label>SDK tipi</label><${Sel} value=${d.attrs.sdkTypeId} options=${cat.sdkTypes().map((s) => [s.id, s.name])} onChange=${(v) => setA({ sdkTypeId: v })} /></div><div class="fld"><label>Çıkış sayısı</label><input class="inp mono" type="number" value=${d.attrs.outputs ?? 4} onChange=${(e) => setA({ outputs: +e.target.value })} /></div></div>
         <div class="fld"><label>Sigortalar (virgülle)</label><input class="inp mono" value=${(d.attrs.fuses || []).join(', ')} placeholder="3×100 A NH, 3×63 A NH" onChange=${(e) => setA({ fuses: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} /></div>
         <div class="note">Besleyen hat: ${lines.filter((l) => l.lineType === 'AG').map((l) => l.lineNo).join(', ') || 'yok'} · Bağlı abone: ${ps.data.lines.filter((l) => l.lineType === 'ABONE' && l.nodes[0] === e0.pointId).length}</div>` : null}
@@ -133,17 +146,19 @@ export function EquipmentScreen({ id }) {
     </div>
     ${draftIssues.length && dirty ? html`<div class="stack">${draftIssues.map((i) => html`<div class=${'alert ' + (i.severity === 'error' ? 'err' : 'warn')}><b>${i.code}</b> ${i.message}</div>`)}</div>` : null}
 
-    <div class="sect">Malzemeler <span class="r"><span class="hl">${autoN} otomatik</span> · <span class="hw">${manN} manuel</span></span></div>
-    <div class="card" style="padding:10px 12px"><div class="row"><span class="grow" style="font-size:13px">Tanım: ${isPole ? (g ? g.short : '') + ' · ' + (t ? t.name : '') + ' · ' + roleLabel(ri.role) : eqSummary(e0)} · ${job ? JOB_LABEL[job] : 'iş yok'}</span><button class="btn xs" onClick=${() => app.nav.go('definitions', { eqId: id })}>Reçete →</button></div></div>
+    <div class="sect">Malzemeler <span class="r">${auto ? html`<span class="hl">${autoN} otomatik</span> · <span class="hw">${manN} manuel</span>` : html`<span class="hl">${autoN} seçilen</span> · <span class="hw">${manN} eklenen</span>`}</span></div>
+    <div class="card" style="padding:10px 12px"><div class="row"><span class="grow" style="font-size:13px">Tanım: ${isPole ? (g ? g.short : '') + ' · ' + (t ? t.name : '') + ' · ' + roleLabel(ri.role) : eqSummary(e0)} · ${job ? JOB_LABEL[job] : 'iş yok'}</span>${auto ? html`<button class="btn xs" onClick=${() => app.nav.go('definitions', { eqId: id })}>Reçete →</button>` : null}</div>${auto ? null : html`<div class="note">Bu projede otomatik reçete kapalı: listede yalnız seçtiğiniz kalemler durur. Diğer malzemeleri aşağıdaki "Malzeme ekle" ile ekleyin.</div>`}</div>
     <div class="card tight list">
-      ${mats.items.filter((m) => m.origin === 'OTO').map((m) => html`<div class="li"><${Badge} k="ok">OTO</${Badge}><div class="grow"><div class="t" style="font-size:13px">${m.why}</div><div class="s">${m.name}</div><div class="m">${m.servis || 'katalogda yok'}${m.grp ? ' · Kg grubu ' + m.grp : ''}${m.overridden ? ' · reçete ' + m.autoQty : ''}</div></div>
+      ${mats.items.filter((m) => m.origin === 'OTO').map((m) => html`<div class="li"><${Badge} k="ok">${auto ? 'OTO' : 'SEÇİM'}</${Badge}><div class="grow"><div class="t" style="font-size:13px">${m.why}</div><div class="s">${m.name}</div><div class="m">${m.servis || 'katalogda yok'}${m.grp ? ' · Kg grubu ' + m.grp : ''}${m.overridden ? ' · reçete ' + m.autoQty : ''}</div></div>
         <button class="btn xs" style=${m.overridden ? 'border-color:#f59e0b;color:#fcd34d' : ''} onClick=${() => changeQty(m)}><b class="mono">${trn(m.qty, m.unit === 'm' || m.unit === 'Kg' ? 1 : 0)}</b> ${m.unit}</button>${m.overridden ? html`<button class="btn xs" aria-label="Reçeteye dön" onClick=${() => resetQty(m)}><${Icon} n="undo" s=${14} /></button>` : null}</div>`)}
-      ${!mats.items.length ? html`<div class="empty">${job ? 'Reçete boş · MALZEME EKSİK' : 'Mevcut / ileride · malzeme gelmez'}</div>` : null}
+      ${!mats.items.length ? html`<div class="empty">${job ? (auto ? 'Reçete boş · MALZEME EKSİK' : 'Kalem yok · tipi seçin ya da aşağıdan malzeme ekleyin') : 'Mevcut / ileride · malzeme gelmez'}</div>` : null}
     </div>
-    ${mats.items.filter((m) => m.origin !== 'OTO').map((m) => html`<div class="card warn"><div class="row"><${Badge} k="m">${m.origin === 'SAHADA_ILAVE' ? 'SAHADA İLAVE' : 'MANUEL'}</${Badge}><b class="grow" style="font-size:13px">${m.name}</b></div><div class="mono hw" style="font-size:12px;margin:4px 0">${m.servis} · ${m.why}</div>
-      <div class="row"><b class="mono grow">${trn(m.qty, 2)} ${m.unit}</b><span class="note">Onay</span><${Toggle} on=${m.approved} onChange=${(v) => ps.approveMaterial(m.materialId, v)} label="Onay" /><button class="btn dang sm" onClick=${async () => { const r = await app.prompt('Kaldır', 'Gerekçe', { required: true }); if (r) ps.removeMaterial(m.materialId, r); }}>Kaldır</button></div></div>`)}
-    ${job ? html`<button class="btn blk" style="border-style:dashed;border-color:#f59e0b;color:#fcd34d" onClick=${() => setPick(!pick)}><${Icon} n=${pick ? 'x' : 'plus'} s=${18} />${pick ? 'Malzeme seçimini kapat' : 'Sahada ilave talebi'}</button>` : null}
-    ${pick ? html`<div class="card stack"><div class="lbl">Katalogdan seç · elle eklenen olarak işaretlenir</div><input class="inp" value=${q} placeholder="servis no veya ad: izolatör, kazık, 011.04…" onInput=${(e) => setQ(e.target.value)} />
+    ${mats.items.filter((m) => m.origin !== 'OTO').map((m) => (m.origin === 'MANUEL' && m.approved && !auto) ? html`<div class="card" style="padding:10px 12px"><div class="row"><${Badge} k="cy">EKLENEN</${Badge}><div class="grow"><b style="font-size:13px">${m.name}</b><div class="m">${m.servis}</div></div>
+        <button class="btn xs" onClick=${() => manualQty(m)}><b class="mono">${trn(m.qty, m.unit === 'Ad' ? 0 : 2)}</b> ${m.unit}</button><button class="btn xs dang" aria-label="Malzemeyi kaldır" onClick=${async () => { if (await app.confirm('Malzemeyi kaldır', m.name + ' listeden çıkarılsın mı?', { danger: true, ok: 'Kaldır' })) ps.removeMaterial(m.materialId, 'Kaldırıldı'); }}><${Icon} n="trash" s=${14} /></button></div></div>`
+      : html`<div class="card warn"><div class="row"><${Badge} k="m">${m.origin === 'SAHADA_ILAVE' ? 'SAHADA İLAVE' : 'MANUEL'}</${Badge}><b class="grow" style="font-size:13px">${m.name}</b></div><div class="mono hw" style="font-size:12px;margin:4px 0">${m.servis} · ${m.why}</div>
+      <div class="row"><b class="mono grow">${trn(m.qty, 2)} ${m.unit}</b><span class="note">Onay</span><${Toggle} on=${m.approved} onChange=${(v) => ps.approveMaterial(m.materialId, v).catch((err) => app.toast(err.message, 'err', 6000))} label="Onay" /><button class="btn dang sm" onClick=${async () => { const r = await app.prompt('Kaldır', 'Gerekçe', { required: true }); if (r) ps.removeMaterial(m.materialId, r); }}>Kaldır</button></div></div>`)}
+    ${job ? html`<button class="btn blk" style="border-style:dashed;border-color:#f59e0b;color:#fcd34d" onClick=${() => setPick(!pick)}><${Icon} n=${pick ? 'x' : 'plus'} s=${18} />${pick ? 'Malzeme seçimini kapat' : auto ? 'Sahada ilave talebi' : 'Malzeme ekle'}</button>` : null}
+    ${pick ? html`<div class="card stack"><div class="lbl">${auto ? 'Katalogdan seç · elle eklenen olarak işaretlenir' : 'Katalogdan seç'}</div><input class="inp" value=${q} placeholder="servis no veya ad: izolatör, kazık, 011.04…" onInput=${(e) => setQ(e.target.value)} />
       <div class="list">${hits.slice(0, 12).map((x) => html`<div class="li" style="padding:8px 0"><div class="grow"><div style="font-size:13px;font-weight:600">${x.name}</div><div class="m">${x.servis} · ${x.unit}${x.kgPerUnit ? ' · ' + x.kgPerUnit + ' kg' : ''}</div></div><button class="btn sm" style="border-color:#f59e0b;color:#fcd34d" onClick=${() => addManual(x.servis)}>Ekle</button></div>`)}</div><div class="note">${hits.length} sonuç (${job} sayfasında bulunanlar)</div></div>` : null}
 
     ${job ? html`<div class="sect">Yeşil deftere yazılacak <span class="r"><${Badge} k="ok">${JOB_LABEL[job].toUpperCase()} SAYFASI</${Badge}></span></div>

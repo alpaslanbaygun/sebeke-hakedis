@@ -18,6 +18,15 @@ export function govdeSecenekleri(cat) {
   for (const p of cat.t.poz) if (/^PB-\d/.test(p.name) && !out.some((x) => x.servis === p.servis)) out.push({ servis: p.servis, ad: p.name });
   return out;
 }
+// v2.4 · Posta tipine göre seçilebilir köşk gövdeleri: prefabrik beton köşk → PB-1…PB-4 · monoblok → TİP-1A/1B/1C (boş gövde)
+export function koskGovdeleri(cat, post) {
+  if (post === 'mbk' || post === 'rbk') return cat.t.poz.filter((p) => /^PB-\d/.test(p.name)).sort((a, b) => a.name.localeCompare(b.name, 'tr', { numeric: true })).map((p) => ({ servis: p.servis, ad: p.name, kisa: p.name.split(' ')[0] }));
+  if (post === 'mono') {
+    const map = (cat.table('cabin') || {}).govde || {};
+    return ['TİP-1A', 'TİP-1B', 'TİP-1C'].filter((k) => map[k] && cat.poz(map[k])).map((k) => ({ servis: map[k], ad: k + ' · ' + cat.poz(map[k]).name, kisa: k }));
+  }
+  return [];
+}
 const line = (cat, servis, qty, why, tag, extra = {}) => {
   const pz = servis ? cat.poz(servis) : null;
   return Object.assign({ servis: servis || null, qty, unit: pz ? pz.unit : (extra.unit || 'Ad'), kgPer: pz ? pz.kgPerUnit : null, name: pz ? pz.name : (extra.name || '(katalogda yok)'), why, grp: '', tag, origin: 'OTO', qtyFrom: 'kabin', missing: !pz }, extra.keep || {});
@@ -69,7 +78,7 @@ export function cabinItems(e, cat, ctx, params) {
   const kServis = (cat.table('cabin') || {}).kanal || null;
   for (const k of Y.kanallar) {
     const m = Math.round((k.boy || 0) / 10) / 100;
-    if (m > 0) items.push(line(cat, kServis, m, 'Kablo kanalı · ' + k.ad + ' · ' + (k.gen || '?') + '×' + (k.der || '?') + ' mm' + (k.kapakli ? ' · kapaklı' : ''), 'kanal', { unit: 'm', name: 'Kablo kanalı' }));
+    if (m > 0) items.push(line(cat, kServis, m, 'Kablo kanalı · ' + k.ad + ' · ' + (k.gen || '?') + '×' + (k.der || '?') + ' mm' + (k.kapakli ? ' · kapaklı' : ''), 'kanal', { unit: 'm', name: 'Kablo kanalı', keep: { tipProje: k.kaynak !== 'kullanici' } }));
   }
   // Topraklama ve levha (köşk / bina reçetesindeki gibi)
   for (const [servis, key, why] of [['030.02.01.01-001', 'koskKazik', 'Topraklama kazığı'], ['030.01.04.01-002', 'koskBakir', 'Örgülü bakır 50 mm² (m)'], ['027.01.02.01-000', 'levha', 'Tehlike levhası']]) {

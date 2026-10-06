@@ -1,7 +1,7 @@
 // Proje hesap zinciri (saf fonksiyon):
 // NOKTA/HARİTA → HAT → AÇIKLIK → DİREK ROLÜ/AÇI → MALZEME REÇETESİ → METRAJ → (HAKEDİŞ) → KONTROL → (DXF/RAPOR karması)
 import { indexModel, computeSpans, computePoleRoles, lineLengths, topologyIssues } from '../grid/network.js';
-import { equipmentMaterials, applyRules } from '../grid/recipe.js';
+import { equipmentMaterials, applyRules, autoRecipeOn } from '../grid/recipe.js';
 import { overheadQuantities, cableQuantities, isBareAG } from '../grid/lines.js';
 import { checkPole, checkTransformer, checkLine, checkPoint, checkMaterials } from '../grid/checks.js';
 import { analyzeLine } from '../grid/enh.js';
@@ -27,6 +27,7 @@ export function computeProject(model, cat) {
   const bare = new Set();
   for (const l of ix.lines) if (l.install !== 'yeralti' && isBareAG(l, cat)) for (const pid of l.nodes || []) bare.add(pid);
   const params = project.paramOverrides || {};
+  const auto = autoRecipeOn(project);
   const manualBy = new Map();
   for (const x of m.materials) { if (!manualBy.has(x.ownerId)) manualBy.set(x.ownerId, []); manualBy.get(x.ownerId).push(x); }
 
@@ -35,7 +36,7 @@ export function computeProject(model, cat) {
   for (const e of m.equipment) {
     const p = ix.pts.get(e.pointId);
     const ri = roles.get(e.id);
-    const mats = equipmentMaterials(e, cat, { ctx: { role: (ri && ri.role) || 'T', agCiplak: bare.has(e.pointId) }, params, manual: manualBy.get(e.id) });
+    const mats = equipmentMaterials(e, cat, { ctx: { role: (ri && ri.role) || 'T', agCiplak: bare.has(e.pointId) }, params, manual: manualBy.get(e.id), auto });
     matsByEq.set(e.id, mats);
     contribs.push(...contributionsFromEquipment(e, mats, { posSource: posSourceOf(p), photos: photoCount.get(e.id) || 0, done: countsAsDone(project, e) }));
     if (e.kind === 'pole') issues.push(...checkPole(e, cat, ri));
@@ -52,13 +53,18 @@ export function computeProject(model, cat) {
     let items = [], cableInfo = null;
     if (l.install === 'yeralti') {
       const endKinds = [l.nodes[0], l.nodes[l.nodes.length - 1]].map((pid) => { const eqs = ix.eqByPoint.get(pid) || []; return eqs.length ? eqs[0].kind : 'point'; });
-      cableInfo = cableQuantities(l, { length2D: ln.l2 }, endKinds, cat);
+      cableInfo = cableQuantities(l, { length2D: ln.l2 }, endKinds, cat, { auto });
       items = cableInfo.items;
     } else items = overheadQuantities(l, ln.l3, cat, { payPct: project.conductorPayPct || 0 });
-    if (l.lineType === 'ABONE') {
+    if (l.lineType === 'ABONE' && auto) {
       const n = l.aboneCount || 1;
       const ab = applyRules(cat.rules('abone'), { install: l.install, phase: l.abonePhase || 'uc', length: ln.l2 }, cat, params);
       for (const a of ab) items.push({ servis: a.servis, qty: a.qtyFrom === '$length' ? a.qty : a.qty * n, unit: a.unit, why: a.why, conductor: a.name, missing: a.missing });
+    }
+    // Hatta elle eklenen malzemeler (v2.4)
+    for (const x of manualBy.get(l.id) || []) {
+      const pz = cat.poz(x.servis);
+      items.push({ servis: x.servis, qty: +x.qty, unit: pz ? pz.unit : x.unit || 'Ad', why: x.reason || 'Elle eklendi', conductor: pz ? pz.name : x.name || '', missing: !pz, manual: true, materialId: x.id, origin: x.origin || 'MANUEL', name: pz ? pz.name : x.name || '(katalogda yok)' });
     }
     if (job) contribs.push(...contributionsFromLine(l, items, job, { lenSource: allGnss ? 'GNSS' : 'GIS', photos: photoCount.get(l.id) || 0, done: countsAsDone(project, l) }));
     issues.push(...checkLine(l, cat));

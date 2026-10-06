@@ -94,12 +94,7 @@ async function boot() {
     document.getElementById('splash').remove();
     render(html`<${App} />`, document.body);
     bus.on('native:gnssStatus', (d) => { if (d && d.state === 'error' && app.toast) app.toast('GNSS: ' + (d.error || 'bağlantı hatası'), 'err', 5000); if (d && d.state === 'connected' && app.toast) app.toast('GNSS bağlandı · ' + (d.name || '')); });
-    // Spectra profili: bağlandıktan sonra 4 sn veri gelmezse konum çıkışını açmayı dene
-    bus.on('native:gnssStatus', async (d) => {
-      if (!d || d.state !== 'connected' || (await ds.setting('receiverProfile')) !== 'spectra') return;
-      const n0 = gnss.stream ? gnss.stream.stats.lines : 0;
-      setTimeout(() => { if (gnss.state.source === 'external' && gnss.state.connected && gnss.stream && gnss.stream.stats.lines === n0) gnss.setupSpectra().then(() => app.toast && app.toast('Spectra: konum çıkışı açıldı', 'ok', 4000)).catch(() => {}); }, 4000);
-    });
+    // v2.4: alıcı markası seçimi kaldırıldı (birden çok marka kullanılacak); tüm alıcılar genel NMEA ile okunur.
     bus.on('native:ntrip', (d) => { if (d && d.state === 'error' && app.toast) app.toast('NTRIP: ' + (d.error || 'hata'), 'err', 5000); });
     // İnternet geldiğinde otomatik senkron (sunucu adresi kayıtlıysa); yoksa Senkron ekranından elle
     const autoSync = async () => {

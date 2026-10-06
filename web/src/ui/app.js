@@ -10,7 +10,7 @@ const NO_PROJECT_OK = new Set(['settings', 'sync']);
 
 // Web üst çubuğu: açık proje + bulut kaydı durumu
 function WebBar() {
-  useBus(['cloud:status', 'project:open', 'project:computed']);
+  useBus(['cloud:status', 'project:open', 'project:computed', 'project:deleted']);
   const c = app.cloud, st = c ? c.status : null, p = app.ps.p;
   const [lab, col, tip] = !c ? ['YALNIZ BU TARAYICI', '#f59e0b', 'Bulut kaydı kullanılamıyor: veriler yalnız bu tarayıcıda saklanıyor. Oturum açıp sayfayı yeniden açın.']
     : st.state === 'saved' ? ['BULUTA KAYDEDİLDİ', '#10b981', st.at ? 'Son kayıt ' + new Date(st.at).toLocaleString('tr-TR') : 'Bulut kaydı açık']
@@ -62,19 +62,19 @@ function Toasts() {
 function Modals() {
   const [m, setM] = useState(null);
   useEffect(() => {
-    app.modal = (render) => new Promise((resolve) => setM({ render, resolve }));
+    app.modal = (render) => new Promise((resolve) => { app.modalOpen = true; setM({ render, resolve }); });
     app.confirm = (title, text, opts = {}) => app.modal((close) => html`<div class="mh"><h3>${title}</h3></div><div class="mb"><div class="note" style="font-size:14px">${text}</div></div><div class="mf"><button class="btn grow" onClick=${() => close(false)}>Vazgeç</button><button class=${'btn grow ' + (opts.danger ? 'dang' : 'pri')} onClick=${() => close(true)}>${opts.ok || 'Tamam'}</button></div>`);
-    app.prompt = (title, label, opts = {}) => app.modal((close) => { let v = opts.value || ''; return html`<div class="mh"><h3>${title}</h3></div><div class="mb"><div class="fld"><label>${label}</label><input class="inp" autofocus value=${v} placeholder=${opts.placeholder || ''} onInput=${(e) => { v = e.target.value; }} /></div>${opts.note ? html`<div class="note">${opts.note}</div>` : null}</div><div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn pri grow" onClick=${() => close(v.trim() || (opts.required ? null : ''))}>${opts.ok || 'Kaydet'}</button></div>`; });
+    app.prompt = (title, label, opts = {}) => app.modal((close) => { let v = opts.value || ''; return html`<div class="mh"><h3>${title}</h3></div><div class="mb"><div class="fld"><label>${label}</label><input class="inp" autofocus value=${v} placeholder=${opts.placeholder || ''} onInput=${(e) => { v = e.target.value; }} /></div>${opts.note ? html`<div class="note">${opts.note}</div>` : null}</div><div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class=${'btn grow ' + (opts.danger ? 'dang' : 'pri')} onClick=${() => close(v.trim() || (opts.required ? null : ''))}>${opts.ok || 'Kaydet'}</button></div>`; });
   }, []);
   if (!m) return null;
-  const close = (v) => { setM(null); m.resolve(v); };
+  const close = (v) => { app.modalOpen = false; setM(null); m.resolve(v); };
   return html`<div class="modal-bg" onClick=${(e) => { if (e.target === e.currentTarget) close(null); }}><div class="modal" role="dialog">${m.render(close)}</div></div>`;
 }
 
 export function App() {
   const [stack, setStack] = useState([{ name: app.ps.p ? 'map' : 'projects', params: {} }]);
   const [tab, setTab] = useState(app.ps.p ? 'map' : null);
-  useBus(['project:open']);
+  useBus(['project:open', 'project:deleted']);
   useEffect(() => {
     app.nav = {
       go: (name, params = {}) => setStack((s) => [...s, { name, params }]),

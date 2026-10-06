@@ -6,16 +6,26 @@ import { makeCrs, zoneForLon, TM_ZONES } from '../../geo/crs.js';
 import { listStandards } from '../../core/standards.js';
 import { HAK_STATUSES, HAK_ORDER } from '../../core/schema.js';
 import { PENDING } from '../../core/roles.js';
+import { autoRecipeOn } from '../../grid/recipe.js';
 import { exportChangeset, applyChangeset, markSynced, listConflicts, resolveConflict, pendingChanges, httpSync } from '../../core/sync.js';
 
 export function ProjectsScreen() {
-  useBus(['project:open', 'project:computed']);
+  useBus(['project:open', 'project:computed', 'project:deleted']);
   const [list, setList] = useState(null);
   const [form, setForm] = useState(null);
   const [stds, setStds] = useState([]);
   const load = async () => setList(await app.ps.listProjects());
   useEffect(() => { load(); listStandards(app.ds).then(setStds); }, []);
   const open = async (p) => { await app.ps.open(p.id); app.nav.tab('map'); };
+  // Proje silme: ad yazılarak onaylanır; geri alınamaz
+  const removeProject = async (p) => {
+    const v = await app.prompt('Projeyi sil', 'Onaylamak için proje adını yazın', { required: true, danger: true, ok: 'Kalıcı olarak sil', placeholder: p.name, note: '"' + p.name + '" projesi; noktaları, objeleri, hatları, fotoğrafları ve hakediş kayıtlarıyla birlikte ' + (app.web ? 'web sürümünden (bulut kaydından)' : 'bu cihazdan') + ' kalıcı olarak silinir. Geri alınamaz. ' + (app.web ? 'Telefondaki kopya etkilenmez. ' : 'Web sürümündeki kopya etkilenmez. ') + 'Gerekirse önce Dışa Aktar ekranından teslim paketi alın.' });
+    if (v == null) return;
+    if (String(v).trim().toLocaleLowerCase('tr-TR') !== String(p.name).trim().toLocaleLowerCase('tr-TR')) return app.toast('Proje adı eşleşmedi · silinmedi', 'warn', 5000);
+    const wasOpen = !!(app.ps.p && app.ps.p.id === p.id);
+    try { const r = await app.ps.deleteProject(p.id); app.toast(r.name + ' silindi · ' + r.records + ' kayıt', 'ok', 5000); if (wasOpen) { app.nav.tab('projects'); return; } } catch (e) { app.toast(e.message, 'err', 7000); }
+    load();
+  };
   // Web: telefondan gelen dosya (.vsync) ile proje al
   const fromPhone = async (f) => {
     try {
@@ -51,7 +61,8 @@ export function ProjectsScreen() {
     <button class="btn pri blk" style="height:56px" onClick=${() => setForm({ name: '', code: '', location: '', client: '', contractor: '', stdId: (stds.find((s) => s.status === 'active') || stds[0] || {}).id, datum: 'TUREF', cm: 39, heightSystem: 'ortometrik', enhZone: 'II', mode: 'asbuilt' })}><${Icon} n="plus" s=${20} c="#0b1326" />Yeni proje</button>
     ${app.web ? html`<label class="btn blk" style="height:56px"><${Icon} n="sync" s=${20} />Telefondan proje al (.vsync dosyası)<input type="file" accept=".vsync,.json" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) fromPhone(f); }} /></label>
       <div class="note">Telefonda: Ayarlar → Veri ve senkron → Senkron → "Değişiklikleri paylaş (.vsync)". Oluşan dosyayı bu bilgisayara gönderin (e-posta, Drive, kablo) ve yukarıdan seçin.</div>` : null}
-    ${list === null ? html`<${Empty}>Yükleniyor…</${Empty}>` : !list.length ? html`<${Empty}>${app.web ? 'Henüz proje yok. Telefondaki projeyi dosya ile alın ya da burada yeni proje açıp koordinatları Excel, elle giriş ya da haritadan seçerek girin.' : 'Henüz proje yok. Proje oluşturup GNSS alıcısını bağlayarak sahaya çıkın.'}</${Empty}>` : html`<div class="card tight list">${list.map((p) => html`<button class="li" onClick=${() => open(p)}><${Icon} n="folder" c=${app.ps.p && app.ps.p.id === p.id ? '#10b981' : '#94a3b8'} /><div class="grow"><div class="t">${p.name}</div><div class="s">${p.code || ''} · ${p.crs ? p.crs.label : ''} · ${p.stdId}</div><div class="m">${new Date(p.updatedAt).toLocaleString('tr-TR')}</div></div><${Icon} n="next" s=${16} c="#94a3b8" /></button>`)}</div>`}`;
+    ${list === null ? html`<${Empty}>Yükleniyor…</${Empty}>` : !list.length ? html`<${Empty}>${app.web ? 'Henüz proje yok. Telefondaki projeyi dosya ile alın ya da burada yeni proje açıp koordinatları Excel, elle giriş ya da haritadan seçerek girin.' : 'Henüz proje yok. Proje oluşturup GNSS alıcısını bağlayarak sahaya çıkın.'}</${Empty}>` : html`<div class="card tight list">${list.map((p) => html`<div class="li"><button style="background:none;border:0;color:inherit;display:flex;gap:12px;align-items:center;text-align:left;padding:0;min-width:0" class="grow" onClick=${() => open(p)}><${Icon} n="folder" c=${app.ps.p && app.ps.p.id === p.id ? '#10b981' : '#94a3b8'} /><div class="grow" style="min-width:0"><div class="t">${p.name}</div><div class="s">${p.code || ''} · ${p.crs ? p.crs.label : ''} · ${p.stdId}</div><div class="m">${new Date(p.updatedAt).toLocaleString('tr-TR')}</div></div></button><button class="btn xs dang" aria-label=${'Projeyi sil: ' + p.name} onClick=${() => removeProject(p)}><${Icon} n="trash" s=${15} /></button></div>`)}</div>
+      <div class="note">Projeyi açmak için adına dokunun. Çöp kutusu projeyi tüm kayıtlarıyla kalıcı olarak siler.</div>`}`;
 }
 ProjectsScreen.noTabs = false;
 
@@ -73,7 +84,7 @@ export function HubScreen() {
     ['Saha objelerini al (GNSS · manuel · harita · Excel)', eqc('pole') + ' direk · ' + eqc('transformer') + ' trafo · ' + eqc('sdk') + ' SDK · ' + (eqc('lighting') + eqc('luminaire')) + ' ayd.', d.equipment.length > 0, () => app.nav.tab('map')],
     ['Hatları çiz', d.lines.length + ' hat · ' + r.spans.length + ' açıklık', d.lines.length > 0, () => app.nav.tab('map')],
     ['Hatları elektriksel bağla', topo.length ? topo.length + ' topoloji bulgusu' : 'Topoloji temiz', d.lines.length > 0 && !topo.length, () => app.nav.go('checks')],
-    ['Malzeme reçeteleri', [...r.matsByEq.values()].reduce((s, m) => s + m.items.length, 0) + ' kalem · ' + matMiss.length + ' eksik', d.equipment.length > 0 && !matMiss.length, () => app.nav.go('definitions')],
+    [autoRecipeOn(ps.p) ? 'Malzeme reçeteleri' : 'Malzemeler (seçilen + elle eklenen)', [...r.matsByEq.values()].reduce((s, m) => s + m.items.length, 0) + ' kalem · ' + matMiss.length + ' eksik', d.equipment.length > 0 && !matMiss.length, () => app.nav.go(ps.p.autoRecipe === true ? 'definitions' : 'objects')],
     ['Metraj', r.quantities.length + ' Yeşil Defter satırı', r.quantities.length > 0, () => app.nav.go('metraj')],
     ['Hakediş', d.periods.length + ' dönem · ' + d.periods.filter((p) => p.status === 'onayli').length + ' onaylı', d.periods.some((p) => p.status === 'onayli'), () => app.nav.go('hakedis')],
     ['Kontrol', errs.length + ' hata · ' + (r.issues.length - errs.length) + ' uyarı', d.equipment.length > 0 && !errs.length, () => app.nav.go('checks')],
@@ -99,14 +110,15 @@ export function HubScreen() {
 
 export function ProjectEditScreen() {
   const ps = app.ps;
-  const [d, setD] = useState({ name: ps.p.name, code: ps.p.code, client: ps.p.client, contractor: ps.p.contractor, location: ps.p.location, mode: ps.p.mode, cornerThresholdDeg: ps.p.cornerThresholdDeg ?? 3, conductorPayPct: ps.p.conductorPayPct ?? 0, landClass: ps.p.landClass || 'arazi' });
+  const [d, setD] = useState({ name: ps.p.name, code: ps.p.code, client: ps.p.client, contractor: ps.p.contractor, location: ps.p.location, mode: ps.p.mode, cornerThresholdDeg: ps.p.cornerThresholdDeg ?? 3, conductorPayPct: ps.p.conductorPayPct ?? 0, landClass: ps.p.landClass || 'arazi', autoRecipe: autoRecipeOn(ps.p) });
   const set = (x) => setD(Object.assign({}, d, x));
-  const save = async () => { await ps.updateProject(d, 'Proje bilgileri'); app.toast('Kaydedildi'); app.nav.back(); };
+  const save = async () => { const out = Object.assign({}, d); if (ps.p.autoRecipe === undefined && out.autoRecipe === autoRecipeOn(ps.p)) delete out.autoRecipe; /* dokunulmadıysa eski proje sorusu geçerli kalır */ await ps.updateProject(out, 'Proje bilgileri'); app.toast('Kaydedildi'); app.nav.back(); };
   return html`<${Title} title="Proje bilgileri" sub=${'Standart: ' + ps.cat.std.name + ' (sabit)'} />
     <div class="card stack">${[['name', 'Proje adı'], ['code', 'Kod'], ['client', 'İdare'], ['contractor', 'Yüklenici'], ['location', 'Yer']].map(([k, l]) => html`<div class="fld"><label>${l}</label><input class="inp" value=${d[k] || ''} onInput=${(e) => set({ [k]: e.target.value })} /></div>`)}
       <div class="fld"><label>Çalışma modu</label><${Seg} value=${d.mode} options=${[['asbuilt', 'Uygulama'], ['tasarim', 'Tasarım']]} onChange=${(v) => set({ mode: v })} /></div>
       <div class="grid2"><div class="fld"><label>Köşe eşiği (°)</label><input class="inp mono" type="number" step="0.5" value=${d.cornerThresholdDeg} onChange=${(e) => set({ cornerThresholdDeg: +e.target.value })} /></div><div class="fld"><label>İletken payı (%)</label><input class="inp mono" type="number" step="0.5" value=${d.conductorPayPct} onChange=${(e) => set({ conductorPayPct: +e.target.value })} /></div></div>
-      <div class="fld"><label>Zemin sınıfı (ENH açıklık)</label><${Seg} value=${d.landClass} options=${[['arazi', 'Yerleşim dışı'], ['yerlesim', 'Yerleşim yeri']]} onChange=${(v) => set({ landClass: v })} /></div></div>
+      <div class="fld"><label>Zemin sınıfı (ENH açıklık)</label><${Seg} value=${d.landClass} options=${[['arazi', 'Yerleşim dışı'], ['yerlesim', 'Yerleşim yeri']]} onChange=${(v) => set({ landClass: v })} /></div>
+      <div class="row"><div class="grow"><b style="font-size:14px">Otomatik malzeme reçetesi</b><div class="note">Kapalı (önerilen): objede yalnız seçtiğiniz kalemler gelir (direk, trafo, köşk, iletken boyu, kanal hesabı); diğer malzemeleri siz eklersiniz. Açık: travers, izolatör, topraklama, kum, bant gibi yardımcı malzemeler kurala göre kendiliğinden eklenir.</div></div><${Toggle} on=${d.autoRecipe} onChange=${(v) => set({ autoRecipe: v })} label="Otomatik reçete" /></div></div>
     <button class="btn pri blk huge" onClick=${save}>KAYDET</button>`;
 }
 

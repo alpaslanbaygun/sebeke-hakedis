@@ -5,7 +5,9 @@ import { measure } from '../services.js';
 import { renumberDialog } from './field.js';
 import { HakRow, HakHistory } from './team.js';
 import { STATUSES, HAK_STATUSES, HAK_ORDER, hakOf } from '../../core/schema.js';
-import { circuitLabel, lineLabel, CABLE_DEFAULTS } from '../../grid/lines.js';
+import { circuitLabel, lineLabel, CABLE_DEFAULTS, KAPLAMA, YONTEM, kanalModel } from '../../grid/lines.js';
+import { autoRecipeOn } from '../../grid/recipe.js';
+import { MaterialPicker } from './matpick.js';
 import { offsetPolyline, dms } from '../../geo/geom.js';
 import { unproject } from '../../geo/crs.js';
 import { sourceInfo, sourceText } from '../../core/source.js';
@@ -57,6 +59,7 @@ export function LineScreen({ id }) {
   const ps = app.ps, cat = ps.cat;
   const l0 = ps.lineById(id);
   const [d, setD] = useState(() => (l0 ? JSON.parse(JSON.stringify(l0)) : null));
+  const [pick, setPick] = useState(false);
   if (!l0 || !d) return html`<${Title} title="Hat yok" />`;
   const li = ps.result.lineInfo.get(id) || {};
   const spans = ps.result.spans.filter((s) => s.lineId === id).sort((a, b) => a.seq - b.seq);
@@ -64,6 +67,20 @@ export function LineScreen({ id }) {
   const setC = (i, p) => setD((x) => Object.assign({}, x, { circuits: x.circuits.map((c, j) => (j === i ? Object.assign({}, c, p) : c)) }));
   const setCable = (p) => setD((x) => Object.assign({}, x, { cable: Object.assign({}, x.cable || {}, p) }));
   const dirty = JSON.stringify(d) !== JSON.stringify(l0);
+  const auto = autoRecipeOn(ps.p);
+  const num = (v) => +String(v).replace(',', '.');
+  const matLabel = (key) => { const m = (cat.table('materialsMaster') || []).find((x) => x.key === key); return m ? m.label : key; };
+  const addManual = async (servis) => {
+    const pz = cat.poz(servis);
+    const v = await app.prompt('Malzeme ekle · ' + (pz ? pz.name : servis), 'Miktar (' + (pz ? pz.unit : 'Ad') + ')', { value: '1', required: true });
+    if (!v) return;
+    try { await ps.addMaterial('line', id, servis, num(v)); app.toast((pz ? pz.name : servis) + ' eklendi', 'ok'); setPick(false); } catch (err) { app.toast(err.message, 'err', 6000); }
+  };
+  const manualQty = async (m) => {
+    const v = await app.prompt('Miktar · ' + (m.name || ''), 'Yeni miktar (' + m.unit + ')', { value: String(m.qty), required: true });
+    if (!v) return;
+    try { await ps.setMaterialRowQty(m.materialId, num(v)); } catch (err) { app.toast(err.message, 'err'); }
+  };
   const iss = ps.result.issues.filter((i) => i.entityId === id);
   const save = async () => { const { id: _i, createdAt, updatedAt, rev, createdBy, updatedBy, ...patch } = d; await ps.updateLine(id, patch, 'Hat kaydı güncellendi'); app.toast(d.lineNo + ' kaydedildi'); };
   const roleOpts = d.lineType === 'OG' || d.lineType === 'ENH' ? [[d.lineType, d.lineType], ['AG', 'AG (müşterek)'], ['AYD', 'AYD']] : d.lineType === 'ABONE' ? [['ABONE', 'ABONE']] : [['AG', 'AG'], ['AYD', 'AYD']];
@@ -93,7 +110,7 @@ export function LineScreen({ id }) {
       <div class="fld"><label>Hat tipi</label><${Seg} value=${d.lineType} options=${['AG', 'OG', 'AYD', 'ENH', 'ABONE']} onChange=${(v) => set({ lineType: v })} /></div>
       <div class="grid2"><div class="fld"><label>Tesis</label><${Seg} value=${d.install} options=${[['havai', 'Havai'], ['yeralti', 'Yeraltı']]} onChange=${(v) => set({ install: v })} /></div><div class="fld"><label>Gerilim (kV)</label><input class="inp mono" type="number" step="0.1" value=${d.voltageKV ?? (d.lineType === 'OG' || d.lineType === 'ENH' ? 34.5 : 0.4)} onChange=${(e) => set({ voltageKV: +e.target.value })} /></div></div>
       <div class="fld"><label>Durum</label><div class="chips">${Object.entries(STATUSES).map(([k, v]) => html`<${Chip} on=${d.state === k} onClick=${() => set({ state: k })}>${v.label.split(' ·')[0]}</${Chip}>`)}</div></div>
-      <div class="row"><span class="grow">Müşterek (AG+OG aynı direk)</span><${Toggle} on=${!!d.musterek} onChange=${(v) => set({ musterek: v })} label="Müşterek" /></div>
+      <div class="row"><span class="grow">${d.install === 'yeralti' ? 'Aynı kanalda AG ve OG kablosu' : 'Müşterek (AG+OG aynı direk)'}</span><${Toggle} on=${!!d.musterek} onChange=${(v) => set({ musterek: v })} label="Müşterek" /></div>
       <div class="row"><span class="grow">Ana ring</span><${Toggle} on=${!!d.ring} onChange=${(v) => set({ ring: v })} label="Ring" /></div>
       ${d.lineType === 'ABONE' ? html`<div class="grid2"><div class="fld"><label>Faz</label><${Seg} value=${d.abonePhase || 'uc'} options=${[['tek', 'Tek'], ['uc', 'Üç']]} onChange=${(v) => set({ abonePhase: v })} /></div><div class="fld"><label>Bağlantı sayısı</label><input class="inp mono" type="number" value=${d.aboneCount || 1} onChange=${(e) => set({ aboneCount: +e.target.value })} /></div></div>` : null}
       <div class="fld"><label>Faz yapısı</label><input class="inp mono" value=${d.phaseConfig || (d.lineType === 'ABONE' && d.abonePhase === 'tek' ? '1F+N' : '3F+N')} onChange=${(e) => set({ phaseConfig: e.target.value })} /></div>
@@ -102,11 +119,27 @@ export function LineScreen({ id }) {
     ${d.circuits.map((c, i) => html`<div class="card stack"><div class="row"><${Sel} value=${c.role} options=${roleOpts} onChange=${(v) => setC(i, { role: v })} /><select class="inp mono" style="width:70px" value=${c.count || 1} onChange=${(e) => setC(i, { count: +e.target.value })}>${[1, 2, 3, 4].map((n) => html`<option value=${n}>${n}×</option>`)}</select><button class="btn dang sm" aria-label="Sil" disabled=${d.circuits.length < 2} onClick=${() => set({ circuits: d.circuits.filter((_, j) => j !== i) })}><${Icon} n="x" s=${16} /></button></div>
       ${c.custom ? html`<div class="mono note">Çıplak: ${circuitLabel(c, cat)}</div>` : html`<${Sel} mono value=${c.key} options=${cat.lineTypesFor(c.role === 'AYD' ? 'AG' : c.role, d.install).map((x) => [x.name, x.name])} onChange=${(v) => setC(i, { key: v, custom: null })} />`}
       <div class="note">${(() => { const lt = cat.lineType(c.key); const cd = lt ? cat.conductor(lt.parts[0].conductor) : null; return cd ? (cd.tech || cd.family + ' · ' + (cd.kgPerKm ? cd.kgPerKm + ' kg/km' : '')) + (cd.yd ? ' · YD ' + cd.yd : '') : ''; })()}</div></div>`)}
-    ${d.install === 'yeralti' ? html`<div class="sect">Kanal / kablo modeli</div><div class="card stack">
-      <div class="chips">${[['toprak', 'Toprak'], ['beton', 'Beton'], ['borulu', 'Borulu'], ['direk', 'Direk inişi'], ['duvar', 'Duvar geçişi']].map(([k, l]) => html`<${Chip} on=${cb.channelType === k} onClick=${() => setCable({ channelType: k })}>${l}</${Chip}>`)}</div>
-      <div class="grid3">${[['depth', 'Derinlik m *'], ['width', 'Genişlik m'], ['sandCm', 'Kum cm'], ['pipeDia', 'Boru Ø mm'], ['pipeCount', 'Boru adet'], ['warningTape', 'Uyarı bandı'], ['manholes', 'Menhol'], ['joints', 'Muf (boş=oto)'], ['reserveM', 'Rezerv m'], ['riserM', 'Dikey iniş m'], ['exitM', 'Çıkış payı m'], ['trafoM', 'Trafo payı m'], ['sdkM', 'SDK payı m'], ['jointM', 'Muf payı m'], ['drumM', 'Makara m'], ['concreteCm', 'Beton cm']].map(([k, l]) => html`<div class="fld"><label>${l}</label><input class="inp mono" type="number" step="0.05" value=${(d.cable || {})[k] ?? (k === 'joints' || k === 'depth' ? '' : cb[k])} onChange=${(e) => setCable({ [k]: e.target.value === '' ? null : +e.target.value })} /></div>`)}</div>
-      <div class="row"><span class="grow">Koruma plakası</span><${Toggle} on=${cb.protectionPlate} onChange=${(v) => setCable({ protectionPlate: v })} label="Koruma plakası" /></div>
-      ${li.cable ? html`<div class="kv mono" style="font-size:12px"><b>Kanal</b><span>${trn(li.cable.breakdown.kanal, 2)} m</span><b>+ Dikey iniş</b><span>${trn(li.cable.breakdown.dikeyInis, 2)} (${li.cable.breakdown.risers} iniş)</span><b>+ Çıkış</b><span>${trn(li.cable.breakdown.cikis, 2)}</span><b>+ Trafo / SDK</b><span>${trn(li.cable.breakdown.trafoPayi, 2)} / ${trn(li.cable.breakdown.sdkPayi, 2)}</span><b>+ Muf payı</b><span>${trn(li.cable.breakdown.mufPayi, 2)} (${li.cable.breakdown.joints} muf)</span><b>+ Rezerv</b><span>${trn(li.cable.breakdown.rezerv, 2)}</span><b>= Damar boyu</b><span class="hl">${trn(li.cable.breakdown.damar, 2)} m</span></div>` : null}</div>` : null}
+    ${d.install === 'yeralti' ? (() => { const km = kanalModel(d.cable); const kn = li.cable && li.cable.kanal; const fld = ([k, l]) => html`<div class="fld"><label>${l}</label><input class="inp mono" type="number" step="0.05" value=${(d.cable || {})[k] ?? (k === 'joints' || k === 'depth' ? '' : cb[k])} onChange=${(e) => setCable({ [k]: e.target.value === '' ? null : +e.target.value })} /></div>`;
+      return html`<div class="sect">Kanal</div><div class="card stack">
+      ${!km.yeni && (km.eski === 'direk' || km.eski === 'duvar') ? html`<div class="alert warn" style="font-size:12px">Bu kayıt eski "${km.eski === 'direk' ? 'Direk inişi' : 'Duvar geçişi'}" türündeydi; bu tür kaldırıldı. Kaplama ve yöntemi seçip kaydedin.</div>` : null}
+      <div class="fld"><label>Kaplama</label><div class="chips">${Object.entries(KAPLAMA).map(([k, l]) => html`<${Chip} on=${km.surface === k} onClick=${() => setCable({ surface: k, method: km.method })}>${l}</${Chip}>`)}</div></div>
+      <div class="fld"><label>Yöntem</label><div class="chips">${Object.entries(YONTEM).map(([k, l]) => html`<${Chip} on=${km.method === k} onClick=${() => setCable(Object.assign({ surface: km.surface, method: k }, k === 'borulu' && !((d.cable || {}).pipeCount > 0) ? { pipeCount: 1 } : {}))}>${l}</${Chip}>`)}</div></div>
+      <div class="grid3">${[['depth', 'Derinlik m *'], ['width', 'Genişlik m']].map(fld)}${km.method !== 'acik' ? [['pipeDia', 'Boru Ø mm'], ['pipeCount', 'Boru adet']].map(fld) : null}</div>
+      ${kn && kn.eski ? html`<div class="alert warn">Bu hat eski sürümde “${kn.eski === 'direk' ? 'Direk inişi' : 'Duvar geçişi'}” olarak girilmiş; bu seçenek kaldırıldı ve kazı hesaplanmıyor. Burada kanal açılıyorsa yukarıdan kaplamayı seçin.</div>` : null}
+      ${kn ? html`<div class="kv mono" style="font-size:12px"><b>Kanal boyu</b><span>${trn(kn.uzunluk, 2)} m</span>${kn.method === 'sondaj' ? html`<b>Yatay sondaj</b><span class="hl">${trn(kn.uzunluk, 2)} m</span>` : html`<b>Kazı hacmi</b><span class="hl">${trn(kn.uzunluk, 2)} × ${kn.genislik} × ${kn.derinlik} = ${trn(kn.hacim, 2)} m³</span>`}${kn.boru ? html`<b>Boru</b><span>${trn(kn.boru, 2)} m</span>` : null}</div>` : html`<div class="note">Kaplama ve yöntemi seçip kaydedince kanal hesabı burada görünür.</div>`}
+      </div>
+      ${d.channelOnly && !(d.circuits || []).length ? null : html`<div class="sect">Kablo boyu payları</div><div class="card stack">
+      <div class="grid3">${[['riserM', 'Dikey iniş m'], ['exitM', 'Çıkış payı m'], ['trafoM', 'Trafo payı m'], ['sdkM', 'SDK payı m'], ['joints', 'Muf (boş=oto)'], ['jointM', 'Muf payı m'], ['drumM', 'Makara m'], ['reserveM', 'Rezerv m']].map(fld)}</div>
+      ${li.cable ? html`<div class="kv mono" style="font-size:12px"><b>Kanal</b><span>${trn(li.cable.breakdown.kanal, 2)} m</span><b>+ Dikey iniş</b><span>${trn(li.cable.breakdown.dikeyInis, 2)} (${li.cable.breakdown.risers} iniş)</span><b>+ Çıkış</b><span>${trn(li.cable.breakdown.cikis, 2)}</span><b>+ Trafo / SDK</b><span>${trn(li.cable.breakdown.trafoPayi, 2)} / ${trn(li.cable.breakdown.sdkPayi, 2)}</span><b>+ Muf payı</b><span>${trn(li.cable.breakdown.mufPayi, 2)} (${li.cable.breakdown.joints} muf)</span><b>+ Rezerv</b><span>${trn(li.cable.breakdown.rezerv, 2)}</span><b>= Damar boyu</b><span class="hl">${trn(li.cable.breakdown.damar, 2)} m</span></div>` : null}</div>`}
+      ${auto ? html`<div class="sect">Otomatik yardımcı malzeme ayarları</div><div class="card stack"><div class="grid3">${[['sandCm', 'Kum cm'], ['warningTape', 'Uyarı bandı'], ['concreteCm', 'Beton cm']].map(fld)}</div>
+        <div class="row"><span class="grow">Koruma plakası</span><${Toggle} on=${cb.protectionPlate} onChange=${(v) => setCable({ protectionPlate: v })} label="Koruma plakası" /></div></div>` : null}`; })() : null}
+    <div class="sect">Malzemeler <span class="r mono">${(li.items || []).length} kalem</span></div>
+    <div class="card tight list">${(li.items || []).map((m) => { const pz = m.servis ? cat.poz(m.servis) : null; const ad = m.name || (pz ? pz.name : '') || m.conductor || matLabel(m.material) || '?'; return html`<div class="li"><${Badge} k=${m.manual ? 'cy' : 'ok'}>${m.manual ? 'EKLENEN' : m.kanal || m.material ? 'KANAL' : 'HAT'}</${Badge}><div class="grow"><div class="t" style="font-size:13px">${ad}</div><div class="m">${m.servis || (m.material ? 'poz eşlenmemiş' : 'katalogda yok')}${m.why && !m.manual ? ' · ' + m.why : ''}</div></div>
+      ${m.manual ? html`<button class="btn xs" onClick=${() => manualQty(m)}><b class="mono">${trn(m.qty, m.unit === 'Ad' ? 0 : 2)}</b> ${m.unit}</button><button class="btn xs dang" aria-label="Malzemeyi kaldır" onClick=${async () => { if (await app.confirm('Malzemeyi kaldır', ad + ' listeden çıkarılsın mı?', { danger: true, ok: 'Kaldır' })) ps.removeMaterial(m.materialId, 'Kaldırıldı'); }}><${Icon} n="trash" s=${14} /></button>` : html`<b class="mono">${trn(m.qty, m.unit === 'Ad' ? 0 : 2)}</b><span class="note">${m.unit}</span>`}</div>`; })}
+      ${!(li.items || []).length ? html`<div class="empty">Kalem yok</div>` : null}</div>
+    ${auto ? null : html`<div class="note">Bu projede otomatik reçete kapalı: hatta yalnız iletken / kablo boyu ve kanal hesabı kendiliğinden gelir. Kum, uyarı bandı, koruma plakası, muf, başlık gibi malzemeleri "Malzeme ekle" ile ekleyin.</div>`}
+    ${li.job ? html`<button class="btn blk" style="border-style:dashed;border-color:#f59e0b;color:#fcd34d" onClick=${() => setPick(!pick)}><${Icon} n=${pick ? 'x' : 'plus'} s=${18} />${pick ? 'Malzeme seçimini kapat' : 'Malzeme ekle'}</button>` : null}
+    ${pick ? html`<${MaterialPicker} job=${li.job} onAdd=${addManual} />` : null}
     <div class="sect">Düğümler (${d.nodes.length})</div>
     <div class="card tight list">${d.nodes.map((n, i) => { const p = ps.pointById(n); const e = p ? ps.eqAt(p.id)[0] : null; const r = e ? ps.result.roles.get(e.id) : null; return html`<div class="li"><span class="m" style="width:22px">${i + 1}</span><div class="grow"><div class="t">${e ? e.no : p ? p.pointNo : '(silinmiş)'}</div><div class="s">${r && r.role ? r.role + (r.angle ? ' · α ' + dms(r.angle) : '') : p ? p.cls : ''}</div></div><button class="btn xs" disabled=${i === 0 || i === d.nodes.length - 1} onClick=${async () => { await ps.splitLine(id, i); app.toast('Bölündü'); app.nav.back(); }}>Böl</button><button class="btn xs dang" onClick=${() => ps.removeNode(id, i).then(() => setD(JSON.parse(JSON.stringify(ps.lineById(id)))))}>Çıkar</button></div>`; })}</div>
     <div class="sect">Açıklıklar</div>

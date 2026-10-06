@@ -3,13 +3,21 @@
 import { html, useState, Icon, Chip, Seg, Sel, Badge, Title, trn } from '../kit.js';
 import { app } from '../ctx.js';
 import { varsayilanKabin, kabinTipleri, gucListesi, hucreListesi, hucreRec, HUCRE_SERI, yerlesim, kontroller, agirliklar, planSekilleri, hucreEkle, hucreSil, hucreKopyala, hucreTasi, hucreDegistir, hucreAyar, kabinDegistir, kanalEkle, kanalSil } from '../../grid/cabin.js';
-import { cabinItems, govdeSecenekleri, govdeAnahtar, hucrePoz } from '../../grid/cabin-recipe.js';
-import { recipeContext } from '../../grid/recipe.js';
+import { govdeSecenekleri, govdeAnahtar, hucrePoz, koskGovdeleri } from '../../grid/cabin-recipe.js';
+import { equipmentMaterials, autoRecipeOn } from '../../grid/recipe.js';
 
-const SINIF = [['mono', 'Monoblok köşk'], ['pref', 'Prefabrik köşk'], ['bina', 'Trafo binası (MOD)']];
+// v2.4: Kabin ekranında yalnız köşkler (monoblok / prefabrik). Trafo binası (MOD) kaldırıldı; eski kayıtta varsa düzenlenebilir.
+const SINIF = [['mono', 'Monoblok köşk'], ['pref', 'Prefabrik köşk']];
 // Posta tipine göre başlangıç sınıfı
-export const kabinSinifi = (post) => (['mod', 'bina', 'ba'].includes(post) ? 'bina' : 'mono');
-export const KABIN_POSTLARI = ['mono', 'mbk', 'rbk', 'mod', 'bina', 'ba', 'dapt', 'ind'];
+export const kabinSinifi = (post) => (['mbk', 'rbk', 'dapt'].includes(post) ? 'pref' : 'mono');
+export const KABIN_POSTLARI = ['mono', 'mbk', 'rbk', 'dapt'];
+// Yeni kabin: hücresiz başlar (hücreler elle eklenir); trafo gücü kayıttan alınır
+function yeniKabin(a0) {
+  let c = Object.assign(varsayilanKabin(kabinSinifi(a0.post)), { hucreler: [] });
+  if (a0.kva && gucListesi(c).includes(+a0.kva)) { const r = kabinDegistir(c, { trafoKva: +a0.kva }); if (r.ok) c = r.cabin; }
+  delete c.sakli;
+  return c;
+}
 
 const FILL = { duvar: '#64748b', bolme: '#475569', hucre: '#13243d', hucreTasan: '#5b1620', trafo: '#3a2a09', pano: '#2a2150', kanal: 'rgba(34,211,238,.10)', kapak: 'rgba(148,163,184,.18)', rezerv: 'none', kapi: '#0b1326' };
 const STROKE = { duvar: '#94a3b8', bolme: '#64748b', hucre: '#38bdf8', hucreTasan: '#ef4444', trafo: '#f59e0b', pano: '#a78bfa', kanal: '#22d3ee', kapak: '#64748b', rezerv: '#64748b', kapi: '#10b981' };
@@ -36,8 +44,9 @@ export function CabinScreen({ id }) {
   const ps = app.ps, cat = ps.cat;
   const e0 = ps.eqById(id);
   const a0 = (e0 && e0.attrs) || {};
-  const [cabin, setCabinS] = useState(() => (a0.cabin ? JSON.parse(JSON.stringify(a0.cabin)) : Object.assign(varsayilanKabin(kabinSinifi(a0.post)), a0.kva ? {} : {})));
-  const [govde, setGovde] = useState(a0.govde === undefined ? 'oto' : (a0.govde || 'yok'));
+  const [cabin, setCabinS] = useState(() => (a0.cabin ? JSON.parse(JSON.stringify(a0.cabin)) : yeniKabin(a0)));
+  const ilkPB = () => (koskGovdeleri(cat, 'mbk')[0] || {}).servis || 'yok';
+  const [govde, setGovde] = useState(() => (a0.govde === undefined ? ((a0.cabin ? a0.cabin.sinif : kabinSinifi(a0.post)) === 'pref' ? ilkPB() : 'oto') : (a0.govde || 'yok')));
   const [dirty, setDirty] = useState(!a0.cabin);
   const [addCode, setAddCode] = useState('');
   const [kn, setKn] = useState({ ad: '', boy: '', gen: 500, der: 700 });
@@ -52,12 +61,15 @@ export function CabinScreen({ id }) {
   const guc = gucListesi(cabin);
   const liste = hucreListesi(cabin.hucreSeri);
   const yal = cabin.yalitim === 'gd' ? 'gd' : 'hd';
-  const gOpts = govdeSecenekleri(cat);
+  const auto = autoRecipeOn(ps.p);
+  // Gövde seçenekleri: prefabrikte PB-1…PB-4, monoblokta TİP-1A/1B/1C; eski kayıttaki başka seçim listede kalır
+  const gBase = cabin.sinif === 'bina' ? govdeSecenekleri(cat) : koskGovdeleri(cat, cabin.sinif === 'pref' ? 'mbk' : 'mono');
+  const gOpts = govde !== 'oto' && govde !== 'yok' && !gBase.some((g) => g.servis === govde) ? [...gBase, { servis: govde, ad: (cat.poz(govde) || {}).name || govde }] : gBase;
   const gKey = govdeAnahtar(cabin, Y);
   // Keşif önizlemesi: bu kabinle oluşacak kalemler
   const eNew = Object.assign({}, e0, { attrs: Object.assign({}, a0, { cabin, kva: Y.hasT ? cabin.trafoKva : a0.kva }, govde === 'oto' ? {} : { govde: govde === 'yok' ? null : govde }) });
   if (govde === 'oto') delete eNew.attrs.govde;
-  let items = []; try { items = cabinItems(eNew, cat, recipeContext(eNew, cat), ps.p.paramOverrides); } catch (err) { items = []; }
+  let items = []; try { items = equipmentMaterials(eNew, cat, { params: ps.p.paramOverrides, auto }).items.filter((m) => m.origin === 'OTO'); } catch (err) { items = []; }
   const bad = K.filter((k) => k.st === 'bad').length, warn = K.filter((k) => k.st === 'warn').length;
   const save = async () => {
     const attrs = Object.assign({}, a0, { cabin });
@@ -74,8 +86,8 @@ export function CabinScreen({ id }) {
   const st = (k) => (k === 'ok' ? 'ok' : k === 'warn' ? 'warn' : 'err');
   return html`<${Title} title=${'Kabin · ' + e0.no} sub=${Y.tipKodu || cabin.kosk} right=${html`<button class=${'btn sm' + (dirty ? ' pri' : '')} disabled=${!dirty} onClick=${save}>${dirty ? 'KAYDET' : 'Kayıtlı'}</button>`} />
     <div class="card stack">
-      <div class="fld"><label>Yapı sınıfı</label><div class="chips">${SINIF.map(([k, l]) => html`<${Chip} fill on=${cabin.sinif === k} onClick=${() => run(kabinDegistir(cabin, { sinif: k }))}>${l}</${Chip}>`)}</div></div>
-      <div class="grid2"><div class="fld"><label>Tip</label><${Sel} mono value=${cabin.kosk} options=${tipler.map((t) => [t.kosk, t.ad + ' · ' + t.boy + '×' + t.en + ' mm'])} onChange=${(v) => run(kabinDegistir(cabin, { kosk: v }))} /></div>
+      <div class="fld"><label>Yapı sınıfı</label><div class="chips">${[...SINIF, ...(cabin.sinif === 'bina' ? [['bina', 'Trafo binası (eski kayıt)']] : [])].map(([k, l]) => html`<${Chip} fill on=${cabin.sinif === k} onClick=${() => { if (k === cabin.sinif) return; run(kabinDegistir(cabin, { sinif: k })); if (govde !== 'yok') setGovde(k === 'pref' ? ilkPB() : 'oto'); }}>${l}</${Chip}>`)}</div></div>
+      <div class="grid2"><div class="fld"><label>${cabin.sinif === 'pref' ? 'Yerleşim ölçüsü (tip proje)' : 'Tip'}</label><${Sel} mono value=${cabin.kosk} options=${tipler.map((t) => [t.kosk, t.ad + ' · ' + t.boy + '×' + t.en + ' mm'])} onChange=${(v) => run(kabinDegistir(cabin, { kosk: v }))} /></div>
         <div class="fld"><label>Yerleşim</label><${Sel} value=${cabin.varyant} options=${(tip ? tip.varyantlar : []).map((v) => [v.key, v.ad])} onChange=${(v) => run(kabinDegistir(cabin, { varyant: v }))} /></div></div>
       <div class="grid2">${Y.hasT ? html`<div class="fld"><label>Trafo gücü</label><${Sel} mono value=${cabin.trafoKva} options=${guc.map((g) => [g, g + ' kVA'])} onChange=${(v) => run(kabinDegistir(cabin, { trafoKva: +v }))} /></div>` : html`<div class="fld"><label>Trafo</label><div class="inp" style="display:flex;align-items:center;color:#94a3b8">yok (KÖK)</div></div>`}
         <div class="fld"><label>Hücre yalıtımı</label><${Seg} value=${yal} options=${[['hd', 'Hava (hd)'], ['gd', 'Gaz (gd)']]} onChange=${(v) => setCabin(Object.assign({}, cabin, { yalitim: v }))} /></div></div>
@@ -96,7 +108,7 @@ export function CabinScreen({ id }) {
           <div class="row" style="gap:6px;margin-top:6px"><select class="inp mono" style="height:36px;font-size:12px" value=${h.c} onChange=${(e) => run(hucreDegistir(cabin, i, e.target.value))}>${[...(liste.some((x) => x[0] === h.c) ? [] : [[h.c, r[1]]]), ...liste].map((x) => html`<option value=${x[0]}>${x[0]} · ${x[1]}</option>`)}</select></div></div>
         <div class="row" style="gap:4px"><button class="btn xs" aria-label="Sola taşı" onClick=${() => run(hucreTasi(cabin, i, -1))}><${Icon} n="back" s=${14} /></button><button class="btn xs" aria-label="Sağa taşı" onClick=${() => run(hucreTasi(cabin, i, 1))}><${Icon} n="next" s=${14} /></button><button class="btn xs" aria-label="Kopyala" onClick=${() => run(hucreKopyala(cabin, i))}><${Icon} n="plus" s=${14} /></button><button class="btn xs dang" aria-label="Hücreyi çıkar" onClick=${() => run(hucreSil(cabin, i))}><${Icon} n="trash" s=${14} /></button></div>
       </div>`; })}
-      ${!cabin.hucreler.length ? html`<div class="empty">Hücre yok. Aşağıdan ekleyin.</div>` : null}
+      ${!cabin.hucreler.length ? html`<div class="empty">Köşk hücresiz. Hücreleri aşağıdaki listeden seçip "Ekle" ile ekleyin.</div>` : null}
     </div>
     <div class="card stack">
       <div class="fld"><label>Hücre serisi</label><div class="chips">${Object.entries(HUCRE_SERI).map(([k, v]) => html`<${Chip} on=${cabin.hucreSeri === k} onClick=${() => run(kabinDegistir(cabin, { hucreSeri: k }))}>${v.ad}</${Chip}>`)}</div></div>
@@ -114,9 +126,9 @@ export function CabinScreen({ id }) {
       <button class="btn" onClick=${() => { if (!(+kn.boy > 0)) return app.toast('Uzunluk girin', 'warn'); run(kanalEkle(cabin, { ad: kn.ad.trim() || 'Kanal ' + ((cabin.kanallar || []).length + 1), boy: Math.round(+kn.boy * 1000), gen: +kn.gen || 500, der: +kn.der || 700 })); setKn({ ad: '', boy: '', gen: kn.gen, der: kn.der }); }}><${Icon} n="plus" s=${18} />Kanal ekle</button>
       <div class="note">Kanallar keşfe uzunluğuyla (m) gelir. Yazılacağı kalem: ${(cat.poz((cat.table('cabin') || {}).kanal) || {}).name || 'tanımsız'} · poz numarasını Poz Kataloğu'ndan girebilirsiniz.</div></div>
 
-    <div class="sect">Köşk / bina gövdesi (keşifte ayrı kalem)</div>
-    <div class="card stack"><${Sel} value=${govde} options=${[['oto', 'Otomatik: ' + (gKey ? gKey : cabin.sinif === 'pref' ? 'prefabrikte elle seçin' : 'belirlenemedi')], ['yok', 'Gövde kalemi yok (mevcut yapı)'], ...gOpts.map((g) => [g.servis, g.ad])]} onChange=${(v) => { setGovde(v); setDirty(true); }} />
-      <div class="note">Monoblokta tip dış boydan bulunur (≤5500 TİP-1A · ≤6500 TİP-1B · ≤7500 TİP-1C); trafo binasında MOD tipi kullanılır.</div></div>
+    <div class="sect">Köşk tipi (keşifte ayrı kalem)</div>
+    <div class="card stack"><${Sel} value=${govde} options=${[...(cabin.sinif === 'pref' ? [] : [['oto', 'Otomatik: ' + (gKey ? gKey : 'belirlenemedi')]]), ...gOpts.map((g) => [g.servis, g.ad]), ['yok', 'Köşk kalemi yok (mevcut yapı)']]} onChange=${(v) => { setGovde(v); setDirty(true); }} />
+      <div class="note">${cabin.sinif === 'pref' ? 'Prefabrik beton köşkte tip PB-1 … PB-4 arasından seçilir. Yukarıdaki "yerleşim ölçüsü" yalnız plan çizimi ve sığma kontrolü içindir.' : 'Monoblokta "Otomatik" tip dış boydan bulunur (≤5500 TİP-1A · ≤6500 TİP-1B · ≤7500 TİP-1C); isterseniz elle seçin.'}</div></div>
 
     <div class="sect">Kontroller <span class="r">${bad ? html`<span class="he">${bad} hata</span>` : null}${warn ? html` <span class="hw">${warn} uyarı</span>` : null}${!bad && !warn ? html`<span class="hl">uygun</span>` : null}</span></div>
     <div class="stack" style="gap:6px">${K.filter((k) => k.st !== 'ok').map((k) => html`<div class=${'alert ' + st(k.st)} style="display:block"><b>${k.txt}</b>${k.sub ? html`<div class="note">${k.sub}</div>` : null}</div>`)}

@@ -1,7 +1,7 @@
 // 07 · Poz Kataloğu · 08 · Katmanlar & Lejant · 09 · Tanımlar (tek veri kaynağı)
 import { html, useState, useEffect, useBus, Icon, Chip, Seg, Sel, Badge, Title, Toggle, Stepper, fmt, trn } from '../kit.js';
 import { app } from '../ctx.js';
-import { applyRules, recipeContext } from '../../grid/recipe.js';
+import { applyRules, recipeContext, autoRecipeOn } from '../../grid/recipe.js';
 import { roleLabel } from '../../grid/checks.js';
 import { JOB_LABEL } from '../../core/schema.js';
 import { listStandards, cloneStandard, updateStdTable, exportStandard } from '../../core/standards.js';
@@ -151,6 +151,7 @@ export function DefinitionsScreen({ eqId }) {
   };
   const verify = async (k) => { const v = cat.table(k); if (!v || typeof v !== 'object') return; if (!(await app.confirm('Doğrulama', k + ' tablosu ' + cat.std.code + ' için doğrulandı olarak işaretlensin mi?'))) return; const nv = Object.assign({}, v, { verified: true, verifiedBy: app.ds.user.name, verifiedAt: new Date().toISOString() }); await updateStdTable(app.ds, cat.stdId, k, nv, 'Tablo doğrulandı'); cat.tables[k] = nv; app.toast(k + ' doğrulandı'); };
   return html`<${Title} title="Tanımlar" sub="Tek veri kaynağı · direk, trafo, iletken, hat" />
+    ${ps.p && !autoRecipeOn(ps.p) ? html`<div class="alert info"><${Icon} n="info" s=${16} /><span>Bu projede otomatik malzeme reçetesi kapalı: aşağıdaki reçeteler yalnız bilgi içindir, objelere uygulanmaz. Açmak için: Proje merkezi › Proje oluştur adımı › "Otomatik malzeme reçetesi".</span></div>` : null}
     <div class="card tight flow">${[['1', 'Tanım', 'Direk / trafo tipi → iş tipine göre malzeme reçetesi (bu ekran)', true], ['2', 'Alım', 'Haritada nokta + tip + durum; koordinat GNSS / telefon', false], ['3', 'Kayıt', 'Reçeteden otomatik malzeme; sahada ek ihtiyaç ayrı işaretli', false], ['4', 'Çıktı', 'Yeşil defter, rapor, DXF — otomatik / manuel ayrımı korunur', false]].map(([n, t2, d, on]) => html`<div class=${'st' + (on ? ' done' : '')}><span class="n">${n}</span><div class="grow"><b>${t2}</b><div class="note">${d}</div></div></div>`)}</div>
     <div class="grid3">${[['direk', 'DİREK'], ['trafo', 'TRAFO'], ['iletken', 'İLETKEN']].map(([k, l]) => html`<${Chip} on=${tab === k} onClick=${() => setTab(k)}>${l}</${Chip}>`)}</div>
     ${tab === 'direk' ? html`<div class="stack">

@@ -7,7 +7,9 @@ import { dist2, bearing, polygonArea, polylineLength, dms, segProject } from '..
 import { STATUSES, TRAFO_STATUSES, HAK_STATUSES, HAK_ORDER, EQUIPMENT_KINDS, hakOf } from '../../core/schema.js';
 import { sourceInfo, sourceText } from '../../core/source.js';
 import { resolveCoord, crsChoices, luminairePoz } from '../../services/survey-service.js';
-import { lineLabel } from '../../grid/lines.js';
+import { lineLabel, KAPLAMA, YONTEM } from '../../grid/lines.js';
+import { koskGovdeleri } from '../../grid/cabin-recipe.js';
+import { KABIN_POSTLARI } from './cabin.js';
 import { roleLabel } from '../../grid/checks.js';
 import { jobOf } from '../../grid/recipe.js';
 import { armsOfPoint } from './tepe.js';
@@ -102,6 +104,30 @@ export function MapScreen() {
     const off4 = app.bus.on('ui:measureProgress', (p) => setMeasuring((m) => (m ? Object.assign({}, m, p) : m)));
     return () => { off1(); off2(); off3(); off4(); off5(); if (ro) ro.disconnect(); if (app.web) window.removeEventListener('resize', syncPad); e.destroy(); };
   }, []);
+  // v2.4: otomatik reçete artık proje ayarı (varsayılan kapalı). Önceki sürümde oluşturulmuş, içinde kayıt olan projede bir kez sorulur;
+  // kullanıcı seçene kadar hesap eski düzende (açık) kalır → metraj sessizce değişmez.
+  const pid = ps.p ? ps.p.id : null, rcp = ps.p ? ps.p.autoRecipe : null;
+  useEffect(() => {
+    if (!pid || rcp !== undefined) return;
+    if ((app.state.recipeAsked || {})[pid]) return;
+    let n = 0, tm = null, dead = false;
+    const ask = async () => {
+      if (dead) return;
+      // Uygulama haritayla açıldığında proje verisi ve pencere katmanı henüz hazır olmayabilir → hazır olana kadar bekle
+      if (ps.openedId !== pid || !app.modal || app.modalOpen) { if (++n < 40) tm = setTimeout(ask, 500); return; }
+      if (!ps.p || ps.p.id !== pid || ps.p.autoRecipe !== undefined) return;
+      // içi boş eski proje: sorulacak bir şey yok → yeni düzen
+      if (!(ps.data.equipment.length + ps.data.lines.length)) { ps.updateProject({ autoRecipe: false }, 'Otomatik reçete kapalı').catch(() => {}); return; }
+      app.state.recipeAsked = Object.assign({}, app.state.recipeAsked, { [pid]: true });
+      const r = await app.modal((close) => html`<div class="mh"><h3>Otomatik malzeme reçetesi</h3></div><div class="mb"><div class="alert info">Bu sürümde otomatik malzeme reçetesi kaldırıldı: objede yalnız seçtiğiniz kalemler gelir, diğer malzemeleri siz eklersiniz.</div><div class="note">Bu proje önceki sürümde oluşturuldu ve metrajında kurala göre eklenmiş yardımcı malzemeler (travers, izolatör, topraklama, kum, bant…) var. Kapatırsanız bu kalemler metrajdan çıkar. Seçiminizi sonradan Proje bilgileri ekranından değiştirebilirsiniz.</div></div>
+        <div class="mf"><button class="btn grow" onClick=${() => close('on')}>Bu projede açık kalsın</button><button class="btn pri grow" onClick=${() => close('off')}>Kapat (yeni düzen)</button></div>`);
+      if (!r || !ps.p || ps.p.id !== pid) { app.state.recipeAsked[pid] = false; return; }
+      await ps.updateProject({ autoRecipe: r === 'on' }, 'Otomatik reçete: ' + (r === 'on' ? 'açık' : 'kapalı'));
+      app.toast(r === 'on' ? 'Bu projede otomatik reçete açık bırakıldı' : 'Otomatik reçete kapatıldı · metraj güncellendi', 'ok', 4000);
+    };
+    tm = setTimeout(ask, 500);
+    return () => { dead = true; clearTimeout(tm); };
+  }, [pid, rcp]);
   // v2.2: GEÇİŞ özelliği kaldırıldı → eski projede kayıt varsa bir kez sor: detay noktasına dönüştür / arşivle
   useEffect(() => {
     const leg = ps.legacyCrossings ? ps.legacyCrossings() : [];
@@ -429,6 +455,7 @@ function SelectionPanel({ sel, select, eng, openLine }) {
   return html`<div class="body">
     <div class="row"><b class="grow" style="font-size:17px">${e ? e.no : p.pointNo} <span style="font-weight:500;color:var(--mut)">· ${kindLbl}</span></b><${Badge} k=${si.badge}>${si.tag}</${Badge}><button class="btn xs" aria-label="Kapat" onClick=${() => select(null)}><${Icon} n="x" s=${16} /></button></div>
     ${e ? html`<div style="font-size:13px">${eqSummary(e)}${ri && ri.role ? html` · <b class="hw">${roleLabel(ri.role)}${ri.angle ? ' α=' + dms(ri.angle) : ''}</b>` : null}</div>` : null}
+    ${e && e.kind === 'transformer' && (KABIN_POSTLARI.includes((e.attrs || {}).post) || (e.attrs || {}).cabin) ? html`<button class="btn blk" style="min-height:46px;border-color:#22d3ee;color:#67e8f9" onClick=${() => app.nav.go('cabin', { id: e.id })}><${Icon} n="grid" s=${18} />Kabin · hücreler${(e.attrs || {}).cabin ? ' (' + e.attrs.cabin.hucreler.length + ')' : ' ve kablo kanalları'}</button>` : null}
     <div class="kv" style="font-size:13px">
       <b>Koordinat</b><span class="mono">Y ${fmt(p.E)} · X ${fmt(p.N)} · Z ${p.H != null ? fmt(p.H) : 'bilinmiyor'}</span>
       <b>Veri kaynağı</b><span style=${'color:' + si.color}>${sourceText(p)}${p.quality && p.quality.sats != null ? ' · ' + p.quality.sats + ' uydu' : ''}</span>
@@ -555,16 +582,17 @@ function usePole() {
     if (!t) { app.toast('Önce direk tipini seçin', 'warn'); return null; }
     const pos = await acq({ critical: true, label: 'Direk' });
     if (!pos) return null;
-    const e = await ps.addEquipment(group === 'ayd' ? 'lighting' : 'pole', { group, typeId, state: f.state }, pos);
+    const arm = f.arm && cat.poz(f.arm) ? [{ servis: f.arm, qty: Math.max(1, +f.armN || 1) }] : null;
+    const e = await ps.addEquipment(group === 'ayd' ? 'lighting' : 'pole', Object.assign({ group, typeId, state: f.state }, arm ? { attrs: { armatur: arm } } : {}), pos);
     if (line) await ps.appendNode(line.id, e.pointId);
-    const cur = { gen: f.gen, group, typeId, state: f.state };
+    const cur = { gen: f.gen, group, typeId, state: f.state, arm: f.arm || '', armN: f.armN || 1 };
     await recent('form:pole', cur);
     const rc = [cur, ...recents.filter((x) => !(x.typeId === typeId && x.state === f.state))].slice(0, 6);
     setRecents(rc); await recent('poles', rc);
     const ri = ps.result.roles.get(e.id);
     return { msg: e.no + ' kaydedildi' + (line ? ' → ' + line.lineNo : '') + (ri && ri.role ? ' · ' + roleLabel(ri.role) + (ri.angle ? ' α=' + ri.angle.toFixed(1) + '°' : '') : ''), undo: { no: e.no, pointId: e.pointId, eqId: e.id, lineId: line ? line.id : null } };
   };
-  return { f, set, favs, setFavs, recents, groups, group, types, typeId, t, gr, code, ok: !!t, label: 'DİREK AL', title: GEN_LBL[f.gen] || 'DİREK', sub: (t ? t.name : 'tip seçin') + ' · ' + (ST_LBL[f.state] || f.state), color: ST_COL[f.state] || '#10b981', take };
+  return { f, set, favs, setFavs, recents, groups, group, types, typeId, t, gr, code, ok: !!t, label: 'DİREK AL', title: GEN_LBL[f.gen] || 'DİREK', sub: (t ? t.name : 'tip seçin') + ' · ' + (ST_LBL[f.state] || f.state) + (f.arm && cat.poz(f.arm) ? ' · ' + (f.armN || 1) + ' armatür' : ''), color: ST_COL[f.state] || '#10b981', take };
 }
 function PoleFields({ m, close }) {
   const cat = app.ps.cat, f = m.f, set = m.set;
@@ -582,7 +610,8 @@ function PoleFields({ m, close }) {
     <div class="row"><span class="lbl" style="width:64px">Alt tip</span><div class="chips grow">${m.groups.map((gid) => { const g = cat.poleGroup(gid); return html`<${Chip} on=${m.group === gid} onClick=${() => set({ group: gid, typeId: null })}>${g.material}<small>${g.joint}</small></${Chip}>`; })}</div></div>
     <div class="row"><span class="lbl" style="width:64px">Tip</span><div class="grow"><${Sel} mono value=${m.typeId} options=${opts} onChange=${(v) => set({ typeId: v })} /></div><button class="btn sm" aria-label="Favori" onClick=${async () => m.setFavs(await favorites(m.typeId))}><${Icon} n="star" s=${18} c=${m.favs.includes(m.typeId) ? '#fbbf24' : '#94a3b8'} fill=${m.favs.includes(m.typeId) ? '#fbbf24' : 'none'} /></button></div>
     <div class="row"><span class="lbl" style="width:64px">Durum</span><div class="chips grow">${Object.keys(ST_LBL).map((k) => html`<${Chip} c=${ST_COL[k]} on=${f.state === k} onClick=${() => set({ state: k })}>${ST_LBL[k]}</${Chip}>`)}</div></div>
-    <div class="note">Rol (taşıyıcı / durdurucu / köşe / nihayet) ve köşe açısı hat geometrisinden otomatik hesaplanır; tip harfiyle uyuşmazsa uyarı verilir.</div>`;
+    <div class="row"><span class="lbl" style="width:64px">Armatür</span><div class="grow"><${Sel} value=${f.arm && cat.poz(f.arm) ? f.arm : ''} options=${[['', 'Armatür yok'], ...luminairePoz(cat).map((x) => [x.servis, x.name])]} onChange=${(v) => set({ arm: v, armN: f.armN || 1 })} /></div>${f.arm && cat.poz(f.arm) ? html`<select class="inp mono" style="width:64px" aria-label="Armatür adedi" value=${f.armN || 1} onChange=${(e) => set({ armN: +e.target.value })}>${[1, 2, 3, 4].map((n) => html`<option value=${n}>${n}×</option>`)}</select>` : null}</div>
+    <div class="note">Armatür direğin malzemesi olarak kaydedilir. Rol (taşıyıcı / durdurucu / köşe / nihayet) ve köşe açısı hat geometrisinden otomatik hesaplanır; tip harfiyle uyuşmazsa uyarı verilir.</div>`;
 }
 
 // ---------------- Hat: başlat / devam / bitir tek pencerede ----------------
@@ -617,6 +646,7 @@ function LineSheet({ active, close, rerender }) {
   const agShow = !ogOn || f.mus;
   const agRole = f.lt === 'ABONE' ? 'ABONE' : f.lt === 'AYD' ? 'AYD' : 'AG';
   const startPt = app.state.lineStartPoint ? ps.pointById(app.state.lineStartPoint) : null;
+  const surf = KAPLAMA[f.surface] ? f.surface : 'toprak', meth = YONTEM[f.method] ? f.method : 'acik';
   const start = async () => {
     if (f.install === 'yeralti' && !f.depth) { setMore(true); app.toast('Yeraltı hat için kanal derinliği zorunlu', 'warn'); return; }
     const circuits = [];
@@ -625,7 +655,7 @@ function LineSheet({ active, close, rerender }) {
     if (agShow && !chOnly) circuits.push(f.bare && f.install === 'havai' && agRole !== 'ABONE' ? { role: agRole, custom: { f: f.bf, nt: f.bn, ay: f.ba || '' }, count: f.agN } : { role: agRole, key: f.ag, count: f.agN });
     const d = { lineType: f.lt, install: f.install, circuits, musterek: ogOn && f.mus, nodes: startPt ? [startPt.id] : [] };
     if (f.lt === 'ABONE') { d.abonePhase = f.phase; d.aboneCount = 1; }
-    if (f.install === 'yeralti') { d.cable = { channelType: f.channel, depth: f.depth, width: f.width }; if (chOnly) d.channelOnly = true; }
+    if (f.install === 'yeralti') { d.cable = { surface: surf, method: meth, depth: f.depth, width: f.width }; if (meth !== 'acik') { d.cable.pipeDia = +f.pipeDia || 110; d.cable.pipeCount = meth === 'borulu' ? Math.max(1, +f.pipeCount || 1) : (+f.pipeCount || 0); } if (chOnly) d.channelOnly = true; }
     const l = await ps.createLine(d);
     app.state.activeLineId = l.id; app.state.toLine = true; app.state.lineStartPoint = null; app.state.sel = null; app.bus.emit('ui:sel');
     await recent('form:line', f);
@@ -639,18 +669,21 @@ function LineSheet({ active, close, rerender }) {
     <div class="row"><b class="grow" style="font-size:17px">Yeni hat</b>${startPt ? html`<${Badge} k="cy">İLK DÜĞÜM ${startPt.pointNo}</${Badge}>` : null}</div>
     <div class="row"><span class="lbl" style="width:64px">Hat tipi</span><div class="chips grow">${['AG', 'OG', 'AYD', 'ENH', 'ABONE'].map((k) => html`<${Chip} c=${GCOL[k]} on=${f.lt === k} onClick=${() => set({ lt: k, og: cat.lineDefault(k, f.install) || f.og, ag: cat.lineDefault(k === 'ABONE' ? 'ABONE' : 'AG', f.install) || f.ag })}>${k === 'AYD' ? 'AYD.' : k}</${Chip}>`)}</div></div>
     <div class="row"><span class="lbl" style="width:64px">Tesis</span><div class="grow"><${Seg} value=${f.install} options=${[['havai', 'Havai'], ['yeralti', 'Yeraltı']]} onChange=${(v) => { set({ install: v, og: cat.lineDefault('OG', v), ag: cat.lineDefault(f.lt === 'ABONE' ? 'ABONE' : 'AG', v) }); if (v === 'yeralti') setMore(true); }} /></div></div>
-    ${f.install === 'yeralti' ? html`<div class="row card" style="padding:8px 10px"><span class="grow" style="font-size:13px"><b>Yalnız kanal / kazı</b><div class="note">Kablo yok; yalnız kanal, kum, bant metrajı çıkar.</div></span><${Toggle} on=${!!f.channelOnly} onChange=${(v) => set({ channelOnly: v })} label="Yalnız kanal" /></div>` : null}
-    <button class="what" style="height:auto;min-height:52px;padding:8px 10px" onClick=${() => setMore(!more)}><span class="grow"><b>${f.install === 'yeralti' && f.channelOnly ? 'KANAL' : 'İLETKEN / KABLO'}</b><small style="white-space:normal">${f.install === 'yeralti' && f.channelOnly ? f.lt + ' · kanal ' + f.channel + ' · ' + (f.depth ?? '?') + ' × ' + f.width + ' m' : sumr}</small></span><${Icon} n=${more ? 'up' : 'down'} s=${18} c="#94a3b8" /></button>
+    ${f.install === 'yeralti' ? html`<div class="row card" style="padding:8px 10px"><span class="grow" style="font-size:13px"><b>Yalnız kanal / kazı</b><div class="note">Kablo yok; yalnız kanal metrajı çıkar.</div></span><${Toggle} on=${!!f.channelOnly} onChange=${(v) => set({ channelOnly: v })} label="Yalnız kanal" /></div>` : null}
+    <button class="what" style="height:auto;min-height:52px;padding:8px 10px" onClick=${() => setMore(!more)}><span class="grow"><b>${f.install === 'yeralti' && f.channelOnly ? 'KANAL' : 'İLETKEN / KABLO'}</b><small style="white-space:normal">${f.install === 'yeralti' && f.channelOnly ? f.lt + ' · ' + KAPLAMA[surf] + (meth !== 'acik' ? ' · ' + YONTEM[meth] : '') + ' · ' + (f.depth ?? '?') + ' × ' + f.width + ' m' : sumr}</small></span><${Icon} n=${more ? 'up' : 'down'} s=${18} c="#94a3b8" /></button>
     ${more ? html`
       ${f.lt === 'ABONE' ? html`<div class="row"><span class="lbl" style="width:64px">Faz</span><div class="grow"><${Seg} c="#fbbf24" value=${f.phase} options=${[['tek', 'Tek fazlı'], ['uc', 'Üç fazlı']]} onChange=${(v) => set({ phase: v, ag: f.install === 'havai' ? (v === 'tek' ? '2x16+25 AER' : '3x16+25 AER') : (v === 'tek' ? 'NYY 2x16' : 'NYY 4x16') })} /></div></div>` : null}
       ${ogOn && !(f.install === 'yeralti' && f.channelOnly) ? html`<div class="row"><span class="lbl" style="width:64px;color:#ff8a8a">${f.lt}</span><select class="inp mono" style="width:64px" value=${f.ogN} onChange=${(e) => set({ ogN: +e.target.value })}>${[1, 2, 3].map((n) => html`<option value=${n}>${n}×</option>`)}</select><div class="grow"><${Sel} mono value=${f.og} options=${circuitOpts('OG', f.install)} onChange=${(v) => set({ og: v })} /></div></div>
-        <div class="row card" style="padding:8px 10px"><span class="grow" style="font-size:13px">Aynı direklerde AG hattı da var (müşterek)</span><${Toggle} on=${f.mus} onChange=${(v) => set({ mus: v })} label="Müşterek" /></div>` : null}
+        <div class="row card" style="padding:8px 10px"><span class="grow" style="font-size:13px">${f.install === 'yeralti' ? 'Aynı kanalda AG kablosu da var' : 'Aynı direklerde AG hattı da var (müşterek)'}</span><${Toggle} on=${f.mus} onChange=${(v) => set({ mus: v })} label="Müşterek" /></div>` : null}
       ${agShow && !(f.install === 'yeralti' && f.channelOnly) ? html`<div class="row"><span class="lbl" style="width:64px;color:${GCOL[f.lt === 'ABONE' ? 'ABONE' : f.lt === 'AYD' ? 'AYD' : 'AG']}">${f.lt === 'ABONE' ? 'Abone' : f.lt === 'AYD' ? 'Ayd.' : 'AG'}</span>
           <select class="inp mono" style="width:64px" value=${f.agN} onChange=${(e) => set({ agN: +e.target.value })}>${[1, 2, 3].map((n) => html`<option value=${n}>${n}×</option>`)}</select>
           <div class="grow">${f.bare && f.install === 'havai' && f.lt !== 'ABONE' ? html`<div class="row" style="gap:4px"><span class="mono">3</span><select class="inp mono" value=${f.bf} onChange=${(e) => set({ bf: e.target.value })}>${cat.t.conductors.filter((c) => c.kind === 'AAC').map((c) => html`<option value=${c.short}>${c.short}</option>`)}</select><span class="mono">+</span><select class="inp mono" value=${f.bn} onChange=${(e) => set({ bn: e.target.value })}>${cat.t.conductors.filter((c) => c.kind === 'AAC').map((c) => html`<option value=${c.short}>${c.short}</option>`)}</select><span class="mono">+</span><select class="inp mono" value=${f.ba} onChange=${(e) => set({ ba: e.target.value })}><option value="">—</option>${cat.t.conductors.filter((c) => c.kind === 'AAC').map((c) => html`<option value=${c.short}>${c.short}</option>`)}</select></div>` : html`<${Sel} mono value=${f.ag} options=${agOptions} onChange=${(v) => set({ ag: v })} />`}</div></div>
         ${f.install === 'havai' && f.lt !== 'ABONE' ? html`<div class="row"><span class="note grow">Çıplak Al iletken (Rose/Pansy…) — AG mesnet izolatörleri otomatik</span><${Toggle} on=${f.bare} onChange=${(v) => set({ bare: v })} label="Çıplak iletken" /></div>` : null}` : null}
-      ${f.install === 'yeralti' ? html`<div class="row"><span class="lbl" style="width:64px">Kanal</span><div class="chips grow">${[['toprak', 'Toprak'], ['beton', 'Beton'], ['borulu', 'Borulu'], ['direk', 'Direk inişi'], ['duvar', 'Duvar']].map(([k, l]) => html`<${Chip} on=${f.channel === k} onClick=${() => set({ channel: k })}>${l}</${Chip}>`)}</div></div>
-        <div class="grid2"><div class="fld"><label>Derinlik (m) *</label><input class="inp mono" type="number" step="0.05" value=${f.depth ?? ''} placeholder="zorunlu" onChange=${(e) => set({ depth: e.target.value === '' ? null : +e.target.value })} /></div><div class="fld"><label>Genişlik (m)</label><input class="inp mono" type="number" step="0.05" value=${f.width ?? ''} onChange=${(e) => set({ width: +e.target.value })} /></div></div>` : null}` : null}
+      ${f.install === 'yeralti' ? html`<div class="row"><span class="lbl" style="width:64px">Kaplama</span><div class="chips grow">${Object.entries(KAPLAMA).map(([k, l]) => html`<${Chip} on=${surf === k} onClick=${() => set({ surface: k })}>${l}</${Chip}>`)}</div></div>
+        <div class="row"><span class="lbl" style="width:64px">Yöntem</span><div class="chips grow">${Object.entries(YONTEM).map(([k, l]) => html`<${Chip} on=${meth === k} onClick=${() => set({ method: k })}>${l}</${Chip}>`)}</div></div>
+        <div class="grid2"><div class="fld"><label>Derinlik (m) *</label><input class="inp mono" type="number" step="0.05" value=${f.depth ?? ''} placeholder="zorunlu" onChange=${(e) => set({ depth: e.target.value === '' ? null : +e.target.value })} /></div><div class="fld"><label>Genişlik (m)</label><input class="inp mono" type="number" step="0.05" value=${f.width ?? ''} onChange=${(e) => set({ width: +e.target.value })} /></div></div>
+        ${meth !== 'acik' ? html`<div class="grid2"><div class="fld"><label>Boru çapı (mm)</label><${Sel} mono value=${+f.pipeDia || 110} options=${[110, 125, 160, 200].map((x) => [x, 'Ø' + x])} onChange=${(v) => set({ pipeDia: +v })} /></div><div class="fld"><label>Boru adedi${meth === 'sondaj' ? ' (yoksa 0)' : ''}</label><input class="inp mono" type="number" min=${meth === 'borulu' ? 1 : 0} step="1" value=${f.pipeCount ?? (meth === 'borulu' ? 1 : 0)} onChange=${(e) => set({ pipeCount: +e.target.value })} /></div></div>` : null}
+        <div class="note">${meth === 'sondaj' ? 'Yatay sondaj: metraja sondaj boyu (m) gelir; kazı hacmi hesaplanmaz.' : 'Kanal hesabı: uzunluk × genişlik × derinlik = m³, seçilen kaplamanın kalemine yazılır.' + (meth === 'borulu' ? ' Borulu geçişte boru metrajı da gelir.' : '')}</div>` : null}` : null}
     <div class="note">Hattı başlattıktan sonra direkleri sırayla al; her direk otomatik bağlanır, köşe ve rol kendiliğinden hesaplanır. İletken bilgisi sonradan Hat kaydından değişir.</div>
     ${others.length ? html`<div class="lbl" style="margin-top:4px">Mevcut hatta devam et</div>
       <div class="card tight list">${others.map((l) => html`<button class="li" onClick=${() => { app.state.activeLineId = l.id; app.state.toLine = true; app.state.lineStartPoint = null; app.bus.emit('ui:sel'); app.toast(l.lineNo + ' çizime açıldı'); close(); }}><span style=${'width:18px;height:4px;flex-shrink:0;background:' + (GCOL[l.lineType] || '#fff')}></span><span class="grow"><span class="t">${l.lineNo} · ${l.lineType} · ${l.install}</span><div class="m">${l.nodes.length} düğüm · ${lineLabel(l, cat) || ''}</div></span><${Icon} n="next" s=${18} c="#94a3b8" /></button>`)}</div>` : null}`,
@@ -659,19 +692,19 @@ function LineSheet({ active, close, rerender }) {
 
 function useTrafo() {
   const ps = app.ps, cat = ps.cat;
-  const [f, set] = useForm('trafo', { post: 'direk', state: 'yeni', kva: 250, cins: 'herm', poleName: 'G-T25', kFam: 'TİP-1C', kiosk: null, oldKva: null });
+  const [f, set] = useForm('trafo', { post: 'direk', state: 'yeni', kva: 250, cins: 'herm', poleName: 'G-T25', govde: '', oldKva: null });
   const post = cat.postType(f.post) || {};
-  const binaLike = ['bina', 'ba', 'dapt', 'mod', 'kule', 'kulec', 'mono', 'rbk'].includes(f.post);
+  const binaLike = ['bina', 'ba', 'dapt', 'mod', 'kule', 'kulec', 'mono', 'rbk', 'mbk'].includes(f.post);
   const sizes = f.post === 'direk' ? cat.trafoSizes('direk', 'herm') : cat.trafoSizes('bina', f.cins);
-  const kioskMode = f.post === 'mbk' || f.post === 'rbk' || f.post === 'mrmu' || f.post === 'ind';
-  const fams = cat.kioskFamilies();
-  const kList = f.post === 'mbk' ? cat.kiosksOf(f.kFam) : [];
-  const kioskServis = f.post === 'mbk' ? (kList.find((k) => k.servis === f.kiosk) ? f.kiosk : (kList[0] || {}).servis) : kioskMode ? cat.kioskDefault(f.post) : null;
+  // v2.4 · Köşk tipi: prefabrik beton köşkte PB-1…PB-4, monoblokta TİP-1A/1B/1C boş gövde. Hücreler kendiliğinden gelmez (Kabin ekranından eklenir).
+  const govdeList = koskGovdeleri(cat, f.post);
+  const govde = govdeList.length ? (govdeList.find((g) => g.servis === f.govde) ? f.govde : (govdeList.find((g) => g.kisa === 'TİP-1C') || govdeList[0]).servis) : null;
+  const kioskServis = f.post === 'mrmu' || f.post === 'ind' ? cat.kioskDefault(f.post) : null;
   const kRow = kioskServis ? cat.kiosk(kioskServis) : null;
-  const kva = kRow && kRow.kva ? kRow.kva : f.kva;
+  const kva = f.kva;
   const tdType = cat.poleTypeByName('trafo', f.poleName);
   const ts = TRAFO_STATUSES[f.state] || {};
-  const e0 = { kind: 'transformer', state: f.state, attrs: { post: f.post, kva, cins: f.cins, poleTypeId: tdType && f.post === 'direk' ? tdType.id : null, kioskServis, oldKva: f.oldKva } };
+  const e0 = { kind: 'transformer', state: f.state, attrs: Object.assign({ post: f.post, kva, cins: f.cins, poleTypeId: tdType && f.post === 'direk' ? tdType.id : null, kioskServis, oldKva: f.oldKva }, govde ? { govde } : {}) };
   const issues = [];
   if (post.maxKva && !post.noTrafo && (kva > post.maxKva || kva < post.minKva)) issues.push('UYUMSUZ: ' + kva + ' kVA, ' + post.label + ' için ' + post.minKva + '–' + post.maxKva + ' kVA');
   const comp = f.post === 'direk' ? (cat.table('trafoPoleCompat') || []).find((c) => c.pole === f.poleName) : null;
@@ -684,26 +717,29 @@ function useTrafo() {
     const e = await ps.addEquipment('transformer', Object.assign({}, e0), pos);
     if (line) await ps.appendNode(line.id, e.pointId);
     await recent('form:trafo', f);
-    return { msg: e.no + ' kaydedildi' + (line ? ' → ' + line.lineNo : '') + ' · ' + (ps.result.matsByEq.get(e.id) || { items: [] }).items.length + ' malzeme', undo: { no: e.no, pointId: e.pointId, eqId: e.id, lineId: line ? line.id : null } };
+    return { msg: e.no + ' kaydedildi' + (line ? ' → ' + line.lineNo : '') + ' · ' + (ps.result.matsByEq.get(e.id) || { items: [] }).items.length + ' kalem' + (govde ? ' · hücreler için: trafoya dokun › Kabin' : ''), undo: { no: e.no, pointId: e.pointId, eqId: e.id, lineId: line ? line.id : null } };
   };
-  const code = !job ? (f.state === 'mevcut' ? 'Mevcut · hakedişe girmez' : 'İleride · malzeme gelmez') : 'Reçete otomatik · ' + (kRow ? kRow.servis : kva + ' kVA');
-  return { f, set, post, binaLike, sizes, fams, kList, kioskServis, kRow, ts, issues, code, ok: true, label: 'TRAFO AL', title: 'TRAFO', sub: (post.label || 'Trafo') + (post.noTrafo ? '' : ' · ' + kva + ' kVA') + ' · ' + (ts.label || f.state), color: issues.length ? '#f59e0b' : '#6b82ff', take };
+  const gRow = govde ? govdeList.find((g) => g.servis === govde) : null;
+  const code = !job ? (f.state === 'mevcut' ? 'Mevcut · hakedişe girmez' : 'İleride · malzeme gelmez') : (gRow ? gRow.kisa + ' + ' : '') + (kRow ? kRow.servis : kva + ' kVA');
+  return { f, set, post, binaLike, sizes, govdeList, govde, kioskServis, kRow, ts, issues, code, ok: true, label: 'TRAFO AL', title: 'TRAFO', sub: (post.label || 'Trafo') + (post.noTrafo ? '' : ' · ' + kva + ' kVA') + ' · ' + (ts.label || f.state), color: issues.length ? '#f59e0b' : '#6b82ff', take };
 }
 function TrafoFields({ m }) {
   const cat = app.ps.cat, f = m.f, set = m.set, post = m.post;
   return html`
     <div class="grid2"><${Fld} l="Posta tipi"><${Sel} value=${f.post} options=${cat.postTypes().map((p) => [p.id, p.label])} onChange=${(v) => set({ post: v })} /></${Fld}>
     <${Fld} l="Durum"><${Sel} value=${f.state} options=${Object.entries(TRAFO_STATUSES).map(([k, v]) => [k, v.label])} onChange=${(v) => set({ state: v })} /></${Fld}></div>
-    ${!post.noTrafo && !(f.post === 'mbk' && m.kRow && m.kRow.kva) ? html`<div class="grid2"><${Fld} l="Güç (kVA)"><${Sel} mono value=${f.kva} options=${m.sizes.map((k) => [k, k + ' kVA'])} onChange=${(v) => set({ kva: +v })} /></${Fld}>
+    ${!post.noTrafo ? html`<div class="grid2"><${Fld} l="Güç (kVA)"><${Sel} mono value=${f.kva} options=${m.sizes.map((k) => [k, k + ' kVA'])} onChange=${(v) => set({ kva: +v })} /></${Fld}>
       ${m.binaLike ? html`<${Fld} l="Cins"><${Sel} value=${f.cins} options=${[['herm', 'Hermetik yağlı'], ['kuru', 'Kuru tip']]} onChange=${(v) => set({ cins: v })} /></${Fld}>` : f.post === 'direk' ? html`<${Fld} l="Trafo direği"><${Sel} mono value=${f.poleName} options=${cat.poleTypes('trafo').map((t) => [t.name, t.name + ' · ' + t.kg + ' kg'])} onChange=${(v) => set({ poleName: v })} /></${Fld}>` : html`<div></div>`}</div>` : null}
     ${m.ts.removeOld ? html`<${Fld} l="Eski güç (kVA) · demontaj kalemi için"><${Sel} mono value=${f.oldKva || ''} options=${[['', 'seçin'], ...m.sizes.map((k) => [k, k + ' kVA'])]} onChange=${(v) => set({ oldKva: v ? +v : null })} /></${Fld}>` : null}
-    ${f.post === 'mbk' ? html`<div class="grid2"><${Fld} l="Köşk ailesi"><${Sel} value=${f.kFam} options=${m.fams} onChange=${(v) => set({ kFam: v, kiosk: null })} /></${Fld}><${Fld} l="Köşk tipi"><${Sel} mono value=${m.kioskServis} options=${m.kList.map((k) => [k.servis, k.label])} onChange=${(v) => set({ kiosk: v })} /></${Fld}></div>` : null}
+    ${m.govdeList.length ? html`<${Fld} l="Köşk tipi"><${Sel} value=${m.govde} options=${m.govdeList.map((g) => [g.servis, g.ad])} onChange=${(v) => set({ govde: v })} /></${Fld}>
+      <div class="note">Köşk hücresiz kaydedilir. Hücreleri ve kablo kanallarını sonradan ekleyin: haritada trafoya dokunup "Kabin · hücreler".</div>` : null}
     ${m.issues.map((i) => html`<div class="alert err" style="padding:6px 10px">${i}</div>`)}`;
 }
 function Fld({ l, children }) { return html`<div class="fld"><label>${l}</label>${children}</div>`; }
 
 // Diğer obje türleri (GEÇİŞ v2.2'de kaldırıldı). line: hat penceresini açar (kanal/kablo çizgisel objedir).
-const OTHER_KINDS = [['sdk', 'SDK / Box', 'SDK AL'], ['panel', 'Pano', 'PANO AL'], ['manhole', 'Menhol', 'MENHOL AL'], ['luminaire', 'Armatür / lamba', 'ARMATÜR AL'], ['subscriber', 'Abone', 'ABONE AL'], ['linept', 'Hat köşe noktası', 'KÖŞE AL'], ['detail', 'Detay noktası', 'DETAY AL'], ['other', 'Diğer (serbest)', 'OBJE AL']];
+// v2.4: Menhol ve Armatür / lamba listeden çıkarıldı (armatür direğin malzemesidir). Eski kayıtlar açılır ve düzenlenir.
+const OTHER_KINDS = [['sdk', 'SDK / Box', 'SDK AL'], ['panel', 'Pano', 'PANO AL'], ['subscriber', 'Abone', 'ABONE AL'], ['linept', 'Hat köşe noktası', 'KÖŞE AL'], ['detail', 'Detay noktası', 'DETAY AL'], ['other', 'Diğer (serbest)', 'OBJE AL']];
 function useOther() {
   const ps = app.ps, cat = ps.cat;
   const [f, set] = useForm('other', { kind: 'sdk', sdkTypeId: null, outputs: 4, state: 'YENI', phase: 'uc', aboneNo: '', kofre: false, panelKey: '', lumServis: '', typeName: '', note: '' });

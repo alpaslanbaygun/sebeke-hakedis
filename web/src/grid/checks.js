@@ -97,7 +97,7 @@ export function checkMaterials(e, mats) {
   const out = [];
   if (!mats.job) return out;
   // Otomatik reçetesi olan türlerde boş reçete hata; serbest türlerde (pano, armatür, menhol, diğer…) poz seçilmemişse uyarı
-  if (!mats.items.length) out.push(RECIPE_KINDS.includes(e.kind) ? I('MALZEME EKSİK', 'error', e, 'Malzeme reçetesi boş (' + mats.job + ')') : I('MALZEME EKSİK', 'warn', e, 'Poz seçilmemiş · hakedişe girmez (kayıtta "Poz" ya da katalogdan malzeme ekleyin)', { group: 'Malzeme' }));
+  if (!mats.items.length) out.push(RECIPE_KINDS.includes(e.kind) && mats.auto !== false ? I('MALZEME EKSİK', 'error', e, 'Malzeme reçetesi boş (' + mats.job + ')') : I('MALZEME EKSİK', 'warn', e, mats.auto === false && RECIPE_KINDS.includes(e.kind) ? 'Kalem yok · hakedişe girmez (tipi seçin ya da kayıtta "Malzeme ekle" ile ekleyin)' : 'Poz seçilmemiş · hakedişe girmez (kayıtta "Poz" ya da katalogdan malzeme ekleyin)', { group: 'Malzeme' }));
   for (const m of mats.items) {
     if (m.missing) out.push(I('MALZEME EKSİK', 'error', e, (m.why || 'Kalem') + ' · servis kodu katalogda yok' + (m.servis ? ' (' + m.servis + ')' : ''), { group: 'Malzeme' }));
     if (m.origin !== 'OTO' && !m.approved) out.push(I('UYARI', 'warn', e, 'Onay bekleyen sahada ilave: ' + m.name, { group: 'Malzeme' }));

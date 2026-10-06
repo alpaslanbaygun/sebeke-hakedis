@@ -1,4 +1,4 @@
-VOLT-EDAŞ Saha 2.3.0 — Kaynak paketi
+VOLT-EDAŞ Saha 2.4.0 — Kaynak paketi
 ====================================
 
 İçerik
@@ -6,7 +6,7 @@ VOLT-EDAŞ Saha 2.3.0 — Kaynak paketi
 - android/    Android kabuğu (Java): Bluetooth SPP/BLE, NTRIP, telefon GNSS, dosya kaydet/paylaş
 - tools/      APK derleme betikleri (Gradle gerektirmez)
 - keystore/   İmza anahtarı  voltsaha-release.jks
-- surum-gecmisi.bundle   Git geçmişi (v2.1.0, v2.2.0, v2.2.0-web ve v2.3.0 etiketleriyle)
+- surum-gecmisi.bundle   Git geçmişi (v2.1.0, v2.2.0, v2.2.0-web, v2.3.0 ve v2.4.0 etiketleriyle)
 
 GERİ DÖNÜŞ (v2.1.0'a)
 - Telefonda: VOLT-EDAS-Saha-2.1.0-geri-donus.apk dosyasını 2.2.0'ın ÜZERİNE kurun (silmeden). Proje verisi korunur;
@@ -18,7 +18,7 @@ GERİ DÖNÜŞ (v2.1.0'a)
 - Dosya : keystore/voltsaha-release.jks   (sertifika: CN=VOLT-EDAS Saha, L=Elazig, C=TR)
 - Alias : voltsaha
 - Şifre : VoltSaha2026!
-2.1.0, 2.1.0-geri-donus, 2.2.0 ve 2.3.0 aynı anahtarla imzalıdır; birbirinin üzerine kurulabilir.
+2.1.0, 2.1.0-geri-donus, 2.2.0, 2.3.0 ve 2.4.0 aynı anahtarla imzalıdır; birbirinin üzerine kurulabilir.
 Bu dosyayı ve şifreyi güvenli bir yerde saklayın, kimseyle paylaşmayın.
 
 Derleme
@@ -26,7 +26,7 @@ Derleme
 2) Testler: node --test tests/scenarios.test.mjs   (33/33 geçmeli)
           python3 tests/ui/smoke.py                (arayüz duman testi, 0 hata)
           python3 tests/ui/upgrade.py              (2.1.0 ↔ 2.2.0 veri geçişi; önce v2.1.0 derlemesi gerekir)
-3) APK : ./tools/build_apk.sh  →  dist/VOLT-EDAS-Saha-2.3.0.apk
+3) APK : ./tools/build_apk.sh  →  dist/VOLT-EDAS-Saha-2.4.0.apk
 
 2.2.0 değişiklikleri (Teknik Spesifikasyon v2)
 - Veri kaynağı takibi: GNSS_RTK · GNSS_FLOAT · TELEFON_GPS · MANUEL · EXCEL · HARITADAN_SECILDI; harita, liste, rapor etiketleri.
@@ -95,3 +95,48 @@ Testler
 - python3 tests/ui/{smoke,web,v23_cabin,v23_grid,v23_team,v23_web}.py   → 0 hata
 - python3 tests/ui/upgrade23.py  → 2.2.0 ↔ 2.3.0 aynı veritabanı (önce v2.2.0 derlemesi gerekir)
 - tests/ref/ altındaki üç referans dosya pakete dahil değildir; yoksa ilgili karşılaştırma testleri atlanır.
+
+
+2.4.0 değişiklikleri
+====================
+GERİ DÖNÜŞ (v2.3.0'a): VOLT-EDAS-Saha-2.3.0.apk 2.4.0'ın üzerine kurulamaz (sürüm kodu küçük: 230 < 240). Veritabanı sürümü
+aynıdır (3); 2.3.0 aynı veriyi açar (tests/ui/upgrade24.py). Kaynak kodda: git checkout v2.3.0
+
+Ne değişti
+- Otomatik malzeme reçetesi proje ayarı oldu (project.autoRecipe). Yeni projede KAPALI: objede yalnız seçilen kalemler gelir
+  (direk, trafo, köşk gövdesi, elle eklenen hücre, armatür, kofre, iletken / kablo boyu, kanal hesabı). Diğer malzemeler
+  "Malzeme ekle" ile katalogdan elle eklenir (materials tablosu, origin 'MANUEL'). Proje bilgileri ekranından açılabilir.
+  Önceki sürümde oluşturulmuş projede alan tanımsızdır: kullanıcı seçene kadar hesap eski düzende (açık) kalır ve harita
+  açılınca bir kez sorulur (ui/screens/map.js). grid/recipe.js › autoRecipeOn, equipmentMaterials(…, {auto}).
+- Armatür / sokak lambası ve menhol harita obje menüsünden kaldırıldı. Armatür direğin malzemesidir: attrs.armatur
+  = [{ servis, qty }]. Eski armatür ve menhol kayıtları silinmez, açılır ve düzenlenir.
+- Yeraltı kanal: "direk inişi" ve "duvar geçişi" kaldırıldı. cable.surface (toprak · tuvenan · asfalt · beton · parke) ve
+  cable.method (acik · borulu · sondaj). Kazı = boy × genişlik × derinlik (m³), kalem katalog 'kanal' tablosundan;
+  yatay sondaj boy (m); borulu geçişte boru (m). Eski channelType kayıtları grid/lines.js › kanalModel ile okunur;
+  eski direk inişi / duvar geçişi kaydında kaplama seçilene kadar kazı hesaplanmaz.
+- Proje silme: services/project-service.js › deleteProject (projenin tüm kayıtları, fotoğraf ve belge baytları, bekleyen
+  senkron kayıtları). Onay mekanizması açıksa yalnız Yönetici. Silme diğer cihaza / web sürümüne taşınmaz.
+- Köşk: prefabrik beton köşkte tipler PB-1 … PB-4 (022.02.05.01-001…004), monoblokta TİP-1A / 1B / 1C. Hiçbir köşkte
+  hücre kendiliğinden gelmez; kabin ekranından elle eklenir. Kabin ekranında yapı sınıfı yalnız monoblok ve prefabrik
+  (bina tipi yalnız eski kayıtlar için görünür). Kabin ekranına giriş: haritada trafo kartı ve ekipman ekranı.
+- "Kullanıcılar ve hakediş onayı" ekranına giriş: Ayarlar, Hakediş ekranı, Proje merkezi.
+- Alıcı markası seçimi ve Spectra'ya özel kurulum kaldırıldı (cümleler yine okunur: $PASHR,POS / $PTNL,GGK).
+- Kayıtlı NTRIP profilleri: gnss/ntrip-profiles.js, ayar 'ntripProfiles' = { active, list }. Etkin profil eski 'ntrip'
+  ayarına da yazılır (Android tarafı değişmedi).
+- Yeraltı hatta müşterek seçeneğinin adı "Aynı kanalda AG kablosu da var" oldu (hesap değişmedi).
+- Katalog: standard.seedRev = 24 (+3 yerel kalem: asfalt / beton / parke kaplamalı kanal, m³, verified:false; 'kanal' tablosu).
+
+Web (ofis) sürümü
+- 2.4.0 yalnız telefon (APK) için çıkarıldı; yayınlanan web sayfası 2.3.0'da bırakıldı (yeniden yayınlanmadı).
+  Kaynak kod ortaktır: 'node build.mjs --web' 2.4.0 davranışıyla derlenir (tests/ui/v24_web.py), ama yayınlanmadı.
+  Dikkat: web 2.3.0, telefondan gelen 2.4.0 verisindeki yeni kanal alanlarını (surface / method), direkteki armatürü ve
+  'otomatik reçete kapalı' ayarını tanımaz; aynı projenin metrajı web'de farklı görünür.
+
+Açık noktalar
+- Kaplamalı kanal (asfalt, beton, parke) ve boru kalemlerinin poz numarası ve fiyatı doğrulanacak (Poz Kataloğu ekranı).
+- PB köşk iç ölçüleri bilinmiyor; prefabrik plan çizimi EK-1A / 1B / 1C tip proje ölçülerini kullanır.
+
+Testler
+- node --test tests/*.test.mjs   → 130/130 (… + 10 v2.4)
+- python3 tests/ui/{smoke,web,v23_grid,v23_team,v23_web,v24_ui,v24_web}.py   → 0 hata
+- python3 tests/ui/upgrade24.py  → 2.3.0 ↔ 2.4.0 aynı veritabanı (önce v2.3.0 derlemesi gerekir: git worktree add … v2.3.0)

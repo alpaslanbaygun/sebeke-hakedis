@@ -52,9 +52,28 @@ export function overheadQuantities(line, len3D, cat, opts = {}) {
 
 // Yeraltı kablo: gerçek kablo metrajı = kanal + dikey iniş + çıkış + trafo payı + SDK payı + muf payı + rezerv
 export const CABLE_DEFAULTS = { channelType: 'toprak', width: 0.4, depth: null, sandCm: 20, warningTape: 1, protectionPlate: true, plateLenM: 1.0, concreteCm: 10, pipeDia: 110, pipeCount: 0, manholes: 0, joints: null, drumM: 500, riserM: 8, exitM: 2, trafoM: 5, sdkM: 2, jointM: 1.5, reserveM: 5 };
-export function cableQuantities(line, route, endKinds, cat) {
+// v2.4 · Kanal modeli: KAPLAMA (zeminin üstü) + YÖNTEM (nasıl geçildiği) ayrı seçilir
+export const KAPLAMA = { toprak: 'Toprak', tuvenan: 'Tüvenan', asfalt: 'Asfalt', beton: 'Beton', parke: 'Parke taşı' };
+export const YONTEM = { acik: 'Açık kazı', borulu: 'Borulu geçiş', sondaj: 'Yatay sondaj' };
+export const KANAL_VARSAYILAN = {
+  kazi: { toprak: '032.12.01.01-003', tuvenan: '032.12.01.01-002', asfalt: 'YEREL:KANAL-ASFALT', beton: 'YEREL:KANAL-BETON', parke: 'YEREL:KANAL-PARKE' },
+  sondaj: '032.12.06.01-003',
+  abone: { kaplamasiz: '032.13.03.01-001', kaplamali: '032.13.03.01-002' }
+};
+// Kayıttaki kanal bilgisinden kaplama + yöntem (eski kayıtlar: toprak / beton / borulu / direk inişi / duvar)
+export function kanalModel(cable) {
+  const c = cable || {};
+  if (c.surface || c.method) return { surface: KAPLAMA[c.surface] ? c.surface : 'toprak', method: YONTEM[c.method] ? c.method : 'acik', yeni: true };
+  const t = c.channelType || 'toprak';
+  // 'direk' (direk inişi) ve 'duvar' (duvar geçişi) v2.4'te kaldırıldı: bu eski kayıtlarda kazı yoktur → kaplama seçilene kadar kanal hesaplanmaz
+  return { surface: t === 'beton' ? 'beton' : 'toprak', method: t === 'borulu' ? 'borulu' : 'acik', yeni: false, eski: t, kazisiz: t === 'direk' || t === 'duvar' };
+}
+export function kanalLabel(cable) { const k = kanalModel(cable); return KAPLAMA[k.surface] + (k.method !== 'acik' ? ' · ' + YONTEM[k.method] : ''); }
+export function cableQuantities(line, route, endKinds, cat, opts = {}) {
+  const auto = opts.auto !== false;
   const cfg = Object.assign({}, CABLE_DEFAULTS, line.cable || {});
   const Lc = route.length2D;
+  const km0 = kanalModel(line.cable);
   const risers = cfg.riserCount ?? endKinds.filter((k) => k === 'pole').length;
   const trafoEnds = endKinds.filter((k) => k === 'transformer' || k === 'kiosk' || k === 'substation').length;
   const sdkEnds = endKinds.filter((k) => k === 'sdk').length;
@@ -71,24 +90,48 @@ export function cableQuantities(line, route, endKinds, cat) {
     const n = c.count || 1; ncirc += n;
     const p = cp.parts[0];
     if (cp.coresPerCircuit > 1) singleCore = true;
-    const servis = cfg.channelType === 'toprak' ? (p.ydToprak || p.yd) : p.yd;
+    const servis = (km0.yeni ? true : cfg.channelType === 'toprak') ? (p.ydToprak || p.yd) : p.yd;
     const m = coreLen * cp.coresPerCircuit * n;
     out.push({ servis, qty: m, unit: 'm', meters: m, why: c.key + ' · ' + coreLen.toFixed(2) + ' m × ' + (cp.coresPerCircuit * n) + ' damar/devre', conductor: c.key, role: c.role, missing: !servis, refType: 'line', refId: line.id, breakdown });
   }
   // Kanal ve yardımcı malzemeler (Material anahtarları → poz eşlemesi standart tablosunda)
   const mat = (key, qty, unit, why) => { if (qty > 0) out.push({ material: key, servis: null, qty, unit, why, refType: 'line', refId: line.id }); };
-  const chanKey = { toprak: 'KANAL_TOPRAK', beton: 'KANAL_BETON', borulu: 'KANAL_BORULU', direk: 'DIREK_INISI', duvar: 'DUVAR_GECISI' }[cfg.channelType] || 'KANAL_TOPRAK';
-  if (line.lineType !== 'ABONE') mat(chanKey, cfg.channelType === 'direk' || cfg.channelType === 'duvar' ? 1 : Lc, cfg.channelType === 'direk' || cfg.channelType === 'duvar' ? 'Ad' : 'm', 'Kanal ' + cfg.channelType + ' · ' + cfg.width + ' × ' + (cfg.depth ?? '?') + ' m');
-  if (cfg.channelType === 'toprak' || cfg.channelType === 'borulu') mat('KUM', Lc * cfg.width * cfg.sandCm / 100, 'm³', 'Kum yatağı ' + cfg.sandCm + ' cm');
-  mat('UYARI_BANDI', Lc * (cfg.warningTape || 0), 'm', 'Uyarı bandı × ' + cfg.warningTape);
-  if (cfg.protectionPlate) mat('KORUMA_PLAKASI', Math.ceil(Lc / cfg.plateLenM) * Math.max(1, ncirc), 'Ad', 'Koruma plakası (' + cfg.plateLenM + ' m)');
-  if (cfg.channelType === 'beton') mat('BETON', Lc * cfg.width * cfg.concreteCm / 100, 'm³', 'Beton ' + cfg.concreteCm + ' cm');
-  if (cfg.pipeCount > 0) mat('BORU_' + cfg.pipeDia, Lc * cfg.pipeCount, 'm', cfg.pipeCount + ' × Ø' + cfg.pipeDia + ' boru');
-  mat('MENHOL', cfg.manholes || 0, 'Ad', 'Menhol');
-  // Yalnız kanal / kazı (kablosuz) hatta muf ve başlık yok
-  if (!(line.channelOnly && !ncirc)) {
-    mat(og ? 'MUF_OG' : 'MUF_AG', joints * Math.max(1, ncirc) * (singleCore ? 3 : 1), 'Ad', 'Ek muf');
-    mat(og ? 'BASLIK_OG' : 'BASLIK_AG', endKinds.length * Math.max(1, ncirc) * (singleCore ? 3 : 1), 'Ad', 'Kablo başlığı');
+  const km = kanalModel(line.cable);
+  const yeniKanal = km.yeni || !auto;      // v2.4 kanal hesabı: yeni kayıtlar ve otomatik reçetesi kapalı projeler
+  let kanal = null;
+  if (yeniKanal) {
+    const K = Object.assign({}, KANAL_VARSAYILAN, (cat.table && cat.table('kanal')) || {});
+    const poz = (servis, qty, unit, why, ad) => { const pz = servis ? cat.poz(servis) : null; out.push({ servis: servis || null, qty, unit: pz ? pz.unit : unit, why, kanal: true, name: pz ? pz.name : ad, conductor: pz ? pz.name : ad, missing: !pz, refType: 'line', refId: line.id }); };
+    const w = +cfg.width || 0, d = +cfg.depth || 0;
+    const hacim = Lc * w * d;
+    kanal = { surface: km.surface, method: km.method, uzunluk: Lc, genislik: w, derinlik: d, hacim: km.method === 'sondaj' || km.kazisiz ? 0 : hacim, boru: 0, eski: km.kazisiz ? km.eski : null };
+    const olcu = Lc.toFixed(2) + ' m × ' + w + ' × ' + (cfg.depth ?? '?') + ' m';
+    if (Lc > 0 && !km.kazisiz) {
+      if (km.method === 'sondaj') poz(K.sondaj, Lc, 'm', 'Yatay sondaj · ' + Lc.toFixed(2) + ' m', 'Yatay sondaj');
+      else if (line.lineType === 'ABONE') { if (!auto) poz((K.abone || {})[km.surface === 'toprak' || km.surface === 'tuvenan' ? 'kaplamasiz' : 'kaplamali'], Lc, 'm', 'Abone bağlantı kanalı · ' + KAPLAMA[km.surface] + ' · ' + Lc.toFixed(2) + ' m', 'Abone bağlantı kanalı'); }
+      else poz((K.kazi || {})[km.surface], hacim, 'm3', 'Kanal · ' + KAPLAMA[km.surface] + (km.method === 'borulu' ? ' · borulu geçiş' : '') + ' · ' + olcu, 'Kablo kanalı (' + KAPLAMA[km.surface] + ')');
+      const nBoru = km.method === 'borulu' ? Math.max(1, +cfg.pipeCount || 0) : km.method === 'sondaj' ? (+cfg.pipeCount || 0) : 0;
+      if (nBoru > 0) { kanal.boru = Lc * nBoru; mat('BORU_' + cfg.pipeDia, Lc * nBoru, 'm', nBoru + ' × Ø' + cfg.pipeDia + ' boru · ' + YONTEM[km.method]); }
+    }
+  } else {
+    const chanKey = { toprak: 'KANAL_TOPRAK', beton: 'KANAL_BETON', borulu: 'KANAL_BORULU', direk: 'DIREK_INISI', duvar: 'DUVAR_GECISI' }[cfg.channelType] || 'KANAL_TOPRAK';
+    if (line.lineType !== 'ABONE') mat(chanKey, cfg.channelType === 'direk' || cfg.channelType === 'duvar' ? 1 : Lc, cfg.channelType === 'direk' || cfg.channelType === 'duvar' ? 'Ad' : 'm', 'Kanal ' + cfg.channelType + ' · ' + cfg.width + ' × ' + (cfg.depth ?? '?') + ' m');
   }
-  return { items: out, breakdown, cfg };
+  // Yardımcı malzemeler yalnız otomatik reçete açıkken gelir; kapalıyken kullanıcı "Malzeme ekle" ile ekler
+  if (auto) {
+    const kum = yeniKanal ? km.method !== 'sondaj' && km.surface !== 'beton' : cfg.channelType === 'toprak' || cfg.channelType === 'borulu';
+    const acik = !yeniKanal || km.method !== 'sondaj';
+    if (kum) mat('KUM', Lc * cfg.width * cfg.sandCm / 100, 'm³', 'Kum yatağı ' + cfg.sandCm + ' cm');
+    if (acik) mat('UYARI_BANDI', Lc * (cfg.warningTape || 0), 'm', 'Uyarı bandı × ' + cfg.warningTape);
+    if (acik && cfg.protectionPlate) mat('KORUMA_PLAKASI', Math.ceil(Lc / cfg.plateLenM) * Math.max(1, ncirc), 'Ad', 'Koruma plakası (' + cfg.plateLenM + ' m)');
+    if (!yeniKanal && cfg.channelType === 'beton') mat('BETON', Lc * cfg.width * cfg.concreteCm / 100, 'm³', 'Beton ' + cfg.concreteCm + ' cm');
+    if (!yeniKanal && cfg.pipeCount > 0) mat('BORU_' + cfg.pipeDia, Lc * cfg.pipeCount, 'm', cfg.pipeCount + ' × Ø' + cfg.pipeDia + ' boru');
+    mat('MENHOL', cfg.manholes || 0, 'Ad', 'Menhol');
+    // Yalnız kanal / kazı (kablosuz) hatta muf ve başlık yok
+    if (!(line.channelOnly && !ncirc)) {
+      mat(og ? 'MUF_OG' : 'MUF_AG', joints * Math.max(1, ncirc) * (singleCore ? 3 : 1), 'Ad', 'Ek muf');
+      mat(og ? 'BASLIK_OG' : 'BASLIK_AG', endKinds.length * Math.max(1, ncirc) * (singleCore ? 3 : 1), 'Ad', 'Kablo başlığı');
+    }
+  }
+  return { items: out, breakdown, cfg, kanal };
 }

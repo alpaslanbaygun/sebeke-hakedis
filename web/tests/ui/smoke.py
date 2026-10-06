@@ -122,17 +122,18 @@ async def main():
         await pg.locator('.dock-take button.take').click(); await pg.wait_for_timeout(1200)
         await pg.locator('button.srcbtn').click(); await pg.wait_for_timeout(300)
         await pg.locator('section.sheet button.srcopt', has_text='GNSS (Harici').click(); await pg.wait_for_timeout(300)
-        # Armatür al
+        # Pano al (v2.4: armatür ve menhol listeden çıkarıldı)
         await pg.evaluate("""() => { const S = window.__app.gnss.sim; S.pos.lat -= 18/111320; S.pos.lon += 10/87000; }"""); await pg.wait_for_timeout(1200)
         await pg.locator('button.what').click(); await pg.wait_for_timeout(300)
         await pg.locator('section.sheet').get_by_text('DİĞER', exact=True).first.click(); await pg.wait_for_timeout(200)
-        await pg.locator('section.sheet').get_by_text('Armatür / lamba', exact=True).click(); await pg.wait_for_timeout(200)
+        assert await pg.locator('section.sheet').get_by_text('Armatür / lamba', exact=True).count() == 0 and await pg.locator('section.sheet').get_by_text('Menhol', exact=True).count() == 0
+        await pg.locator('section.sheet').get_by_text('Pano', exact=True).click(); await pg.wait_for_timeout(200)
         await shot(pg, '43_picker_other')
         await tap(pg, 'TAMAM', exact=True)
         await pg.locator('.dock-take button.take').click(); await pg.wait_for_timeout(2500)
         srcs = await pg.evaluate("""() => { const ps = window.__app.ps; return ps.data.equipment.map(e => [e.no, e.kind, (ps.pointById(e.pointId) || {}).source, (ps.pointById(e.pointId) || {}).H]); }""")
         print('kaynaklar', srcs[-3:])
-        assert srcs[-3][2] == 'MANUAL' and srcs[-2][2] == 'MAP' and srcs[-2][3] is None and srcs[-1][1] == 'luminaire', srcs[-3:]
+        assert srcs[-3][2] == 'MANUAL' and srcs[-2][2] == 'MAP' and srcs[-2][3] is None and srcs[-1][1] == 'panel', srcs[-3:]
         mp = await pg.evaluate("""() => { const ps = window.__app.ps; const e = ps.data.equipment[ps.data.equipment.length - 3]; const p = ps.pointById(e.pointId); return [p.E, p.N, p.H]; }""")
         assert abs(mp[0] - (g[0] + 40)) < 0.01 and abs(mp[1] - (g[1] + 60)) < 0.01 and abs(mp[2] - 1061.25) < 1e-6, ('eksen duzeltme', mp, g)
         await pg.evaluate("() => { const a = window.__app; a.state.follow = false; a.state.mapEngine.fit(a.ps.data.points); }"); await pg.wait_for_timeout(500)

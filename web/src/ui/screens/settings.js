@@ -1,5 +1,6 @@
 // 06 · Ayarlar — konum kaynağı, GNSS alıcı (Bluetooth SPP/BLE), NTRIP, hassasiyet eşikleri, proje CRS/geoit, senkron, kullanıcı
 import { html, useState, useEffect, useBus, Icon, Chip, Seg, Sel, Badge, Title, Toggle, fmt, trn, FIXCOL } from '../kit.js';
+import { loadProfiles, activeProfile, updateActive, selectProfile, addProfile, removeProfile } from '../../gnss/ntrip-profiles.js';
 import { app } from '../ctx.js';
 import { makeCrs, crsSummary, zoneForLon, TM_ZONES, parseGeoidGrid } from '../../geo/crs.js';
 import { pendingChanges } from '../../core/sync.js';
@@ -8,23 +9,26 @@ import { unproject } from '../../geo/crs.js';
 
 export function SettingsScreen() {
   useBus('gnss:state', 500);
-  useBus(['project:computed', 'settings:change', 'native:ntrip', 'native:gnssStatus']);
+  useBus(['project:computed', 'settings:change', 'native:ntrip', 'native:gnssStatus', 'auth:change']);
   const g = app.gnss, s = g.state, ps = app.ps;
   const [devs, setDevs] = useState(null);
   const [scan, setScan] = useState(false);
   const [pend, setPend] = useState(0);
-  const [nt, setNt] = useState(app.state.ntripCfg || { name: 'TUSAGA-Aktif', host: '', port: 2101, mount: '', user: '', pass: '', version: 2, sendGGA: true, ggaSec: 1 });
+  const [np, setNp] = useState(() => app.state.ntripProfiles || loadProfiles(null, app.state.ntripCfg));
+  const nt = activeProfile(np);
   const [mounts, setMounts] = useState([]);
   const [ver, setVer] = useState(null);
   const [floatCap, setFloatCap] = useState(true);
-  const [profile, setProfile] = useState('genel');
   const [keys, setKeys] = useState(app.state.mapKeys || {});
   const saveKeys = (p) => { const k = Object.assign({}, keys, p); setKeys(k); app.state.mapKeys = k; app.state.googleKeyBad = false; app.ds.setting('mapKeys', k); app.toast('Anahtar kaydedildi', 'ok', 2000); };
-  useEffect(() => { app.ds.setting('floatCapture').then((v) => setFloatCap(v !== false)); app.ds.setting('receiverProfile').then((v) => setProfile(v || 'genel')); }, []);
-  const spectra = async () => { try { const r = await app.gnss.setupSpectra(); app.toast('Spectra: konum çıkışı açıldı (port ' + r.port + (r.asked ? '' : ' · alıcı port bildirmedi, C varsayıldı') + ')', 'ok', 5000); } catch (e) { app.toast('Spectra: ' + e.message, 'err', 5000); } };
-  useEffect(() => { pendingChanges(app.ds).then((x) => setPend(x.length)); app.ds.setting('ntrip').then((v) => { if (v) { setNt(v); app.state.ntripCfg = v; } }); app.bridge.info().then(setVer).catch(() => {}); }, []);
+  useEffect(() => { app.ds.setting('floatCapture').then((v) => setFloatCap(v !== false)); }, []);
+  useEffect(() => { pendingChanges(app.ds).then((x) => setPend(x.length)); Promise.all([app.ds.setting('ntripProfiles'), app.ds.setting('ntrip')]).then(([pv, v]) => { const st = loadProfiles(pv, v); setNp(st); app.state.ntripProfiles = st; app.state.ntripCfg = activeProfile(st); }); app.bridge.info().then(setVer).catch(() => {}); }, []);
   const native = app.bridge.isNative();
-  const setN = (p) => { const n = Object.assign({}, nt, p); setNt(n); app.state.ntripCfg = n; app.ds.setting('ntrip', n); };
+  const saveNp = (st) => { setNp(st); app.state.ntripProfiles = st; app.state.ntripCfg = activeProfile(st); app.ds.setting('ntripProfiles', st); app.ds.setting('ntrip', activeProfile(st)); };
+  const setN = (p) => saveNp(updateActive(np, p));
+  const pickProfile = (id) => { if (id === np.active) return; const bagli = (g.state.ntrip || {}).state === 'connected' || (g.state.ntrip || {}).state === 'connecting'; if (bagli) g.ntripDisconnect(); setMounts([]); saveNp(selectProfile(np, id)); app.toast(activeProfile(selectProfile(np, id)).name + ' seçildi' + (bagli ? ' · önceki bağlantı kesildi, "Bağlan" deyin' : '')); };
+  const newProfile = async () => { const n = await app.prompt('Yeni NTRIP profili', 'Profil adı', { required: true, placeholder: 'ör. Sabit istasyon · Elazığ', note: 'Sunucu, port, bağlantı noktası ve kullanıcı bilgilerini profil seçiliyken aşağıdan girin.' }); if (!n) return; try { setMounts([]); saveNp(addProfile(np, n)); } catch (e) { app.toast(e.message, 'warn'); } };
+  const delProfile = async () => { if (!(await app.confirm('Profili sil', '"' + nt.name + '" profili silinsin mi?', { danger: true, ok: 'Sil' }))) return; try { setMounts([]); saveNp(removeProfile(np, np.active)); } catch (e) { app.toast(e.message, 'warn'); } };
   const usePhone = async () => { try { await g.usePhone(); app.toast('Telefon konum servisi · TEST modu', 'warn'); } catch (e) { app.toast(e.message, 'err'); } };
   const listBt = async () => { setScan(true); try { const b = await app.bridge.btBonded(); let ble = []; try { ble = await app.bridge.bleScan(5000); } catch (e) { /* BLE yok */ } const bonded = (b || []).map((d) => Object.assign(d, { type: d.kind === 'le' ? 'ble' : 'spp' })); setDevs([...bonded, ...(ble || []).filter((x) => !bonded.some((y) => y.address === x.address)).map((d) => Object.assign(d, { type: 'ble' }))]); } catch (e) { app.toast(e.message, 'err'); } setScan(false); };
   const connect = async (d) => { try { await g.connectExternal({ type: d.type, address: d.address, name: d.name }); await app.ds.setting('lastReceiver', d); app.toast(d.name + ' bağlanıyor…'); } catch (e) { app.toast(e.message, 'err'); } };
@@ -78,8 +82,6 @@ export function SettingsScreen() {
     <div class="card stack">
       <div class="row"><span style="width:44px;height:44px;border-radius:8px;border:1px solid #334155;display:flex;align-items:center;justify-content:center"><${Icon} n="bt" c="#22d3ee" /></span><div class="grow"><b style="font-size:17px">${s.source === 'external' ? (s.receiver || {}).name : 'Alıcı seçilmedi'}</b><div class="mono note">${s.source === 'external' ? ((s.link || {}).type || '').toUpperCase() + ' · ' + ((s.link || {}).address || '') + (s.rateHz ? ' · ' + Math.round(s.rateHz) + ' Hz' : '') : native ? 'Eşleşmiş cihazlar listelenir' : 'Masaüstü: Web Serial / Web Bluetooth'}</div></div>${s.source === 'external' ? html`<${Badge} k=${s.connected ? 'ok' : 'warn'}>${s.connected ? 'BAĞLI' : 'BEKLİYOR'}</${Badge}>` : null}</div>
       <div class="grid2">${native ? html`<button class="btn" disabled=${scan} onClick=${listBt}>${scan ? 'Taranıyor…' : 'Cihaz Tara'}</button>` : html`<button class="btn" onClick=${() => webConnect('web-serial')}>USB / Seri</button>`}${native ? html`<button class="btn dang" disabled=${s.source !== 'external'} onClick=${() => g.stopAll()}>Bağlantıyı Kes</button>` : html`<button class="btn" onClick=${() => webConnect('web-ble')}>Web Bluetooth</button>`}</div>
-      <div class="fld"><label>Alıcı markası</label><${Seg} value=${profile} options=${[['genel', 'Genel (NMEA)'], ['spectra', 'Spectra SP60 / SP80 / SP85']]} onChange=${(v) => { setProfile(v); app.ds.setting('receiverProfile', v); }} /></div>
-      ${profile === 'spectra' ? html`<div class="stack" style="gap:6px"><button class="btn" disabled=${s.source !== 'external' || !s.connected} onClick=${spectra}><${Icon} n="sync" s=${18} />Spectra: konum çıkışını aç</button><div class="note">Alıcı bağlıyken konum gelmiyorsa bu düğme alıcıya "konum cümlelerini Bluetooth'tan gönder" komutunu yollar (GGA, GST, GSA, RMC, POS · 1 Hz). Bağlandıktan sonra 4 saniye veri gelmezse kendiliğinden de denenir. Spectra'ya özgü $PASHR,POS ve $PTNL,GGK cümleleri de okunur.${(s.receiver || {}).model ? ' · Alıcı: ' + s.receiver.model + ((s.receiver || {}).serial ? ' #' + s.receiver.serial : '') : ''}</div></div>` : null}
       ${devs ? html`<div class="card tight list">${devs.map((d) => html`<button class="li" onClick=${() => connect(d)}><${Badge} k=${d.type === 'ble' ? 'cy' : 'mut'}>${d.type.toUpperCase()}</${Badge}><div class="grow"><div class="t" style="font-size:13px">${d.name || '(adsız)'}</div><div class="m">${d.address}${d.rssi ? ' · ' + d.rssi + ' dBm' : ''}</div></div><${Icon} n="next" s=${16} /></button>`)}${!devs.length ? html`<div class="empty">Cihaz bulunamadı · alıcıyı telefonun Bluetooth ayarlarından eşleştirin</div>` : null}</div>` : null}
       <div class="fld"><label>Anten yüksekliği</label><div class="row"><input class="inp mono" type="number" step="0.001" style="flex:1;font-size:18px;color:#10b981" value=${ant.height} onChange=${(e) => setAnt({ height: +e.target.value })} /><${Chip} on=${ant.measure === 'vertical'} onClick=${() => setAnt({ measure: 'vertical' })}>Dikey</${Chip}><${Chip} on=${ant.measure === 'slant'} onClick=${() => setAnt({ measure: 'slant' })}>Eğik</${Chip}></div></div>
       ${ant.measure === 'slant' ? html`<div class="grid2"><div class="fld"><label>Anten yarıçapı (m)</label><input class="inp mono" type="number" step="0.001" value=${ant.radius} onChange=${(e) => setAnt({ radius: +e.target.value })} /></div><div class="fld"><label>Dikey karşılık</label><div class="inp mono" style="display:flex;align-items:center">${fmt(g.antennaVertical())} m</div></div></div>` : null}
@@ -88,8 +90,12 @@ export function SettingsScreen() {
       <div class="note">GST yoksa σ değerleri HDOP'tan tahmin edilir ve "σ tahmini" olarak işaretlenir. Alıcıyı GGA+GST+GSA 1–10 Hz çıkış verecek şekilde ayarlayın.</div>
     </div>
 
-    <div class="sect">NTRIP · ${nt.name || 'profil'}</div>
+    <div class="sect">NTRIP · düzeltme kaynağı</div>
     <div class="card stack">
+      <div class="lbl">Kayıtlı profiller · dokunarak seçin</div>
+      <div class="chips">${np.list.map((p) => html`<${Chip} on=${p.id === np.active} onClick=${() => pickProfile(p.id)}>${p.name || 'adsız'}</${Chip}>`)}<button class="chip" style="border-style:dashed" onClick=${newProfile}>+ Profil ekle</button></div>
+      <div class="row" style="align-items:flex-end"><div class="fld grow"><label>Profil adı</label><input class="inp" value=${nt.name || ''} onChange=${(e) => setN({ name: e.target.value.trim() || 'profil' })} /></div>${np.list.length > 1 ? html`<button class="btn dang sm" style="height:48px" onClick=${delProfile}>Sil</button>` : null}</div>
+      <div class="note">TUSAGA-Aktif, kendi sabit istasyonunuz ya da başka bir ağ için ayrı profil açın; bilgiler profille birlikte saklanır.</div>
       <div class="row"><i style=${'width:10px;height:10px;border-radius:5px;background:' + (nts.state === 'connected' ? '#10b981' : nts.state === 'connecting' ? '#f59e0b' : '#475569')}></i><b class=${nts.state === 'connected' ? 'hl' : ''}>${{ connected: 'Bağlı', connecting: 'Bağlanıyor', error: 'Hata', off: 'Kapalı' }[nts.state] || nts.state}</b><span class="grow"></span><span class="mono note">${nts.state === 'connected' ? 'RTCM3 · ' + trn((nts.rateBps || 0) / 1024, 1) + ' kB/s · yaş ' + (s.age != null ? s.age.toFixed(1) + ' s' : '—') : nts.error || ''}</span></div>
       ${nts.types && Object.keys(nts.types).length ? html`<div class="row wrap" style="gap:4px">${Object.entries(nts.types).map(([k, v]) => html`<span class="badge b-mut">${k}×${v}</span>`)}</div>` : null}
       <div class="row"><div class="fld grow"><label>Sunucu</label><input class="inp mono" placeholder="[SUNUCU IP / ad]" value=${nt.host} onChange=${(e) => setN({ host: e.target.value.trim() })} /></div><div class="fld" style="width:96px"><label>Port</label><input class="inp mono" type="number" value=${nt.port} onChange=${(e) => setN({ port: +e.target.value })} /></div></div>
@@ -122,6 +128,8 @@ export function SettingsScreen() {
     <div class="sect">${app.web ? 'Telefonla veri alışverişi' : 'Veri ve senkron'}</div>
     <div class="card stack"><div class="row"><div class="grow"><b>${app.web ? 'Telefona gönderilmemiş değişiklik' : 'Senkron kuyruğu'}</b><div class="mono" style="font-size:12px;color:${pend ? '#f59e0b' : '#10b981'}">${pend} kayıt ${app.web ? '' : 'çevrimdışı '}bekliyor</div></div><button class="btn sm" onClick=${() => app.nav.go('sync')}>${app.web ? 'Aç →' : 'Senkron →'}</button></div></div>
 
+    ${ps.p ? html`<div class="sect">Kullanıcılar ve hakediş onayı</div>
+    <div class="card row"><div class="grow"><b style="font-size:14px">${ps.approval().on ? (ps.member ? ps.member.name : 'Oturum açılmadı') : 'Onay mekanizması kapalı'}</b><div class="note">Roller, şifreli oturum, onay bekleyen işler</div></div><button class="btn sm pri" onClick=${() => app.nav.go('team')}>Aç →</button></div>` : null}
     <div class="sect">Tanımlar ve kayıtlar</div>
     <div class="card tight list">${[['projects', 'Projeler', 'Proje merkezi, akış, yeni proje'], ['definitions', 'Tanımlar (tek veri kaynağı)', 'Reçete kuralları, parametreler, standart sürümleri'], ['poz', 'Poz kataloğu (Yeşil Defter)', 'Veritabanından · sürümlü'], ['layers', 'Katmanlar ve lejant (TEDAŞ)', 'Lejant.dxf katman/ACI eşlemesi'], ['audit', 'Denetim kaydı', 'Kim · ne · ne zaman · eski/yeni · neden'], ['user', 'Kullanıcı ve cihaz', app.ds.user.name + ' · ' + app.ds.deviceId]].map(([k, t, d]) => html`<button class="li" onClick=${() => app.nav.go(k)}><div class="grow"><div class="t">${t}</div><div class="s">${d}</div></div><${Icon} n="next" s=${16} c="#94a3b8" /></button>`)}</div>
     ${app.web ? null : html`    <div class="sect">Harita altlığı · Google ve Yandex</div>

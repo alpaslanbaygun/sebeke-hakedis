@@ -19,8 +19,8 @@ export function contributionsFromEquipment(e, mats, meta) {
 }
 export function contributionsFromLine(line, items, job, meta) {
   return items.filter((x) => x.qty > 0 || x.missing).map((x) => ({
-    job, servis: x.servis, material: x.material || null, qty: x.qty, unit: x.unit, kgPer: null, grp: '', name: x.conductor || x.material || '', why: x.why, tag: x.material ? 'kanal' : 'iletken',
-    source: x.material ? 'OTO' : meta.lenSource, evidence: meta.photos > 0 ? 'FOTO' : null, missing: x.missing || (!x.servis && !x.material),
+    job, servis: x.servis, material: x.material || null, qty: x.qty, unit: x.unit, kgPer: null, grp: '', name: x.name || x.conductor || x.material || '', why: x.why, tag: x.manual ? 'manuel' : x.material || x.kanal ? 'kanal' : 'iletken', origin: x.manual ? (x.origin || 'MANUEL') : undefined,
+    source: x.manual ? 'MANUEL' : x.material || x.kanal ? 'OTO' : meta.lenSource, evidence: meta.photos > 0 ? 'FOTO' : null, missing: x.missing || (!x.servis && !x.material),
     ref: { type: 'line', id: line.id, no: line.lineNo, kind: 'line', workDate: line.workDate || null, done: meta.done != null ? meta.done : line.progress === 'done' }
   }));
 }

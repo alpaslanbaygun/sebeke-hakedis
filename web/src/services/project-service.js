@@ -32,7 +32,7 @@ export class ProjectService {
       id: pid, projectId: pid, name: d.name, code: d.code || '', client: d.client || '', contractor: d.contractor || '', stdId: std, crs,
       heightSystem: d.heightSystem || 'ortometrik', geoid: d.geoid || { model: 'receiver' }, enhZone: d.enhZone || 'II', landClass: d.landClass || 'arazi',
       mode: d.mode || 'asbuilt', cornerThresholdDeg: d.cornerThresholdDeg ?? 3, conductorPayPct: d.conductorPayPct ?? 0, paramOverrides: {}, thresholds: d.thresholds || null,
-      startDate: d.startDate || new Date().toISOString().slice(0, 10), location: d.location || ''
+      startDate: d.startDate || new Date().toISOString().slice(0, 10), location: d.location || '', autoRecipe: d.autoRecipe === true
     }, { reason: 'Proje oluşturuldu' });
     return rec;
   }
@@ -40,6 +40,7 @@ export class ProjectService {
     const p = await this.ds.get('projects', id);
     if (!p) throw new Error('Proje bulunamadı');
     if (this._session && this._session.projectId !== id) { this._session = null; this.ds.setUser(this._baseUser); }
+    this.openedId = null;   // veriler yüklenene kadar: ekranlar 'proje boş' sanmasın
     this.p = p;
     if (!this.catCache.has(p.stdId)) this.catCache.set(p.stdId, await Catalog.load(this.ds, p.stdId));
     this.cat = this.catCache.get(p.stdId);
@@ -48,6 +49,7 @@ export class ProjectService {
     await this.recompute('Proje açıldı', { silent: true });
     if (this.gnss) this.gnss.configure({ crs: p.crs, geoid: p.geoid, thresholds: Object.assign({}, this.cat.table('gnssThresholds') || {}, p.thresholds || {}) });
     await this.ds.setting('lastProject', id);
+    this.openedId = id;
     this.bus.emit('project:open', p);
     return p;
   }
@@ -58,6 +60,31 @@ export class ProjectService {
     if (patch.crs) await this.reprojectAll('Koordinat sistemi değişti');
     await this.recompute(reason || 'Proje ayarı');
     return this.p;
+  }
+  // v2.4 · Proje silme: projenin tüm kayıtları kalıcı olarak silinir. Onay mekanizması açık projede yalnız Yönetici silebilir.
+  async deleteProject(id, reason) {
+    const p = await this.ds.get('projects', id);
+    if (!p) throw new Error('Proje bulunamadı');
+    if (approvalOn(p)) {
+      const m = this.p && this.p.id === id ? this.member : null;
+      if (!m || m.role !== 'yonetici') throw new Error('Bu projede onay mekanizması açık · silmek için projeyi açıp Yönetici olarak oturum açın');
+    }
+    const stores = Object.keys(PROJECT_STORES).filter((k) => !PROJECT_STORES[k].global).concat(['blobs', 'outbox']);
+    let n = 0;
+    for (const st of stores) {
+      let rows = [];
+      try { rows = await this.ds.db.query(st, 'projectId', id); } catch (e) { try { rows = (await this.ds.db.getAll(st)).filter((r) => r && r.projectId === id); } catch (e2) { rows = []; } }
+      if (rows.length) { await this.ds.db.bulkDelete(st, rows.map((r) => r.id)); n += rows.length; }
+    }
+    await this.ds.db.delete('projects', id);
+    if (this.p && this.p.id === id) {
+      this.p = null; this.cat = null; this.data = {}; this.result = null; this.lastImpact = null; this._session = null;
+      this.ds.setUser(this._baseUser);
+      await this.ds.setting('lastProject', null);
+    }
+    await this.ds._audit('projects', { id, name: p.name }, 'delete', [], 'Proje silindi: ' + p.name + (p.code ? ' (' + p.code + ')' : '') + ' · ' + n + ' kayıt' + (reason ? ' · ' + reason : ''));
+    this.bus.emit('project:deleted', { id, name: p.name });
+    return { name: p.name, records: n };
   }
   async load() {
     for (const s of LOAD) this.data[s] = await this.ds.list(s, this.p.id);
@@ -227,6 +254,24 @@ export class ProjectService {
     this.data.materials.push(x);
     await this.recompute('Sahada ilave');
     return x;
+  }
+  // v2.4 · Elle malzeme (otomatik reçete kapalıyken olağan yol): ekipmana ya da hatta katalogdan kalem ekle
+  async addMaterial(ownerType, ownerId, servis, qty, note) {
+    if (!(+qty > 0)) throw new Error('Miktar sıfırdan büyük olmalı');
+    const pz = this.cat.poz(servis);
+    if (!pz) throw new Error('Kalem katalogda yok');
+    const owner = ownerType === 'line' ? this.lineById(ownerId) : this.eqById(ownerId);
+    if (!owner) throw new Error('Kayıt yok');
+    this._guardEdit(ownerType === 'line' ? 'lines' : 'equipment', owner, { materials: Date.now() }, 'Malzeme eklendi');
+    const x = await this.ds.create('materials', { projectId: this.p.id, ownerId, ownerType: ownerType === 'line' ? 'line' : 'equipment', servis, qty: +qty, unit: pz.unit, origin: 'MANUEL', reason: note || 'Elle eklendi', approved: true, grp: pz.kgGroup || '' }, { reason: 'Malzeme eklendi: ' + (owner.no || owner.lineNo) + ' · ' + pz.name + ' × ' + qty });
+    this.data.materials.push(x);
+    await this.recompute('Malzeme eklendi');
+    return x;
+  }
+  async setMaterialRowQty(id, qty) {
+    if (!(+qty > 0)) throw new Error('Miktar sıfırdan büyük olmalı');
+    await this.ds.update('materials', id, { qty: +qty }, { reason: 'Malzeme miktarı: ' + qty });
+    return this._after('materials', 'Malzeme miktarı');
   }
   async approveMaterial(id, ok, reason) { { const c = this.can('material.approve'); if (!c.ok) throw new Error(c.why); } await this.ds.update('materials', id, { approved: !!ok }, { reason: (ok ? 'Onaylandı' : 'Onay geri alındı') + (reason ? ' · ' + reason : '') }); return this._after('materials', 'Malzeme onayı'); }
   async removeMaterial(id, reason) { await this.ds.remove('materials', id, { reason }); return this._after('materials', 'Malzeme kaldırıldı'); }

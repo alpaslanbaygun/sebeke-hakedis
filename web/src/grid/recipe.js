@@ -39,7 +39,7 @@ export function recipeContext(e, cat, extra = {}) {
     const k = a.kioskServis ? cat.kiosk(a.kioskServis) : null;
     const kva = +a.kva || (k && k.kva) || 0;
     const tdType = a.poleTypeId ? cat.poleType(a.poleTypeId) : null;
-    return { eq: 'trafo', type, kva, cins: a.cins || 'herm', cinsLabel: a.cins === 'kuru' ? 'kuru tip' : 'hermetik', tdirek: tdType ? tdType.name : '', tdServis: tdType ? tdType.servis : null, tdKg: tdType ? tdType.kg : 0, kioskServis: a.kioskServis || null, kioskLabel: k ? k.label : '' };
+    return { eq: 'trafo', type, kva, cins: a.cins || 'herm', cinsLabel: a.cins === 'kuru' ? 'kuru tip' : 'hermetik', tdirek: tdType ? tdType.name : '', tdServis: tdType ? tdType.servis : null, tdKg: tdType ? tdType.kg : 0, kioskServis: a.kioskServis || null, kioskLabel: k ? k.label : '', govdeSecili: a.govde !== undefined && a.govde !== null && a.govde !== '' };
   }
   if (e.kind === 'sdk') {
     const t = cat.sdkType((e.attrs || {}).sdkTypeId);
@@ -60,7 +60,7 @@ export function applyRules(rules, ctx, cat, params) {
       let servis = it.servis || null, kgPer = null, nameOverride = null;
       if (it.src === 'self') { servis = ctx.self; kgPer = ctx.kg || null; nameOverride = ctx.selfName || null; }
       else if (it.src === 'self:pole') { servis = ctx.tdServis; kgPer = ctx.tdKg || null; }
-      else if (it.src === 'self:kiosk') servis = ctx.kioskServis;
+      else if (it.src === 'self:kiosk') { if (!ctx.kioskServis && ctx.govdeSecili) continue; servis = ctx.kioskServis; }   // v2.4: gövde (PB…) ayrıca seçildiyse hazır köşk paketi aranmaz
       else if (it.src === 'lookup:trafo') { const t = cat.pickTrafo(ctx.type === 'direk' ? 'direk' : 'bina', ctx.cins, ctx.kva); servis = t ? t.servis : null; if (t) ctx.kvaPicked = t.kva; }
       else if (it.src === 'lookup:panoH') { const p = cat.pickPanel('harici', ctx.kva); servis = p ? p.servis : null; }
       else if (it.src === 'lookup:panoD') { const p = cat.pickPanel('dahili', ctx.kva); servis = p ? p.servis : null; }
@@ -70,7 +70,7 @@ export function applyRules(rules, ctx, cat, params) {
       const pz = servis ? cat.poz(servis) : null;
       out.push({
         servis, qty: +qty, unit: pz ? pz.unit : (it.unit || 'Ad'), kgPer: kgPer ?? (pz ? pz.kgPerUnit : null),
-        name: nameOverride || (pz ? pz.name : '(katalogda yok)'), why: fill(it.why, ctx), grp: fill(it.grp, ctx) || '', tag: it.tag || '', ruleId: r.id, origin: 'OTO', qtyFrom,
+        name: nameOverride || (pz ? pz.name : '(katalogda yok)'), why: fill(it.why, ctx), grp: fill(it.grp, ctx) || '', tag: it.tag || '', ruleId: r.id, src: it.src || null, origin: 'OTO', qtyFrom,
         missing: !servis || !pz
       });
     }
@@ -78,8 +78,19 @@ export function applyRules(rules, ctx, cat, params) {
   return out;
 }
 
+// v2.4 · Otomatik reçete proje ayarıdır (varsayılan KAPALI). Kapalıyken objede yalnız kullanıcının seçtiği kalemler gelir:
+// direğin / trafonun / SDK'nın kendisi, köşk gövdesi, kabine elle eklenen hücre ve kanallar, kofre, armatür, seçilen poz.
+// Kuralla türeyen yardımcı malzeme (travers, izolatör, topraklama, pano, koruma…) gelmez; kullanıcı "Malzeme ekle" ile ekler.
+// autoRecipe: true = açık · false = kapalı · tanımsız = v2.4 öncesi proje (kullanıcı seçene kadar eski davranış: açık)
+export const autoRecipeOn = (project) => !!(project && project.autoRecipe !== false);
+const RULE_SELF = new Set(['self', 'self:pole', 'self:kiosk', 'lookup:trafo']);
+const PLAIN_SELF = new Set(['kosk', 'hucre', 'kanal', 'self', 'kofre', 'armatur', 'trafo']);
+const selected = (m) => (m.ruleId ? RULE_SELF.has(m.src) : PLAIN_SELF.has(m.tag) && !m.tipProje);   // tip projeden gelen hazır kanal da kendiliğinden gelmez
+const KOSK_POSTS = new Set(['mbk', 'rbk', 'mono', 'dapt', 'mod', 'bina', 'ba', 'ind', 'kule', 'kulec']);
+
 // Ekipmanın tam reçetesi: kurallar + iş tipi filtresi + miktar düzeltmeleri + manuel/sahada ilave kalemler
 export function equipmentMaterials(e, cat, opts = {}) {
+  const auto = opts.auto !== false;
   const job = jobOf(e);
   const ctx = recipeContext(e, cat, opts.ctx || {});
   const rulesEq = ctx.eq === 'pole' ? 'pole' : ctx.eq;
@@ -89,6 +100,20 @@ export function equipmentMaterials(e, cat, opts = {}) {
     const a = e.attrs || {};
     if (a.cabin) items = cabinItems(e, cat, ctx, opts.params);
     else if (!items.some((m) => m.tag === 'kosk')) { const g = govdeKalemi(a, ctx.type, cat); if (g) items.unshift(g); }
+    // Gövde ayrıca seçildiyse (ör. PB-3) trafo hazır pakette değildir: güce göre ayrı kalem
+    if (!a.cabin && ctx.govdeSecili && ctx.kva > 0 && KOSK_POSTS.has(ctx.type) && !items.some((m) => m.tag === 'trafo')) {
+      const t = cat.pickTrafo('bina', ctx.cins, ctx.kva);
+      const pz = t ? cat.poz(t.servis) : null;
+      items.push({ servis: t ? t.servis : null, qty: 1, unit: 'Ad', kgPer: null, name: pz ? pz.name : ctx.kva + ' kVA trafo', why: ctx.kva + ' kVA ' + ctx.cinsLabel + ' trafo', grp: '', tag: 'trafo', origin: 'OTO', qtyFrom: 'num', missing: !pz });
+    }
+  }
+  // Direkte armatür (v2.4): direk kaydında seçilen armatür tipi ve adedi malzeme olarak gelir
+  if (job && (e.kind === 'pole' || e.kind === 'lighting')) {
+    for (const x of (e.attrs && Array.isArray(e.attrs.armatur) ? e.attrs.armatur : [])) {
+      if (!x || !x.servis || !(+x.qty > 0)) continue;
+      const pz = cat.poz(x.servis);
+      items.push({ servis: x.servis, qty: +x.qty, unit: pz ? pz.unit : 'Ad', kgPer: null, name: pz ? pz.name : '(katalogda yok)', why: 'Direkteki armatür', grp: '', tag: 'armatur', origin: 'OTO', qtyFrom: 'num', missing: !pz });
+    }
   }
   // Serbest türlerde kural yoksa seçilen poz otomatik kalemdir
   if (job && !items.length && ctx.self && !['pole', 'trafo', 'sdk'].includes(ctx.eq)) {
@@ -101,6 +126,8 @@ export function equipmentMaterials(e, cat, opts = {}) {
     const pz = servis ? cat.poz(servis) : null;
     items.push({ servis, qty: 1, unit: pz ? pz.unit : 'Ad', kgPer: null, name: pz ? pz.name : 'Abone kofresi (katalogda yok)', why: 'Abone kofresi · ' + (e.attrs.phase === 'tek' ? 'tek faz' : 'üç faz'), grp: '', tag: 'kofre', origin: 'OTO', qtyFrom: 'num', missing: !pz });
   }
+  // Otomatik reçete kapalı: yalnız seçilen kalemler
+  if (!auto) items = items.filter(selected);
   // Trafo durum filtreleri: gücü yükseltilen → yalnız trafo + pano; tadil/modül → köşk + hücre
   const ts = TRAFO_STATUSES[e.state];
   if (ctx.eq === 'trafo' && ts && ts.only) items = items.filter((m) => ts.only.includes(m.tag));
@@ -121,5 +148,5 @@ export function equipmentMaterials(e, cat, opts = {}) {
     const t = cat.pickTrafo(ctx.type === 'direk' ? 'direk' : 'bina', ctx.cins, +e.attrs.oldKva);
     if (t) items.push({ servis: t.servis, qty: 1, unit: 'Ad', name: (cat.poz(t.servis) || {}).name || t.kva + ' kVA trafo', why: 'Eski trafo demontajı · ' + e.attrs.oldKva + ' kVA', grp: '', tag: 'trafo', origin: 'OTO', jobOverride: 'demontaj' });
   }
-  return { job, ctx, items };
+  return { job, ctx, items, auto };
 }
