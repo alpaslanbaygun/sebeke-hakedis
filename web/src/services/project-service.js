@@ -166,6 +166,43 @@ export class ProjectService {
     const e = await this.ds.update('equipment', id, patch, { reason });
     return this._after('equipment', reason || (e.no + ' güncellendi')).then(() => e);
   }
+  // Direklere sonradan otomatik numara (v2.3). Sıra: hat boyunca (hat no sırası, düğüm sırası) ya da alım sırası.
+  // opts: { scope:'all'|'line', lineId, kinds:[...], groups:null|[...], prefix, start, digits, order:'line'|'capture', dry }
+  renumberPlan(opts = {}) {
+    const kinds = new Set(opts.kinds || ['pole']);
+    const pick = (e) => e.status !== 'deleted' && kinds.has(e.kind) && (!opts.groups || opts.groups.includes(e.group));
+    const all = this.data.equipment.filter(pick);
+    const byPoint = new Map(); for (const e of all) if (!byPoint.has(e.pointId)) byPoint.set(e.pointId, e);
+    const ordered = []; const seen = new Set();
+    const push = (e) => { if (e && !seen.has(e.id)) { seen.add(e.id); ordered.push(e); } };
+    const cmp = (a, b) => String(a).localeCompare(String(b), 'tr', { numeric: true });
+    if (opts.order !== 'capture') {
+      const lines = this.data.lines.filter((l) => l.status !== 'deleted' && (opts.scope !== 'line' || l.id === opts.lineId)).sort((a, b) => cmp(a.lineNo, b.lineNo));
+      for (const l of lines) for (const pid of l.nodes || []) push(byPoint.get(pid));
+    }
+    if (opts.scope !== 'line') for (const e of all.slice().sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))) push(e);
+    const prefix = opts.prefix ?? 'D-', digits = opts.digits ?? 3; let n = opts.start ?? 1;
+    const plan = ordered.map((e) => ({ id: e.id, pointId: e.pointId, old: e.no, no: prefix + String(n++).padStart(digits, '0') }));
+    const mine = new Set(plan.map((x) => x.id));
+    const taken = new Set(this.data.equipment.filter((e) => e.status !== 'deleted' && !mine.has(e.id)).map((e) => e.no));
+    const clash = plan.filter((x) => taken.has(x.no)).map((x) => x.no);
+    return { plan, clash, changed: plan.filter((x) => x.old !== x.no).length };
+  }
+  async renumber(opts = {}) {
+    const { plan, clash } = this.renumberPlan(opts);
+    if (clash.length) throw new Error('Bu numaralar başka objelerde kullanılıyor: ' + clash.slice(0, 5).join(', ') + (clash.length > 5 ? '…' : '') + ' · başlangıç numarasını ya da ön eki değiştirin');
+    let n = 0;
+    for (const x of plan) {
+      if (x.old === x.no) continue;
+      await this.ds.update('equipment', x.id, { no: x.no, prevNo: x.old }, { reason: 'Otomatik numara: ' + x.old + ' → ' + x.no, silent: true });
+      const p = this.pointById(x.pointId);
+      if (p && p.pointNo === x.old) await this.ds.update('points', p.id, { pointNo: x.no }, { reason: 'Otomatik numara: ' + x.old + ' → ' + x.no, silent: true });
+      n++;
+    }
+    await this.reload('equipment'); await this.reload('points');
+    await this.recompute('Otomatik numaralama · ' + n + ' obje');
+    return { changed: n, total: plan.length };
+  }
   // Reçete kalemi miktar değişikliği (yalnız miktar; denetim kaydına yazılır)
   async setMaterialQty(eqId, servis, qty, reason) {
     if (!reason) throw new Error('Miktar değişikliği için gerekçe zorunlu');

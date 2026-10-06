@@ -3,6 +3,7 @@
 // veritabanındaki kurallar (MaterialRecipe) ile üretilir. Kullanıcı yalnızca miktarı değiştirebilir
 // (denetim kaydıyla) veya "sahada ilave" talebi açabilir; elle eklenen kalem reçete sayılmaz.
 import { STATUSES, TRAFO_STATUSES } from '../core/schema.js';
+import { cabinItems, govdeKalemi } from './cabin-recipe.js';
 
 const ROLN = { T: 'Taşıyıcı', D: 'Durdurucu', N: 'Nihayet', Z: 'Köşe' };
 
@@ -83,6 +84,12 @@ export function equipmentMaterials(e, cat, opts = {}) {
   const ctx = recipeContext(e, cat, opts.ctx || {});
   const rulesEq = ctx.eq === 'pole' ? 'pole' : ctx.eq;
   let items = job ? applyRules(cat.rules(rulesEq), ctx, cat, opts.params) : [];
+  // v2.3 · Kabin: tanımlıysa gövde + hücreler + trafo + pano + kanallar ayrı ayrı; tanımlı değilse monoblok köşkte gövde kalemi eklenir
+  if (job && ctx.eq === 'trafo') {
+    const a = e.attrs || {};
+    if (a.cabin) items = cabinItems(e, cat, ctx, opts.params);
+    else if (!items.some((m) => m.tag === 'kosk')) { const g = govdeKalemi(a, ctx.type, cat); if (g) items.unshift(g); }
+  }
   // Serbest türlerde kural yoksa seçilen poz otomatik kalemdir
   if (job && !items.length && ctx.self && !['pole', 'trafo', 'sdk'].includes(ctx.eq)) {
     const pz = cat.poz(ctx.self);

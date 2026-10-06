@@ -4,6 +4,7 @@ import { html, useState, useEffect, useBus, Icon, Chip, Seg, Sel, Badge, Title, 
 import { app } from '../ctx.js';
 import { STATUSES, TRAFO_STATUSES, JOB_LABEL, SOURCE_LABEL, HAK_STATUSES, HAK_ORDER, KIND_FOLDER, hakOf } from '../../core/schema.js';
 import { sourceInfo, sourceText } from '../../core/source.js';
+import { KABIN_POSTLARI } from './cabin.js';
 import { luminairePoz } from '../../services/survey-service.js';
 import { checkPole, checkTransformer, roleLabel } from '../../grid/checks.js';
 import { jobOf } from '../../grid/recipe.js';
@@ -111,7 +112,9 @@ export function EquipmentScreen({ id }) {
         <div class="fld"><label>Üretici</label><input class="inp" value=${d.attrs.maker || ''} onChange=${(e) => setA({ maker: e.target.value })} /></div>
         <div class="fld"><label>Eski güç (kVA)</label><input class="inp mono" type="number" value=${d.attrs.oldKva ?? ''} onChange=${(e) => setA({ oldKva: e.target.value ? +e.target.value : null })} /></div></div>
         ${d.attrs.post === 'direk' ? html`<div class="fld"><label>Trafo direği</label><${Sel} mono value=${d.attrs.poleTypeId} options=${cat.poleTypes('trafo').map((x) => [x.id, x.name + ' · ' + x.kg + ' kg'])} onChange=${(v) => setA({ poleTypeId: v })} /></div>` : null}
-        ${['mbk', 'rbk', 'mrmu', 'ind'].includes(d.attrs.post) ? html`<div class="fld"><label>Köşk / hücre kodu</label><${Sel} mono value=${d.attrs.kioskServis} options=${cat.t.kiosks.map((k) => [k.servis, k.label])} onChange=${(v) => setA({ kioskServis: v })} /></div>` : null}` : null}
+        ${KABIN_POSTLARI.includes(d.attrs.post) ? html`<button class=${'btn blk' + (d.attrs.cabin ? '' : ' pri')} style="height:52px" onClick=${() => app.nav.go('cabin', { id })}><${Icon} n="grid" s=${18} c=${d.attrs.cabin ? 'currentColor' : '#0b1326'} />${d.attrs.cabin ? 'Kabin: ' + d.attrs.cabin.kosk + ' · ' + d.attrs.cabin.hucreler.length + ' hücre · düzenle' : 'Kabini kur (hücreler · kablo kanalları)'}</button>
+          <div class="note">${d.attrs.cabin ? 'Keşifte gövde, hücreler, trafo, pano ve kanallar ayrı kalemler olarak gelir.' : d.attrs.post === 'mono' ? 'Kabin kurulmadıysa köşk gövdesi TİP1C (BOŞ) olarak keşfe eklenir; kabini kurunca tip boydan bulunur ve hücreler tek tek gelir.' : 'Kabini kurarsanız gövde, hücreler ve kablo kanalları keşfe ayrı kalemler olarak gelir.'}</div>` : null}
+        ${['mbk', 'rbk', 'mrmu', 'ind'].includes(d.attrs.post) && !d.attrs.cabin ? html`<div class="fld"><label>Köşk / hücre kodu</label><${Sel} mono value=${d.attrs.kioskServis} options=${cat.t.kiosks.map((k) => [k.servis, k.label])} onChange=${(v) => setA({ kioskServis: v })} /></div>` : null}` : null}
       ${d.kind === 'sdk' ? html`<div class="grid2"><div class="fld"><label>SDK tipi</label><${Sel} value=${d.attrs.sdkTypeId} options=${cat.sdkTypes().map((s) => [s.id, s.name])} onChange=${(v) => setA({ sdkTypeId: v })} /></div><div class="fld"><label>Çıkış sayısı</label><input class="inp mono" type="number" value=${d.attrs.outputs ?? 4} onChange=${(e) => setA({ outputs: +e.target.value })} /></div></div>
         <div class="fld"><label>Sigortalar (virgülle)</label><input class="inp mono" value=${(d.attrs.fuses || []).join(', ')} placeholder="3×100 A NH, 3×63 A NH" onChange=${(e) => setA({ fuses: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} /></div>
         <div class="note">Besleyen hat: ${lines.filter((l) => l.lineType === 'AG').map((l) => l.lineNo).join(', ') || 'yok'} · Bağlı abone: ${ps.data.lines.filter((l) => l.lineType === 'ABONE' && l.nodes[0] === e0.pointId).length}</div>` : null}

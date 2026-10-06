@@ -10,11 +10,24 @@ import { resolveCoord, crsChoices, luminairePoz } from '../../services/survey-se
 import { lineLabel } from '../../grid/lines.js';
 import { roleLabel } from '../../grid/checks.js';
 import { jobOf } from '../../grid/recipe.js';
+import { armsOfPoint } from './tepe.js';
+import { energize, levelsOf } from '../../grid/energize.js';
+import { cadDocs, importCad, visibleCad, setCad, removeCad, cadModel, snapCad, cadArms } from '../../services/cad-service.js';
 
 const GEN = { AG: ['sehir', 'beton', 'agac'], OG: ['bahh', 'civ', 'beton562', 'agac'], MUS: ['mus', 'beton', 'agac'], AYD: ['ayd'] };
 const GCOL = { AG: '#7ee08a', OG: '#ff8a8a', MUS: '#ff8a8a', AYD: '#7fffff', ENH: '#ff9aff', ABONE: '#fbbf24' };
 const ST_COL = { YENI: '#10b981', MEVCUT: '#cbd5e1', DMM: '#f59e0b', DEMONTAJ: '#ffff00', ILERIDE: '#94a3b8' };
 
+// Enerji kontrolü sonucu: veri ya da ayar değişmedikçe yeniden hesaplanmaz
+let energyMemo = { key: null, val: null };
+export function energyState() {
+  const ps = app.ps, cfg = app.state.energyCfg;
+  if (!cfg || !(cfg.og || cfg.ag) || !ps.p) return null;
+  const src = ps.p.energy || {};
+  const key = ps.p.id + '|' + (ps.result ? ps.result.signature : '') + '|' + JSON.stringify(cfg) + '|' + JSON.stringify(src) + '|' + ps.data.lines.map((l) => (l.energyOpen ? l.id : '')).join('');
+  if (energyMemo.key !== key) energyMemo = { key, val: energize(ps.data, Object.assign({}, cfg, { ogSources: src.og || [], agSources: src.ag || [] })) };
+  return energyMemo.val;
+}
 export function mapData() {
   const ps = app.ps;
   const d = ps.data, r = ps.result;
@@ -27,6 +40,7 @@ export function mapData() {
     points: d.points, equipment: d.equipment, lines: d.lines, pointMap, eqByPoint, roles: r ? r.roles : new Map(),
     hakColor: (rec) => { const h = hakOf(rec); return h ? HAK_STATUSES[h].color : null; }, srcInfo: (p) => sourceInfo(p),
     sel: app.state.sel, target: app.state.target, crs: ps.p.crs, basemap: bm && bm.url ? bm : null,
+    cad: app.state.cadLayers || [], energy: energyState(),
     gnss: g.E != null ? g : null, gnssColor: g.source === 'phone' ? '#38bdf8' : FIXCOL[g.fix] || '#475569',
     groupVolt: (e) => { if (e.kind === 'lighting' || e.group === 'ayd') return 'AYD'; const gr = ps.cat.poleGroup(e.group); return gr && gr.og ? 'OG' : 'AG'; },
     groupSymbol: (e) => { const gr = ps.cat.poleGroup(e.group); return gr ? gr.symbol : 'c'; }
@@ -48,8 +62,11 @@ export function MapScreen() {
   const [busy, setBusy] = useState(false);
   const [lastCap, setLastCap] = useState(app.state.lastCap || null);
   const [, force] = useState(0);
-  useBus(['project:computed', 'project:open', 'ui:sel']);
+  useBus(['project:computed', 'project:open', 'ui:sel', 'cad:change']);
   useBus('gnss:state', 300);
+  // CAD çizimleri: görünür olanları belleğe al, haritaya ver
+  const refreshCad = async () => { try { app.state.cadLayers = await visibleCad(ps); } catch (err) { app.state.cadLayers = []; } if (eng.current) eng.current.invalidate(); force((x) => x + 1); };
+  useEffect(() => { refreshCad(); const off = app.bus.on('cad:reload', refreshCad); return off; }, []);
   useEffect(() => {
     const e = new MapEngine(cv.current, {
       getData: mapData,
@@ -109,6 +126,7 @@ export function MapScreen() {
   if (eng.current) eng.current.crosshair = srcMode === 'map' && !app.state.sel && !tool;
   // Konum edinme: seçili veri kaynağına göre ölçüm / elle giriş / haritadan nişangâh
   const acquire = async ({ critical = true, label = 'Nokta' } = {}) => {
+    if (app.state.forceCoord) { const c = app.state.forceCoord; app.state.forceCoord = null; return { coord: { E: c.E, N: c.N, H: null }, source: 'MAP' }; }
     if (srcMode === 'map') { const e = eng.current; const w = e.toWorld(e.w / 2, e.cy()); return { coord: { E: w.E, N: w.N, H: null }, source: 'MAP' }; }
     if (srcMode === 'manual') { const c = await manualCoordModal(label); return c ? { coord: c, source: 'MANUAL' } : null; }
     const obs = await measure({ critical, label });
@@ -134,7 +152,12 @@ export function MapScreen() {
     const t = app.state.tool;
     if (t === 'measure' || t === 'area') { eng.current.measure.pts.push(snap ? { E: snap.E, N: snap.N } : w); eng.current.invalidate(); force((x) => x + 1); return; }
     if (hit) select(hit.kind === 'line' ? { type: 'line', id: hit.ref.id, seg: hit.seg } : { type: 'point', id: hit.ref.id });
-    else select(null);
+    else {
+      // Uygulama objesi yoksa: CAD çiziminde en yakın uç / köşe / merkez noktasına yapış
+      const cl = eng.current.layers.cad !== false ? app.state.cadLayers || [] : [];
+      const sn = cl.length ? snapCad(cl, w.E, w.N, 18 * eng.current.view.res) : null;
+      select(sn ? { type: 'cad', docId: sn.docId, x: sn.x, y: sn.y, kind: sn.kind, layer: sn.layer, text: sn.text } : null);
+    }
   }
   async function onLong(w) {
     const r = await app.modal((close) => html`<div class="mh"><h3>Haritada nokta</h3></div><div class="mb"><div class="kv mono"><b>Y</b><span>${fmt(w.E)}</span><b>X</b><span>${fmt(w.N)}</span></div>
@@ -187,6 +210,8 @@ export function MapScreen() {
     <div class="fabl">
       <button aria-label="Proje merkezi" onClick=${() => app.nav.go('hub')}><${Icon} n="folder" /></button>
       <button aria-label="Tümünü sığdır" onClick=${() => { setFollow(false); app.state.follow = false; eng.current.fit(ps.data.points); }}><${Icon} n="north" s=${18} c="#dae2fd" fill="#334155" /></button>
+      <button class=${cadDocs(ps).length ? 'on' : ''} aria-label="CAD çizimleri" onClick=${() => setPanel('cad')}><b style="font:800 11px var(--mono)">CAD</b></button>
+      <button class=${app.state.energyCfg && (app.state.energyCfg.og || app.state.energyCfg.ag) ? 'on' : ''} aria-label="Enerji kontrolü" onClick=${() => setPanel('energy')}><b style="font:800 15px var(--mono)">ϟ</b></button>
     </div>
     <div class="fab" style="top:12px">
       <button class=${layersOpen ? 'on' : ''} aria-label="Katmanlar" onClick=${() => setLayersOpen(!layersOpen)}><${Icon} n="layers" /></button>
@@ -207,6 +232,7 @@ export function MapScreen() {
     ${layersOpen ? html`<${LayerPop} eng=${eng.current} close=${() => setLayersOpen(false)} />` : null}
     <div class="base" ref=${base}>
       ${m ? html`<${MeasurePanel} m=${m} clear=${() => { m.pts = []; eng.current.invalidate(); force((x) => x + 1); }} undo=${() => { m.pts.pop(); eng.current.invalidate(); force((x) => x + 1); }} close=${() => setTool(null)} />`
+        : sel && sel.type === 'cad' ? html`<${CadPointPanel} sel=${sel} select=${select} curLabel=${cur.label} take=${async () => { app.state.forceCoord = { E: sel.x, N: sel.y }; select(null); await doTake(); }} />`
         : sel ? html`<${SelectionPanel} sel=${sel} select=${select} eng=${eng.current} openLine=${() => setPanel('line')} />`
         : html`<div class="dock" aria-label="Alım">
             <div class="dock-top">
@@ -236,6 +262,8 @@ export function MapScreen() {
         <div class="foot"><div class="grow" style="min-width:0"><div class="lbl">Yeşil Defter</div><div class="mono" style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cur.code || '—'}</div></div><button class="btn pri" style="flex:0 0 46%;height:52px;font-size:16px" onClick=${closePanel}><${Icon} n="check" s=${20} c="#0b1326" />TAMAM</button></div>
       </section>` : null}
     ${panel === 'line' ? html`<${LineSheet} active=${active} close=${closePanel} rerender=${() => force((x) => x + 1)} />` : null}
+    ${panel === 'cad' ? html`<${CadSheet} close=${closePanel} eng=${eng.current} refresh=${refreshCad} />` : null}
+    ${panel === 'energy' ? html`<${EnergySheet} close=${closePanel} eng=${eng.current} rerender=${() => force((x) => x + 1)} />` : null}
     ${panel === 'src' ? html`<${SourceSheet} mode=${srcMode} setMode=${(m) => { setSrcMode(m); closePanel(); }} close=${closePanel} />` : null}`;
 }
 MapScreen.flush = true;
@@ -245,7 +273,8 @@ function LayerPop({ eng, close }) {
   const [, f] = useState(0);
   const L = eng.layers;
   const t = (k) => { L[k] = !L[k]; app.state.layers = Object.assign({}, L); eng.invalidate(); f((x) => x + 1); };
-  const items = [['AG', 'A.G. şebeke', '#7ee08a'], ['OG', 'O.G. şebeke', '#ff6b6b'], ['AYD', 'Aydınlatma', '#7fffff'], ['ENH', 'E.N.H.', '#ff79ff'], ['ABONE', 'Abone', '#fbbf24'], ['yeralti', 'Yeraltı kablo', '#ff6b6b'], ['trafo', 'Trafo ve box', '#6b82ff'], ['mevcut', 'Mevcut elemanlar', '#00ffbf'], ['demontaj', 'Demontaj işareti', '#ffff00'], ['hak', 'Hakediş durumu (renkler)', '#fbbf24'], ['srcTags', 'Veri kaynağı etiketleri', '#10b981'], ['points', 'Ölçü noktaları', '#e2e8f0'], ['labels', 'Etiketler', '#94a3b8'], ['spanText', 'Açıklık yazıları', '#94a3b8'], ['grid', 'Koordinat ızgarası', '#94a3b8'], ['basemap', 'Altlık harita', '#94a3b8']];
+  const items = [['AG', 'A.G. şebeke', '#7ee08a'], ['OG', 'O.G. şebeke', '#ff6b6b'], ['AYD', 'Aydınlatma', '#7fffff'], ['ENH', 'E.N.H.', '#ff79ff'], ['ABONE', 'Abone', '#fbbf24'], ['yeralti', 'Yeraltı kablo', '#ff6b6b'], ['trafo', 'Trafo ve box', '#6b82ff'], ['mevcut', 'Mevcut elemanlar', '#00ffbf'], ['demontaj', 'Demontaj işareti', '#ffff00'], ['hak', 'Hakediş durumu (renkler)', '#fbbf24'], ['srcTags', 'Veri kaynağı etiketleri', '#10b981'], ['points', 'Ölçü noktaları', '#e2e8f0'], ['labels', 'Etiketler', '#94a3b8'], ['spanText', 'Açıklık yazıları', '#94a3b8'], ['grid', 'Koordinat ızgarası', '#94a3b8'], ['basemap', 'Altlık harita', '#94a3b8'], ['cad', 'CAD çizimi', '#fde047']];
+  if (L.cad === undefined) L.cad = true;
   return html`<div class="card" style="position:absolute;right:68px;top:12px;z-index:6;width:230px;padding:6px;max-height:60%;overflow:auto">
     ${items.map(([k, l, c]) => html`<button class="li" style="min-height:40px;padding:6px 8px" onClick=${() => t(k)}><span style=${'width:18px;height:3px;background:' + c}></span><span class="grow" style="font-size:13px">${l}</span><${Icon} n=${L[k] ? 'check' : 'minus'} s=${16} c=${L[k] ? '#10b981' : '#475569'} /></button>`)}
     <div class="row" hidden=${!!app.web && !app.state.tilesOk} style="padding:6px 8px"><span class="note grow">Altlık</span><select class="inp" style="height:34px;font-size:12px" value=${app.state.basemap || 'none'} onChange=${(e) => { app.state.basemap = e.target.value; app.ds.setting('basemap', e.target.value); eng.invalidate(); f((x) => x + 1); }}>${BASEMAPS.map((b) => html`<option value=${b.id}>${b.label}</option>`)}</select></div>
@@ -262,6 +291,95 @@ function MeasurePanel({ m, clear, undo, close }) {
     <div class="note">Haritaya dokunarak nokta ekleyin; 20 px içinde mevcut noktalara yakalanır.</div></div>`;
 }
 
+// ---------------- Enerji kontrolü ----------------
+function EnergySheet({ close, eng, rerender }) {
+  const ps = app.ps;
+  const cfg = app.state.energyCfg || { og: false, ag: false, link: true, includeFuture: false };
+  const set = (p) => { app.state.energyCfg = Object.assign({}, cfg, p); eng.invalidate(); rerender(); };
+  const R = energyState();
+  const src = ps.p.energy || {};
+  const noOf = (pid) => { const e = ps.eqAt(pid)[0]; const p = ps.pointById(pid); return e ? e.no : p ? p.pointNo : '?'; };
+  const go = (pid) => { const p = ps.pointById(pid); if (!p) return; eng.center(p.E, p.N, Math.min(eng.view.res, 0.6)); app.state.follow = false; app.state.sel = { type: 'point', id: pid }; app.bus.emit('ui:sel'); close(); };
+  const goLine = (id) => { const l = ps.lineById(id); const p = l && ps.pointById(l.nodes[0]); if (p) eng.center(p.E, p.N); app.state.follow = false; app.state.sel = { type: 'line', id }; app.bus.emit('ui:sel'); close(); };
+  const deadEq = R ? R.dead.equipment.map((id) => ps.eqById(id)).filter(Boolean) : [];
+  return html`<section class="sheet" aria-label="Enerji kontrolü"><div class="grab" onClick=${close}><i></i></div>
+    <div class="body">
+      <b style="font-size:17px">Enerji kontrolü</b>
+      <div class="note">Seçtiğiniz tarafa enerji verilir; haritada enerjili hatlar sarı parlar, enerjisiz hatlar gri kesik çizgi olur, enerjisiz objeler kırmızı çarpıyla işaretlenir. Kayıtlı veriyi değiştirmez.</div>
+      <div class="grid2">
+        <button class=${'chip' + (cfg.og ? ' on' : '')} style="min-height:58px;flex-direction:column;--c:#ff8a8a" onClick=${() => set({ og: !cfg.og })}><b style="font-size:15px">OG'ye enerji ver</b><small>${cfg.og ? 'açık' : 'kapalı'}</small></button>
+        <button class=${'chip' + (cfg.ag ? ' on' : '')} style="min-height:58px;flex-direction:column;--c:#7ee08a" onClick=${() => set({ ag: !cfg.ag })}><b style="font-size:15px">AG'ye enerji ver</b><small>${cfg.ag ? 'açık' : 'kapalı'}</small></button>
+      </div>
+      ${cfg.og && cfg.ag ? html`<div class="row"><span class="grow" style="font-size:13px">AG'yi yalnız OG'den enerji alan trafolar beslesin</span><${Toggle} on=${cfg.link !== false} onChange=${(v) => set({ link: v })} label="OG'ye bağlı" /></div>` : null}
+      <div class="row"><span class="grow" style="font-size:13px">Demontaj / ileride durumundaki hatları da say</span><${Toggle} on=${!!cfg.includeFuture} onChange=${(v) => set({ includeFuture: v })} label="Demontaj dahil" /></div>
+      ${cfg.og ? html`<div class="card stack" style="gap:6px"><div class="lbl">OG enerji kaynakları</div>
+        ${(src.og || []).length ? html`<div class="chips">${(src.og || []).map((pid) => html`<button class="chip" onClick=${() => go(pid)}>ϟ ${noOf(pid)}</button>`)}</div>` : html`<div class="alert warn" style="font-size:12px">Kaynak yok. Bu pencereyi kapatın, haritada OG hattının beslendiği direğe / köşke dokunun ve "Buradan OG enerjisi ver" deyin.</div>`}</div>` : null}
+      ${cfg.ag ? html`<div class="card stack" style="gap:6px"><div class="lbl">AG enerji kaynakları</div><div class="note">Trafolar kendiliğinden kaynaktır${cfg.og && cfg.link !== false ? ' (OG\'den enerji alıyorsa)' : ''}. Proje dışından beslenen bir nokta için haritada o noktaya dokunup "Buradan AG enerjisi ver" deyin.</div>
+        ${R && R.sources.ag.length ? html`<div class="chips">${R.sources.ag.slice(0, 24).map((pid) => html`<button class="chip" onClick=${() => go(pid)}>ϟ ${noOf(pid)}</button>`)}</div>` : null}</div>` : null}
+      ${R ? html`<div class="grid3"><div class="stat"><b>Enerjili hat</b><span style="color:#fde047">${R.counts.on}</span></div><div class="stat"><b>Enerjisiz hat</b><span style=${'color:' + (R.counts.off ? '#ff8a8a' : '#6ffbbe')}>${R.counts.off}</span></div><div class="stat"><b>Enerjisiz obje</b><span style=${'color:' + (deadEq.length ? '#ff8a8a' : '#6ffbbe')}>${deadEq.length}</span></div></div>
+        ${R.notes.map((n) => html`<div class="alert warn" style="font-size:12px">${n}</div>`)}
+        ${R.counts.skipped ? html`<div class="note">${R.counts.skipped} hat devre dışı sayıldı (açık bırakılmış ya da demontaj / ileride).</div>` : null}
+        ${R.dead.lines.length ? html`<div class="lbl">Enerjisiz hatlar</div><div class="chips">${R.dead.lines.slice(0, 40).map((id) => { const l = ps.lineById(id); return l ? html`<button class="chip" style="--c:#ff8a8a" onClick=${() => goLine(id)}>${l.lineNo} · ${l.lineType}</button>` : null; })}</div>` : null}
+        ${deadEq.length ? html`<div class="lbl">Enerjisiz objeler</div><div class="chips">${deadEq.slice(0, 60).map((e) => html`<button class="chip" onClick=${() => go(e.pointId)}>${e.no}</button>`)}${deadEq.length > 60 ? html`<span class="note">+${deadEq.length - 60}</span>` : null}</div>` : null}
+        ${!R.dead.lines.length && !deadEq.length && !R.notes.length ? html`<div class="alert ok">Enerji verilen tarafta enerjisiz hat ya da obje yok.</div>` : null}` : html`<div class="alert info">OG ya da AG tarafını açın.</div>`}
+      ${cfg.og || cfg.ag ? html`<button class="btn dang blk" onClick=${() => { app.state.energyCfg = null; eng.invalidate(); rerender(); close(); }}>Enerjiyi kes · kontrolü kapat</button>` : null}
+    </div></section>`;
+}
+
+// ---------------- CAD çizimleri ----------------
+// Çizim aç (DXF / NCZ), göster / gizle, katmanları aç-kapa, sığdır, kaldır
+export async function openCadFile(file) {
+  const ps = app.ps;
+  const u8 = new Uint8Array(await file.arrayBuffer());
+  const r = await importCad(ps, u8, file.name);
+  app.bus.emit('cad:reload');
+  app.toast(file.name + ' yüklendi · ' + r.model.ents.length + ' nesne · ' + r.model.layers.length + ' katman', 'ok', 4000);
+  for (const w of r.warnings.slice(0, 2)) app.toast(w, 'warn', 7000);
+  return r;
+}
+function CadSheet({ close, eng, refresh }) {
+  const ps = app.ps;
+  const [busy, setBusy] = useState(null);
+  const [open, setOpen] = useState(null);
+  const [mdl, setMdl] = useState(null);
+  const docs = cadDocs(ps);
+  const fit = (d) => { const b = d.bbox; if (!b) return; eng.fit([{ E: b.minE, N: b.minN }, { E: b.maxE, N: b.maxN }], 40); app.state.follow = false; close(); };
+  const pick = async (f) => { if (!f) return; setBusy('Okunuyor: ' + f.name); try { const r = await openCadFile(f); await refresh(); fit(r.doc); } catch (e) { app.toast(e.message || String(e), 'err', 7000); } setBusy(null); };
+  const tog = async (d) => { await setCad(ps, d, { visible: d.visible === false }); await refresh(); };
+  const togLayer = async (d, i) => { const h = new Set(d.hidden || []); if (h.has(i)) h.delete(i); else h.add(i); await setCad(ps, d, { hidden: [...h] }); await refresh(); };
+  const allLayers = async (d, on) => { await setCad(ps, d, { hidden: on ? [] : (mdl ? mdl.layers.map((_, i) => i) : []) }); await refresh(); };
+  const del = async (d) => { if (!(await app.confirm('Çizimi kaldır', d.name + ' projeden kaldırılsın mı? (Objeler ve ölçümler etkilenmez.)', { danger: true, ok: 'Kaldır' }))) return; await removeCad(ps, d); if (app.state.sel && app.state.sel.type === 'cad') { app.state.sel = null; app.bus.emit('ui:sel'); } await refresh(); };
+  const expand = async (d) => { if (open === d.id) { setOpen(null); return; } setMdl(await cadModel(ps, d)); setOpen(d.id); };
+  return html`<section class="sheet" aria-label="CAD çizimleri"><div class="grab" onClick=${close}><i></i></div>
+    <div class="body">
+      <b style="font-size:17px">CAD çizimleri</b>
+      <label class="btn pri blk" style="height:52px"><${Icon} n="folder" s=${18} c="#0b1326" />${busy || 'Çizim aç (DXF ya da NCZ)'}<input type="file" accept=".dxf,.ncz,.DXF,.NCZ,*/*" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; pick(f); }} /></label>
+      <div class="note">Çizim haritanın üzerine katman olarak gelir. Çizim koordinatları proje koordinat sisteminde (${ps.p.crs.label}) olmalıdır. Çizimdeki bir uca ya da köşeye dokununca oraya aplikasyon yapabilir, obje ekleyebilir ya da direk tepe kuvvetini hesaplayabilirsiniz.</div>
+      ${docs.map((d) => html`<div class="card stack" style="gap:8px">
+        <div class="row"><div class="grow"><b style="font-size:14px">${d.name}</b><div class="m note mono">${d.format} · ${d.entCount} nesne · ${d.layerCount} katman${d.dom ? ' · DOM ' + d.dom + '°' : ''}</div></div><${Toggle} on=${d.visible !== false} onChange=${() => tog(d)} label="Göster" /></div>
+        ${(d.warnings || []).slice(0, 2).map((w) => html`<div class="note hw">${w}</div>`)}
+        <div class="grid3"><button class="btn sm" onClick=${() => fit(d)}>Sığdır</button><button class="btn sm" onClick=${() => expand(d)}>Katmanlar</button><button class="btn sm dang" onClick=${() => del(d)}>Kaldır</button></div>
+        ${open === d.id && mdl ? html`<div class="row" style="gap:6px"><button class="btn xs grow" onClick=${() => allLayers(d, true)}>Tümünü aç</button><button class="btn xs grow" onClick=${() => allLayers(d, false)}>Tümünü kapat</button></div>
+          <div class="card tight list" style="max-height:240px;overflow:auto">${mdl.layers.map((l, i) => html`<button class="li" style="min-height:38px;padding:6px 10px" onClick=${() => togLayer(d, i)}><span class="grow mono" style="font-size:12px">${l.name || '(adsız)'}</span><${Icon} n=${(d.hidden || []).includes(i) ? 'minus' : 'check'} s=${16} c=${(d.hidden || []).includes(i) ? '#475569' : '#10b981'} /></button>`)}</div>` : null}
+      </div>`)}
+      ${!docs.length ? html`<div class="empty">Henüz çizim yok.</div>` : null}
+    </div></section>`;
+}
+// Çizimde seçilen nokta: aplikasyon hedefi · obje ekle · tepe kuvveti
+function CadPointPanel({ sel, select, take, curLabel }) {
+  const KIND = { end: 'Çizgi ucu', vertex: 'Köşe noktası', center: 'Merkez', text: 'Yazı', point: 'Nokta' };
+  const arms = cadArms(app.state.cadLayers || [], sel.x, sel.y, 0.5);
+  return html`<div class="body">
+    <div class="row"><span style="width:10px;height:10px;border-radius:5px;background:#fde047"></span><b class="grow" style="font-size:16px">Çizim noktası · ${KIND[sel.kind] || sel.kind}</b><button class="btn xs" aria-label="Kapat" onClick=${() => select(null)}><${Icon} n="x" s=${16} /></button></div>
+    <div class="kv" style="font-size:13px"><b>Koordinat</b><span class="mono">Y ${fmt(sel.x)} · X ${fmt(sel.y)}</span><b>Katman</b><span class="mono">${sel.layer || '—'}</span>${sel.text ? html`<b>Yazı</b><span>${sel.text}</span>` : null}<b>Bağlı çizgi</b><span>${arms.length ? arms.length + ' kol · ' + arms.map((a) => trn(a.len, 1) + ' m').join(' · ') : 'yok'}</span></div>
+    <div class="grid2">
+      ${app.web ? null : html`<button class="btn pri" onClick=${() => { app.state.target = { E: sel.x, N: sel.y, H: null, no: 'CAD' + (sel.text ? ' ' + sel.text : sel.layer ? ' · ' + sel.layer : '') }; app.bus.emit('ui:target'); app.nav.tab('stake'); }}><${Icon} n="target" s=${18} c="#0b1326" />Aplikasyon yap</button>`}
+      <button class=${'btn' + (app.web ? ' pri' : '')} onClick=${() => app.nav.go('tepe', { E: sel.x, N: sel.y, arms, title: 'Çizim · ' + (sel.layer || 'nokta') })}><${Icon} n="calc" s=${18} c=${app.web ? '#0b1326' : 'currentColor'} />Tepe kuvveti</button>
+      <button class="btn" style="grid-column:1/3" onClick=${take}><${Icon} n="pin" s=${18} />Buraya ekle: ${curLabel}</button>
+    </div>
+    <div class="note">"Buraya ekle" alt çubukta seçili türü bu noktaya kaydeder (kaynak: HARİTA). Tepe kuvveti için noktada birleşen çizgiler kol olarak alınır.</div></div>`;
+}
+
 // ---------------- Seçim kartı ----------------
 function SelectionPanel({ sel, select, eng, openLine }) {
   const ps = app.ps;
@@ -273,6 +391,7 @@ function SelectionPanel({ sel, select, eng, openLine }) {
     return html`<div class="body">
       <div class="row"><span style=${'width:22px;height:4px;background:' + (GCOL[l.lineType] || '#fff')}></span><b class="grow" style="font-size:16px">${l.lineNo} · ${l.lineType} ${l.install}</b><button class="btn xs" onClick=${() => select(null)}><${Icon} n="x" s=${16} /></button></div>
       <div class="mono" style="font-size:13px">${lineLabel(l, ps.cat) || 'iletken tanımsız'}</div>
+      ${app.state.energyCfg && (app.state.energyCfg.og || app.state.energyCfg.ag) ? (() => { const es = (energyState() || { lineState: new Map() }).lineState.get(l.id); return html`<div class="row"><${Badge} k=${es === 'on' ? 'ok' : es === 'off' ? 'err' : es === 'mixed' ? 'warn' : 'mut'}>${{ on: 'ENERJİLİ', off: 'ENERJİSİZ', mixed: 'KISMEN ENERJİLİ', skip: 'DEVRE DIŞI', na: 'KAPSAM DIŞI' }[es] || '—'}</${Badge}><span class="grow"></span><button class=${'btn xs' + (l.energyOpen ? ' warn' : '')} onClick=${async () => { await ps.updateLine(l.id, { energyOpen: !l.energyOpen }, l.lineNo + (l.energyOpen ? ' kapatıldı (enerji geçer)' : ' açıldı (enerji geçmez)')); app.bus.emit('ui:sel'); }}>${l.energyOpen ? 'Hat AÇIK · kapat' : 'Hattı aç (ayır)'}</button></div>`; })() : null}
       <div class="grid3"><div class="stat"><b>2B</b><span>${trn(li.length2D, 2)}</span><small>m</small></div><div class="stat"><b>3B</b><span>${trn(li.length3D, 2)}</span><small>m</small></div><div class="stat"><b>Açıklık</b><span>${li.spans || 0}</span></div></div>
       <div class="grid2">
         <button class="btn" onClick=${() => app.nav.go('line', { id: l.id })}><${Icon} n="edit" s=${18} />Hat kaydı</button>
@@ -325,6 +444,8 @@ function SelectionPanel({ sel, select, eng, openLine }) {
       ${app.web ? html`<button class="btn" style="grid-column:1/3" onClick=${() => app.nav.go('point', { id: p.id })}><${Icon} n="cross" s=${18} />Koordinat ve ölçüm kaydı</button>` : html`<button class="btn" onClick=${remeasure}><${Icon} n="cross" s=${18} />${si.precise ? 'Yeniden ölç' : 'GNSS ile ölç'}</button>
       <button class="btn" onClick=${() => { app.state.target = { id: p.id }; app.nav.tab('stake'); }}><${Icon} n="target" s=${18} />Aplikasyon</button>`}
       ${act ? null : html`<button class="btn" style="grid-column:1/3" onClick=${() => { app.state.lineStartPoint = p.id; select(null); openLine(); }}><${Icon} n="plus" s=${18} />Buradan hat başlat</button>`}
+      ${app.state.energyCfg && (app.state.energyCfg.og || app.state.energyCfg.ag) ? ['og', 'ag'].filter((lv) => app.state.energyCfg[lv] && ps.data.lines.some((l) => l.nodes.includes(p.id) && levelsOf(l)[lv])).map((lv) => { const cur = ((ps.p.energy || {})[lv] || []); const on = cur.includes(p.id); return html`<button class=${'btn' + (on ? ' warn' : '')} style="grid-column:1/3" onClick=${async () => { const en = Object.assign({ og: [], ag: [] }, ps.p.energy || {}); en[lv] = on ? cur.filter((x) => x !== p.id) : [...cur, p.id]; await ps.updateProject({ energy: en }, (on ? 'Enerji kaynağı kaldırıldı: ' : 'Enerji kaynağı: ') + (e ? e.no : p.pointNo) + ' (' + lv.toUpperCase() + ')'); app.bus.emit('ui:sel'); }}><b style="font:800 15px var(--mono)">ϟ</b>${on ? lv.toUpperCase() + ' enerji kaynağını kaldır' : 'Buradan ' + lv.toUpperCase() + ' enerjisi ver'}</button>`; }) : null}
+      ${e && (e.kind === 'pole' || e.kind === 'lighting') ? html`<button class="btn" style="grid-column:1/3" onClick=${() => app.nav.go('tepe', { E: p.E, N: p.N, arms: armsOfPoint(ps, p.id), title: e.no + ' · ' + eqSummary(e), pointId: p.id })}><${Icon} n="calc" s=${18} />Tepe kuvveti (cer vektör hesabı)</button>` : null}
     </div>
   </div>`;
 }

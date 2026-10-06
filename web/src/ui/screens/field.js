@@ -84,6 +84,49 @@ export function ExcelScreen() {
     ${past.length ? html`<div class="sect">Önceki aktarımlar</div><div class="card tight list">${past.map((d) => html`<div class="li"><div class="grow"><div class="t" style="font-size:13px">${d.name}</div><div class="s">${new Date(d.at || d.createdAt).toLocaleString('tr-TR')} · ${d.imported} kayıt${d.skipped ? ' · ' + d.skipped + ' atlandı' : ''}</div></div></div>`)}</div>` : null}`;
 }
 
+// ---------------- Otomatik numaralama ----------------
+const NUM_KINDS = ['pole', 'lighting', 'sdk', 'manhole', 'subscriber', 'luminaire', 'transformer', 'kiosk', 'panel'];
+function RenumberForm({ close, lineId }) {
+  const ps = app.ps;
+  const line = lineId ? ps.lineById(lineId) : null;
+  // Seçenekler: direkler numara ön ekine göre ayrı seriler (D- OG, A- AG, M- müşterek, AY- aydınlatma), diğer türler tek seri
+  const fam = new Map();
+  for (const e of ps.data.equipment) {
+    if (e.status === 'deleted' || !NUM_KINDS.includes(e.kind)) continue;
+    const px = ps.eqPrefix(e.kind, e.group), key = e.kind + '|' + px;
+    if (!fam.has(key)) fam.set(key, { key, kind: e.kind, prefix: px + '-', groups: new Set(), n: 0 });
+    const f = fam.get(key); f.groups.add(e.group); f.n++;
+  }
+  const POLE_FAM = { D: 'OG direkleri', A: 'AG direkleri', M: 'Müşterek direkler', AY: 'Aydınlatma direkleri' };
+  const choices = [...fam.values()].sort((a, b) => NUM_KINDS.indexOf(a.kind) - NUM_KINDS.indexOf(b.kind) || ['D-', 'A-', 'M-', 'AY-'].indexOf(a.prefix) - ['D-', 'A-', 'M-', 'AY-'].indexOf(b.prefix)).map((f) => Object.assign(f, { label: (f.kind === 'pole' ? POLE_FAM[f.prefix.slice(0, -1)] || 'Direkler' : EQUIPMENT_KINDS[f.kind].label) + ' (' + f.prefix + ' · ' + f.n + ' adet)' }));
+  const poleFams = choices.filter((c) => c.kind === 'pole');
+  if (poleFams.length > 1) choices.splice(poleFams.length, 0, { key: 'pole|*', kind: 'pole', prefix: 'D-', groups: null, n: poleFams.reduce((a, c) => a + c.n, 0), label: 'Tüm direkler tek seri (' + poleFams.reduce((a, c) => a + c.n, 0) + ' adet)' });
+  const first = choices[0] || { key: 'pole|D', kind: 'pole', prefix: 'D-', groups: null };
+  const [o, setO] = useState({ scope: line ? 'line' : 'all', lineId, key: first.key, prefix: first.prefix, start: 1, digits: first.prefix === 'D-' ? 3 : 2, order: 'line' });
+  const set = (p) => setO((x) => Object.assign({}, x, p));
+  const ch = choices.find((c) => c.key === o.key) || first;
+  const opts = { scope: o.scope, lineId: o.lineId, kinds: [ch.kind], groups: ch.groups ? [...ch.groups] : null, prefix: o.prefix, start: Math.max(0, parseInt(o.start, 10) || 0), digits: Math.min(6, Math.max(1, parseInt(o.digits, 10) || 1)), order: o.order };
+  const R = ps.renumberPlan(opts);
+  return html`<div class="mh"><h3>Otomatik numara ver</h3></div><div class="mb">
+    <div class="note">Seçtiğiniz objelere sırayla yeni numara verilir. Eski numara kayıtta saklanır; ölçüler, malzemeler ve hakediş durumu değişmez.</div>
+    <div class="fld"><label>Hangi objeler</label><${Sel} value=${o.key} options=${(choices.length ? choices : [first]).map((c) => [c.key, c.label || 'Direkler'])} onChange=${(k) => { const c = choices.find((x) => x.key === k); set({ key: k, prefix: c.prefix, digits: c.prefix === 'D-' ? 3 : 2 }); }} /></div>
+    ${line ? html`<${Seg} value=${o.scope} options=${[['line', 'Yalnız ' + line.lineNo + ' hattı'], ['all', 'Tüm proje']]} onChange=${(v) => set({ scope: v })} />` : null}
+    ${o.scope === 'all' ? html`<div class="fld"><label>Sıra</label><${Seg} value=${o.order} options=${[['line', 'Hat güzergâhına göre'], ['capture', 'Kayıt sırasına göre']]} onChange=${(v) => set({ order: v })} /></div>` : null}
+    <div class="grid3"><div class="fld"><label>Ön ek</label><input class="inp mono" value=${o.prefix} onInput=${(e) => set({ prefix: e.target.value })} /></div>
+      <div class="fld"><label>Başlangıç</label><input class="inp mono" type="number" min="0" value=${o.start} onInput=${(e) => set({ start: e.target.value })} /></div>
+      <div class="fld"><label>Hane</label><input class="inp mono" type="number" min="1" max="6" value=${o.digits} onInput=${(e) => set({ digits: e.target.value })} /></div></div>
+    <div class="lbl">Önizleme · ${R.plan.length} obje, ${R.changed} tanesi değişecek</div>
+    ${R.plan.length ? html`<div class="card tight" style="max-height:190px;overflow:auto"><table class="tbl mono" style="font-size:12px;width:100%"><tbody>${R.plan.slice(0, 200).map((x) => html`<tr><td style="padding:3px 8px;color:#94a3b8">${x.old}</td><td style="padding:3px 4px">→</td><td style=${'padding:3px 8px;font-weight:800;color:' + (x.old === x.no ? '#94a3b8' : '#6ffbbe')}>${x.no}</td></tr>`)}</tbody></table></div>` : html`<div class="alert warn">Bu kapsamda numaralanacak obje yok.</div>`}
+    ${R.clash.length ? html`<div class="alert err" style="font-size:12px">Bu numaralar başka objelerde kullanılıyor: ${R.clash.slice(0, 6).join(', ')}${R.clash.length > 6 ? '…' : ''}. Ön eki ya da başlangıç numarasını değiştirin.</div>` : null}
+    ${ps.data.photos.length ? html`<div class="note">Not: daha önce çekilen fotoğrafların dosya adları eski numarayla kalır.</div>` : null}
+  </div><div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn pri grow" disabled=${!R.changed || R.clash.length > 0} onClick=${() => close(opts)}>Numaraları ver</button></div>`;
+}
+export async function renumberDialog(lineId) {
+  const opts = await app.modal((close) => html`<${RenumberForm} close=${close} lineId=${lineId || null} />`);
+  if (!opts) return;
+  try { const r = await app.ps.renumber(opts); app.toast(r.changed + ' objeye yeni numara verildi'); } catch (e) { app.toast(e.message, 'err'); }
+}
+
 // ---------------- Saha objeleri listesi (kaynak etiketi + hakediş durumu) ----------------
 export function ObjectsScreen() {
   useBus(['project:computed']);
@@ -105,7 +148,7 @@ export function ObjectsScreen() {
   const counts = ps.hakCounts();
   const open = (r) => { if (r.type === 'equipment') app.nav.go('equipment', { id: r.id }); else if (r.type === 'line') app.nav.go('line', { id: r.id }); else app.nav.go('point', { id: r.id }); };
   const show = (r) => { app.state.sel = r.type === 'line' ? { type: 'line', id: r.id, seg: 0 } : { type: 'point', id: r.type === 'equipment' ? r.rec.pointId : r.id }; app.state.follow = false; const p = r.p || (r.type === 'line' ? ps.pointById(r.rec.nodes[0]) : null); if (p && p.E != null) app.state.view = { cE: p.E, cN: p.N, res: Math.min((app.state.view || {}).res || 0.3, 0.3) }; app.nav.tab('map'); };
-  return html`<${Title} title="Saha objeleri" sub=${rows.length + ' obje · veri kaynağı ve hakediş durumu'} />
+  return html`<${Title} title="Saha objeleri" sub=${rows.length + ' obje · veri kaynağı ve hakediş durumu'} right=${html`<button class="btn sm" onClick=${() => renumberDialog()}>№ Otomatik numara</button>`} />
     <div class="hakrow">${HAK_ORDER.map((k) => html`<button class=${hak === k ? 'on' : ''} style=${'--c:' + HAK_STATUSES[k].color} onClick=${() => setHak(hak === k ? '' : k)}><i></i>${HAK_STATUSES[k].short} ${counts[k] || 0}</button>`)}</div>
     <input class="inp" placeholder="Ara: D-017, trafo, armatür…" value=${q} onInput=${(e) => setQ(e.target.value)} />
     <div class="grid2"><${Sel} value=${kind} options=${[['', 'Tüm türler'], ...kinds]} onChange=${setKind} /><${Sel} value=${src} options=${[['', 'Tüm kaynaklar'], ...SRC_CODES.map((c) => [c, '[' + SRC[c].tag + ']'])]} onChange=${setSrc} /></div>

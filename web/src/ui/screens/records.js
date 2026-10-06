@@ -2,6 +2,7 @@
 import { html, useState, useEffect, useRef, useBus, Icon, Chip, Seg, Sel, Badge, Title, Toggle, fmt, trn, CODE_KIND } from '../kit.js';
 import { app } from '../ctx.js';
 import { measure } from '../services.js';
+import { renumberDialog } from './field.js';
 import { STATUSES, HAK_STATUSES, HAK_ORDER, hakOf } from '../../core/schema.js';
 import { circuitLabel, lineLabel, CABLE_DEFAULTS } from '../../grid/lines.js';
 import { offsetPolyline, dms } from '../../geo/geom.js';
@@ -113,6 +114,7 @@ export function LineScreen({ id }) {
       <button class="btn" onClick=${() => { app.state.activeLineId = id; app.state.capTab = 'hat'; app.nav.tab('map'); }}>Uzat (devam çiz)</button>
       <button class="btn" onClick=${() => ps.reverseLine(id).then(() => setD(JSON.parse(JSON.stringify(ps.lineById(id)))))}>Ters çevir</button>
       <button class="btn" onClick=${merge}>Birleştir</button>
+      <button class="btn" onClick=${() => renumberDialog(id)}>№ Direklere numara ver</button>
       <button class="btn" onClick=${offset}>Ofset hat</button>
       ${d.lineType === 'OG' || d.lineType === 'ENH' ? html`<button class="btn" onClick=${() => app.nav.go('enh', { id })}>ENH hesabı</button>` : html`<span></span>`}
       <button class="btn dang" onClick=${async () => { const r = await app.prompt('Hattı sil', 'Gerekçe', { required: true }); if (r) { await ps.removeLine(id, r); app.nav.back(); } }}>Sil</button>

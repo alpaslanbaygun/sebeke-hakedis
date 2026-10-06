@@ -2,7 +2,8 @@
 import { html, useState, useEffect, useBus, Icon, Chip, Badge, fmt, trn } from '../kit.js';
 import { app } from '../ctx.js';
 import { dist2, bearing, dms } from '../../geo/geom.js';
-import { eqSummary } from './map.js';
+import { eqSummary, openCadFile } from './map.js';
+import { cadDocs } from '../../services/cad-service.js';
 
 const MARKS = [['kazik', 'Kazık'], ['civi', 'Çelik Çivi'], ['boya', 'Röper Boya'], ['poligon', 'Poligon Kazığı']];
 
@@ -69,7 +70,11 @@ export function StakeoutScreen() {
   const say = !r ? (g.E == null ? 'Konum bekleniyor' : 'Hedef seçin') : inTol ? (fixOk ? 'Tolerans içinde — işareti çakın' : 'Tolerans içinde ama RTK FIX yok — bekleyin') : r.forward != null ? (Math.abs(r.forward) >= 0.01 ? trn(Math.abs(r.forward), 2) + ' m ' + (r.forward >= 0 ? 'ileri' : 'geri') : '') + (Math.abs(r.right) >= 0.01 ? ', ' + trn(Math.abs(r.right), 2) + ' m ' + (r.right >= 0 ? 'sağa' : 'sola') : '') : trn(r.dist, 2) + ' m ' + dirWord(r.azimuth) + 'ya yürüyün';
   const bands = [[0, tol, '#10b981'], [tol, 0.2, '#f59e0b'], [0.2, 1, '#ef4444'], [1, 5, '#b91c1c']];
   const marker = r ? Math.min(0.97, r.dist <= tol ? (r.dist / tol) * 0.25 : r.dist <= 0.2 ? 0.25 + ((r.dist - tol) / (0.2 - tol)) * 0.25 : r.dist <= 1 ? 0.5 + ((r.dist - 0.2) / 0.8) * 0.25 : 0.75 + Math.min(1, (r.dist - 1) / 4) * 0.22) : 0;
+  const cadN = cadDocs(ps).length;
+  const openCad = async (f) => { if (!f) return; try { const r = await openCadFile(f); const b = r.doc.bbox; if (b) app.state.view = { cE: (b.minE + b.maxE) / 2, cN: (b.minN + b.maxN) / 2, res: Math.max((b.maxE - b.minE) / 320, (b.maxN - b.minN) / 420, 0.05) }; app.state.follow = false; app.nav.tab('map'); app.toast('Çizimde bir uca ya da köşeye dokunun, sonra "Aplikasyon yap" deyin', 'ok', 6000); } catch (e) { app.toast(e.message || String(e), 'err', 7000); } };
   return html`<div class="stack">
+    <div class="grid2"><label class="btn sm"><${Icon} n="folder" s=${16} />CAD çizimi aç<input type="file" accept=".dxf,.ncz,.DXF,.NCZ,*/*" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; openCad(f); }} /></label>
+      <button class="btn sm" disabled=${!cadN} onClick=${() => { app.state.follow = false; app.nav.tab('map'); app.toast('Çizimde hedef noktaya dokunun, sonra "Aplikasyon yap" deyin', 'ok', 5000); }}><${Icon} n="map" s=${16} />Çizimden hedef seç${cadN ? ' (' + cadN + ')' : ''}</button></div>
     <button class="card row" style="height:56px;padding:0 12px;text-align:left;color:inherit" onClick=${pick}><${Icon} n="target" s=${22} c="#eab308" /><span class="grow"><div class="lbl">Hedef nokta</div><div style="font-weight:600;font-size:14px">${T ? T.no + ' · ' + (T.label || '') : 'Seçilmedi — dokunun'}</div></span><${Icon} n="down" c="#94a3b8" /></button>
     <div class="row" style="gap:12px">
       <svg width="196" height="196" viewBox="0 0 210 210" role="img" aria-label="Yönlendirme radarı">

@@ -9,6 +9,8 @@ import { SettingsScreen, UserScreen } from './settings.js';
 import { PozScreen, LayersScreen, DefinitionsScreen } from './catalog.js';
 import { ProjectsScreen, HubScreen, ProjectEditScreen, AuditScreen, SyncScreen } from './project.js';
 import { ExcelScreen, ObjectsScreen, BaseRoverScreen } from './field.js';
+import { CabinScreen } from './cabin.js';
+import { TepeScreen } from './tepe.js';
 
 export const SCREENS = {
   map: MapScreen, stake: StakeoutScreen, calc: CalcScreen, export: ExportScreen, settings: SettingsScreen,
@@ -16,5 +18,5 @@ export const SCREENS = {
   enh: EnhScreen, metraj: MetrajScreen, hakedis: HakedisScreen, checks: ChecksScreen,
   poz: PozScreen, layers: LayersScreen, definitions: DefinitionsScreen,
   projects: ProjectsScreen, hub: HubScreen, projectEdit: ProjectEditScreen, audit: AuditScreen, sync: SyncScreen, user: UserScreen,
-  excel: ExcelScreen, objects: ObjectsScreen, baseRover: BaseRoverScreen
+  excel: ExcelScreen, objects: ObjectsScreen, baseRover: BaseRoverScreen, cabin: CabinScreen, tepe: TepeScreen
 };

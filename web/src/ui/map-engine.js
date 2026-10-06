@@ -1,6 +1,7 @@
 // Canvas tabanlı GIS motoru: proje CRS (TM, metre) düzleminde çizim, XYZ altlık (TM'ye affine bükülerek),
 // ızgara, katmanlar, yakalama, seçim, ölçüm, GNSS konumu, aplikasyon hedefi ve düğüm düzenleme.
 import { tileX, tileY, tileLL } from '../geo/tiles.js';
+import { aciCSS } from '../cad/aci.js';
 import { project as projLL, unproject } from '../geo/crs.js';
 
 const LCOL = { AG: '#7ee08a', OG: '#ff6b6b', AYD: '#7fffff', ENH: '#ff79ff', ABONE: '#fbbf24' };
@@ -140,6 +141,8 @@ export class MapEngine {
     g.fillStyle = '#0a1122'; g.fillRect(0, 0, this.w, this.h);
     if (this.layers.basemap && d.basemap && d.crs) this.drawTiles(g, d);
     if (this.layers.grid) this.drawGrid(g);
+    if (this.layers.cad !== false && d.cad && d.cad.length) this.drawCad(g, d.cad);
+    const en = d.energy || null;     // enerji kontrolü açıksa: enerjili hat sarı parlar, enerjisiz hat gri kesik çizilir
     const sel = d.sel || {};
     // Hatlar
     for (const l of d.lines) {
@@ -154,9 +157,11 @@ export class MapEngine {
       // Hakediş görünümü: hattın altında durum renginde geniş bant
       const hc = this.layers.hak && d.hakColor ? d.hakColor(l) : null;
       if (hc) { g.strokeStyle = hc; g.globalAlpha = 0.42; g.lineWidth = (LW[l.lineType] || 2) + 9; g.setLineDash([]); this.path(g, n); g.stroke(); g.globalAlpha = 1; }
-      g.strokeStyle = LCOL[l.lineType] || '#7ee08a'; g.lineWidth = LW[l.lineType] || 2;
-      g.setLineDash(l.install === 'yeralti' ? [12, 6, 2, 6] : l.state === 'ILERIDE' ? [8, 6] : l.lineType === 'ABONE' ? [6, 3] : []);
-      if (l.state === 'MEVCUT') g.globalAlpha = 0.6;
+      const es = en ? en.lineState.get(l.id) : null;
+      if (es === 'on' || es === 'mixed') { g.strokeStyle = es === 'on' ? '#fde047' : '#fb923c'; g.globalAlpha = 0.5; g.lineWidth = (LW[l.lineType] || 2) + 9; g.setLineDash([]); this.path(g, n); g.stroke(); g.globalAlpha = 1; }
+      g.strokeStyle = es === 'off' || es === 'skip' ? '#64748b' : LCOL[l.lineType] || '#7ee08a'; g.lineWidth = LW[l.lineType] || 2;
+      g.setLineDash(es === 'off' || es === 'skip' ? [4, 7] : l.install === 'yeralti' ? [12, 6, 2, 6] : l.state === 'ILERIDE' ? [8, 6] : l.lineType === 'ABONE' ? [6, 3] : []);
+      if (l.state === 'MEVCUT' && !es) g.globalAlpha = 0.6;
       this.path(g, n); g.stroke(); g.globalAlpha = 1; g.setLineDash([]);
       if (l.state === 'DEMONTAJ' && this.layers.demontaj) { g.strokeStyle = '#ffff00'; g.lineWidth = 1.5; g.setLineDash([3, 5]); this.path(g, n); g.stroke(); g.setLineDash([]); }
       if (l.musterek && this.layers.AG) { g.strokeStyle = LCOL.AG; g.lineWidth = 1.5; this.path(g, n, 4); g.stroke(); }
@@ -193,6 +198,12 @@ export class MapEngine {
       if (!(far && hc)) for (const e of eqs) this.symbol(g, s, e, d);
       // Hassas olmayan kaynak (telefon · manuel · Excel · harita · FLOAT): sağ altta kaynak renginde küçük işaret (her ölçekte)
       if (this.layers.srcTags && si && !si.precise && eqs.length && !far) { g.fillStyle = si.color; g.strokeStyle = '#0b1326'; g.lineWidth = 1.5; g.beginPath(); g.arc(s.x + 8, s.y + 8, 3.5, 0, Math.PI * 2); g.fill(); g.stroke(); }
+      // Enerji kontrolü: enerjisiz obje kırmızı çarpı, kaynak sarı halka
+      if (en && eqs.length) {
+        const st = en.eqState.get(eqs[0].id);
+        if (st === 'off' || st === 'mixed') { g.strokeStyle = st === 'off' ? '#ef4444' : '#fb923c'; g.lineWidth = 2.5; g.setLineDash([]); g.beginPath(); g.arc(s.x, s.y, 13, 0, Math.PI * 2); g.moveTo(s.x - 6, s.y - 6); g.lineTo(s.x + 6, s.y + 6); g.moveTo(s.x + 6, s.y - 6); g.lineTo(s.x - 6, s.y + 6); g.stroke(); }
+      }
+      if (en && (en.sources.og.includes(p.id) || en.sources.ag.includes(p.id))) { g.strokeStyle = '#fde047'; g.lineWidth = 3; g.setLineDash([]); g.beginPath(); g.arc(s.x, s.y, 17, 0, Math.PI * 2); g.stroke(); g.fillStyle = '#fde047'; g.font = '800 13px JetBrains Mono, monospace'; g.textAlign = 'center'; g.fillText('ϟ', s.x, s.y - 20); g.textAlign = 'left'; }
       if (p.source === 'PHONE' && !far) { g.strokeStyle = '#38bdf8'; g.lineWidth = 1; g.setLineDash([2, 3]); g.beginPath(); g.arc(s.x, s.y, 18, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
       if (labels) {
         g.font = '700 11px JetBrains Mono, monospace'; g.textAlign = 'left';
@@ -310,6 +321,57 @@ export class MapEngine {
     const px = m / this.view.res, x = 72, y = 24;
     g.strokeStyle = '#dae2fd'; g.lineWidth = 2; g.beginPath(); g.moveTo(x, y); g.lineTo(x + px, y); g.moveTo(x, y - 4); g.lineTo(x, y + 4); g.moveTo(x + px, y - 4); g.lineTo(x + px, y + 4); g.stroke();
     g.font = '700 11px JetBrains Mono, monospace'; g.fillStyle = '#dae2fd'; g.textAlign = 'left'; g.fillText((m >= 1000 ? m / 1000 + ' km' : m + ' m'), x + px + 6, y + 4);
+  }
+  // ---------- CAD çizimi (DXF / NCZ) ----------
+  // Nesne sınır kutuları bir kez hesaplanır; her karede yalnız görünen nesneler, renge göre toplu çizilir.
+  drawCad(g, cad) {
+    const tl = this.toWorld(0, 0), br = this.toWorld(this.w, this.h);
+    const vx0 = tl.E, vx1 = br.E, vy0 = br.N, vy1 = tl.N, res = this.view.res;
+    const X = (x) => this.w / 2 + (x - this.view.cE) / res, Y = (y) => this.cy() - (y - this.view.cN) / res;
+    for (const c of cad) {
+      const m = c.model, E = m.ents, n = E.length;
+      let bb = m._bb;
+      if (!bb) {
+        bb = new Float64Array(n * 4);
+        for (let i = 0; i < n; i++) {
+          const e = E[i]; let a, b, cc, d2;
+          if (e.t === 'L') { a = Math.min(e.x1, e.x2); b = Math.min(e.y1, e.y2); cc = Math.max(e.x1, e.x2); d2 = Math.max(e.y1, e.y2); }
+          else if (e.t === 'P' || e.t === 'F') { a = b = Infinity; cc = d2 = -Infinity; for (let k = 0; k < e.v.length; k += 2) { a = Math.min(a, e.v[k]); cc = Math.max(cc, e.v[k]); b = Math.min(b, e.v[k + 1]); d2 = Math.max(d2, e.v[k + 1]); } }
+          else if (e.t === 'C' || e.t === 'A') { a = e.x - e.r; b = e.y - e.r; cc = e.x + e.r; d2 = e.y + e.r; }
+          else if (e.t === 'T') { const w = (e.s || '').length * (e.h || 1); a = e.x - w; b = e.y - w; cc = e.x + w; d2 = e.y + w; }
+          else { a = cc = e.x; b = d2 = e.y; }
+          bb[i * 4] = a; bb[i * 4 + 1] = b; bb[i * 4 + 2] = cc; bb[i * 4 + 3] = d2;
+        }
+        Object.defineProperty(m, '_bb', { value: bb, enumerable: false });
+      }
+      const paths = new Map(), fills = [], texts = [], pts = [];
+      const P = (col) => { let p = paths.get(col); if (!p) { p = new Path2D(); paths.set(col, p); } return p; };
+      for (let i = 0; i < n; i++) {
+        if (bb[i * 4] > vx1 || bb[i * 4 + 2] < vx0 || bb[i * 4 + 1] > vy1 || bb[i * 4 + 3] < vy0) continue;
+        const e = E[i];
+        if (c.hidden && c.hidden.has(e.l)) continue;
+        const col = aciCSS(e.c || 7, true);
+        if (e.t === 'L') { const p = P(col); p.moveTo(X(e.x1), Y(e.y1)); p.lineTo(X(e.x2), Y(e.y2)); }
+        else if (e.t === 'P') { const p = P(col), v = e.v; if (v.length < 4) continue; p.moveTo(X(v[0]), Y(v[1])); for (let k = 2; k < v.length; k += 2) p.lineTo(X(v[k]), Y(v[k + 1])); if (e.closed) p.closePath(); }
+        else if (e.t === 'C') { const r = e.r / res; if (r < 0.4) continue; const p = P(col); p.moveTo(X(e.x) + r, Y(e.y)); p.arc(X(e.x), Y(e.y), r, 0, Math.PI * 2); }
+        else if (e.t === 'A') { const r = e.r / res; if (r < 0.4) continue; const p = P(col); const a1 = -e.a2 * Math.PI / 180, a2 = -e.a1 * Math.PI / 180; p.moveTo(X(e.x) + r * Math.cos(a1), Y(e.y) + r * Math.sin(a1)); p.arc(X(e.x), Y(e.y), r, a1, a2 < a1 ? a2 + Math.PI * 2 : a2); }
+        else if (e.t === 'F') fills.push([e, col]);
+        else if (e.t === 'T') { if ((e.h || 1) / res > 5 && texts.length < 600) texts.push([e, col]); }
+        else if (e.t === 'N') pts.push([e, col]);
+      }
+      g.lineWidth = 1.1; g.lineCap = 'round'; g.lineJoin = 'round'; g.setLineDash([]);
+      g.globalAlpha = 0.28;
+      for (const [e, col] of fills) { const v = e.v; if (v.length < 6) continue; g.fillStyle = col; g.beginPath(); g.moveTo(X(v[0]), Y(v[1])); for (let k = 2; k < v.length; k += 2) g.lineTo(X(v[k]), Y(v[k + 1])); g.closePath(); g.fill(); }
+      g.globalAlpha = 0.9;
+      for (const [col, p] of paths) { g.strokeStyle = col; g.stroke(p); }
+      for (const [e, col] of pts) { const x = X(e.x), y = Y(e.y); g.strokeStyle = col; g.beginPath(); g.moveTo(x - 3, y); g.lineTo(x + 3, y); g.moveTo(x, y - 3); g.lineTo(x, y + 3); g.stroke(); }
+      g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+      for (const [e, col] of texts) { const px = Math.min(60, (e.h || 1) / res); g.save(); g.translate(X(e.x), Y(e.y)); if (e.rot) g.rotate(-e.rot * Math.PI / 180); g.fillStyle = col; g.font = '500 ' + px.toFixed(1) + 'px Inter, sans-serif'; const lines = String(e.s || '').split('\n'); for (let k = 0; k < lines.length; k++) g.fillText(lines[k], 0, k * px * 1.25); g.restore(); }
+      g.globalAlpha = 1;
+    }
+    // Seçili çizim noktası
+    const s = this.o.getData().sel;
+    if (s && s.type === 'cad') { const x = X(s.x), y = Y(s.y); g.strokeStyle = '#fde047'; g.lineWidth = 2.5; g.beginPath(); g.arc(x, y, 11, 0, Math.PI * 2); g.moveTo(x - 17, y); g.lineTo(x + 17, y); g.moveTo(x, y - 17); g.lineTo(x, y + 17); g.stroke(); }
   }
   // ---------- Altlık karolar ----------
   drawTiles(g, d) {
