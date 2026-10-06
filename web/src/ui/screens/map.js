@@ -11,6 +11,7 @@ import { lineLabel } from '../../grid/lines.js';
 import { roleLabel } from '../../grid/checks.js';
 import { jobOf } from '../../grid/recipe.js';
 import { armsOfPoint } from './tepe.js';
+import { HakRow } from './team.js';
 import { energize, levelsOf } from '../../grid/energize.js';
 import { cadDocs, importCad, visibleCad, setCad, removeCad, cadModel, snapCad, cadArms } from '../../services/cad-service.js';
 
@@ -219,7 +220,7 @@ export function MapScreen() {
       <button class=${tool === 'edit' ? 'on' : ''} aria-label="Düğüm düzenle" onClick=${() => setTool(tool === 'edit' ? null : 'edit')}><${Icon} n="edit" /></button>
       <button class=${hakOn ? 'on' : ''} aria-label="Hakediş görünümü" onClick=${() => { const e = eng.current; e.layers.hak = !e.layers.hak; app.state.layers = Object.assign({}, e.layers); e.invalidate(); force((x) => x + 1); }}><b style="font:800 14px var(--mono)">₺</b></button>
     </div>
-    ${hakOn && visH > 300 && ps.data.equipment.length + ps.data.lines.length > 0 ? html`<div class="haklegend" style=${'top:' + (active ? 156 : 124) + 'px'}>${HAK_ORDER.map((k) => html`<span><i style=${'background:' + HAK_STATUSES[k].color}></i>${HAK_STATUSES[k].short}</span>`)}</div>` : null}
+    ${hakOn && visH > 400 && ps.data.equipment.length + ps.data.lines.length > 0 ? html`<div class="haklegend" style=${'top:' + (active ? 268 : 236) + 'px'}>${HAK_ORDER.map((k) => html`<span><i style=${'background:' + HAK_STATUSES[k].color}></i>${HAK_STATUSES[k].short}</span>`)}</div>` : null}
     <div class="fab" style=${'bottom:' + (padB + 10) + 'px'}>
       ${visH > 380 ? html`<button aria-label="Yakınlaş" onClick=${() => eng.current.zoom(0.6)}><${Icon} n="plus" /></button>
       <button aria-label="Uzaklaş" onClick=${() => eng.current.zoom(1.6)}><${Icon} n="minus" /></button>` : null}
@@ -448,15 +449,6 @@ function SelectionPanel({ sel, select, eng, openLine }) {
       ${e && (e.kind === 'pole' || e.kind === 'lighting') ? html`<button class="btn" style="grid-column:1/3" onClick=${() => app.nav.go('tepe', { E: p.E, N: p.N, arms: armsOfPoint(ps, p.id), title: e.no + ' · ' + eqSummary(e), pointId: p.id })}><${Icon} n="calc" s=${18} />Tepe kuvveti (cer vektör hesabı)</button>` : null}
     </div>
   </div>`;
-}
-// Hakediş durumu: haritadaki objeye dokunup tek dokunuşla değiştirilir (spesifikasyon 8.2)
-function HakRow({ type, rec }) {
-  const ps = app.ps;
-  const cur = hakOf(rec);
-  if (!cur) return html`<div class="note">Hakediş: — (mevcut / ileride durumundaki objenin iş kalemi yok)</div>`;
-  const setH = async (k) => { if (k === cur) return; try { await ps.setHak(type, rec.id, k); app.toast((rec.no || rec.lineNo) + ' · ' + HAK_STATUSES[k].label, 'ok'); } catch (err) { app.toast(err.message, 'err'); } };
-  return html`<div><div class="lbl" style="margin-bottom:4px">Hakediş durumu · <span style=${'color:' + HAK_STATUSES[cur].color}>${HAK_STATUSES[cur].label}</span></div>
-    <div class="hakrow">${HAK_ORDER.map((k) => html`<button class=${k === cur ? 'on' : ''} style=${'--c:' + HAK_STATUSES[k].color} aria-label=${HAK_STATUSES[k].label} onClick=${() => setH(k)}><i></i>${HAK_STATUSES[k].short}</button>`)}</div></div>`;
 }
 export function eqSummary(e) {
   const ps = app.ps;

@@ -186,8 +186,9 @@ export class CloudAdapter {
   async _blobPut(rec) {
     this.m('blobs').set(rec.id, rec);
     if (rec.text != null && !this.seeding) {
-      const parts = []; const CH = 60000;
-      for (let i = 0; i < rec.text.length; i += CH) parts.push(rec.text.slice(i, i + CH));
+      // Parça boyu: belge sınırı 256 KiB. Çoğunlukla ASCII metinde (CAD çizimi) büyük parça, değilse küçük parça (UTF-8'de 3 kata kadar büyür)
+      const parts = []; const CH = /[^\x00-\x7f]/.test(rec.text.slice(0, 20000)) ? 60000 : 150000;
+      for (let i = 0; i < rec.text.length; i += CH) { let part = rec.text.slice(i, i + CH); if (CH > 60000 && docBytes(part) > 200 * 1024) { parts.push(part.slice(0, CH / 2)); part = part.slice(CH / 2); } parts.push(part); }
       const meta = Object.assign({}, rec, { text: undefined, n: parts.length });
       delete meta.text;
       try {

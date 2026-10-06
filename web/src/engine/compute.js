@@ -7,6 +7,7 @@ import { checkPole, checkTransformer, checkLine, checkPoint, checkMaterials } fr
 import { analyzeLine } from '../grid/enh.js';
 import { contributionsFromEquipment, contributionsFromLine, aggregate } from '../qty/metraj.js';
 import { STATUSES } from '../core/schema.js';
+import { countsAsDone } from '../core/roles.js';
 
 // Metraj satırındaki konum kaynağı: GNSS (harici alıcı) · TEST (telefon) · SIM · GIS (haritadan) · EXCEL · PROJE (tasarım) · MANUEL
 const posSourceOf = (p) => (!p ? 'MANUEL' : p.source === 'GNSS_RTK' || p.source === 'GNSS_FLOAT' ? 'GNSS' : p.source === 'PHONE' ? 'TEST' : p.source === 'SIM' ? 'SIM' : p.source === 'MAP' ? 'GIS' : p.source === 'EXCEL' || p.source === 'IMPORT' ? 'EXCEL' : p.source === 'DESIGN' ? 'PROJE' : 'MANUEL');
@@ -36,7 +37,7 @@ export function computeProject(model, cat) {
     const ri = roles.get(e.id);
     const mats = equipmentMaterials(e, cat, { ctx: { role: (ri && ri.role) || 'T', agCiplak: bare.has(e.pointId) }, params, manual: manualBy.get(e.id) });
     matsByEq.set(e.id, mats);
-    contribs.push(...contributionsFromEquipment(e, mats, { posSource: posSourceOf(p), photos: photoCount.get(e.id) || 0 }));
+    contribs.push(...contributionsFromEquipment(e, mats, { posSource: posSourceOf(p), photos: photoCount.get(e.id) || 0, done: countsAsDone(project, e) }));
     if (e.kind === 'pole') issues.push(...checkPole(e, cat, ri));
     if (e.kind === 'transformer') issues.push(...checkTransformer(e, cat));
     issues.push(...checkMaterials(e, mats));
@@ -59,7 +60,7 @@ export function computeProject(model, cat) {
       const ab = applyRules(cat.rules('abone'), { install: l.install, phase: l.abonePhase || 'uc', length: ln.l2 }, cat, params);
       for (const a of ab) items.push({ servis: a.servis, qty: a.qtyFrom === '$length' ? a.qty : a.qty * n, unit: a.unit, why: a.why, conductor: a.name, missing: a.missing });
     }
-    if (job) contribs.push(...contributionsFromLine(l, items, job, { lenSource: allGnss ? 'GNSS' : 'GIS', photos: photoCount.get(l.id) || 0 }));
+    if (job) contribs.push(...contributionsFromLine(l, items, job, { lenSource: allGnss ? 'GNSS' : 'GIS', photos: photoCount.get(l.id) || 0, done: countsAsDone(project, l) }));
     issues.push(...checkLine(l, cat));
     lineInfo.set(l.id, { length2D: ln.l2, length3D: ln.l3, spans: ln.spans, items, cable: cableInfo, job, lenSource: allGnss ? 'GNSS' : 'GIS' });
   }

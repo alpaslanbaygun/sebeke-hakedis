@@ -1,11 +1,15 @@
 // Proje servisi: veritabanı ile hesap zincirini bağlar. UI yalnızca bu servisi çağırır.
 import { ulid, nextNo } from '../core/ids.js';
-import { PROJECT_STORES, EQUIPMENT_KINDS, HAK_STATUSES, hakOf } from '../core/schema.js';
+import { PROJECT_STORES, EQUIPMENT_KINDS, HAK_STATUSES, HAK_ORDER, hakOf } from '../core/schema.js';
 import { Catalog } from '../grid/catalog.js';
 import { computeProject, impactOf } from '../engine/compute.js';
 import { makeCrs, project as projectLL, unproject } from '../geo/crs.js';
+import { ROLES, approvalOn, strictOn, canHak, canDo, activeMembers, checkPin, pinHash, validPin } from '../core/roles.js';
 import { buildWorkProgram, periodTable, approveSnapshot } from '../qty/hakedis.js';
 
+// Onay açıkken kilitlenen durumlar ve kilit dışı alanlar
+const LOCKED = new Set(['KONTROL', 'HAKEDISTE', 'ONAYLI']);
+const FREE_KEYS = new Set(['hak', 'hakLog', 'hakNote', 'energyOpen', 'note']);
 const LOAD = ['points', 'equipment', 'lines', 'crossings', 'materials', 'photos', 'periods', 'workPrograms', 'stakeouts', 'revisions', 'surveySessions', 'gnssObservations', 'inspections', 'exportJobs', 'documents'];
 
 export class ProjectService {
@@ -13,6 +17,7 @@ export class ProjectService {
     this.ds = ds; this.bus = bus; this.gnss = gnss;
     this.p = null; this.cat = null; this.data = {}; this.result = null; this.lastImpact = null;
     this.catCache = new Map();
+    this._session = null; this._baseUser = ds.user;
   }
   get id() { return this.p ? this.p.id : null; }
 
@@ -34,6 +39,7 @@ export class ProjectService {
   async open(id) {
     const p = await this.ds.get('projects', id);
     if (!p) throw new Error('Proje bulunamadı');
+    if (this._session && this._session.projectId !== id) { this._session = null; this.ds.setUser(this._baseUser); }
     this.p = p;
     if (!this.catCache.has(p.stdId)) this.catCache.set(p.stdId, await Catalog.load(this.ds, p.stdId));
     this.cat = this.catCache.get(p.stdId);
@@ -157,12 +163,14 @@ export class ProjectService {
     const rec = Object.assign({ projectId: this.p.id, kind, no, pointId, state: kind === 'transformer' ? 'yeni' : 'YENI', attrs: {}, materialOverrides: {}, progress, workDate: progress === 'done' ? this.ds.iso().slice(0, 10) : null }, data, { no, pointId, progress });
     if (!rec.hak || !HAK_STATUSES[rec.hak]) rec.hak = hakOf(rec); // obje bazlı hakediş durumu (iş kalemi yoksa null)
     else { rec.progress = HAK_STATUSES[rec.hak].done ? 'done' : 'planned'; if (rec.progress === 'done' && !rec.workDate) rec.workDate = this.ds.iso().slice(0, 10); if (rec.progress !== 'done') rec.workDate = null; }
+    this._initHak(rec); if (rec.hak) rec.progress = HAK_STATUSES[rec.hak].done ? 'done' : 'planned';
     const e = await this.ds.create('equipment', rec, { reason: opts.reason || (EQUIPMENT_KINDS[kind] || {}).label + ' kaydı' });
     this.data.equipment.push(e);
     if (!opts.defer) await this.recompute(e.no + ' eklendi');
     return e;
   }
   async updateEquipment(id, patch, reason) {
+    patch = this._guardEdit('equipment', this.eqById(id), patch, reason);
     const e = await this.ds.update('equipment', id, patch, { reason });
     return this._after('equipment', reason || (e.no + ' güncellendi')).then(() => e);
   }
@@ -220,7 +228,7 @@ export class ProjectService {
     await this.recompute('Sahada ilave');
     return x;
   }
-  async approveMaterial(id, ok, reason) { await this.ds.update('materials', id, { approved: !!ok }, { reason: (ok ? 'Onaylandı' : 'Onay geri alındı') + (reason ? ' · ' + reason : '') }); return this._after('materials', 'Malzeme onayı'); }
+  async approveMaterial(id, ok, reason) { { const c = this.can('material.approve'); if (!c.ok) throw new Error(c.why); } await this.ds.update('materials', id, { approved: !!ok }, { reason: (ok ? 'Onaylandı' : 'Onay geri alındı') + (reason ? ' · ' + reason : '') }); return this._after('materials', 'Malzeme onayı'); }
   async removeMaterial(id, reason) { await this.ds.remove('materials', id, { reason }); return this._after('materials', 'Malzeme kaldırıldı'); }
   async removeEquipment(id, reason) { await this.ds.remove('equipment', id, { reason }); return this._after('equipment', 'Ekipman silindi'); }
 
@@ -228,12 +236,13 @@ export class ProjectService {
   async createLine(d, opts = {}) {
     const rec = Object.assign({ projectId: this.p.id, lineNo: d.lineNo || this.nextLineNo(), state: 'YENI', nodes: [], circuits: [], install: 'havai', progress: this.p.mode === 'asbuilt' ? 'done' : 'planned', workDate: this.p.mode === 'asbuilt' ? this.ds.iso().slice(0, 10) : null }, d);
     if (!rec.hak || !HAK_STATUSES[rec.hak]) rec.hak = hakOf(rec);
+    this._initHak(rec);
     const l = await this.ds.create('lines', rec, { reason: opts.reason || 'Hat oluşturuldu' });
     this.data.lines.push(l);
     if (!opts.defer) await this.recompute(l.lineNo + ' oluşturuldu');
     return l;
   }
-  async updateLine(id, patch, reason) { const l = await this.ds.update('lines', id, patch, { reason }); await this._after('lines', reason || l.lineNo + ' güncellendi'); return l; }
+  async updateLine(id, patch, reason) { patch = this._guardEdit('lines', this.lineById(id), patch, reason); const l = await this.ds.update('lines', id, patch, { reason }); await this._after('lines', reason || l.lineNo + ' güncellendi'); return l; }
   async appendNode(lineId, pointId, index = null) {
     const l = this.lineById(lineId);
     const nodes = l.nodes.slice();
@@ -283,12 +292,143 @@ export class ProjectService {
     const store = type === 'line' ? 'lines' : 'equipment';
     const rec = type === 'line' ? this.lineById(id) : this.eqById(id);
     if (!rec) throw new Error('Kayıt yok');
-    if (hakOf(rec) === null) throw new Error('Mevcut / ileride durumundaki objenin hakediş kalemi yok');
+    const from = hakOf(rec);
+    if (from === null) throw new Error('Mevcut / ileride durumundaki objenin hakediş kalemi yok');
+    const ck = canHak(this.p, this.member, from, status);
+    if (!ck.ok) throw new Error(ck.why);
+    if (ck.needReason && !String(reason || '').trim()) throw new Error('Geri alma / ret için gerekçe yazın');
     const patch = { hak: status, progress: st.done ? 'done' : 'planned' };
     if (st.done && !rec.workDate) patch.workDate = this.ds.iso().slice(0, 10);
     if (!st.done) patch.workDate = null;
-    await this.ds.update(store, id, patch, { reason: reason || 'Hakediş durumu: ' + st.label });
+    if (from !== status) patch.hakLog = this._hakLog(rec, from, status, reason);
+    await this.ds.update(store, id, patch, { reason: 'Hakediş durumu: ' + HAK_STATUSES[from].label + ' → ' + st.label + (reason ? ' · ' + reason : '') });
     return this._after(store, (rec.no || rec.lineNo) + ' · ' + st.label);
+  }
+  // Toplu onay / ret (onay bekleyenler listesi). items: [{ type, id }]
+  async setHakMany(items, status, reason) {
+    let n = 0; const errs = [];
+    for (const it of items) {
+      const store = it.type === 'line' ? 'lines' : 'equipment';
+      const rec = it.type === 'line' ? this.lineById(it.id) : this.eqById(it.id);
+      const from = rec ? hakOf(rec) : null;
+      if (!from || from === status) continue;
+      const ck = canHak(this.p, this.member, from, status);
+      if (!ck.ok) { errs.push((rec.no || rec.lineNo) + ': ' + ck.why); continue; }
+      if (ck.needReason && !String(reason || '').trim()) throw new Error('Geri alma / ret için gerekçe yazın');
+      const st = HAK_STATUSES[status];
+      const patch = { hak: status, progress: st.done ? 'done' : 'planned', hakLog: this._hakLog(rec, from, status, reason) };
+      if (st.done && !rec.workDate) patch.workDate = this.ds.iso().slice(0, 10);
+      if (!st.done) patch.workDate = null;
+      await this.ds.update(store, it.id, patch, { reason: 'Hakediş durumu: ' + HAK_STATUSES[from].label + ' → ' + st.label + (reason ? ' · ' + reason : ''), silent: true }); n++;
+    }
+    if (n) { await this.reload('equipment'); await this.reload('lines'); await this.recompute(n + ' obje · ' + HAK_STATUSES[status].label); }
+    return { changed: n, errors: errs };
+  }
+  _hakLog(rec, from, to, note) {
+    const m = this.member;
+    return [...(rec.hakLog || []), { at: this.ds.iso(), by: m ? m.name : this.ds.user.name, role: m ? m.role : null, from, to, note: note || null }].slice(-20);
+  }
+  // Kayıt düzenleme denetimi: durum değişikliği yetkiye bağlı; kontrol edilmiş kayıt (isteğe bağlı) kilitli
+  _guardEdit(store, rec, patch, reason) {
+    if (!rec || !approvalOn(this.p)) return patch;
+    const from = hakOf(rec);
+    const to = 'hak' in patch || 'state' in patch || 'progress' in patch ? hakOf(Object.assign({}, rec, patch)) : from;
+    const m = this.member;
+    if (from && LOCKED.has(from) && !(this.p.approval && this.p.approval.lock === false) && !(m && m.role === 'yonetici')) {
+      const hakChange = to !== from;
+      const touched = Object.keys(patch).filter((k) => !FREE_KEYS.has(k) && !(hakChange && (k === 'progress' || k === 'workDate')) && JSON.stringify(patch[k] ?? null) !== JSON.stringify(rec[k] ?? null));
+      if (touched.length) throw new Error((rec.no || rec.lineNo) + ' "' + HAK_STATUSES[from].label + '" durumunda · kayıt kilitli. Değiştirmek için önce durum geri çevrilmeli ya da Yönetici düzenlemeli.');
+    }
+    if (from && to && from !== to) {
+      const ck = canHak(this.p, m, from, to);
+      if (!ck.ok) throw new Error(ck.why);
+      if (ck.needReason && !String(patch.hakNote || '').trim()) throw new Error('Geri alma / ret için gerekçe yazın');
+      patch = Object.assign({}, patch, { hakLog: this._hakLog(rec, from, to, patch.hakNote || null) });
+    }
+    if ('hakNote' in patch) { patch = Object.assign({}, patch); delete patch.hakNote; }
+    return patch;
+  }
+  // Yeni kayıtta ilk durum: onay açıkken saha girişi en fazla "Tamamlandı" olabilir
+  _initHak(rec) {
+    if (!approvalOn(this.p) || !rec.hak) return rec;
+    const m = this.member;
+    if (HAK_ORDER.indexOf(rec.hak) > HAK_ORDER.indexOf('TAMAMLANDI') && !(m && m.role === 'yonetici')) rec.hak = 'TAMAMLANDI';
+    return rec;
+  }
+
+  // ---------------- Kullanıcılar, roller, oturum ----------------
+  get member() { const s = this._session; if (!s || !this.p || s.projectId !== this.p.id) return null; return activeMembers(this.p).find((m) => m.id === s.id) || null; }
+  approval() { return { on: approvalOn(this.p), strict: strictOn(this.p), lock: approvalOn(this.p) && !(this.p.approval && this.p.approval.lock === false), members: (this.p.members || []).map(({ pinHash: _h, salt: _s, ...m }) => m), member: this.member }; }
+  can(action) { return canDo(this.p, this.member, action); }
+  canHak(from, to) { return canHak(this.p, this.member, from, to); }
+  login(memberId, pin) {
+    const m = activeMembers(this.p).find((x) => x.id === memberId);
+    if (!m) throw new Error('Kullanıcı yok');
+    const t = this._tries || (this._tries = new Map());
+    const st = t.get(memberId) || { n: 0, until: 0 };
+    const now = this.ds.now().getTime();
+    if (st.until > now) throw new Error('Çok fazla yanlış deneme · ' + Math.ceil((st.until - now) / 1000) + ' sn bekleyin');
+    if (!checkPin(m, pin)) { st.n++; if (st.n >= 5) { st.until = now + 60000; st.n = 0; } t.set(memberId, st); throw new Error('Şifre yanlış'); }
+    t.delete(memberId);
+    this._session = { projectId: this.p.id, id: m.id };
+    this.ds.setUser({ id: m.id, name: m.name });
+    this.bus.emit('auth:change', m);
+    return m;
+  }
+  logout() { this._session = null; this.ds.setUser(this._baseUser || { id: 'local', name: 'Operatör' }); this.bus.emit('auth:change', null); }
+  async _saveMembers(members, reason, extra) { this.p = await this.ds.update('projects', this.p.id, Object.assign({ members }, extra || {}), { reason }); this.bus.emit('auth:change', this.member); return this.p; }
+  async addMember({ name, role, pin }) {
+    name = String(name || '').trim();
+    if (!name) throw new Error('Ad gerekli');
+    if (!ROLES[role]) throw new Error('Rol seçin');
+    if (!validPin(pin)) throw new Error('Şifre 4–8 rakam olmalı');
+    const list = (this.p.members || []).slice();
+    const boot = !approvalOn(this.p);
+    if (boot && role !== 'yonetici') throw new Error('İlk kullanıcı Yönetici olmalı');
+    if (!boot) { const c = this.can('members.manage'); if (!c.ok) throw new Error(c.why); }
+    if (list.some((m) => m.active !== false && m.name.toLocaleLowerCase('tr-TR') === name.toLocaleLowerCase('tr-TR'))) throw new Error('Bu adla kullanıcı var');
+    const salt = ulid(this.ds.now().getTime());
+    const m = { id: ulid(this.ds.now().getTime()), name, role, salt, pinHash: pinHash(pin, salt), active: true, createdAt: this.ds.iso() };
+    list.push(m);
+    await this._saveMembers(list, 'Kullanıcı eklendi: ' + name + ' (' + ROLES[role].label + ')');
+    if (boot) { this._session = { projectId: this.p.id, id: m.id }; this.ds.setUser({ id: m.id, name }); await this.recompute('Onay mekanizması açıldı'); this.bus.emit('auth:change', m); }
+    return m;
+  }
+  async updateMember(id, patch) {
+    const list = (this.p.members || []).map((m) => Object.assign({}, m));
+    const m = list.find((x) => x.id === id);
+    if (!m) throw new Error('Kullanıcı yok');
+    const me = this.member, self = me && me.id === id;
+    const onlyPin = Object.keys(patch).every((k) => k === 'pin');
+    if (!(self && onlyPin)) { const c = this.can('members.manage'); if (!c.ok) throw new Error(c.why); }
+    if (patch.name != null) { const n = String(patch.name).trim(); if (!n) throw new Error('Ad gerekli'); m.name = n; }
+    if (patch.role != null) { if (!ROLES[patch.role]) throw new Error('Rol seçin'); m.role = patch.role; }
+    if (patch.active != null) m.active = !!patch.active;
+    if (patch.pin != null) { if (!validPin(patch.pin)) throw new Error('Şifre 4–8 rakam olmalı'); m.salt = ulid(this.ds.now().getTime()); m.pinHash = pinHash(patch.pin, m.salt); }
+    if (!list.some((x) => x.active !== false && x.role === 'yonetici')) throw new Error('En az bir etkin Yönetici kalmalı · önce başka bir Yönetici tanımlayın ya da onay mekanizmasını kapatın');
+    await this._saveMembers(list, 'Kullanıcı güncellendi: ' + m.name);
+    if (self && m.active === false) this.logout();
+    return m;
+  }
+  async setApproval(patch) {
+    const c = this.can('members.manage'); if (!c.ok) throw new Error(c.why);
+    this.p = await this.ds.update('projects', this.p.id, { approval: Object.assign({}, this.p.approval || {}, patch) }, { reason: 'Onay ayarı' });
+    await this.recompute('Onay ayarı');
+    return this.p;
+  }
+  // Onay mekanizmasını kapat: kullanıcılar pasife alınır (liste ve geçmiş saklanır), uygulama kısıtsız çalışır
+  async closeApproval(reason) {
+    const c = this.can('members.manage'); if (!c.ok) throw new Error(c.why);
+    await this._saveMembers((this.p.members || []).map((m) => Object.assign({}, m, { active: false })), 'Onay mekanizması kapatıldı' + (reason ? ' · ' + reason : ''));
+    this.logout();
+    await this.recompute('Onay mekanizması kapatıldı');
+  }
+  // Rolün onayını bekleyen objeler
+  pending(status) {
+    const out = [];
+    for (const e of this.data.equipment) if (e.status !== 'deleted' && hakOf(e) === status) out.push({ type: 'equipment', id: e.id, no: e.no, rec: e });
+    for (const l of this.data.lines) if (l.status !== 'deleted' && hakOf(l) === status) out.push({ type: 'line', id: l.id, no: l.lineNo, rec: l });
+    return out.sort((a, b) => String(a.no).localeCompare(String(b.no), 'tr', { numeric: true }));
   }
   hakCounts() {
     const c = {};
@@ -304,7 +444,7 @@ export class ProjectService {
         const h = hakOf(r);
         if (!h || !from.includes(h) || r.progress !== 'done') continue;
         if ((r.workDate || '0000-00-00').slice(0, 10) > end) continue;
-        await this.ds.update(store, r.id, { hak: to }, { reason, silent: true }); n++;
+        await this.ds.update(store, r.id, { hak: to, hakLog: this._hakLog(r, h, to, reason) }, { reason, silent: true }); n++;
       }
     }
     if (n) { await this.reload('equipment'); await this.reload('lines'); }
@@ -357,17 +497,19 @@ export class ProjectService {
   }
   activeProgram() { return this.data.workPrograms.find((w) => w.active) || null; }
   async createPeriod({ start, end }) {
+    { const c = this.can('period.create'); if (!c.ok) throw new Error(c.why); }
     const no = (this.data.periods.reduce((m, p) => Math.max(m, p.no), 0)) + 1;
     const last = this.data.periods.filter((p) => p.status === 'taslak');
     if (last.length) throw new Error('Onaylanmamış taslak dönem var (' + last[0].no + ')');
     const p = await this.ds.create('periods', { projectId: this.p.id, no, start, end, status: 'taslak' }, { reason: no + '. hakediş dönemi açıldı' });
     await this.reload('periods');
-    const n = await this._advanceHak(end, ['TAMAMLANDI', 'KONTROL'], 'HAKEDISTE', no + '. hakedişe girdi');
+    const n = await this._advanceHak(end, strictOn(this.p) ? ['KONTROL'] : ['TAMAMLANDI', 'KONTROL'], 'HAKEDISTE', no + '. hakedişe girdi');
     if (n) await this.recompute(no + '. hakediş dönemi · ' + n + ' obje hakedişe girdi');
     return p;
   }
   periodTable(periodId) { return periodTable(this.result.quantities, this.activeProgram(), this.data.periods, periodId); }
   async approvePeriod(id, reason) {
+    { const c = this.can('period.approve'); if (!c.ok) throw new Error(c.why); }
     const t = this.periodTable(id);
     await this.ds.update('periods', id, { status: 'onayli', snapshot: approveSnapshot(t), approvedAt: this.ds.iso(), approvedBy: this.ds.user.name, totals: t.totals }, { reason: reason || 'Hakediş onaylandı' });
     await this.reload('periods');

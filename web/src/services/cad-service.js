@@ -40,7 +40,7 @@ export async function importCad(ps, bytes, filename) {
   const { model, warnings } = readCad(bytes, filename, ps.p);
   const blobId = ulid();
   const stored = { format: model.format, ents: model.ents, layers: model.layers, bbox: model.bbox, dom: model.dom || null, stats: model.stats || {} };
-  await ps.ds.db.put('blobs', { id: blobId, projectId: ps.p.id, mime: 'application/json', text: JSON.stringify(stored) });
+  await ps.ds.db.put('blobs', { id: blobId, projectId: ps.p.id, mime: 'application/json', text: JSON.stringify(stored, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 1e4) / 1e4 : v)) });
   const hidden = model.layers.map((l, i) => (l.off ? i : -1)).filter((i) => i >= 0);
   const doc = await ps.ds.create('documents', { projectId: ps.p.id, kind: 'CAD', name: filename, format: model.format, blobId, entCount: model.ents.length, layerCount: model.layers.length, bbox: model.bbox, dom: model.dom || null, stats: model.stats || {}, visible: true, hidden, warnings, at: ps.ds.iso() }, { reason: 'CAD çizimi yüklendi: ' + filename + ' · ' + model.ents.length + ' nesne', silent: true });
   cache.set(doc.id, stored);

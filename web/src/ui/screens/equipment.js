@@ -1,6 +1,7 @@
 // 03 · Ekipman Kaydı (Direk · Trafo · SDK · Aydınlatma · Abone · Menhol)
 // Reçete otomatik; kullanıcı yalnız miktar değiştirir (gerekçeli) ya da "sahada ilave" açar (ayrı işaretli, onaylı).
 import { html, useState, useEffect, useBus, Icon, Chip, Seg, Sel, Badge, Title, Toggle, fmt, trn, CODE_KIND } from '../kit.js';
+import { HakRow, HakHistory } from './team.js';
 import { app } from '../ctx.js';
 import { STATUSES, TRAFO_STATUSES, JOB_LABEL, SOURCE_LABEL, HAK_STATUSES, HAK_ORDER, KIND_FOLDER, hakOf } from '../../core/schema.js';
 import { sourceInfo, sourceText } from '../../core/source.js';
@@ -125,7 +126,8 @@ export function EquipmentScreen({ id }) {
       ${d.kind === 'subscriber' ? html`<div class="grid2"><div class="fld"><label>Faz</label><${Sel} value=${d.attrs.phase || 'uc'} options=${[['tek', 'Tek faz'], ['uc', 'Üç faz']]} onChange=${(v) => setA({ phase: v })} /></div><div class="fld"><label>Abone no</label><input class="inp mono" value=${d.attrs.aboneNo || ''} onChange=${(e) => setA({ aboneNo: e.target.value })} /></div></div>
         <div class="fld"><label>Kofre</label><${Seg} value=${d.attrs.kofre ? 'var' : 'yok'} options=${[['yok', 'Kofre yok'], ['var', 'Kofre var']]} onChange=${(v) => setA({ kofre: v === 'var' })} /><span class="note">Kofre varsa faz sayısına göre kofre kalemi keşfe ve hakedişe gelir.</span></div>` : null}
       ${hk ? html`<div class="fld"><label>Hakediş durumu · <span style=${'color:' + HAK_STATUSES[hk].color}>${HAK_STATUSES[hk].label}</span></label>
-        <div class="hakrow">${HAK_ORDER.map((k) => html`<button class=${k === hk ? 'on' : ''} style=${'--c:' + HAK_STATUSES[k].color} onClick=${() => set({ hak: k, progress: HAK_STATUSES[k].done ? 'done' : 'planned', workDate: HAK_STATUSES[k].done ? (d.workDate || new Date().toISOString().slice(0, 10)) : null })}><i></i>${HAK_STATUSES[k].short}</button>`)}</div></div>
+        ${ps.approval().on ? html`<${HakRow} type="equipment" rec=${e0} noLabel=${true} onDone=${(r) => r && set({ hak: r.hak, progress: r.progress, workDate: r.workDate, hakLog: r.hakLog })} />` : html`<div class="hakrow">${HAK_ORDER.map((k) => html`<button class=${k === hk ? 'on' : ''} style=${'--c:' + HAK_STATUSES[k].color} onClick=${() => set({ hak: k, progress: HAK_STATUSES[k].done ? 'done' : 'planned', workDate: HAK_STATUSES[k].done ? (d.workDate || new Date().toISOString().slice(0, 10)) : null })}><i></i>${HAK_STATUSES[k].short}</button>`)}</div>`}</div>
+        <${HakHistory} rec=${e0} />
         <div class="note">"Tamamlandı" ve sonrası durumlar metraja ve hakediş kümülatifine girer. Dönem açılınca "Hakedişe Girdi", onaylanınca "Hakediş Onaylandı" olur.</div>` : html`<div class="note">Hakediş: — (mevcut / ileride durumundaki objenin iş kalemi yok)</div>`}
       ${d.progress === 'done' && hk ? html`<div class="fld"><label>Montaj / iş tarihi</label><input class="inp mono" type="date" value=${d.workDate || ''} onChange=${(e) => set({ workDate: e.target.value })} /></div>` : null}
     </div>

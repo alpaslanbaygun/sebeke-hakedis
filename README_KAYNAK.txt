@@ -1,4 +1,4 @@
-VOLT-EDAŞ Saha 2.2.0 — Kaynak paketi
+VOLT-EDAŞ Saha 2.3.0 — Kaynak paketi
 ====================================
 
 İçerik
@@ -6,7 +6,7 @@ VOLT-EDAŞ Saha 2.2.0 — Kaynak paketi
 - android/    Android kabuğu (Java): Bluetooth SPP/BLE, NTRIP, telefon GNSS, dosya kaydet/paylaş
 - tools/      APK derleme betikleri (Gradle gerektirmez)
 - keystore/   İmza anahtarı  voltsaha-release.jks
-- surum-gecmisi.bundle   Git geçmişi (v2.1.0 ve v2.2.0 etiketleriyle)
+- surum-gecmisi.bundle   Git geçmişi (v2.1.0, v2.2.0, v2.2.0-web ve v2.3.0 etiketleriyle)
 
 GERİ DÖNÜŞ (v2.1.0'a)
 - Telefonda: VOLT-EDAS-Saha-2.1.0-geri-donus.apk dosyasını 2.2.0'ın ÜZERİNE kurun (silmeden). Proje verisi korunur;
@@ -18,7 +18,7 @@ GERİ DÖNÜŞ (v2.1.0'a)
 - Dosya : keystore/voltsaha-release.jks   (sertifika: CN=VOLT-EDAS Saha, L=Elazig, C=TR)
 - Alias : voltsaha
 - Şifre : VoltSaha2026!
-2.1.0, 2.1.0-geri-donus ve 2.2.0 aynı anahtarla imzalıdır; birbirinin üzerine kurulabilir.
+2.1.0, 2.1.0-geri-donus, 2.2.0 ve 2.3.0 aynı anahtarla imzalıdır; birbirinin üzerine kurulabilir.
 Bu dosyayı ve şifreyi güvenli bir yerde saklayın, kimseyle paylaşmayın.
 
 Derleme
@@ -26,7 +26,7 @@ Derleme
 2) Testler: node --test tests/scenarios.test.mjs   (33/33 geçmeli)
           python3 tests/ui/smoke.py                (arayüz duman testi, 0 hata)
           python3 tests/ui/upgrade.py              (2.1.0 ↔ 2.2.0 veri geçişi; önce v2.1.0 derlemesi gerekir)
-3) APK : ./tools/build_apk.sh  →  dist/VOLT-EDAS-Saha-2.2.0.apk
+3) APK : ./tools/build_apk.sh  →  dist/VOLT-EDAS-Saha-2.3.0.apk
 
 2.2.0 değişiklikleri (Teknik Spesifikasyon v2)
 - Veri kaynağı takibi: GNSS_RTK · GNSS_FLOAT · TELEFON_GPS · MANUEL · EXCEL · HARITADAN_SECILDI; harita, liste, rapor etiketleri.
@@ -56,3 +56,42 @@ Web (ofis) sürümü — 2.2.0-web
 - Web'e özel görünüm yalnız "html.web" sınıfı altında (ui/theme.css sonu); APK görünümü değişmez.
 - Testler: node --test tests/*.test.mjs  (42/42: 33 senaryo + 9 web)  ·  python3 tests/ui/web.py (sahte bulutla tarayıcı testi)
 - APK 2.2.0 bu değişikliklerden etkilenmedi (yeniden derlenmedi); geri dönüş noktaları: v2.1.0, v2.2.0 etiketleri.
+
+
+2.3.0 değişiklikleri
+====================
+GERİ DÖNÜŞ (v2.2.0'a): VOLT-EDAS-Saha-2.2.0.apk 2.3.0'ın üzerine kurulamaz (sürüm kodu küçük: 220 < 230). Geri dönmek için
+2.3.0'ı kaldırmadan önce Dışa Aktar › telefona veri (.vsync) ile yedek alın. Veritabanı sürümü aynıdır (3); 2.2.0 aynı veriyi
+açar (tests/ui/upgrade23.py). Kaynak kodda: git checkout v2.2.0
+
+Yeni dosyalar
+- grid/cabin.js           Kabin (köşk / trafo binası) yerleşim kuralları: tipler, hücre serileri, sığma kontrolleri, plan şekilleri
+- grid/cabin-recipe.js    Kabin keşfi: gövde (tipine göre ayrı kalem) + hücreler + trafo + pano + kablo kanalı (m)
+- ui/screens/cabin.js     Kabin kurma ekranı (2B plan, hücre ekle / çıkar / sırala, kanal ekle)
+- cad/{dxf,ncz,aci,symbols,index}.js   DXF ve NCZ okuma, birleşik çizim modeli, yapışma noktaları, kol bulma
+- services/cad-service.js Çizimi projeye ekleme (documents + blobs), görünürlük, katman aç / kapat
+- calc/tepe.js            Cer vektör ve direk tepe kuvveti (tablo yöntemi, kg): T / KT / D / KD / N / genel düğüm
+- ui/screens/tepe.js      Tepe kuvveti ekranı (kollar çizimden ya da hattan, katman adından iletken tanıma + elle seçim)
+- grid/energize.js        Enerji kontrolü: OG / AG kaynaklarından bağlantı izleme
+- core/roles.js           Hakediş onay rolleri, izinli adımlar, şifre özeti (tuzlu, yinelemeli SHA-256)
+- ui/screens/team.js      Kullanıcılar ve onay ekranı, oturum, onay bekleyenler, onay geçmişi
+- geo/tiles.js            Karo matematiği: 3857 (OSM / Esri / Google) ve 3395 (Yandex)
+- tools/seed_extras_v23.mjs   Katalog ekleri (hd hücreler, LED / sodyum armatürler, kofre, kanal, köşk gövde eşlemesi)
+
+Davranış notları
+- Katalog: standard.seedRev = 23. Eski veride açılışta yalnız EKSİK satırlar eklenir (core/standards.js › upgradeStandard);
+  kullanıcının değiştirdiği fiyat / kalem korunur. Yeni kalemler verified:false ("DOĞRULANACAK") işaretlidir; Poz Kataloğu
+  ekranından ad / poz no / fiyat düzeltilebilir, yeni kalem eklenebilir.
+- Monoblok köşk (post 'mono') trafolarda köşk gövdesi artık ayrı kalem olarak keşfe gelir (varsayılan TİP-1C BOŞ;
+  ekipman ekranından ya da kabin ekranından değiştirilir). Bu, mevcut projelerde de monoblok trafo metrajına 1 kalem ekler.
+- Hakediş onayı: proje kaydında members[] (ad, rol, tuz, şifre özeti) ve approval{strict, lock}. Etkin Yönetici yoksa
+  mekanizma kapalıdır ve davranış 2.2.0 ile aynıdır. Oturum cihazda saklanmaz (uygulama kapanınca kapanır).
+- GNSS: Float çözümde alım ayardan açılıp kapatılır (varsayılan açık). Spectra: $PASHR,POS / $PTNL,GGK okunur;
+  "Alıcı markası: Spectra" seçilirse konum çıkışı yoksa $PASHS,NME komutlarıyla açılır.
+- Altlık: Google (anahtar varsa Map Tiles API oturumu, yoksa genel adres) ve Yandex (elipsoidal Mercator).
+
+Testler
+- node --test tests/*.test.mjs   → 120/120 (33 senaryo · 10 web · 29 kabin · 17 CAD · 19 tepe · 12 v2.3)
+- python3 tests/ui/{smoke,web,v23_cabin,v23_grid,v23_team,v23_web}.py   → 0 hata
+- python3 tests/ui/upgrade23.py  → 2.2.0 ↔ 2.3.0 aynı veritabanı (önce v2.2.0 derlemesi gerekir)
+- tests/ref/ altındaki üç referans dosya pakete dahil değildir; yoksa ilgili karşılaştırma testleri atlanır.

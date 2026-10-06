@@ -104,7 +104,7 @@ export function HakedisScreen() {
     const [a, b] = s.split(/\s+/);
     try { const p = await ps.createPeriod({ start: a, end: b || a }); setPid(p.id); } catch (e) { app.toast(e.message, 'err'); }
   };
-  const approve = async () => { if (!(await app.confirm('Onay', cur.no + '. dönem onaylanıp dondurulsun mu? Sonraki değişiklikler bir sonraki dönemde REVİZYON olarak görünür.', { ok: 'Onayla' }))) return; await ps.approvePeriod(cur.id); app.toast(cur.no + '. hakediş onaylandı'); };
+  const approve = async () => { if (!(await app.confirm('Onay', cur.no + '. dönem onaylanıp dondurulsun mu? Sonraki değişiklikler bir sonraki dönemde REVİZYON olarak görünür.', { ok: 'Onayla' }))) return; try { await ps.approvePeriod(cur.id); app.toast(cur.no + '. hakediş onaylandı'); } catch (e) { app.toast(e.message, 'err', 6000); } };
   const lines = t ? t.lines.filter((l) => l.job === job) : [];
   return html`<${Title} title="Hakediş" sub=${'Proje → İş programı → Dönem → Poz'} />
     <div class="card row"><div class="grow"><div class="lbl">İş programı</div><div style="font-size:13px">${wp ? wp.basis + ' · ' + wp.items.length + ' kalem · ' + new Date(wp.createdAt).toLocaleDateString('tr-TR') : 'Oluşturulmadı'}</div></div><button class="btn sm" onClick=${newProgram}>${wp ? 'Yenile' : 'Oluştur'}</button></div>

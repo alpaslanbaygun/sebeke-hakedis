@@ -3,6 +3,7 @@ import { html, useState, useEffect, useRef, useBus, Icon, Chip, Seg, Sel, Badge,
 import { app } from '../ctx.js';
 import { measure } from '../services.js';
 import { renumberDialog } from './field.js';
+import { HakRow, HakHistory } from './team.js';
 import { STATUSES, HAK_STATUSES, HAK_ORDER, hakOf } from '../../core/schema.js';
 import { circuitLabel, lineLabel, CABLE_DEFAULTS } from '../../grid/lines.js';
 import { offsetPolyline, dms } from '../../geo/geom.js';
@@ -120,7 +121,8 @@ export function LineScreen({ id }) {
       <button class="btn dang" onClick=${async () => { const r = await app.prompt('Hattı sil', 'Gerekçe', { required: true }); if (r) { await ps.removeLine(id, r); app.nav.back(); } }}>Sil</button>
     </div>
     ${hakOf(d) ? html`<div class="card stack" style="margin-top:10px"><div class="lbl">Hakediş durumu · <span style=${'color:' + HAK_STATUSES[hakOf(d)].color}>${HAK_STATUSES[hakOf(d)].label}</span></div>
-      <div class="hakrow">${HAK_ORDER.map((k) => html`<button class=${k === hakOf(d) ? 'on' : ''} style=${'--c:' + HAK_STATUSES[k].color} onClick=${() => set({ hak: k, progress: HAK_STATUSES[k].done ? 'done' : 'planned', workDate: HAK_STATUSES[k].done ? (d.workDate || new Date().toISOString().slice(0, 10)) : null })}><i></i>${HAK_STATUSES[k].short}</button>`)}</div></div>` : html`<div class="note" style="margin-top:10px">Hakediş: — (mevcut / ileride)</div>`}
+      ${ps.approval().on ? html`<${HakRow} type="line" rec=${l0} noLabel=${true} onDone=${(r) => r && set({ hak: r.hak, progress: r.progress, workDate: r.workDate, hakLog: r.hakLog })} />` : html`<div class="hakrow">${HAK_ORDER.map((k) => html`<button class=${k === hakOf(d) ? 'on' : ''} style=${'--c:' + HAK_STATUSES[k].color} onClick=${() => set({ hak: k, progress: HAK_STATUSES[k].done ? 'done' : 'planned', workDate: HAK_STATUSES[k].done ? (d.workDate || new Date().toISOString().slice(0, 10)) : null })}><i></i>${HAK_STATUSES[k].short}</button>`)}</div>`}
+      <${HakHistory} rec=${l0} /></div>` : html`<div class="note" style="margin-top:10px">Hakediş: — (mevcut / ileride)</div>`}
     ${d.progress === 'done' ? html`<div class="fld"><label>Montaj tarihi</label><input class="inp mono" type="date" value=${d.workDate || ''} onChange=${(e) => set({ workDate: e.target.value })} /></div>` : null}
     <div class="fld" style="margin-top:8px"><label>Açıklama</label><textarea class="inp" value=${d.note || ''} onInput=${(e) => set({ note: e.target.value })}></textarea></div>
     <div class="row" style="position:sticky;bottom:-24px;background:var(--bg);padding:12px 0;border-top:1px solid var(--line2);margin-top:8px"><button class="btn" style="flex:0 0 32%" onClick=${() => (dirty ? setD(JSON.parse(JSON.stringify(l0))) : app.nav.back())}>${dirty ? 'Geri al' : 'Kapat'}</button><button class="btn pri grow" style="height:56px" disabled=${!dirty} onClick=${save}>KAYDET · ${d.lineNo}</button></div>`;

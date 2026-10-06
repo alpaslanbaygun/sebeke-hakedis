@@ -12,7 +12,7 @@ export function contributionsFromEquipment(e, mats, meta) {
     out.push({
       job, servis: m.servis, material: null, qty: m.qty, unit: m.unit, kgPer: m.kgPer, grp: m.grp, name: m.name, why: m.why, tag: m.tag,
       source, evidence: meta.photos > 0 ? 'FOTO' : null, missing: m.missing, overridden: !!m.overridden, origin: m.origin,
-      ref: { type: 'equipment', id: e.id, no: e.no, kind: e.kind, workDate: e.workDate || null, done: e.progress === 'done' }
+      ref: { type: 'equipment', id: e.id, no: e.no, kind: e.kind, workDate: e.workDate || null, done: meta.done != null ? meta.done : e.progress === 'done' }
     });
   }
   return out;
@@ -21,7 +21,7 @@ export function contributionsFromLine(line, items, job, meta) {
   return items.filter((x) => x.qty > 0 || x.missing).map((x) => ({
     job, servis: x.servis, material: x.material || null, qty: x.qty, unit: x.unit, kgPer: null, grp: '', name: x.conductor || x.material || '', why: x.why, tag: x.material ? 'kanal' : 'iletken',
     source: x.material ? 'OTO' : meta.lenSource, evidence: meta.photos > 0 ? 'FOTO' : null, missing: x.missing || (!x.servis && !x.material),
-    ref: { type: 'line', id: line.id, no: line.lineNo, kind: 'line', workDate: line.workDate || null, done: line.progress === 'done' }
+    ref: { type: 'line', id: line.id, no: line.lineNo, kind: 'line', workDate: line.workDate || null, done: meta.done != null ? meta.done : line.progress === 'done' }
   }));
 }
 

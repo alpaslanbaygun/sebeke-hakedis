@@ -5,6 +5,7 @@ import { app } from '../ctx.js';
 import { makeCrs, zoneForLon, TM_ZONES } from '../../geo/crs.js';
 import { listStandards } from '../../core/standards.js';
 import { HAK_STATUSES, HAK_ORDER } from '../../core/schema.js';
+import { PENDING } from '../../core/roles.js';
 import { exportChangeset, applyChangeset, markSynced, listConflicts, resolveConflict, pendingChanges, httpSync } from '../../core/sync.js';
 
 export function ProjectsScreen() {
@@ -55,7 +56,7 @@ export function ProjectsScreen() {
 ProjectsScreen.noTabs = false;
 
 export function HubScreen() {
-  useBus(['project:computed']);
+  useBus(['project:computed', 'auth:change']);
   useBus('gnss:state', 1000);
   const ps = app.ps, r = ps.result, d = ps.data, g = app.gnss.state;
   const eqc = (k) => d.equipment.filter((e) => e.kind === k).length;
@@ -87,7 +88,8 @@ export function HubScreen() {
   return html`<${Title} title=${ps.p.name} sub=${(ps.p.code || '') + ' · ' + ps.p.crs.label} right=${html`<button class="btn sm" onClick=${() => app.nav.go('projects')}>Projeler</button>`} />
     <div class="grid4"><div class="stat"><b>Nokta</b><span>${d.points.length}</span></div><div class="stat"><b>Ekipman</b><span>${d.equipment.length}</span></div><div class="stat"><b>Hat</b><span>${d.lines.length}</span></div><div class="stat"><b>Hata</b><span style=${'color:' + (errs.length ? '#ff8a8a' : '#6ffbbe')}>${errs.length}</span></div></div>
     ${ps.lastImpact ? html`<div class="alert info"><${Icon} n="sync" s=${16} /><span>Son değişiklik (${ps.lastImpact.reason}): ${ps.lastImpact.spans} açıklık · ${ps.lastImpact.roles} rol · ${ps.lastImpact.materials} reçete · ${ps.lastImpact.quantities} metraj${ps.lastImpact.exportsStale ? ' · DXF/rapor yenilenmeli' : ''}</span></div>` : null}
-    <div class="grid2"><button class="btn" onClick=${() => app.nav.go('objects')}><${Icon} n="list" s=${18} />Saha objeleri</button><button class="btn" onClick=${() => app.nav.go('excel')}><${Icon} n="grid" s=${18} />Excel aktarım</button></div>
+    <div class="grid2"><button class="btn" onClick=${() => app.nav.go('objects')}><${Icon} n="list" s=${18} />Saha objeleri</button><button class="btn" onClick=${() => app.nav.go('excel')}><${Icon} n="grid" s=${18} />Excel aktarım</button>
+      <button class="btn" style="grid-column:1/3" onClick=${() => app.nav.go('team')}><${Icon} n="check" s=${18} />Kullanıcılar ve hakediş onayı${(() => { const ap = ps.approval(); if (!ap.on) return html` <span class="note">· kapalı</span>`; const me = ap.member; const n = me && PENDING[me.role] ? ps.pending(PENDING[me.role][0]).length : 0; return html` <span class="note">· ${me ? me.name : 'oturum açılmadı'}</span>${n ? html` <${Badge} k="warn">${n} bekliyor</${Badge}>` : null}`; })()}</button></div>
     ${(() => { const c = ps.hakCounts(); const tot = HAK_ORDER.reduce((a, k) => a + (c[k] || 0), 0); return tot ? html`<div class="sect">Hakediş durumu <span class="r mono">${tot} obje</span></div><div class="hakbar">${HAK_ORDER.filter((k) => c[k]).map((k) => html`<span style=${'flex:' + c[k] + ';background:' + HAK_STATUSES[k].color} title=${HAK_STATUSES[k].label}></span>`)}</div><div class="hakrow">${HAK_ORDER.map((k) => html`<button style=${'--c:' + HAK_STATUSES[k].color} onClick=${() => app.nav.go('objects')}><i></i>${HAK_STATUSES[k].short} ${c[k] || 0}</button>`)}</div>` : null; })()}
     <div class="sect">Proje akışı</div>
     <div class="card tight flow">${steps.map(([t, s, ok, go], i) => html`<button class=${'st' + (ok ? ' done' : i === firstOpen ? ' act' : '')} onClick=${go}><span class="n">${ok ? html`<${Icon} n="check" s=${14} c="#10b981" w=${3} />` : i + 1}</span><div class="grow"><b style="font-size:14px">${t}</b><div class="note">${s}</div></div><${Icon} n="next" s=${16} c="#475569" /></button>`)}</div>

@@ -86,4 +86,4 @@ async def main():
             print('ERRORS', len(errors)); [print('  ', e) for e in errors[:10]]
             await b.close(); srv.terminate()
     if errors: sys.exit(1)
-asyncio.run(main())
+if __name__ == "__main__": asyncio.run(main())

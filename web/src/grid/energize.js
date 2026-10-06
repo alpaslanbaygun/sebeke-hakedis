@@ -61,8 +61,9 @@ export function energize(data, cfg = {}) {
     if (st === 'on') out.counts.on++; else { out.counts.off++; out.dead.lines.push(l.id); }
   }
   // Objeler: bağlı olduğu etkin seviyelerden en az birinde enerji varsa enerjili; hiçbir etkin seviyeye bağlı değilse kapsam dışı
+  // (yalnız devre dışı — açık / demontaj / ileride — hatlara bağlı objeler de kapsam dışı sayılır)
   const levelNodes = { og: new Set(), ag: new Set() };
-  for (const l of lines) { const lv = levelsOf(l); for (const id of l.nodes || []) { if (lv.og) levelNodes.og.add(id); if (lv.ag) levelNodes.ag.add(id); } }
+  for (const l of lines) { if (!passable(l, opts)) continue; const lv = levelsOf(l); for (const id of l.nodes || []) { if (lv.og) levelNodes.og.add(id); if (lv.ag) levelNodes.ag.add(id); } }
   for (const e of eqs) {
     if (!e.pointId) continue;
     const inOG = cfg.og && levelNodes.og.has(e.pointId), inAG = cfg.ag && levelNodes.ag.has(e.pointId);

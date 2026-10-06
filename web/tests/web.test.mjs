@@ -217,3 +217,27 @@ test('W9 · Açılışta geçici okuma hatası yeniden denenir; bulut hiç okuna
   const dead = { doc: () => ({ get: async () => { throw Object.assign(new Error('yok'), { code: 'unavailable' }); }, onSnapshot: () => () => {} }) };
   await assert.rejects(new CloudAdapter(dead).open());
 });
+
+test('W10 · Çizim (CAD) web bulutunda: büyük çizim parçalara bölünür, başka bilgisayarda aynı çizim açılır', async () => {
+  const { importCad, cadDocs, cadModel, clearCadCache } = await import('../src/services/cad-service.js');
+  const cloud = new FakeCloud();
+  const A = await webStack(cloud);
+  await newProject(A.ps);
+  const out = ['0', 'SECTION', '2', 'ENTITIES'];
+  for (let i = 0; i < 6000; i++) out.push('0', 'LINE', '8', i % 2 ? 'OG_HAT' : 'AG_ŞEBEKE', '10', String(512000 + i * 1.2345), '20', String(4281000 + (i % 50) * 3.21), '11', String(512001 + i * 1.2345), '21', String(4281003 + (i % 50) * 3.21));
+  out.push('0', 'ENDSEC', '0', 'EOF', '');
+  const r = await importCad(A.ps, new TextEncoder().encode(out.join('\n')), 'buyuk.dxf');
+  assert.equal(r.doc.entCount, 6000);
+  await A.adapter.flush();
+  const parts = [...cloud.docs.keys()].filter((k) => k.startsWith('x/' + r.doc.blobId + '~'));
+  assert.ok(parts.length >= 2, 'parça sayısı: ' + parts.length);
+  for (const k of parts) assert.ok(JSON.stringify(cloud.docs.get(k)).length < 250 * 1024, k + ' belge sınırının altında');
+  clearCadCache();
+  const B = await webStack(cloud);
+  await B.ps.open(A.ps.p.id);
+  const d = cadDocs(B.ps);
+  assert.equal(d.length, 1);
+  const m = await cadModel(B.ps, d[0]);
+  assert.equal(m.ents.length, 6000);
+  assert.ok(m.layers.some((l) => l.name === 'AG_ŞEBEKE'), 'Türkçe katman adı korunur');
+});
