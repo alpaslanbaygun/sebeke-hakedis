@@ -6,3 +6,4 @@ web/tests/ui/shots/
 __pycache__/
 dist/
 surum-gecmisi.bundle
+web/tests/ref/
