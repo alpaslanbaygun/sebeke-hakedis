@@ -1,0 +1,92 @@
+name: AutoCAD eklentisi
+
+# Her gönderimde: çekirdek testleri → iki derleme (AutoCAD 2016–2024 ve 2025+) → kurulum paketi.
+# Sonuçlar "ci-sonuc" dalına, paket "Releases" bölümüne yazılır.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'autocad/**'
+      - '.github/workflows/autocad.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: autocad
+  cancel-in-progress: false
+
+jobs:
+  derle:
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: 1
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sürüm numarası
+        id: surum
+        shell: pwsh
+        run: |
+          $s = "0.1.$env:GITHUB_RUN_NUMBER"
+          "surum=$s" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+          New-Item -ItemType Directory -Force cikti | Out-Null
+          "Sürüm: $s`nİşlem: $env:GITHUB_SHA`nTarih: $(Get-Date -Format s)" | Out-File -Encoding utf8 cikti/ozet.txt
+
+      - name: Çekirdek testleri
+        shell: pwsh
+        run: |
+          dotnet run --project autocad/test/CekirdekTest/CekirdekTest.csproj -c Release -- ornek 2>&1 | Tee-Object -FilePath cikti/test.log
+          if ($LASTEXITCODE -ne 0) { "TEST: BAŞARISIZ" | Out-File -Append -Encoding utf8 cikti/ozet.txt; exit 1 }
+          "TEST: geçti" | Out-File -Append -Encoding utf8 cikti/ozet.txt
+
+      - name: Eklentiyi derle
+        shell: pwsh
+        run: |
+          dotnet build autocad/src/Eklenti/Eklenti.csproj -c Release "-p:Version=${{ steps.surum.outputs.surum }}" -v minimal 2>&1 | Tee-Object -FilePath cikti/derleme.log
+          if ($LASTEXITCODE -ne 0) { "DERLEME: BAŞARISIZ" | Out-File -Append -Encoding utf8 cikti/ozet.txt; exit 1 }
+          "DERLEME: geçti" | Out-File -Append -Encoding utf8 cikti/ozet.txt
+
+      - name: Kurulum paketini hazırla
+        shell: pwsh
+        run: |
+          $s = "${{ steps.surum.outputs.surum }}"
+          $kok = "paket/SebekeHakedis-$s"
+          $b = "$kok/SebekeHakedis.bundle"
+          New-Item -ItemType Directory -Force "$b/Contents/R20-R24", "$b/Contents/R25" | Out-Null
+          Copy-Item autocad/src/Eklenti/bin/Release/net46/SebekeHakedis.dll "$b/Contents/R20-R24/"
+          Copy-Item autocad/src/Eklenti/bin/Release/net8.0-windows/SebekeHakedis.dll "$b/Contents/R25/"
+          (Get-Content -Raw -Encoding utf8 autocad/paket/PackageContents.xml).Replace('SURUM', $s) | Set-Content -Encoding utf8 "$b/PackageContents.xml"
+          Copy-Item autocad/paket/KUR.bat, autocad/paket/KALDIR.bat, autocad/paket/OKUBENI.txt $kok/
+          Compress-Archive -Path "$kok/*" -DestinationPath "cikti/SebekeHakedis-$s.zip" -Force
+          Get-ChildItem -Recurse $kok | Select-Object FullName, Length | Format-Table -AutoSize | Out-String -Width 200 | Out-File -Append -Encoding utf8 cikti/ozet.txt
+          "PAKET: cikti/SebekeHakedis-$s.zip" | Out-File -Append -Encoding utf8 cikti/ozet.txt
+
+      - name: GitHub sürümü oluştur
+        if: success()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $s = "${{ steps.surum.outputs.surum }}"
+          gh release create "v$s" "cikti/SebekeHakedis-$s.zip" --title "AutoCAD eklentisi $s" --notes "Kurulum: zip'i indirin, bir klasöre çıkarın, KUR.bat'ı çalıştırın, AutoCAD'i yeniden başlatın. AutoCAD 2016–2024 ve 2025+ desteklenir."
+
+      - name: Sonuçları ci-sonuc dalına yaz
+        if: always()
+        shell: pwsh
+        run: |
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          $tmp = Join-Path $env:RUNNER_TEMP "sonuc"
+          New-Item -ItemType Directory -Force $tmp | Out-Null
+          Copy-Item cikti/* $tmp -Recurse -Force
+          git checkout --orphan ci-sonuc-yeni
+          git rm -rf . --quiet
+          Get-ChildItem -Force | Where-Object { $_.Name -ne '.git' } | Remove-Item -Recurse -Force
+          Copy-Item "$tmp/*" . -Recurse -Force
+          git add -A
+          git commit -m "ci: ${{ steps.surum.outputs.surum }} ($env:GITHUB_SHA)" --quiet
+          git push -f origin HEAD:ci-sonuc

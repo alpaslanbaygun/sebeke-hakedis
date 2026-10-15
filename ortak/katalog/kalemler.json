@@ -1,0 +1,3907 @@
+{
+ "bicim": "sebeke-hakedis.kalem-katalogu",
+ "surum": 1,
+ "kaynak": "PROMAGIS çiziminden çıkarıldı (Kayseri 25.38.03, 8 hakediş)",
+ "aciklama": "cins+tanim+birim başına bir kalem. katsayi: giriş biriminden rapor birimine çarpan (ör. kg/m, kg/ad). rol: ana (nesnenin kendi pozu), malzeme, hat, kanal, sondaj.",
+ "kalemler": [
+  {
+   "cins": "AG_ALİMİNYUM_KABLO",
+   "tanim": "3x150+70 Nyy Alm.",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "BOX",
+    "HAT_AG_YERALTI",
+    "MUSTEREK_DIREK",
+    "PANO",
+    "TRAFO_DIREGI",
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 67
+  },
+  {
+   "cins": "AG_ALİMİNYUM_KABLO",
+   "tanim": "3x50+25 Nyy Alm.",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "DM",
+    "M",
+    "ME"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "BOX",
+    "HAT_AG_YERALTI",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 118
+  },
+  {
+   "cins": "AG_ALİMİNYUM_KABLO",
+   "tanim": "3x95+50 Nyy Alm.",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M",
+    "ME"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "BOX",
+    "HAT_AG_YERALTI",
+    "MUSTEREK_DIREK",
+    "PANO",
+    "TRAFO_DIREGI",
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 384
+  },
+  {
+   "cins": "AG_ALİMİNYUM_KABLO",
+   "tanim": "4x16 Nyy Alm.",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "ME"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "AG_AĞAÇ",
+   "tanim": "11mt",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0106",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 6
+  },
+  {
+   "cins": "AG_AĞAÇ",
+   "tanim": "9mt",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 3
+  },
+  {
+   "cins": "AG_BAKIR_KABLO",
+   "tanim": "3x25+16 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "AG_BAKIR_KABLO",
+   "tanim": "3x35+16 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "DM",
+    "DM+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "HAT_AG_YERALTI",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 6
+  },
+  {
+   "cins": "AG_BETON",
+   "tanim": "9,3/10",
+   "birim": "ad/kg",
+   "katsayi": 1540,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "AG_BETON",
+   "tanim": "9,3/2",
+   "birim": "ad/kg",
+   "katsayi": 640,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 11
+  },
+  {
+   "cins": "AG_BETON",
+   "tanim": "9,3/3",
+   "birim": "ad/kg",
+   "katsayi": 745,
+   "tarife": "0107",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "AG_BETON",
+   "tanim": "9,3/8",
+   "birim": "ad/kg",
+   "katsayi": 1510,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 7
+  },
+  {
+   "cins": "AG_DEMİR",
+   "tanim": "10I",
+   "birim": "ad/kg",
+   "katsayi": 209,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 683
+  },
+  {
+   "cins": "AG_DEMİR",
+   "tanim": "10U",
+   "birim": "ad/kg",
+   "katsayi": 245,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 15
+  },
+  {
+   "cins": "AG_DEMİR",
+   "tanim": "12I",
+   "birim": "ad/kg",
+   "katsayi": 258,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 395
+  },
+  {
+   "cins": "AG_DEMİR",
+   "tanim": "12U",
+   "birim": "ad/kg",
+   "katsayi": 316,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 7
+  },
+  {
+   "cins": "AG_DEMİR",
+   "tanim": "8I",
+   "birim": "ad/kg",
+   "katsayi": 152,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 498
+  },
+  {
+   "cins": "AG_DEMİR",
+   "tanim": "8U",
+   "birim": "ad/kg",
+   "katsayi": 210,
+   "tarife": "0107",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "AG_DEMİR",
+   "tanim": "K1",
+   "birim": "ad/kg",
+   "katsayi": 326,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 59
+  },
+  {
+   "cins": "AG_DEMİR",
+   "tanim": "K2",
+   "birim": "ad/kg",
+   "katsayi": 504,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 113
+  },
+  {
+   "cins": "AG_DEMİR",
+   "tanim": "K3",
+   "birim": "ad/kg",
+   "katsayi": 578,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "AG_DEMİR_GLV",
+   "tanim": "G-10I",
+   "birim": "ad/kg",
+   "katsayi": 209,
+   "tarife": "0107",
+   "durumlar": [
+    "M",
+    "M+M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 838
+  },
+  {
+   "cins": "AG_DEMİR_GLV",
+   "tanim": "G-12I",
+   "birim": "ad/kg",
+   "katsayi": 258,
+   "tarife": "0107",
+   "durumlar": [
+    "M",
+    "M+M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 560
+  },
+  {
+   "cins": "AG_DEMİR_GLV",
+   "tanim": "G-8I",
+   "birim": "ad/kg",
+   "katsayi": 152,
+   "tarife": "0107",
+   "durumlar": [
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 9
+  },
+  {
+   "cins": "AG_DEMİR_GLV",
+   "tanim": "G-K1",
+   "birim": "ad/kg",
+   "katsayi": 326,
+   "tarife": "0107",
+   "durumlar": [
+    "M",
+    "M+M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 50
+  },
+  {
+   "cins": "AG_DEMİR_GLV",
+   "tanim": "G-K2",
+   "birim": "ad/kg",
+   "katsayi": 504,
+   "tarife": "0107",
+   "durumlar": [
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 255
+  },
+  {
+   "cins": "AG_DEMİR_GLV",
+   "tanim": "G-K3",
+   "birim": "ad/kg",
+   "katsayi": 578,
+   "tarife": "0107",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 14
+  },
+  {
+   "cins": "AG_KABLO_BAŞLIK_ALM",
+   "tanim": "2x16 Nyy K.B Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 27
+  },
+  {
+   "cins": "AG_KABLO_BAŞLIK_ALM",
+   "tanim": "3x150+70 Nyy K.B Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 35
+  },
+  {
+   "cins": "AG_KABLO_BAŞLIK_ALM",
+   "tanim": "3x50+25 Nyy K.B Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 19
+  },
+  {
+   "cins": "AG_KABLO_BAŞLIK_ALM",
+   "tanim": "3x95+50 Nyy K.B Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 109
+  },
+  {
+   "cins": "AG_KABLO_BAŞLIK_ALM",
+   "tanim": "4x16 Nyy K.B Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 248
+  },
+  {
+   "cins": "AG_KABLO_BAŞLIK_CU",
+   "tanim": "4x6 Nyy K.B Cu",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 70
+  },
+  {
+   "cins": "AG_PANO_DT",
+   "tanim": "630 kVA DT PANO ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "PANO"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "AG_PANO_HT",
+   "tanim": "100 kVA HT PANO ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "DM",
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "PANO"
+   ],
+   "kullanim": 9
+  },
+  {
+   "cins": "AG_PANO_HT",
+   "tanim": "160 kVA HT PANO ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "PANO"
+   ],
+   "kullanim": 17
+  },
+  {
+   "cins": "AG_PANO_HT",
+   "tanim": "250 kVA HT PANO ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "DM",
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "PANO"
+   ],
+   "kullanim": 16
+  },
+  {
+   "cins": "AG_PANO_HT",
+   "tanim": "400 kVA HT PANO ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "PANO"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "AG_PANO_HT",
+   "tanim": "50 kVA HT PANO ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "PANO"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "AG_İLETKEN",
+   "tanim": "2R",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 10
+  },
+  {
+   "cins": "AG_İLETKEN",
+   "tanim": "3A+P+R",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 26
+  },
+  {
+   "cins": "AG_İLETKEN",
+   "tanim": "3R",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 147
+  },
+  {
+   "cins": "AG_İLETKEN",
+   "tanim": "4P+R",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 261
+  },
+  {
+   "cins": "AG_İLETKEN",
+   "tanim": "4R",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "AG_İLETKEN",
+   "tanim": "5R",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 294
+  },
+  {
+   "cins": "AG_İLETKEN",
+   "tanim": "A",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "ME"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "AG_İLETKEN",
+   "tanim": "P",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "ME"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "AG_İLETKEN",
+   "tanim": "R",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "ME"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "AG_İZOLATÖR",
+   "tanim": "N-80",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 144
+  },
+  {
+   "cins": "AG_İZOLATÖR",
+   "tanim": "N-95",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 82
+  },
+  {
+   "cins": "ALPEK_KABLOLAR",
+   "tanim": "1X16+25 ALPEK",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ALPEK_KABLOLAR",
+   "tanim": "3X16/16+25 ALPEK",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "DM+M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 27
+  },
+  {
+   "cins": "ALPEK_KABLOLAR",
+   "tanim": "3X25/16+35 ALPEK",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M",
+    "ME"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 538
+  },
+  {
+   "cins": "ALPEK_KABLOLAR",
+   "tanim": "3X35/16+50 ALPEK",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "DM+M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 47
+  },
+  {
+   "cins": "ALPEK_KABLOLAR",
+   "tanim": "3X50/16+70 ALPEK",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M",
+    "ME"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 154
+  },
+  {
+   "cins": "ALPEK_KABLOLAR",
+   "tanim": "3X70/16+95 ALPEK",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_AG_HAVAI"
+   ],
+   "kullanim": 16
+  },
+  {
+   "cins": "ARMATÜR",
+   "tanim": "125W Civa Arm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "ARMATÜR",
+   "tanim": "150W SB Plmr Enjeksiyon Arm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 3
+  },
+  {
+   "cins": "ARMATÜR",
+   "tanim": "250W SB Plmr Enjeksiyon Arm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "DM",
+    "DM+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 8
+  },
+  {
+   "cins": "ARMATÜR",
+   "tanim": "70W Sodyum Arm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 825
+  },
+  {
+   "cins": "ARMATÜR",
+   "tanim": "S11 SINIF NUMARALI LED ARMATÜR",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AYD_DIREK"
+   ],
+   "kullanim": 5
+  },
+  {
+   "cins": "ARMATÜR",
+   "tanim": "S14 SINIF NUMARALI LED ARMATÜR",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AYD_DIREK"
+   ],
+   "kullanim": 132
+  },
+  {
+   "cins": "ARMATÜR",
+   "tanim": "S6 SINIF NUMARALI LED ARMATÜR",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AYD_DIREK"
+   ],
+   "kullanim": 118
+  },
+  {
+   "cins": "AYDINLATMA_KABLO",
+   "tanim": "2x16 Nyy Alm.",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "BOX",
+    "HAT_AYDINLATMA"
+   ],
+   "kullanim": 5
+  },
+  {
+   "cins": "AYDINLATMA_KABLO",
+   "tanim": "4x10 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 3
+  },
+  {
+   "cins": "AYDINLATMA_KABLO",
+   "tanim": "4x16 Nyy Alm.",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "AYD_DIREK",
+    "BOX",
+    "HAT_AYDINLATMA",
+    "MUSTEREK_DIREK",
+    "PANO",
+    "TRAFO_DIREGI",
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 651
+  },
+  {
+   "cins": "AYDINLATMA_KABLO",
+   "tanim": "4x6 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "AYD_GLV_PLG",
+   "tanim": "AD1-100/10",
+   "birim": "ad/kg",
+   "katsayi": 143,
+   "tarife": "0108",
+   "durumlar": [
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AYD_DIREK"
+   ],
+   "kullanim": 145
+  },
+  {
+   "cins": "AYD_GLV_PLG",
+   "tanim": "AD1-120/10",
+   "birim": "ad/kg",
+   "katsayi": 180,
+   "tarife": "0108",
+   "durumlar": [
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AYD_DIREK"
+   ],
+   "kullanim": 68
+  },
+  {
+   "cins": "AYD_GLV_PLG",
+   "tanim": "AD1-60/10",
+   "birim": "ad/kg",
+   "katsayi": 65,
+   "tarife": "0108",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AYD_DIREK"
+   ],
+   "kullanim": 19
+  },
+  {
+   "cins": "AYD_GLV_PLG",
+   "tanim": "AD2-120/10",
+   "birim": "ad/kg",
+   "katsayi": 186,
+   "tarife": "0108",
+   "durumlar": [
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AYD_DIREK"
+   ],
+   "kullanim": 60
+  },
+  {
+   "cins": "AYD_GLV_PLG",
+   "tanim": "AD2-60/10",
+   "birim": "ad/kg",
+   "katsayi": 70,
+   "tarife": "0108",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "AYD_DIREK"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "AYIRICI_HT",
+   "tanim": "36kV 630A H.T. SİGOR. AYIRICI",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "DM",
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 26
+  },
+  {
+   "cins": "AYIRICI_HT",
+   "tanim": "36kV 630A H.T. SİGOR. TOPR. AYIRICI",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "DM",
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 23
+  },
+  {
+   "cins": "BAHH_BETON_TRAVERS",
+   "tanim": "N-320/440",
+   "birim": "ad/kg",
+   "katsayi": 470,
+   "tarife": "0106",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS",
+   "tanim": "D-200 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 41,
+   "tarife": "0106",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 3
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS",
+   "tanim": "D-250 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 51,
+   "tarife": "0106",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 23
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS",
+   "tanim": "D-300 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 59,
+   "tarife": "0106",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS",
+   "tanim": "DS-200 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 71,
+   "tarife": "0106",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 7
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS",
+   "tanim": "DS-250 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 81,
+   "tarife": "0106",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS",
+   "tanim": "T-250 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 42,
+   "tarife": "0106",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 20
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS",
+   "tanim": "T-300 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 49,
+   "tarife": "0106",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS_GLV",
+   "tanim": "G-D-250 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 51,
+   "tarife": "0106",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 35
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS_GLV",
+   "tanim": "G-D-300 (1/0)",
+   "birim": "ad/kg",
+   "katsayi": 56,
+   "tarife": "0106",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS_GLV",
+   "tanim": "G-D-300 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 59,
+   "tarife": "0106",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS_GLV",
+   "tanim": "G-DS-250 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 81,
+   "tarife": "0106",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 11
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS_GLV",
+   "tanim": "G-DS-300 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 81,
+   "tarife": "0106",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS_GLV",
+   "tanim": "G-T-250 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 42,
+   "tarife": "0106",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS_GLV",
+   "tanim": "G-T-300 (1/0)",
+   "birim": "ad/kg",
+   "katsayi": 48,
+   "tarife": "0106",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 3
+  },
+  {
+   "cins": "BAHH_DEMİR_TRAVERS_GLV",
+   "tanim": "G-T-300 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 49,
+   "tarife": "0106",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "BAKIR_BARA",
+   "tanim": "F8 mm² Bakır Bara",
+   "birim": "mt/kg",
+   "katsayi": 0.45,
+   "tarife": "0102",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 11
+  },
+  {
+   "cins": "BAKIR_BARA",
+   "tanim": "F8 mm² Bakır Bara (Seksiyoner)",
+   "birim": "mt/kg",
+   "katsayi": 0.45,
+   "tarife": "0102",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 38
+  },
+  {
+   "cins": "BETON_KÖŞKLER",
+   "tanim": "BK1/BOŞ KÖŞK (3K+1000kVA+PANO) HV İZL",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "BETON_KÖŞKLER",
+   "tanim": "BK4/BOŞ KÖŞK TRAFO (1000kVA+PANO) HV İZL",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "BETON_KÖŞKLER",
+   "tanim": "BK8/BOŞ KÖŞK HÜCRE (7K) HV İZL",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "BETON_KÖŞKLER",
+   "tanim": "KB1/BOŞ BETON KÖŞK(HÜCRE+TRAFO+PANO)",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "BETON_KÖŞKLER",
+   "tanim": "KB2-H/BOŞ BETON KÖŞK(HÜCRE)",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "KM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 3
+  },
+  {
+   "cins": "BOX_PANO",
+   "tanim": "AG SAHA DAĞITIM KUTUSU (TİP-3)",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "DM",
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "BOX"
+   ],
+   "kullanim": 114
+  },
+  {
+   "cins": "BOX_PANO",
+   "tanim": "AYDINLATMA PN.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "BOX"
+   ],
+   "kullanim": 36
+  },
+  {
+   "cins": "DİĞER_AMBAR_MALZEMELERİ",
+   "tanim": "ANKARAJ DEMİRİ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "ME"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "DİĞER_AMBAR_MALZEMELERİ",
+   "tanim": "ATLAMA KABLOSU NA2XY 1x150 mm²",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0103",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "DİĞER_AMBAR_MALZEMELERİ",
+   "tanim": "S-1 BORU (ARMATÜR İÇİN)",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0108",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 620
+  },
+  {
+   "cins": "EK_MUFU_AG_ALM",
+   "tanim": "2x16 Nyy Ek Mufu Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "EK_MUFU"
+   ],
+   "kullanim": 7
+  },
+  {
+   "cins": "EK_MUFU_AG_ALM",
+   "tanim": "3x150+70 Nyy Ek Mufu Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "EK_MUFU"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "EK_MUFU_AG_ALM",
+   "tanim": "3x50+25 Nyy Ek Mufu Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "EK_MUFU"
+   ],
+   "kullanim": 8
+  },
+  {
+   "cins": "EK_MUFU_AG_ALM",
+   "tanim": "3x95+50 Nyy Ek Mufu Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "EK_MUFU"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "EK_MUFU_AG_ALM",
+   "tanim": "4x10 Nyy Ek Mufu Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "EK_MUFU"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "EK_MUFU_AG_ALM",
+   "tanim": "4x16 Nyy Ek Mufu Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "EK_MUFU"
+   ],
+   "kullanim": 56
+  },
+  {
+   "cins": "EK_MUFU_OG_ALM",
+   "tanim": "1x150/25 Ek Mufu Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "EK_MUFU"
+   ],
+   "kullanim": 41
+  },
+  {
+   "cins": "EK_MUFU_OG_ALM",
+   "tanim": "1x70/16 Ek Mufu Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "EK_MUFU"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_BETON",
+   "tanim": "12/26",
+   "birim": "ad/kg",
+   "katsayi": 3500,
+   "tarife": "0103",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_BETON",
+   "tanim": "12/34",
+   "birim": "ad/kg",
+   "katsayi": 3650,
+   "tarife": "0103",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_BETON",
+   "tanim": "12/8",
+   "birim": "ad/kg",
+   "katsayi": 2170,
+   "tarife": "0103",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 5
+  },
+  {
+   "cins": "ENH_BETON",
+   "tanim": "14/4",
+   "birim": "ad/kg",
+   "katsayi": 2170,
+   "tarife": "0103",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_BETON",
+   "tanim": "15/5",
+   "birim": "ad/kg",
+   "katsayi": 2530,
+   "tarife": "0103",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 9
+  },
+  {
+   "cins": "ENH_BETON",
+   "tanim": "17/5",
+   "birim": "ad/kg",
+   "katsayi": 3080,
+   "tarife": "0103",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_DEMİR",
+   "tanim": "D-10 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 279,
+   "tarife": "0103",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "ENH_DEMİR",
+   "tanim": "D-12 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 344,
+   "tarife": "0103",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 8
+  },
+  {
+   "cins": "ENH_DEMİR",
+   "tanim": "D-14 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 418,
+   "tarife": "0103",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "ENH_DEMİR",
+   "tanim": "N-10 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 293,
+   "tarife": "0103",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_DEMİR",
+   "tanim": "N-12 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 366,
+   "tarife": "0103",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 24
+  },
+  {
+   "cins": "ENH_DEMİR",
+   "tanim": "N-14 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 448,
+   "tarife": "0103",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 3
+  },
+  {
+   "cins": "ENH_DEMİR",
+   "tanim": "T-10 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 258,
+   "tarife": "0103",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_DEMİR",
+   "tanim": "T-12 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 306,
+   "tarife": "0103",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 34
+  },
+  {
+   "cins": "ENH_DEMİR",
+   "tanim": "T-14 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 370,
+   "tarife": "0103",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_DEMİR",
+   "tanim": "Z-10 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 338,
+   "tarife": "0103",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_DEMİR",
+   "tanim": "Z-12 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 420,
+   "tarife": "0103",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 3
+  },
+  {
+   "cins": "ENH_DEMİR",
+   "tanim": "Z-14 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 510,
+   "tarife": "0103",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "ENH_DEMİR_GLV",
+   "tanim": "G-N-12 (1/0)",
+   "birim": "ad/kg",
+   "katsayi": 496,
+   "tarife": "0103",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "ENH_DEMİR_GLV",
+   "tanim": "G-N-12 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 366,
+   "tarife": "0103",
+   "durumlar": [
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 9
+  },
+  {
+   "cins": "ENH_DEMİR_GLV",
+   "tanim": "G-N-14 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 448,
+   "tarife": "0103",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 5
+  },
+  {
+   "cins": "ENH_DEMİR_GLV",
+   "tanim": "G-T-12 (1/0)",
+   "birim": "ad/kg",
+   "katsayi": 331,
+   "tarife": "0103",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_DEMİR_GLV",
+   "tanim": "G-T-12 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 306,
+   "tarife": "0103",
+   "durumlar": [
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 5
+  },
+  {
+   "cins": "ENH_DEMİR_GLV",
+   "tanim": "G-T-14 (1/0)",
+   "birim": "ad/kg",
+   "katsayi": 393,
+   "tarife": "0103",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "ENH_DEMİR_GLV",
+   "tanim": "G-T-14 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 370,
+   "tarife": "0103",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_DEMİR_GLV",
+   "tanim": "G-Z-14 (sw)",
+   "birim": "ad/kg",
+   "katsayi": 510,
+   "tarife": "0103",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "ENH_GLV_CVT",
+   "tanim": "BER+2   ",
+   "birim": "ad/kg",
+   "katsayi": 977,
+   "tarife": "0103",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "ENH_GLV_CVT",
+   "tanim": "BES+6   ",
+   "birim": "ad/kg",
+   "katsayi": 1419,
+   "tarife": "0103",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_GLV_CVT",
+   "tanim": "K-4 ",
+   "birim": "ad/kg",
+   "katsayi": 999,
+   "tarife": "0103",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_GLV_CVT",
+   "tanim": "L-2",
+   "birim": "ad/kg",
+   "katsayi": 1288,
+   "tarife": "0103",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "ENH_GLV_CVT",
+   "tanim": "PA-4",
+   "birim": "ad/kg",
+   "katsayi": 1125,
+   "tarife": "0103",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "ENH_GLV_CVT",
+   "tanim": "R-4",
+   "birim": "ad/kg",
+   "katsayi": 1331,
+   "tarife": "0103",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "GALVANİZLİ_GAZ_BORUSU",
+   "tanim": "3/4\"",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 382
+  },
+  {
+   "cins": "GALVANİZLİ_KABLO_TAVASI",
+   "tanim": "2mm GALVANİZLİ SAC TAVA",
+   "birim": "kg/kg",
+   "katsayi": 1,
+   "tarife": "0106",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "ENH_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 183
+  },
+  {
+   "cins": "HÜCRELER_METAL",
+   "tanim": "31,5/0,1√3-0,22√3kV 30-800VA İÇ İHT MMH3",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "KM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "HÜCRELER_METAL",
+   "tanim": "36KV 630A 16KA HV.İZO.KES.G/Ç MMH1",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "KM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "KABLO_KANALI",
+   "tanim": "BRANŞMAN KANAL",
+   "birim": "mt/m³",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "kanal",
+   "nesneler": [
+    "KANAL"
+   ],
+   "kullanim": 33
+  },
+  {
+   "cins": "KABLO_KANALI",
+   "tanim": "PARKE TOPRAK",
+   "birim": "mt/m³",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "kanal",
+   "nesneler": [
+    "KANAL"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "KABLO_KANALI",
+   "tanim": "PARKE TUVENAN",
+   "birim": "mt/m³",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "kanal",
+   "nesneler": [
+    "KANAL"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "KABLO_KANALI",
+   "tanim": "PARKE TUVENAN (BARİYERLİ)",
+   "birim": "mt/m³",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "kanal",
+   "nesneler": [
+    "KANAL"
+   ],
+   "kullanim": 33
+  },
+  {
+   "cins": "KABLO_KANALI",
+   "tanim": "TOPRAK",
+   "birim": "mt/m³",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "kanal",
+   "nesneler": [
+    "KANAL"
+   ],
+   "kullanim": 565
+  },
+  {
+   "cins": "KABLO_KANALI",
+   "tanim": "TOPRAK (BARİYERLİ)",
+   "birim": "mt/m³",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "kanal",
+   "nesneler": [
+    "KANAL"
+   ],
+   "kullanim": 20
+  },
+  {
+   "cins": "KABLO_KANALI",
+   "tanim": "TUVENAN",
+   "birim": "mt/m³",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "kanal",
+   "nesneler": [
+    "KANAL"
+   ],
+   "kullanim": 39
+  },
+  {
+   "cins": "KABLO_KANALI",
+   "tanim": "TUVENAN (BARİYERLİ)",
+   "birim": "mt/m³",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "kanal",
+   "nesneler": [
+    "KANAL"
+   ],
+   "kullanim": 168
+  },
+  {
+   "cins": "KOFRA",
+   "tanim": "KOFRA TIP-1",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "KOFRE"
+   ],
+   "kullanim": 161
+  },
+  {
+   "cins": "KOMPOZİT_SİLİKON_ASKI_VE_GERGİ_İZOLATÖRLERİ",
+   "tanim": "36 kV 25 kV/mm (8 -12.5 kN) Mesnet",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0103",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 206
+  },
+  {
+   "cins": "KOMPOZİT_SİLİKON_ASKI_VE_GERGİ_İZOLATÖRLERİ",
+   "tanim": "40kN/11B",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0103",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 95
+  },
+  {
+   "cins": "MÜŞ_DEMİR",
+   "tanim": "10I\"",
+   "birim": "ad/kg",
+   "katsayi": 233,
+   "tarife": "0106",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 199
+  },
+  {
+   "cins": "MÜŞ_DEMİR",
+   "tanim": "10U\"",
+   "birim": "ad/kg",
+   "katsayi": 280,
+   "tarife": "0106",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 8
+  },
+  {
+   "cins": "MÜŞ_DEMİR",
+   "tanim": "12I\"",
+   "birim": "ad/kg",
+   "katsayi": 298,
+   "tarife": "0106",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 87
+  },
+  {
+   "cins": "MÜŞ_DEMİR",
+   "tanim": "12U\"",
+   "birim": "ad/kg",
+   "katsayi": 362,
+   "tarife": "0106",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "MÜŞ_DEMİR",
+   "tanim": "K1\"",
+   "birim": "ad/kg",
+   "katsayi": 373,
+   "tarife": "0106",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 10
+  },
+  {
+   "cins": "MÜŞ_DEMİR",
+   "tanim": "K2\"",
+   "birim": "ad/kg",
+   "katsayi": 449,
+   "tarife": "0106",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 99
+  },
+  {
+   "cins": "MÜŞ_DEMİR",
+   "tanim": "K2\"+2",
+   "birim": "ad/kg",
+   "katsayi": 523,
+   "tarife": "0106",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "MÜŞ_DEMİR",
+   "tanim": "K3\"",
+   "birim": "ad/kg",
+   "katsayi": 566,
+   "tarife": "0106",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 16
+  },
+  {
+   "cins": "MÜŞ_DEMİR",
+   "tanim": "K4\"",
+   "birim": "ad/kg",
+   "katsayi": 790,
+   "tarife": "0106",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "MÜŞ_DEMİR",
+   "tanim": "K5\"",
+   "birim": "ad/kg",
+   "katsayi": 952,
+   "tarife": "0106",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "MÜŞ_DEMİR_GLV",
+   "tanim": "G-10I\"",
+   "birim": "ad/kg",
+   "katsayi": 233,
+   "tarife": "0106",
+   "durumlar": [
+    "M",
+    "ME",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 205
+  },
+  {
+   "cins": "MÜŞ_DEMİR_GLV",
+   "tanim": "G-12I\"",
+   "birim": "ad/kg",
+   "katsayi": 298,
+   "tarife": "0106",
+   "durumlar": [
+    "M",
+    "ME",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 88
+  },
+  {
+   "cins": "MÜŞ_DEMİR_GLV",
+   "tanim": "G-K2\"",
+   "birim": "ad/kg",
+   "katsayi": 449,
+   "tarife": "0106",
+   "durumlar": [
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 104
+  },
+  {
+   "cins": "MÜŞ_DEMİR_GLV",
+   "tanim": "G-K3\"",
+   "birim": "ad/kg",
+   "katsayi": 566,
+   "tarife": "0106",
+   "durumlar": [
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 22
+  },
+  {
+   "cins": "MÜŞ_DEMİR_GLV",
+   "tanim": "G-K4\"",
+   "birim": "ad/kg",
+   "katsayi": 790,
+   "tarife": "0106",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 3
+  },
+  {
+   "cins": "OG_ALİMİNYUM_KABLO",
+   "tanim": "1x150/25 Xlpe Alm.",
+   "birim": "mt/mt",
+   "katsayi": 3,
+   "tarife": "0104",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M",
+    "ME"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK",
+    "HAT_OG_YERALTI",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI",
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 143
+  },
+  {
+   "cins": "OG_ALİMİNYUM_KABLO",
+   "tanim": "1x50/16 Xlpe Alm.",
+   "birim": "mt/mt",
+   "katsayi": 3,
+   "tarife": "0104",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "HAT_OG_YERALTI",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 3
+  },
+  {
+   "cins": "OG_KABLO_BAŞLIK_DT_ALM",
+   "tanim": "1x150/25 D.T K.B Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI",
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 17
+  },
+  {
+   "cins": "OG_KABLO_BAŞLIK_HT_ALM",
+   "tanim": "1x150/25 H.T K.B Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 60
+  },
+  {
+   "cins": "OG_KABLO_BAŞLIK_HT_ALM",
+   "tanim": "1x95/16 H.T K.B Alm.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "OG_İLETKEN",
+   "tanim": "1xSW",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0106",
+   "durumlar": [
+    "ME"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_OG_HAVAI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "OG_İLETKEN",
+   "tanim": "3x1\\0",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0106",
+   "durumlar": [
+    "DM",
+    "DM+M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_OG_HAVAI"
+   ],
+   "kullanim": 8
+  },
+  {
+   "cins": "OG_İLETKEN",
+   "tanim": "3x3\\0",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0103",
+   "durumlar": [
+    "DM",
+    "DM+M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_OG_HAVAI"
+   ],
+   "kullanim": 5
+  },
+  {
+   "cins": "OG_İLETKEN",
+   "tanim": "3xSW",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0106",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_OG_HAVAI"
+   ],
+   "kullanim": 134
+  },
+  {
+   "cins": "OG_İZOLASYON_MALZEMELERİ",
+   "tanim": "BUSHİNG İZOLASYON KAPAĞI (31,5 kV OG)",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 10
+  },
+  {
+   "cins": "OG_İZOLASYON_MALZEMELERİ",
+   "tanim": "SWALLOW/ PIGON BORU TİP İZOLASYON",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0103",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 132
+  },
+  {
+   "cins": "OG_İZOLATÖR",
+   "tanim": "K1 ZİNC. İZO.",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0106",
+   "durumlar": [
+    "DM",
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "OG_İZOLATÖR",
+   "tanim": "K2 ZİNC. İZO.",
+   "birim": "tk/tk",
+   "katsayi": 1,
+   "tarife": "0106",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 5
+  },
+  {
+   "cins": "OG_İZOLATÖR",
+   "tanim": "TEK GERGİ TK (SW)",
+   "birim": "tk/tk",
+   "katsayi": 1,
+   "tarife": "0106",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 99
+  },
+  {
+   "cins": "OG_İZOLATÖR",
+   "tanim": "VHD-15",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0106",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "OG_İZOLATÖR",
+   "tanim": "VHD-35",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0106",
+   "durumlar": [
+    "DM",
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "ENH_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 326
+  },
+  {
+   "cins": "OG_İZOLATÖR",
+   "tanim": "VKS-35",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0106",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "PARAFUDR",
+   "tanim": "36kV 5kA PARAFUDR",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 25
+  },
+  {
+   "cins": "REKORTMAN_ALİMİNYUM",
+   "tanim": "2x16 Nyy Alm.",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "AG_DIREK",
+    "BOX",
+    "HAT_REKORTMAN",
+    "MUSTEREK_DIREK",
+    "PANO"
+   ],
+   "kullanim": 122
+  },
+  {
+   "cins": "REKORTMAN_ALİMİNYUM",
+   "tanim": "3x150+70 Nyy Alm.",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "DM+M",
+    "M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "BOX",
+    "HAT_REKORTMAN"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "REKORTMAN_ALİMİNYUM",
+   "tanim": "3x50+25 Nyy Alm.",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "AG_DIREK",
+    "BOX",
+    "HAT_REKORTMAN",
+    "PANO"
+   ],
+   "kullanim": 42
+  },
+  {
+   "cins": "REKORTMAN_ALİMİNYUM",
+   "tanim": "3x95+50 Nyy Alm.",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "BOX",
+    "HAT_REKORTMAN"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "REKORTMAN_ALİMİNYUM",
+   "tanim": "4x16 Nyy Alm.",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0105",
+   "durumlar": [
+    "DM",
+    "M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "AG_DIREK",
+    "BOX",
+    "HAT_REKORTMAN",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 518
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "1x2.5 Nya Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0109",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "1x4 Nya Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0109",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "HAT_REKORTMAN",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 76
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "2x10 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "2x16 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "DM",
+    "DM+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "2x6 Nym (Ç.K.) Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0109",
+   "durumlar": [
+    "DM",
+    "DM+M",
+    "M+M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "AG_DIREK",
+    "HAT_REKORTMAN"
+   ],
+   "kullanim": 287
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "2x6 Nym Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0109",
+   "durumlar": [
+    "DM",
+    "M+M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_REKORTMAN",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 115
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "2x6 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 5
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "3x25+16 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "DM",
+    "DM+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "3x35+16 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "DM",
+    "DM+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "3x50+25 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "4x10 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "4x16 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "DM",
+    "DM+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "4x25 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "4x6 Nym (Ç.K.) Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0109",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "AG_DIREK",
+    "HAT_REKORTMAN"
+   ],
+   "kullanim": 9
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "4x6 Nym Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0109",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "HAT_REKORTMAN"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "REKORTMAN_BAKIR",
+   "tanim": "4x6 Nyy Cu",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0110",
+   "durumlar": [
+    "DM",
+    "M+M"
+   ],
+   "rol": "hat",
+   "nesneler": [
+    "AG_DIREK",
+    "HAT_REKORTMAN",
+    "MUSTEREK_DIREK",
+    "PANO",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 230
+  },
+  {
+   "cins": "SİGORTA_BUŞONU",
+   "tanim": "36 KV 2-20A SİG BUŞONU",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "ENH_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 38
+  },
+  {
+   "cins": "TOPRAKLAMA",
+   "tanim": "1X95 Nyy Alm.",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "AYD_DIREK",
+    "BOX",
+    "MUSTEREK_DIREK",
+    "PANO"
+   ],
+   "kullanim": 430
+  },
+  {
+   "cins": "TOPRAKLAMA",
+   "tanim": "TOPRAKLAMA KAZIĞI",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "AYD_DIREK",
+    "BOX",
+    "MUSTEREK_DIREK",
+    "PANO"
+   ],
+   "kullanim": 430
+  },
+  {
+   "cins": "TOP_İLETKEN",
+   "tanim": "1x95 mm' St.",
+   "birim": "mt/kg",
+   "katsayi": 0.76,
+   "tarife": "0108",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AYD_DIREK",
+    "BOX",
+    "HAT_AG_YERALTI",
+    "PANO",
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 739
+  },
+  {
+   "cins": "TRAFO_BİNASI",
+   "tanim": "MOD-2 TR BİNASI",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 5
+  },
+  {
+   "cins": "TRAFO_GENLEŞME_TANKLI",
+   "tanim": "31,5 kV 100 kVA Gen. Tank. ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "DM",
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 4
+  },
+  {
+   "cins": "TRAFO_GENLEŞME_TANKLI",
+   "tanim": "31,5 kV 160 kVA Gen. Tank. ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 14
+  },
+  {
+   "cins": "TRAFO_GENLEŞME_TANKLI",
+   "tanim": "31,5 kV 250 kVA Gen. Tank. ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "DM",
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 11
+  },
+  {
+   "cins": "TRAFO_GENLEŞME_TANKLI",
+   "tanim": "31,5 kV 50 kVA Gen. Tank. ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR",
+   "tanim": "6,5 U",
+   "birim": "mt/kg",
+   "katsayi": 7.09,
+   "tarife": "0107",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "ENH_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 199
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR",
+   "tanim": "L-40",
+   "birim": "mt/kg",
+   "katsayi": 2.42,
+   "tarife": "0107",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "ENH_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 29
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR",
+   "tanim": "L-50",
+   "birim": "mt/kg",
+   "katsayi": 3.77,
+   "tarife": "0107",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "ENH_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 111
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR",
+   "tanim": "L-60",
+   "birim": "mt/kg",
+   "katsayi": 5.24,
+   "tarife": "0107",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 134
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR",
+   "tanim": "L-65",
+   "birim": "mt/kg",
+   "katsayi": 6.83,
+   "tarife": "0107",
+   "durumlar": [
+    "DM"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "ENH_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 401
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "G-6,5 U",
+   "birim": "mt/kg",
+   "katsayi": 7.09,
+   "tarife": "0107",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "ENH_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 1564
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "G-L-40",
+   "birim": "mt/kg",
+   "katsayi": 2.42,
+   "tarife": "0107",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 83
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "G-L-50",
+   "birim": "mt/kg",
+   "katsayi": 3.77,
+   "tarife": "0107",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 495
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "G-L-60",
+   "birim": "mt/kg",
+   "katsayi": 5.24,
+   "tarife": "0107",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 11
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "G-L-65",
+   "birim": "mt/kg",
+   "katsayi": 6.83,
+   "tarife": "0107",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 315
+  },
+  {
+   "cins": "TR_DİREK",
+   "tanim": "T-15",
+   "birim": "ad/kg",
+   "katsayi": 787,
+   "tarife": "0106",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 12
+  },
+  {
+   "cins": "TR_DİREK",
+   "tanim": "T-25",
+   "birim": "ad/kg",
+   "katsayi": 887,
+   "tarife": "0106",
+   "durumlar": [
+    "DM",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 32
+  },
+  {
+   "cins": "TR_DİREK",
+   "tanim": "T-35",
+   "birim": "ad/kg",
+   "katsayi": 995,
+   "tarife": "0106",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 8
+  },
+  {
+   "cins": "TR_DİREK",
+   "tanim": "T-50",
+   "birim": "ad/kg",
+   "katsayi": 1141,
+   "tarife": "0106",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "TR_DİREK_GLV",
+   "tanim": "G-T-15",
+   "birim": "ad/kg",
+   "katsayi": 787,
+   "tarife": "0106",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 1
+  },
+  {
+   "cins": "TR_DİREK_GLV",
+   "tanim": "G-T-25",
+   "birim": "ad/kg",
+   "katsayi": 887,
+   "tarife": "0106",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 6
+  },
+  {
+   "cins": "TR_DİREK_GLV",
+   "tanim": "G-T-35",
+   "birim": "ad/kg",
+   "katsayi": 995,
+   "tarife": "0106",
+   "durumlar": [
+    "M",
+    "MEVCUT"
+   ],
+   "rol": "ana",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 28
+  },
+  {
+   "cins": "TUTANAKLI_İŞLER",
+   "tanim": "HAVUZLU BETON KÖŞK TEMELİ",
+   "birim": "m²/m²",
+   "katsayi": 1,
+   "tarife": "0102",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "TUTANAKLI_İŞLER",
+   "tanim": "KOT YÜKSELTİLMESİ İNŞAAT ATAŞMANI",
+   "birim": "m²/m²",
+   "katsayi": 1,
+   "tarife": "0717",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_MERKEZI"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "TUTANAKLI_İŞLER",
+   "tanim": "MALZEME MUTABAKATI EKSİK TUTANAGI",
+   "birim": "tl/tl",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "M+M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kullanim": 13
+  },
+  {
+   "cins": "YATAY_DELGİ",
+   "tanim": "F-150 YYDS",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "sondaj",
+   "nesneler": [
+    "SONDAJ"
+   ],
+   "kullanim": 9
+  },
+  {
+   "cins": "YATAY_DELGİ",
+   "tanim": "F-300 YYDS",
+   "birim": "mt/mt",
+   "katsayi": 1,
+   "tarife": "0104",
+   "durumlar": [
+    "MEVCUT"
+   ],
+   "rol": "sondaj",
+   "nesneler": [
+    "SONDAJ"
+   ],
+   "kullanim": 2
+  },
+  {
+   "cins": "ŞEFFAF_TÜP_AMPULLER",
+   "tanim": "150 W SOD.BUH.AMP. ŞEF. TÜP. (YÜK.BAS.-ATEŞLEMELİ T.) ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK"
+   ],
+   "kullanim": 3
+  },
+  {
+   "cins": "ŞEFFAF_TÜP_AMPULLER",
+   "tanim": "70 W SOD.BUH.AMP. ŞEF. TÜP. (YÜK.BAS.-ATEŞLEMELİ T.) ",
+   "birim": "ad/ad",
+   "katsayi": 1,
+   "tarife": "0107",
+   "durumlar": [
+    "M"
+   ],
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK",
+    "TRAFO_DIREGI"
+   ],
+   "kullanim": 616
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+bin/
+obj/
+*.user
+*.suo
+.vs/
+cikti/
+paket/SebekeHakedis-*/
+# Gerçek proje verileri depoya konmaz
+*.dwg
+*.bak
+*.dwl
+*.dwl2
+ornek-veri/

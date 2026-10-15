@@ -1,0 +1,47 @@
+{
+  "bicim": "sebeke-hakedis.cad-dokum",
+  "surum": 1,
+  "kaynak": "ornek.dwg (uydurma test verisi)",
+  "varliklar": [
+    {"h": "B2", "tur": "POLYLINE", "katman": "SC_PROJE", "kapali": true,
+     "kose": [[0, 0], [1000, 0], [1000, 1000], [0, 1000]],
+     "xd": {"FULLREG": ["BÜYÜK PROJE AG-YG(OG) VE AYDINLATMA ELEKTRİK TESİSİ;25.38.03.01.00001;"]}},
+    {"h": "B1", "tur": "POLYLINE", "katman": "SC_PROJE", "kapali": true,
+     "kose": [[100, 100], [300, 100], [300, 300], [100, 300]],
+     "xd": {"FULLREG": ["KÜÇÜK PROJE İLAVE TR AG-YG(OG) VE AYDINLATMA ELEKTRİK TESİSİ;25.38.03.02.00002;"]}},
+
+    {"h": "G1", "tur": "INSERT", "katman": "GPS", "blok": "GPS", "x": 210.5, "y": 220.25, "aci": 0,
+     "oz": {"METIN1": "SC430", "METIN2": "AD2-120", "METIN3": "", "METIN4": "", "METIN5": "", "METIN6": ""},
+     "xd": {"HAKNO": ["2"], "ZKOORD": ["1476,597"]}},
+
+    {"h": "A1", "tur": "INSERT", "katman": "SC_2.HAK.AGDİR", "blok": "*U12", "x": 200, "y": 200, "aci": 0,
+     "oz": {"SIRA_NO": "A1", "GIS_ID": "SC77", "CİNS": "AG_DEMİR_GLV", "TİP": "G-10I", "DURUM": "M"},
+     "xd": {"HANDLE": ["A1"], "GIS": ["A1;SC77;AG_DEMİR_GLV;G-10I;M"], "KONTROL": ["True"],
+            "NIT": ["AG_DEMİR_GLV;G-10I;M;0;1;ad/kg;209;209;,00;2;0107;;322"],
+            "MALZEME": ["TRAVERS_VE_KONSOLLAR_GLV;G-L-50;M+M;0;9,8;mt/kg;3,77;36,946;,00;2;0107;323;True"]}},
+    {"h": "A2", "tur": "INSERT", "katman": "SC_1.HAK.AGDİR", "blok": "*U13", "x": 1100, "y": 500, "aci": 1.5708,
+     "xd": {"GIS": ["A2;SC99;AG_DEMİR_GLV;G-K1;M"], "KONTROL": ["False"],
+            "NIT": ["AG_DEMİR_GLV;G-K1;M;0;1;ad/kg;326;326;,00;1;0107;;324"]}},
+    {"h": "A3", "tur": "INSERT", "katman": "SC_DEMONTAJ", "blok": "DEMONTAJ_AG_DİR", "x": 250, "y": 250, "aci": 0,
+     "xd": {"GIS": ["A3;HE1287/03-45;AG_DEMİR;10I;DM"], "KONTROL": ["True"],
+            "NIT": ["AG_DEMİR;10I;DM;0;1;ad/kg;209;209;,00;2;0107;KESİK;298"]}},
+
+    {"h": "L1", "tur": "POLYLINE", "katman": "SC_2.HAK.AG_HAV_HAT", "kapali": false,
+     "kose": [[150, 150], [250, 150]],
+     "xd": {"HAT": ["AG_İLETKEN;4P+R;;DM+M;0;100;mt/mt;1;100;0,00;2;0107;500;True"], "ANAKESIT": ["4P+R"], "ETK": ["T1"], "KONTROL": ["True"]}},
+    {"h": "T1", "tur": "TEXT", "katman": "SC_2.HAK.AG_HAV_HAT", "x": 200, "y": 152, "metin": "[4P+R]/100m/(L1)"},
+    {"h": "L2", "tur": "POLYLINE", "katman": "SC_1.HAK.AG_HAV_HAT", "kapali": false,
+     "kose": [[400, 400], [400, 500]],
+     "xd": {"HAT": ["ALPEK_KABLOLAR;3X50/16+70 ALPEK;;M;0;101;mt/mt;1;101;0,00;1;0107;501;True"], "ANAKESIT": ["3X50/16+70 ALPEK"], "KONTROL": ["True"]}},
+
+    {"h": "K1", "tur": "POLYLINE", "katman": "SC_KABLO_KANALI", "kapali": false,
+     "kose": [[120, 120], [120, 145]],
+     "xd": {"GIS": ["Xs;Xe;25;100;40;40"], "KONTROL": ["True"],
+            "NIT": ["12;TOPRAK;M+M;0;25;mt/m³;1;10;0,00;2;0104;600;True"]}},
+
+    {"h": "S1", "tur": "POLYLINE", "katman": "SC_YATAY_SONDAJ", "kapali": false,
+     "kose": [[130, 130], [160, 130]],
+     "xd": {"GIS": [";;30"], "KONTROL": ["False"],
+            "NIT": ["YATAY_DELGİ;F-150 YYDS;M;0;30;mt/mt;1;30;0,00;1;0104;700;False"]}}
+  ]
+}

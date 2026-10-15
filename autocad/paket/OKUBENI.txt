@@ -1,0 +1,33 @@
+ŞEBEKE HAKEDİŞ — AutoCAD eklentisi
+==================================
+
+Desteklenen sürümler: AutoCAD 2016–2024 ve AutoCAD 2025 ve sonrası
+(Map 3D, Civil 3D gibi AutoCAD tabanlı ürünler dahil; AutoCAD LT desteklenmez).
+
+KURULUM
+1. Bu zip dosyasını bir klasöre çıkarın.
+2. AutoCAD açıksa kapatın.
+3. KUR.bat dosyasına çift tıklayın.
+   Windows "bilgisayarınız korundu" uyarısı verirse: "Ek bilgi" → "Yine de çalıştır".
+4. AutoCAD'i açın. Şeritte "ŞEBEKE HAKEDİŞ" sekmesi görünür.
+   Güvenlik uyarısı çıkarsa "Her zaman yükle" (Always Load) seçin.
+
+ELLE KURULUM (KUR.bat çalışmazsa)
+- SebekeHakedis.bundle klasörünü şuraya kopyalayın:
+  %APPDATA%\Autodesk\ApplicationPlugins
+  (Dosya Gezgini adres çubuğuna yazıp Enter'a basın.)
+
+KOMUTLAR
+  SH_RAPOR       Açık PROMAGIS çiziminden Durum Tespit raporu (Excel)
+  SH_ICEAL       Çizimi ortak proje dosyasına aktarır (.sebeke.json) — telefon uygulaması bunu açar
+  SH_PROJERAPOR  Proje dosyasından Durum Tespit raporu
+  SH_OZET        Çizimdeki bölge, eleman, hat, kanal sayıları
+  SH_SERIT       Şerit sekmesi kaybolursa yeniden kurar
+  SH_HAKKINDA    Sürüm bilgisi
+
+KALDIRMA
+  KALDIR.bat dosyasını çalıştırın, AutoCAD'i yeniden başlatın.
+
+SORUN OLURSA
+  Hata ayrıntısı şu dosyaya yazılır: %TEMP%\SebekeHakedis_hata.txt
+  SH_DOKUM komutu, çizimin teknik dökümünü destek için kaydeder.

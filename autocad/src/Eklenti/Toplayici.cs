@@ -1,0 +1,181 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
+using SebekeHakedis.Cekirdek;
+
+namespace SebekeHakedis.Eklenti
+{
+    /// <summary>
+    /// Açık çizimin model alanındaki nesneleri çekirdeğin anladığı yalın biçime (CadVarlik) çevirir.
+    /// Yalnız okuma yapar; çizimde hiçbir şeyi değiştirmez.
+    /// </summary>
+    internal static class Toplayici
+    {
+        public static List<CadVarlik> Topla(Database db)
+        {
+            var liste = new List<CadVarlik>();
+            var etiketler = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var tr = db.TransactionManager.StartOpenCloseTransaction())
+            {
+                var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                var ms = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+                foreach (ObjectId id in ms)
+                {
+                    Entity ent;
+                    try { ent = tr.GetObject(id, OpenMode.ForRead, false) as Entity; }
+                    catch { continue; }
+                    if (ent == null) continue;
+
+                    var xd = XdataOku(ent);
+                    if (xd.Count == 0) continue; // PROMAGIS nesneleri her zaman genişletilmiş veri taşır
+
+                    var v = Cevir(ent, tr);
+                    if (v == null) continue;
+                    v.Xd = xd;
+                    liste.Add(v);
+
+                    List<string> etk;
+                    if (xd.TryGetValue("ETK", out etk)) foreach (var h in etk) if (!string.IsNullOrEmpty(h)) etiketler.Add(h);
+                }
+
+                // Hat etiketleri (ETK ile bağlı yazılar) ayrıca alınır
+                foreach (var h in etiketler)
+                {
+                    ObjectId id;
+                    if (!TanitiiciylaBul(db, h, out id)) continue;
+                    Entity ent;
+                    try { ent = tr.GetObject(id, OpenMode.ForRead, false) as Entity; }
+                    catch { continue; }
+                    var v = ent == null ? null : Cevir(ent, tr);
+                    if (v != null) liste.Add(v);
+                }
+                tr.Commit();
+            }
+            return liste;
+        }
+
+        private static CadVarlik Cevir(Entity ent, Transaction tr)
+        {
+            var v = new CadVarlik { H = ent.Handle.ToString(), Katman = ent.Layer };
+
+            if (ent is BlockReference br)
+            {
+                v.Tur = "INSERT";
+                v.X = br.Position.X; v.Y = br.Position.Y; v.Z = br.Position.Z;
+                v.Aci = br.Rotation;
+                v.Blok = BlokAdi(br, tr);
+                foreach (ObjectId aid in br.AttributeCollection)
+                {
+                    AttributeReference ar;
+                    try { ar = tr.GetObject(aid, OpenMode.ForRead, false) as AttributeReference; }
+                    catch { continue; }
+                    if (ar != null && !string.IsNullOrEmpty(ar.Tag) && !v.Oz.ContainsKey(ar.Tag)) v.Oz[ar.Tag] = ar.TextString ?? "";
+                }
+                return v;
+            }
+            if (ent is Polyline pl)
+            {
+                v.Tur = "LWPOLYLINE";
+                v.Kapali = pl.Closed;
+                for (int i = 0; i < pl.NumberOfVertices; i++)
+                {
+                    Point2d p = pl.GetPoint2dAt(i);
+                    v.Kose.Add(new[] { p.X, p.Y });
+                }
+                return v;
+            }
+            if (ent is Polyline2d p2)
+            {
+                v.Tur = "POLYLINE";
+                v.Kapali = p2.Closed;
+                foreach (ObjectId vid in p2)
+                {
+                    Vertex2d vx;
+                    try { vx = tr.GetObject(vid, OpenMode.ForRead, false) as Vertex2d; }
+                    catch { continue; }
+                    if (vx == null || vx.VertexType == Vertex2dType.SplineControlVertex) continue;
+                    v.Kose.Add(new[] { vx.Position.X, vx.Position.Y });
+                }
+                return v;
+            }
+            if (ent is Polyline3d p3)
+            {
+                v.Tur = "POLYLINE";
+                v.Kapali = p3.Closed;
+                foreach (ObjectId vid in p3)
+                {
+                    PolylineVertex3d vx;
+                    try { vx = tr.GetObject(vid, OpenMode.ForRead, false) as PolylineVertex3d; }
+                    catch { continue; }
+                    if (vx == null || vx.VertexType == Vertex3dType.ControlVertex) continue;
+                    v.Kose.Add(new[] { vx.Position.X, vx.Position.Y });
+                }
+                return v;
+            }
+            if (ent is DBText t)
+            {
+                v.Tur = "TEXT";
+                v.X = t.Position.X; v.Y = t.Position.Y;
+                v.Metin = t.TextString ?? "";
+                return v;
+            }
+            if (ent is MText mt)
+            {
+                v.Tur = "MTEXT";
+                v.X = mt.Location.X; v.Y = mt.Location.Y;
+                v.Metin = mt.Text ?? "";
+                return v;
+            }
+            return null;
+        }
+
+        private static string BlokAdi(BlockReference br, Transaction tr)
+        {
+            try
+            {
+                var id = br.IsDynamicBlock ? br.DynamicBlockTableRecord : br.BlockTableRecord;
+                var btr = tr.GetObject(id, OpenMode.ForRead, false) as BlockTableRecord;
+                return btr != null ? btr.Name : br.Name;
+            }
+            catch { return br.Name; }
+        }
+
+        public static Dictionary<string, List<string>> XdataOku(DBObject o)
+        {
+            var d = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            ResultBuffer rb = o.XData;
+            if (rb == null) return d;
+            using (rb)
+            {
+                List<string> mevcut = null;
+                foreach (TypedValue tv in rb)
+                {
+                    if (tv.TypeCode == (short)DxfCode.ExtendedDataRegAppName)
+                    {
+                        string ad = Convert.ToString(tv.Value, CultureInfo.InvariantCulture) ?? "";
+                        if (!d.TryGetValue(ad, out mevcut)) d[ad] = mevcut = new List<string>();
+                        continue;
+                    }
+                    if (mevcut == null) continue;
+                    mevcut.Add(Convert.ToString(tv.Value, CultureInfo.InvariantCulture) ?? "");
+                }
+            }
+            return d;
+        }
+
+        private static bool TanitiiciylaBul(Database db, string hex, out ObjectId id)
+        {
+            id = ObjectId.Null;
+            long n;
+            if (!long.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out n)) return false;
+            try
+            {
+                id = db.GetObjectId(false, new Handle(n), 0);
+                return !id.IsNull && !id.IsErased;
+            }
+            catch { return false; }
+        }
+    }
+}

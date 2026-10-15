@@ -1,0 +1,109 @@
+using System;
+using System.Collections.Generic;
+
+namespace SebekeHakedis.Cekirdek
+{
+    public static class Geometri
+    {
+        public static double Uzunluk(IList<double[]> kose)
+        {
+            double t = 0;
+            for (int i = 1; i < kose.Count; i++) t += Mesafe(kose[i - 1], kose[i]);
+            return t;
+        }
+
+        public static double Mesafe(double[] a, double[] b)
+        {
+            double dx = b[0] - a[0], dy = b[1] - a[1];
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        /// <summary>Çizginin uzunluğunun yarısındaki nokta.</summary>
+        public static double[] OrtaNokta(IList<double[]> kose)
+        {
+            if (kose.Count == 0) return null;
+            if (kose.Count == 1) return kose[0];
+            double yarim = Uzunluk(kose) / 2, t = 0;
+            for (int i = 1; i < kose.Count; i++)
+            {
+                double d = Mesafe(kose[i - 1], kose[i]);
+                if (t + d >= yarim && d > 0)
+                {
+                    double o = (yarim - t) / d;
+                    return new[] { kose[i - 1][0] + (kose[i][0] - kose[i - 1][0]) * o, kose[i - 1][1] + (kose[i][1] - kose[i - 1][1]) * o };
+                }
+                t += d;
+            }
+            return kose[kose.Count - 1];
+        }
+
+        /// <summary>Nokta çokgenin içinde mi (ışın yöntemi).</summary>
+        public static bool Icinde(double[] p, IList<double[]> cokgen)
+        {
+            bool ic = false;
+            int n = cokgen.Count;
+            for (int i = 0, j = n - 1; i < n; j = i++)
+            {
+                double xi = cokgen[i][0], yi = cokgen[i][1], xj = cokgen[j][0], yj = cokgen[j][1];
+                if ((yi > p[1]) != (yj > p[1]))
+                {
+                    double xk = xj + (p[1] - yj) * (xi - xj) / (yi - yj);
+                    if (p[0] < xk) ic = !ic;
+                }
+            }
+            return ic;
+        }
+
+        public static double Alan(IList<double[]> cokgen)
+        {
+            double s = 0;
+            int n = cokgen.Count;
+            for (int i = 0, j = n - 1; i < n; j = i++) s += cokgen[j][0] * cokgen[i][1] - cokgen[i][0] * cokgen[j][1];
+            return Math.Abs(s) / 2;
+        }
+
+        public static double CokgeneMesafe(double[] p, IList<double[]> cokgen)
+        {
+            double en = double.MaxValue;
+            int n = cokgen.Count;
+            for (int i = 0, j = n - 1; i < n; j = i++) en = Math.Min(en, DogruParcasinaMesafe(p, cokgen[j], cokgen[i]));
+            return en;
+        }
+
+        public static double DogruParcasinaMesafe(double[] p, double[] a, double[] b)
+        {
+            double dx = b[0] - a[0], dy = b[1] - a[1];
+            double l2 = dx * dx + dy * dy;
+            if (l2 == 0) return Mesafe(p, a);
+            double t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2;
+            t = Math.Max(0, Math.Min(1, t));
+            double qx = a[0] + t * dx, qy = a[1] + t * dy;
+            double ex = p[0] - qx, ey = p[1] - qy;
+            return Math.Sqrt(ex * ex + ey * ey);
+        }
+
+        /// <summary>
+        /// Noktanın bölgesi: içinde kaldığı en küçük bölge; hiçbirinin içinde değilse en yakın bölge.
+        /// PROMAGIS raporuyla 22.048 satırın %99'unda aynı sonucu verir.
+        /// </summary>
+        public static Bolge BolgeSec(double[] p, IList<Bolge> bolgeler)
+        {
+            if (p == null || bolgeler.Count == 0) return null;
+            Bolge secilen = null;
+            foreach (var b in bolgeler)
+            {
+                if (b.Sinir.Count < 3) continue;
+                if (Icinde(p, b.Sinir) && (secilen == null || b.Alan < secilen.Alan)) secilen = b;
+            }
+            if (secilen != null) return secilen;
+            double en = double.MaxValue;
+            foreach (var b in bolgeler)
+            {
+                if (b.Sinir.Count < 2) continue;
+                double d = CokgeneMesafe(p, b.Sinir);
+                if (d < en) { en = d; secilen = b; }
+            }
+            return secilen;
+        }
+    }
+}

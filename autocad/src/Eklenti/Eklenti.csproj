@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Şebeke Hakediş AutoCAD eklentisi.
+    İki derleme çıkar:
+      net46           → AutoCAD 2016–2024 (.NET Framework)
+      net8.0-windows  → AutoCAD 2025 ve sonrası (.NET 8)
+    AutoCAD başvuru dosyaları NuGet'ten gelir ve pakete konmaz (AutoCAD'in kendi dosyaları kullanılır).
+  -->
+
+  <PropertyGroup>
+    <TargetFrameworks>net46;net8.0-windows</TargetFrameworks>
+    <AssemblyName>SebekeHakedis</AssemblyName>
+    <RootNamespace>SebekeHakedis.Eklenti</RootNamespace>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Version>0.1.0</Version>
+    <Product>Şebeke Hakediş</Product>
+    <Company>Şebeke Hakediş</Company>
+    <Description>Elektrik dağıtım şebekesi hakediş ve durum tespit eklentisi</Description>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
+    <SatelliteResourceLanguages>tr</SatelliteResourceLanguages>
+    <NoWarn>$(NoWarn);CS0618;NU1701;MSB3270</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Cekirdek\**\*.cs" Link="Cekirdek\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+    <PackageReference Include="AutoCAD.NET" Version="20.1.0" ExcludeAssets="runtime" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.IO.Compression" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
+    <PackageReference Include="AutoCAD.NET" Version="25.0.1" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+</Project>
