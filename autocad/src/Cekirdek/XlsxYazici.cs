@@ -247,7 +247,7 @@ namespace SebekeHakedis.Cekirdek
 
         private static double OtomatikGenislik(Sayfa s, int c)
         {
-            int en = c < s.Basliklar.Count ? Math.Min(s.Basliklar[c].Length, 18) : 8;
+            int en = c < s.Basliklar.Count ? Math.Min(s.Basliklar[c].Length + 3, 22) : 8;
             int bak = 0;
             foreach (var satir in s.Satirlar)
             {

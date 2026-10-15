@@ -17,6 +17,8 @@ namespace SebekeHakedis.Eklenti
 
         public static void Kur()
         {
+            // Çalışma alanı değişince AutoCAD şeridi yeniden kurar; sekmemizi geri ekle.
+            try { AcApp.SystemVariableChanged += SistemDegiskeniDegisti; } catch { }
             if (ComponentManager.Ribbon == null)
             {
                 if (!_bekliyor)
@@ -27,6 +29,25 @@ namespace SebekeHakedis.Eklenti
                 return;
             }
             Olustur();
+        }
+
+        private static void SistemDegiskeniDegisti(object sender, Autodesk.AutoCAD.ApplicationServices.SystemVariableChangedEventArgs e)
+        {
+            if (!string.Equals(e.Name, "WSCURRENT", StringComparison.OrdinalIgnoreCase)) return;
+            AcApp.Idle += BostaYenidenKur;
+        }
+
+        private static void BostaYenidenKur(object sender, EventArgs e)
+        {
+            AcApp.Idle -= BostaYenidenKur;
+            try
+            {
+                var serit = ComponentManager.Ribbon;
+                if (serit == null) return;
+                foreach (RibbonTab t in serit.Tabs) if (t.Id == SekmeKimligi) return;
+                Olustur();
+            }
+            catch { }
         }
 
         private static void SeritHazir(object sender, RibbonItemEventArgs e)
