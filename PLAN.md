@@ -14,8 +14,8 @@
 | Faz | Kapsam | Durum |
 | --- | --- | --- |
 | 1 | Ortak temel: proje dosyası biçimi, rapor katsayıları, malzeme kataloğu | tamam |
-| 2 | AutoCAD eklentisi 1: şerit menü, PROMAGIS içe alma, Durum Tespit raporu | test bekliyor |
-| 3 | Mobil tasarım: Stitch ekran listesi ve istemleri | sırada |
+| 2 | AutoCAD eklentisi 1: şerit menü, PROMAGIS içe alma, Durum Tespit raporu | AutoCAD'de deneme bekliyor (v0.1.2) |
+| 3 | Mobil tasarım: Stitch ekran listesi ve istemleri ([android/tasarim/STITCH-ISTEMLERI.md](android/tasarim/STITCH-ISTEMLERI.md)) | istemler hazır, Stitch bekliyor |
 | 4 | AutoCAD eklentisi 2: nokta alma, direk/box/trafo, hat, kanal, sondaj, bölge, malzeme düzenleme | sırada |
 | 5 | Mobil uygulama 1: proje açma, harita, GNSS ile eleman koyma, hat, hakediş/bölge, dışa aktarma | sırada |
 | 6 | Mobilde rapor ve malzeme; ardından bulut eşitleme | sırada |
