@@ -1,0 +1,32 @@
+name: ci-deneme
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/ci-deneme.yml']
+permissions:
+  contents: write
+jobs:
+  deneme:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ortam bilgisi
+        shell: pwsh
+        run: |
+          dotnet --list-sdks | Out-File -Encoding utf8 ortam.txt
+          dotnet nuget list source | Out-File -Append -Encoding utf8 ortam.txt
+          Invoke-RestMethod https://api.nuget.org/v3-flatcontainer/autocad.net/index.json | ConvertTo-Json -Compress | Out-File -Append -Encoding utf8 ortam.txt
+          Invoke-RestMethod https://api.nuget.org/v3-flatcontainer/autocad.net.core/index.json | ConvertTo-Json -Compress | Out-File -Append -Encoding utf8 ortam.txt
+          Invoke-RestMethod https://api.nuget.org/v3-flatcontainer/autocad.net.model/index.json | ConvertTo-Json -Compress | Out-File -Append -Encoding utf8 ortam.txt
+      - name: Sonucu ci-sonuc dalina yaz
+        shell: pwsh
+        run: |
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          Copy-Item ortam.txt $env:RUNNER_TEMP\ortam.txt
+          git fetch origin ci-sonuc 2>$null
+          if ($LASTEXITCODE -eq 0) { git checkout -B ci-sonuc origin/ci-sonuc } else { git checkout --orphan ci-sonuc; git rm -rf . 2>$null }
+          Copy-Item $env:RUNNER_TEMP\ortam.txt ortam.txt
+          git add ortam.txt
+          git commit -m "ci: ortam bilgisi"
+          git push origin ci-sonuc
