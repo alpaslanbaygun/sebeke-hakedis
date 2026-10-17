@@ -59,9 +59,10 @@ Güncellemek için yeni zip ile aynı adımları tekrarlayın. Kaldırmak için 
 
 ### B. Sahada sıfırdan başlıyorsanız
 
-1. **Telefon**: **Projeler › Yeni Proje**. Proje adını, **koordinat dilimini** (Elazığ, Malatya, Erzincan: 39°),
-   hakediş numarasını ve katman ön ekini (ör. SC) girin.
-2. **Bölgeler** ekranında alt projeleri (ad, proje kodu, sınır) tanımlayın. Rapordaki PROJE sütunu buradan gelir.
+1. **Telefon**: **Projeler › Yeni Proje**. Proje adını, hakediş numarasını, GIS ön ekini (ör. SC) ve
+   **koordinat dilimini** (Elazığ, Malatya, Erzincan: TM 39°) girin. “Rapor başlığı” kutularına ilk alt projenin
+   adını ve proje kodunu yazın (rapordaki PROJE ve PROJE KODU sütunları buradan gelir).
+2. Başka alt projeler varsa **Bölgeler › Yeni Bölge** ile ekleyin (ad, proje kodu, sınır).
 3. Sahada çalışın (Bölüm 3), sonra proje dosyasını Drive'a gönderin.
 4. **AutoCAD**: yeni boş bir çizim açın › **Telefondan Al**. Her şey PROMAGIS katman ve bilgi biçiminde
    çizilir, görünüm projeye yaklaşır. Bu çizimi PROMAGIS çizimi gibi kullanabilirsiniz.
