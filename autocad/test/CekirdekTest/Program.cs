@@ -32,6 +32,7 @@ namespace SebekeHakedis.Test
                     case "dogrula": Dogrula(args[1], args[2], args[3]); break;
                     case "gidisdonus": GidisDonus(ProjeDosyasi.Oku(File.ReadAllText(args[1], Encoding.UTF8)), args[1]); break;
                     case "aktarim": AktarimDene(args[1], args[2]); break;
+                    case "bosaaktar": BosaAktar(args[1]); break;
                     case "katsayilar": File.WriteAllText(args[1], Json.Yaz(Katsayilar.Varsayilan.JsonYap()) + "\n", new UTF8Encoding(false)); Console.WriteLine("yazıldı: " + args[1]); break;
                     default: Console.WriteLine("Bilinmeyen komut: " + komut); return 2;
                 }
@@ -429,6 +430,31 @@ namespace SebekeHakedis.Test
             // Etiket ve sayı yazımı
             var h0 = p.Hatlar.Count > 0 ? p.Hatlar[0] : null;
             if (h0 != null) Esit(h0.Etiket != "" ? geri.Hatlar.Find(x => x.Id == h0.Id).Etiket.StartsWith(h0.Etiket.Split('/')[0], StringComparison.Ordinal) : true, true, "hat etiketi okunur");
+        }
+
+        /// <summary>Telefonun yazdığı bir proje dosyası boş çizime aktarılır, geri okunur; ikinci aktarım iş çıkarmamalı.</summary>
+        private static void BosaAktar(string projeYolu)
+        {
+            var tel = ProjeDosyasi.Oku(File.ReadAllText(projeYolu, Encoding.UTF8));
+            Console.WriteLine($"Proje: {tel.Ad} · bölge {tel.Bolgeler.Count}, nokta {tel.Noktalar.Count}, eleman {tel.Elemanlar.Count}, hat {tel.Hatlar.Count}, kanal {tel.Kanallar.Count}, sondaj {tel.Sondajlar.Count}");
+            var cizim = new List<CadVarlik>();
+            var plan = Aktarim.Planla(cizim, tel, string.IsNullOrEmpty(tel.KatmanOnEki) ? "SC" : tel.KatmanOnEki);
+            Console.WriteLine($"1. aktarım: yeni {plan.Sayi("yeni")} · güncelle {plan.Sayi("guncelle")} · uyarı {plan.Uyarilar.Count}");
+            foreach (var u in plan.Uyarilar) Console.WriteLine("  uyarı: " + u);
+            Uygula(cizim, plan, false);
+            var geri = PromagisOkuyucu.Oku(cizim, "bos.dwg");
+            Esit(0, geri.Uyarilar.Count, "okuma uyarısı yok");
+            var a = RaporSatirlari(tel);
+            var b = RaporSatirlari(geri);
+            Esit(a.Count, b.Count, "rapor satır sayısı aynı");
+            double ta = 0, tb = 0;
+            foreach (var r in new DurumTespit(tel).Satirlar) ta += r.Toplam;
+            foreach (var r in new DurumTespit(geri).Satirlar) tb += r.Toplam;
+            Esit(SayiCoz.Temiz(ta, 3), SayiCoz.Temiz(tb, 3), "rapor toplamı aynı");
+            plan = Aktarim.Planla(cizim, tel, string.IsNullOrEmpty(tel.KatmanOnEki) ? "SC" : tel.KatmanOnEki);
+            Console.WriteLine($"2. aktarım: yeni {plan.Sayi("yeni")} · güncelle {plan.Sayi("guncelle")} · aynı {plan.Ayni}");
+            foreach (var x in plan.Adimlar) Console.WriteLine("  " + x.Islem + " " + x.Ad + " · " + x.Fark);
+            Esit(0, plan.Adimlar.Count, "ikinci aktarım iş çıkarmaz");
         }
 
         /// <summary>Gerçek bir çizim dökümü ile o çizimden alınmış proje dosyası: değişiklik yoksa iş çıkmamalı.</summary>
