@@ -17,7 +17,7 @@ Dosya telefon ile bilgisayar arasında **Google Drive** üzerinden taşınır. B
 ### Telefon
 
 1. Telefondan GitHub'a girin (depo size özeldir; kendi hesabınızla giriş yapın):
-   **alpaslanbaygun/sebeke-hakedis › Releases**.
+   **sebeke-hakedis** deposu › **Releases**.
 2. En üstteki **“Telefon uygulaması 0.2.x”** sürümünü açın, `SebekeHakedis-0.2.x.apk` dosyasına dokunun.
 3. İndirme bitince dosyayı açın. Telefon “bilinmeyen kaynak” uyarısı verirse **Ayarlar › Bu kaynağa izin ver**.
 4. **Yükle**. Uygulama “Şebeke Hakediş” adıyla görünür.

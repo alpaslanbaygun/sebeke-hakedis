@@ -60,4 +60,4 @@ Telefon tarafı: her marka Bluetooth GNSS alıcısı (NMEA) + NTRIP (TUSAGA-Akti
 - Bilgisayarsız deneme: `dotnet run --project autocad/test/CekirdekTest -- ornek`,
   `node android/araclar/cekirdek-test.js`.
 - Gerçek proje dosyaları (DWG, proje verisi) depoya konmaz; testler uydurma örneklerle çalışır.
-- Plan ve fazlar: [PLAN.md](PLAN.md)
+- Plan ve fazlar: [PLAN.md](PLAN.md) · Başka hesaba / oturuma devir: [DEVIR.md](DEVIR.md)
