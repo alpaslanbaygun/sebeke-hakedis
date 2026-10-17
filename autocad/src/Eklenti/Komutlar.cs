@@ -174,8 +174,9 @@ namespace SebekeHakedis.Eklenti
             ed.WriteMessage("\n  SH_ICEAL       Telefona gönder: çizimi proje dosyasına yaz (.sebeke.json ya da .volt.json)");
             ed.WriteMessage("\n  SH_PROJEAL     Telefondan al: telefondaki değişiklikleri çizime aktar");
             ed.WriteMessage("\n  Çizim");
+            ed.WriteMessage("\n  SH_CIZ         Şeritten hızlı çizim (seçili kategori / tip ile eleman koy ya da hat çiz)");
             ed.WriteMessage("\n  SH_ELEMAN      Direk, box, pano, trafo, mufu koy (GIS numarası kendiliğinden)");
-            ed.WriteMessage("\n  SH_HAT         Hat çiz (direkten direğe; metraj ve etiket kendiliğinden)");
+            ed.WriteMessage("\n  SH_HAT         Hat çiz (direkten direğe parça parça; metraj, etiket ve açıklık uzunlukları kendiliğinden)");
             ed.WriteMessage("\n  SH_KANAL       Kablo kanalı çiz (hacim ölçülerden)");
             ed.WriteMessage("\n  SH_SONDAJ      Yatay sondaj çiz");
             ed.WriteMessage("\n  SH_BOLGE       Bölge (alt proje) sınırı çiz ya da var olan çizgiyi bölge yap");
@@ -184,7 +185,8 @@ namespace SebekeHakedis.Eklenti
             ed.WriteMessage("\n  SH_MALZEME     Seçilen nesnenin malzemelerini düzenle");
             ed.WriteMessage("\n  SH_METRAJ      Hat/kanal metrajını çizim uzunluğundan yeniden hesapla");
             ed.WriteMessage("\n  SH_HAKEDIS     Aktif hakedişi değiştir");
-            ed.WriteMessage("\n  SH_AYARLAR     Çizim ayarları (ön ek, ölçek, etiket, metraj payı)");
+            ed.WriteMessage("\n  SH_AYARLAR     Çizim ayarları (ön ek, ölçek, yazı yüksekliği, metraj payı, tarife)");
+            ed.WriteMessage("\n  SH_STIL        Var olan çizimi telefon görünümüne getir (renk, çizgi tipi, simge, yazı)");
             ed.WriteMessage("\n  Rapor");
             ed.WriteMessage("\n  SH_RAPOR       Bu çizimden Durum Tespit raporu (Excel)");
             ed.WriteMessage("\n  SH_PROJERAPOR  Proje dosyasından Durum Tespit raporu");

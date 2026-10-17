@@ -171,6 +171,7 @@ namespace SebekeHakedis.Eklenti
                 var secim = Pencereler.Eleman(o, null);
                 if (secim == null) return;
                 o.AyarKaydet();
+                Serit.Yenile();
                 ElemanYerlestir(o, secim);
             });
         }
@@ -256,6 +257,7 @@ namespace SebekeHakedis.Eklenti
                 var secim = Pencereler.Hat(o, null);
                 if (secim == null) return;
                 o.AyarKaydet();
+                Serit.Yenile();
                 HatZinciri(o, secim);
             });
         }
@@ -396,6 +398,64 @@ namespace SebekeHakedis.Eklenti
             var b = uclar.Count > 1 ? uclar[uclar.Count - 1] : null;
             o.Ed.WriteMessage("\nHat çizildi: " + h.Etiket + "  (" + (a != null ? a.GisId : "köşe") + " → " + (b != null ? b.GisId : "serbest uç") + ", " + L.ToString("0.00", Tr) + " m)");
             return true;
+        }
+
+        // ================= SH_CIZ: şeritten hızlı çizim =================
+
+        /// <summary>
+        /// Şeritteki eleman / hat düğmesinden gelir: seçilen tür ve tiple (durum ve hakediş şeritten) doğrudan
+        /// yerleştirmeye ya da hat çizimine başlar. Tip seçilmemişse (Katalogdan seç…) katalog penceresi türle açılır.
+        /// </summary>
+        [CommandMethod("SH_CIZ", CommandFlags.Modal)]
+        public void HizliCiz()
+        {
+            var belge = AcApp.DocumentManager.MdiActiveDocument;
+            if (belge == null) return;
+            var istek = HizliCizim.Al();
+            Komutlar.Calistir("Hızlı çizim", () =>
+            {
+                var o = Ortam.Hazirla(belge);
+                if (istek == null)
+                {
+                    o.Ed.WriteMessage("\nŞeritteki ŞEBEKE HAKEDİŞ sekmesinden bir eleman ya da hat düğmesi seçin (ya da SH_ELEMAN / SH_HAT).");
+                    return;
+                }
+                string durum = o.Ayar.SonDeger("serit.durum", o.Ayar.SonDeger(istek.Hat ? "hat.durum" : "eleman.durum", "M"));
+                int hakedis = o.Hakedis;
+                KatalogKalemi tip = null;
+                if (!string.IsNullOrEmpty(istek.Anahtar))
+                {
+                    int ayrac = istek.Anahtar.IndexOf('|');
+                    if (ayrac > 0) tip = o.Katalog.Bul(istek.Anahtar.Substring(0, ayrac), istek.Anahtar.Substring(ayrac + 1));
+                }
+                if (istek.Hat)
+                {
+                    HatSecimi secim;
+                    if (tip != null) secim = new HatSecimi { Tur = istek.Tur, Kesit = tip, Durum = durum, Hakedis = hakedis };
+                    else secim = Pencereler.Hat(o, new HatSecimi { Tur = istek.Tur, Durum = durum, Hakedis = hakedis });
+                    if (secim == null) return;
+                    o.Ayar.Son["hat.tur"] = secim.Tur;
+                    o.Ayar.Son["hat.kesit." + secim.Tur] = secim.Kesit.Anahtar;
+                    o.Ayar.Son["hat.durum"] = secim.Durum;
+                    o.AyarKaydet();
+                    Serit.Yenile();
+                    HatZinciri(o, secim);
+                }
+                else
+                {
+                    ElemanSecimi secim;
+                    if (tip != null) secim = new ElemanSecimi { Tur = istek.Tur, Tip = tip, Durum = durum, Hakedis = hakedis };
+                    else secim = Pencereler.Eleman(o, new ElemanSecimi { Tur = istek.Tur, Durum = durum, Hakedis = hakedis });
+                    if (secim == null) return;
+                    o.Ayar.Son["eleman.tur"] = secim.Tur;
+                    o.Ayar.Son["eleman.tip." + secim.Tur] = secim.Tip.Anahtar;
+                    o.Ayar.Son["eleman.cins." + secim.Tur] = secim.Tip.Cins;
+                    o.Ayar.Son["eleman.durum"] = secim.Durum;
+                    o.AyarKaydet();
+                    Serit.Yenile();
+                    ElemanYerlestir(o, secim);
+                }
+            });
         }
 
         // ================= SH_KANAL =================
@@ -834,6 +894,7 @@ namespace SebekeHakedis.Eklenti
                 var o = Ortam.Hazirla(belge);
                 if (!Pencereler.Ayarlar(o)) return;
                 o.AyarKaydet();
+                Serit.Yenile();
                 o.Ed.WriteMessage("\nAyarlar bu çizime kaydedildi.");
             });
         }
@@ -858,6 +919,7 @@ namespace SebekeHakedis.Eklenti
                 if (r.Status != PromptStatus.OK) return;
                 o.Ayar.AktifHakedis = r.Value;
                 o.AyarKaydet();
+                Serit.Yenile();
                 o.Ed.WriteMessage("\nAktif hakediş: " + r.Value + ". Yeni çizilen nesneler " + r.Value + ". hakediş katmanlarına konur.");
             });
         }

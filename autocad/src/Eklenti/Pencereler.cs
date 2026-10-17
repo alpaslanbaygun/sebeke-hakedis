@@ -349,7 +349,10 @@ namespace SebekeHakedis.Eklenti
             using (var d = new Duzen("Eleman koy — direk, box, pano, trafo, mufu", 640, 600, "Yerleştir"))
             {
                 var tur = d.Satir("Tür", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
-                foreach (var t in Turler.Elemanlar) tur.Items.Add(t);
+                var kategori = Kategoriler.Bul(o.Ayar.Kategori);
+                string istenenTur = onceki != null ? onceki.Tur : o.Ayar.SonDeger("eleman.tur", "AG_DIREK");
+                foreach (var t in KategoriTurleri(Turler.Elemanlar, kategori != null ? kategori.Elemanlar : null, istenenTur)) tur.Items.Add(t);
+                if (kategori != null && kategori.Kod != Kategoriler.Genel) d.Not("Kategori: " + kategori.Ad + " (tüm türler için şeritten \"Tümü\" seçin).");
                 var cins = d.Satir("Cins (malzeme)", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
                 d.AraBaslik("Tip (katalogdan seçin, yazarak arayın)");
                 var liste = new KatalogListesi();
@@ -406,8 +409,8 @@ namespace SebekeHakedis.Eklenti
                 durum.SelectedIndexChanged += (s, e) => dmAyarla();
                 dmAyarla();
 
-                string ilkTur = onceki != null ? onceki.Tur : o.Ayar.SonDeger("eleman.tur", "AG_DIREK");
-                tur.SelectedIndex = Math.Max(0, Array.FindIndex(Turler.Elemanlar, t => t.Kod == ilkTur));
+                string ilkTur = istenenTur;
+                tur.SelectedIndex = Math.Max(0, tur.Items.IndexOf(Turler.Eleman(ilkTur)));
                 if (onceki != null && !string.IsNullOrEmpty(onceki.Gis)) { gis.Text = onceki.Gis; elle = true; }
 
                 d.Dogrula = () =>
@@ -434,6 +437,20 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
+        /// <summary>Kategorinin türleri (Turler sırasıyla); kategori yoksa ya da "Tümü" ise hepsi. İstenen tür listede yoksa eklenir.</summary>
+        private static List<Tur> KategoriTurleri(Tur[] hepsi, string[] kategoriTurleri, string istenen)
+        {
+            var l = new List<Tur>();
+            foreach (var t in hepsi) if (kategoriTurleri == null || kategoriTurleri.Length == 0 || Array.IndexOf(kategoriTurleri, t.Kod) >= 0) l.Add(t);
+            if (!string.IsNullOrEmpty(istenen) && !l.Exists(t => t.Kod == istenen))
+            {
+                var t = Array.Find(hepsi, x => x.Kod == istenen);
+                if (t != null) l.Insert(0, t);
+            }
+            if (l.Count == 0) l.AddRange(hepsi);
+            return l;
+        }
+
         // ================= Hat =================
 
         public static HatSecimi Hat(OrtamVerisi o, HatSecimi onceki)
@@ -441,7 +458,9 @@ namespace SebekeHakedis.Eklenti
             using (var d = new Duzen("Hat çiz — AG/OG havai, yeraltı, aydınlatma, rekortman", 640, 580, "Çiz"))
             {
                 var tur = d.Satir("Hat türü", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
-                foreach (var t in Turler.Hatlar) tur.Items.Add(t);
+                var kategori = Kategoriler.Bul(o.Ayar.Kategori);
+                string istenenTur = onceki != null ? onceki.Tur : o.Ayar.SonDeger("hat.tur", "AG_HAVAI");
+                foreach (var t in KategoriTurleri(Turler.Hatlar, kategori != null ? kategori.Hatlar : null, istenenTur)) tur.Items.Add(t);
                 d.AraBaslik("Kesit / iletken (katalogdan seçin, yazarak arayın)");
                 var liste = new KatalogListesi();
                 d.Tam(liste.Kap, -1);
@@ -459,8 +478,8 @@ namespace SebekeHakedis.Eklenti
                     liste.Doldur(o.Katalog.HatKesitleri(t.Kod), son);
                 };
                 liste.Secildi += () => d.Tamam.PerformClick();
-                string ilkTur = onceki != null ? onceki.Tur : o.Ayar.SonDeger("hat.tur", "AG_HAVAI");
-                tur.SelectedIndex = Math.Max(0, Array.FindIndex(Turler.Hatlar, t => t.Kod == ilkTur));
+                string ilkTur = istenenTur;
+                tur.SelectedIndex = Math.Max(0, tur.Items.IndexOf(Turler.Hat(ilkTur)));
 
                 d.Dogrula = () =>
                 {
