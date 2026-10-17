@@ -304,13 +304,18 @@ namespace SebekeHakedis.Test
                 new Eleman { Id = "2", Tur = "AG_DIREK", Durum = "DM", Blok = "DEMONTAJ_AG_DİR" },
                 new Eleman { Id = "3", Tur = "AG_DIREK", Durum = "M+M", Blok = "YENİ_AG_DİR" },
             };
-            Esit("DEMONTAJ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "YENİ_AG_DİR" }), "blok: demontaja çevrilen direk");
-            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "M", Blok = "YENİ_AG_DİR" }), "blok: durumu aynı direk bloğunu korur");
-            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "M" }), "blok: yeni direk çizimdeki bloğu kullanır");
-            Esit("SH_TRAFO_DIREK_YENI", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "TRAFO_DIREGI", Durum = "M" }), "blok: çizimde örneği yoksa eklentinin lejant simgesi");
-            Esit("*U5", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "*U5" }), "blok: adsız blok korunur");
-            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "M", Blok = "SH_DIREK_AG_YENI" }), "blok: eklenti bloğu yerine çizimdeki PROMAGIS bloğu");
-            Esit("SH_KAFES_AG_DMM", PromagisYazici.BlokSec(new List<Eleman>(), new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "DM+M", Blok = "SH_KAFES_AG_YENI" }), "blok: eklenti bloğu duruma göre yeniden seçilir");
+            // Varsayılan (telefon görünümü): her zaman lejant simgesi, PROMAGIS bloğu olsa da
+            Esit("SH_DIREK_AG_DM", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "DM", Blok = "YENİ_AG_DİR" }), "blok (telefon): demontaja çevrilen direk");
+            Esit("SH_KAFES_AG_YENI", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "M", Blok = "YENİ_AG_DİR" }), "blok (telefon): PROMAGIS bloğu yerine lejant simgesi");
+            Esit("SH_DIREK_AG_YENI", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "M", Blok = "*U5" }), "blok (telefon): adsız blok da değişir");
+            // PROMAGIS blokları seçeneği açıkken: çizimdeki bloklara uyar
+            Esit("DEMONTAJ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "YENİ_AG_DİR" }, true), "blok: demontaja çevrilen direk");
+            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "M", Blok = "YENİ_AG_DİR" }, true), "blok: durumu aynı direk bloğunu korur");
+            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "M" }, true), "blok: yeni direk çizimdeki bloğu kullanır");
+            Esit("SH_TRAFO_DIREK_YENI", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "TRAFO_DIREGI", Durum = "M" }, true), "blok: çizimde örneği yoksa eklentinin lejant simgesi");
+            Esit("*U5", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "*U5" }, true), "blok: adsız blok korunur");
+            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "M", Blok = "SH_DIREK_AG_YENI" }, true), "blok: eklenti bloğu yerine çizimdeki PROMAGIS bloğu");
+            Esit("SH_KAFES_AG_DMM", PromagisYazici.BlokSec(new List<Eleman>(), new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "DM+M", Blok = "SH_KAFES_AG_YENI" }, true), "blok: eklenti bloğu duruma göre yeniden seçilir");
             Semboller_();
             var olcekler = new List<CadVarlik>
             {
@@ -322,12 +327,48 @@ namespace SebekeHakedis.Test
             Esit(4.0, PromagisYazici.OlcekOner(olcekler, "C", 1), "ölçek: yoksa en çok kullanılan");
             Esit(4.0, PromagisYazici.OlcekOner(new List<CadVarlik>(), "C", 4), "ölçek: boş çizimde varsayılan");
 
+            // Görünüm: telefonun lejantıyla aynı (katman adları PROMAGIS düzeninde)
             short renk; string cizgi;
             PromagisYazici.KatmanStili("SC_2.HAK.AG_YER_HAT", out renk, out cizgi);
-            Esit((short)3, renk, "katman rengi AG yeraltı");
-            Esit("HIDDENX2", cizgi, "katman çizgi tipi AG yeraltı");
-            PromagisYazici.KatmanStili("SC_DEMONTAJ", out renk, out cizgi);
-            Esit((short)9, renk, "katman rengi demontaj");
+            Esit((short)1, renk, "katman rengi AG yeraltı (telefon: ELEKTRIK-KABLO 1)");
+            Esit("DASHDOT", cizgi, "katman çizgi tipi AG yeraltı (nokta-çizgi)");
+            Stil.KatmanStili("SC_1.HAK.AG_HAV_HAT", out renk, out cizgi);
+            Esit((short)84, renk, "katman rengi AG havai (telefon 84)"); Esit("", cizgi, "AG havai düz çizgi");
+            Stil.KatmanStili("SC_1.HAK.REKORTMAN", out renk, out cizgi);
+            Esit((short)84, renk, "rekortman rengi"); Esit("DASHED", cizgi, "rekortman kesikli");
+            Stil.KatmanStili("SC_1.HAK.AGDİR", out renk, out cizgi);
+            Esit((short)108, renk, "katman rengi AG direk (yeni 108)");
+            Stil.KatmanStili("SC_DEMONTAJ", out renk, out cizgi);
+            Esit((short)2, renk, "katman rengi demontaj (telefon 2)");
+            Esit((short)120, Stil.ElemanRengi("AG_DIREK", "MEVCUT"), "eleman rengi: mevcut AG direk");
+            Esit((short)108, Stil.ElemanRengi("AG_DIREK", "M+M"), "eleman rengi: yeni AG direk");
+            Esit((short)3, Stil.ElemanRengi("AG_DIREK", "DM+M"), "eleman rengi: söküm-montaj AG direk");
+            Esit((short)2, Stil.ElemanRengi("AG_DIREK", "DM"), "eleman rengi: demontaj");
+            Esit((short)10, Stil.ElemanRengi("ENH_DIREK", "KM"), "eleman rengi: ENH direği OG paleti (yeni)");
+            Esit((short)152, Stil.ElemanRengi("AYD_DIREK", "M"), "eleman rengi: aydınlatma direği");
+            Esit((short)5, Stil.ElemanRengi("BOX", "M"), "eleman rengi: SDK 5");
+            Stil.HatStili("OG_YERALTI", "M", out renk, out cizgi);
+            Esit((short)1, renk, "hat rengi OG yeraltı"); Esit("DASHDOT", cizgi, "hat çizgi tipi OG yeraltı");
+            Stil.HatStili("AG_HAVAI", "DM", out renk, out cizgi);
+            Esit((short)2, renk, "demontaj hattı sarı"); Esit("", cizgi, "demontaj hattı düz");
+            Esit("41.73", Stil.UzunlukYazisi(41.7349), "açıklık uzunluk yazısı (telefon biçimi)");
+            Esit("SC12 G-K2", Stil.ElemanYazisi("SC12", "G-K2"), "eleman yazısı");
+            Esit("G-K2", Stil.ElemanYazisi("", "G-K2"), "eleman yazısı (GIS no yok)");
+            Esit(0.0, Stil.YaziAcisi(-10, 0), "yazı açısı: sağdan sola çizgi ters yazılmaz");
+            Esit(Math.PI / 2, Stil.YaziAcisi(0, 10), "yazı açısı: dikey çizgi aşağıdan yukarı");
+            double ox, oy, oaci;
+            Stil.OrtaParca(new List<double[]> { new[] { 0.0, 0 }, new[] { 10.0, 0 }, new[] { 10.0, 10 } }, out ox, out oy, out oaci);
+            Esit(10.0, ox, "etiket: iki parçalı hatta ikinci parça (telefonla aynı seçim)"); Esit(5.0, oy, "etiket: orta parça y");
+            var stilEl = PromagisYazici.Eleman(new Eleman { Id = "1", Tur = "AG_DIREK", GisId = "SC5", Cins = "AG_BETON", Tip = "9,3/3", Durum = "M", Hakedis = 1, Saga = 10, Yukari = 20 }, "SC", "SH_DIREK_AG_YENI", null);
+            Esit("SC5 9,3/3", stilEl.Oz[Stil.EtiketOzniteligi], "eleman tarifinde ETİKET özniteliği");
+            Esit((short)108, stilEl.Renk, "eleman tarifinde renk");
+            var stilHat = PromagisYazici.Hat(new Hat { Id = "2", Tur = "AG_YERALTI", AnaKesit = "3x95+50 Nyy Alm.", Durum = "M", Hakedis = 1, Kose = { new[] { 0.0, 0 }, new[] { 50.0, 0 } } }, "SC", null);
+            Esit((short)1, stilHat.Renk, "hat tarifinde renk"); Esit("DASHDOT", stilHat.CizgiTipi, "hat tarifinde çizgi tipi");
+            string stilFark;
+            var stilA = PromagisYazici.Eleman(new Eleman { Id = "1", Tur = "AG_DIREK", GisId = "SC5", Cins = "AG_BETON", Tip = "9,3/3", Durum = "M", Hakedis = 1 }, "SC", "SH_DIREK_AG_YENI", null);
+            var stilB = PromagisYazici.Eleman(new Eleman { Id = "1", Tur = "AG_DIREK", GisId = "SC5", Cins = "AG_BETON", Tip = "9,3/3", Durum = "M", Hakedis = 1 }, "SC", "SH_DIREK_AG_YENI", null);
+            stilB.Oz.Remove(Stil.EtiketOzniteligi); stilB.Renk = 256;
+            Esit(true, CadVarlik.Ayni(stilA, stilB, out stilFark), "karşılaştırma ETİKET ve renge bakmaz: " + stilFark);
 
             double ex, ey, eaci;
             Geometri.EtiketKonumu(new List<double[]> { new[] { 10.0, 0 }, new[] { 0.0, 0 } }, out ex, out ey, out eaci);
@@ -453,8 +494,15 @@ namespace SebekeHakedis.Test
             foreach (var v in ornekCizim) cizim.Add(CadVarlik.JsondanOku(v.JsonYap()));
             var p = PromagisOkuyucu.Oku(cizim, "ornek.dwg");
             var tel = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(p, "test"));
-            var plan = Aktarim.Planla(cizim, tel, "SC");
+            // PROMAGIS çizimi, PROMAGIS blokları korunarak (ayar açık): hiçbir iş yok
+            var plan = Aktarim.Planla(cizim, tel, "SC", true);
             Esit(0, plan.Adimlar.Count, "değişmemiş proje: iş yok");
+            // Telefon görünümü (varsayılan): PROMAGIS bloklu elemanlar lejant simgesine çevrilmek üzere güncellenir, başka iş çıkmaz
+            var stilPlani = Aktarim.Planla(cizim, tel, "SC");
+            int promagisBloklu = p.Elemanlar.FindAll(e => !string.IsNullOrEmpty(e.Blok) && !Semboller.EklentininBlogu(e.Blok)).Count;
+            Esit(promagisBloklu, stilPlani.Sayi("guncelle", "eleman"), "telefon görünümü: PROMAGIS bloklu elemanlar simgeye çevrilir");
+            Esit(0, stilPlani.Sayi("yeni"), "telefon görünümü: yeni nesne çıkmaz");
+            Esit(true, stilPlani.Adimlar.TrueForAll(x => x.Nesne == "eleman" && x.Fark.StartsWith("blok", StringComparison.Ordinal)), "telefon görünümü: tek fark blok");
             Esit(p.Bolgeler.Count + p.Noktalar.Count + p.Elemanlar.Count + p.Hatlar.Count + p.Kanallar.Count + p.Sondajlar.Count, plan.Ayni, "değişmemiş proje: hepsi aynı");
             Esit(0, plan.Silinenler.Count, "değişmemiş proje: silinen yok");
 
@@ -482,7 +530,7 @@ namespace SebekeHakedis.Test
                 Kalemler = { new Kalem { Cins = "ALPEK_KABLOLAR", Tanim = "3X50/16+70 ALPEK", Durum = "M", Miktar = 30, Birim = "mt/mt", Katsayi = 1, Toplam = 30, Hakedis = 2, Tarife = "0107", Sira = "9002", Kaynak = "HAT" } },
             };
             tel.Hatlar.Add(yeniHat);
-            plan = Aktarim.Planla(cizim, tel, "SC");
+            plan = Aktarim.Planla(cizim, tel, "SC", true);
             Esit(2, plan.Sayi("yeni"), "değişen proje: 2 yeni");
             Esit(3, plan.Sayi("guncelle"), "değişen proje: 3 güncelleme (taşınan, metrajı değişen, demontaja çevrilen)");
             Esit(true, plan.Silinenler.ContainsKey(silinen), "değişen proje: telefonda silinen kanal sorulur");
@@ -504,7 +552,7 @@ namespace SebekeHakedis.Test
             Esit(RaporSatirlari(tel).Count, RaporSatirlari(sonra).Count, "uygulandıktan sonra rapor satır sayısı");
 
             // 3) Aynı dosyayı ikinci kez almak hiçbir şeyi değiştirmemeli (yeni nesneler SH_ID ile bulunur)
-            plan = Aktarim.Planla(cizim, tel, "SC");
+            plan = Aktarim.Planla(cizim, tel, "SC", true);
             Esit(0, plan.Adimlar.Count, "ikinci alma: iş yok");
             Esit(1, plan.KimlikleEslesen > 0 ? 1 : 0, "ikinci alma: yeni nesneler kimlikle eşleşti");
             Esit(0, plan.Silinenler.Count, "ikinci alma: silinen yok");

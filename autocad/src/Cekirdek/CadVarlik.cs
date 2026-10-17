@@ -22,6 +22,10 @@ namespace SebekeHakedis.Cekirdek
         public double Olcek = 1;
         public string Metin = "";
         public bool Kapali;
+        /// <summary>Nesnenin rengi (AutoCAD renk numarası); 256 = katmana göre. Yazıcı doldurur, karşılaştırmada bakılmaz.</summary>
+        public short Renk = 256;
+        /// <summary>Nesnenin çizgi tipi (boş = katmana göre). Yazıcı doldurur, karşılaştırmada bakılmaz.</summary>
+        public string CizgiTipi = "";
         /// <summary>Blok öznitelikleri (etiket → değer).</summary>
         public Dictionary<string, string> Oz = new Dictionary<string, string>(StringComparer.Ordinal);
         /// <summary>Çoklu çizgi köşeleri: her biri [X, Y].</summary>
@@ -69,11 +73,11 @@ namespace SebekeHakedis.Cekirdek
                 if (Math.Min(da, 2 * Math.PI - da) > 1e-5) { fark = "açı"; return false; }
                 foreach (var kv in a.Oz)
                 {
-                    if (kv.Key == "SIRA_NO") continue;
+                    if (TuretilmisOznitelik(kv.Key)) continue;
                     string d;
                     if (!b.Oz.TryGetValue(kv.Key, out d) || d != kv.Value) { fark = "öznitelik " + kv.Key; return false; }
                 }
-                foreach (var kv in b.Oz) if (kv.Key != "SIRA_NO" && !a.Oz.ContainsKey(kv.Key)) { fark = "öznitelik " + kv.Key; return false; }
+                foreach (var kv in b.Oz) if (!TuretilmisOznitelik(kv.Key) && !a.Oz.ContainsKey(kv.Key)) { fark = "öznitelik " + kv.Key; return false; }
             }
             else if (a.CizgiMi)
             {
@@ -86,7 +90,7 @@ namespace SebekeHakedis.Cekirdek
             uygulamalar.UnionWith(b.Xd.Keys);
             foreach (var u in uygulamalar)
             {
-                if (u == "SH_ID" || u == "ETK") continue;
+                if (u == "SH_ID" || u == "ETK" || u == "SH_UZ") continue;
                 var la = a.XdHepsi(u);
                 var lb = b.XdHepsi(u);
                 if (la.Count != lb.Count) { fark = u + " satır sayısı " + la.Count + " → " + lb.Count; return false; }
@@ -94,6 +98,9 @@ namespace SebekeHakedis.Cekirdek
             }
             return true;
         }
+
+        /// <summary>SIRA_NO (tanıtıcı) ve ETİKET (GIS no + tip'ten türetilir) karşılaştırmaya girmez.</summary>
+        private static bool TuretilmisOznitelik(string etiket) => etiket == "SIRA_NO" || etiket == Stil.EtiketOzniteligi;
 
         /// <summary>Genişletilmiş veri satırları alan alan aynı mı (sayılar 0,001 toleransla: "1447,202759" ile "1447,2028" aynıdır).</summary>
         private static bool SatirAyni(string a, string b)

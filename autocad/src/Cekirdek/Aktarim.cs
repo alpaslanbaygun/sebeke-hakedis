@@ -64,7 +64,8 @@ namespace SebekeHakedis.Cekirdek
             public object Model;
         }
 
-        public static AktarimPlani Planla(IList<CadVarlik> cizim, Proje tel, string onEk)
+        /// <param name="promagisBloklari">Açıksa elemanlar çizimdeki PROMAGIS bloklarıyla konur; kapalıysa (varsayılan) telefon simgeleri (SH_…).</param>
+        public static AktarimPlani Planla(IList<CadVarlik> cizim, Proje tel, string onEk, bool promagisBloklari = false)
         {
             var plan = new AktarimPlani();
             if (string.IsNullOrEmpty(onEk)) onEk = "SC";
@@ -163,8 +164,8 @@ namespace SebekeHakedis.Cekirdek
                 var t = e;
                 string ad = (string.IsNullOrEmpty(t.GisId) ? "" : t.GisId + " ") + Turler.ElemanAdi(t.Tur);
                 isle("eleman", t.Id,
-                    (h, k) => PromagisYazici.Eleman(t, onEk, PromagisYazici.BlokSec(cp.Elemanlar, t), k),
-                    (o, k) => { var d = (Eleman)o; return PromagisYazici.Eleman(d, onEk, string.IsNullOrEmpty(d.Blok) ? PromagisYazici.BlokOner(cp.Elemanlar, d.Tur, d.Cins, d.Durum) : d.Blok, k); },
+                    (h, k) => PromagisYazici.Eleman(t, onEk, PromagisYazici.BlokSec(cp.Elemanlar, t, promagisBloklari), k),
+                    (o, k) => { var d = (Eleman)o; return PromagisYazici.Eleman(d, onEk, string.IsNullOrEmpty(d.Blok) ? PromagisYazici.BlokOner(cp.Elemanlar, d.Tur, d.Cins, d.Durum, promagisBloklari) : d.Blok, k); },
                     null, ad, t.Tur);
             }
             foreach (var hat in tel.Hatlar)

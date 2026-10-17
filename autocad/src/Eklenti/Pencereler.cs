@@ -447,8 +447,9 @@ namespace SebekeHakedis.Eklenti
                 d.Tam(liste.Kap, -1);
                 var durum = d.Satir("Durum", DurumKutusu(onceki != null ? onceki.Durum : o.Ayar.SonDeger("hat.durum", "M")));
                 var hak = d.Satir("Hakediş", Sayi(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis));
-                d.Not("Başlangıç direğine, gerekirse ara köşelere ve bitiş direğine tıklayın; Enter ile bitirin. " +
-                      "Metraj çizim uzunluğundan hesaplanır (ayarlardaki yuvarlama ve ek pay), onaylamadan önce değiştirebilirsiniz.");
+                d.Not("Başlangıç direğine, sonra sırayla direklere tıklayın: her direkte hat biter, yenisi oradan başlar " +
+                      "(direkten direğe ayrı hat, ayrı metraj). Ara köşe için boş yere tıklayın; Enter ile bitirin. " +
+                      "Metraj çizim uzunluğundan hesaplanır (ayarlardaki yuvarlama ve ek pay); ayarlardan \"her hattın metrajını sor\" açılabilir.");
 
                 tur.SelectedIndexChanged += (s, e) =>
                 {
@@ -616,7 +617,7 @@ namespace SebekeHakedis.Eklenti
         public static bool Ayarlar(OrtamVerisi o)
         {
             var a = o.Ayar;
-            using (var d = new Duzen("Şebeke Hakediş — çizim ayarları", 620, 760, "Kaydet"))
+            using (var d = new Duzen("Şebeke Hakediş — çizim ayarları", 620, 790, "Kaydet"))
             {
                 var onEk = d.Satir("Katman ön eki", new TextBox { Text = a.KatmanOnEki });
                 d.Not("Boş bırakılırsa çizimdeki PROMAGIS katmanlarından bulunur (şu an: " + o.OnEk + ").");
@@ -628,10 +629,12 @@ namespace SebekeHakedis.Eklenti
                 dom.SelectedIndex = Math.Max(0, Array.IndexOf(Turler.Domlar, a.Dom) + 1);
                 var olcek = d.Satir("Sembol ölçeği", Sayi(0, 1000, D(a.SembolOlcegi), 2, 0.5m));
                 d.Not("0 = çizimdeki elemanlarla aynı ölçek (PROMAGIS çizimlerinde genellikle 4).");
-                var etiket = d.Satir("Hat etiketi yüksekliği (m)", Sayi(0.05m, 50, D(a.EtiketYuksekligi), 2, 0.1m));
+                var etiket = d.Satir("Yazı yüksekliği (m)", Sayi(0.05m, 50, D(a.EtiketYuksekligi), 2, 0.1m));
+                d.Not("Hat etiketleri ve eleman yazıları (GIS no + tip). Telefonla aynı: 1,8 m (1/1000 paftada 1,8 mm); açıklık uzunlukları bunun 0,8 katı.");
                 var yakala = d.Satir("Direğe yakalama (m)", Sayi(0, 50, D(a.YakalamaMesafesi), 2, 0.5m));
                 var yukari = d.Satir("Metraj", new CheckBox { Text = "Çizim uzunluğunu yukarı yuvarla", Checked = a.YukariYuvarla, AutoSize = true });
                 var metrajSor = d.Satir("Hat çizerken", new CheckBox { Text = "Her hattın metrajını sor (kapalıysa kendiliğinden yazılır)", Checked = a.HattaMetrajSor, AutoSize = true });
+                var promagisBlok = d.Satir("Simgeler", new CheckBox { Text = "Çizimdeki PROMAGIS bloklarına uy (kapalıysa telefon simgeleri)", Checked = a.PromagisBloklari, AutoSize = true });
                 d.AraBaslik("Tarife (karakteristik + unsur)");
                 var koy = d.Satir("Unsur sütunu", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
                 koy.Items.Add("Şehir (katalogdaki standart)");
@@ -670,6 +673,7 @@ namespace SebekeHakedis.Eklenti
                 a.YakalamaMesafesi = (double)yakala.Value;
                 a.YukariYuvarla = yukari.Checked;
                 a.HattaMetrajSor = metrajSor.Checked;
+                a.PromagisBloklari = promagisBlok.Checked;
                 a.KoyTarifesi = koy.SelectedIndex == 1;
                 a.Karakteristik = krk.SelectedIndex > 0 && krk.SelectedIndex < krkKodlari.Count ? krkKodlari[krk.SelectedIndex] : "";
                 a.EtiketAyarlandi = true;

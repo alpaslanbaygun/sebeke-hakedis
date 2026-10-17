@@ -171,6 +171,14 @@ namespace SebekeHakedis.Eklenti
                 var secim = Pencereler.Eleman(o, null);
                 if (secim == null) return;
                 o.AyarKaydet();
+                ElemanYerlestir(o, secim);
+            });
+        }
+
+        /// <summary>Seçilen tipte elemanları tıklanan yerlere koyar (Enter bitirir). Şeritten hızlı çizim de bunu kullanır.</summary>
+        internal static void ElemanYerlestir(Ortam o, ElemanSecimi secim)
+        {
+            {
                 var ed = o.Ed;
                 string ilkGis = secim.Gis;
                 ObjectId sonId = ObjectId.Null;
@@ -216,7 +224,7 @@ namespace SebekeHakedis.Eklenti
                     using (var tr = o.Db.TransactionManager.StartTransaction())
                     {
                         var y = Yazici(o, tr);
-                        string blok = y.KullanilabilirBlok(PromagisYazici.BlokSec(o.Proje.Elemanlar, e), e.Tur, e.Cins, e.Durum, o.Proje.Elemanlar);
+                        string blok = y.KullanilabilirBlok(PromagisYazici.BlokSec(o.Proje.Elemanlar, e, o.Ayar.PromagisBloklari), e.Tur, e.Cins, e.Durum, o.Proje.Elemanlar);
                         var v = PromagisYazici.Eleman(e, o.OnEk, blok, null);
                         sonId = y.Ekle(v, null, o.Olcek(blok));
                         e.Id = v.H;
@@ -232,7 +240,7 @@ namespace SebekeHakedis.Eklenti
                 }
                 if (sayi > 0) ed.WriteMessage("\n" + sayi + " eleman konuldu.");
                 o.SiraKaydet();
-            });
+            }
         }
 
         // ================= SH_HAT =================
@@ -248,45 +256,146 @@ namespace SebekeHakedis.Eklenti
                 var secim = Pencereler.Hat(o, null);
                 if (secim == null) return;
                 o.AyarKaydet();
-                var ed = o.Ed;
-                int sayi = 0;
-                ed.WriteMessage("\nHat: " + secim);
-                while (true)
-                {
-                    string katman = PromagisYazici.HatKatmani(o.OnEk, secim.Tur, secim.Durum, secim.Hakedis);
-                    var uclar = new List<Eleman>();
-                    string sonuc;
-                    var noktalar = KoseleriIste(o, katman, false, 2, null, "\nHattın başlangıcı — direğe tıklayın [Ayarlar/Bitir] <Bitir>: ", "Ayarlar Bitir", uclar, out sonuc);
-                    if (sonuc == "ayarlar")
-                    {
-                        var s2 = Pencereler.Hat(o, secim);
-                        if (s2 != null) { secim = s2; o.AyarKaydet(); ed.WriteMessage("\nHat: " + secim); }
-                        continue;
-                    }
-                    if (sonuc == "yeniden") continue;
-                    if (noktalar == null) break;
-
-                    double L = Uzunluk(noktalar);
-                    var m = MetrajSor(ed, L, o.Ayar.HatMetraji(L, secim.Tur));
-                    if (m == null) { ed.WriteMessage("\nHat çizilmedi."); break; }
-                    var h = new Hat { Tur = secim.Tur, AnaKesit = secim.Kesit.Tanim, Durum = secim.Durum, Hakedis = secim.Hakedis };
-                    foreach (var q in noktalar) h.Kose.Add(new[] { q.X, q.Y });
-                    h.Kalemler.Add(o.KalemYap(secim.Kesit, m.Value, secim.Durum, secim.Hakedis, false, "HAT"));
-                    var v = PromagisYazici.Hat(h, o.OnEk, null);
-                    string etiket = PromagisYazici.HatEtiketi(h);
-                    using (var tr = o.Db.TransactionManager.StartTransaction())
-                    {
-                        var y = Yazici(o, tr);
-                        y.Ekle(v, etiket, 1);
-                        tr.Commit();
-                        UyarilariYaz(ed, y);
-                    }
-                    sayi++;
-                    ed.WriteMessage("\nHat çizildi: " + etiket.Replace(PromagisYazici.Tanitici, v.H));
-                }
-                if (sayi > 0) ed.WriteMessage("\n" + sayi + " hat çizildi.");
-                o.SiraKaydet();
+                HatZinciri(o, secim);
             });
+        }
+
+        /// <summary>
+        /// Parçalı (direkten direğe) hat çizimi: başlangıç direğine tıklanır, sonra sırayla direklere (ya da ara
+        /// köşelere) tıklanır. Her direğe / SDK'ya / trafoya tıklamada o parça ayrı bir hat olarak yazılır (kendi
+        /// metrajı ve etiketiyle) ve yeni hat aynı yerden başlar. Enter zinciri bitirir; açık kalan parça varsa
+        /// serbest uçlu hat olarak yazılır. Geri: son köşeyi, köşe yoksa son yazılan hattı kaldırır.
+        /// Metraj çizim uzunluğundan hesaplanır (yuvarlama ve ek pay ayarları); "Her hattın metrajını sor" açıksa onaylatılır.
+        /// </summary>
+        internal static void HatZinciri(Ortam o, HatSecimi secim)
+        {
+            var ed = o.Ed;
+            int sayi = 0;
+            ed.WriteMessage("\nHat: " + secim + "  — her direkte hat biter, yenisi başlar" + (o.Ayar.HattaMetrajSor ? "; metraj sorulur." : "; metraj çizimden alınır."));
+            bool iptal = false;
+            while (!iptal)
+            {
+                string katman = PromagisYazici.HatKatmani(o.OnEk, secim.Tur, secim.Durum, secim.Hakedis);
+                Point3d p;
+                string k;
+                var g0 = NoktaIste(ed, "\nHattın başlangıcı — direğe tıklayın [Ayarlar/Bitir] <Bitir>: ", "Ayarlar Bitir", null, out p, out k);
+                if (g0 == Giris.Kelime && k == "Ayarlar")
+                {
+                    var s2 = Pencereler.Hat(o, secim);
+                    if (s2 != null) { secim = s2; o.AyarKaydet(); ed.WriteMessage("\nHat: " + secim); }
+                    continue;
+                }
+                if (g0 != Giris.Nokta) break;
+                var bas = Yakala(o, ref p);
+                if (bas != null) ed.WriteMessage("  → " + Ad(bas));
+                else ed.WriteMessage("  (direk yok: serbest başlangıç)");
+
+                var yazilan = new List<KeyValuePair<ObjectId, Hat>>();
+                var parca = new List<Point3d> { p };
+                var uclar = new List<Eleman> { bas };
+                using (var canli = new CanliCizgi(o.Belge, katman, false))
+                {
+                    while (true)
+                    {
+                        bool bitirebilir = parca.Count >= 2 || yazilan.Count > 0;
+                        var g = NoktaIste(ed, bitirebilir ? "\nSonraki direk ya da köşe [Geri/Bitir] <Bitir>: " : "\nSonraki direk ya da köşe [Geri]: ",
+                            bitirebilir ? "Geri Bitir" : "Geri", parca[parca.Count - 1], out p, out k);
+                        if (g == Giris.Iptal) { iptal = true; break; }
+                        if (g == Giris.Kelime && k == "Geri")
+                        {
+                            if (parca.Count > 1)
+                            {
+                                parca.RemoveAt(parca.Count - 1);
+                                uclar.RemoveAt(uclar.Count - 1);
+                                canli.Ayarla(parca);
+                                continue;
+                            }
+                            if (yazilan.Count > 0)
+                            {
+                                var son = yazilan[yazilan.Count - 1];
+                                using (var tr = o.Db.TransactionManager.StartTransaction())
+                                {
+                                    Yazici(o, tr).Sil(son.Key);
+                                    tr.Commit();
+                                }
+                                o.Proje.Hatlar.Remove(son.Value);
+                                yazilan.RemoveAt(yazilan.Count - 1);
+                                sayi--;
+                                var ilk = son.Value.Kose[0];
+                                parca = new List<Point3d> { new Point3d(ilk[0], ilk[1], 0) };
+                                uclar = new List<Eleman> { o.YakinEleman(parca[0], 0.01) };
+                                canli.Ayarla(parca);
+                                ed.WriteMessage("\nSon hat kaldırıldı; " + (uclar[0] != null ? Ad(uclar[0]) + "'den" : "aynı yerden") + " devam.");
+                                continue;
+                            }
+                            ed.WriteMessage("\nGeri alınacak nokta yok.");
+                            continue;
+                        }
+                        if (g == Giris.Kelime || g == Giris.Bitti)
+                        {
+                            if (parca.Count >= 2)
+                            {
+                                if (!HatYaz(o, secim, parca, uclar, yazilan, ref sayi)) { iptal = true; break; }
+                            }
+                            else if (yazilan.Count == 0)
+                            {
+                                ed.WriteMessage("\nEn az iki nokta gerekir (vazgeçmek için Esc).");
+                                continue;
+                            }
+                            break;
+                        }
+                        var el = Yakala(o, ref p);
+                        if (p.DistanceTo(parca[parca.Count - 1]) < 1e-6) continue;
+                        parca.Add(p);
+                        uclar.Add(el);
+                        if (el == null) { canli.Ayarla(parca); continue; }
+                        ed.WriteMessage("  → " + Ad(el));
+                        // Düğüm: bu parça burada biter, yeni hat aynı direkten başlar
+                        if (!HatYaz(o, secim, parca, uclar, yazilan, ref sayi)) { iptal = true; break; }
+                        parca = new List<Point3d> { p };
+                        uclar = new List<Eleman> { el };
+                        canli.Ayarla(parca);
+                    }
+                }
+            }
+            if (sayi > 0) ed.WriteMessage("\n" + sayi + " hat çizildi.");
+            o.SiraKaydet();
+        }
+
+        /// <summary>Bir parçayı hat olarak yazar (metraj, kalem, PROMAGIS etiketi, uzunluk yazıları). Esc ile vazgeçilirse false.</summary>
+        private static bool HatYaz(Ortam o, HatSecimi secim, List<Point3d> noktalar, List<Eleman> uclar, List<KeyValuePair<ObjectId, Hat>> yazilan, ref int sayi)
+        {
+            double L = Uzunluk(noktalar);
+            double m = o.Ayar.HatMetraji(L, secim.Tur);
+            if (o.Ayar.HattaMetrajSor)
+            {
+                var mm = MetrajSor(o.Ed, L, m);
+                if (mm == null) { o.Ed.WriteMessage("\nHat çizilmedi."); return false; }
+                m = mm.Value;
+            }
+            var h = new Hat { Tur = secim.Tur, AnaKesit = secim.Kesit.Tanim, Durum = secim.Durum, Hakedis = secim.Hakedis, CizimUzunlugu = L };
+            foreach (var q in noktalar) h.Kose.Add(new[] { q.X, q.Y });
+            h.Kalemler.Add(o.KalemYap(secim.Kesit, m, secim.Durum, secim.Hakedis, false, "HAT"));
+            var v = PromagisYazici.Hat(h, o.OnEk, null);
+            string etiket = PromagisYazici.HatEtiketi(h);
+            ObjectId id;
+            using (var tr = o.Db.TransactionManager.StartTransaction())
+            {
+                var y = Yazici(o, tr);
+                id = y.Ekle(v, etiket, 1);
+                tr.Commit();
+                UyarilariYaz(o.Ed, y);
+            }
+            h.Id = v.H;
+            h.Katman = v.Katman;
+            h.Etiket = etiket.Replace(PromagisYazici.Tanitici, v.H);
+            o.Proje.Hatlar.Add(h);
+            yazilan.Add(new KeyValuePair<ObjectId, Hat>(id, h));
+            sayi++;
+            var a = uclar.Count > 0 ? uclar[0] : null;
+            var b = uclar.Count > 1 ? uclar[uclar.Count - 1] : null;
+            o.Ed.WriteMessage("\nHat çizildi: " + h.Etiket + "  (" + (a != null ? a.GisId : "köşe") + " → " + (b != null ? b.GisId : "serbest uç") + ", " + L.ToString("0.00", Tr) + " m)");
+            return true;
         }
 
         // ================= SH_KANAL =================
@@ -566,8 +675,9 @@ namespace SebekeHakedis.Eklenti
             if (nesne is Eleman e)
             {
                 if (e.Hakedis != eskiHakedis || DurumGrubu(e.Durum) != DurumGrubu(eskiDurum)) e.Katman = "";
-                string blok = PromagisYazici.BlokSec(o.Proje.Elemanlar, e);
+                string blok = PromagisYazici.BlokSec(o.Proje.Elemanlar, e, o.Ayar.PromagisBloklari);
                 if (!y.BlokKullanilabilir(blok)) blok = e.Blok;
+                y.BlokOlcegi = o.Olcek(blok);
                 v = PromagisYazici.Eleman(e, o.OnEk, blok, null);
             }
             else if (nesne is Hat h)
@@ -796,7 +906,7 @@ namespace SebekeHakedis.Eklenti
                     return;
 
                 ed.WriteMessage("\nKarşılaştırılıyor...");
-                var plan = Aktarim.Planla(o.Varliklar, tel, o.OnEk);
+                var plan = Aktarim.Planla(o.Varliklar, tel, o.OnEk, o.Ayar.PromagisBloklari);
                 int cizimdeSilinmis = 0;
                 foreach (var a in plan.Adimlar) if (a.CizimdeSilinmis) cizimdeSilinmis++;
                 if (plan.Adimlar.Count == 0 && plan.Silinenler.Count == 0)
@@ -866,6 +976,7 @@ namespace SebekeHakedis.Eklenti
                                 ObjectId id;
                                 if (!Toplayici.TaniticiylaBul(o.Db, a.Hedef, out id)) { y.Uyarilar.Add("Nesne bulunamadı: " + a.Hedef + " " + a.Ad); continue; }
                                 if (a.Nesne == "eleman" && !y.BlokKullanilabilir(v.Blok)) v.Blok = "";
+                                y.BlokOlcegi = a.Nesne == "eleman" && !string.IsNullOrEmpty(v.Blok) ? o.Olcek(v.Blok) : 0;
                                 y.Guncelle(id, v, a.Etiket);
                                 guncellenen++;
                             }

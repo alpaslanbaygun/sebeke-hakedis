@@ -50,7 +50,7 @@ namespace SebekeHakedis.Cekirdek
         public int Dom;
         public double SembolOlcegi;
         /// <summary>Hat etiketi ve uzunluk yazılarının yüksekliği (m). Telefonun çizimiyle aynı: 1,8 m (1/1000'de 1,8 mm).</summary>
-        public double EtiketYuksekligi = 1.8;
+        public double EtiketYuksekligi = Stil.EtiketYuksekligi;
         /// <summary>Etiket yüksekliği bu çizimde ayarlandı mı (yoksa PROMAGIS'in TXSCALE değeri kullanılır).</summary>
         public bool EtiketAyarlandi;
         public double YakalamaMesafesi = 1.0;
@@ -66,6 +66,8 @@ namespace SebekeHakedis.Cekirdek
         public string Kategori = "";
         /// <summary>Hat çizerken her hattın metrajı sorulsun (kapalıysa çizim uzunluğundan hesaplanır, sonra düzeltilebilir).</summary>
         public bool HattaMetrajSor;
+        /// <summary>Elemanlar çizimdeki PROMAGIS bloklarıyla konsun (kapalıysa telefon simgeleri SH_…; görünüm telefonla aynı olur).</summary>
+        public bool PromagisBloklari;
 
         /// <summary>Son seçimler (tür, tip, kesit, durum...): bir sonraki komutta hazır gelir.</summary>
         public readonly Dictionary<string, string> Son = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -109,6 +111,7 @@ namespace SebekeHakedis.Cekirdek
                 new KeyValuePair<string, string>("karakteristik", Karakteristik ?? ""),
                 new KeyValuePair<string, string>("kategori", Kategori ?? ""),
                 new KeyValuePair<string, string>("hattaMetrajSor", HattaMetrajSor ? "1" : "0"),
+                new KeyValuePair<string, string>("promagisBloklari", PromagisBloklari ? "1" : "0"),
             };
             foreach (var kv in EkPay) l.Add(new KeyValuePair<string, string>("ekPay." + kv.Key, S(kv.Value)));
             foreach (var kv in Son) l.Add(new KeyValuePair<string, string>("son." + kv.Key, kv.Value ?? ""));
@@ -142,6 +145,7 @@ namespace SebekeHakedis.Cekirdek
                     case "karakteristik": a.Karakteristik = v.Trim(); break;
                     case "kategori": a.Kategori = v.Trim(); break;
                     case "hattaMetrajSor": a.HattaMetrajSor = v == "1"; break;
+                    case "promagisBloklari": a.PromagisBloklari = v == "1"; break;
                 }
             }
             if (a.EtiketYuksekligi <= 0) { a.EtiketYuksekligi = 1.8; a.EtiketAyarlandi = false; }

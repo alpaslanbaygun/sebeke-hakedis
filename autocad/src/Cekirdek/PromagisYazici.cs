@@ -20,7 +20,10 @@ namespace SebekeHakedis.Cekirdek
         public const string KimlikUygulamasi = "SH_ID";
 
         /// <summary>XDATA uygulama adları (çizimde kayıtlı olmalı).</summary>
-        public static readonly string[] Uygulamalar = { "GIS", "NIT", "MALZEME", "HAT", "ANAKESIT", "ETK", "KONTROL", "FULLREG", "HAKNO", "ZKOORD", KimlikUygulamasi };
+        public static readonly string[] Uygulamalar = { "GIS", "NIT", "MALZEME", "HAT", "ANAKESIT", "ETK", "KONTROL", "FULLREG", "HAKNO", "ZKOORD", KimlikUygulamasi, UzunlukUygulamasi };
+
+        /// <summary>Uygulamanın kendi verisi: hattın açıklık uzunluğu yazılarının tanıtıcıları (ETK gibi; PROMAGIS'te yoktur).</summary>
+        public const string UzunlukUygulamasi = "SH_UZ";
 
         // ---------------- Sayı ve alan yazımı (PROMAGIS: Türkçe ondalık virgül) ----------------
 
@@ -108,12 +111,13 @@ namespace SebekeHakedis.Cekirdek
         private static string DurumGrubu(string durum) => durum == "MEVCUT" ? "MEVCUT" : durum == "DM" ? "DM" : "YENI";
 
         /// <summary>
-        /// Çizimde aynı tür ve durumdaki elemanlarda en çok kullanılan PROMAGIS bloğu (PROMAGIS bloklarıyla aynı
-        /// görünsün diye). Adsız bloklar (*U…) ve eklentinin kendi blokları (SH_…) sayılmaz. Bulunamazsa
-        /// eklentinin lejant simgesi (malzeme ve duruma göre).
+        /// Yeni elemanın bloğu. Varsayılan (telefon görünümü): her zaman eklentinin lejant simgesi (SH_…, tür + malzeme +
+        /// duruma göre; telefonun DXF'iyle aynı). promagisBloklari açıksa: çizimde aynı tür ve durumdaki elemanlarda en
+        /// çok kullanılan PROMAGIS bloğu; adsız bloklar (*U…) ve SH_ blokları sayılmaz; bulunamazsa lejant simgesi.
         /// </summary>
-        public static string BlokOner(IEnumerable<Eleman> mevcut, string tur, string cins, string durum)
+        public static string BlokOner(IEnumerable<Eleman> mevcut, string tur, string cins, string durum, bool promagisBloklari = false)
         {
+            if (!promagisBloklari) return Semboller.BlokAdi(tur, cins, durum);
             var say = new Dictionary<string, int>(StringComparer.Ordinal);
             string grup = DurumGrubu(durum);
             foreach (var e in mevcut)
@@ -131,13 +135,13 @@ namespace SebekeHakedis.Cekirdek
         }
 
         /// <summary>
-        /// Elemanın bloğu: kendi bloğu bu çizimde aynı tür ve durumdaki elemanlarda kullanılıyorsa (ya da
+        /// Elemanın bloğu. Varsayılan (telefon görünümü): güncel tür, malzeme ve duruma göre lejant simgesi (SH_…).
+        /// promagisBloklari açıksa: kendi bloğu bu çizimde aynı tür ve durumdaki elemanlarda kullanılıyorsa (ya da
         /// başka seçenek yoksa) korunur; durumu değişmişse (ör. montajdan demontaja) o durumun bloğu önerilir.
-        /// Eklentinin kendi (SH_) blokları her zaman güncel tür, malzeme ve duruma göre yeniden seçilir.
         /// </summary>
-        public static string BlokSec(IEnumerable<Eleman> cizim, Eleman e)
+        public static string BlokSec(IEnumerable<Eleman> cizim, Eleman e, bool promagisBloklari = false)
         {
-            if (string.IsNullOrEmpty(e.Blok) || Semboller.EklentininBlogu(e.Blok)) return BlokOner(cizim, e.Tur, e.Cins, e.Durum);
+            if (!promagisBloklari || string.IsNullOrEmpty(e.Blok) || Semboller.EklentininBlogu(e.Blok)) return BlokOner(cizim, e.Tur, e.Cins, e.Durum, promagisBloklari);
             if (e.Blok.StartsWith("*", StringComparison.Ordinal)) return e.Blok; // adsız blok: mevcut nesnede olduğu gibi kalır
             string grup = DurumGrubu(e.Durum);
             bool ayniGrup = false, baska = false;
@@ -149,7 +153,7 @@ namespace SebekeHakedis.Cekirdek
                 if (string.Equals(x.Blok, e.Blok, StringComparison.OrdinalIgnoreCase)) { ayniGrup = true; break; }
                 baska = true;
             }
-            return ayniGrup || !baska ? e.Blok : BlokOner(cizim, e.Tur, e.Cins, e.Durum);
+            return ayniGrup || !baska ? e.Blok : BlokOner(cizim, e.Tur, e.Cins, e.Durum, true);
         }
 
         /// <summary>Yeni bloğun ölçeği: çizimde aynı bloğun en çok kullanılan ölçeği, yoksa elemanların en çok kullanılan ölçeği.</summary>
@@ -172,35 +176,8 @@ namespace SebekeHakedis.Cekirdek
             return en > 0 ? en : (varsayilan > 0 ? varsayilan : 1);
         }
 
-        /// <summary>Yeni katmanın rengi (AutoCAD renk numarası) ve çizgi tipi: PROMAGIS çizimlerindeki gibi.</summary>
-        public static void KatmanStili(string katman, out short renk, out string cizgiTipi)
-        {
-            renk = 7; cizgiTipi = "";
-            katman = katman ?? "";
-            int i = katman.IndexOf(".HAK.", StringComparison.Ordinal);
-            string tur = i >= 0 ? katman.Substring(i + 5) : "";
-            switch (tur)
-            {
-                case "AGDİR": renk = 180; return;
-                case "AYDDİR": renk = 140; return;
-                case "ENHDİR": renk = 240; return;
-                case "MÜŞDİR": case "BOX": case "PANO": renk = 7; return;
-                case "TRAFO": renk = 1; return;
-                case "AG_HAV_HAT": renk = 3; return;
-                case "AG_YER_HAT": renk = 3; cizgiTipi = "HIDDENX2"; return;
-                case "AYD_HAT": renk = 5; cizgiTipi = "HIDDENX2"; return;
-                case "OG_HAV_HAT": renk = 1; return;
-                case "OG_YER_XLPE": renk = 1; cizgiTipi = "HIDDENX2"; return;
-                case "REKORTMAN": renk = 140; cizgiTipi = "HIDDENX2"; return;
-                case "MÜŞTEREK_HAT": renk = 6; return;
-            }
-            if (katman.EndsWith("_DEMONTAJ", StringComparison.Ordinal)) { renk = 9; cizgiTipi = "HIDDENX2"; }
-            else if (katman.EndsWith("_MEVCUT", StringComparison.Ordinal)) renk = 8;
-            else if (katman.EndsWith("_PROJE", StringComparison.Ordinal)) { renk = 2; cizgiTipi = "HIDDENX2"; }
-            else if (katman.EndsWith("_KABLO_KANALI", StringComparison.Ordinal)) renk = 30;
-            else if (katman.EndsWith("_YATAY_SONDAJ", StringComparison.Ordinal)) renk = 200;
-            else if (katman == "GPS" || katman.EndsWith("_GPS", StringComparison.Ordinal)) renk = 4;
-        }
+        /// <summary>Katmanın rengi (AutoCAD renk numarası) ve çizgi tipi: telefonun lejantıyla aynı (bkz. Stil).</summary>
+        public static void KatmanStili(string katman, out short renk, out string cizgiTipi) => Stil.KatmanStili(katman, out renk, out cizgiTipi);
 
         // ---------------- Nesneler ----------------
 
@@ -230,6 +207,8 @@ namespace SebekeHakedis.Cekirdek
             v.Oz["DURUM"] = ana.Durum;
             v.Oz["GÜÇ"] = string.IsNullOrEmpty(e.Guc) ? " " : e.Guc;
             v.Oz["GERİLİM"] = string.IsNullOrEmpty(e.Gerilim) ? " " : e.Gerilim;
+            v.Oz[Stil.EtiketOzniteligi] = Stil.ElemanYazisi(e.GisId, ana.Tanim);
+            v.Renk = Stil.ElemanRengi(e.Tur, e.Durum);
             string gis = Tanitici + ";" + A(e.GisId) + ";" + A(ana.Cins) + ";" + A(ana.Tanim) + ";" + A(ana.Durum);
             if (!string.IsNullOrEmpty(e.Guc) || !string.IsNullOrEmpty(e.Gerilim)) gis += ";" + A(e.Guc) + ";" + A(e.Gerilim);
             Ekle(v, "GIS", gis);
@@ -260,6 +239,9 @@ namespace SebekeHakedis.Cekirdek
                 Katman = string.IsNullOrEmpty(h.Katman) || !KatmanUyumlu(h.Katman, h.Durum) ? HatKatmani(onEk, h.Tur, h.Durum, h.Hakedis) : h.Katman,
             };
             foreach (var k in h.Kose) v.Kose.Add(new[] { k[0], k[1] });
+            short renk; string cizgi;
+            Stil.HatStili(h.Tur, h.Durum, out renk, out cizgi);
+            v.Renk = renk; v.CizgiTipi = cizgi;
             var ilk = h.Kalemler.Find(k => k.Kaynak == "HAT");
             Ekle(v, "KONTROL", Mantik(h.Kontrol ?? (ilk != null ? ilk.Kontrol : null)));
             Ekle(v, "ANAKESIT", string.IsNullOrEmpty(h.AnaKesit) ? (ilk != null ? ilk.Tanim : "") : h.AnaKesit);
@@ -305,6 +287,7 @@ namespace SebekeHakedis.Cekirdek
         public static CadVarlik Kanal(Kanal c, string onEk, string kimlik)
         {
             var v = new CadVarlik { H = c.Id, Tur = "LWPOLYLINE", Katman = onEk + "_KABLO_KANALI" };
+            if (Stil.DurumGrubu(c.Durum) == 3) v.Renk = Stil.DemontajRengi;
             foreach (var k in c.Kose) v.Kose.Add(new[] { k[0], k[1] });
             var ana = c.Kalemler.Find(k => k.Ana) ?? new Kalem { Cins = c.Kod.ToString(CultureInfo.InvariantCulture), Tanim = c.Zemin, Durum = c.Durum, Hakedis = c.Hakedis, Birim = "mt/m³", Katsayi = 1, Ana = true };
             var nit = ana.Kopya();
@@ -321,6 +304,7 @@ namespace SebekeHakedis.Cekirdek
         public static CadVarlik Sondaj(Sondaj s, string onEk, string kimlik)
         {
             var v = new CadVarlik { H = s.Id, Tur = "LWPOLYLINE", Katman = onEk + "_YATAY_SONDAJ" };
+            if (Stil.DurumGrubu(s.Durum) == 3) v.Renk = Stil.DemontajRengi;
             foreach (var k in s.Kose) v.Kose.Add(new[] { k[0], k[1] });
             var ana = s.Kalemler.Find(k => k.Ana) ?? new Kalem { Cins = "YATAY_DELGİ", Tanim = s.Tip, Durum = s.Durum, Hakedis = s.Hakedis, Birim = "mt/mt", Katsayi = 1, Ana = true };
             Ekle(v, "GIS", A(s.BasNo) + ";" + A(s.BitNo) + ";" + Sayi(ana.Miktar));
@@ -354,14 +338,14 @@ namespace SebekeHakedis.Cekirdek
         }
 
         /// <summary>Projenin tüm nesneleri (kimlik: telefondan gelen nesnenin kimliği; çizimde olan nesnelerde boş).</summary>
-        public static List<CadVarlik> Hepsi(Proje p, Func<string, bool> telefondanMi = null)
+        public static List<CadVarlik> Hepsi(Proje p, Func<string, bool> telefondanMi = null, bool promagisBloklari = false)
         {
             string on = string.IsNullOrEmpty(p.KatmanOnEki) ? "SC" : p.KatmanOnEki;
             Func<string, string> kim = id => telefondanMi != null && telefondanMi(id) ? id : null;
             var l = new List<CadVarlik>();
             foreach (var b in p.Bolgeler) l.Add(Bolge(b, on, kim(b.Id)));
             foreach (var n in p.Noktalar) l.Add(Nokta(n, kim(n.Id)));
-            foreach (var e in p.Elemanlar) l.Add(Eleman(e, on, BlokSec(p.Elemanlar, e), kim(e.Id)));
+            foreach (var e in p.Elemanlar) l.Add(Eleman(e, on, BlokSec(p.Elemanlar, e, promagisBloklari), kim(e.Id)));
             foreach (var h in p.Hatlar) l.Add(Hat(h, on, kim(h.Id)));
             foreach (var c in p.Kanallar) l.Add(Kanal(c, on, kim(c.Id)));
             foreach (var s in p.Sondajlar) l.Add(Sondaj(s, on, kim(s.Id)));
