@@ -40,20 +40,27 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Alan içinde ayırıcı (;) olmasın.</summary>
         private static string A(string s) => (s ?? "").Replace(';', ',').Replace('\r', ' ').Replace('\n', ' ');
 
-        /// <summary>NIT: cins;tanım;durum;0;miktar;birim;katsayı;toplam;fiyat;hakediş;tarife;dm durum;sıra</summary>
+        /// <summary>NIT: cins;tanım;durum;birim fiyat;miktar;birim;katsayı;toplam;toplam tutar;hakediş;tarife;dm durum (KESİK/SÖKÜK);sıra</summary>
         public static string NitSatiri(Kalem k) =>
-            string.Join(";", new[] { A(k.Cins), A(k.Tanim), A(k.Durum), "0", Sayi(k.Miktar), A(k.Birim), Sayi(k.Katsayi), Sayi(k.Toplam),
-                Fiyat(k.BirimFiyat), Tam(k.Hakedis), A(k.Tarife), A(k.DmDurum), A(k.Sira) });
+            string.Join(";", new[] { A(k.Cins), A(k.Tanim), A(k.Durum), Fiyat(k.BirimFiyat), Sayi(k.Miktar), A(k.Birim), Sayi(k.Katsayi), Sayi(k.Toplam),
+                Fiyat(k.ToplamTutar), Tam(k.Hakedis), A(k.Tarife), A(k.DmDurum), A(k.Sira) });
 
-        /// <summary>MALZEME (kanal ve sondajın kendi pozu da bu biçimdedir): cins;tanım;durum;0;miktar;birim;katsayı;toplam;fiyat;hakediş;tarife;sıra;kontrol</summary>
+        /// <summary>MALZEME (kanal ve sondajın kendi pozu da bu biçimdedir): cins;tanım;durum;birim fiyat;miktar;birim;katsayı;toplam;toplam tutar;hakediş;tarife;sıra;kontrol</summary>
         public static string MalzemeSatiri(Kalem k) =>
-            string.Join(";", new[] { A(k.Cins), A(k.Tanim), A(k.Durum), "0", Sayi(k.Miktar), A(k.Birim), Sayi(k.Katsayi), Sayi(k.Toplam),
-                Fiyat(k.BirimFiyat), Tam(k.Hakedis), A(k.Tarife), A(k.Sira), Mantik(k.Kontrol) });
+            string.Join(";", new[] { A(k.Cins), A(k.Tanim), A(k.Durum), Fiyat(k.BirimFiyat), Sayi(k.Miktar), A(k.Birim), Sayi(k.Katsayi), Sayi(k.Toplam),
+                Fiyat(k.ToplamTutar), Tam(k.Hakedis), A(k.Tarife), A(k.Sira), Mantik(k.Kontrol) });
 
-        /// <summary>HAT: cins;;tam yazım;durum;0;miktar;birim;katsayı;toplam;fiyat;hakediş;tarife;sıra;kontrol</summary>
-        public static string HatSatiri(Kalem k) =>
-            string.Join(";", new[] { A(k.Cins), "", A(string.IsNullOrEmpty(k.Aciklama) ? k.Tanim : k.Aciklama), A(k.Durum), "0", Sayi(k.Miktar), A(k.Birim),
-                Sayi(k.Katsayi), Sayi(k.Toplam), Fiyat(k.BirimFiyat), Tam(k.Hakedis), A(k.Tarife), A(k.Sira), Mantik(k.Kontrol) });
+        /// <summary>
+        /// HAT: cins;AG kesit;OG kesit;durum;birim fiyat;miktar;birim;katsayı;toplam;toplam tutar;hakediş;tarife;sıra;kontrol.
+        /// Kesit, PROMAGIS formundaki gibi OG cinslerinde OG alanına, diğerlerinde AG alanına yazılır (tam yazım varsa o).
+        /// </summary>
+        public static string HatSatiri(Kalem k)
+        {
+            string kesit = A(string.IsNullOrEmpty(k.Aciklama) ? k.Tanim : k.Aciklama);
+            bool og = (k.Cins ?? "").StartsWith("OG_", StringComparison.Ordinal);
+            return string.Join(";", new[] { A(k.Cins), og ? "" : kesit, og ? kesit : "", A(k.Durum), Fiyat(k.BirimFiyat), Sayi(k.Miktar), A(k.Birim),
+                Sayi(k.Katsayi), Sayi(k.Toplam), Fiyat(k.ToplamTutar), Tam(k.Hakedis), A(k.Tarife), A(k.Sira), Mantik(k.Kontrol) });
+        }
 
         // ---------------- Katman ve blok ----------------
 
@@ -286,6 +293,8 @@ namespace SebekeHakedis.Cekirdek
                 case "M+M": govde = "* " + kesit + "/" + metraj; break;
                 case "DM": govde = ">" + kesit + "</" + metraj; break;
                 case "DM+M": govde = "[" + kesit + "]/" + metraj; break;
+                case "KM": govde = "/" + kesit + "\\/" + metraj; break;
+                case "ENH": govde = "{" + kesit + "}/" + metraj; break;
                 case "MEVCUT": govde = "(" + kesit + ")/" + metraj; break;
                 default: govde = kesit + "/" + metraj; break;
             }
@@ -334,12 +343,12 @@ namespace SebekeHakedis.Cekirdek
             return v;
         }
 
-        /// <summary>Bölge (alt proje): kapalı çoklu çizgi (önEk_PROJE) + FULLREG "ad;kod;".</summary>
+        /// <summary>Bölge (alt proje): kapalı çoklu çizgi (önEk_PROJE) + FULLREG "ad;proje kodu;grup kodu".</summary>
         public static CadVarlik Bolge(Bolge b, string onEk, string kimlik)
         {
             var v = new CadVarlik { H = b.Id, Tur = "LWPOLYLINE", Katman = onEk + "_PROJE", Kapali = true };
             foreach (var k in b.Sinir) v.Kose.Add(new[] { k[0], k[1] });
-            Ekle(v, "FULLREG", A(b.Ad) + ";" + A(b.Kod) + ";");
+            Ekle(v, "FULLREG", A(b.Ad) + ";" + A(b.Kod) + ";" + A(b.Grup));
             if (!string.IsNullOrEmpty(kimlik)) Ekle(v, KimlikUygulamasi, kimlik);
             return v;
         }

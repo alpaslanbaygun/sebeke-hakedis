@@ -21,9 +21,11 @@
 
   // ---------------------------------------------------------------- Sabitler
 
-  const DURUMLAR = ['M', 'M+M', 'DM', 'DM+M', 'MEVCUT'];
+  /** PROMAGIS durum kodları (MALZEMEDRM listesi). */
+  const DURUMLAR = ['M+M', 'M', 'KM', 'DM+M', 'DM', 'ENH', 'ME', 'MEVCUT'];
   const DURUM_ADI = {
-    M: 'Montaj', 'M+M': 'Malzeme + Montaj', DM: 'Demontaj', 'DM+M': 'Sök-Tak', MEVCUT: 'Mevcut', KM: 'KM', ME: 'ME'
+    'M+M': 'Malzeme + Montaj', M: 'Montaj (malzeme kurumdan)', KM: 'Kurum montajı, malzeme yükleniciden', 'DM+M': 'Sök-Tak', DM: 'Demontaj',
+    ENH: 'Kilometrik bedelli iş', ME: 'Mutabakat eksiği', MEVCUT: 'Mevcut'
   };
 
   /** Eleman türleri. katman: PROMAGIS katman adındaki tür; gis: GIS numarası biçimi. */
@@ -444,6 +446,8 @@
       case 'M+M': return '* ' + k + '/' + m;
       case 'DM': return '>' + k + '</' + m;
       case 'DM+M': return '[' + k + ']/' + m;
+      case 'KM': return '/' + k + '\\/' + m;
+      case 'ENH': return '{' + k + '}/' + m;
       case 'MEVCUT': return '(' + k + ')/' + m;
       default: return k + '/' + m;
     }
@@ -663,7 +667,7 @@
     };
     const dizi = ad => (Array.isArray(k[ad]) ? k[ad].filter(x => x && typeof x === 'object') : []);
     let s = new Set();
-    for (const o of dizi('bolgeler')) p.bolgeler.push(Object.assign({}, o, { id: kimlik(o, s), ad: str(o.ad), kod: str(o.kod), sinir: koseler(o.sinir) }));
+    for (const o of dizi('bolgeler')) p.bolgeler.push(Object.assign({}, o, { id: kimlik(o, s), ad: str(o.ad), kod: str(o.kod), grup: str(o.grup), sinir: koseler(o.sinir) }));
     s = new Set();
     for (const o of dizi('noktalar')) {
       p.noktalar.push(Object.assign({}, o, {
@@ -751,7 +755,7 @@
       proje: sirala(pj, [['ad', pj.ad], ['kaynak', pj.kaynak],
         ['koordinat', Object.assign({ sistem: 'TM', datum: 'ITRF96', dom: 0 }, pj.koordinat, { eksenler: 'saga = doğu (CAD X), yukari = kuzey (CAD Y)' })],
         ['aktifHakedis', pj.aktifHakedis], ['katmanOnEki', pj.katmanOnEki], ['gisOnEki', pj.gisOnEki]]),
-      bolgeler: p.bolgeler.map(b => sirala(b, [['id', b.id], ['ad', b.ad], ['kod', b.kod], ['aciklama', b.aciklama || undefined], ['sinir', kYaz(b.sinir)]])),
+      bolgeler: p.bolgeler.map(b => sirala(b, [['id', b.id], ['ad', b.ad], ['kod', b.kod], ['grup', b.grup || undefined], ['aciklama', b.aciklama || undefined], ['sinir', kYaz(b.sinir)]])),
       noktalar: p.noktalar.map(n => sirala(n, [['id', n.id], ['ad', n.ad], ['kod', n.kod], ['saga', r4(n.saga)], ['yukari', r4(n.yukari)],
         ['kot', r4(n.kot)], ['hakedis', n.hakedis], ['bolge', n.bolge], ['ekMetinler', n.ekMetinler && n.ekMetinler.length ? n.ekMetinler : undefined]])),
       elemanlar: p.elemanlar.map(e => sirala(e, [['id', e.id], ['tur', e.tur], ['gisId', e.gisId], ['cins', e.cins], ['tip', e.tip],

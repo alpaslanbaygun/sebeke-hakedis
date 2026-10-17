@@ -68,6 +68,7 @@ namespace SebekeHakedis.Cekirdek
             {
                 var o = new JsonNesne();
                 o["id"] = b.Id; o["ad"] = b.Ad; o["kod"] = b.Kod;
+                if (!string.IsNullOrEmpty(b.Grup)) o["grup"] = b.Grup;
                 if (!string.IsNullOrEmpty(b.Aciklama)) o["aciklama"] = b.Aciklama;
                 o["sinir"] = Koseler(b.Sinir);
                 bolgeler.Add(o);
@@ -198,7 +199,7 @@ namespace SebekeHakedis.Cekirdek
 
             foreach (var o in Nesneler(k, "bolgeler"))
             {
-                var b = new Bolge { Id = o.Metin("id"), Ad = o.Metin("ad"), Kod = o.Metin("kod"), Aciklama = o.Metin("aciklama"), Sinir = KoseOku(o.Dizi("sinir")) };
+                var b = new Bolge { Id = o.Metin("id"), Ad = o.Metin("ad"), Kod = o.Metin("kod"), Grup = o.Metin("grup"), Aciklama = o.Metin("aciklama"), Sinir = KoseOku(o.Dizi("sinir")) };
                 b.Alan = Geometri.Alan(b.Sinir);
                 p.Bolgeler.Add(b);
             }

@@ -12,7 +12,7 @@ namespace SebekeHakedis.Cekirdek
     ///   MALZEME  nesneye bağlı malzeme satırları
     ///   HAT      hat satırı (tanımdan sonra ikinci bir iletken alanı vardır)
     ///   KONTROL  True/False, ANAKESIT iletken, ETK etiket yazısının tanıtıcısı
-    ///   FULLREG  bölge sınırı: proje adı;proje kodu
+    ///   FULLREG  bölge sınırı: proje adı;proje kodu;grup kodu
     ///   HAKNO, ZKOORD  GPS noktasının hakedişi ve kotu
     /// </summary>
     public static class PromagisOkuyucu
@@ -41,7 +41,7 @@ namespace SebekeHakedis.Cekirdek
                 var fr = v.XdIlk("FULLREG");
                 if (fr == null || !v.CizgiMi) continue;
                 var f = fr.Split(';');
-                var b = new Bolge { Id = v.H, Ad = Alan(f, 0).Trim(), Kod = Alan(f, 1).Trim() };
+                var b = new Bolge { Id = v.H, Ad = Alan(f, 0).Trim(), Kod = Alan(f, 1).Trim(), Grup = Alan(f, 2).Trim() };
                 foreach (var k in v.Kose) b.Sinir.Add(new[] { k[0], k[1] });
                 b.Alan = Geometri.Alan(b.Sinir);
                 p.Bolgeler.Add(b);
@@ -251,7 +251,7 @@ namespace SebekeHakedis.Cekirdek
 
         // ---------------- Satır biçimleri ----------------
 
-        /// <summary>NIT (nesnenin kendi pozu): cins;tanım;durum;0;miktar;birim;katsayı;toplam;fiyat;hakediş;tarife;dm durum;sıra</summary>
+        /// <summary>NIT (nesnenin kendi pozu): cins;tanım;durum;birim fiyat;miktar;birim;katsayı;toplam;toplam tutar;hakediş;tarife;dm durum;sıra</summary>
         public static Kalem AnaKalemOku(string satir)
         {
             var f = (satir ?? "").Split(';');
@@ -263,7 +263,7 @@ namespace SebekeHakedis.Cekirdek
             return k;
         }
 
-        /// <summary>MALZEME: cins;tanım;durum;0;miktar;birim;katsayı;toplam;fiyat;hakediş;tarife;sıra;kontrol</summary>
+        /// <summary>MALZEME: cins;tanım;durum;birim fiyat;miktar;birim;katsayı;toplam;toplam tutar;hakediş;tarife;sıra;kontrol</summary>
         public static Kalem MalzemeOku(string satir)
         {
             var f = (satir ?? "").Split(';');
@@ -274,7 +274,7 @@ namespace SebekeHakedis.Cekirdek
             return k;
         }
 
-        /// <summary>HAT: cins;tanım;ikinci tanım;durum;0;miktar;birim;katsayı;toplam;fiyat;hakediş;tarife;sıra;kontrol</summary>
+        /// <summary>HAT: cins;AG kesit;OG kesit;durum;birim fiyat;miktar;birim;katsayı;toplam;toplam tutar;hakediş;tarife;sıra;kontrol</summary>
         public static Kalem HatKalemiOku(string satir)
         {
             var f = (satir ?? "").Split(';');
@@ -301,10 +301,16 @@ namespace SebekeHakedis.Cekirdek
                 Birim = Alan(f, 5).Trim(),
                 Katsayi = SayiCoz.Coz(Alan(f, 6), 1),
                 Toplam = SayiCoz.Coz(Alan(f, 7)),
-                BirimFiyat = SayiCoz.Coz(Alan(f, 8)),
+                BirimFiyat = SayiCoz.Coz(Alan(f, 3)),
                 Hakedis = SayiCoz.Tam(Alan(f, 9)),
                 Tarife = Alan(f, 10).Trim(),
             };
+            // PROMAGIS: 3. alan birim fiyat, 8. alan toplam tutar. Eklentinin eski dosyalarında birim fiyat 8. alandaydı.
+            if (k.BirimFiyat == 0)
+            {
+                double tutar = SayiCoz.Coz(Alan(f, 8));
+                if (tutar > 0) k.BirimFiyat = k.Toplam > 0 ? SayiCoz.Temiz(tutar / k.Toplam, 4) : tutar;
+            }
             return k;
         }
 

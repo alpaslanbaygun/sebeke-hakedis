@@ -23,7 +23,10 @@ namespace SebekeHakedis.Eklenti
         {
             var o = new Ortam { Belge = belge, Db = belge.Database, Ed = belge.Editor };
             var varliklar = Toplayici.Topla(o.Db);
-            o.Doldur(varliklar, PromagisOkuyucu.Oku(varliklar, belge.Name), AyarDeposu.Oku(o.Db), yedekOnEk);
+            PromagisAyarlari pa;
+            try { pa = PromagisSozlugu.Oku(o.Db); }
+            catch { pa = new PromagisAyarlari(); }
+            o.Doldur(varliklar, PromagisOkuyucu.Oku(varliklar, belge.Name), AyarDeposu.Oku(o.Db), yedekOnEk, pa);
             return o;
         }
 
@@ -31,6 +34,31 @@ namespace SebekeHakedis.Eklenti
         {
             try { AyarDeposu.Yaz(Db, Ayar); }
             catch (Exception ex) { Ed.WriteMessage("\nAyarlar kaydedilemedi: " + ex.Message); }
+            // PROMAGIS çizimlerinde aktif hakediş PROMAGIS'in kaydına da yazılır (formları aynı numarayla açılır)
+            try
+            {
+                if (Promagis.Var && Ayar.AktifHakedis > 0 && Ayar.AktifHakedis != Promagis.HakNo)
+                {
+                    PromagisSozlugu.Yaz(Db, "HakNo_Dic", "HakNo_Rec", Ayar.AktifHakedis.ToString(CultureInfo.InvariantCulture));
+                    Promagis.HakNo = Ayar.AktifHakedis;
+                }
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Komut sonunda: verilen sıra numaraları PROMAGIS'in sayacına yazılır ki PROMAGIS sonraki kayıtları
+        /// bizimkilerle çakışmayan numaralarla versin (yalnız PROMAGIS sözlüğü olan çizimlerde).
+        /// </summary>
+        public void SiraKaydet()
+        {
+            try
+            {
+                if (!Promagis.Var || Sira <= Promagis.Sayac) return;
+                PromagisSozlugu.Yaz(Db, "AYARLAR", "SAYAC", Sira.ToString(CultureInfo.InvariantCulture));
+                Promagis.Sayac = Sira;
+            }
+            catch { }
         }
 
         /// <summary>Noktaya en yakın eleman (yakalama mesafesi içinde); yoksa null.</summary>
@@ -109,6 +137,77 @@ namespace SebekeHakedis.Eklenti
                         rb.Add(new TypedValue((int)DxfCode.Text, kv.Key));
                         rb.Add(new TypedValue((int)DxfCode.Text, v));
                     }
+                    xr.Data = rb;
+                }
+                tr.Commit();
+            }
+        }
+    }
+
+    /// <summary>
+    /// PROMAGIS'in çizim sözlüğü: HakNo_Dic/HakNo_Rec (aktif hakediş), Tarife_Dic/Tarife_Rec (grup kodu),
+    /// AYARLAR/SAYAC (sıra sayacı), AYARLAR/TXSCALE (yazı ölçeği ×10). Değerler metin (DXF 1) olarak tutulur.
+    /// </summary>
+    internal static class PromagisSozlugu
+    {
+        public static PromagisAyarlari Oku(Database db)
+        {
+            var a = new PromagisAyarlari();
+            using (var tr = db.TransactionManager.StartOpenCloseTransaction())
+            {
+                var nod = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForRead);
+                a.Var = nod.Contains("AYARLAR") || nod.Contains("HakNo_Dic") || nod.Contains("Tarife_Dic");
+                a.HakNo = SayiCoz.Tam(Deger(tr, nod, "HakNo_Dic", "HakNo_Rec"));
+                a.GrupKodu = (Deger(tr, nod, "Tarife_Dic", "Tarife_Rec") ?? "").Trim();
+                double tx = SayiCoz.Coz(Deger(tr, nod, "AYARLAR", "TXSCALE"));
+                a.YaziOlcegi = tx > 0 ? tx / 10 : 0;
+                long sayac;
+                long.TryParse((Deger(tr, nod, "AYARLAR", "SAYAC") ?? "").Trim(), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out sayac);
+                a.Sayac = sayac;
+                tr.Commit();
+            }
+            return a;
+        }
+
+        private static string Deger(Transaction tr, DBDictionary nod, string sozluk, string kayit)
+        {
+            if (!nod.Contains(sozluk)) return null;
+            var d = tr.GetObject(nod.GetAt(sozluk), OpenMode.ForRead) as DBDictionary;
+            if (d == null || !d.Contains(kayit)) return null;
+            var xr = tr.GetObject(d.GetAt(kayit), OpenMode.ForRead) as Xrecord;
+            if (xr == null) return null;
+            using (var rb = xr.Data)
+            {
+                if (rb == null) return null;
+                foreach (TypedValue tv in rb) return Convert.ToString(tv.Value, CultureInfo.InvariantCulture);
+            }
+            return null;
+        }
+
+        public static void Yaz(Database db, string sozluk, string kayit, string deger)
+        {
+            using (var tr = db.TransactionManager.StartTransaction())
+            {
+                var nod = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForRead);
+                DBDictionary d;
+                if (nod.Contains(sozluk)) d = (DBDictionary)tr.GetObject(nod.GetAt(sozluk), OpenMode.ForWrite);
+                else
+                {
+                    nod.UpgradeOpen();
+                    d = new DBDictionary();
+                    nod.SetAt(sozluk, d);
+                    tr.AddNewlyCreatedDBObject(d, true);
+                }
+                Xrecord xr;
+                if (d.Contains(kayit)) xr = (Xrecord)tr.GetObject(d.GetAt(kayit), OpenMode.ForWrite);
+                else
+                {
+                    xr = new Xrecord();
+                    d.SetAt(kayit, xr);
+                    tr.AddNewlyCreatedDBObject(xr, true);
+                }
+                using (var rb = new ResultBuffer(new TypedValue((int)DxfCode.Text, deger ?? "")))
+                {
                     xr.Data = rb;
                 }
                 tr.Commit();

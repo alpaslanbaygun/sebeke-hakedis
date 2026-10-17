@@ -38,7 +38,8 @@ namespace SebekeHakedis.Cekirdek
     {
         public string Id = "";
         public string Ad = "";
-        public string Kod = "";         // ör. 11.22.33.19.12345
+        public string Kod = "";         // proje (tarife) kodu, ör. 24.38.01..05
+        public string Grup = "";        // yatırım grup kodu (PROMAGIS FULLREG üçüncü alan), ör. 01
         public string Aciklama = "";
         public List<double[]> Sinir = new List<double[]>(); // [Saga, Yukari]
         public double Alan;              // m², hesaplanır

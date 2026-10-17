@@ -55,6 +55,15 @@ export function promagisDurumu(state, supply) {
   if (d === 'M' && supply && ESLESME.tedarik[supply]) return ESLESME.tedarik[supply];
   return d;
 }
+/**
+ * AutoCAD'den gelen özel durum kodu (KM, ENH, ME) korunur: telefonda durum değişmediyse dosyaya aynı kod yazılır;
+ * değiştiyse telefonun durumundan türetilen kod kullanılır.
+ */
+function ozelDurum(turetilen, orijinal, state, trafo) {
+  const o = String(orijinal || '').trim().toUpperCase();
+  if (!o || o === turetilen || !ESLESME.durumlarTers[o] || ['M', 'M+M', 'DM', 'DM+M', 'MEVCUT'].includes(o)) return turetilen;
+  return voltDurumu(o, trafo) === state ? o : turetilen;
+}
 /** İş türü (montaj / demontaj / dmm) → PROMAGIS durumu. */
 const isDurumu = (job, supply) => (job === 'montaj' ? (supply && ESLESME.tedarik[supply]) || 'M' : ESLESME.isler[job] || 'M');
 
@@ -131,8 +140,9 @@ export function sebekeModel(ps, opts = {}) {
     if (!p || p.E == null) { uyarilar.push(e.no + ': konumu yok, dosyaya yazılmadı'); continue; }
     const ms = result.matsByEq.get(e.id) || { items: [], job: jobOf(e) };
     const tanim = elemanTanimi(e, cat);
-    const durum = promagisDurumu(e.state, tanim.tedarik);
+    let durum = promagisDurumu(e.state, tanim.tedarik);
     if (durum === null) { uyarilar.push(e.no + ': "ileride" durumundaki obje AutoCAD dosyasına yazılmaz'); continue; }
+    durum = ozelDurum(durum, e.sebeke && (e.sebeke.durum || (e.sebeke.anaKalem && e.sebeke.anaKalem.durum)), e.state, e.kind === 'transformer');
     const hak = hakedisi(e);
     const bolge = bolgeIdi(p.E, p.N);
     const el = {
@@ -168,8 +178,9 @@ export function sebekeModel(ps, opts = {}) {
     const hatTuru = hatTuruSec(l);
     const iletkenler = li.items.filter((x) => !x.kanal && !x.material && !x.manual && (x.conductor || x.role));
     const tedarik = tedarikOf(cat, iletkenler.length ? iletkenler[0].servis : null);
-    const durum = promagisDurumu(l.state, tedarik);
+    let durum = promagisDurumu(l.state, tedarik);
     if (durum === null) { uyarilar.push(l.lineNo + ': "ileride" durumundaki hat AutoCAD dosyasına yazılmaz'); continue; }
+    durum = ozelDurum(durum, l.sebeke && l.sebeke.durum, l.state, false);
     const km = l.install === 'yeralti' ? kanalModel(l.cable) : null;
     const kablolu = !(l.channelOnly && !(l.circuits || []).length);
     if (kablolu) {
@@ -442,7 +453,7 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     project = await ps.createProject({ name: opts.name || pj.ad || 'AutoCAD projesi', code: pj.kod || '', crs: opts.crs || makeCrs({ datum: 'TUREF', projection: 'TM3', cm: dom }), autoRecipe: false, mode: 'asbuilt' });
     await ps.open(project.id);
   }
-  const sebeke = Object.assign({}, project.sebeke || {}, { katmanOnEki: pj.katmanOnEki || (project.sebeke || {}).katmanOnEki || 'SC', gisOnEki: pj.gisOnEki || pj.katmanOnEki || 'SC', kaynak: pj.kaynak || '', dom, olusturan: sp.olusturan || '', bolgeler: (sp.bolgeler || []).map((b) => ({ id: b.id, ad: b.ad, kod: b.kod, aciklama: b.aciklama || '', sinir: b.sinir })), alinma: new Date().toISOString() });
+  const sebeke = Object.assign({}, project.sebeke || {}, { katmanOnEki: pj.katmanOnEki || (project.sebeke || {}).katmanOnEki || 'SC', gisOnEki: pj.gisOnEki || pj.katmanOnEki || 'SC', kaynak: pj.kaynak || '', dom, olusturan: sp.olusturan || '', bolgeler: (sp.bolgeler || []).map((b) => ({ id: b.id, ad: b.ad, kod: b.kod, grup: b.grup || '', aciklama: b.aciklama || '', sinir: b.sinir })), alinma: new Date().toISOString() });
   await ps.updateProject({ sebeke, autoRecipe: project.autoRecipe === true }, 'AutoCAD dosyası alındı');
   if (opts.dry) return ozet;
 
@@ -462,7 +473,7 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     const et = ESLESME.elemanTurleri[el.tur] || ESLESME.elemanTurleri.DIGER;
     const trafo = et.kind === 'transformer';
     const state = voltDurumu(el.durum, trafo);
-    const data = { state, note: el.not || undefined, sebekeId: el.id, sebeke: { id: el.id, tur: el.tur, cins: el.cins, tip: el.tip, aci: el.aci, katman: el.katman, blok: el.blok, hakedis: el.hakedis, bolge: el.bolge, anaKalem: (el.kalemler || []).find((k) => k.ana) || null } };
+    const data = { state, note: el.not || undefined, sebekeId: el.id, sebeke: { id: el.id, tur: el.tur, cins: el.cins, tip: el.tip, durum: el.durum, aci: el.aci, katman: el.katman, blok: el.blok, hakedis: el.hakedis, bolge: el.bolge, anaKalem: (el.kalemler || []).find((k) => k.ana) || null } };
     const anaKalem = (el.kalemler || []).find((k) => k.ana);
     const attrs = {};
     if (et.kind === 'pole' || et.kind === 'lighting') {
@@ -523,7 +534,7 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
       lineType: ht.lineType, install: ht.install, musterek: !!ht.musterek, state: voltDurumu(h.durum), nodes, name: lt ? '' : h.anaKesit,
       circuits: lt ? [{ role: ht.lineType === 'ABONE' ? 'ABONE' : ht.lineType, key: lt.name, count: 1 }] : [],
       sebekeId: h.id, note: h.not || undefined,
-      sebeke: { id: h.id, tur: h.tur, anaKesit: h.anaKesit, etiket: h.etiket, katman: h.katman, hakedis: h.hakedis, bolge: h.bolge, kalemler: lt ? undefined : h.kalemler }
+      sebeke: { id: h.id, tur: h.tur, anaKesit: h.anaKesit, durum: h.durum, etiket: h.etiket, katman: h.katman, hakedis: h.hakedis, bolge: h.bolge, kalemler: lt ? undefined : h.kalemler }
     };
     let boruKalemi = null;
     if (kanal) { const ka = kanalAyari(kanal, h); data.cable = ka.cable; boruKalemi = ka.boru; data.sebeke.kanalId = kanal.id; data.sebeke.kanalKod = kanal.kod; kanalIndeks.delete(koseAnahtari(h.kose)); }

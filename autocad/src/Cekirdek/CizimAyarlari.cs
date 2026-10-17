@@ -49,12 +49,23 @@ namespace SebekeHakedis.Cekirdek
         public int AktifHakedis;
         public int Dom;
         public double SembolOlcegi;
-        public double EtiketYuksekligi = 0.5;
+        /// <summary>Hat etiketi ve uzunluk yazılarının yüksekliği (m). Telefonun çizimiyle aynı: 1,8 m (1/1000'de 1,8 mm).</summary>
+        public double EtiketYuksekligi = 1.8;
+        /// <summary>Etiket yüksekliği bu çizimde ayarlandı mı (yoksa PROMAGIS'in TXSCALE değeri kullanılır).</summary>
+        public bool EtiketAyarlandi;
         public double YakalamaMesafesi = 1.0;
         public bool YukariYuvarla = true;
         public readonly Dictionary<string, double> EkPay = new Dictionary<string, double>(StringComparer.Ordinal);
         public double KanalAlt = 40, KanalUst = 40, KanalDerinlik = 100;
         public string KanalZemin = "TOPRAK";
+        /// <summary>Tarifede köy / bakım sütunu kullanılsın (PROMAGIS "Köy" seçeneği); kapalıysa şehir.</summary>
+        public bool KoyTarifesi;
+        /// <summary>Tarifenin karakteristik hanesi (01, 02, 03, 04, 05, 11); boşsa katalogdaki.</summary>
+        public string Karakteristik = "";
+        /// <summary>Aktif kategori (şerit menü): unsur kodu buradan gelir; boşsa katalogdaki unsur.</summary>
+        public string Kategori = "";
+        /// <summary>Hat çizerken her hattın metrajı sorulsun (kapalıysa çizim uzunluğundan hesaplanır, sonra düzeltilebilir).</summary>
+        public bool HattaMetrajSor;
 
         /// <summary>Son seçimler (tür, tip, kesit, durum...): bir sonraki komutta hazır gelir.</summary>
         public readonly Dictionary<string, string> Son = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -94,6 +105,10 @@ namespace SebekeHakedis.Cekirdek
                 new KeyValuePair<string, string>("kanalUst", S(KanalUst)),
                 new KeyValuePair<string, string>("kanalDerinlik", S(KanalDerinlik)),
                 new KeyValuePair<string, string>("kanalZemin", KanalZemin ?? ""),
+                new KeyValuePair<string, string>("koyTarifesi", KoyTarifesi ? "1" : "0"),
+                new KeyValuePair<string, string>("karakteristik", Karakteristik ?? ""),
+                new KeyValuePair<string, string>("kategori", Kategori ?? ""),
+                new KeyValuePair<string, string>("hattaMetrajSor", HattaMetrajSor ? "1" : "0"),
             };
             foreach (var kv in EkPay) l.Add(new KeyValuePair<string, string>("ekPay." + kv.Key, S(kv.Value)));
             foreach (var kv in Son) l.Add(new KeyValuePair<string, string>("son." + kv.Key, kv.Value ?? ""));
@@ -116,16 +131,20 @@ namespace SebekeHakedis.Cekirdek
                     case "aktifHakedis": a.AktifHakedis = SayiCoz.Tam(v); break;
                     case "dom": a.Dom = SayiCoz.Tam(v); break;
                     case "sembolOlcegi": a.SembolOlcegi = SayiCoz.Coz(v); break;
-                    case "etiketYuksekligi": a.EtiketYuksekligi = SayiCoz.Coz(v, 0.5); break;
+                    case "etiketYuksekligi": a.EtiketYuksekligi = SayiCoz.Coz(v, 1.8); a.EtiketAyarlandi = a.EtiketYuksekligi > 0; break;
                     case "yakalamaMesafesi": a.YakalamaMesafesi = SayiCoz.Coz(v, 1.0); break;
                     case "yukariYuvarla": a.YukariYuvarla = v != "0"; break;
                     case "kanalAlt": a.KanalAlt = SayiCoz.Coz(v, 40); break;
                     case "kanalUst": a.KanalUst = SayiCoz.Coz(v, 40); break;
                     case "kanalDerinlik": a.KanalDerinlik = SayiCoz.Coz(v, 100); break;
                     case "kanalZemin": a.KanalZemin = string.IsNullOrEmpty(v) ? "TOPRAK" : v; break;
+                    case "koyTarifesi": a.KoyTarifesi = v == "1"; break;
+                    case "karakteristik": a.Karakteristik = v.Trim(); break;
+                    case "kategori": a.Kategori = v.Trim(); break;
+                    case "hattaMetrajSor": a.HattaMetrajSor = v == "1"; break;
                 }
             }
-            if (a.EtiketYuksekligi <= 0) a.EtiketYuksekligi = 0.5;
+            if (a.EtiketYuksekligi <= 0) { a.EtiketYuksekligi = 1.8; a.EtiketAyarlandi = false; }
             if (a.YakalamaMesafesi < 0) a.YakalamaMesafesi = 1.0;
             return a;
         }

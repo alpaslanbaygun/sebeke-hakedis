@@ -212,7 +212,7 @@ namespace SebekeHakedis.Eklenti
                         Tur = secim.Tur, GisId = gis, Cins = secim.Tip.Cins, Tip = secim.Tip.Tanim, Durum = secim.Durum, DmDurum = secim.DmDurum,
                         Hakedis = secim.Hakedis, Saga = p.X, Yukari = p.Y, Kot = p.Z,
                     };
-                    e.Kalemler.Add(Katalog.KalemYap(secim.Tip, 1, secim.Durum, secim.Hakedis, true, "NIT", o.YeniSira(), secim.DmDurum));
+                    e.Kalemler.Add(o.KalemYap(secim.Tip, 1, secim.Durum, secim.Hakedis, true, "NIT", secim.DmDurum));
                     using (var tr = o.Db.TransactionManager.StartTransaction())
                     {
                         var y = Yazici(o, tr);
@@ -231,6 +231,7 @@ namespace SebekeHakedis.Eklenti
                     ed.WriteMessage("\n" + Ad(e) + " konuldu.");
                 }
                 if (sayi > 0) ed.WriteMessage("\n" + sayi + " eleman konuldu.");
+                o.SiraKaydet();
             });
         }
 
@@ -270,7 +271,7 @@ namespace SebekeHakedis.Eklenti
                     if (m == null) { ed.WriteMessage("\nHat çizilmedi."); break; }
                     var h = new Hat { Tur = secim.Tur, AnaKesit = secim.Kesit.Tanim, Durum = secim.Durum, Hakedis = secim.Hakedis };
                     foreach (var q in noktalar) h.Kose.Add(new[] { q.X, q.Y });
-                    h.Kalemler.Add(Katalog.KalemYap(secim.Kesit, m.Value, secim.Durum, secim.Hakedis, false, "HAT", o.YeniSira()));
+                    h.Kalemler.Add(o.KalemYap(secim.Kesit, m.Value, secim.Durum, secim.Hakedis, false, "HAT"));
                     var v = PromagisYazici.Hat(h, o.OnEk, null);
                     string etiket = PromagisYazici.HatEtiketi(h);
                     using (var tr = o.Db.TransactionManager.StartTransaction())
@@ -284,6 +285,7 @@ namespace SebekeHakedis.Eklenti
                     ed.WriteMessage("\nHat çizildi: " + etiket.Replace(PromagisYazici.Tanitici, v.H));
                 }
                 if (sayi > 0) ed.WriteMessage("\n" + sayi + " hat çizildi.");
+                o.SiraKaydet();
             });
         }
 
@@ -328,10 +330,14 @@ namespace SebekeHakedis.Eklenti
                         BitNo = uclar.Count > 1 && uclar[uclar.Count - 1] != null ? uclar[uclar.Count - 1].GisId : "",
                     };
                     foreach (var q in noktalar) c.Kose.Add(new[] { q.X, q.Y });
+                    var zeminKalemi = o.Katalog.Bul("KABLO_KANALI", c.Zemin);
                     var kl = new Kalem
                     {
                         Cins = c.Kod.ToString(CultureInfo.InvariantCulture), Tanim = c.Zemin, Durum = c.Durum, Miktar = m.Value, Birim = "mt/m³",
-                        Katsayi = 1, Hakedis = c.Hakedis, Tarife = "0104", Sira = o.YeniSira(), Ana = true, Kaynak = "NIT",
+                        Katsayi = 1, Hakedis = c.Hakedis, Sira = o.YeniSira(), Ana = true, Kaynak = "NIT",
+                        Tarife = zeminKalemi != null
+                            ? Katalog.TarifeYap(zeminKalemi.TarifeSec(o.Ayar.KoyTarifesi), o.Ayar.Karakteristik, Kategoriler.UnsurUygula(zeminKalemi.TarifeSec(o.Ayar.KoyTarifesi), o.Unsur))
+                            : Katalog.TarifeYap("0104", o.Ayar.Karakteristik, Kategoriler.UnsurUygula("0104", o.Unsur)),
                     };
                     Metraj.Toplam(kl, c);
                     c.Kalemler.Add(kl);
@@ -347,6 +353,7 @@ namespace SebekeHakedis.Eklenti
                     ed.WriteMessage("\nKanal çizildi: " + Metraj.Yazi(m.Value) + " m, " + kl.Toplam.ToString("0.##", Tr) + " m³.");
                 }
                 if (sayi > 0) ed.WriteMessage("\n" + sayi + " kanal çizildi.");
+                o.SiraKaydet();
             });
         }
 
@@ -390,7 +397,7 @@ namespace SebekeHakedis.Eklenti
                         BitNo = uclar.Count > 1 && uclar[uclar.Count - 1] != null ? uclar[uclar.Count - 1].GisId : "",
                     };
                     foreach (var q in noktalar) s.Kose.Add(new[] { q.X, q.Y });
-                    s.Kalemler.Add(Katalog.KalemYap(secim.Tip, m.Value, secim.Durum, secim.Hakedis, true, "NIT", o.YeniSira()));
+                    s.Kalemler.Add(o.KalemYap(secim.Tip, m.Value, secim.Durum, secim.Hakedis, true, "NIT"));
                     var v = PromagisYazici.Sondaj(s, o.OnEk, null);
                     using (var tr = o.Db.TransactionManager.StartTransaction())
                     {
@@ -403,6 +410,7 @@ namespace SebekeHakedis.Eklenti
                     ed.WriteMessage("\nSondaj çizildi: " + secim.Tip.Tanim + ", " + Metraj.Yazi(m.Value) + " m.");
                 }
                 if (sayi > 0) ed.WriteMessage("\n" + sayi + " sondaj çizildi.");
+                o.SiraKaydet();
             });
         }
 
@@ -456,9 +464,9 @@ namespace SebekeHakedis.Eklenti
                 else return;
 
                 if (sinir.Count < 3) { Pencereler.Uyar("Bölge sınırı için en az üç köşe gerekir."); return; }
-                string ad = "", kod = "";
-                if (!Pencereler.Bolge(ref ad, ref kod)) return;
-                var b = new Bolge { Ad = ad, Kod = kod, Sinir = sinir };
+                string ad = "", kod = "", grup = o.Promagis.GrupKodu;
+                if (!Pencereler.Bolge(ref ad, ref kod, ref grup)) return;
+                var b = new Bolge { Ad = ad, Kod = kod, Grup = grup, Sinir = sinir };
                 var vb = PromagisYazici.Bolge(b, o.OnEk, null);
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
@@ -619,6 +627,7 @@ namespace SebekeHakedis.Eklenti
                     UyarilariYaz(ed, y);
                 }
                 ed.WriteMessage("\nMalzemeler kaydedildi.");
+                o.SiraKaydet();
             });
         }
 

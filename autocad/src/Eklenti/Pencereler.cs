@@ -569,13 +569,15 @@ namespace SebekeHakedis.Eklenti
 
         // ================= Bölge =================
 
-        public static bool Bolge(ref string ad, ref string kod)
+        public static bool Bolge(ref string ad, ref string kod, ref string grup)
         {
-            using (var d = new Duzen("Bölge (alt proje)", 520, 210, "Kaydet"))
+            using (var d = new Duzen("Bölge (alt proje)", 520, 250, "Kaydet"))
             {
                 var tAd = d.Satir("Bölge adı", new TextBox { Text = ad ?? "" });
                 var tKod = d.Satir("Proje kodu", new TextBox { Text = kod ?? "" });
-                d.Not("Raporun PROJE sütununa bu kod yazılır. Sınırın içindeki her nesne bu bölgeye sayılır.");
+                var tGrup = d.Satir("Yatırım grup kodu", new TextBox { Text = grup ?? "" });
+                d.Not("Raporun PROJE sütununa proje kodu yazılır (PROMAGIS biçimi: YIL.İL.GRUP..PROJE, ör. 24.38.01..05). " +
+                      "Sınırın içindeki her nesne bu bölgeye sayılır.");
                 d.Dogrula = () =>
                 {
                     if (tAd.Text.Trim().Length == 0 && tKod.Text.Trim().Length == 0) { Uyar("Bölge adını ya da proje kodunu yazın."); return false; }
@@ -584,6 +586,7 @@ namespace SebekeHakedis.Eklenti
                 if (!d.Goster()) return false;
                 ad = tAd.Text.Trim();
                 kod = tKod.Text.Trim();
+                grup = tGrup.Text.Trim();
                 return true;
             }
         }
@@ -613,7 +616,7 @@ namespace SebekeHakedis.Eklenti
         public static bool Ayarlar(OrtamVerisi o)
         {
             var a = o.Ayar;
-            using (var d = new Duzen("Şebeke Hakediş — çizim ayarları", 600, 690, "Kaydet"))
+            using (var d = new Duzen("Şebeke Hakediş — çizim ayarları", 620, 760, "Kaydet"))
             {
                 var onEk = d.Satir("Katman ön eki", new TextBox { Text = a.KatmanOnEki });
                 d.Not("Boş bırakılırsa çizimdeki PROMAGIS katmanlarından bulunur (şu an: " + o.OnEk + ").");
@@ -628,6 +631,18 @@ namespace SebekeHakedis.Eklenti
                 var etiket = d.Satir("Hat etiketi yüksekliği (m)", Sayi(0.05m, 50, D(a.EtiketYuksekligi), 2, 0.1m));
                 var yakala = d.Satir("Direğe yakalama (m)", Sayi(0, 50, D(a.YakalamaMesafesi), 2, 0.5m));
                 var yukari = d.Satir("Metraj", new CheckBox { Text = "Çizim uzunluğunu yukarı yuvarla", Checked = a.YukariYuvarla, AutoSize = true });
+                var metrajSor = d.Satir("Hat çizerken", new CheckBox { Text = "Her hattın metrajını sor (kapalıysa kendiliğinden yazılır)", Checked = a.HattaMetrajSor, AutoSize = true });
+                d.AraBaslik("Tarife (karakteristik + unsur)");
+                var koy = d.Satir("Unsur sütunu", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
+                koy.Items.Add("Şehir (katalogdaki standart)");
+                koy.Items.Add("Köy / bakım sütunu");
+                koy.SelectedIndex = a.KoyTarifesi ? 1 : 0;
+                var krk = d.Satir("Karakteristik", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
+                krk.Items.Add("Katalogdaki (genellikle 01)");
+                var krkKodlari = new List<string> { "" };
+                foreach (var kv in o.Katalog.Karakteristikler) { krk.Items.Add(kv.Key + " — " + kv.Value); krkKodlari.Add(kv.Key); }
+                krk.SelectedIndex = Math.Max(0, krkKodlari.IndexOf(a.Karakteristik ?? ""));
+                d.Not("Unsur, şerit menüdeki kategoriden gelir (AG havai 07, AG yeraltı 05, OG havai 06, ENH 03, OG yeraltı 04, aydınlatma 08); \"Tümü\" seçiliyse katalogdaki unsur kullanılır.");
                 d.AraBaslik("Hat metrajına eklenecek pay (m)");
                 var paylar = new Dictionary<string, NumericUpDown>();
                 var payTablosu = IkiliTablo();
@@ -654,6 +669,10 @@ namespace SebekeHakedis.Eklenti
                 a.EtiketYuksekligi = (double)etiket.Value;
                 a.YakalamaMesafesi = (double)yakala.Value;
                 a.YukariYuvarla = yukari.Checked;
+                a.HattaMetrajSor = metrajSor.Checked;
+                a.KoyTarifesi = koy.SelectedIndex == 1;
+                a.Karakteristik = krk.SelectedIndex > 0 && krk.SelectedIndex < krkKodlari.Count ? krkKodlari[krk.SelectedIndex] : "";
+                a.EtiketAyarlandi = true;
                 foreach (var kv in paylar)
                 {
                     double v = (double)kv.Value.Value;
@@ -857,7 +876,7 @@ namespace SebekeHakedis.Eklenti
                     var it = KatalogdanSec("Malzeme ekle — " + baslik, o.Katalog.Malzemeler(katalogNesnesi), d.F);
                     if (it == null) return;
                     string dur = nesneDurumu == "MEVCUT" || string.IsNullOrEmpty(nesneDurumu) ? "M" : nesneDurumu;
-                    var k = Katalog.KalemYap(it, 1, dur, o.Hakedis, false, "MALZEME", o.YeniSira());
+                    var k = o.KalemYap(it, 1, dur, o.Hakedis, false, "MALZEME");
                     kalemler.Add(k);
                     int r = satirEkle(k);
                     g.ClearSelection();

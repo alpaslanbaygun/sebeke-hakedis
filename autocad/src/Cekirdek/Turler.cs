@@ -46,7 +46,11 @@ namespace SebekeHakedis.Cekirdek
             new Tur("MUSTEREK", "Müşterek"),
         };
 
-        public static readonly string[] Durumlar = { "M", "M+M", "DM", "DM+M", "MEVCUT" };
+        /// <summary>PROMAGIS durum kodları (MALZEMEDRM listesiyle aynı sıra ve anlam).</summary>
+        public static readonly string[] Durumlar = { "M+M", "M", "KM", "DM+M", "DM", "ENH", "ME", "MEVCUT" };
+
+        /// <summary>Çizim komutlarında sunulan sık kullanılan durumlar.</summary>
+        public static readonly string[] SikDurumlar = { "M+M", "M", "DM+M", "DM", "MEVCUT" };
 
         public static readonly string[] DmDurumlari = { "", "KESİK", "SÖKÜK" };
 
@@ -63,10 +67,13 @@ namespace SebekeHakedis.Cekirdek
         {
             switch (durum)
             {
-                case "M": return "Montaj";
+                case "M": return "Montaj (malzeme kurumdan)";
                 case "M+M": return "Malzeme + Montaj";
+                case "KM": return "Kurum montajı, malzeme yükleniciden";
                 case "DM": return "Demontaj";
                 case "DM+M": return "Sök-Tak";
+                case "ENH": return "Kilometrik bedelli iş";
+                case "ME": return "Mutabakat eksiği";
                 case "MEVCUT": return "Mevcut";
                 default: return durum ?? "";
             }
