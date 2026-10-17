@@ -1,5 +1,6 @@
 // AutoCAD DXF (R12 / AC1009) üretici — Lejant.dxf katman, ACI, çizgi tipi ve sembol yapısıyla.
 // Koordinatlar proje CRS'inde: X = Sağa (E), Y = Yukarı (N), Z = kot (H). Ölçek 1/1000 (yazı 1.8 m = 1.8 mm).
+// Görünüm kuralları (renkler, çizgi tipleri, yazı yerleri) AutoCAD eklentisindeki Stil.cs ile birebir aynıdır.
 // Simgeler ortak tablodan gelir (ortak/katalog/semboller.json → semboller.js): AutoCAD eklentisi aynı blokları
 // aynı adla (SH_…) tanımlar; böylece telefonun DXF'i ile eklentinin çizimi aynı görünür.
 import SEMBOLLER from '../ortak/semboller.js';
@@ -133,7 +134,19 @@ export function buildDXF(model, opts = {}) {
   blocks(w);
   // ENTITIES
   w.g(0, 'SECTION').g(2, 'ENTITIES');
-  const text = (layer, x, y, z, s, h = th, rot = 0, color = null) => { w.g(0, 'TEXT').g(8, layer); if (color != null) w.g(62, color); w.g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(40, f(h)).g(1, s).g(50, f(rot)); };
+  const text = (layer, x, y, z, s, h = th, rot = 0, color = null, orta = false) => {
+    w.g(0, 'TEXT').g(8, layer); if (color != null) w.g(62, color);
+    w.g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(40, f(h)).g(1, s).g(50, f(rot));
+    if (orta) w.g(72, 1).g(11, f(x)).g(21, f(y)).g(31, f(z || 0)); // ortalanmış (hizalama noktası = x, y)
+  };
+  // Hat yazıları: parçanın ortasında, çizgiye dik yönde pay kadar üstünde (+) ya da altında (−); yatay hatta y ± pay.
+  // AutoCAD eklentisi aynı kuralla yazar (Stil.cs), böylece iki çizim birebir aynı görünür.
+  const yaziAcisi = (dx, dy) => { let a = Math.atan2(dy, dx); if (a > Math.PI / 2 + 1e-9) a -= Math.PI; else if (a <= -Math.PI / 2 + 1e-9) a += Math.PI; return a; };
+  const hatYazisi = (a, b, pay, s, h) => {
+    const aci = yaziAcisi(b.E - a.E, b.N - a.N);
+    const mx = (a.E + b.E) / 2, my = (a.N + b.N) / 2;
+    text('ELEKTRIK-YAZI', mx - Math.sin(aci) * pay, my + Math.cos(aci) * pay, 0, s, h, aci * 180 / Math.PI, null, true);
+  };
   const insert = (layer, block, x, y, z, color = null, rot = 0) => { w.g(0, 'INSERT').g(8, layer); if (color != null) w.g(62, color); w.g(2, block).g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(41, 1).g(42, 1).g(43, 1).g(50, f(rot)); };
   const kesitFmt = (cat.table('legend') || {}).kesit || { MEVCUT: '({t})', YENI: '{t}', ILERIDE: '<{t}>', DMM: '[{t}]' };
   let nLines = 0, nIns = 0, nTxt = 0;
@@ -145,15 +158,13 @@ export function buildDXF(model, opts = {}) {
       w.g(0, 'LINE').g(8, layer); if (lt) w.g(6, lt); if (l.state === 'DEMONTAJ') w.g(62, 2);
       w.g(10, f(a.E)).g(20, f(a.N)).g(30, f(a.H || 0)).g(11, f(b.E)).g(21, f(b.N)).g(31, f(b.H || 0)); nLines++;
       if (opts.spanText !== false) {
-        const mx = (a.E + b.E) / 2, my = (a.N + b.N) / 2; let ang = Math.atan2(b.N - a.N, b.E - a.E) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
         const d = Math.hypot(b.E - a.E, b.N - a.N);
-        text('ELEKTRIK-YAZI', mx, my + 0.8, 0, d.toFixed(2), th * 0.8, ang); nTxt++;
+        hatYazisi(a, b, 0.8, d.toFixed(2), th * 0.8); nTxt++;
       }
     }
     const mid = Math.floor((l.coords.length - 1) / 2), a = l.coords[mid], b = l.coords[mid + 1];
-    let ang = Math.atan2(b.N - a.N, b.E - a.E) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
     const tag = (kesitFmt[l.state] || '{t}').replace('{t}', l.label);
-    text('ELEKTRIK-YAZI', (a.E + b.E) / 2, (a.N + b.N) / 2 - 2.5, 0, l.no + ' ' + tag, th, ang); nTxt++;
+    hatYazisi(a, b, -2.5, l.no + ' ' + tag, th); nTxt++;
   }
   for (const e of model.equipment) {
     if (e.E == null) continue;

@@ -165,16 +165,15 @@ export function sebekeModel(ps, opts = {}) {
     sp.elemanlar.push(el);
   }
 
-  // Hatlar, kanallar, sondajlar
+  // Hatlar, kanallar, sondajlar. Hat, ekipman olan düğümlerde bölünür: direkten direğe / SDK'dan SDK'ya her açıklık
+  // AutoCAD'de ayrı bir hat nesnesidir (kendi metrajı ve etiketiyle; PROMAGIS ve eklenti böyle çalışır). Parçaların
+  // kimlikleri korunur: daha önce AutoCAD'den gelen parça kimlikleri (sebeke.parcalar) aynı uçlara yeniden verilir,
+  // yenileri "<hat kimliği>#<sıra>" olur. Telefona geri alınırken parçalar yeniden tek hat olur.
   for (const l of lines) {
     const li = result.lineInfo.get(l.id) || { items: [], length2D: 0, length3D: 0, cable: null };
     const coords = (l.nodes || []).map((id) => pts.get(id)).filter((p) => p && p.E != null);
     if (coords.length < 2) { uyarilar.push(l.lineNo + ': iki noktası yok, dosyaya yazılmadı'); continue; }
-    const kose = coords.map((p) => [r4(p.E), r4(p.N)]);
-    const mid = coords[Math.floor(coords.length / 2)];
-    const bolge = bolgeIdi(mid.E, mid.N);
     const hak = hakedisi(l);
-    const uc = [coords[0], coords[coords.length - 1]].map((p) => { const es = eqByPoint.get(p.id) || []; return es.length ? es[0] : null; });
     const hatTuru = hatTuruSec(l);
     const iletkenler = li.items.filter((x) => !x.kanal && !x.material && !x.manual && (x.conductor || x.role));
     const tedarik = tedarikOf(cat, iletkenler.length ? iletkenler[0].servis : null);
@@ -183,47 +182,95 @@ export function sebekeModel(ps, opts = {}) {
     durum = ozelDurum(durum, l.sebeke && l.sebeke.durum, l.state, false);
     const km = l.install === 'yeralti' ? kanalModel(l.cable) : null;
     const kablolu = !(l.channelOnly && !(l.circuits || []).length);
-    if (kablolu) {
-      const etiket = l.sebeke && !(l.circuits || []).length && l.sebeke.anaKesit ? l.sebeke.anaKesit : lineLabel(l, cat);
-      const kesit = promagisKesit(etiket, l.lineType, l.install);
-      const h = {
-        id: (l.sebeke && l.sebeke.id) || l.sebekeId || l.id, tur: hatTuru.tur, anaKesit: kesit.tanim, durum, hakedis: hak, bolge, kose,
-        cizimUzunlugu: r3(li.length2D), etiket: '', kontrol: null, katman: (l.sebeke && l.sebeke.katman) || '', kalemler: [], telefonId: l.id,
-        uclar: uc.map((e) => (e ? (e.sebekeId || e.id) : '')), not: l.note || undefined
-      };
-      const hatKalemleri = iletkenKalemleri(l, li, iletkenler, hatTuru, kesit, durum, hak, cat);
-      h.kalemler.push(...hatKalemleri);
-      if (!hatKalemleri.length && l.sebeke && Array.isArray(l.sebeke.kalemler)) h.kalemler.push(...l.sebeke.kalemler.map((k) => Object.assign({}, k, { hakedis: hak })));
-      for (const m of li.items) if (m.manual) { const k = malzemeKalemi(Object.assign({}, m, { kgPer: null, origin: 'MANUEL' }), { cins: '', voltaj: hatTuru.voltaj, tarife: hatTuru.tarife }, hak, li.job, cat); if (k) h.kalemler.push(k); }
-      const ana = h.kalemler.find((k) => k.kaynak === 'HAT') || h.kalemler[0];
-      h.etiket = SH.hatEtiketi(durum, kesit.aciklama || kesit.tanim, ana ? ana.miktar : Math.ceil(li.length2D - 1e-6));
-      sp.hatlar.push(h);
-    }
-    // Yeraltı: kazı kanalı ya da yatay sondaj ayrı nesnedir
-    if (km && !km.kazisiz && li.cable && li.cable.kanal) {
-      const kn = li.cable.kanal;
-      const kablolar = kanalKablolari(l);
-      if (km.method === 'sondaj') {
-        const s = { id: (l.sebeke && l.sebeke.sondaj && l.sebeke.id) || 'S' + ((l.sebeke && l.sebeke.id) || l.sebekeId || l.id), tip: (l.sebeke && l.sebeke.sondaj && l.sebeke.tip) || 'Yatay sondaj' + (l.cable && l.cable.pipeDia ? ' Ø' + l.cable.pipeDia : ''), durum, hakedis: hak, bolge, basNo: uc[0] ? uc[0].no : '', bitNo: uc[1] ? uc[1].no : '', kose, cizimUzunlugu: r3(kn.uzunluk), kontrol: null, kalemler: [], telefonId: l.id };
-        const sondaj = li.items.find((x) => x.kanal && /sondaj/i.test(x.why || ''));
-        s.kalemler.push(SH.kalemYap({ cins: 'YATAY_DELGİ', tanim: s.tip, birim: 'mt/mt', katsayi: 1, tarife: cinsTarifesi('YATAY_DELGİ', '0104') }, { miktar: Math.ceil(kn.uzunluk - 1e-6), durum, hakedis: hak, ana: true, kaynak: 'NIT' }));
-        if (sondaj && sondaj.servis) s.kalemler[0].servis = sondaj.servis;
-        sp.sondajlar.push(s);
-      } else {
-        const zemin = ESLESME.zeminler[km.surface] || 'TOPRAK';
-        const gen = Math.round((kn.genislik || 0) * 100), der = Math.round((kn.derinlik || 0) * 100);
-        const c = { id: (l.sebeke && l.sebeke.kanalId) || 'K' + ((l.sebeke && l.sebeke.id) || l.sebekeId || l.id), kod: SH.kanalKodu(kablolar.OG, kablolar.AG, kablolar.AYD, kablolar.REK), zemin, altGenislik: gen, ustGenislik: gen, derinlik: der, basNo: uc[0] ? uc[0].no : '', bitNo: uc[1] ? uc[1].no : '', durum, hakedis: hak, bolge, kose, cizimUzunlugu: r3(kn.uzunluk), kontrol: null, kalemler: [], telefonId: l.id };
-        const kk = SH.kalemYap({ cins: String(c.kod), tanim: zemin, birim: 'mt/m³', katsayi: 1, tarife: cinsTarifesi('KABLO_KANALI', '0104') }, { miktar: Math.ceil(kn.uzunluk - 1e-6), durum, hakedis: hak, ana: true, kaynak: 'NIT' });
-        SH.kalemToplami(kk, c);
-        c.kalemler.push(kk);
-        if (kn.boru > 0) {
-          // Boru PROMAGIS'te kanalın değil kablonun malzemesidir (kanal nesnesi yalnız kendi kalemini taşır)
-          const boru = SH.kalemYap({ cins: 'GALVANİZLİ_GAZ_BORUSU', tanim: 'Ø' + ((l.cable && l.cable.pipeDia) || 110) + ' boru', birim: 'mt/mt', katsayi: 1, tarife: cinsTarifesi('GALVANİZLİ_GAZ_BORUSU', '0104') }, { miktar: Math.ceil(kn.boru - 1e-6), durum, hakedis: hak, kaynak: 'MALZEME' });
-          const hat = kablolu ? sp.hatlar[sp.hatlar.length - 1] : null;
-          if (hat) hat.kalemler.push(boru);
-          else { c.kalemler.push(boru); uyarilar.push(l.lineNo + ': kablosuz kanaldaki boru kalemi AutoCAD çizimine yazılamaz (yalnız dosyadan raporda görünür)'); }
+    const sb2 = l.sebeke || {};
+    const temelId = sb2.id || l.sebekeId || l.id;
+    const parcalar = hatParcalari(coords, eqByPoint);
+    const n = parcalar.length;
+    const ucEleman = (p) => { const es = eqByPoint.get(p.id) || []; return es.length ? es[0] : null; };
+    const ucKimlik = (e) => (e ? (e.sebekeId || e.id) : '');
+    const paylar = parcalar.map((pc) => (l.install === 'yeralti' ? uzunluk2D(pc) : uzunluk3D(pc)));
+    const eskiParcalar = Array.isArray(sb2.parcalar) ? sb2.parcalar : [];
+    const parcaKimligi = (uclar, i, alan, onek) => {
+      if (n === 1) return null;
+      const eski = eskiParcalar.find((x) => x && x[alan] && Array.isArray(x.uclar) && uclar[0] && uclar[1] && ((x.uclar[0] === uclar[0] && x.uclar[1] === uclar[1]) || (x.uclar[0] === uclar[1] && x.uclar[1] === uclar[0])));
+      return eski ? eski[alan] : onek + temelId + '#' + (i + 1);
+    };
+
+    // Hattın tüm kalemleri (bütün hat için), sonra parçalara dağıtılır
+    const kesit = kablolu ? promagisKesit(sb2 && !(l.circuits || []).length && sb2.anaKesit ? sb2.anaKesit : lineLabel(l, cat), l.lineType, l.install) : null;
+    let hatKalemleri = kablolu ? iletkenKalemleri(l, li, iletkenler, hatTuru, kesit, durum, hak, cat) : [];
+    if (kablolu && !hatKalemleri.length && Array.isArray(sb2.kalemler)) hatKalemleri = sb2.kalemler.map((k) => Object.assign({}, k, { hakedis: hak }));
+    const manuel = [];
+    if (kablolu) for (const m of li.items) if (m.manual) { const k = malzemeKalemi(Object.assign({}, m, { kgPer: null, origin: 'MANUEL' }), { cins: '', voltaj: hatTuru.voltaj, tarife: hatTuru.tarife }, hak, li.job, cat); if (k) manuel.push(k); }
+    const dagitimlar = new Map();
+    for (const k of hatKalemleri) dagitimlar.set(k, k.kaynak === 'HAT' ? dagit(k.miktar, paylar) : null);
+
+    const kn = km && !km.kazisiz && li.cable && li.cable.kanal ? li.cable.kanal : null;
+    const kablolar = kn ? kanalKablolari(l) : null;
+    const kanalUz = kn ? dagit(Math.ceil(kn.uzunluk - 1e-6), paylar) : null;
+    const boruUz = kn && kn.boru > 0 ? dagit(Math.ceil(kn.boru - 1e-6), paylar) : null;
+
+    for (let i = 0; i < n; i++) {
+      const pc = parcalar[i];
+      const kose = pc.map((p) => [r4(p.E), r4(p.N)]);
+      const mid = pc[Math.floor(pc.length / 2)];
+      const bolge = bolgeIdi(mid.E, mid.N);
+      const uc = [ucEleman(pc[0]), ucEleman(pc[pc.length - 1])];
+      const uclar = uc.map(ucKimlik);
+      let hat = null;
+      if (kablolu) {
+        const h = {
+          id: n === 1 ? temelId : parcaKimligi(uclar, i, 'id', ''), tur: hatTuru.tur, anaKesit: kesit.tanim, durum, hakedis: hak, bolge, kose,
+          cizimUzunlugu: r3(uzunluk2D(pc)), etiket: '', kontrol: null, katman: sb2.katman || '', kalemler: [], telefonId: l.id,
+          uclar, not: l.note || undefined
+        };
+        if (n > 1) h.parca = i + 1;
+        for (const k of hatKalemleri) {
+          const d = dagitimlar.get(k);
+          if (d) h.kalemler.push(SH.kalemToplami(Object.assign({}, k, { miktar: d[i] })));
+          else if (i === 0) h.kalemler.push(k);
         }
-        sp.kanallar.push(c);
+        if (i === 0) h.kalemler.push(...manuel);
+        const ana = h.kalemler.find((k) => k.kaynak === 'HAT') || h.kalemler[0];
+        h.etiket = SH.hatEtiketi(durum, kesit.aciklama || kesit.tanim, ana ? ana.miktar : Math.ceil(uzunluk2D(pc) - 1e-6));
+        sp.hatlar.push(h);
+        hat = h;
+      }
+      // Yeraltı: kazı kanalı ya da yatay sondaj ayrı nesnedir (parça parça, baş/bit numaralarıyla)
+      if (kn) {
+        const basNo = uc[0] ? uc[0].no : '', bitNo = uc[1] ? uc[1].no : '';
+        const cizimUz = r3(uzunluk2D(pc));
+        if (km.method === 'sondaj') {
+          const s = {
+            id: n === 1 ? ((sb2.sondaj && sb2.id) || 'S' + temelId) : parcaKimligi(uclar, i, 'kanalId', 'S'),
+            tip: (sb2.sondaj && sb2.tip) || 'Yatay sondaj' + (l.cable && l.cable.pipeDia ? ' Ø' + l.cable.pipeDia : ''), durum, hakedis: hak, bolge, basNo, bitNo, kose,
+            cizimUzunlugu: cizimUz, kontrol: null, kalemler: [], telefonId: l.id
+          };
+          if (n > 1) s.parca = i + 1;
+          const sondaj = li.items.find((x) => x.kanal && /sondaj/i.test(x.why || ''));
+          s.kalemler.push(SH.kalemYap({ cins: 'YATAY_DELGİ', tanim: s.tip, birim: 'mt/mt', katsayi: 1, tarife: cinsTarifesi('YATAY_DELGİ', '0104') }, { miktar: kanalUz[i], durum, hakedis: hak, ana: true, kaynak: 'NIT' }));
+          if (sondaj && sondaj.servis) s.kalemler[0].servis = sondaj.servis;
+          sp.sondajlar.push(s);
+        } else {
+          const zemin = ESLESME.zeminler[km.surface] || 'TOPRAK';
+          const gen = Math.round((kn.genislik || 0) * 100), der = Math.round((kn.derinlik || 0) * 100);
+          const c = {
+            id: n === 1 ? (sb2.kanalId || 'K' + temelId) : parcaKimligi(uclar, i, 'kanalId', 'K'),
+            kod: SH.kanalKodu(kablolar.OG, kablolar.AG, kablolar.AYD, kablolar.REK), zemin, altGenislik: gen, ustGenislik: gen, derinlik: der, basNo, bitNo, durum, hakedis: hak, bolge, kose,
+            cizimUzunlugu: cizimUz, kontrol: null, kalemler: [], telefonId: l.id
+          };
+          if (n > 1) c.parca = i + 1;
+          const kk = SH.kalemYap({ cins: String(c.kod), tanim: zemin, birim: 'mt/m³', katsayi: 1, tarife: cinsTarifesi('KABLO_KANALI', '0104') }, { miktar: kanalUz[i], durum, hakedis: hak, ana: true, kaynak: 'NIT' });
+          SH.kalemToplami(kk, c);
+          c.kalemler.push(kk);
+          if (boruUz && boruUz[i] > 0) {
+            // Boru PROMAGIS'te kanalın değil kablonun malzemesidir (kanal nesnesi yalnız kendi kalemini taşır)
+            const boru = SH.kalemYap({ cins: 'GALVANİZLİ_GAZ_BORUSU', tanim: 'Ø' + ((l.cable && l.cable.pipeDia) || 110) + ' boru', birim: 'mt/mt', katsayi: 1, tarife: cinsTarifesi('GALVANİZLİ_GAZ_BORUSU', '0104') }, { miktar: boruUz[i], durum, hakedis: hak, kaynak: 'MALZEME' });
+            if (hat) hat.kalemler.push(boru);
+            else { c.kalemler.push(boru); if (i === 0) uyarilar.push(l.lineNo + ': kablosuz kanaldaki boru kalemi AutoCAD çizimine yazılamaz (yalnız dosyadan raporda görünür)'); }
+          }
+          sp.kanallar.push(c);
+        }
       }
     }
   }
@@ -243,6 +290,42 @@ export function sebekeModel(ps, opts = {}) {
 /** Açık projeyi .sebeke.json metnine çevirir. */
 export function sebekeYaz(ps, opts = {}) {
   return SH.projeYaz(sebekeModel(ps, opts), 'VOLT-EDAŞ Saha', opts.girintili !== false);
+}
+
+/** Hattın parçaları: ekipman olan düğümlerde bölünür; aradaki ekipmansız noktalar parçanın köşeleridir. */
+export function hatParcalari(coords, eqByPoint) {
+  const out = [];
+  let cur = [coords[0]];
+  for (let i = 1; i < coords.length; i++) {
+    cur.push(coords[i]);
+    const son = i === coords.length - 1;
+    const dugum = son || (eqByPoint.get(coords[i].id) || []).length > 0;
+    if (dugum) { out.push(cur); cur = [coords[i]]; }
+  }
+  return out.length ? out : [coords];
+}
+const uzunluk2D = (pc) => { let t = 0; for (let i = 1; i < pc.length; i++) t += Math.hypot(pc[i].E - pc[i - 1].E, pc[i].N - pc[i - 1].N); return t; };
+const uzunluk3D = (pc) => { let t = 0; for (let i = 1; i < pc.length; i++) t += Math.hypot(pc[i].E - pc[i - 1].E, pc[i].N - pc[i - 1].N, (pc[i].H || 0) - (pc[i - 1].H || 0)); return t; };
+/**
+ * Toplam miktarı paylara (uzunluklara) orantılı dağıtır; toplam tam sayıysa parçalar da tam sayı olur ve toplamı
+ * birebir tutar (birikimli yuvarlama). Tek parçada toplamın kendisi döner.
+ */
+export function dagit(toplam, paylar) {
+  const n = paylar.length;
+  if (n <= 1) return [toplam];
+  const T = +toplam || 0;
+  const butun = paylar.reduce((a, b) => a + b, 0);
+  const tam = Math.abs(T - Math.round(T)) < 1e-9;
+  const yuvarla = tam ? Math.round : (v) => Math.round(v * 1000) / 1000;
+  const out = [];
+  let onceki = 0, birikim = 0;
+  for (let i = 0; i < n; i++) {
+    birikim += butun > 0 ? paylar[i] / butun : 1 / n;
+    const cum = i === n - 1 ? T : yuvarla(T * birikim);
+    out.push(Math.max(0, Math.round((cum - onceki) * 1000) / 1000));
+    onceki = cum;
+  }
+  return out;
 }
 
 function aktifHakedis(periods) {
@@ -462,7 +545,10 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
   const eqByKey = new Map();
   for (const e of eqs) { eqByKey.set(e.id, e); if (e.sebekeId) eqByKey.set(e.sebekeId, e); }
   const lineByKey = new Map();
-  for (const l of lines) { lineByKey.set(l.id, l); if (l.sebekeId) lineByKey.set(l.sebekeId, l); }
+  for (const l of lines) {
+    lineByKey.set(l.id, l); if (l.sebekeId) lineByKey.set(l.sebekeId, l);
+    for (const pc of (l.sebeke && l.sebeke.parcalar) || []) { if (pc && pc.id) lineByKey.set(pc.id, l); if (pc && pc.kanalId) lineByKey.set(pc.kanalId, l); }
+  }
   const pointByKey = new Map();
   for (const p of pts) { pointByKey.set(p.id, p); if (p.sebekeId) pointByKey.set(p.sebekeId, p); }
   const bul = (map, o) => (o.telefonId && map.get(o.telefonId)) || map.get(o.id) || null;
@@ -520,7 +606,21 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     return p.id;
   };
   const kanalIndeks = new Map((sp.kanallar || []).map((c) => [koseAnahtari(c.kose), c]));
-  for (const h of sp.hatlar || []) {
+  // Noktadaki eleman (parça uçları için): telefon nokta kimliği → dosyadaki eleman kimliği
+  const noktaninElemani = new Map();
+  for (const el of sp.elemanlar || []) { const pid = noktaIdByEleman.get(el.id); if (pid && !noktaninElemani.has(pid)) noktaninElemani.set(pid, el.id); }
+  const ucElemani = async (xy) => noktaninElemani.get(await koseNokta(xy, 'HAT')) || '';
+  // AutoCAD'de direkten direğe parça parça duran hatlar telefonda tek hat olur (parça kimlikleri saklanır, geri yazımda aynen döner)
+  for (const grup of parcalariBirlestir(sp.hatlar || [], hatAyniMi)) {
+    const parcalar = grup.parcalar;
+    const h0 = parcalar[0], hN = parcalar[parcalar.length - 1];
+    const temel = parcaKimligi(h0.id);
+    const h = Object.assign({}, h0, {
+      id: parcalar.length > 1 && temel ? temel.temel : h0.id, kose: grup.kose, kalemler: kalemleriBirlestir(parcalar),
+      cizimUzunlugu: parcalar.reduce((a, x) => a + (+x.cizimUzunlugu || SH.uzunluk(x.kose) || 0), 0),
+      uclar: [grup.ters0 ? (h0.uclar || [])[1] : (h0.uclar || [])[0], grup.tersN ? (hN.uclar || [])[0] : (hN.uclar || [])[1]],
+      telefonId: parcalar.map((x) => x.telefonId).find(Boolean) || undefined
+    });
     const ht = ESLESME.hatTurleriTers[h.tur] || ESLESME.hatTurleriTers.AG_HAVAI;
     const lt = hatTipiEsle(ps.cat, h.anaKesit, ht.lineType, ht.install);
     const nodes = [];
@@ -529,36 +629,56 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
       const pid = (uc && noktaIdByEleman.get(uc)) || await koseNokta(h.kose[i], 'HAT');
       if (!nodes.length || nodes[nodes.length - 1] !== pid) nodes.push(pid);
     }
-    const kanal = kanalIndeks.get(koseAnahtari(h.kose)) || null;
+    // Parça kimlikleri ve uçları (geri yazımda aynı parçalara aynı kimlik)
+    const parcaKayitlari = [];
+    const kanallar = [];
+    for (const pc of parcalar) {
+      const kayit = { id: pc.id, uclar: [await ucElemani(pc.kose[0]), await ucElemani(pc.kose[pc.kose.length - 1])] };
+      const kn = kanalIndeks.get(koseAnahtari(pc.kose)) || null;
+      if (kn) { kayit.kanalId = kn.id; kanallar.push(kn); kanalIndeks.delete(koseAnahtari(pc.kose)); }
+      parcaKayitlari.push(kayit);
+    }
+    const kanal = kanallar.length ? Object.assign({}, kanallar[0], { cizimUzunlugu: kanallar.reduce((a, x) => a + (+x.cizimUzunlugu || SH.uzunluk(x.kose) || 0), 0), kalemler: [].concat(...kanallar.map((x) => x.kalemler || [])) }) : null;
     const data = {
       lineType: ht.lineType, install: ht.install, musterek: !!ht.musterek, state: voltDurumu(h.durum), nodes, name: lt ? '' : h.anaKesit,
       circuits: lt ? [{ role: ht.lineType === 'ABONE' ? 'ABONE' : ht.lineType, key: lt.name, count: 1 }] : [],
       sebekeId: h.id, note: h.not || undefined,
-      sebeke: { id: h.id, tur: h.tur, anaKesit: h.anaKesit, durum: h.durum, etiket: h.etiket, katman: h.katman, hakedis: h.hakedis, bolge: h.bolge, kalemler: lt ? undefined : h.kalemler }
+      sebeke: { id: h.id, tur: h.tur, anaKesit: h.anaKesit, durum: h.durum, etiket: h.etiket, katman: h.katman, hakedis: h.hakedis, bolge: h.bolge, kalemler: lt ? undefined : h.kalemler, parcalar: parcalar.length > 1 ? parcaKayitlari : undefined }
     };
     let boruKalemi = null;
-    if (kanal) { const ka = kanalAyari(kanal, h); data.cable = ka.cable; boruKalemi = ka.boru; data.sebeke.kanalId = kanal.id; data.sebeke.kanalKod = kanal.kod; kanalIndeks.delete(koseAnahtari(h.kose)); }
+    if (kanal) { const ka = kanalAyari(kanal, h); data.cable = ka.cable; boruKalemi = ka.boru; data.sebeke.kanalId = parcalar.length > 1 ? undefined : kanal.id; data.sebeke.kanalKod = kanal.kod; }
     if (!lt && h.anaKesit) ozet.eslesmeyen.push((h.etiket || h.anaKesit) + ': hat tipi katalogda yok, metraj eklentideki kalemlerle korunur');
-    const mevcut = bul(lineByKey, h);
+    const mevcut = bul(lineByKey, h) || parcalar.map((x) => lineByKey.get(x.id)).find(Boolean) || null;
     let rec;
     if (mevcut) { rec = await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi'); ozet.guncellenenHat++; }
     else { rec = await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı' }); ozet.yeniHat++; }
     // Boru kalemi kanal ayarına (borulu geçiş, boru sayısı) çevrildi; malzeme olarak ayrıca yazılmaz (telefon kendisi hesaplar)
-    await malzemeleriYaz(ps, 'line', rec.id, (h.kalemler || []).filter((k) => !k.ana && k.kaynak !== 'HAT' && k !== boruKalemi), opts);
+    const boruMu = (k) => boruKalemi && k.cins === boruKalemi.cins && k.tanim === boruKalemi.tanim && k.kaynak !== 'HAT';
+    await malzemeleriYaz(ps, 'line', rec.id, (h.kalemler || []).filter((k) => !k.ana && k.kaynak !== 'HAT' && !boruMu(k)), opts);
   }
-  // Hattı olmayan kanallar ve sondajlar: kablosuz kanal / kazı hattı
-  for (const c of kanalIndeks.values()) {
+  // Hattı olmayan kanallar ve sondajlar: kablosuz kanal / kazı hattı (parçalar birleştirilir)
+  for (const grup of parcalariBirlestir([...kanalIndeks.values()], kanalAyniMi)) {
+    const c0 = grup.parcalar[0];
+    const temel = parcaKimligi(c0.id);
+    const c = Object.assign({}, c0, { id: grup.parcalar.length > 1 && temel ? temel.temel : c0.id, kose: grup.kose, kalemler: kalemleriBirlestir(grup.parcalar), cizimUzunlugu: grup.parcalar.reduce((a, x) => a + (+x.cizimUzunlugu || SH.uzunluk(x.kose) || 0), 0) });
     const nodes = []; for (const xy of c.kose) { const pid = await koseNokta(xy, 'HAT'); if (!nodes.length || nodes[nodes.length - 1] !== pid) nodes.push(pid); }
-    const data = { lineType: c.kod & 8 ? 'OG' : c.kod & 4 ? 'AG' : c.kod & 2 ? 'AYD' : 'ABONE', install: 'yeralti', channelOnly: true, circuits: [], nodes, state: voltDurumu(c.durum), cable: kanalAyari(c, null).cable, sebekeId: c.id, sebeke: { id: c.id, kanal: true, kanalId: c.id, kanalKod: c.kod, zemin: c.zemin, hakedis: c.hakedis, bolge: c.bolge } };
-    const mevcut = bul(lineByKey, c);
+    const parcaKayitlari = grup.parcalar.length > 1 ? grup.parcalar.map((x) => ({ kanalId: x.id, uclar: [] })) : undefined;
+    if (parcaKayitlari) for (let i = 0; i < grup.parcalar.length; i++) { const x = grup.parcalar[i]; parcaKayitlari[i].uclar = [await ucElemani(x.kose[0]), await ucElemani(x.kose[x.kose.length - 1])]; }
+    const data = { lineType: c.kod & 8 ? 'OG' : c.kod & 4 ? 'AG' : c.kod & 2 ? 'AYD' : 'ABONE', install: 'yeralti', channelOnly: true, circuits: [], nodes, state: voltDurumu(c.durum), cable: kanalAyari(c, null).cable, sebekeId: c.id, sebeke: { id: c.id, kanal: true, kanalId: c.id, kanalKod: c.kod, zemin: c.zemin, hakedis: c.hakedis, bolge: c.bolge, parcalar: parcaKayitlari } };
+    const mevcut = bul(lineByKey, c) || grup.parcalar.map((x) => lineByKey.get(x.id)).find(Boolean) || null;
     if (mevcut) await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi'); else await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı (kanal)' });
     ozet.yeniKanal++;
   }
-  for (const s of sp.sondajlar || []) {
+  for (const grup of parcalariBirlestir(sp.sondajlar || [], sondajAyniMi)) {
+    const s0 = grup.parcalar[0];
+    const temel = parcaKimligi(s0.id);
+    const s = Object.assign({}, s0, { id: grup.parcalar.length > 1 && temel ? temel.temel : s0.id, kose: grup.kose });
     const nodes = []; for (const xy of s.kose) { const pid = await koseNokta(xy, 'HAT'); if (!nodes.length || nodes[nodes.length - 1] !== pid) nodes.push(pid); }
+    const parcaKayitlari = grup.parcalar.length > 1 ? grup.parcalar.map((x) => ({ kanalId: x.id, uclar: [] })) : undefined;
+    if (parcaKayitlari) for (let i = 0; i < grup.parcalar.length; i++) { const x = grup.parcalar[i]; parcaKayitlari[i].uclar = [await ucElemani(x.kose[0]), await ucElemani(x.kose[x.kose.length - 1])]; }
     const cap = /Ø\s*(\d+)/.exec(s.tip || '');
-    const data = { lineType: 'OG', install: 'yeralti', channelOnly: true, circuits: [], nodes, state: voltDurumu(s.durum), cable: { surface: 'toprak', method: 'sondaj', width: 0, depth: 0, pipeDia: cap ? +cap[1] : 110, pipeCount: 1 }, sebekeId: s.id, sebeke: { id: s.id, sondaj: true, tip: s.tip, hakedis: s.hakedis, bolge: s.bolge } };
-    const mevcut = bul(lineByKey, s);
+    const data = { lineType: 'OG', install: 'yeralti', channelOnly: true, circuits: [], nodes, state: voltDurumu(s.durum), cable: { surface: 'toprak', method: 'sondaj', width: 0, depth: 0, pipeDia: cap ? +cap[1] : 110, pipeCount: 1 }, sebekeId: s.id, sebeke: { id: s.id, sondaj: true, tip: s.tip, hakedis: s.hakedis, bolge: s.bolge, parcalar: parcaKayitlari } };
+    const mevcut = bul(lineByKey, s) || grup.parcalar.map((x) => lineByKey.get(x.id)).find(Boolean) || null;
     if (mevcut) await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi'); else await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı (sondaj)' });
     ozet.yeniKanal++;
   }
@@ -579,6 +699,89 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
 }
 
 function koseAnahtari(kose) { return (kose || []).map((q) => Math.round(q[0] * 100) + ',' + Math.round(q[1] * 100)).join(';'); }
+const ucAnahtari = (q) => Math.round(q[0] * 100) + ',' + Math.round(q[1] * 100);
+/** "<kimlik>#<n>" biçimindeki parça kimliği → { temel, n }; değilse null. */
+export function parcaKimligi(id) { const m = /^(.+)#(\d+)$/.exec(String(id || '')); return m ? { temel: m[1], n: +m[2] } : null; }
+const hatAyniMi = (a, b) => a.tur === b.tur && adNormal(a.anaKesit) === adNormal(b.anaKesit) && (a.durum || '') === (b.durum || '') && (a.hakedis || 0) === (b.hakedis || 0) && (a.katman || '') === (b.katman || '');
+const kanalAyniMi = (a, b) => a.kod === b.kod && (a.zemin || '') === (b.zemin || '') && (a.durum || '') === (b.durum || '') && (a.hakedis || 0) === (b.hakedis || 0) && +a.altGenislik === +b.altGenislik && +a.ustGenislik === +b.ustGenislik && +a.derinlik === +b.derinlik;
+const sondajAyniMi = (a, b) => (a.tip || '') === (b.tip || '') && (a.durum || '') === (b.durum || '') && (a.hakedis || 0) === (b.hakedis || 0);
+/**
+ * Parça parça duran nesneleri (hat, kanal, sondaj) tek güzergâha birleştirir. Önce "<kimlik>#n" parçaları sırayla
+ * (telefonun kendi böldüğü hat); sonra uç uca değen, aynı nitelikte (ayniMi) ve o uçta başka bağlantısı olmayan
+ * parçalar zincir olur (bilgisayarda direkten direğe çizilen hatlar). Üçlü kavşaklar ve nitelik değişimleri zinciri
+ * böler. Döner: [{ parcalar: [nesne…] (güzergâh sırasıyla), kose, ters0, tersN }]
+ */
+export function parcalariBirlestir(nesneler, ayniMi) {
+  const gecerli = (nesneler || []).filter((o) => Array.isArray(o.kose) && o.kose.length >= 2);
+  const gruplar = new Map(), tekler = [];
+  for (const o of gecerli) { const pk = parcaKimligi(o.id); if (pk) { if (!gruplar.has(pk.temel)) gruplar.set(pk.temel, []); gruplar.get(pk.temel).push({ o, n: pk.n }); } else tekler.push(o); }
+  const birimler = [];
+  for (const [, g] of gruplar) {
+    g.sort((a, b) => a.n - b.n);
+    let cur = null;
+    for (const { o } of g) {
+      if (cur && ucAnahtari(cur.kose[cur.kose.length - 1]) === ucAnahtari(o.kose[0]) && ayniMi(cur.parcalar[0], o)) { cur.parcalar.push(o); cur.kose.push(...o.kose.slice(1)); }
+      else { cur = { parcalar: [o], kose: o.kose.slice() }; birimler.push(cur); }
+    }
+  }
+  for (const o of tekler) birimler.push({ parcalar: [o], kose: o.kose.slice() });
+  const ucta = new Map();
+  const ekle = (k, b) => { if (!ucta.has(k)) ucta.set(k, []); ucta.get(k).push(b); };
+  for (const b of birimler) { ekle(ucAnahtari(b.kose[0]), b); ekle(ucAnahtari(b.kose[b.kose.length - 1]), b); }
+  const kullanildi = new Set();
+  const komsu = (b, k) => {
+    const l = ucta.get(k) || [];
+    if (l.length !== 2) return null;
+    const d = l[0] === b ? l[1] : l[0];
+    return d === b || kullanildi.has(d) || !ayniMi(b.parcalar[0], d.parcalar[0]) ? null : d;
+  };
+  const sonuc = [];
+  for (const b of birimler) {
+    if (kullanildi.has(b)) continue;
+    kullanildi.add(b);
+    const parcalar = b.parcalar.slice(), kose = b.kose.slice();
+    let ters0 = false, tersN = false;
+    // ileri: bitiş ucundan devam eden komşular
+    for (let cur = b, k = ucAnahtari(kose[kose.length - 1]); ;) {
+      const d = komsu(cur, k);
+      if (!d) break;
+      kullanildi.add(d);
+      const duz = ucAnahtari(d.kose[0]) === k;
+      parcalar.push(...(duz ? d.parcalar : d.parcalar.slice().reverse()));
+      kose.push(...(duz ? d.kose.slice(1) : d.kose.slice().reverse().slice(1)));
+      tersN = !duz;
+      cur = d; k = ucAnahtari(kose[kose.length - 1]);
+    }
+    // geri: başlangıç ucundan devam eden komşular
+    for (let cur = b, k = ucAnahtari(kose[0]); ;) {
+      const d = komsu(cur, k);
+      if (!d) break;
+      kullanildi.add(d);
+      const duz = ucAnahtari(d.kose[d.kose.length - 1]) === k;
+      parcalar.unshift(...(duz ? d.parcalar : d.parcalar.slice().reverse()));
+      kose.unshift(...(duz ? d.kose.slice(0, -1) : d.kose.slice().reverse().slice(0, -1)));
+      ters0 = !duz;
+      cur = d; k = ucAnahtari(kose[0]);
+    }
+    sonuc.push({ parcalar, kose, ters0, tersN });
+  }
+  return sonuc;
+}
+/** Parçaların kalemleri: hat (HAT) ve ana kalemler aynı cins/tanım/durumda toplanır, malzemeler art arda eklenir. */
+export function kalemleriBirlestir(parcalar) {
+  if (parcalar.length === 1) return (parcalar[0].kalemler || []).slice();
+  const out = [], toplananlar = new Map();
+  for (const p of parcalar) for (const k of p.kalemler || []) {
+    if (k.kaynak === 'HAT' || k.ana) {
+      const anahtar = [k.kaynak, k.cins, k.tanim, k.aciklama || '', k.durum, k.hakedis].join('|');
+      const t = toplananlar.get(anahtar);
+      if (t) { t.miktar = r3(t.miktar + (+k.miktar || 0)); t.toplam = r3(t.toplam + (+k.toplam || 0)); continue; }
+      const kopya = Object.assign({}, k, { miktar: +k.miktar || 0, toplam: +k.toplam || 0 });
+      toplananlar.set(anahtar, kopya); out.push(kopya);
+    } else out.push(Object.assign({}, k));
+  }
+  return out;
+}
 /** Kanal nesnesinden telefonun kanal ayarı; boru kalemi kanalda ya da aynı güzergâhtaki hatta aranır. */
 function kanalAyari(c, hat) {
   const surface = ESLESME.zeminlerTers[(c.zemin || '').toUpperCase()] || 'toprak';

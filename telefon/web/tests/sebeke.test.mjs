@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { setup, newProject, buildPoleLine, rtkObs, route } from './helpers.mjs';
-import { sebekeYaz, sebekeModel, sebekeIceAl, voltProjeYaz, voltProjeOku, promagisTip, voltTip, promagisKesit, hatTipiEsle, direkEsle, SH } from '../src/interop/sebeke.js';
+import { sebekeYaz, sebekeModel, sebekeIceAl, voltProjeYaz, voltProjeOku, promagisTip, voltTip, promagisKesit, hatTipiEsle, direkEsle, parcalariBirlestir, dagit, SH } from '../src/interop/sebeke.js';
 import KATSAYILAR from '../src/ortak/katsayilar.js';
 import { exportFormat } from '../src/export/exporter.js';
 
@@ -75,15 +75,27 @@ test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Dur
   // SDK: BOX · BOX_PANO
   const s = sp.elemanlar.find((e) => e.gisId === sdk.no);
   assert.equal(s.tur, 'BOX'); assert.equal(s.cins, 'BOX_PANO'); assert.ok(s.tip.includes('TİP-B'));
-  // Hatlar: OG havai 3xSW (mt/mt, rapor tel tel açar), AG havai ALPEK, AG yeraltı Nyy + kanal
-  const og = sp.hatlar.find((h) => h.tur === 'OG_HAVAI');
-  assert.equal(og.anaKesit, '3xSW'); assert.equal(og.kalemler[0].cins, 'OG_İLETKEN'); assert.equal(og.kalemler[0].birim, 'mt/mt'); assert.equal(og.kalemler[0].miktar, Math.ceil(og.cizimUzunlugu - 1e-6) >= og.kalemler[0].miktar - 1 ? og.kalemler[0].miktar : -1);
-  assert.ok(/^\^ 3xSW\/\d+m$/.test(og.etiket), og.etiket);
-  assert.equal(og.kose.length, 4);
-  assert.deepEqual(og.uclar, [poles[0].id, poles[3].id]);
-  const ag = sp.hatlar.find((h) => h.tur === 'AG_HAVAI');
+  // Hatlar: direkten direğe parça parça (AutoCAD'de her açıklık ayrı hat). OG havai 4 direk → 3 parça (3xSW, mt/mt, rapor tel tel açar)
+  const ogParcalar = sp.hatlar.filter((h) => h.tur === 'OG_HAVAI');
+  assert.equal(ogParcalar.length, 3);
+  const ogHat = ps.data.lines.find((l) => l.lineType === 'OG');
+  assert.deepEqual(ogParcalar.map((h) => h.id), [1, 2, 3].map((i) => ogHat.id + '#' + i), 'parça kimlikleri <hat>#n');
+  assert.deepEqual(ogParcalar.map((h) => h.parca), [1, 2, 3]);
+  for (const h of ogParcalar) { assert.equal(h.kose.length, 2); assert.equal(h.telefonId, ogHat.id); assert.equal(h.anaKesit, '3xSW'); assert.equal(h.kalemler[0].cins, 'OG_İLETKEN'); assert.equal(h.kalemler[0].birim, 'mt/mt'); assert.ok(/^\^ 3xSW\/\d+m$/.test(h.etiket), h.etiket); }
+  assert.deepEqual(ogParcalar.map((h) => h.uclar), [[poles[0].id, poles[1].id], [poles[1].id, poles[2].id], [poles[2].id, poles[3].id]], 'parça uçları direkten direğe');
+  const ogToplam = ogParcalar.reduce((a, h) => a + h.kalemler[0].miktar, 0);
+  const ogUzunluk = ps.result.lineInfo.get(ogHat.id).length3D;
+  assert.equal(ogToplam, Math.ceil(ogUzunluk - 1e-6), 'parça metrajlarının toplamı hattın metrajı (tam metre)');
+  assert.ok(ogParcalar.every((h) => Number.isInteger(h.kalemler[0].miktar) && h.kalemler[0].miktar > 0), 'her parça tam metre');
+  const og = ogParcalar[0];
+  const agParcalar = sp.hatlar.filter((h) => h.tur === 'AG_HAVAI');
+  assert.equal(agParcalar.length, 2, 'AG havai 3 direk → 2 parça');
+  const ag = agParcalar[0];
   assert.equal(ag.anaKesit, '3X70/16+95 ALPEK'); assert.equal(ag.kalemler[0].cins, 'ALPEK_KABLOLAR'); assert.equal(ag.kalemler[0].tarife, '0107');
   const yer = sp.hatlar.find((h) => h.tur === 'AG_YERALTI');
+  assert.equal(sp.hatlar.filter((h) => h.tur === 'AG_YERALTI').length, 1, 'iki uçlu kablo tek parça');
+  assert.ok(!/#/.test(yer.id), 'tek parçalı hattın kimliği bölünmez');
+  assert.equal(yer.parca, undefined);
   assert.equal(yer.anaKesit, '3x95+50 Nyy Alm.'); assert.equal(yer.kalemler[0].cins, 'AG_ALİMİNYUM_KABLO');
   assert.equal(sp.kanallar.length, 1);
   const kn = sp.kanallar[0];
@@ -96,8 +108,11 @@ test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Dur
   const direkKg = satirlar.filter((r) => r.nesne === 'ELEMAN' && r.birim === 'ad/kg' && r.durum === 'M').reduce((a, r) => a + r.toplam, 0);
   const voltKg = ps.result.quantities.filter((q) => q.job === 'montaj' && q.isGroup && /direk/i.test(q.name)).reduce((a, q) => a + q.qty, 0);
   assert.equal(Math.round(direkKg), Math.round(voltKg));
-  // OG hattı tel tel açılır: 3 × Swallow
-  assert.ok(satirlar.some((r) => r.cins === 'AL_İLETKENLER' && r.tip === 'SWALLOW' && r.miktar === og.kalemler[0].miktar * 3));
+  // OG hattı tel tel açılır: 3 × Swallow (parça parça; toplam = hattın metrajı × 3)
+  const swallow = satirlar.filter((r) => r.cins === 'AL_İLETKENLER' && r.tip === 'SWALLOW');
+  assert.equal(swallow.length, 3, 'her parça için bir satır');
+  assert.equal(swallow.reduce((a, r) => a + r.miktar, 0), ogToplam * 3);
+  assert.ok(swallow.some((r) => r.miktar === og.kalemler[0].miktar * 3));
   fs.writeFileSync(OUT + 'telefon-durum-tespit.json', JSON.stringify(SH.ozet(satirlar), null, 1));
 });
 
@@ -221,12 +236,78 @@ test('A7 · telefon projesi → AutoCAD dosyası → başka telefon → AutoCAD 
   assert.equal(yer.cable.method, 'borulu'); assert.equal(yer.cable.pipeCount, 1); assert.equal(yer.cable.surface, 'asfalt'); assert.equal(yer.cable.width, 0.4); assert.equal(yer.cable.depth, 0.8);
   assert.deepEqual(yer.circuits.map((c) => c.key), ['NAYY 3x95+50']);
   assert.equal(ps2.data.materials.filter((m) => m.ownerId === yer.id && m.status !== 'deleted').length, 0, 'boru malzeme olarak çoğaltılmaz');
+  // Parçalar telefonda tek hat olur: OG 3 parça → 4 düğümlü bir hat; parça kimlikleri saklanır
+  const og2 = ps2.data.lines.find((l) => l.lineType === 'OG');
+  assert.equal(og2.nodes.length, 4, 'üç parça tek hatta birleşir');
+  assert.equal(ps2.data.lines.filter((l) => l.lineType === 'OG').length, 1);
+  assert.deepEqual(og2.sebeke.parcalar.map((x) => x.id), ilk.hatlar.filter((h) => h.tur === 'OG_HAVAI').map((h) => h.id), 'parça kimlikleri sırayla saklanır');
+  assert.equal(og2.sebekeId, ilk.hatlar.find((h) => h.tur === 'OG_HAVAI').telefonId, 'hattın kimliği temel kimlik');
   const geri = sebekeModel(ps2);
   assert.equal(geri.elemanlar.length, ilk.elemanlar.length); assert.equal(geri.hatlar.length, ilk.hatlar.length); assert.equal(geri.kanallar.length, 1);
+  assert.deepEqual(geri.hatlar.map((h) => h.id).sort(), ilk.hatlar.map((h) => h.id).sort(), 'geri yazımda parça kimlikleri aynen döner');
+  assert.deepEqual(geri.kanallar.map((c) => c.id), ilk.kanallar.map((c) => c.id));
   // Kimlikler: ilk telefonun kimlikleri (telefonId) ikinci telefonda sebekeId olarak korunur ve geri yazılır
   for (const e of ilk.elemanlar) { const g = geri.elemanlar.find((x) => x.id === e.id); assert.ok(g, 'kimlik korunur: ' + e.gisId); assert.equal(g.tur, e.tur); assert.equal(g.cins, e.cins); assert.equal(g.tip, e.tip); assert.equal(g.durum, e.durum); }
   const kat = SH.katsayiHazirla(KATSAYILAR);
   const kg = (p) => Math.round(SH.durumTespit(p, kat).filter((r) => r.birim.endsWith('/kg')).reduce((a, r) => a + r.toplam, 0) * 100) / 100;
   assert.equal(kg(geri), kg(ilk));
   assert.equal(SH.durumTespit(geri, kat).length, SH.durumTespit(ilk, kat).length, 'rapor satır sayısı');
+});
+
+test('A8 · bilgisayarda direkten direğe çizilen hatlar telefonda zincir olur; kavşakta bölünür; geri yazımda kimlikler korunur', async () => {
+  // E1—E2—E3—E4 aynı kesit; E2'de E5'e branşman (üçlü kavşak → zincir E2'de kırılır)
+  const sp = SH.yeniProje({ ad: 'Zincir', dom: 39, hakedis: 1 });
+  sp.bolgeler.push({ id: 'B1', ad: 'Zincir', kod: '', sinir: [[519000, 4282000], [519200, 4282000], [519200, 4282200], [519000, 4282200]] });
+  const yer = { E1: [519050, 4282050], E2: [519090, 4282050], E3: [519130, 4282050], E4: [519130, 4282090], E5: [519090, 4282090] };
+  let sira = 1;
+  for (const [id, [x, y]] of Object.entries(yer)) sp.elemanlar.push({ id, tur: 'AG_DIREK', gisId: 'SC' + id.slice(1), cins: 'AG_DEMİR_GLV', tip: 'G-K2', durum: 'M', hakedis: 1, bolge: 'B1', saga: x, yukari: y, aci: 0, kontrol: null, katman: 'SC_1.HAK.AGDİR', blok: '', kalemler: [SH.kalemYap({ cins: 'AG_DEMİR_GLV', tanim: 'G-K2', birim: 'ad/kg', katsayi: 504, tarife: '0107' }, { miktar: 1, durum: 'M', hakedis: 1, ana: true, kaynak: 'NIT', sira: sira++ })] });
+  const hat = (id, a, b, m, kesit = '3X50/16+70 ALPEK') => ({ id, tur: 'AG_HAVAI', anaKesit: kesit, durum: 'M', hakedis: 1, bolge: 'B1', etiket: '^ ' + kesit + '/' + m + 'm', kontrol: null, katman: 'SC_1.HAK.AG_HAV_HAT', kose: [yer[a], yer[b]], kalemler: [SH.kalemYap({ cins: 'ALPEK_KABLOLAR', tanim: kesit, birim: 'mt/mt', katsayi: 1, tarife: '0107' }, { miktar: m, durum: 'M', hakedis: 1, kaynak: 'HAT', sira: sira++ })] });
+  sp.hatlar.push(hat('1A01', 'E1', 'E2', 41), hat('1A02', 'E2', 'E3', 42), hat('1A03', 'E4', 'E3', 43), hat('1A04', 'E2', 'E5', 44));
+  const { ps } = await setup();
+  const oz = await sebekeIceAl(ps, SH.projeOku(SH.projeYaz(sp)));
+  assert.equal(oz.yeniEleman, 5);
+  assert.equal(oz.yeniHat, 3, 'E2—E3—E4 zincir olur (ters çizilen 1A03 dahil), 1A01 ve 1A04 ayrı kalır');
+  const zincir = ps.data.lines.find((l) => l.sebeke && l.sebeke.parcalar && l.sebeke.parcalar.length === 2);
+  assert.ok(zincir, 'zincir hat');
+  assert.equal(zincir.nodes.length, 3);
+  assert.deepEqual(zincir.sebeke.parcalar.map((x) => x.id), ['1A02', '1A03']);
+  assert.deepEqual(zincir.sebeke.parcalar.map((x) => x.uclar), [['E2', 'E3'], ['E4', 'E3']], 'parça uçları çizildiği yönde (eşleşme iki yönlü)');
+  assert.equal(zincir.sebekeId, '1A02');
+  const mats = ps.result.lineInfo.get(zincir.id);
+  assert.ok(mats && mats.length2D > 79 && mats.length2D < 81, 'uzunluk 40 + 40');
+  // Geri yazım: aynı parçalara aynı kimlikler (uçlardan eşleşir), metrajlar hattın toplamından parçalara dağıtılır
+  const geri = sebekeModel(ps);
+  assert.deepEqual(geri.hatlar.map((h) => h.id).sort(), ['1A01', '1A02', '1A03', '1A04']);
+  const p2 = geri.hatlar.find((h) => h.id === '1A02'), p3 = geri.hatlar.find((h) => h.id === '1A03');
+  assert.deepEqual(p2.uclar, ['E2', 'E3']); assert.deepEqual(p3.uclar, ['E3', 'E4']);
+  assert.equal(p2.kalemler[0].miktar + p3.kalemler[0].miktar, Math.ceil(mats.length3D - 1e-6));
+  // Aynı dosya ikinci kez: güncelleme, çoğaltma yok
+  const oz2 = await sebekeIceAl(ps, SH.projeOku(SH.projeYaz(sp)), { projectId: ps.p.id });
+  assert.equal(oz2.yeniHat, 0); assert.equal(oz2.guncellenenHat, 3);
+  assert.equal(ps.data.lines.filter((l) => l.status !== 'deleted').length, 3);
+});
+
+test('A9 · parça birleştirme ve metre dağıtımı yardımcıları', () => {
+  const ayni = (a, b) => a.t === b.t;
+  const k = (id, a, b, t = 'x') => ({ id, t, kose: [a, b] });
+  // #n parçaları sırayla; ters sıralı girilse de
+  let g = parcalariBirlestir([k('L#2', [10, 0], [20, 0]), k('L#1', [0, 0], [10, 0]), k('L#3', [20, 0], [30, 5])], ayni);
+  assert.equal(g.length, 1); assert.deepEqual(g[0].kose, [[0, 0], [10, 0], [20, 0], [30, 5]]); assert.deepEqual(g[0].parcalar.map((x) => x.id), ['L#1', 'L#2', 'L#3']);
+  // Nitelik değişince zincir kırılır
+  g = parcalariBirlestir([k('a', [0, 0], [10, 0]), k('b', [10, 0], [20, 0], 'y')], ayni);
+  assert.equal(g.length, 2);
+  // Üçlü kavşak zinciri kırar; geri yönde zincirleme ve ters parça
+  g = parcalariBirlestir([k('a', [0, 0], [10, 0]), k('b', [10, 0], [20, 0]), k('c', [10, 0], [10, 10]), k('d', [30, 0], [20, 0])], ayni);
+  const uzun = g.find((x) => x.parcalar.length === 2);
+  assert.deepEqual(uzun.parcalar.map((x) => x.id), ['b', 'd']); assert.deepEqual(uzun.kose, [[10, 0], [20, 0], [30, 0]]);
+  assert.equal(g.length, 3);
+  // Halka: sonsuz döngü yok
+  g = parcalariBirlestir([k('a', [0, 0], [10, 0]), k('b', [10, 0], [10, 10]), k('c', [10, 10], [0, 0])], ayni);
+  assert.equal(g.length, 1); assert.equal(g[0].parcalar.length, 3);
+  // Metre dağıtımı: tam sayı toplam → tam sayı parçalar, toplam korunur
+  assert.deepEqual(dagit(100, [1, 1, 1]), [33, 34, 33]);
+  assert.deepEqual(dagit(7, [10, 10]), [4, 3]);
+  assert.deepEqual(dagit(10, [0, 5]), [0, 10]);
+  assert.deepEqual(dagit(12.5, [1, 3]), [3.125, 9.375]);
+  assert.deepEqual(dagit(5, [1]), [5]);
 });
