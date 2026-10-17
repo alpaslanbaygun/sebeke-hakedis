@@ -94,11 +94,13 @@ jobs:
           gh release create "v$s" "cikti/SebekeHakedis-$s.zip" --title "AutoCAD eklentisi $s" --notes "Kurulum: zip'i indirin, bir klasöre çıkarın, KUR.bat'ı çalıştırın, AutoCAD'i yeniden başlatın. AutoCAD 2016–2024 ve 2025+ desteklenir."
 
       - name: Sonuçları ci-sonuc dalına yaz
-        if: always() && github.ref == 'refs/heads/main'
+        # main: ci-sonuc · diğer dallar: ci-sonuc-dal
+        if: always()
         shell: pwsh
         run: |
           git config user.name "ci"
           git config user.email "ci@users.noreply.github.com"
+          $hedef = if ($env:GITHUB_REF -eq 'refs/heads/main') { 'ci-sonuc' } else { 'ci-sonuc-dal' }
           $tmp = Join-Path $env:RUNNER_TEMP "sonuc"
           New-Item -ItemType Directory -Force $tmp | Out-Null
           Copy-Item cikti/* $tmp -Recurse -Force
@@ -108,4 +110,4 @@ jobs:
           Copy-Item "$tmp/*" . -Recurse -Force
           git add -A
           git commit -m "ci: ${{ steps.surum.outputs.surum }} ($env:GITHUB_SHA)" --quiet
-          git push -f origin HEAD:ci-sonuc
+          git push -f origin "HEAD:$hedef"

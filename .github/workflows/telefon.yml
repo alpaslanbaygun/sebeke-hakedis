@@ -95,10 +95,12 @@ jobs:
             --notes "Kurulum: APK'yı telefona indirin ve açın (bilinmeyen kaynaklara izin verin). VOLT-EDAŞ Saha 2.1.0 ve sonrasının üzerine projeler silinmeden kurulur."
 
       - name: Sonuçları ci-sonuc-android dalına yaz
-        if: always() && github.ref == 'refs/heads/main'
+        # main: ci-sonuc-android · diğer dallar: ci-sonuc-android-dal (APK dala yazılmaz)
+        if: always()
         run: |
           git config user.name "ci"
           git config user.email "ci@users.noreply.github.com"
+          hedef="ci-sonuc-android"; [ "$GITHUB_REF" = "refs/heads/main" ] || hedef="ci-sonuc-android-dal"
           tmp="$RUNNER_TEMP/sonuc"
           mkdir -p "$tmp"
           rm -f cikti/*.apk
@@ -110,4 +112,4 @@ jobs:
           cp -r "$tmp/." .
           git add -A
           git commit -m "ci: ${{ steps.surum.outputs.surum }} ($GITHUB_SHA)" --quiet
-          git push -f origin HEAD:ci-sonuc-android
+          git push -f origin "HEAD:$hedef"
