@@ -124,23 +124,36 @@ namespace SebekeHakedis.Eklenti
                 };
             }
 
+            private bool _dolduran;
+
             public T Satir<T>(string etiket, T kontrol) where T : Control
             {
                 int r = _t.RowCount++;
                 _t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                 var l = new Label { Text = etiket, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(0, 6, 8, 6) };
-                if (!(kontrol is CheckBox) && !(kontrol is FlowLayoutPanel)) kontrol.Dock = DockStyle.Fill;
+                if (kontrol is NumericUpDown)
+                {
+                    kontrol.Width = 110;
+                    kontrol.Anchor = AnchorStyles.Left;
+                }
+                else if (!(kontrol is CheckBox) && !(kontrol is FlowLayoutPanel) && !(kontrol is TableLayoutPanel)) kontrol.Dock = DockStyle.Fill;
                 kontrol.Margin = new Padding(0, 4, 0, 4);
                 _t.Controls.Add(l, 0, r);
                 _t.Controls.Add(kontrol, 1, r);
                 return kontrol;
             }
 
+            /// <summary>İki sütuna yayılan satır. yukseklik 0: içeriğe göre; -1: pencerede kalan boşluğun tamamı.</summary>
             public T Tam<T>(T kontrol, float yukseklik) where T : Control
             {
                 int r = _t.RowCount++;
-                _t.RowStyles.Add(yukseklik > 0 ? new RowStyle(SizeType.Absolute, yukseklik) : new RowStyle(SizeType.AutoSize));
-                if (yukseklik > 0) kontrol.Dock = DockStyle.Fill;
+                if (yukseklik < 0)
+                {
+                    _t.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+                    _dolduran = true;
+                }
+                else _t.RowStyles.Add(yukseklik > 0 ? new RowStyle(SizeType.Absolute, yukseklik) : new RowStyle(SizeType.AutoSize));
+                if (yukseklik != 0) kontrol.Dock = DockStyle.Fill;
                 _t.Controls.Add(kontrol, 0, r);
                 _t.SetColumnSpan(kontrol, 2);
                 return kontrol;
@@ -167,8 +180,11 @@ namespace SebekeHakedis.Eklenti
 
             public bool Goster(IWin32Window sahip = null)
             {
-                _t.RowCount++;
-                _t.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+                if (!_dolduran)
+                {
+                    _t.RowCount++;
+                    _t.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+                }
                 if (sahip != null) F.StartPosition = FormStartPosition.CenterParent;
                 return Gosterici(F, sahip) == DialogResult.OK;
             }
@@ -283,6 +299,33 @@ namespace SebekeHakedis.Eklenti
             };
         }
 
+        /// <summary>Etiket + kutu çiftlerini iki sütunda dizen tablo (ayarlar penceresi için).</summary>
+        private static TableLayoutPanel IkiliTablo()
+        {
+            var t = new TableLayoutPanel { ColumnCount = 4, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = new Padding(0, 0, 0, 4) };
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F));
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F));
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
+            return t;
+        }
+
+        private static T IkiliEkle<T>(TableLayoutPanel t, int sira, string etiket, T kontrol) where T : Control
+        {
+            int satir = sira / 2, sutun = (sira % 2) * 2;
+            while (t.RowCount <= satir)
+            {
+                t.RowCount++;
+                t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            }
+            t.Controls.Add(new Label { Text = etiket, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(0, 6, 8, 6) }, sutun, satir);
+            kontrol.Width = 110;
+            kontrol.Anchor = AnchorStyles.Left;
+            kontrol.Margin = new Padding(0, 4, 0, 4);
+            t.Controls.Add(kontrol, sutun + 1, satir);
+            return kontrol;
+        }
+
         private static decimal D(double d)
         {
             if (double.IsNaN(d) || double.IsInfinity(d)) return 0;
@@ -303,13 +346,13 @@ namespace SebekeHakedis.Eklenti
 
         public static ElemanSecimi Eleman(OrtamVerisi o, ElemanSecimi onceki)
         {
-            using (var d = new Duzen("Eleman koy — direk, box, pano, trafo, mufu", 640, 640, "Yerleştir"))
+            using (var d = new Duzen("Eleman koy — direk, box, pano, trafo, mufu", 640, 600, "Yerleştir"))
             {
                 var tur = d.Satir("Tür", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
                 foreach (var t in Turler.Elemanlar) tur.Items.Add(t);
                 d.AraBaslik("Tip (katalogdan seçin, yazarak arayın)");
                 var liste = new KatalogListesi();
-                d.Tam(liste.Kap, 270);
+                d.Tam(liste.Kap, -1);
                 var durum = d.Satir("Durum", DurumKutusu(onceki != null ? onceki.Durum : o.Ayar.SonDeger("eleman.durum", "M")));
                 var dm = d.Satir("Demontaj durumu", DmKutusu(onceki != null ? onceki.DmDurum : ""));
                 var hak = d.Satir("Hakediş", Sayi(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis));
@@ -373,13 +416,13 @@ namespace SebekeHakedis.Eklenti
 
         public static HatSecimi Hat(OrtamVerisi o, HatSecimi onceki)
         {
-            using (var d = new Duzen("Hat çiz — AG/OG havai, yeraltı, aydınlatma, rekortman", 640, 600, "Çiz"))
+            using (var d = new Duzen("Hat çiz — AG/OG havai, yeraltı, aydınlatma, rekortman", 640, 580, "Çiz"))
             {
                 var tur = d.Satir("Hat türü", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
                 foreach (var t in Turler.Hatlar) tur.Items.Add(t);
                 d.AraBaslik("Kesit / iletken (katalogdan seçin, yazarak arayın)");
                 var liste = new KatalogListesi();
-                d.Tam(liste.Kap, 280);
+                d.Tam(liste.Kap, -1);
                 var durum = d.Satir("Durum", DurumKutusu(onceki != null ? onceki.Durum : o.Ayar.SonDeger("hat.durum", "M")));
                 var hak = d.Satir("Hakediş", Sayi(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis));
                 d.Not("Başlangıç direğine, gerekirse ara köşelere ve bitiş direğine tıklayın; Enter ile bitirin. " +
@@ -426,7 +469,7 @@ namespace SebekeHakedis.Eklenti
         public static KanalSecimi Kanal(OrtamVerisi o, KanalSecimi onceki)
         {
             var a = o.Ayar;
-            using (var d = new Duzen("Kablo kanalı çiz", 560, 470, "Çiz"))
+            using (var d = new Duzen("Kablo kanalı çiz", 560, 400, "Çiz"))
             {
                 var kablo = new FlowLayoutPanel { AutoSize = true, WrapContents = false };
                 var og = new CheckBox { Text = "OG", AutoSize = true, Margin = new Padding(0, 4, 16, 0) };
@@ -479,11 +522,11 @@ namespace SebekeHakedis.Eklenti
 
         public static SondajSecimi Sondaj(OrtamVerisi o, SondajSecimi onceki)
         {
-            using (var d = new Duzen("Yatay sondaj (delgi) çiz", 600, 470, "Çiz"))
+            using (var d = new Duzen("Yatay sondaj (delgi) çiz", 600, 430, "Çiz"))
             {
                 d.AraBaslik("Sondaj tipi");
                 var liste = new KatalogListesi();
-                d.Tam(liste.Kap, 200);
+                d.Tam(liste.Kap, -1);
                 var durum = d.Satir("Durum", DurumKutusu(onceki != null ? onceki.Durum : o.Ayar.SonDeger("sondaj.durum", "M")));
                 var hak = d.Satir("Hakediş", Sayi(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis));
                 d.Not("Sondajın başlangıç ve bitiş noktalarını (gerekirse ara köşeleri) gösterin; Enter ile bitirin.");
@@ -506,7 +549,7 @@ namespace SebekeHakedis.Eklenti
 
         public static bool Bolge(ref string ad, ref string kod)
         {
-            using (var d = new Duzen("Bölge (alt proje)", 520, 230, "Kaydet"))
+            using (var d = new Duzen("Bölge (alt proje)", 520, 210, "Kaydet"))
             {
                 var tAd = d.Satir("Bölge adı", new TextBox { Text = ad ?? "" });
                 var tKod = d.Satir("Proje kodu", new TextBox { Text = kod ?? "" });
@@ -530,7 +573,7 @@ namespace SebekeHakedis.Eklenti
             using (var d = new Duzen(baslik, 640, 520, "Ekle"))
             {
                 var kl = new KatalogListesi();
-                d.Tam(kl.Kap, 420);
+                d.Tam(kl.Kap, -1);
                 kl.Doldur(liste, null);
                 kl.Secildi += () => d.Tamam.PerformClick();
                 d.Dogrula = () =>
@@ -548,7 +591,7 @@ namespace SebekeHakedis.Eklenti
         public static bool Ayarlar(OrtamVerisi o)
         {
             var a = o.Ayar;
-            using (var d = new Duzen("Şebeke Hakediş — çizim ayarları", 580, 720, "Kaydet"))
+            using (var d = new Duzen("Şebeke Hakediş — çizim ayarları", 600, 690, "Kaydet"))
             {
                 var onEk = d.Satir("Katman ön eki", new TextBox { Text = a.KatmanOnEki });
                 d.Not("Boş bırakılırsa çizimdeki PROMAGIS katmanlarından bulunur (şu an: " + o.OnEk + ").");
@@ -565,12 +608,20 @@ namespace SebekeHakedis.Eklenti
                 var yukari = d.Satir("Metraj", new CheckBox { Text = "Çizim uzunluğunu yukarı yuvarla", Checked = a.YukariYuvarla, AutoSize = true });
                 d.AraBaslik("Hat metrajına eklenecek pay (m)");
                 var paylar = new Dictionary<string, NumericUpDown>();
-                foreach (var t in Turler.Hatlar) paylar[t.Kod] = d.Satir(t.Ad, Sayi(-100, 1000, D(a.EkPayi(t.Kod)), 2, 0.5m));
-                d.AraBaslik("Kablo kanalı varsayılanları");
-                var alt = d.Satir("Alt genişlik (cm)", Sayi(0, 1000, D(a.KanalAlt), 0, 5));
-                var ust = d.Satir("Üst genişlik (cm)", Sayi(0, 1000, D(a.KanalUst), 0, 5));
-                var der = d.Satir("Derinlik (cm)", Sayi(0, 1000, D(a.KanalDerinlik), 0, 5));
-                var zemin = d.Satir("Zemin", ZeminKutusu(o, a.KanalZemin));
+                var payTablosu = IkiliTablo();
+                for (int i = 0; i < Turler.Hatlar.Length; i++)
+                {
+                    var t = Turler.Hatlar[i];
+                    paylar[t.Kod] = IkiliEkle(payTablosu, i, t.Ad, Sayi(-100, 1000, D(a.EkPayi(t.Kod)), 2, 0.5m));
+                }
+                d.Tam(payTablosu, 0);
+                d.AraBaslik("Kablo kanalı varsayılanları (cm)");
+                var kanalTablosu = IkiliTablo();
+                var alt = IkiliEkle(kanalTablosu, 0, "Alt genişlik", Sayi(0, 1000, D(a.KanalAlt), 0, 5));
+                var ust = IkiliEkle(kanalTablosu, 1, "Üst genişlik", Sayi(0, 1000, D(a.KanalUst), 0, 5));
+                var der = IkiliEkle(kanalTablosu, 2, "Derinlik", Sayi(0, 1000, D(a.KanalDerinlik), 0, 5));
+                d.Tam(kanalTablosu, 0);
+                var zemin = d.Satir("Kanal zemini", ZeminKutusu(o, a.KanalZemin));
                 if (!d.Goster()) return false;
 
                 a.KatmanOnEki = onEk.Text.Trim();
@@ -621,7 +672,7 @@ namespace SebekeHakedis.Eklenti
             Kalem ana = hat != null ? kalemler.Find(k => k.Kaynak == "HAT") : kalemler.Find(k => k.Ana);
             var kanalKopya = kanal == null ? null : new Kanal { AltGenislik = kanal.AltGenislik, UstGenislik = kanal.UstGenislik, Derinlik = kanal.Derinlik };
 
-            using (var d = new Duzen("Malzemeler — " + baslik, 900, 600, "Kaydet"))
+            using (var d = new Duzen("Malzemeler — " + baslik, 900, 560, "Kaydet"))
             {
                 TextBox gis = null, guc = null, gerilim = null, bas = null, bit = null;
                 ComboBox zemin = null;
@@ -755,7 +806,7 @@ namespace SebekeHakedis.Eklenti
                     satirYaz(e.RowIndex, k);
                 };
 
-                d.Tam(g, kanal != null ? 250 : 330);
+                d.Tam(g, -1);
                 d.Not("Durum, miktar, hakediş ve demontaj durumunu hücreye tıklayıp değiştirin; toplam kendiliğinden hesaplanır. " +
                       "Kalın satır nesnenin kendi pozudur (silinemez).");
 

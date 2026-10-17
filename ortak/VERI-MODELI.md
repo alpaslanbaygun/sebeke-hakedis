@@ -20,7 +20,7 @@ Karışıklık olmasın diye eksenler açık adla tutulur:
 ```
 {
   "bicim": "sebeke-hakedis.proje", "surum": 1,
-  "proje":    { ad, kaynak, koordinat{sistem, datum, dom}, aktifHakedis, katmanOnEki },
+  "proje":    { ad, kaynak, koordinat{sistem, datum, dom}, aktifHakedis, katmanOnEki, gisOnEki },
   "bolgeler": [ { id, ad, kod, sinir[[saga,yukari]...] } ],                 alt projeler (PROMAGIS: BÖLGE)
   "noktalar": [ { id, ad, kod, saga, yukari, kot, hakedis, bolge } ],          saha ölçüm noktaları (NOKTA AL)
   "elemanlar":[ { id, tur, gisId, cins, tip, durum, hakedis, bolge, saga, yukari, aci, guc, gerilim, dmDurum, kontrol, kalemler[] } ],
@@ -29,6 +29,20 @@ Karışıklık olmasın diye eksenler açık adla tutulur:
   "sondajlar":[ { id, tip, durum, hakedis, bolge, kose[], kalemler[] } ]
 }
 ```
+
+Okuyucular tanımadıkları alanları atlar, telefon yazarken korur. Telefonun eklediği alanlar:
+
+| Alan | Nerede | Anlamı |
+| --- | --- | --- |
+| `olcum` | eleman, nokta | ölçümün kaynağı ve kalitesi: `{kaynak: alici/telefon/harici/harita, cozum, hata, uydu, epok, zaman}` |
+| `fotolar` | her nesne | telefondaki fotoğraf dosyalarının adları (fotoğraflar ayrıca zip olarak dışa aktarılır) |
+| `not` | her nesne | serbest not |
+| `uclar` | hat | `[başlangıç elemanının kimliği, bitiş elemanının kimliği]` (taşımada uçlar birlikte gider) |
+| `olusturma` | her nesne | oluşturulma zamanı |
+| `ayarlar` | proje | telefon ayarları (metraj yuvarlama, ek paylar, ölçüm süresi, kanal varsayılanları…) |
+
+Kimlikler: PROMAGIS/AutoCAD'den gelen nesnelerde AutoCAD tanıtıcısı (onaltılık, ör. `2F3A`), telefonda
+oluşturulanlarda `T` ile başlayan bir kimlik.
 
 ### Kalem (poz satırı)
 
@@ -78,7 +92,9 @@ Kanal hacmi = (alt genişlik + üst genişlik) / 2 × derinlik × uzunluk (geni�
 ## Katalog dosyaları
 
 - `katalog/katsayilar.json` — rapor katsayıları (PROMAGIS Durum Tespit dosyasının KATSAYILAR sayfası)
-- `katalog/kalemler.json` — gerçek bir projeden çıkarılan 244 kalem (59 kategori): birim, katsayı, tarife
+- `katalog/kalemler.json` — gerçek bir projeden çıkarılan 244 kalem (59 kategori): birim, katsayı, tarife,
+  rol (`ana` nesnenin kendi pozu, `hat`, `malzeme`, `kanal`, `sondaj`) ve hangi nesnelerde kullanıldığı.
+  Telefon uygulamasına ve AutoCAD eklentisine derlemede gömülür.
 
 ## PROMAGIS çizimlerinden okuma
 
@@ -98,3 +114,33 @@ PROMAGIS veriyi nesnelerin genişletilmiş verisinde (XDATA) tutar. Okuyucu: `au
 
 Katmanlar: `<ön ek>_<hakediş>.HAK.<tür>` (ör. `SC_8.HAK.AG_HAV_HAT`) ve `<ön ek>_DEMONTAJ`, `_MEVCUT`,
 `_STANDART`, `_KABLO_KANALI`, `_YATAY_SONDAJ`, `_PROJE`, `GPS`.
+
+## Eklentinin çizime yazdıkları
+
+Eklenti PROMAGIS'in yazdığı biçimle yazar (yukarıdaki XDATA ve katmanlar); ayrıca:
+
+| Ne | Nerede | Anlamı |
+| --- | --- | --- |
+| `SH_ID` XDATA | telefondan gelen nesne | telefondaki kimlik; aynı dosya yeniden alınınca nesne bununla bulunur |
+| `SEBEKE_HAKEDIS` › `AYARLAR` | çizimin sözlüğü (Named Objects Dictionary) | çizim ayarları: ön ekler, aktif hakediş, dilim, ölçek, etiket, metraj payları, son seçimler |
+| `SH_DIREK`, `SH_BOX`, `SH_PANO`, `SH_TRAFO_DIREGI`, `SH_TRAFO_MERKEZI`, `SH_EK_MUFU`, `SH_KOFRE`, `SH_DIGER`, `GPS` | blok tanımları | çizimde aynı tür ve durumda PROMAGIS bloğu yoksa kullanılır (PROMAGIS gibi 4 ölçekle konur, öznitelikler aynı adlarla) |
+
+Hat etiketi PROMAGIS yazımıyladır: `^ kesit/341m/(tanıtıcı)` (M), `* …` (M+M), `>…<` (DM), `[…]` (DM+M),
+`(…)` (MEVCUT); kesit yerine hattın tam yazımı varsa o kullanılır.
+
+## Telefondan alma (SH_PROJEAL)
+
+1. Telefondaki nesnenin kimliği çizimde bir tanıtıcıysa o nesne; değilse aynı `SH_ID`'li nesne; ikisi de
+   yoksa yeni nesne.
+2. İki taraf da aynı yazıcıdan geçirilip karşılaştırılır (konum 1 mm, sayılar 0,001 toleransla). Aynıysa
+   nesneye dokunulmaz; değiştiyse yer, köşeler, katman, blok (durum değiştiyse o durumun bloğu),
+   öznitelikler, XDATA ve hat etiketi güncellenir.
+3. Telefonda olmayan çizim nesneleri, yalnız proje bu çizimden alınmışsa ve nesne dışa aktarımdan önce
+   varsa (tanıtıcısı küçükse) “silinmiş görünen” olarak sorulur. Bilgisayarda sonradan çizilenler sorulmaz.
+
+## Telefonda saklama
+
+Her proje telefonda bir klasördür: `proje.sebeke.json` (son derlenmiş hâl), `degisiklik.jsonl` (her
+değişiklik bir satır: `{"ops":[{"k":"elemanlar","put":{…}}, {"k":"hatlar","del":"kimlik"}, {"k":"proje","set":{…}}]}`),
+`bilgi.json` (liste için özet) ve `foto/`. Açılışta dosya + günlük uygulanır; günlük büyüyünce dosyaya
+derlenir. Böylece her dokunuş anında ve küçük bir yazmayla kaydedilir, uygulama kapansa da kaybolmaz.

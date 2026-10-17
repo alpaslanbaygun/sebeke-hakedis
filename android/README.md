@@ -2,7 +2,9 @@
 
 Sahada direk, box, pano, trafo gibi elemanları GNSS ile ölçüp koymak; hat, kanal ve malzemeleri
 girmek; hakediş özetini ve PROMAGIS ile aynı Durum Tespit raporunu (Excel) almak için.
-AutoCAD eklentisiyle aynı proje dosyasını (`.sebeke.json`) kullanır.
+AutoCAD eklentisiyle aynı proje dosyasını (`.sebeke.json`) kullanır: AutoCAD'de “Telefona Gönder” ile
+yazılan dosya telefonda “Dosyadan Aç” ile açılır; telefonda “Dışa Aktar › Proje dosyası” ile gönderilen
+dosya AutoCAD'de “Telefondan Al” ile çizime işlenir. Kullanım: [../KULLANIM.md](../KULLANIM.md)
 
 ## Kurulum (telefon)
 

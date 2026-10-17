@@ -1,4 +1,4 @@
-ŞEBEKE HAKEDİŞ — AutoCAD eklentisi
+﻿ŞEBEKE HAKEDİŞ — AutoCAD eklentisi
 ==================================
 
 Desteklenen sürümler: AutoCAD 2016–2024 ve AutoCAD 2025 ve sonrası
@@ -17,13 +17,31 @@ ELLE KURULUM (KUR.bat çalışmazsa)
   %APPDATA%\Autodesk\ApplicationPlugins
   (Dosya Gezgini adres çubuğuna yazıp Enter'a basın.)
 
-KOMUTLAR
-  SH_RAPOR       Açık PROMAGIS çiziminden Durum Tespit raporu (Excel)
-  SH_ICEAL       Çizimi ortak proje dosyasına aktarır (.sebeke.json) — telefon uygulaması bunu açar
+KOMUTLAR (şeritte ŞEBEKE HAKEDİŞ sekmesi)
+ Telefon
+  SH_ICEAL       Telefona gönder: çizimi proje dosyasına yazar (.sebeke.json)
+  SH_PROJEAL     Telefondan al: telefondaki yeni ve değişen nesneleri çizime aktarır
+ Çizim
+  SH_ELEMAN      Direk, box, pano, trafo, mufu koyar (GIS numarası kendiliğinden)
+  SH_HAT         Hat çizer (metraj ve PROMAGIS etiketi kendiliğinden)
+  SH_KANAL       Kablo kanalı çizer (hacim ölçülerden)
+  SH_SONDAJ      Yatay sondaj çizer
+  SH_BOLGE       Bölge (alt proje) sınırı
+  SH_NOKTAAL     Ölçü noktalarını dosyadan alır (CSV/TXT)
+ Düzenleme
+  SH_MALZEME     Seçilen nesnenin malzemeleri
+  SH_METRAJ      Metrajı çizim uzunluğundan yeniden hesaplar
+  SH_HAKEDIS     Aktif hakediş
+  SH_AYARLAR     Çizim ayarları
+ Rapor
+  SH_RAPOR       Bu çizimden Durum Tespit raporu (Excel)
   SH_PROJERAPOR  Proje dosyasından Durum Tespit raporu
   SH_OZET        Çizimdeki bölge, eleman, hat, kanal sayıları
+ Diğer
   SH_SERIT       Şerit sekmesi kaybolursa yeniden kurar
-  SH_HAKKINDA    Sürüm bilgisi
+  SH_HAKKINDA    Sürüm ve komut listesi
+
+Ayrıntılı kullanım: GitHub deposundaki KULLANIM.md
 
 KALDIRMA
   KALDIR.bat dosyasını çalıştırın, AutoCAD'i yeniden başlatın.
