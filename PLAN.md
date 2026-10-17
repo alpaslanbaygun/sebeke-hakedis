@@ -42,7 +42,9 @@
 
 ## Açık sorular
 
-- PROMAGIS'teki `KONTROL` (Doğru/Yanlış) işareti ve `KM`, `ME` durum kodları ne anlama geliyor?
+- ~~PROMAGIS'teki `KONTROL` işareti ve `KM`, `ME` durum kodları ne anlama geliyor?~~ Çözüldü, bkz.
+  `ortak/PROMAGIS-NOTLARI.md` (KONTROL = denetlendi işareti; KM = malzemesi yükleniciye çıkılan kurum montajı;
+  ME = mutabakat eksiği; ENH = kilometrik bedelli iş).
 - Birim fiyat girişi gerekecek mi? (İncelenen projede fiyat sütunları boştu.)
 - Telefon kataloğundaki travers, izolatör, topraklama gibi malzemelerin PROMAGIS cins / tanım karşılıkları şimdilik
   kategori kuralıyla üretiliyor; birebir eşleme istenirse `volt-eslesme.json › kalemler` doldurulur.

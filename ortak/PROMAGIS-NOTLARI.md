@@ -124,13 +124,51 @@ Blok adına göre izin verilen durumlar: `YENİ_*` → M+M, M, KM, ENH, DM+M, ME
   Rapor ekranından **toplu malzeme ekleme** (seçilen tüm direklere aynı malzeme) ve **toplu güncelleme** vardır.
 - Sıra numarası (INDEX) çizimdeki `AYARLAR/SAYAC` sayacından verilir; kayıtlar bu numarayla bulunur/silinir.
 
+## 6a. Rapor modülü (`R` komutu)
+
+- Rapor modülü **hesap yapmaz**: nesnelerin XDATA'sındaki hazır değerleri (miktar, metrik ağırlık, toplam, tutar,
+  tarife) bölge / hakediş / durum süzgeciyle listeler ve boş bir `.xlsm`'e aktarır; gruplama, toplamlar, kanal
+  paylaştırma, iletken tonajı ve pivot, AutoCAD `Support\pivot.bas` içindeki Excel makrolarıyla (KANAL_AYIR, OGTEL,
+  AGTEL, PivotOluştur, METRAJ) yapılır. Bu makro dosyası elimizde yok; bizim Durum Tespit raporu, PROMAGIS'in
+  ürettiği rapor dosyasının KATSAYILAR sayfasından çıkarılan aynı tablolarla (`katsayilar.json`) hesaplar.
+- Raporda yapılan tek hesap: hat / kanal / sondaj için `GIS UZ.` (çizim uzunluğu, 2 ondalık) ve `FARK` (girilen
+  miktar − çizim uzunluğu). Bu sütun, elle girilen uzunlukla çizimi karşılaştırmak için — bizde de yararlı olur.
+- Bölge → nesne eşlemesi, bölge çoklu çizgisinin köşeleriyle **crossing polygon** seçimidir (sınırı kesen nesne
+  iki bölgede sayılabilir). Bizde nokta-poligon testi var.
+- Excel sayfaları: DURUM TESPİT, ANA MALZEME, ARA MALZEME, HAT VE İLETKENLER, KANALLAR, SONDAJ, GPS, KATSAYILAR,
+  METRAJ, SORGU, DETAY. Sütunlar: HANDLE, PROJE, SIRA, GIS ID, CİNS, TİP, DURUM, BİRM F., MİKTAR, BİRİM, METRİK A.,
+  TOP. MİK., TOP. TL., HAK. NO, BÖL.TARİFE, MLZ.TARİFE, DM DRM, INDEX, KONTROL (hatta ek: GIS UZ., FARK; kanalda:
+  BAŞ/BİT NO, ALT/ÜST G., DERİNLİK, UZUNLUK, HACİM). DURUM TESPİT sayfasında birim fiyat ve tutar sıfır yazılır.
+- Rapor ekranındaki yardımcı işler: **SORGU** (cins/tip/durum/tarife/miktar süzgeci), **DETAY** (şu malzemeyi
+  içeren / içermeyen direkler → eksik malzeme bulma), seçilenleri çizimde gösterme, **alana toplu malzeme ekleme**,
+  tarife / durum / miktar toplu değiştirme, "Kontrol edildi" işaretleme, INDEX yeniden numaralama.
+- Kusurlar: DURUM TESPİT'e kanal satırı eklenmez (yorumda); sondaj süzgeci yanlış alana bakar; hakediş listesi
+  raporda 1–10, ayarlarda 1–12.
+
 ## 7. Onay akışı
 
 Her hakediş numarası için üç aşamalı onay: **KONTROL → HAKEDİŞ → GIS**; her aşama parolalıdır ve işaret çizimde
 saklanır (`HAK_ONAY/ONAY_DURUM<n>`, bitler 4/2/1). Denetlenmiş (`KONTROL=True`) öğeler denetim kipi kapalıyken
 değiştirilemez; hakediş yetkisi olmayan numaradaki kayıtlar da kilitlidir (`HAK_YETKİ`).
 
-## 8. Bizde olan / olmayan — özet
+## 8. Alınabilecekler (öneri listesi)
+
+1. **Tam katalog**: ana listedeki 2 982 tipin cins, tip, poz no, metrik ağırlık, ölçü birimleri ve standart
+   tarifelerini `kalemler.json`'a almak (fiyatsız). Telefon ve eklenti her PROMAGIS tipini seçebilir; `volt-eslesme.json
+   › kalemler` birebir eşleme için zemin olur.
+2. **Durum kodları**: `KM`, `ENH`, `ME` eklentide ve telefonda seçilebilir olsun; hat etiketleri `/tip\` ve `{tip}`;
+   DM'de KESİK / SÖKÜK seçimi.
+3. **Tarife kuralı**: kalemde karakteristik + unsur (şehir / köy-bakım) ayrı; çizim ayarında şehir/köy anahtarı.
+4. **Katman stilleri**: KT komutundaki RGB renk, kalınlık ve çizgi tipleri birebir.
+5. **Sıra numarası**: yeni kayıtların INDEX'i çizimdeki `AYARLAR/SAYAC` ile uyumlu verilsin (max(SAYAC, en büyük
+   sıra) + 1; SAYAC geri yazılsın); aktif hakediş ve yazı yüksekliği için `HakNo_Rec` / `TXSCALE` okunsun.
+6. **Bölge**: `FULLREG` üçüncü alanı (grup kodu) yazılsın; proje kodu biçimi `YIL.İL.GRUP..PROJE`.
+7. **Raporda FARK sütunu** (girilen / ölçülen uzunluk − çizim uzunluğu) ve **DETAY** mantığı (eksik malzeme bulma).
+8. **Onay akışı** (kontrol → hakediş → GIS) ve denetlenen öğenin kilitlenmesi: telefonda ve eklentide sade bir
+   karşılığı düşünülebilir (ileride).
+9. Pano çıkış şeması (`ANA`/`CON`) ve bina TR hücreleri (`FIDER`): okunup korunsun; düzenleme ileride.
+
+## 9. Bizde olan / olmayan — özet
 
 | Konu | PROMAGIS | Bizde |
 | --- | --- | --- |
