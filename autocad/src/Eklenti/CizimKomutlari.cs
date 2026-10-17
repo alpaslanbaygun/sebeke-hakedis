@@ -693,7 +693,8 @@ namespace SebekeHakedis.Eklenti
                         string d;
                         int hk;
                         DurumVeHakedis(kv.Value, out d, out hk);
-                        NesneyiYaz(o, y, kv.Key, kv.Value, d, hk);
+                        try { NesneyiYaz(o, y, kv.Key, kv.Value, d, hk); }
+                        catch (System.Exception ex) { y.Uyarilar.Add(kv.Key.Handle + " güncellenemedi (katmanı kilitli olabilir): " + ex.Message); }
                     }
                     tr.Commit();
                     UyarilariYaz(ed, y);
@@ -845,26 +846,33 @@ namespace SebekeHakedis.Eklenti
                     foreach (var a in plan.Adimlar)
                     {
                         var v = a.Varlik;
-                        if (a.Islem == "yeni")
+                        try
                         {
-                            if (a.CizimdeSilinmis && !yenidenEkle) continue;
-                            double olcek = 1;
-                            if (a.Nesne == "eleman")
+                            if (a.Islem == "yeni")
                             {
-                                v.Blok = y.KullanilabilirBlok(v.Blok, a.ElemanTuru, v.OzDeger("DURUM"), o.Proje.Elemanlar);
-                                olcek = o.Olcek(v.Blok);
+                                if (a.CizimdeSilinmis && !yenidenEkle) continue;
+                                double olcek = 1;
+                                if (a.Nesne == "eleman")
+                                {
+                                    v.Blok = y.KullanilabilirBlok(v.Blok, a.ElemanTuru, v.OzDeger("DURUM"), o.Proje.Elemanlar);
+                                    olcek = o.Olcek(v.Blok);
+                                }
+                                y.Ekle(v, a.Etiket, olcek);
+                                eklenen++;
+                                Kapsa(ref kapsam, ref kapsamVar, v);
                             }
-                            y.Ekle(v, a.Etiket, olcek);
-                            eklenen++;
-                            Kapsa(ref kapsam, ref kapsamVar, v);
+                            else
+                            {
+                                ObjectId id;
+                                if (!Toplayici.TaniticiylaBul(o.Db, a.Hedef, out id)) { y.Uyarilar.Add("Nesne bulunamadı: " + a.Hedef + " " + a.Ad); continue; }
+                                if (a.Nesne == "eleman" && !y.BlokKullanilabilir(v.Blok)) v.Blok = "";
+                                y.Guncelle(id, v, a.Etiket);
+                                guncellenen++;
+                            }
                         }
-                        else
+                        catch (System.Exception ex)
                         {
-                            ObjectId id;
-                            if (!Toplayici.TaniticiylaBul(o.Db, a.Hedef, out id)) { y.Uyarilar.Add("Nesne bulunamadı: " + a.Hedef + " " + a.Ad); continue; }
-                            if (a.Nesne == "eleman" && !y.BlokKullanilabilir(v.Blok)) v.Blok = "";
-                            y.Guncelle(id, v, a.Etiket);
-                            guncellenen++;
+                            y.Uyarilar.Add(a.Ad + " aktarılamadı (katmanı kilitli olabilir): " + ex.Message);
                         }
                     }
                     if (sil)
@@ -872,8 +880,15 @@ namespace SebekeHakedis.Eklenti
                         {
                             ObjectId id;
                             if (!Toplayici.TaniticiylaBul(o.Db, h, out id)) continue;
-                            y.Sil(id);
-                            silinen++;
+                            try
+                            {
+                                y.Sil(id);
+                                silinen++;
+                            }
+                            catch (System.Exception ex)
+                            {
+                                y.Uyarilar.Add(plan.Silinenler[h] + " silinemedi (katmanı kilitli olabilir): " + ex.Message);
+                            }
                         }
                     tr.Commit();
                     UyarilariYaz(ed, y);
