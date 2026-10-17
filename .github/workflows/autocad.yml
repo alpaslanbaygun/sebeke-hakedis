@@ -10,6 +10,7 @@ on:
     paths:
       - 'autocad/**'
       - 'ortak/**'
+      - '!**/*.md'
       - '.github/workflows/autocad.yml'
   workflow_dispatch:
 

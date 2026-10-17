@@ -10,6 +10,7 @@ on:
     paths:
       - 'telefon/**'
       - 'ortak/**'
+      - '!**/*.md'
       - '.github/workflows/telefon.yml'
   workflow_dispatch:
 
