@@ -1,0 +1,9 @@
+web/node_modules/
+web/dist/
+build/
+web/tests/out/
+web/tests/ui/shots/
+__pycache__/
+dist/
+surum-gecmisi.bundle
+web/tests/ref/
