@@ -1,11 +1,12 @@
 name: AutoCAD eklentisi
 
 # Her gönderimde: çekirdek testleri → iki derleme (AutoCAD 2016–2024 ve 2025+) → kurulum paketi.
-# Sonuçlar "ci-sonuc" dalına, paket "Releases" bölümüne yazılır.
+# main dalında: sonuçlar "ci-sonuc" dalına, paket "Releases" bölümüne yazılır.
+# Diğer dallarda: yalnız test ve derleme; paket ve günlükler iş akışı eki (artifact) olarak kalır.
 
 on:
   push:
-    branches: [main]
+    branches: [main, volt-birlesim]
     paths:
       - 'autocad/**'
       - 'ortak/**'
@@ -16,7 +17,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: autocad
+  group: autocad-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -75,8 +76,16 @@ jobs:
           Get-ChildItem -Recurse $kok | Select-Object FullName, Length | Format-Table -AutoSize | Out-String -Width 200 | Out-File -Append -Encoding utf8 cikti/ozet.txt
           "PAKET: cikti/SebekeHakedis-$s.zip" | Out-File -Append -Encoding utf8 cikti/ozet.txt
 
+      - name: İş akışı eki (dal denemeleri için)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autocad-${{ steps.surum.outputs.surum }}
+          path: cikti/
+          retention-days: 14
+
       - name: GitHub sürümü oluştur
-        if: success()
+        if: success() && github.ref == 'refs/heads/main'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -85,7 +94,7 @@ jobs:
           gh release create "v$s" "cikti/SebekeHakedis-$s.zip" --title "AutoCAD eklentisi $s" --notes "Kurulum: zip'i indirin, bir klasöre çıkarın, KUR.bat'ı çalıştırın, AutoCAD'i yeniden başlatın. AutoCAD 2016–2024 ve 2025+ desteklenir."
 
       - name: Sonuçları ci-sonuc dalına yaz
-        if: always()
+        if: always() && github.ref == 'refs/heads/main'
         shell: pwsh
         run: |
           git config user.name "ci"

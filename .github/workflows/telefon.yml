@@ -1,0 +1,113 @@
+name: Telefon uygulaması
+
+# Her gönderimde: JavaScript testleri → web paketi → APK (Gradle'sız; aapt2 + ecj + d8 + apksigner) → sürüm.
+# main dalında: APK "Releases" bölümüne, günlükler "ci-sonuc-android" dalına yazılır.
+# Diğer dallarda: yalnız test ve derleme; APK ve günlükler iş akışı eki (artifact) olarak kalır.
+
+on:
+  push:
+    branches: [main, volt-birlesim]
+    paths:
+      - 'telefon/**'
+      - 'ortak/**'
+      - '.github/workflows/telefon.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: telefon-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  derle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Sürüm numarası
+        id: surum
+        run: |
+          # Sürüm adı 2.5.N (N = derleme sırası); sürüm kodu 1000+N (telefondaki 2.4.0'ın kodu 240'tan büyük olmalı).
+          n="${GITHUB_RUN_NUMBER}"
+          s="2.5.${n}"
+          kod=$((1000 + n))
+          echo "surum=$s" >> "$GITHUB_OUTPUT"
+          echo "kod=$kod" >> "$GITHUB_OUTPUT"
+          mkdir -p cikti
+          printf 'Sürüm: %s (kod %s)\nİşlem: %s\nDal: %s\nTarih: %s\n' "$s" "$kod" "$GITHUB_SHA" "$GITHUB_REF_NAME" "$(date -Iseconds)" > cikti/ozet.txt
+          sed -i "s/android:versionCode=\"[0-9]*\"/android:versionCode=\"$kod\"/; s/android:versionName=\"[^\"]*\"/android:versionName=\"$s\"/" telefon/android/AndroidManifest.xml
+          grep -o 'android:version[A-Za-z]*="[^"]*"' telefon/android/AndroidManifest.xml >> cikti/ozet.txt
+
+      - name: Paketleri kur
+        working-directory: telefon/web
+        run: npm ci --no-audit --no-fund 2>&1 | tail -3
+
+      - name: JavaScript testleri
+        working-directory: telefon/web
+        run: |
+          set -o pipefail
+          node --test tests/*.test.mjs 2>&1 | tee ../../cikti/js-test.log | grep -E "^# (tests|pass|fail|skipped)"
+          if grep -q "^# fail [1-9]" ../../cikti/js-test.log; then echo "JS TEST: BAŞARISIZ" >> ../../cikti/ozet.txt; exit 1; fi
+          echo "JS TEST: geçti ($(grep '^# pass' ../../cikti/js-test.log))" >> ../../cikti/ozet.txt
+
+      - name: APK araçları
+        run: |
+          chmod +x telefon/tools/*.sh
+          telefon/tools/setup_tools.sh "$RUNNER_TEMP/apk-araclari" 2>&1 | tail -2
+
+      - name: APK
+        run: |
+          set -o pipefail
+          # Paket kurulumundan sonra: uygulama içi sürüm yazısı package.json'dan okunur
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.surum.outputs.surum }}\"/" telefon/web/package.json
+          TOOLS="$RUNNER_TEMP/apk-araclari" telefon/tools/build_apk.sh 2>&1 | tee cikti/apk.log
+          s="${{ steps.surum.outputs.surum }}"
+          test -f "telefon/dist/VOLT-EDAS-Saha-$s.apk"
+          cp "telefon/dist/VOLT-EDAS-Saha-$s.apk" cikti/
+          echo "APK: VOLT-EDAS-Saha-$s.apk ($(stat -c %s "cikti/VOLT-EDAS-Saha-$s.apk") bayt)" >> cikti/ozet.txt
+
+      - name: İş akışı eki (dal denemeleri için)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: telefon-${{ steps.surum.outputs.surum }}
+          path: cikti/
+          retention-days: 14
+
+      - name: GitHub sürümü oluştur
+        if: success() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          s="${{ steps.surum.outputs.surum }}"
+          gh release create "mobil-$s" "cikti/VOLT-EDAS-Saha-$s.apk" --title "Telefon uygulaması $s" \
+            --notes "Kurulum: APK'yı telefona indirin ve açın (bilinmeyen kaynaklara izin verin). VOLT-EDAŞ Saha 2.1.0 ve sonrasının üzerine projeler silinmeden kurulur."
+
+      - name: Sonuçları ci-sonuc-android dalına yaz
+        if: always() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          tmp="$RUNNER_TEMP/sonuc"
+          mkdir -p "$tmp"
+          rm -f cikti/*.apk
+          cp -r cikti/. "$tmp/"
+          git checkout -- . 2>/dev/null || true
+          git checkout --orphan ci-sonuc-android-yeni
+          git rm -rf . --quiet
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -r "$tmp/." .
+          git add -A
+          git commit -m "ci: ${{ steps.surum.outputs.surum }} ($GITHUB_SHA)" --quiet
+          git push -f origin HEAD:ci-sonuc-android
