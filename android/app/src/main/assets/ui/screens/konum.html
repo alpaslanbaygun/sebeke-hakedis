@@ -1,0 +1,78 @@
+<!-- Konum kaynağı: Bluetooth GNSS alıcısı (+ NTRIP) ya da telefonun konumu -->
+<template data-body-class="bg-background font-body-md text-on-surface min-h-screen antialiased">
+<header class="fixed top-0 w-full z-50 pt-safe bg-primary-container shadow-[0_1px_8px_rgba(0,0,0,0.12)]">
+  <div class="h-16 px-margin flex items-center gap-space-sm">
+    <button data-a="back" class="w-11 h-11 -ml-2 flex items-center justify-center text-on-primary" aria-label="Geri"><span class="material-symbols-outlined">arrow_back</span></button>
+    <h1 class="flex-1 text-headline-md font-headline-md text-on-primary truncate">Konum Kaynağı</h1>
+  </div>
+</header>
+<main class="pt-16 pb-space-lg px-margin min-h-screen flex flex-col gap-space-md">
+  <div class="grid grid-cols-2 gap-space-sm pt-space-md">
+    <button data-a="kaynakBt" data-kaynak="bt" class="card p-space-md text-left flex flex-col gap-1 min-h-[112px]">
+      <span class="material-symbols-outlined text-[30px] text-primary-container">bluetooth</span>
+      <span class="text-title-md font-title-md">GNSS alıcısı</span>
+      <span class="text-label-md font-label-md text-on-surface-variant">Bluetooth · her marka (NMEA)</span>
+    </button>
+    <button data-a="kaynakTel" data-kaynak="phone" class="card p-space-md text-left flex flex-col gap-1 min-h-[112px]">
+      <span class="material-symbols-outlined text-[30px] text-primary-container">smartphone</span>
+      <span class="text-title-md font-title-md">Telefon konumu</span>
+      <span class="text-label-md font-label-md text-on-surface-variant">M-Survey RTK vb. uygulamanın verdiği konum</span>
+    </button>
+  </div>
+
+  <section class="card p-space-md flex flex-col gap-space-sm">
+    <div class="flex items-center gap-space-sm">
+      <div class="h-7 px-2 rounded-full flex items-center gap-1" data-chip><span class="w-2 h-2 rounded-full" data-dot></span><span class="text-label-sm font-label-sm font-bold" data-b="fix-label">Konum yok</span></div>
+      <span class="text-label-md font-label-md num" data-b="fix-hrms">—</span>
+      <span class="flex-1"></span>
+      <span class="text-label-md font-label-md text-on-surface-variant num"><span data-b="fix-sats">—</span> uydu · yaş <span data-b="fix-age">—</span></span>
+    </div>
+    <div class="grid grid-cols-3 gap-space-sm num">
+      <div><div class="field-label">Y (Sağa)</div><div class="text-readout-md font-readout-md" data-b="e">—</div></div>
+      <div><div class="field-label">X (Yukarı)</div><div class="text-readout-md font-readout-md" data-b="n">—</div></div>
+      <div><div class="field-label">Kot</div><div class="text-readout-md font-readout-md" data-b="h">—</div></div>
+    </div>
+    <div class="text-label-md font-label-md text-on-surface-variant num" data-b="geo">—</div>
+  </section>
+
+  <section data-show="bt" class="flex flex-col gap-space-md">
+    <div class="card p-space-md flex flex-col gap-space-sm">
+      <div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary-container">bluetooth_connected</span><h2 class="text-title-md font-title-md flex-1">Alıcı</h2>
+        <button data-a="btAyar" class="text-label-md font-label-md text-primary-container">Eşleştir…</button></div>
+      <button data-a="aliciSec" class="input flex items-center justify-between text-left"><span class="truncate" data-b="alici">Seçilmedi</span><span class="material-symbols-outlined text-secondary">unfold_more</span></button>
+      <div class="text-body-md font-body-md" data-b="btMsg">—</div>
+      <div class="grid grid-cols-2 gap-space-sm"><button data-a="baglan" class="btn btn-main h-12"><span class="material-symbols-outlined">bluetooth_searching</span>Bağlan</button><button data-a="kes" class="btn btn-soft h-12"><span class="material-symbols-outlined">bluetooth_disabled</span>Kes</button></div>
+      <p class="text-label-md font-label-md text-on-surface-variant">Alıcı önce telefonun Bluetooth ayarlarından eşleştirilir. Alıcı NMEA (GGA, GST) göndermelidir; marka uygulamasında “Bluetooth NMEA çıkışı” açık olsun.</p>
+    </div>
+    <div class="card p-space-md flex flex-col gap-space-sm">
+      <div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary-container">cell_tower</span><h2 class="text-title-md font-title-md flex-1">Düzeltme (NTRIP · TUSAGA-Aktif)</h2></div>
+      <div class="grid grid-cols-3 gap-space-sm">
+        <div class="col-span-2 flex flex-col gap-1"><label class="field-label">Sunucu</label><input data-b="nHost" class="input !text-[16px]" autocomplete="off" placeholder="cors.tusaga-aktif.gov.tr"></div>
+        <div class="flex flex-col gap-1"><label class="field-label">Port</label><input data-b="nPort" class="input num" inputmode="numeric"></div>
+      </div>
+      <div class="flex flex-col gap-1"><label class="field-label">Bağlama noktası</label>
+        <div class="flex gap-space-sm"><input data-b="nMount" class="input flex-1 !text-[16px]" autocomplete="off" placeholder="VRSRTCM31"><button data-a="mountListe" class="btn btn-soft h-[52px] !px-3"><span class="material-symbols-outlined">list</span></button></div></div>
+      <div class="grid grid-cols-2 gap-space-sm">
+        <div class="flex flex-col gap-1"><label class="field-label">Kullanıcı</label><input data-b="nUser" class="input !text-[16px]" autocomplete="off"></div>
+        <div class="flex flex-col gap-1"><label class="field-label">Parola</label><input data-b="nPass" type="password" class="input !text-[16px]" autocomplete="off"></div>
+      </div>
+      <label class="flex items-center justify-between min-h-[44px]"><span class="text-body-md font-body-md">Konumu sunucuya gönder (GGA)</span><input type="checkbox" data-c="nGga" class="w-6 h-6 accent-[#0D4A7A]"></label>
+      <label class="flex items-center justify-between min-h-[44px]"><span class="text-body-md font-body-md">Alıcı bağlanınca otomatik başlat</span><input type="checkbox" data-c="nAuto" class="w-6 h-6 accent-[#0D4A7A]"></label>
+      <div class="text-body-md font-body-md" data-b="ntripMsg">—</div>
+      <div class="grid grid-cols-2 gap-space-sm"><button data-a="ntripBaslat" class="btn btn-main h-12"><span class="material-symbols-outlined">play_arrow</span>Başlat</button><button data-a="ntripDurdur" class="btn btn-soft h-12"><span class="material-symbols-outlined">stop</span>Durdur</button></div>
+    </div>
+  </section>
+
+  <section data-show="tel" hidden class="card p-space-md flex flex-col gap-space-sm">
+    <div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary-container">phone_android</span><h2 class="text-title-md font-title-md flex-1">Telefon konumu</h2></div>
+    <div class="text-body-md font-body-md" data-b="telMsg">—</div>
+    <ol class="list-decimal pl-5 text-body-md font-body-md text-on-surface-variant flex flex-col gap-1">
+      <li>RTK alıcısını kendi uygulamasına (M-Survey RTK, alıcının uygulaması…) bağlayın ve Fixed çözüm alın.</li>
+      <li>O uygulamada “Sahte konum / Mock location” seçeneğini açın.</li>
+      <li>Telefonun <b>Geliştirici seçenekleri › Sahte konum uygulaması</b> olarak o uygulamayı seçin.</li>
+      <li>Burada çözüm “Harici · RTK” olarak görünür; doğruluk o uygulamanın bildirdiğidir.</li>
+    </ol>
+    <div class="grid grid-cols-2 gap-space-sm"><button data-a="konumAyar" class="btn btn-soft h-12 text-[14px]"><span class="material-symbols-outlined">settings</span>Konum ayarı</button><button data-a="gelistirici" class="btn btn-soft h-12 text-[14px]"><span class="material-symbols-outlined">developer_board</span>Geliştirici</button></div>
+  </section>
+</main>
+</template>

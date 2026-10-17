@@ -1,0 +1,72 @@
+<!-- M13 Ayarlar -->
+<template data-body-class="bg-background font-body-md text-on-surface min-h-screen antialiased">
+<header class="fixed top-0 w-full z-50 pt-safe bg-primary-container shadow-[0_1px_8px_rgba(0,0,0,0.12)]">
+  <div class="h-16 px-margin flex items-center gap-space-sm">
+    <button data-a="back" class="w-11 h-11 -ml-2 flex items-center justify-center text-on-primary" aria-label="Geri"><span class="material-symbols-outlined">arrow_back</span></button>
+    <h1 class="flex-1 text-headline-md font-headline-md text-on-primary truncate">Ayarlar</h1>
+  </div>
+</header>
+<main class="pt-[76px] pb-[110px] px-margin min-h-screen flex flex-col gap-space-md">
+  <section class="card p-space-md mt-space-md flex flex-col gap-space-sm">
+    <div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary-container">folder_open</span><h2 class="text-title-md font-title-md">Proje</h2></div>
+    <label class="field-label" for="a-ad">Proje adı</label>
+    <input id="a-ad" data-b="ad" class="input" autocomplete="off">
+    <div class="grid grid-cols-3 gap-space-sm">
+      <div class="flex flex-col gap-1"><label class="field-label">Hakediş</label><input data-b="hakedis" class="input num" inputmode="numeric"></div>
+      <div class="flex flex-col gap-1"><label class="field-label">GIS ön eki</label><input data-b="gisOnEki" class="input" autocapitalize="characters"></div>
+      <div class="flex flex-col gap-1"><label class="field-label">Katman ön eki</label><input data-b="katmanOnEki" class="input" autocapitalize="characters"></div>
+    </div>
+    <label class="field-label" for="a-dom">Koordinat dilimi (TM, ITRF96)</label>
+    <select id="a-dom" data-b="dom" class="input">
+      <option value="0">Seçilmedi</option>
+      <option value="27">TM 27°</option><option value="30">TM 30°</option><option value="33">TM 33°</option>
+      <option value="36">TM 36°</option><option value="39">TM 39°</option><option value="42">TM 42°</option><option value="45">TM 45°</option>
+    </select>
+  </section>
+
+  <section class="card p-space-md flex flex-col gap-space-sm">
+    <div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary-container">straighten</span><h2 class="text-title-md font-title-md">Hat metrajı</h2></div>
+    <p class="text-label-md font-label-md text-on-surface-variant">Çizim uzunluğundan metraj önerisi: yukarı yuvarlanır, hat türüne göre ek pay (sehim, bağlantı) eklenir. Her hatta elle değiştirilebilir.</p>
+    <label class="flex items-center justify-between min-h-[48px]"><span class="text-body-lg font-body-lg">Yukarı yuvarla</span><input type="checkbox" data-c="yukariYuvarla" class="w-6 h-6 accent-[#0D4A7A]"></label>
+    <div class="grid grid-cols-3 gap-space-sm" id="ekpay"></div>
+  </section>
+
+  <section class="card p-space-md flex flex-col gap-space-sm">
+    <div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary-container">gps_fixed</span><h2 class="text-title-md font-title-md">Ölçüm</h2></div>
+    <div class="grid grid-cols-2 gap-space-sm">
+      <div class="flex flex-col gap-1"><label class="field-label">Ölçüm süresi (sn)</label><input data-b="olcumSuresi" class="input num" inputmode="numeric"></div>
+      <div class="flex flex-col gap-1"><label class="field-label">Anten yüksekliği (m)</label><input data-b="antenYuksekligi" class="input num" inputmode="decimal"></div>
+    </div>
+    <p class="text-label-md font-label-md text-on-surface-variant">0 sn: düğmeye basıldığı andaki konum. Süre verilirse o kadar saniyenin ortalaması alınır.</p>
+    <label class="flex items-center justify-between min-h-[48px]"><span class="text-body-lg font-body-lg">Yalnız Fixed çözümde kaydet</span><input type="checkbox" data-c="yalnizFixed" class="w-6 h-6 accent-[#0D4A7A]"></label>
+    <div class="flex flex-col gap-1"><label class="field-label">En fazla yatay hata (m)</label><input data-b="enFazlaHata" class="input num" inputmode="decimal"></div>
+  </section>
+
+  <section class="card p-space-md flex flex-col gap-space-sm">
+    <div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary-container">route</span><h2 class="text-title-md font-title-md">Kanal varsayılanları</h2></div>
+    <div class="grid grid-cols-3 gap-space-sm">
+      <div class="flex flex-col gap-1"><label class="field-label">Alt (cm)</label><input data-b="kanalAlt" class="input num" inputmode="numeric"></div>
+      <div class="flex flex-col gap-1"><label class="field-label">Üst (cm)</label><input data-b="kanalUst" class="input num" inputmode="numeric"></div>
+      <div class="flex flex-col gap-1"><label class="field-label">Derinlik</label><input data-b="kanalDerinlik" class="input num" inputmode="numeric"></div>
+    </div>
+  </section>
+
+  <section class="card p-space-md flex flex-col gap-space-sm">
+    <div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary-container">layers</span><h2 class="text-title-md font-title-md">Harita altlığı</h2></div>
+    <select data-b="basemap" class="input" id="altlik"></select>
+    <p class="text-label-md font-label-md text-on-surface-variant">Google ve Yandex karoları yalnız kendi API anahtarınızla çalışır (Saha Ölçüm'deki gibi). Anahtar telefonda saklanır.</p>
+    <div class="flex flex-col gap-1"><label class="field-label">Google Map Tiles API anahtarı</label><input data-b="googleKey" class="input" placeholder="değiştirmek için yazın" autocomplete="off"></div>
+    <div class="flex flex-col gap-1"><label class="field-label">Yandex Tiles API anahtarı</label><input data-b="yandexKey" class="input" placeholder="değiştirmek için yazın" autocomplete="off"></div>
+  </section>
+
+  <section class="card p-space-md flex flex-col gap-space-sm">
+    <div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary-container">bluetooth</span><h2 class="text-title-md font-title-md">Alıcı</h2></div>
+    <label class="flex items-center justify-between min-h-[48px] gap-space-sm"><span class="text-body-lg font-body-lg">Spectra / Ashtech alıcıda NMEA çıkışını otomatik aç</span><input type="checkbox" data-c="autoConfig" class="w-6 h-6 accent-[#0D4A7A] shrink-0"></label>
+    <p class="text-label-md font-label-md text-on-surface-variant">CHCNAV, Kolida, Trimble, Meridian, Geo gibi diğer markalarda kapalı kalsın; alıcı kendi uygulamasında NMEA (GGA, GST) verecek şekilde ayarlanır.</p>
+  </section>
+  <p class="text-label-md font-label-md text-secondary text-center pb-space-sm" data-b="surum"></p>
+</main>
+<div class="fixed bottom-0 left-0 right-0 z-50 bg-surface pb-safe shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
+  <div class="p-margin"><button data-a="kaydet" class="btn btn-main w-full h-14"><span class="material-symbols-outlined">save</span>Kaydet</button></div>
+</div>
+</template>

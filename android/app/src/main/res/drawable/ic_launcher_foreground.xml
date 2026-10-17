@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Elektrik direği ve iletkenler: iki direk arasında hat, üstte şimşek işareti. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Sol direk -->
+    <path
+        android:pathData="M36,34L36,78M28,38L44,38"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="4" />
+    <!-- Sağ direk -->
+    <path
+        android:pathData="M72,34L72,78M64,38L80,38"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="4" />
+    <!-- Sehimli iletkenler -->
+    <path
+        android:pathData="M28,38Q54,50 64,38M44,38Q58,48 80,38"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="2" />
+    <!-- Ölçüm noktası -->
+    <path
+        android:fillColor="#C2410C"
+        android:pathData="M54,70m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+</vector>

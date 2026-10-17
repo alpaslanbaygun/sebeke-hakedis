@@ -1,0 +1,165 @@
+/* Stitch ekranlarının ortak taban kuralları ve uygulamanın kendi katmanları (bildirim, uyarı). */
+html, body {
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+}
+body {
+  overscroll-behavior: none;
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+input, textarea { -webkit-user-select: text; user-select: text; }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+main > :first-child { margin-top: 0 !important; }
+main > :last-child { margin-bottom: 0 !important; }
+::-webkit-scrollbar { display: none; }
+
+/*
+ * Stitch bazı ekranlarda renk tablosunu farklı tanımlamış ("primary-container" açık mavi); bu
+ * ekranlarda üst çubuk da açık renkli çıkıp beyaz başlık okunmuyordu. Üst çubuk her ekranda
+ * Ana Ekran'daki koyu laciverttir.
+ */
+.screen-root > header { --c-primary-container: 13 74 122; --c-on-primary: 255 255 255; }
+
+/* Ekran sarmalayıcısı yerleşime katılmaz; Stitch'in header/main/nav öğeleri doğrudan body'nin çocuğu gibi davranır. */
+.screen-root { display: contents; }
+[hidden] { display: none !important; }
+
+/* Kısa bildirim */
+#toast {
+  position: fixed; left: 16px; right: 16px; bottom: 96px; z-index: 200;
+  display: flex; justify-content: center; pointer-events: none;
+}
+#toast > div {
+  background: rgb(45 49 51 / 0.95); color: #fff; font: 500 14px/20px 'Inter', sans-serif;
+  padding: 10px 16px; border-radius: 12px; max-width: 100%; box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s;
+}
+#toast > div.show { opacity: 1; transform: none; }
+
+/* Uygulamanın kendi iletişim kutusu (Stitch'te tasarımı olmayan sorular için) */
+#dialog {
+  position: fixed; inset: 0; z-index: 150; background: rgb(15 23 42 / 0.45);
+  display: flex; align-items: flex-end; justify-content: center; padding: 16px;
+}
+#dialog .box {
+  width: 100%; max-width: 480px; background: #fff; border-radius: 16px; padding: 20px 16px 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.25); max-height: 80vh; display: flex; flex-direction: column;
+}
+#dialog h2 { font: 600 20px/26px 'Inter', sans-serif; color: #0F172A; margin: 0 4px 8px; }
+#dialog p { font: 400 15px/22px 'Inter', sans-serif; color: #42474f; margin: 0 4px 12px; white-space: pre-line; }
+#dialog .items { overflow-y: auto; margin: 0 -4px 8px; }
+#dialog .items button {
+  display: flex; width: 100%; align-items: center; gap: 12px; min-height: 56px; padding: 8px 12px;
+  border: 0; background: none; text-align: left; font: 500 16px/21px 'Inter', sans-serif; color: #0F172A; border-radius: 8px;
+}
+#dialog .items button:active { background: #eceef0; }
+#dialog .items button:disabled { opacity: .6; }
+#dialog .html { overflow: auto; margin: 0 0 12px; }
+#dialog .html table { border-collapse: collapse; width: 100%; font: 500 13px/18px 'Inter', sans-serif; font-variant-numeric: tabular-nums; }
+#dialog .html th { background: #eceef0; color: #42474f; text-align: right; padding: 6px 6px; white-space: nowrap; }
+#dialog .html th:first-child, #dialog .html td:first-child { text-align: left; }
+#dialog .html td { border-top: 1px solid #e0e3e5; padding: 6px 6px; text-align: right; white-space: nowrap; }
+#dialog .html td.bad { color: #B3261E; font-weight: 700; }
+#dialog .html td.off { color: #9CA3AF; }
+#dialog .items small { display: block; font: 500 12px/16px 'Inter', sans-serif; color: #42474f; }
+#dialog .actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+#dialog .actions button {
+  min-height: 48px; padding: 0 16px; border-radius: 8px; border: 0; background: none;
+  font: 600 16px/20px 'Inter', sans-serif; color: #0D4A7A;
+}
+#dialog .actions button.main { background: #0D4A7A; color: #fff; }
+#dialog input {
+  width: 100%; box-sizing: border-box; height: 56px; border: 1px solid #B6C2CF; border-radius: 8px;
+  padding: 0 14px; font: 500 17px 'Inter', sans-serif; margin: 0 0 12px; outline: none;
+}
+#dialog input:focus { border: 2px solid #0D4A7A; }
+
+/* ---- Şebeke Hakediş: ortak bileşenler ---- */
+#toast > div { display: flex; align-items: center; gap: 12px; pointer-events: auto; }
+#toast button {
+  border: 0; background: none; color: #9DCAFF; font: 700 14px/20px 'Inter', sans-serif; padding: 6px 4px; white-space: nowrap;
+}
+#dialog .actions button.danger { color: #B3261E; }
+#dialog .fields { display: flex; flex-direction: column; gap: 10px; margin: 0 0 12px; overflow-y: auto; }
+#dialog .fields label { display: flex; flex-direction: column; gap: 4px; font: 600 13px/17px 'Inter', sans-serif; color: #42474f; }
+#dialog .fields input, #dialog .fields select {
+  width: 100%; box-sizing: border-box; height: 52px; border: 1px solid #B6C2CF; border-radius: 8px; padding: 0 12px;
+  font: 500 17px 'Inter', sans-serif; color: #0F172A; background: #fff; margin: 0; outline: none;
+}
+#dialog .fields input:focus, #dialog .fields select:focus { border: 2px solid #0D4A7A; }
+
+/* Bekleme perdesi */
+#busy { position: fixed; inset: 0; z-index: 300; background: rgb(15 23 42 / 0.35); display: flex; align-items: center; justify-content: center; }
+#busy > div { background: #fff; border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; gap: 14px;
+  font: 600 16px/22px 'Inter', sans-serif; color: #0F172A; box-shadow: 0 8px 32px rgba(0,0,0,.25); max-width: 80vw; }
+#busy .spin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid #DCEAF6; border-top-color: #0D4A7A; animation: spin .9s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Düğmeler */
+.btn { min-height: 48px; padding: 0 16px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font: 600 16px/20px 'Inter', sans-serif; border: 0; transition: transform .1s; }
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: .45; }
+.btn-main { background: #0D4A7A; color: #fff; box-shadow: 0 2px 6px rgba(13,74,122,.25); }
+.btn-measure { background: #C2410C; color: #fff; box-shadow: 0 2px 8px rgba(194,65,12,.3); }
+.btn-line { background: #fff; color: #0D4A7A; border: 2px solid #0D4A7A; }
+.btn-soft { background: #E8EDF2; color: #0F172A; }
+.btn-danger { background: #fff; color: #B3261E; border: 2px solid #F2B8B5; }
+
+/* Çipler (kaydırmalı seçim) */
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
+.chip { flex-shrink: 0; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #B6C2CF; background: #fff;
+  font: 600 14px/18px 'Inter', sans-serif; color: #0F172A; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.chip.on { background: #0D4A7A; border-color: #0D4A7A; color: #fff; }
+
+/* Bölmeli düğme grubu (durum seçimi) */
+.seg { display: flex; border: 1.5px solid #0D4A7A; border-radius: 12px; overflow: hidden; }
+.seg button { flex: 1; min-height: 46px; border: 0; background: #fff; color: #0D4A7A; font: 700 14px/18px 'Inter', sans-serif; padding: 0 2px; }
+.seg button + button { border-left: 1.5px solid #0D4A7A; }
+.seg button.on { background: #0D4A7A; color: #fff; }
+
+/* Kart ve alanlar */
+.card { background: #fff; border-radius: 12px; border: 1px solid #E0E3E5; }
+.field-label { font: 600 12px/16px 'Inter', sans-serif; color: #42474F; text-transform: uppercase; letter-spacing: .04em; }
+.input { width: 100%; height: 52px; border: 1px solid #B6C2CF; border-radius: 10px; padding: 0 12px; font: 600 18px 'Inter', sans-serif;
+  color: #0F172A; background: #fff; outline: none; box-sizing: border-box; }
+.input:focus { border: 2px solid #0D4A7A; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Durum rozetleri */
+.rozet { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; font: 700 11px/14px 'Inter', sans-serif; white-space: nowrap; }
+.rozet-M { background: #DBEAFE; color: #1E3A8A; }
+.rozet-MM { background: #DCFCE7; color: #14532D; }
+.rozet-DM { background: #FEE2E2; color: #7F1D1D; }
+.rozet-DMM { background: #FFEDD5; color: #7C2D12; }
+.rozet-MEVCUT { background: #E5E7EB; color: #374151; }
+
+/* Harita ekranı: alt panel ve yüzen düğmeler */
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; background: #fff; border-radius: 18px 18px 0 0;
+  box-shadow: 0 -6px 24px rgba(0,0,0,.18); max-height: 42vh; display: flex; flex-direction: column; }
+.sheet .grip { width: 40px; height: 4px; border-radius: 2px; background: #C2C7D0; margin: 8px auto 2px; flex-shrink: 0; }
+.sheet .body { overflow-y: auto; padding: 4px 16px 12px; }
+.sheet .body > * { flex-shrink: 0; }
+.sheet .foot { padding: 8px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid #ECEEF0; flex-shrink: 0; }
+.fab { position: absolute; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+.fab:active { transform: scale(0.96); }
+.map-btn { width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,.96); color: #0F172A; border: 0;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.map-btn.on { background: #0D4A7A; color: #fff; }
+.adim { background: #0F172A; color: #fff; border-radius: 12px; padding: 10px 14px; font: 600 15px/20px 'Inter', sans-serif;
+  box-shadow: 0 4px 14px rgba(0,0,0,.25); display: flex; align-items: center; gap: 10px; }
+
+/* Liste satırı */
+.row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 64px; background: #fff; border-bottom: 1px solid #ECEEF0; width: 100%; text-align: left; }
+.row:active { background: #F2F4F6; }
+.tablo { width: 100%; border-collapse: collapse; font: 500 13px/18px 'Inter', sans-serif; font-variant-numeric: tabular-nums; }
+.tablo th { position: sticky; top: 0; background: #ECEEF0; color: #42474F; text-align: right; padding: 8px 8px; font-weight: 700; white-space: nowrap; }
+.tablo th:first-child, .tablo td:first-child { text-align: left; }
+.tablo td { border-top: 1px solid #E0E3E5; padding: 8px 8px; text-align: right; vertical-align: top; }

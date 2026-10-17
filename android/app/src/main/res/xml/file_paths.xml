@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paylaşılan dosyalar (önbellekteki share/) ve kamera için proje fotoğraf klasörleri -->
+<paths>
+    <cache-path name="share" path="share/" />
+    <files-path name="projeler" path="projeler/" />
+</paths>

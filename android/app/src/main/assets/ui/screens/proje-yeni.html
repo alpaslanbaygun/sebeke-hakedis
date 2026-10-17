@@ -1,0 +1,43 @@
+<!-- Yeni proje -->
+<template data-body-class="bg-background font-body-md text-on-surface min-h-screen antialiased">
+<header class="fixed top-0 w-full z-50 pt-safe bg-primary-container shadow-[0_1px_8px_rgba(0,0,0,0.12)]">
+  <div class="h-16 px-margin flex items-center gap-space-sm">
+    <button data-a="back" class="w-11 h-11 -ml-2 flex items-center justify-center text-on-primary" aria-label="Geri"><span class="material-symbols-outlined">arrow_back</span></button>
+    <h1 class="flex-1 text-headline-md font-headline-md text-on-primary truncate">Yeni Proje</h1>
+  </div>
+</header>
+<main class="pt-16 pb-[110px] px-margin min-h-screen flex flex-col gap-space-lg">
+  <div class="pt-space-lg flex flex-col gap-space-xs">
+    <label class="field-label" for="ad">Proje adı</label>
+    <input id="ad" data-b="ad" class="input" placeholder="ör. Örnek Mahallesi AG Şebekesi" autocomplete="off">
+  </div>
+  <div class="grid grid-cols-2 gap-gutter">
+    <div class="flex flex-col gap-space-xs">
+      <label class="field-label" for="hak">Hakediş no</label>
+      <input id="hak" data-b="hakedis" class="input num" inputmode="numeric" value="1">
+    </div>
+    <div class="flex flex-col gap-space-xs">
+      <label class="field-label" for="onek">GIS ön eki</label>
+      <input id="onek" data-b="onek" class="input" value="SC" autocomplete="off" autocapitalize="characters">
+    </div>
+  </div>
+  <div class="flex flex-col gap-space-xs">
+    <label class="field-label" for="dom">Koordinat dilimi (TM, ITRF96)</label>
+    <select id="dom" data-b="dom" class="input">
+      <option value="0">Otomatik (ilk GNSS konumundan)</option>
+      <option value="27">TM 27°</option><option value="30">TM 30°</option><option value="33">TM 33°</option>
+      <option value="36">TM 36°</option><option value="39">TM 39°</option><option value="42">TM 42°</option><option value="45">TM 45°</option>
+    </select>
+    <p class="text-label-md font-label-md text-on-surface-variant">Elazığ, Malatya, Erzincan 39° · Kayseri, Sivas, Adana 36° · Ankara, Konya 33°</p>
+  </div>
+  <div class="card p-space-md flex flex-col gap-space-sm">
+    <div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary-container">summarize</span><span class="text-title-md font-title-md">Rapor başlığı (alt proje)</span></div>
+    <p class="text-label-md font-label-md text-on-surface-variant">Durum Tespit raporunda PROJE ve PROJE KODU sütunlarına yazılır. Sonra Bölgeler ekranından değiştirilebilir.</p>
+    <input data-b="bolgeAd" class="input" placeholder="Proje adı (ör. ELAZIĞ İLİ … AG ŞEBEKE TESİSİ)" autocomplete="off">
+    <input data-b="bolgeKod" class="input num" placeholder="Proje kodu (ör. 23.01.01.02.30001)" inputmode="decimal" autocomplete="off">
+  </div>
+</main>
+<div class="fixed bottom-0 left-0 right-0 z-50 bg-surface pb-safe shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
+  <div class="p-margin"><button data-a="olustur" class="btn btn-main w-full h-14"><span class="material-symbols-outlined">add</span>Projeyi Oluştur</button></div>
+</div>
+</template>

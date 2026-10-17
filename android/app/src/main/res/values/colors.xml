@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Saha Ölçüm" tasarım sistemi (açık tema, gün ışığı). -->
+<resources>
+    <color name="primary">#0D4A7A</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="primary_container">#DCEAF6</color>
+    <color name="on_primary_container">#0A3557</color>
+    <color name="secondary">#475569</color>
+    <color name="measure">#C2410C</color>
+    <color name="on_measure">#FFFFFF</color>
+    <color name="neutral">#F4F6F8</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_variant">#E8EDF2</color>
+    <color name="on_surface">#0F172A</color>
+    <color name="on_surface_variant">#4B5563</color>
+    <color name="outline">#B6C2CF</color>
+    <color name="success">#17703A</color>
+    <color name="success_container">#DDF2E3</color>
+    <color name="on_success_container">#0E4A26</color>
+    <color name="warning_container">#FCEBC5</color>
+    <color name="on_warning_container">#6B3D00</color>
+    <color name="error">#B3261E</color>
+    <color name="error_container">#F9DEDC</color>
+    <color name="on_error_container">#7A1610</color>
+    <color name="app_bar">#0D4A7A</color>
+    <color name="on_app_bar">#FFFFFF</color>
+
+    <color name="cut">#B3261E</color>
+    <color name="fill">#1D4ED8</color>
+    <color name="guide_near">#1B5E20</color>
+    <color name="guide_on">#4ADE80</color>
+
+    <color name="sat_gps">#2563EB</color>
+    <color name="sat_glonass">#DC2626</color>
+    <color name="sat_beidou">#16A34A</color>
+    <color name="sat_galileo">#EAB308</color>
+    <color name="sat_qzss">#C026D3</color>
+    <color name="sat_sbas">#06B6D4</color>
+    <color name="sat_unused">#9CA3AF</color>
+
+    <color name="menu_dosya">#2E7D32</color>
+    <color name="menu_is">#1E3A8A</color>
+    <color name="menu_olcum">#6D28D9</color>
+    <color name="menu_aplikasyon">#9D174D</color>
+    <color name="menu_araclar">#0369A1</color>
+
+    <color name="launcher_background">#0D4A7A</color>
+</resources>

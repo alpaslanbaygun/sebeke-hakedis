@@ -1,0 +1,9 @@
+# Derleme çıktıları
+build/
+.gradle/
+*.apk
+
+# Makineye özel
+local.properties
+.idea/
+*.iml

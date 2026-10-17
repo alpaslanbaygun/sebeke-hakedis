@@ -1,0 +1,62 @@
+{
+ "bicim": "sebeke-hakedis.proje",
+ "surum": 1,
+ "olusturan": "test verisi (elle hazırlandı)",
+ "proje": {
+  "ad": "Örnek Proje",
+  "kaynak": "test",
+  "koordinat": {"sistem": "TM", "datum": "ITRF96", "dom": 39},
+  "aktifHakedis": 2,
+  "katmanOnEki": "SC"
+ },
+ "bolgeler": [
+  {"id": "B1", "ad": "ELAZIĞ MERKEZ AG ŞEBEKE", "kod": "23.01.01.01.00001", "sinir": [[519000, 4282000], [519200, 4282000], [519200, 4282200], [519000, 4282200]]},
+  {"id": "B2", "ad": "ELAZIĞ AYDINLATMA", "kod": "23.01.01.01.00002", "sinir": [[519100, 4282100], [519150, 4282100], [519150, 4282150], [519100, 4282150]]}
+ ],
+ "noktalar": [
+  {"id": "N1", "ad": "SC1", "kod": "G-K2", "saga": 519050, "yukari": 4282050, "kot": 1067.25, "hakedis": 1, "bolge": "B1"}
+ ],
+ "elemanlar": [
+  {"id": "E1", "tur": "AG_DIREK", "gisId": "SC1", "cins": "AG_DEMİR_GLV", "tip": "G-K2", "durum": "M", "hakedis": 1, "bolge": "B1",
+   "saga": 519050, "yukari": 4282050, "aci": 0, "kontrol": true, "katman": "SC_1.HAK.AGDİR", "blok": "",
+   "kalemler": [
+    {"cins": "AG_DEMİR_GLV", "tanim": "G-K2", "durum": "M", "miktar": 1, "birim": "ad/kg", "katsayi": 504, "toplam": 504, "birimFiyat": 0, "hakedis": 1, "tarife": "0107", "sira": "10", "kontrol": true, "ana": true, "kaynak": "NIT"},
+    {"cins": "TRAVERS_VE_KONSOLLAR_GLV", "tanim": "G-L-50", "durum": "M+M", "miktar": 9.8, "birim": "mt/kg", "katsayi": 3.77, "toplam": 36.946, "birimFiyat": 0, "hakedis": 1, "tarife": "0107", "sira": "11", "kontrol": false, "kaynak": "MALZEME"}
+   ]},
+  {"id": "E2", "tur": "AG_DIREK", "gisId": "SC7", "cins": "AG_DEMİR", "tip": "10I", "durum": "DM", "hakedis": 1, "bolge": "B2",
+   "saga": 519120, "yukari": 4282120, "aci": 0, "kontrol": false, "katman": "SC_DEMONTAJ", "blok": "",
+   "kalemler": [
+    {"cins": "AG_DEMİR", "tanim": "10I", "durum": "DM", "miktar": 1, "birim": "ad/kg", "katsayi": 209, "toplam": 209, "birimFiyat": 0, "hakedis": 1, "tarife": "0107", "dmDurum": "KESİK", "sira": "12", "kontrol": false, "ana": true, "kaynak": "NIT"}
+   ]},
+  {"id": "E3", "tur": "BOX", "gisId": "SCB03", "cins": "BOX_PANO", "tip": "AG SAHA DAĞITIM KUTUSU (TİP-3)", "durum": "M", "hakedis": 2, "bolge": "B1",
+   "saga": 519300, "yukari": 4282300, "aci": 0, "kontrol": null, "katman": "SC_2.HAK.BOX", "blok": "",
+   "kalemler": [
+    {"cins": "BOX_PANO", "tanim": "AG SAHA DAĞITIM KUTUSU (TİP-3)", "durum": "M", "miktar": 1, "birim": "ad/ad", "katsayi": 1, "toplam": 1, "birimFiyat": 0, "hakedis": 2, "tarife": "0105", "sira": "13", "kontrol": null, "ana": true, "kaynak": "NIT"}
+   ]}
+ ],
+ "hatlar": [
+  {"id": "H1", "tur": "AG_HAVAI", "anaKesit": "3A+P+R", "durum": "DM", "hakedis": 1, "bolge": "B1", "etiket": ">3A+P+R</100m", "kontrol": false, "katman": "SC_DEMONTAJ",
+   "kose": [[519050, 4282050], [519120, 4282120]],
+   "kalemler": [
+    {"cins": "AG_İLETKEN", "tanim": "3A+P+R", "durum": "DM", "miktar": 100, "birim": "mt/mt", "katsayi": 1, "toplam": 100, "birimFiyat": 0, "hakedis": 1, "tarife": "0107", "sira": "14", "kontrol": false, "kaynak": "HAT"}
+   ]},
+  {"id": "H2", "tur": "OG_HAVAI", "anaKesit": "3xSW", "durum": "M", "hakedis": 2, "bolge": "B1", "kontrol": true, "katman": "SC_2.HAK.OG_HAV_HAT",
+   "kose": [[519010, 4282010], [519010, 4282060]],
+   "kalemler": [
+    {"cins": "OG_İLETKEN", "tanim": "3xSW", "durum": "M", "miktar": 50, "birim": "mt/mt", "katsayi": 1, "toplam": 50, "birimFiyat": 2.5, "hakedis": 2, "tarife": "0106", "sira": "15", "kontrol": true, "kaynak": "HAT"}
+   ]}
+ ],
+ "kanallar": [
+  {"id": "K1", "kod": 12, "zemin": "TOPRAK", "altGenislik": 40, "ustGenislik": 40, "derinlik": 100, "basNo": "SC1", "bitNo": "SCB03",
+   "durum": "M+M", "hakedis": 1, "bolge": "B1", "kontrol": null, "kose": [[519020, 4282020], [519020, 4282070]],
+   "kalemler": [
+    {"cins": "12", "tanim": "TOPRAK", "durum": "M+M", "miktar": 50, "birim": "mt/m³", "katsayi": 1, "toplam": 20, "birimFiyat": 0, "hakedis": 1, "tarife": "0104", "sira": "16", "kontrol": true, "ana": true, "kaynak": "NIT"}
+   ]}
+ ],
+ "sondajlar": [
+  {"id": "S1", "tip": "F-150 YYDS", "durum": "M", "hakedis": 2, "bolge": "B1", "basNo": "", "bitNo": "", "kontrol": null, "kose": [[519030, 4282030], [519030, 4282059]],
+   "kalemler": [
+    {"cins": "YATAY_DELGİ", "tanim": "F-150 YYDS", "durum": "M", "miktar": 30, "birim": "mt/mt", "katsayi": 1, "toplam": 30, "birimFiyat": 0, "hakedis": 2, "tarife": "0104", "sira": "17", "kontrol": null, "ana": true, "kaynak": "NIT"}
+   ]}
+ ]
+}

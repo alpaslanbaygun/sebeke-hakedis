@@ -1,0 +1,31 @@
+<!-- M10 Bölgeler (alt projeler) -->
+<template data-body-class="bg-background font-body-md text-on-surface min-h-screen antialiased">
+<header class="fixed top-0 w-full z-50 pt-safe bg-primary-container shadow-[0_1px_8px_rgba(0,0,0,0.12)]">
+  <div class="h-16 px-margin flex items-center gap-space-sm">
+    <button data-a="back" class="w-11 h-11 -ml-2 flex items-center justify-center text-on-primary" aria-label="Geri"><span class="material-symbols-outlined">arrow_back</span></button>
+    <h1 class="flex-1 text-headline-md font-headline-md text-on-primary truncate">Bölgeler</h1>
+    <button data-a="yenidenAta" class="w-11 h-11 -mr-2 flex items-center justify-center text-on-primary" aria-label="Yeniden ata"><span class="material-symbols-outlined">sync</span></button>
+  </div>
+</header>
+<main class="pt-16 pb-[110px] min-h-screen">
+  <div class="px-margin pt-space-md">
+    <div class="relative"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary">search</span>
+      <input data-b="ara" class="input !pl-11" placeholder="Bölge adı ya da kodu" autocomplete="off"></div>
+    <p class="text-label-md font-label-md text-on-surface-variant mt-space-sm">Her nesne içinde kaldığı en küçük bölgeye (yoksa en yakınına) yazılır. Raporda PROJE ve PROJE KODU buradan gelir.</p>
+  </div>
+  <div id="liste" class="mt-space-sm border-t border-[#ECEEF0]">
+    <button data-tpl="bolge" data-a="sec" class="row">
+      <div class="w-10 h-10 rounded-lg bg-[#DBEAFE] flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[#1D4ED8]">polyline</span></div>
+      <div class="min-w-0 flex-1">
+        <div class="text-body-md font-body-md font-semibold text-on-surface line-clamp-2" data-f="ad">Bölge</div>
+        <div class="text-label-md font-label-md text-on-surface-variant num mt-0.5" data-f="alt">—</div>
+      </div>
+      <span class="material-symbols-outlined text-secondary">chevron_right</span>
+    </button>
+  </div>
+  <div data-show="bos" hidden class="m-margin p-space-lg card text-center text-on-surface-variant">Bölge yok. Rapor başlığı için en az bir bölge ekleyin.</div>
+</main>
+<div class="fixed bottom-0 left-0 right-0 z-50 bg-surface pb-safe shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
+  <div class="p-margin"><button data-a="yeni" class="btn btn-main w-full h-14"><span class="material-symbols-outlined">add</span>Yeni Bölge</button></div>
+</div>
+</template>
