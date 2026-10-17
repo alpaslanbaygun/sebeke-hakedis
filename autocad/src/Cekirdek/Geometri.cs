@@ -37,6 +37,34 @@ namespace SebekeHakedis.Cekirdek
             return kose[kose.Count - 1];
         }
 
+        /// <summary>
+        /// Hat etiketinin yeri: çizginin uzunluğunun yarısındaki nokta ve o parçanın okunur yöndeki açısı
+        /// (yazı ters dönmesin diye -90°..+90° arasına getirilir, sonra 0..360°).
+        /// </summary>
+        public static bool EtiketKonumu(IList<double[]> kose, out double x, out double y, out double aci)
+        {
+            x = y = aci = 0;
+            if (kose == null || kose.Count < 2) return false;
+            double yarim = Uzunluk(kose) / 2, t = 0;
+            int parca = kose.Count - 1;
+            double o = 1;
+            for (int i = 1; i < kose.Count; i++)
+            {
+                double d = Mesafe(kose[i - 1], kose[i]);
+                if (t + d >= yarim && d > 0) { parca = i; o = (yarim - t) / d; break; }
+                t += d;
+            }
+            var a = kose[parca - 1];
+            var b = kose[parca];
+            x = a[0] + (b[0] - a[0]) * o;
+            y = a[1] + (b[1] - a[1]) * o;
+            aci = Math.Atan2(b[1] - a[1], b[0] - a[0]);
+            if (aci > Math.PI / 2 + 1e-9) aci -= Math.PI;
+            else if (aci <= -Math.PI / 2 + 1e-9) aci += Math.PI;
+            if (aci < 0) aci += 2 * Math.PI;
+            return true;
+        }
+
         /// <summary>Nokta çokgenin içinde mi (ışın yöntemi).</summary>
         public static bool Icinde(double[] p, IList<double[]> cokgen)
         {

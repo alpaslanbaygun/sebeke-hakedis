@@ -33,6 +33,7 @@ namespace SebekeHakedis.Cekirdek
             pj["koordinat"] = kor;
             pj["aktifHakedis"] = p.AktifHakedis;
             pj["katmanOnEki"] = p.KatmanOnEki;
+            if (!string.IsNullOrEmpty(p.GisOnEki)) pj["gisOnEki"] = p.GisOnEki;
             k["proje"] = pj;
 
             var bolgeler = new List<object>();
@@ -143,6 +144,7 @@ namespace SebekeHakedis.Cekirdek
             if (kor != null) { p.KoordinatSistemi = kor.Metin("sistem", "TM"); p.Datum = kor.Metin("datum", "ITRF96"); p.Dom = kor.Tam("dom"); }
             p.AktifHakedis = pj.Tam("aktifHakedis", 1);
             p.KatmanOnEki = pj.Metin("katmanOnEki");
+            p.GisOnEki = pj.Metin("gisOnEki");
 
             foreach (var o in Nesneler(k, "bolgeler"))
             {

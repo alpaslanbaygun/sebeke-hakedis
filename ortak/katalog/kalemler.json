@@ -1,7 +1,7 @@
 {
  "bicim": "sebeke-hakedis.kalem-katalogu",
  "surum": 1,
- "kaynak": "PROMAGIS çiziminden çıkarıldı (Kayseri 25.38.03, 8 hakediş)",
+ "kaynak": "Gerçek bir PROMAGIS çiziminden çıkarılmış tipler ve katsayılar",
  "aciklama": "cins+tanim+birim başına bir kalem. katsayi: giriş biriminden rapor birimine çarpan (ör. kg/m, kg/ad). rol: ana (nesnenin kendi pozu), malzeme, hat, kanal, sondaj.",
  "kalemler": [
   {

@@ -44,7 +44,7 @@ namespace SebekeHakedis.Eklenti
                 foreach (var h in etiketler)
                 {
                     ObjectId id;
-                    if (!TanitiiciylaBul(db, h, out id)) continue;
+                    if (!TaniticiylaBul(db, h, out id)) continue;
                     Entity ent;
                     try { ent = tr.GetObject(id, OpenMode.ForRead, false) as Entity; }
                     catch { continue; }
@@ -56,7 +56,29 @@ namespace SebekeHakedis.Eklenti
             return liste;
         }
 
-        private static CadVarlik Cevir(Entity ent, Transaction tr)
+        /// <summary>Tek bir nesneyi (genişletilmiş verisiyle) çevirir; hat ise etiket yazısı da eklenir.</summary>
+        internal static List<CadVarlik> Tek(Transaction tr, Entity ent)
+        {
+            var l = new List<CadVarlik>();
+            var v = Cevir(ent, tr);
+            if (v == null) return l;
+            v.Xd = XdataOku(ent);
+            l.Add(v);
+            List<string> etk;
+            if (v.Xd.TryGetValue("ETK", out etk) && etk.Count > 0)
+            {
+                ObjectId id;
+                if (TaniticiylaBul(ent.Database, etk[0], out id))
+                {
+                    var t = tr.GetObject(id, OpenMode.ForRead, false) as Entity;
+                    var tv = t == null ? null : Cevir(t, tr);
+                    if (tv != null) l.Add(tv);
+                }
+            }
+            return l;
+        }
+
+        internal static CadVarlik Cevir(Entity ent, Transaction tr)
         {
             var v = new CadVarlik { H = ent.Handle.ToString(), Katman = ent.Layer };
 
@@ -65,6 +87,7 @@ namespace SebekeHakedis.Eklenti
                 v.Tur = "INSERT";
                 v.X = br.Position.X; v.Y = br.Position.Y; v.Z = br.Position.Z;
                 v.Aci = br.Rotation;
+                v.Olcek = br.ScaleFactors.X;
                 v.Blok = BlokAdi(br, tr);
                 foreach (ObjectId aid in br.AttributeCollection)
                 {
@@ -131,7 +154,7 @@ namespace SebekeHakedis.Eklenti
             return null;
         }
 
-        private static string BlokAdi(BlockReference br, Transaction tr)
+        internal static string BlokAdi(BlockReference br, Transaction tr)
         {
             try
             {
@@ -165,7 +188,7 @@ namespace SebekeHakedis.Eklenti
             return d;
         }
 
-        private static bool TanitiiciylaBul(Database db, string hex, out ObjectId id)
+        internal static bool TaniticiylaBul(Database db, string hex, out ObjectId id)
         {
             id = ObjectId.Null;
             long n;

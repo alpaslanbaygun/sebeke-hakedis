@@ -35,6 +35,8 @@
 
   <ItemGroup>
     <Compile Include="..\Cekirdek\**\*.cs" Link="Cekirdek\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Telefonla aynı malzeme kataloğu eklentiye gömülür -->
+    <EmbeddedResource Include="..\..\..\ortak\katalog\kalemler.json" Link="Katalog\kalemler.json" LogicalName="SebekeHakedis.kalemler.json" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
@@ -44,6 +46,7 @@
     <Reference Include="WindowsBase" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
   </ItemGroup>
 

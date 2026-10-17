@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'autocad/**'
+      - 'ortak/**'
       - '.github/workflows/autocad.yml'
   workflow_dispatch:
 

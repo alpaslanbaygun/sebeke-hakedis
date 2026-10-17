@@ -38,7 +38,7 @@ namespace SebekeHakedis.Cekirdek
     {
         public string Id = "";
         public string Ad = "";
-        public string Kod = "";         // ör. 25.38.03.19.24042
+        public string Kod = "";         // ör. 11.22.33.19.12345
         public string Aciklama = "";
         public List<double[]> Sinir = new List<double[]>(); // [Saga, Yukari]
         public double Alan;              // m², hesaplanır
@@ -135,6 +135,8 @@ namespace SebekeHakedis.Cekirdek
         public int Dom;                  // dilim orta meridyeni (0 = belirtilmemiş)
         public int AktifHakedis = 1;
         public string KatmanOnEki = "";
+        /// <summary>GIS numaralarının ön eki (boşsa katman ön eki kullanılır).</summary>
+        public string GisOnEki = "";
         public List<Bolge> Bolgeler = new List<Bolge>();
         public List<Nokta> Noktalar = new List<Nokta>();
         public List<Eleman> Elemanlar = new List<Eleman>();

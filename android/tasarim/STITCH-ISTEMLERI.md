@@ -55,7 +55,7 @@ GNSS bağlantısı, NTRIP ve alıcı ekranları Saha Ölçüm'den aynen alınır
 
 ### M01 — Projeler
 > "Projeler" ekranı. Üst çubukta başlık "Projeler" ve sağda arama ikonu. Liste kartlarında proje adı
-> (ör. "Kayseri 25.38.03"), alt satırda "37 bölge · 8 hakediş · son değişiklik 14.10.2026" ve sağda
+> (ör. "Örnek Proje 11.22.33"), alt satırda "37 bölge · 8 hakediş · son değişiklik 14.10.2026" ve sağda
 > ⋮ menüsü. Altta iki büyük düğme: "Drive'dan Aç" (dosya ikonu) ve "Yeni Proje". Boş durum için ortada
 > "Henüz proje yok. Bilgisayardaki eklentiyle hazırlanan .sebeke.json dosyasını açın." yazısı.
 
@@ -111,7 +111,7 @@ GNSS bağlantısı, NTRIP ve alıcı ekranları Saha Ölçüm'den aynen alınır
 > miktar alanı büyük rakamlarla, durum düğme grubu, canlı toplam "9.8 m → 36.95 kg", "Ekle" düğmesi.
 
 ### M10 — Bölgeler
-> "Bölgeler" ekranı. Liste: proje adı iki satıra kadar, altında proje kodu "25.38.03.19.24042" ve
+> "Bölgeler" ekranı. Liste: proje adı iki satıra kadar, altında proje kodu "11.22.33.19.12345" ve
 > "312 eleman". Sağda haritada göster ikonu. Üstte arama.
 
 ### M11 — Hakediş Özeti

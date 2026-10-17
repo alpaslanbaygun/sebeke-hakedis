@@ -5,10 +5,10 @@
   "varliklar": [
     {"h": "B2", "tur": "POLYLINE", "katman": "SC_PROJE", "kapali": true,
      "kose": [[0, 0], [1000, 0], [1000, 1000], [0, 1000]],
-     "xd": {"FULLREG": ["BÜYÜK PROJE AG-YG(OG) VE AYDINLATMA ELEKTRİK TESİSİ;25.38.03.01.00001;"]}},
+     "xd": {"FULLREG": ["BÜYÜK PROJE AG-YG(OG) VE AYDINLATMA ELEKTRİK TESİSİ;11.22.33.01.00001;"]}},
     {"h": "B1", "tur": "POLYLINE", "katman": "SC_PROJE", "kapali": true,
      "kose": [[100, 100], [300, 100], [300, 300], [100, 300]],
-     "xd": {"FULLREG": ["KÜÇÜK PROJE İLAVE TR AG-YG(OG) VE AYDINLATMA ELEKTRİK TESİSİ;25.38.03.02.00002;"]}},
+     "xd": {"FULLREG": ["KÜÇÜK PROJE İLAVE TR AG-YG(OG) VE AYDINLATMA ELEKTRİK TESİSİ;11.22.33.02.00002;"]}},
 
     {"h": "G1", "tur": "INSERT", "katman": "GPS", "blok": "GPS", "x": 210.5, "y": 220.25, "aci": 0,
      "oz": {"METIN1": "SC430", "METIN2": "AD2-120", "METIN3": "", "METIN4": "", "METIN5": "", "METIN6": ""},

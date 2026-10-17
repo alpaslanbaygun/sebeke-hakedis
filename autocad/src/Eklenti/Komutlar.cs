@@ -29,7 +29,7 @@ namespace SebekeHakedis.Eklenti
         public void Initialize()
         {
             try { Serit.Kur(); } catch (System.Exception ex) { Yaz("Şerit menü kurulamadı: " + ex.Message); }
-            Yaz("Şebeke Hakediş " + Surum + " yüklendi. Komutlar: SH_RAPOR, SH_ICEAL, SH_PROJERAPOR, SH_OZET, SH_HAKKINDA");
+            Yaz("Şebeke Hakediş " + Surum + " yüklendi. Şeritte ŞEBEKE HAKEDİŞ sekmesi; komut listesi için SH_HAKKINDA.");
         }
 
         public void Terminate() { }
@@ -74,16 +74,24 @@ namespace SebekeHakedis.Eklenti
         {
             var belge = AcApp.DocumentManager.MdiActiveDocument;
             if (belge == null) return;
-            Calistir("PROMAGIS içe alma", () =>
+            Calistir("Telefona gönderme", () =>
             {
                 var p = CizimdenProje(belge);
                 if (p == null) return;
+                var ayar = AyarDeposu.Oku(belge.Database);
+                if (ayar.Dom > 0) p.Dom = ayar.Dom;
+                if (ayar.AktifHakedis > 0) p.AktifHakedis = ayar.AktifHakedis;
+                if (!string.IsNullOrEmpty(ayar.KatmanOnEki)) p.KatmanOnEki = ayar.KatmanOnEki;
+                if (string.IsNullOrEmpty(p.KatmanOnEki)) p.KatmanOnEki = "SC";
+                p.GisOnEki = string.IsNullOrEmpty(ayar.GisOnEki) ? p.KatmanOnEki : ayar.GisOnEki;
+                if (p.Dom == 0) Uygulama.Yaz("Not: dilim orta meridyeni (DOM) ayarlı değil; telefonda proje açılırken sorulacak. SH_AYARLAR ile girebilirsiniz.");
                 string yol = KayitYeriSor("Proje dosyasını kaydet", "Şebeke Hakediş projesi (*.sebeke.json)|*.sebeke.json", Ad(belge) + ProjeDosyasi.Uzanti, Klasor(belge));
                 if (yol == null) return;
                 if (!yol.EndsWith(ProjeDosyasi.Uzanti, StringComparison.OrdinalIgnoreCase))
                     yol = Path.Combine(Path.GetDirectoryName(yol) ?? "", Path.GetFileNameWithoutExtension(yol) + ProjeDosyasi.Uzanti);
                 File.WriteAllText(yol, ProjeDosyasi.Yaz(p, "Şebeke Hakediş AutoCAD eklentisi " + Uygulama.Surum), new UTF8Encoding(false));
                 Uygulama.Yaz("Proje dosyası yazıldı: " + yol);
+                Uygulama.Yaz("Telefona aktarmak için dosyayı Google Drive'a koyun; telefonda Projeler › Dosyadan Aç ile açın.");
             });
         }
 
@@ -162,10 +170,26 @@ namespace SebekeHakedis.Eklenti
             var ed = Ed;
             if (ed == null) return;
             ed.WriteMessage("\nŞebeke Hakediş AutoCAD eklentisi " + Uygulama.Surum + " (" + System.Runtime.InteropServices.RuntimeEnvironment.GetSystemVersion() + ")");
+            ed.WriteMessage("\n  Telefon");
+            ed.WriteMessage("\n  SH_ICEAL       Telefona gönder: çizimi proje dosyasına yaz (.sebeke.json)");
+            ed.WriteMessage("\n  SH_PROJEAL     Telefondan al: telefondaki değişiklikleri çizime aktar");
+            ed.WriteMessage("\n  Çizim");
+            ed.WriteMessage("\n  SH_ELEMAN      Direk, box, pano, trafo, mufu koy (GIS numarası kendiliğinden)");
+            ed.WriteMessage("\n  SH_HAT         Hat çiz (direkten direğe; metraj ve etiket kendiliğinden)");
+            ed.WriteMessage("\n  SH_KANAL       Kablo kanalı çiz (hacim ölçülerden)");
+            ed.WriteMessage("\n  SH_SONDAJ      Yatay sondaj çiz");
+            ed.WriteMessage("\n  SH_BOLGE       Bölge (alt proje) sınırı çiz ya da var olan çizgiyi bölge yap");
+            ed.WriteMessage("\n  SH_NOKTAAL     Ölçü noktalarını dosyadan al (CSV/TXT)");
+            ed.WriteMessage("\n  Düzenleme");
+            ed.WriteMessage("\n  SH_MALZEME     Seçilen nesnenin malzemelerini düzenle");
+            ed.WriteMessage("\n  SH_METRAJ      Hat/kanal metrajını çizim uzunluğundan yeniden hesapla");
+            ed.WriteMessage("\n  SH_HAKEDIS     Aktif hakedişi değiştir");
+            ed.WriteMessage("\n  SH_AYARLAR     Çizim ayarları (ön ek, ölçek, etiket, metraj payı)");
+            ed.WriteMessage("\n  Rapor");
             ed.WriteMessage("\n  SH_RAPOR       Bu çizimden Durum Tespit raporu (Excel)");
-            ed.WriteMessage("\n  SH_ICEAL       PROMAGIS çizimini proje dosyasına aktar (.sebeke.json)");
             ed.WriteMessage("\n  SH_PROJERAPOR  Proje dosyasından Durum Tespit raporu");
             ed.WriteMessage("\n  SH_OZET        Çizimdeki proje özetini göster");
+            ed.WriteMessage("\n  Diğer");
             ed.WriteMessage("\n  SH_SERIT       Şerit menü sekmesini yeniden kur");
             ed.WriteMessage("\n  SH_DOKUM       Destek için teknik döküm dosyası");
         }
@@ -196,7 +220,7 @@ namespace SebekeHakedis.Eklenti
             return p;
         }
 
-        private static void Calistir(string islem, Action is_)
+        internal static void Calistir(string islem, Action is_)
         {
             try { is_(); }
             catch (System.Exception ex)
@@ -245,7 +269,7 @@ namespace SebekeHakedis.Eklenti
             return string.IsNullOrEmpty(ad) ? "Proje" : ad;
         }
 
-        private static string Klasor(Document belge)
+        internal static string Klasor(Document belge)
         {
             try
             {

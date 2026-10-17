@@ -11,3 +11,6 @@ paket/SebekeHakedis-*/
 *.dwl
 *.dwl2
 ornek-veri/
+
+# Yerel derleme için çevrimdışı NuGet ayarı (depoya konmaz)
+autocad/test/CekirdekTest/nuget.config
