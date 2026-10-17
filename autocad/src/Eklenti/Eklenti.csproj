@@ -26,6 +26,7 @@
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <SatelliteResourceLanguages>tr</SatelliteResourceLanguages>
     <NoWarn>$(NoWarn);CS0618;NU1701;MSB3270</NoWarn>
+    <DefineConstants>$(DefineConstants);AUTOCAD</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">

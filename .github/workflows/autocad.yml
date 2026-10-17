@@ -44,6 +44,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { "TEST: BAŞARISIZ" | Out-File -Append -Encoding utf8 cikti/ozet.txt; exit 1 }
           "TEST: geçti" | Out-File -Append -Encoding utf8 cikti/ozet.txt
 
+      - name: Pencere denemesi (ekran görüntüleri)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force cikti/ekran | Out-Null
+          dotnet run --project autocad/test/PencereTest/PencereTest.csproj -c Release -- cikti/ekran 2>&1 | Tee-Object -FilePath cikti/pencere-test.log
+          if ($LASTEXITCODE -ne 0) { "PENCERE: BAŞARISIZ" | Out-File -Append -Encoding utf8 cikti/ozet.txt; exit 1 }
+          "PENCERE: geçti" | Out-File -Append -Encoding utf8 cikti/ozet.txt
+
       - name: Eklentiyi derle
         shell: pwsh
         run: |

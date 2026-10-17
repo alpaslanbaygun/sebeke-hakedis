@@ -5,7 +5,9 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using SebekeHakedis.Cekirdek;
+#if AUTOCAD
 using AcApp = Autodesk.AutoCAD.ApplicationServices.Application;
+#endif
 
 namespace SebekeHakedis.Eklenti
 {
@@ -62,6 +64,23 @@ namespace SebekeHakedis.Eklenti
     internal static class Pencereler
     {
         private const string Baslik = "Şebeke Hakediş";
+
+        /// <summary>Pencereyi gösterir: AutoCAD içinde AutoCAD'in modal penceresiyle. Denemede ekran görüntüsü için değiştirilir.</summary>
+        public static Func<Form, IWin32Window, DialogResult> Gosterici = VarsayilanGoster;
+
+        /// <summary>Bilgi / soru kutusu. Denemede değiştirilir.</summary>
+        public static Func<string, MessageBoxButtons, MessageBoxIcon, MessageBoxDefaultButton, DialogResult> Mesaj =
+            (metin, dugmeler, simge, varsayilan) => MessageBox.Show(metin, Baslik, dugmeler, simge, varsayilan);
+
+        private static DialogResult VarsayilanGoster(Form f, IWin32Window sahip)
+        {
+            if (sahip != null) return f.ShowDialog(sahip);
+#if AUTOCAD
+            return AcApp.ShowModalDialog(f);
+#else
+            return f.ShowDialog();
+#endif
+        }
 
         // ================= Ortak parçalar =================
 
@@ -146,11 +165,12 @@ namespace SebekeHakedis.Eklenti
                 return Tam(l, 0);
             }
 
-            public bool Goster()
+            public bool Goster(IWin32Window sahip = null)
             {
                 _t.RowCount++;
                 _t.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-                return AcApp.ShowModalDialog(F) == DialogResult.OK;
+                if (sahip != null) F.StartPosition = FormStartPosition.CenterParent;
+                return Gosterici(F, sahip) == DialogResult.OK;
             }
 
             public void Dispose() => F.Dispose();
@@ -270,18 +290,18 @@ namespace SebekeHakedis.Eklenti
         }
 
         public static void Uyar(string metin) =>
-            MessageBox.Show(metin, Baslik, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            Mesaj(metin, MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1);
 
         public static void Bilgi(string metin) =>
-            MessageBox.Show(metin, Baslik, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Mesaj(metin, MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1);
 
         public static bool Onay(string metin, bool varsayilanEvet = true) =>
-            MessageBox.Show(metin, Baslik, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+            Mesaj(metin, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
                 varsayilanEvet ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2) == DialogResult.Yes;
 
         // ================= Eleman =================
 
-        public static ElemanSecimi Eleman(Ortam o, ElemanSecimi onceki)
+        public static ElemanSecimi Eleman(OrtamVerisi o, ElemanSecimi onceki)
         {
             using (var d = new Duzen("Eleman koy — direk, box, pano, trafo, mufu", 640, 640, "Yerleştir"))
             {
@@ -351,7 +371,7 @@ namespace SebekeHakedis.Eklenti
 
         // ================= Hat =================
 
-        public static HatSecimi Hat(Ortam o, HatSecimi onceki)
+        public static HatSecimi Hat(OrtamVerisi o, HatSecimi onceki)
         {
             using (var d = new Duzen("Hat çiz — AG/OG havai, yeraltı, aydınlatma, rekortman", 640, 600, "Çiz"))
             {
@@ -392,7 +412,7 @@ namespace SebekeHakedis.Eklenti
 
         // ================= Kanal =================
 
-        private static ComboBox ZeminKutusu(Ortam o, string secili)
+        private static ComboBox ZeminKutusu(OrtamVerisi o, string secili)
         {
             var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDown };
             var gorulen = new HashSet<string>(StringComparer.Ordinal);
@@ -403,7 +423,7 @@ namespace SebekeHakedis.Eklenti
             return c;
         }
 
-        public static KanalSecimi Kanal(Ortam o, KanalSecimi onceki)
+        public static KanalSecimi Kanal(OrtamVerisi o, KanalSecimi onceki)
         {
             var a = o.Ayar;
             using (var d = new Duzen("Kablo kanalı çiz", 560, 470, "Çiz"))
@@ -457,7 +477,7 @@ namespace SebekeHakedis.Eklenti
 
         // ================= Sondaj =================
 
-        public static SondajSecimi Sondaj(Ortam o, SondajSecimi onceki)
+        public static SondajSecimi Sondaj(OrtamVerisi o, SondajSecimi onceki)
         {
             using (var d = new Duzen("Yatay sondaj (delgi) çiz", 600, 470, "Çiz"))
             {
@@ -519,21 +539,13 @@ namespace SebekeHakedis.Eklenti
                     return true;
                 };
                 d.F.Shown += (s, e) => kl.Ara.Focus();
-                bool tamam;
-                if (sahip != null)
-                {
-                    d.F.StartPosition = FormStartPosition.CenterParent;
-                    var r = d.F.ShowDialog(sahip);
-                    tamam = r == DialogResult.OK;
-                }
-                else tamam = d.Goster();
-                return tamam ? kl.Secili : null;
+                return d.Goster(sahip) ? kl.Secili : null;
             }
         }
 
         // ================= Ayarlar =================
 
-        public static bool Ayarlar(Ortam o)
+        public static bool Ayarlar(OrtamVerisi o)
         {
             var a = o.Ayar;
             using (var d = new Duzen("Şebeke Hakediş — çizim ayarları", 580, 720, "Kaydet"))
@@ -591,7 +603,7 @@ namespace SebekeHakedis.Eklenti
         /// Nesnenin pozlarını düzenler. Tamam'a basılırsa değişiklikler nesneye (model) yazılır ve true döner;
         /// çizime yazmak çağıranın işidir.
         /// </summary>
-        public static bool Kalemler(Ortam o, object nesne)
+        public static bool Kalemler(OrtamVerisi o, object nesne)
         {
             var el = nesne as Eleman;
             var hat = nesne as Hat;

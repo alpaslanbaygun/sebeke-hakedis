@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Text;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -13,48 +11,21 @@ namespace SebekeHakedis.Eklenti
 {
     /// <summary>
     /// Bir komutun çalışma ortamı: çizimden okunan proje, çizimin ayarları, katalog, ön ekler,
-    /// aktif hakediş ve kalem sırası. Her komut başında bir kez hazırlanır.
+    /// aktif hakediş ve kalem sırası (OrtamVerisi) + açık belge. Her komut başında bir kez hazırlanır.
     /// </summary>
-    internal sealed class Ortam
+    internal sealed class Ortam : OrtamVerisi
     {
         public Document Belge;
         public Database Db;
         public Editor Ed;
-        public List<CadVarlik> Varliklar;
-        public Proje Proje;
-        public CizimAyarlari Ayar;
-        public string OnEk = "SC";
-        public string GisOnEki = "SC";
-        public int Hakedis = 1;
-        public long Sira;
-        private Katalog _katalog;
-
-        public Katalog Katalog => _katalog ?? (_katalog = Katalog.Oku(KatalogKaynagi.Json(), Proje));
 
         public static Ortam Hazirla(Document belge, string yedekOnEk = null)
         {
             var o = new Ortam { Belge = belge, Db = belge.Database, Ed = belge.Editor };
-            o.Varliklar = Toplayici.Topla(o.Db);
-            o.Proje = PromagisOkuyucu.Oku(o.Varliklar, belge.Name);
-            o.Ayar = AyarDeposu.Oku(o.Db);
-            o.OnEk = Ilk(o.Ayar.KatmanOnEki, o.Proje.KatmanOnEki, yedekOnEk, "SC");
-            o.GisOnEki = Ilk(o.Ayar.GisOnEki, o.OnEk);
-            o.Hakedis = o.Ayar.AktifHakedis > 0 ? o.Ayar.AktifHakedis : Math.Max(1, o.Proje.AktifHakedis);
-            o.Sira = Numara.EnBuyukSira(o.Proje);
+            var varliklar = Toplayici.Topla(o.Db);
+            o.Doldur(varliklar, PromagisOkuyucu.Oku(varliklar, belge.Name), AyarDeposu.Oku(o.Db), yedekOnEk);
             return o;
         }
-
-        private static string Ilk(params string[] l)
-        {
-            foreach (var s in l) if (!string.IsNullOrWhiteSpace(s)) return s.Trim();
-            return "";
-        }
-
-        /// <summary>Yeni kalemin sıra numarası (INDEX).</summary>
-        public string YeniSira() => (++Sira).ToString(CultureInfo.InvariantCulture);
-
-        /// <summary>Yeni elemanın blok ölçeği: ayarda verilmişse o, yoksa çizimdekilerle aynı (PROMAGIS: 4).</summary>
-        public double Olcek(string blok) => Ayar.SembolOlcegi > 0 ? Ayar.SembolOlcegi : PromagisYazici.OlcekOner(Varliklar, blok, 4);
 
         public void AyarKaydet()
         {
@@ -63,19 +34,7 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>Noktaya en yakın eleman (yakalama mesafesi içinde); yoksa null.</summary>
-        public Eleman YakinEleman(Point3d p, double mesafe)
-        {
-            if (mesafe <= 0) return null;
-            Eleman en = null;
-            double enKisa = mesafe;
-            foreach (var e in Proje.Elemanlar)
-            {
-                double dx = e.Saga - p.X, dy = e.Yukari - p.Y;
-                double d = Math.Sqrt(dx * dx + dy * dy);
-                if (d <= enKisa) { enKisa = d; en = e; }
-            }
-            return en;
-        }
+        public Eleman YakinEleman(Point3d p, double mesafe) => YakinEleman(p.X, p.Y, mesafe);
     }
 
     /// <summary>Çizimin içinde saklanan ayarlar (Named Objects Dictionary → SEBEKE_HAKEDIS → AYARLAR).</summary>
@@ -154,27 +113,6 @@ namespace SebekeHakedis.Eklenti
                 }
                 tr.Commit();
             }
-        }
-    }
-
-    /// <summary>Eklentiye gömülü malzeme kataloğu (ortak/katalog/kalemler.json).</summary>
-    internal static class KatalogKaynagi
-    {
-        private static string _json;
-
-        public static string Json()
-        {
-            if (_json != null) return _json;
-            try
-            {
-                using (var s = typeof(KatalogKaynagi).Assembly.GetManifestResourceStream("SebekeHakedis.kalemler.json"))
-                {
-                    if (s == null) return _json = "";
-                    using (var r = new StreamReader(s, Encoding.UTF8)) _json = r.ReadToEnd();
-                }
-            }
-            catch { _json = ""; }
-            return _json;
         }
     }
 }
