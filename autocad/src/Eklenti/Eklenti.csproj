@@ -38,6 +38,8 @@
     <Compile Include="..\Cekirdek\**\*.cs" Link="Cekirdek\%(RecursiveDir)%(Filename)%(Extension)" />
     <!-- Telefonla aynı malzeme kataloğu eklentiye gömülür -->
     <EmbeddedResource Include="..\..\..\ortak\katalog\kalemler.json" Link="Katalog\kalemler.json" LogicalName="SebekeHakedis.kalemler.json" />
+    <!-- Lejant simge takımı (telefonun DXF çıktısıyla aynı bloklar) -->
+    <EmbeddedResource Include="..\..\..\ortak\katalog\semboller.json" Link="Katalog\semboller.json" LogicalName="SebekeHakedis.semboller.json" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net46'">

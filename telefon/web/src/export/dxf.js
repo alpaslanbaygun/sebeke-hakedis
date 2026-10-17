@@ -1,5 +1,8 @@
 // AutoCAD DXF (R12 / AC1009) üretici — Lejant.dxf katman, ACI, çizgi tipi ve sembol yapısıyla.
 // Koordinatlar proje CRS'inde: X = Sağa (E), Y = Yukarı (N), Z = kot (H). Ölçek 1/1000 (yazı 1.8 m = 1.8 mm).
+// Simgeler ortak tablodan gelir (ortak/katalog/semboller.json → semboller.js): AutoCAD eklentisi aynı blokları
+// aynı adla (SH_…) tanımlar; böylece telefonun DXF'i ile eklentinin çizimi aynı görünür.
+import SEMBOLLER from './semboller.js';
 const f = (v) => (Number.isFinite(v) ? (+v).toFixed(4) : '0.0');
 
 class W {
@@ -27,45 +30,54 @@ const lineLayer = (l) => (l.install === 'yeralti' ? 'ELEKTRIK-KABLO' : { AG: 'EL
 // Lejant ACI: mevcut / yeni / DMM
 const POLE_ACI = { AG: [120, 108, 3], OG: [16, 10, 1], AYD: [190, 152, 4], ENH: [6, 6, 6] };
 const stIdx = (st) => (st === 'YENI' ? 1 : st === 'DMM' ? 2 : 0);
-const mode = (st) => (st === 'YENI' ? 'FULL' : st === 'DMM' ? 'HALF' : 'NONE');
+
+/** Sembol varyantı: durumdan (ekipman ve hat durum kodları → YENI · MEVCUT · DMM · DM). */
+export function sembolVaryanti(state) {
+  const st = String(state || '').toUpperCase();
+  if (st === 'YENI') return 'YENI';
+  if (st === 'DMM' || st === 'TASINAN') return 'DMM';
+  if (st === 'DEMONTAJ') return 'DM';
+  return 'MEVCUT'; // MEVCUT, ILERIDE, güç/gerilim değişen, tadil…
+}
+/** Ekipmanın sembol ailesi (ortak tablo adları). */
+export function sembolAilesi(e) {
+  if (e.kind === 'pole' || e.kind === 'lighting') {
+    const volt = e.kind === 'lighting' || e.group === 'ayd' ? 'AYD' : e.volt === 'OG' ? 'OG' : 'AG';
+    if (volt === 'AYD') return 'DIREK_AYD';
+    return (e.symbol === 's' ? 'KAFES_' : 'DIREK_') + volt;
+  }
+  if (e.kind === 'transformer' || e.kind === 'kiosk' || e.kind === 'substation') {
+    const post = (e.attrs || {}).post || 'direk';
+    return post === 'direk' ? 'TRAFO_DIREK' : post === 'bina' || post === 'ba' ? 'TRAFO_BINA' : 'TRAFO_KOSK';
+  }
+  if (e.kind === 'sdk') return 'SDK';
+  if (e.kind === 'manhole') return 'MENHOL';
+  if (e.kind === 'panel') return 'PANO';
+  if (e.kind === 'luminaire') return 'ARMATUR';
+  if (e.kind === 'other') return 'DIGER';
+  return 'ABONE';
+}
+/** Ekipmanın blok adı: SH_<aile>_<varyant> (eklentiyle aynı). */
+export function sembolBlogu(e) {
+  const st = e.kind === 'transformer' || e.kind === 'kiosk' || e.kind === 'substation' ? { yeni: 'YENI', tasinan: 'DMM', demontaj: 'DEMONTAJ' }[e.state] || 'MEVCUT' : e.state;
+  return 'SH_' + sembolAilesi(e) + '_' + sembolVaryanti(st);
+}
 
 function blocks(w) {
-  const circle = (r, m, ground) => {
-    const ents = [];
-    ents.push(['CIRCLE', { 10: 0, 20: 0, 30: 0, 40: r }]);
-    if (m === 'FULL') ents.push(['DONUT', r]);
-    if (m === 'HALF') ents.push(['HALFDONUT', r]);
-    if (ground) ents.push(['GROUND', r]);
-    return ents;
-  };
-  const square = (a, m, ground) => {
-    const h = a / 2, ents = [];
-    ents.push(['PLINE', [[-h, -h], [h, -h], [h, h], [-h, h]], true]);
-    if (m === 'FULL') ents.push(['SOLID', [[-h, -h], [h, -h], [-h, h], [h, h]]]);
-    if (m === 'NONE') { ents.push(['LINE', [-h, -h, h, h]]); ents.push(['LINE', [h, -h, -h, h]]); }
-    if (m === 'HALF') { ents.push(['SOLID', [[-h, -h], [0, 0], [-h, h], [-h, h]]]); ents.push(['SOLID', [[h, -h], [0, 0], [h, h], [h, h]]]); }
-    if (ground) ents.push(['GROUND', h]);
-    return ents;
-  };
   const defs = {};
-  for (const m of ['NONE', 'FULL', 'HALF']) {
-    defs['DIREK_AG_' + m] = circle(2.25, m, false); defs['KAFES_AG_' + m] = square(4.6, m, false);
-    defs['DIREK_OG_' + m] = circle(3, m, true); defs['KAFES_OG_' + m] = square(6, m, true);
-    defs['DIREK_AYD_' + m] = circle(2, m, false); defs['DIREK_ENH_' + m] = circle(3, m, true);
+  for (const [name, ilkeller] of Object.entries(SEMBOLLER.semboller)) {
+    const ents = [];
+    for (const i of ilkeller) {
+      const t = i[0];
+      if (t === 'L') ents.push(['LINE', [i[1], i[2], i[3], i[4]]]);
+      else if (t === 'C') ents.push(['CIRCLE', { 10: i[1], 20: i[2], 30: 0, 40: i[3] }]);
+      else if (t === 'P') ents.push(['PLINE', i[1], !!i[2]]);
+      else if (t === 'S') ents.push(['SOLID', i[1]]);
+      else if (t === 'D') ents.push(['DONUT', i[1]]);
+      else if (t === 'Y') ents.push(['HALFDONUT', i[1]]);
+    }
+    defs['SH_' + name] = ents;
   }
-  const tri = [[0, 5.5], [5, -3], [-5, -3]], sq = [[-5, -5], [5, -5], [5, 5], [-5, 5]], house = [[-6, 2], [0, 7], [6, 2], [5, 2], [5, -6], [-5, -6], [-5, 2]];
-  for (const [nm, shp] of [['TRAFO_DIREK', tri], ['TRAFO_BINA', sq], ['TRAFO_KOSK', house]]) {
-    defs[nm + '_NONE'] = [['PLINE', shp, true]];
-    defs[nm + '_FULL'] = [['PLINE', shp, true], ...fanSolids(shp)];
-  }
-  defs.SDK_NONE = [['PLINE', [[-4, -2.5], [4, -2.5], [4, 2.5], [-4, 2.5]], true], ['LINE', [-4, -2.5, 4, 2.5]]];
-  defs.SDK_FULL = [['PLINE', [[-4, -2.5], [4, -2.5], [4, 2.5], [-4, 2.5]], true], ['SOLID', [[-4, -2.5], [4, -2.5], [4, 2.5], [4, 2.5]]]];
-  defs.MENHOL = [['PLINE', [[-2, -2], [2, -2], [2, 2], [-2, 2]], true], ['CIRCLE', { 10: 0, 20: 0, 30: 0, 40: 1.2 }]];
-  defs.ABONE = [['CIRCLE', { 10: 0, 20: 0, 30: 0, 40: 1.5 }], ['LINE', [-1.5, 0, 1.5, 0]]];
-  // v2.2: pano · armatür / sokak lambası · diğer
-  defs.PANO = [['PLINE', [[-2.5, -3.5], [2.5, -3.5], [2.5, 3.5], [-2.5, 3.5]], true], ['LINE', [1, 2.5, -1, 0]], ['LINE', [-1, 0, 1, 0]], ['LINE', [1, 0, -1, -2.5]]];
-  defs.ARMATUR = [['CIRCLE', { 10: 0, 20: 0, 30: 0, 40: 1.5 }], ['LINE', [-3, 0, -2, 0]], ['LINE', [2, 0, 3, 0]], ['LINE', [0, -3, 0, -2]], ['LINE', [0, 2, 0, 3]], ['LINE', [-2.1, -2.1, -1.4, -1.4]], ['LINE', [1.4, 1.4, 2.1, 2.1]], ['LINE', [-2.1, 2.1, -1.4, 1.4]], ['LINE', [1.4, -1.4, 2.1, -2.1]]];
-  defs.DIGER = [['PLINE', [[0, -2.5], [2.5, 0], [0, 2.5], [-2.5, 0]], true]];
   defs.OLCU = [['LINE', [-1, 0, 1, 0]], ['LINE', [0, -1, 0, 1]]];
   w.g(0, 'SECTION').g(2, 'BLOCKS');
   for (const [name, ents] of Object.entries(defs)) {
@@ -76,25 +88,19 @@ function blocks(w) {
   w.g(0, 'ENDSEC');
   return Object.keys(defs);
 }
-function fanSolids(shp) { const out = []; for (let i = 1; i < shp.length - 1; i++) out.push(['SOLID', [shp[0], shp[i], shp[i + 1], shp[i + 1]]]); return out; }
 function writeEnt(w, e) {
   const [t, a, b] = e;
-  if (t === 'CIRCLE') { w.g(0, 'CIRCLE').g(8, '0').g(62, 0).g(10, 0).g(20, 0).g(30, 0).g(40, f(a[40])); return; }
+  if (t === 'CIRCLE') { w.g(0, 'CIRCLE').g(8, '0').g(62, 0).g(10, f(a[10])).g(20, f(a[20])).g(30, 0).g(40, f(a[40])); return; }
   if (t === 'LINE') { w.g(0, 'LINE').g(8, '0').g(62, 0).g(10, f(a[0])).g(20, f(a[1])).g(30, 0).g(11, f(a[2])).g(21, f(a[3])).g(31, 0); return; }
   if (t === 'SOLID') { w.g(0, 'SOLID').g(8, '0').g(62, 0); a.forEach((p, i) => w.g(10 + i, f(p[0])).g(20 + i, f(p[1])).g(30 + i, 0)); return; }
   if (t === 'PLINE') { w.g(0, 'POLYLINE').g(8, '0').g(62, 0).g(66, 1).g(10, 0).g(20, 0).g(30, 0).g(70, b ? 1 : 0); for (const p of a) w.g(0, 'VERTEX').g(8, '0').g(10, f(p[0])).g(20, f(p[1])).g(30, 0); w.g(0, 'SEQEND').g(8, '0'); return; }
   if (t === 'DONUT' || t === 'HALFDONUT') {
-    // kalın yay polyline (genişlik = r) ile dolu daire / yarım daire
+    // kalın yay polyline (genişlik = r) ile dolu daire / yarım daire (eklentideki blok çizimiyle aynı)
     const r = a / 2;
     w.g(0, 'POLYLINE').g(8, '0').g(62, 0).g(66, 1).g(10, 0).g(20, 0).g(30, 0).g(70, t === 'DONUT' ? 1 : 0).g(40, f(a)).g(41, f(a));
     if (t === 'DONUT') { w.g(0, 'VERTEX').g(8, '0').g(10, f(-r)).g(20, 0).g(30, 0).g(42, 1); w.g(0, 'VERTEX').g(8, '0').g(10, f(r)).g(20, 0).g(30, 0).g(42, 1); }
     else { w.g(0, 'VERTEX').g(8, '0').g(10, 0).g(20, f(r)).g(30, 0).g(42, 1); w.g(0, 'VERTEX').g(8, '0').g(10, 0).g(20, f(-r)).g(30, 0); }
     w.g(0, 'SEQEND').g(8, '0'); return;
-  }
-  if (t === 'GROUND') {
-    const y0 = -a, y1 = y0 - 2.1, hw = 2.35;
-    writeEnt(w, ['LINE', [0, y0, 0, y1]]); writeEnt(w, ['LINE', [-hw, y1, hw, y1]]);
-    for (let i = 0; i < 4; i++) writeEnt(w, ['LINE', [-hw + (i * hw) / 2, y1 - 1.8, -hw + (i * hw) / 2 + 1, y1]]);
   }
 }
 
@@ -151,25 +157,19 @@ export function buildDXF(model, opts = {}) {
   }
   for (const e of model.equipment) {
     if (e.E == null) continue;
-    let layer, block, color = null;
-    const m = mode(e.state);
+    let layer, color = null;
+    const block = sembolBlogu(e); // demontajda çapraz çizgi bloğun içindedir (SH_…_DM)
     if (e.kind === 'pole' || e.kind === 'lighting') {
       const volt = e.kind === 'lighting' || e.group === 'ayd' ? 'AYD' : e.volt === 'OG' ? 'OG' : 'AG';
       layer = poleLayer(e);
-      block = (volt === 'AYD' ? 'DIREK_AYD_' : e.symbol === 's' ? (volt === 'OG' ? 'KAFES_OG_' : 'KAFES_AG_') : (volt === 'OG' ? 'DIREK_OG_' : 'DIREK_AG_')) + m;
       color = POLE_ACI[volt][stIdx(e.state)];
-    } else if (e.kind === 'transformer' || e.kind === 'kiosk' || e.kind === 'substation') {
-      layer = 'ELEKTRIK-TRAFO';
-      const post = (e.attrs || {}).post || 'direk';
-      block = (post === 'direk' ? 'TRAFO_DIREK' : post === 'bina' || post === 'ba' ? 'TRAFO_BINA' : 'TRAFO_KOSK') + (e.state === 'yeni' ? '_FULL' : '_NONE');
-    } else if (e.kind === 'sdk') { layer = 'ELEKTRIK-SDK'; block = e.state === 'YENI' ? 'SDK_FULL' : 'SDK_NONE'; }
-    else if (e.kind === 'manhole') { layer = 'ELEKTRIK-KABLO'; block = 'MENHOL'; }
-    else if (e.kind === 'panel') { layer = 'ELEKTRIK-SDK'; block = 'PANO'; }
-    else if (e.kind === 'luminaire') { layer = 'ELEKTRIK-DIREK-AYD'; block = 'ARMATUR'; color = 4; }
-    else if (e.kind === 'other') { layer = 'ELEKTRIK-YAZI'; block = 'DIGER'; }
-    else { layer = 'ELEKTRIK-YAZI'; block = 'ABONE'; }
+    } else if (e.kind === 'transformer' || e.kind === 'kiosk' || e.kind === 'substation') layer = 'ELEKTRIK-TRAFO';
+    else if (e.kind === 'sdk' || e.kind === 'panel') layer = 'ELEKTRIK-SDK';
+    else if (e.kind === 'manhole') layer = 'ELEKTRIK-KABLO';
+    else if (e.kind === 'luminaire') { layer = 'ELEKTRIK-DIREK-AYD'; color = 4; }
+    else layer = 'ELEKTRIK-YAZI';
+    if (e.state === 'DEMONTAJ' || e.state === 'demontaj') color = 2;
     insert(layer, block, e.E, e.N, e.H, color); nIns++;
-    if (e.state === 'DEMONTAJ' || e.state === 'demontaj') { w.g(0, 'LINE').g(8, 'ELEKTRIK-DEMONTAJ').g(62, 2).g(10, f(e.E - 5)).g(20, f(e.N - 5)).g(30, 0).g(11, f(e.E + 5)).g(21, f(e.N + 5)).g(31, 0); }
     text('ELEKTRIK-YAZI', e.E + 3.5, e.N + 3, e.H, e.no + (e.typeName ? ' ' + e.typeName : ''), th, 0); nTxt++;
     if (e.role === 'Z' && e.angle) { text('ELEKTRIK-YAZI', e.E + 3.5, e.N + 0.6, e.H, 'α=' + e.angle.toFixed(2) + '°', th * 0.7); nTxt++; }
   }

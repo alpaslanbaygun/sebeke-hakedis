@@ -64,24 +64,38 @@ namespace SebekeHakedis.Eklenti
         }
     }
 
-    /// <summary>Eklentiye gömülü malzeme kataloğu (ortak/katalog/kalemler.json).</summary>
+    /// <summary>Eklentiye gömülü ortak dosyalar: malzeme kataloğu (kalemler.json) ve simge takımı (semboller.json).</summary>
     internal static class KatalogKaynagi
     {
         private static string _json;
+        private static bool _sembollerYuklendi;
 
         public static string Json()
         {
             if (_json != null) return _json;
+            return _json = Kaynak("SebekeHakedis.kalemler.json");
+        }
+
+        /// <summary>Simge takımını bir kez yükler (CizimYazici blok tanımlarken çağırır).</summary>
+        public static void SembolleriYukle()
+        {
+            if (_sembollerYuklendi || Semboller.Yuklu) { _sembollerYuklendi = true; return; }
+            string json = Kaynak("SebekeHakedis.semboller.json");
+            if (!string.IsNullOrEmpty(json)) Semboller.Yukle(json);
+            _sembollerYuklendi = true;
+        }
+
+        private static string Kaynak(string ad)
+        {
             try
             {
-                using (var s = typeof(KatalogKaynagi).Assembly.GetManifestResourceStream("SebekeHakedis.kalemler.json"))
+                using (var s = typeof(KatalogKaynagi).Assembly.GetManifestResourceStream(ad))
                 {
-                    if (s == null) return _json = "";
-                    using (var r = new StreamReader(s, Encoding.UTF8)) _json = r.ReadToEnd();
+                    if (s == null) return "";
+                    using (var r = new StreamReader(s, Encoding.UTF8)) return r.ReadToEnd();
                 }
             }
-            catch { _json = ""; }
-            return _json;
+            catch { return ""; }
         }
     }
 }

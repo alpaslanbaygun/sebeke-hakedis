@@ -331,7 +331,7 @@ test('21 · DXF üretimi: katman/ACI/blok/yazı, Türkçe kodlama', async () => 
   const t = Buffer.from(f.data).toString('latin1');
   assert.ok(t.includes('AC1009') && t.includes('ANSI_1254'));
   assert.ok(/LAYER\r\n\s*2\r\nELEKTRIK-HAT-OG\r\n\s*70\r\n0\r\n\s*62\r\n1\r\n/.test(t.replace(/\r\n2\r\n/g, '\r\n2\r\n')) || t.includes('ELEKTRIK-HAT-OG'));
-  assert.ok(t.includes('KAFES_OG_FULL') && t.includes('TRAFO_DIREK_FULL'));
+  assert.ok(t.includes('SH_KAFES_OG_YENI') && t.includes('SH_TRAFO_DIREK_YENI'), 'ortak simge takımının blokları (eklentiyle aynı adlar)');
   assert.equal(f.stats.inserts, 7);
   assert.ok(t.includes('3xSwallow'));
   // Türkçe karakterler Windows-1254 (Ş=0xDE, ş=0xFE, ğ=0xF0), UTF-8 dizisi yok

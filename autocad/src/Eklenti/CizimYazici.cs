@@ -35,6 +35,7 @@ namespace SebekeHakedis.Eklenti
         {
             _db = db;
             _tr = tr;
+            KatalogKaynagi.SembolleriYukle();
         }
 
         private BlockTableRecord Ms
@@ -121,18 +122,18 @@ namespace SebekeHakedis.Eklenti
             return bt.Has(ad);
         }
 
-        private static bool Tanimlayabilir(string ad) => ad == "GPS" || ad.StartsWith("SH_", StringComparison.Ordinal);
+        private static bool Tanimlayabilir(string ad) => ad == "GPS" || Semboller.EklentininBlogu(ad);
 
         /// <summary>
         /// Yeni eleman için kullanılabilecek blok: istenen blok çizimde varsa o; yoksa çizimde aynı tür ve
-        /// durumdaki elemanların bloğu; o da yoksa eklentinin kendi bloğu.
+        /// durumdaki elemanların PROMAGIS bloğu; o da yoksa eklentinin lejant simgesi (tür + malzeme + durum).
         /// </summary>
-        public string KullanilabilirBlok(string istenen, string tur, string durum, IEnumerable<Eleman> cizimElemanlari)
+        public string KullanilabilirBlok(string istenen, string tur, string cins, string durum, IEnumerable<Eleman> cizimElemanlari)
         {
             if (BlokKullanilabilir(istenen)) return istenen;
-            string oneri = PromagisYazici.BlokOner(cizimElemanlari, tur, durum);
+            string oneri = PromagisYazici.BlokOner(cizimElemanlari, tur, cins, durum);
             if (BlokKullanilabilir(oneri)) return oneri;
-            return PromagisYazici.VarsayilanBlok(tur);
+            return PromagisYazici.VarsayilanBlok(tur, cins, durum);
         }
 
         /// <summary>Blok tanımı; eklentinin kendi bloklarıysa ve çizimde yoksa oluşturulur.</summary>
@@ -149,48 +150,34 @@ namespace SebekeHakedis.Eklenti
             return id;
         }
 
-        /// <summary>Eklentinin blokları: blok biriminde çizilir, elemanlar PROMAGIS gibi 4 ölçekle konur.</summary>
+        /// <summary>
+        /// Eklentinin blokları: lejant simge takımından (ortak/katalog/semboller.json) çizilir. Tablo metre
+        /// cinsindendir; bloklar PROMAGIS gibi 4 ölçekle konduğundan blok birimi = metre / 4. Tabloda olmayan
+        /// eski bir SH_ adı için basit daire çizilir.
+        /// </summary>
         private void BlokCiz(BlockTableRecord btr, string ad)
         {
             var parcalar = new List<Entity>();
-            switch (ad)
+            double yariGenislik = 0.5; // blok birimi
+            if (ad == "GPS")
             {
-                case "GPS":
-                    parcalar.Add(new Circle(Point3d.Origin, Vector3d.ZAxis, 0.15));
-                    parcalar.Add(new Line(new Point3d(-0.25, 0, 0), new Point3d(0.25, 0, 0)));
-                    parcalar.Add(new Line(new Point3d(0, -0.25, 0), new Point3d(0, 0.25, 0)));
-                    break;
-                case "SH_TRAFO_DIREGI":
-                    parcalar.Add(new Circle(Point3d.Origin, Vector3d.ZAxis, 0.5));
-                    parcalar.Add(Cokgen(true, 0, 0.42, -0.36, -0.21, 0.36, -0.21));
-                    break;
-                case "SH_TRAFO_MERKEZI":
-                    parcalar.Add(Cokgen(true, -0.6, -0.6, 0.6, -0.6, 0.6, 0.6, -0.6, 0.6));
-                    parcalar.Add(new Line(new Point3d(-0.6, -0.6, 0), new Point3d(0.6, 0.6, 0)));
-                    break;
-                case "SH_PANO":
-                    parcalar.Add(Cokgen(true, -0.6, -0.35, 0.6, -0.35, 0.6, 0.35, -0.6, 0.35));
-                    parcalar.Add(new Line(new Point3d(-0.6, 0, 0), new Point3d(0.6, 0, 0)));
-                    break;
-                case "SH_BOX":
-                    parcalar.Add(Cokgen(true, -0.4, -0.4, 0.4, -0.4, 0.4, 0.4, -0.4, 0.4));
-                    parcalar.Add(new Line(new Point3d(-0.4, -0.4, 0), new Point3d(0.4, 0.4, 0)));
-                    parcalar.Add(new Line(new Point3d(-0.4, 0.4, 0), new Point3d(0.4, -0.4, 0)));
-                    break;
-                case "SH_EK_MUFU":
-                    parcalar.Add(Cokgen(true, 0, 0.35, 0.35, 0, 0, -0.35, -0.35, 0));
-                    break;
-                case "SH_KOFRE":
-                    parcalar.Add(Cokgen(true, -0.35, -0.22, 0.35, -0.22, 0.35, 0.22, -0.35, 0.22));
-                    break;
-                case "SH_DIGER":
-                    parcalar.Add(Cokgen(true, 0, 0.4, 0.4, 0, 0, -0.4, -0.4, 0));
-                    parcalar.Add(new Circle(Point3d.Origin, Vector3d.ZAxis, 0.08));
-                    break;
-                default: // SH_DIREK
+                parcalar.Add(new Circle(Point3d.Origin, Vector3d.ZAxis, 0.15));
+                parcalar.Add(new Line(new Point3d(-0.25, 0, 0), new Point3d(0.25, 0, 0)));
+                parcalar.Add(new Line(new Point3d(0, -0.25, 0), new Point3d(0, 0.25, 0)));
+            }
+            else
+            {
+                var sembol = Semboller.Bul(ad);
+                if (sembol != null)
+                {
+                    yariGenislik = sembol.YariGenislik / Semboller.BlokOlcegi;
+                    foreach (var i in sembol.Ilkeller) parcalar.AddRange(IlkelVarliklari(i, 1 / Semboller.BlokOlcegi));
+                }
+                else
+                {
                     parcalar.Add(new Circle(Point3d.Origin, Vector3d.ZAxis, 0.5));
                     parcalar.Add(new Circle(Point3d.Origin, Vector3d.ZAxis, 0.08));
-                    break;
+                }
             }
             foreach (var e in parcalar)
             {
@@ -205,21 +192,65 @@ namespace SebekeHakedis.Eklenti
                 for (int i = 1; i <= 6; i++) OznitelikTanimi(btr, "METIN" + i, 0.27, 0.12 - 0.17 * (i - 1), 0.1, true);
                 return;
             }
-            OznitelikTanimi(btr, "SIRA_NO", -0.5, 0.65, 0.3, true);
-            OznitelikTanimi(btr, "GIS_ID", 0.7, 0.1, 0.4, false);
-            OznitelikTanimi(btr, "TİP", 0.7, -0.47, 0.4, false);
-            OznitelikTanimi(btr, "CİNS", 0.73, -0.73, 0.1, true);
-            OznitelikTanimi(btr, "DURUM", 0.73, -0.9, 0.1, true);
-            OznitelikTanimi(btr, "GÜÇ", 0.73, -1.05, 0.1, true);
-            OznitelikTanimi(btr, "GERİLİM", 0.73, -1.2, 0.1, true);
+            // Öznitelikler PROMAGIS bloklarıyla aynı adlarda; yazılar simgenin sağına, simge boyutuna göre
+            double x = Math.Max(0.7, yariGenislik + 0.2);
+            OznitelikTanimi(btr, "SIRA_NO", -yariGenislik, yariGenislik + 0.15, 0.3, true);
+            OznitelikTanimi(btr, "GIS_ID", x, 0.1, 0.4, false);
+            OznitelikTanimi(btr, "TİP", x, -0.47, 0.4, false);
+            OznitelikTanimi(btr, "CİNS", x + 0.03, -0.73, 0.1, true);
+            OznitelikTanimi(btr, "DURUM", x + 0.03, -0.9, 0.1, true);
+            OznitelikTanimi(btr, "GÜÇ", x + 0.03, -1.05, 0.1, true);
+            OznitelikTanimi(btr, "GERİLİM", x + 0.03, -1.2, 0.1, true);
         }
 
-        private static Polyline Cokgen(bool kapali, params double[] xy)
+        /// <summary>Sembol ilkelini AutoCAD varlıklarına çevirir (k: metre → blok birimi çarpanı).</summary>
+        private static IEnumerable<Entity> IlkelVarliklari(SembolIlkeli i, double k)
         {
-            var pl = new Polyline();
-            for (int i = 0; i + 1 < xy.Length; i += 2) pl.AddVertexAt(i / 2, new Point2d(xy[i], xy[i + 1]), 0, 0, 0);
-            pl.Closed = kapali;
-            return pl;
+            var d = i.Sayilar;
+            switch (i.Tur)
+            {
+                case "L":
+                    if (d.Length >= 4) yield return new Line(new Point3d(d[0] * k, d[1] * k, 0), new Point3d(d[2] * k, d[3] * k, 0));
+                    break;
+                case "C":
+                    if (d.Length >= 3) yield return new Circle(new Point3d(d[0] * k, d[1] * k, 0), Vector3d.ZAxis, d[2] * k);
+                    break;
+                case "P":
+                    {
+                        var pl = new Polyline();
+                        for (int n = 0; n < i.Noktalar.Count; n++) pl.AddVertexAt(n, new Point2d(i.Noktalar[n][0] * k, i.Noktalar[n][1] * k), 0, 0, 0);
+                        pl.Closed = i.Kapali;
+                        yield return pl;
+                        break;
+                    }
+                case "S":
+                    if (i.Noktalar.Count >= 4)
+                        yield return new Solid(
+                            new Point3d(i.Noktalar[0][0] * k, i.Noktalar[0][1] * k, 0), new Point3d(i.Noktalar[1][0] * k, i.Noktalar[1][1] * k, 0),
+                            new Point3d(i.Noktalar[2][0] * k, i.Noktalar[2][1] * k, 0), new Point3d(i.Noktalar[3][0] * k, i.Noktalar[3][1] * k, 0));
+                    break;
+                case "D": // dolu daire: r genişlikli, iki yarım yaydan kapalı çizgi (yarıçap r/2)
+                    if (d.Length >= 1)
+                    {
+                        double r = d[0] * k;
+                        var pl = new Polyline();
+                        pl.AddVertexAt(0, new Point2d(-r / 2, 0), 1, r, r);
+                        pl.AddVertexAt(1, new Point2d(r / 2, 0), 1, r, r);
+                        pl.Closed = true;
+                        yield return pl;
+                    }
+                    break;
+                case "Y": // yarım dolu daire (sol yarı): r genişlikli açık yarım yay
+                    if (d.Length >= 1)
+                    {
+                        double r = d[0] * k;
+                        var pl = new Polyline();
+                        pl.AddVertexAt(0, new Point2d(0, r / 2), 1, r, r);
+                        pl.AddVertexAt(1, new Point2d(0, -r / 2), 0, r, r);
+                        yield return pl;
+                    }
+                    break;
+            }
         }
 
         private void OznitelikTanimi(BlockTableRecord btr, string etiket, double x, double y, double yukseklik, bool gizli)

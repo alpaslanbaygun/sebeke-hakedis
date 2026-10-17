@@ -216,7 +216,7 @@ namespace SebekeHakedis.Eklenti
                     using (var tr = o.Db.TransactionManager.StartTransaction())
                     {
                         var y = Yazici(o, tr);
-                        string blok = y.KullanilabilirBlok(PromagisYazici.BlokSec(o.Proje.Elemanlar, e), e.Tur, e.Durum, o.Proje.Elemanlar);
+                        string blok = y.KullanilabilirBlok(PromagisYazici.BlokSec(o.Proje.Elemanlar, e), e.Tur, e.Cins, e.Durum, o.Proje.Elemanlar);
                         var v = PromagisYazici.Eleman(e, o.OnEk, blok, null);
                         sonId = y.Ekle(v, null, o.Olcek(blok));
                         e.Id = v.H;
@@ -854,7 +854,7 @@ namespace SebekeHakedis.Eklenti
                                 double olcek = 1;
                                 if (a.Nesne == "eleman")
                                 {
-                                    v.Blok = y.KullanilabilirBlok(v.Blok, a.ElemanTuru, v.OzDeger("DURUM"), o.Proje.Elemanlar);
+                                    v.Blok = y.KullanilabilirBlok(v.Blok, a.ElemanTuru, v.OzDeger("CİNS"), v.OzDeger("DURUM"), o.Proje.Elemanlar);
                                     olcek = o.Olcek(v.Blok);
                                 }
                                 y.Ekle(v, a.Etiket, olcek);

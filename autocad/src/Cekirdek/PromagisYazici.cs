@@ -90,36 +90,29 @@ namespace SebekeHakedis.Cekirdek
             return onEk + "_" + Math.Max(1, hakedis).ToString(CultureInfo.InvariantCulture) + ".HAK." + t;
         }
 
-        /// <summary>Eklentinin kendi blokları (çizimde benzeri yoksa kullanılır).</summary>
-        public static string VarsayilanBlok(string tur)
-        {
-            switch (tur)
-            {
-                case "TRAFO_DIREGI": return "SH_TRAFO_DIREGI";
-                case "TRAFO_MERKEZI": return "SH_TRAFO_MERKEZI";
-                case "PANO": return "SH_PANO";
-                case "BOX": return "SH_BOX";
-                case "EK_MUFU": return "SH_EK_MUFU";
-                case "KOFRE": return "SH_KOFRE";
-                case "DIGER": return "SH_DIGER";
-                default: return "SH_DIREK";
-            }
-        }
+        /// <summary>
+        /// Eklentinin kendi bloğu (çizimde PROMAGIS bloğu yoksa kullanılır): lejant simgesi, tür + malzeme + duruma göre
+        /// (ör. SH_KAFES_AG_YENI). Bkz. Semboller.
+        /// </summary>
+        public static string VarsayilanBlok(string tur, string cins, string durum) => Semboller.BlokAdi(tur, cins, durum);
+
+        public static string VarsayilanBlok(Eleman e) => Semboller.BlokAdi(e);
 
         private static string DurumGrubu(string durum) => durum == "MEVCUT" ? "MEVCUT" : durum == "DM" ? "DM" : "YENI";
 
         /// <summary>
-        /// Çizimde aynı tür ve durumdaki elemanlarda en çok kullanılan blok (PROMAGIS bloklarıyla aynı
-        /// görünsün diye). Adsız bloklar (*U…) sayılmaz. Bulunamazsa eklentinin kendi bloğu.
+        /// Çizimde aynı tür ve durumdaki elemanlarda en çok kullanılan PROMAGIS bloğu (PROMAGIS bloklarıyla aynı
+        /// görünsün diye). Adsız bloklar (*U…) ve eklentinin kendi blokları (SH_…) sayılmaz. Bulunamazsa
+        /// eklentinin lejant simgesi (malzeme ve duruma göre).
         /// </summary>
-        public static string BlokOner(IEnumerable<Eleman> mevcut, string tur, string durum)
+        public static string BlokOner(IEnumerable<Eleman> mevcut, string tur, string cins, string durum)
         {
             var say = new Dictionary<string, int>(StringComparer.Ordinal);
             string grup = DurumGrubu(durum);
             foreach (var e in mevcut)
             {
                 if (e.Tur != tur || DurumGrubu(e.Durum) != grup) continue;
-                if (string.IsNullOrEmpty(e.Blok) || e.Blok.StartsWith("*", StringComparison.Ordinal)) continue;
+                if (string.IsNullOrEmpty(e.Blok) || e.Blok.StartsWith("*", StringComparison.Ordinal) || Semboller.EklentininBlogu(e.Blok)) continue;
                 int c;
                 say.TryGetValue(e.Blok, out c);
                 say[e.Blok] = c + 1;
@@ -127,16 +120,17 @@ namespace SebekeHakedis.Cekirdek
             string en = null;
             int enCok = 0;
             foreach (var kv in say) if (kv.Value > enCok) { enCok = kv.Value; en = kv.Key; }
-            return en ?? VarsayilanBlok(tur);
+            return en ?? Semboller.BlokAdi(tur, cins, durum);
         }
 
         /// <summary>
         /// Elemanın bloğu: kendi bloğu bu çizimde aynı tür ve durumdaki elemanlarda kullanılıyorsa (ya da
         /// başka seçenek yoksa) korunur; durumu değişmişse (ör. montajdan demontaja) o durumun bloğu önerilir.
+        /// Eklentinin kendi (SH_) blokları her zaman güncel tür, malzeme ve duruma göre yeniden seçilir.
         /// </summary>
         public static string BlokSec(IEnumerable<Eleman> cizim, Eleman e)
         {
-            if (string.IsNullOrEmpty(e.Blok)) return BlokOner(cizim, e.Tur, e.Durum);
+            if (string.IsNullOrEmpty(e.Blok) || Semboller.EklentininBlogu(e.Blok)) return BlokOner(cizim, e.Tur, e.Cins, e.Durum);
             if (e.Blok.StartsWith("*", StringComparison.Ordinal)) return e.Blok; // adsız blok: mevcut nesnede olduğu gibi kalır
             string grup = DurumGrubu(e.Durum);
             bool ayniGrup = false, baska = false;
@@ -144,11 +138,11 @@ namespace SebekeHakedis.Cekirdek
             {
                 if (ReferenceEquals(x, e) || (x.Id == e.Id && !string.IsNullOrEmpty(e.Id))) continue;
                 if (x.Tur != e.Tur || DurumGrubu(x.Durum) != grup) continue;
-                if (string.IsNullOrEmpty(x.Blok) || x.Blok.StartsWith("*", StringComparison.Ordinal)) continue;
+                if (string.IsNullOrEmpty(x.Blok) || x.Blok.StartsWith("*", StringComparison.Ordinal) || Semboller.EklentininBlogu(x.Blok)) continue;
                 if (string.Equals(x.Blok, e.Blok, StringComparison.OrdinalIgnoreCase)) { ayniGrup = true; break; }
                 baska = true;
             }
-            return ayniGrup || !baska ? e.Blok : BlokOner(cizim, e.Tur, e.Durum);
+            return ayniGrup || !baska ? e.Blok : BlokOner(cizim, e.Tur, e.Cins, e.Durum);
         }
 
         /// <summary>Yeni bloğun ölçeği: çizimde aynı bloğun en çok kullanılan ölçeği, yoksa elemanların en çok kullanılan ölçeği.</summary>

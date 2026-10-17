@@ -13,6 +13,7 @@ namespace SebekeHakedis.Test
     ///   dogrula dokum.json ref.tsv cikti/ : gerçek bir PROMAGIS çizimi ve PROMAGIS raporuyla satır satır karşılaştırma
     ///   katsayilar hedef.json         : ortak katsayı dosyasını üretir
     ///   gidisdonus proje.sebeke.json  : projeyi çizim nesnelerine yazıp geri okur, raporları karşılaştırır
+    ///   semboller [dokum.txt]         : simge takımı denetimleri ve ilkel dökümü (telefonun tablosuyla karşılaştırma)
     /// </summary>
     public static class Program
     {
@@ -34,6 +35,7 @@ namespace SebekeHakedis.Test
                     case "aktarim": AktarimDene(args[1], args[2]); break;
                     case "bosaaktar": BosaAktar(args[1]); break;
                     case "katsayilar": File.WriteAllText(args[1], Json.Yaz(Katsayilar.Varsayilan.JsonYap()) + "\n", new UTF8Encoding(false)); Console.WriteLine("yazıldı: " + args[1]); break;
+                    case "semboller": SembolleriYukle(); Semboller_(); SembolDokumu(args.Length > 1 ? args[1] : null); break;
                     default: Console.WriteLine("Bilinmeyen komut: " + komut); return 2;
                 }
             }
@@ -44,6 +46,72 @@ namespace SebekeHakedis.Test
             }
             Console.WriteLine(_hata == 0 ? "SONUÇ: tüm denetimler geçti" : "SONUÇ: " + _hata + " denetim başarısız");
             return _hata == 0 ? 0 : 1;
+        }
+
+        /// <summary>Simge takımı (ortak/katalog/semboller.json) — eklentideki gömülü dosyanın aynısı.</summary>
+        private static void SembolleriYukle()
+        {
+            if (Semboller.Yuklu) return;
+            string yol = Path.Combine(AppContext.BaseDirectory, "semboller.json");
+            Semboller.Yukle(File.ReadAllText(yol, Encoding.UTF8));
+        }
+
+        /// <summary>Simge seçimi ve tablo bütünlüğü denetimleri.</summary>
+        private static void Semboller_()
+        {
+            SembolleriYukle();
+            Esit("SH_DIREK_AG_YENI", Semboller.BlokAdi("AG_DIREK", "AG_BETON", "M"), "simge: AG beton direk montaj");
+            Esit("SH_DIREK_AG_YENI", Semboller.BlokAdi("AG_DIREK", "AG_AĞAÇ", "M+M"), "simge: AG ağaç direk malzeme+montaj");
+            Esit("SH_KAFES_AG_MEVCUT", Semboller.BlokAdi("AG_DIREK", "AG_DEMİR_GLV", "MEVCUT"), "simge: AG demir direk mevcut");
+            Esit("SH_KAFES_AG_DM", Semboller.BlokAdi("AG_DIREK", "AG_DEMİR", "DM"), "simge: AG demir direk demontaj");
+            Esit("SH_DIREK_AG_MEVCUT", Semboller.BlokAdi("AG_DIREK", "", ""), "simge: cinsi bilinmeyen AG direk (daire, boş)");
+            Esit("SH_KAFES_OG_DMM", Semboller.BlokAdi("MUSTEREK_DIREK", "MÜŞ_DEMİR_GLV", "DM+M"), "simge: müşterek demir direk sök-tak");
+            Esit("SH_DIREK_OG_YENI", Semboller.BlokAdi("ENH_DIREK", "ENH_BETON", "M"), "simge: ENH beton direk");
+            Esit("SH_KAFES_OG_YENI", Semboller.BlokAdi("ENH_DIREK", "ENH_GLV_CVT", "M"), "simge: ENH cıvatalı demir direk");
+            Esit("SH_DIREK_AYD_YENI", Semboller.BlokAdi("AYD_DIREK", "AYD_GLV_PLG", "M"), "simge: aydınlatma direği (galvaniz olsa da daire)");
+            Esit("SH_TRAFO_DIREK_MEVCUT", Semboller.BlokAdi("TRAFO_DIREGI", "TR_DİREK_GLV", "MEVCUT"), "simge: trafo direği");
+            Esit("SH_TRAFO_KOSK_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "M"), "simge: beton köşk");
+            Esit("SH_TRAFO_BINA_MEVCUT", Semboller.BlokAdi("TRAFO_MERKEZI", "TRAFO_BİNASI", "KM"), "simge: trafo binası (KM → mevcut)");
+            Esit("SH_SDK_YENI", Semboller.BlokAdi("BOX", "BOX_PANO", "M"), "simge: box → SDK");
+            Esit("SH_PANO_YENI", Semboller.BlokAdi("PANO", "AG_PANO_HT", "M+M"), "simge: pano");
+            Esit("SH_MUFU_MEVCUT", Semboller.BlokAdi("EK_MUFU", "EK_MUFU_AG_ALM", "MEVCUT"), "simge: ek mufu");
+            Esit("SH_KOFRE_YENI", Semboller.BlokAdi("KOFRE", "KOFRA", "M"), "simge: kofre");
+            Esit("SH_DIGER_DM", Semboller.BlokAdi("DIGER", "", "DM"), "simge: diğer");
+            Esit(true, Semboller.EklentininBlogu("SH_DIREK_AG_YENI"), "simge: SH_ bloğu eklentinin");
+            Esit(false, Semboller.EklentininBlogu("YENİ_AG_DİR"), "simge: PROMAGIS bloğu eklentinin değil");
+            int eksik = 0, bos = 0;
+            foreach (var aile in Semboller.Aileler())
+                foreach (var v in new[] { "YENI", "MEVCUT", "DMM", "DM" })
+                {
+                    var s = Semboller.Bul("SH_" + aile + "_" + v);
+                    if (s == null) { eksik++; Console.WriteLine("    eksik sembol: " + aile + "_" + v); }
+                    else if (s.Ilkeller.Count == 0) bos++;
+                }
+            Esit(0, eksik, "simge: her aile için 4 varyant var");
+            Esit(0, bos, "simge: geometrisi boş sembol yok");
+            var orn = Semboller.Bul("SH_KAFES_OG_YENI");
+            Esit(3.0, orn != null ? orn.YariGenislik : 0, "simge: KAFES_OG yarı genişliği 3 m");
+            Esit(null, Semboller.Bul("SH_DIREK"), "simge: eski SH_DIREK adı tabloda yok (eklenti basit daire çizer)");
+        }
+
+        /// <summary>Tüm sembolleri ilkel ilkel yazar (telefonun JS tablosuyla karşılaştırmak için).</summary>
+        private static void SembolDokumu(string hedef)
+        {
+            var sb = new StringBuilder();
+            foreach (var s in Semboller.Hepsi())
+            {
+                sb.Append(s.Ad).Append('\t').Append(s.YariGenislik.ToString("0.####", CultureInfo.InvariantCulture)).Append('\t').Append(s.Ilkeller.Count).Append('\n');
+                foreach (var i in s.Ilkeller)
+                {
+                    sb.Append("  ").Append(i.Tur);
+                    foreach (var d in i.Sayilar) sb.Append(' ').Append(d.ToString("0.####", CultureInfo.InvariantCulture));
+                    foreach (var n in i.Noktalar) sb.Append(' ').Append(n[0].ToString("0.####", CultureInfo.InvariantCulture)).Append(',').Append(n[1].ToString("0.####", CultureInfo.InvariantCulture));
+                    if (i.Tur == "P") sb.Append(i.Kapali ? " kapali" : " acik");
+                    sb.Append('\n');
+                }
+            }
+            if (hedef != null) { File.WriteAllText(hedef, sb.ToString(), new UTF8Encoding(false)); Console.WriteLine("yazıldı: " + hedef); }
+            else Console.Write(sb.ToString());
         }
 
         private static void Esit(object beklenen, object gercek, string ad)
@@ -60,6 +128,7 @@ namespace SebekeHakedis.Test
         private static void Ornek(string yol)
         {
             Console.WriteLine("Örnek döküm: " + yol);
+            SembolleriYukle();
             Esit(16.8, SayiCoz.Coz("16,8"), "Türkçe ondalık");
             Esit(0.0, SayiCoz.Coz(",00"), "',00' sıfırdır");
             Esit(10.5, SayiCoz.Coz("10.5"), "noktalı ondalık");
@@ -178,8 +247,11 @@ namespace SebekeHakedis.Test
             Esit("DEMONTAJ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "YENİ_AG_DİR" }), "blok: demontaja çevrilen direk");
             Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "M", Blok = "YENİ_AG_DİR" }), "blok: durumu aynı direk bloğunu korur");
             Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "M" }), "blok: yeni direk çizimdeki bloğu kullanır");
-            Esit("SH_TRAFO_DIREGI", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "TRAFO_DIREGI", Durum = "M" }), "blok: çizimde örneği yoksa eklentinin bloğu");
+            Esit("SH_TRAFO_DIREK_YENI", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "TRAFO_DIREGI", Durum = "M" }), "blok: çizimde örneği yoksa eklentinin lejant simgesi");
             Esit("*U5", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "*U5" }), "blok: adsız blok korunur");
+            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "M", Blok = "SH_DIREK_AG_YENI" }), "blok: eklenti bloğu yerine çizimdeki PROMAGIS bloğu");
+            Esit("SH_KAFES_AG_DMM", PromagisYazici.BlokSec(new List<Eleman>(), new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "DM+M", Blok = "SH_KAFES_AG_YENI" }), "blok: eklenti bloğu duruma göre yeniden seçilir");
+            Semboller_();
             var olcekler = new List<CadVarlik>
             {
                 new CadVarlik { Tur = "INSERT", Blok = "A", Olcek = 4, Xd = { { "NIT", new List<string> { "" } } } },
