@@ -7,7 +7,7 @@ import { makeCrs, crsSummary, zoneForLon } from '../../geo/crs.js';
 export function ExportScreen() {
   useBus(['project:computed']);
   const ps = app.ps;
-  const [sel, setSel] = useState(app.state.expSel || { dxf: true, ncn: true, xlsx: true, package: true });
+  const [sel, setSel] = useState(app.state.expSel || { sebeke: true, dxf: true, ncn: true, xlsx: true, package: true });
   const [busy, setBusy] = useState(null);
   const [crsKey, setCrsKey] = useState('proje');
   const n = Object.values(sel).filter(Boolean).length;

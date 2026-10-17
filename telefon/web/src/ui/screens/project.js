@@ -8,6 +8,28 @@ import { HAK_STATUSES, HAK_ORDER } from '../../core/schema.js';
 import { PENDING } from '../../core/roles.js';
 import { autoRecipeOn } from '../../grid/recipe.js';
 import { exportChangeset, applyChangeset, markSynced, listConflicts, resolveConflict, pendingChanges, httpSync } from '../../core/sync.js';
+import { voltProjeOku, sebekeIceAl } from '../../interop/sebeke.js';
+
+/**
+ * AutoCAD eklentisinin yazdığı proje dosyasını (.sebeke.json) ya da telefonun tam proje dosyasını (.volt.json) alır.
+ * projectId verilirse o projeye (var olan kayıtlar güncellenir), verilmezse yeni proje açılır.
+ */
+export async function autocadDosyasiAl(file, projectId) {
+  let okunan;
+  try { okunan = voltProjeOku(await file.text()); } catch (e) { app.toast('Dosya okunamadı: ' + e.message, 'err', 7000); return null; }
+  const sp = okunan.proje;
+  const say = sp.elemanlar.length + ' eleman · ' + sp.hatlar.length + ' hat · ' + sp.kanallar.length + ' kanal · ' + sp.sondajlar.length + ' sondaj';
+  if (!(await app.confirm('AutoCAD dosyası', (sp.proje.ad || 'Proje') + ' · ' + say + (projectId ? '\n\nAçık projeye alınacak: aynı kimlikli kayıtlar güncellenir, yenileri eklenir.' : '\n\nYeni proje olarak açılacak.'), { ok: 'Al' }))) return null;
+  try {
+    const oz = await sebekeIceAl(app.ps, sp, { projectId });
+    const m = [];
+    if (oz.yeniEleman) m.push(oz.yeniEleman + ' yeni eleman'); if (oz.guncellenenEleman) m.push(oz.guncellenenEleman + ' eleman güncellendi');
+    if (oz.yeniHat) m.push(oz.yeniHat + ' yeni hat'); if (oz.guncellenenHat) m.push(oz.guncellenenHat + ' hat güncellendi');
+    if (oz.yeniKanal) m.push(oz.yeniKanal + ' kanal / sondaj'); if (oz.nokta) m.push(oz.nokta + ' nokta');
+    app.toast('AutoCAD dosyası alındı: ' + (m.join(' · ') || 'değişiklik yok') + (oz.eslesmeyen.length ? ' · ' + oz.eslesmeyen.length + ' kalem katalogda bulunamadı (Kontrol listesi)' : ''), oz.eslesmeyen.length ? 'warn' : 'ok', 7000);
+    return oz;
+  } catch (e) { app.toast('Alınamadı: ' + e.message, 'err', 8000); return null; }
+}
 
 export function ProjectsScreen() {
   useBus(['project:open', 'project:computed', 'project:deleted']);
@@ -59,6 +81,8 @@ export function ProjectsScreen() {
   }
   return html`<div class="title"><div class="grow"><h1>Projeler</h1><div class="sub" style="font-family:Inter">${app.ps.p ? 'Açık: ' + app.ps.p.name : 'Proje seçin veya oluşturun'}</div></div>${app.ps.p ? html`<button class="btn sm" onClick=${() => app.nav.go('hub')}>Proje merkezi</button>` : null}</div>
     <button class="btn pri blk" style="height:56px" onClick=${() => setForm({ name: '', code: '', location: '', client: '', contractor: '', stdId: (stds.find((s) => s.status === 'active') || stds[0] || {}).id, datum: 'TUREF', cm: 39, heightSystem: 'ortometrik', enhZone: 'II', mode: 'asbuilt' })}><${Icon} n="plus" s=${20} c="#0b1326" />Yeni proje</button>
+    <label class="btn blk" style="height:56px"><${Icon} n="down" s=${20} />AutoCAD dosyasından proje al (.sebeke.json)<input type="file" accept=".json,application/json" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) autocadDosyasiAl(f, null).then((oz) => { if (oz) { app.nav.tab('map'); } load(); }); }} /></label>
+    <div class="note">AutoCAD'de ŞEBEKE HAKEDİŞ › Telefona Gönder ile kaydedilen dosyayı (Drive'dan) seçin. Direkler, hatlar, kanallar ve malzemeler projeye gelir; sahada değiştirip Dışa Aktar › "AutoCAD proje dosyası" ile geri gönderirsiniz.</div>
     ${app.web ? html`<label class="btn blk" style="height:56px"><${Icon} n="sync" s=${20} />Telefondan proje al (.vsync dosyası)<input type="file" accept=".vsync,.json" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) fromPhone(f); }} /></label>
       <div class="note">Telefonda: Ayarlar → Veri ve senkron → Senkron → "Değişiklikleri paylaş (.vsync)". Oluşan dosyayı bu bilgisayara gönderin (e-posta, Drive, kablo) ve yukarıdan seçin.</div>` : null}
     ${list === null ? html`<${Empty}>Yükleniyor…</${Empty}>` : !list.length ? html`<${Empty}>${app.web ? 'Henüz proje yok. Telefondaki projeyi dosya ile alın ya da burada yeni proje açıp koordinatları Excel, elle giriş ya da haritadan seçerek girin.' : 'Henüz proje yok. Proje oluşturup GNSS alıcısını bağlayarak sahaya çıkın.'}</${Empty}>` : html`<div class="card tight list">${list.map((p) => html`<div class="li"><button style="background:none;border:0;color:inherit;display:flex;gap:12px;align-items:center;text-align:left;padding:0;min-width:0" class="grow" onClick=${() => open(p)}><${Icon} n="folder" c=${app.ps.p && app.ps.p.id === p.id ? '#10b981' : '#94a3b8'} /><div class="grow" style="min-width:0"><div class="t">${p.name}</div><div class="s">${p.code || ''} · ${p.crs ? p.crs.label : ''} · ${p.stdId}</div><div class="m">${new Date(p.updatedAt).toLocaleString('tr-TR')}</div></div></button><button class="btn xs dang" aria-label=${'Projeyi sil: ' + p.name} onClick=${() => removeProject(p)}><${Icon} n="trash" s=${15} /></button></div>`)}</div>
@@ -100,6 +124,7 @@ export function HubScreen() {
     <div class="grid4"><div class="stat"><b>Nokta</b><span>${d.points.length}</span></div><div class="stat"><b>Ekipman</b><span>${d.equipment.length}</span></div><div class="stat"><b>Hat</b><span>${d.lines.length}</span></div><div class="stat"><b>Hata</b><span style=${'color:' + (errs.length ? '#ff8a8a' : '#6ffbbe')}>${errs.length}</span></div></div>
     ${ps.lastImpact ? html`<div class="alert info"><${Icon} n="sync" s=${16} /><span>Son değişiklik (${ps.lastImpact.reason}): ${ps.lastImpact.spans} açıklık · ${ps.lastImpact.roles} rol · ${ps.lastImpact.materials} reçete · ${ps.lastImpact.quantities} metraj${ps.lastImpact.exportsStale ? ' · DXF/rapor yenilenmeli' : ''}</span></div>` : null}
     <div class="grid2"><button class="btn" onClick=${() => app.nav.go('objects')}><${Icon} n="list" s=${18} />Saha objeleri</button><button class="btn" onClick=${() => app.nav.go('excel')}><${Icon} n="grid" s=${18} />Excel aktarım</button>
+      <label class="btn" style="grid-column:1/3"><${Icon} n="down" s=${18} />AutoCAD dosyasını bu projeye al${ps.p.sebeke && ps.p.sebeke.alinma ? html` <span class="note">· son: ${new Date(ps.p.sebeke.alinma).toLocaleDateString('tr-TR')}</span>` : null}<input type="file" accept=".json,application/json" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) autocadDosyasiAl(f, ps.p.id); }} /></label>
       <button class="btn" style="grid-column:1/3" onClick=${() => app.nav.go('team')}><${Icon} n="check" s=${18} />Kullanıcılar ve hakediş onayı${(() => { const ap = ps.approval(); if (!ap.on) return html` <span class="note">· kapalı</span>`; const me = ap.member; const n = me && PENDING[me.role] ? ps.pending(PENDING[me.role][0]).length : 0; return html` <span class="note">· ${me ? me.name : 'oturum açılmadı'}</span>${n ? html` <${Badge} k="warn">${n} bekliyor</${Badge}>` : null}`; })()}</button></div>
     ${(() => { const c = ps.hakCounts(); const tot = HAK_ORDER.reduce((a, k) => a + (c[k] || 0), 0); return tot ? html`<div class="sect">Hakediş durumu <span class="r mono">${tot} obje</span></div><div class="hakbar">${HAK_ORDER.filter((k) => c[k]).map((k) => html`<span style=${'flex:' + c[k] + ';background:' + HAK_STATUSES[k].color} title=${HAK_STATUSES[k].label}></span>`)}</div><div class="hakrow">${HAK_ORDER.map((k) => html`<button style=${'--c:' + HAK_STATUSES[k].color} onClick=${() => app.nav.go('objects')}><i></i>${HAK_STATUSES[k].short} ${c[k] || 0}</button>`)}</div>` : null; })()}
     <div class="sect">Proje akışı</div>

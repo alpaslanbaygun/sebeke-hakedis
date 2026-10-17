@@ -10,8 +10,11 @@ import { greenBookPage } from '../qty/metraj.js';
 import { JOB_LABEL, SOURCE_LABEL } from '../core/schema.js';
 import { photoPath, safeName, projectFolder } from '../services/photo-service.js';
 import { HAK_STATUSES, HAK_ORDER } from '../core/schema.js';
+import { sebekeYaz, voltProjeYaz } from '../interop/sebeke.js';
 
 export const FORMATS = {
+  sebeke: { label: 'AutoCAD proje dosyası', ext: '.sebeke.json', desc: 'AutoCAD eklentisi "Telefondan Al" ile açar: direk, hat, kanal ve malzemeler PROMAGIS biçiminde (Durum Tespit raporu için)' },
+  voltjson: { label: 'Telefon proje dosyası', ext: '.volt.json', desc: 'Projenin tam yedeği (tüm kayıtlar) + AutoCAD bölümü; eklenti ve telefon bunu açar' },
   dxf: { label: 'AutoCAD DXF', ext: '.dxf', desc: 'Lejant katmanları, bloklar, ACI renkleri, çizgi tipleri, yazılar · 1/1000' },
   ncn: { label: 'Netcad NCN', ext: '.ncn', desc: 'Nokta adı · Y · X · Z · kod (NCZ kapalı formattır; Netcad DXF+NCN içe alır)' },
   kmz: { label: 'Google Earth KMZ', ext: '.kmz', desc: 'Gerçek koordinat, 3B direk ve tel modelleri' },
@@ -71,6 +74,8 @@ export async function exportFormat(ps, fmt, opts = {}) {
   const base = (ps.p.code || ps.p.name || 'proje').replace(/[^\p{L}\p{N}_-]+/gu, '_');
   switch (fmt) {
     case 'dxf': { const d = buildDXF(model, opts); return [{ name: base + '.dxf', mime: 'application/dxf', data: dxfBytes(d.text), stats: d.stats }]; }
+    case 'sebeke': return [{ name: base + '.sebeke.json', mime: 'application/json', data: enc(sebekeYaz(ps)) }];
+    case 'voltjson': return [{ name: base + '.volt.json', mime: 'application/json', data: enc(JSON.stringify(voltProjeYaz(ps), null, 1)) }];
     case 'ncn': return [{ name: base + '.ncn', mime: 'text/plain', data: enc(buildNCN(model)) }];
     case 'kml': return [{ name: base + '.kml', mime: 'application/vnd.google-earth.kml+xml', data: enc(buildKML(model)) }];
     case 'kmz': return [{ name: base + '.kmz', mime: 'application/vnd.google-earth.kmz', data: await buildKMZ(model) }];
@@ -94,10 +99,9 @@ async function deliveryPackage(ps, model, base, opts) {
   const add = (name, data) => files.push({ name, data: typeof data === 'string' ? enc(data) : data });
   const csv = (rows) => '﻿' + rows.map((r) => r.map((x) => '"' + String(x ?? '').replace(/"/g, '""') + '"').join(';')).join('\r\n');
   // PROJECT_INFO: proje JSON (tam veri + standart kimliği) + denetim kaydı
-  const full = { format: 'volt-project/2', exportedAt: new Date().toISOString(), standard: ps.cat.std, project: ps.p, data: {} };
-  for (const s of ['points', 'equipment', 'lines', 'materials', 'photos', 'periods', 'workPrograms', 'stakeouts', 'revisions', 'surveySessions', 'gnssObservations', 'documents']) full.data[s] = ps.data[s] || [];
-  full.derived = { spans: ps.result.spans, quantities: ps.result.quantities, issues: ps.result.issues, signature: ps.result.signature };
+  const full = voltProjeYaz(ps);   // volt-project/3: ham veri + türetilmiş sonuçlar + AutoCAD bölümü (sebeke)
   add('PROJECT_INFO/project.json', JSON.stringify(full, null, 1));
+  add('EXPORT/' + base + '.sebeke.json', JSON.stringify(full.sebeke, null, 1));
   add('PROJECT_INFO/denetim_kaydi.json', JSON.stringify(await ps.ds.auditLog(ps.p.id, 100000), null, 1));
   // SAHA_ALIMI: obje listesi (kaynak, doğruluk, cihaz, hakediş, fotoğraf sayısı)
   const objHead = ['id', 'project_id', 'object_type', 'object_number', 'coordinate_x', 'coordinate_y', 'coordinate_z', 'coordinate_system', 'timestamp', 'source', 'device_id', 'accuracy', 'fix_type', 'satellite_count', 'hdop', 'vdop', 'pdop', 'operator_id', 'notes', 'hakedis_status', 'progress', 'photos'];

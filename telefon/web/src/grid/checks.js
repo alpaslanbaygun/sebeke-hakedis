@@ -52,7 +52,11 @@ export const roleLabel = (r) => ({ T: 'Taşıyıcı', D: 'Durdurucu', N: 'Nihaye
 export function checkLine(l, cat, ctx = {}) {
   const out = [];
   if (!l.lineType) out.push(I('EKSİK VERİ', 'error', l, 'Hat tipi (AG/OG/AYD/ENH/ABONE) seçilmemiş'));
-  if (!(l.circuits || []).length && !l.channelOnly) out.push(I('EKSİK VERİ', 'error', l, 'Hatta iletken/kablo tanımlı değil'));
+  if (!(l.circuits || []).length && !l.channelOnly) {
+    // AutoCAD'den gelen hat: iletken telefon kataloğunda yoksa metraj eklentideki kalemlerle korunur (uyarı)
+    if (l.sebeke && l.sebeke.anaKesit) out.push(I('UYARI', 'warn', l, 'İletken AutoCAD dosyasından: ' + l.sebeke.anaKesit + ' (telefon kataloğunda yok; metraj AutoCAD kalemleriyle)'));
+    else out.push(I('EKSİK VERİ', 'error', l, 'Hatta iletken/kablo tanımlı değil'));
+  }
   for (const c of l.circuits || []) {
     const cp = circuitParts(c, cat);
     if (!cp) { out.push(I('EKSİK VERİ', 'error', l, 'İletken katalogda yok: ' + c.key)); continue; }
@@ -67,7 +71,7 @@ export function checkLine(l, cat, ctx = {}) {
   if (l.lineType === 'OG' || l.lineType === 'ENH') {
     if ((l.circuits || []).some((c) => c.role !== 'OG' && c.role !== 'ENH') && !l.musterek) out.push(I('UYUMSUZ', 'warn', l, 'OG hatta AG devresi var ama müşterek işaretli değil'));
   }
-  if (l.install === 'yeralti') {
+  if (l.install === 'yeralti' && !(l.cable && l.cable.method === 'sondaj')) {   // yatay sondajda kazı ölçüsü yok
     const cb = l.cable || {};
     if (!(cb.depth > 0)) out.push(I('EKSİK VERİ', 'error', l, 'Yeraltı hattında kanal derinliği yok'));
     if (!(cb.width > 0)) out.push(I('EKSİK VERİ', 'error', l, 'Yeraltı hattında kanal genişliği yok'));

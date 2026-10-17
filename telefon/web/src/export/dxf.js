@@ -2,7 +2,7 @@
 // Koordinatlar proje CRS'inde: X = Sağa (E), Y = Yukarı (N), Z = kot (H). Ölçek 1/1000 (yazı 1.8 m = 1.8 mm).
 // Simgeler ortak tablodan gelir (ortak/katalog/semboller.json → semboller.js): AutoCAD eklentisi aynı blokları
 // aynı adla (SH_…) tanımlar; böylece telefonun DXF'i ile eklentinin çizimi aynı görünür.
-import SEMBOLLER from './semboller.js';
+import SEMBOLLER from '../ortak/semboller.js';
 const f = (v) => (Number.isFinite(v) ? (+v).toFixed(4) : '0.0');
 
 class W {

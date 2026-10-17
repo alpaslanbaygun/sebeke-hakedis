@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Lejant simge takımını üretir: ortak/katalog/semboller.json (eklentiye gömülür) ve
-// telefon/web/src/export/semboller.js (telefonun DXF çıktısı). İkisi aynı içeriktir.
+// Lejant simge takımını üretir: ortak/katalog/semboller.json (eklentiye gömülür; telefon kopyası için
+// araclar/ortak-tablolar.mjs → telefon/web/src/ortak/semboller.js).
 //
 // Boyutlar metre cinsinden, 1/1000 ölçekli pafta lejantına göredir (telefonun "Lejant.dxf" takımı).
 // AutoCAD eklentisi blokları PROMAGIS gibi 4 ölçekle koyar; bu yüzden blok birimi = metre / 4.
@@ -138,7 +138,5 @@ const cikti = {
 
 const json = JSON.stringify(cikti, null, 1) + '\n';
 fs.writeFileSync(path.join(kok, 'ortak/katalog/semboller.json'), json);
-fs.writeFileSync(path.join(kok, 'telefon/web/src/export/semboller.js'),
-  '// Bu dosya araclar/semboller-uret.mjs ile üretilir; ortak/katalog/semboller.json ile aynı içeriktir. Elle düzenlenmez.\n' +
-  'export default ' + JSON.stringify(cikti) + ';\n');
 console.log('semboller.json: ' + Object.keys(semboller).length + ' sembol, ' + Object.keys(aileler).length + ' aile');
+console.log('Telefon kopyası için: node araclar/ortak-tablolar.mjs');
