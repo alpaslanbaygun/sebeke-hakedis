@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Text;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -85,13 +86,22 @@ namespace SebekeHakedis.Eklenti
                 if (string.IsNullOrEmpty(p.KatmanOnEki)) p.KatmanOnEki = "SC";
                 p.GisOnEki = string.IsNullOrEmpty(ayar.GisOnEki) ? p.KatmanOnEki : ayar.GisOnEki;
                 if (p.Dom == 0) Uygulama.Yaz("Not: dilim orta meridyeni (DOM) ayarlı değil; telefonda proje açılırken sorulacak. SH_AYARLAR ile girebilirsiniz.");
-                string yol = KayitYeriSor("Proje dosyasını kaydet", "Şebeke Hakediş projesi (*.sebeke.json)|*.sebeke.json", Ad(belge) + ProjeDosyasi.Uzanti, Klasor(belge));
+                string yol = KayitYeriSor("Proje dosyasını kaydet",
+                    "AutoCAD proje dosyası (*.sebeke.json)|*.sebeke.json|Telefon proje dosyası (*.volt.json)|*.volt.json",
+                    Ad(belge) + ProjeDosyasi.Uzanti, Klasor(belge));
                 if (yol == null) return;
-                if (!yol.EndsWith(ProjeDosyasi.Uzanti, StringComparison.OrdinalIgnoreCase))
-                    yol = Path.Combine(Path.GetDirectoryName(yol) ?? "", Path.GetFileNameWithoutExtension(yol) + ProjeDosyasi.Uzanti);
-                File.WriteAllText(yol, ProjeDosyasi.Yaz(p, "Şebeke Hakediş AutoCAD eklentisi " + Uygulama.Surum), new UTF8Encoding(false));
+                bool volt = yol.EndsWith(ProjeDosyasi.VoltUzanti, StringComparison.OrdinalIgnoreCase);
+                string uzanti = volt ? ProjeDosyasi.VoltUzanti : ProjeDosyasi.Uzanti;
+                if (!yol.EndsWith(uzanti, StringComparison.OrdinalIgnoreCase))
+                {
+                    string ad = Path.GetFileName(yol);
+                    if (ad.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) ad = ad.Substring(0, ad.Length - 5);
+                    yol = Path.Combine(Path.GetDirectoryName(yol) ?? "", ad + uzanti);
+                }
+                string olusturan = "Şebeke Hakediş AutoCAD eklentisi " + Uygulama.Surum;
+                File.WriteAllText(yol, volt ? ProjeDosyasi.VoltYaz(p, olusturan) : ProjeDosyasi.Yaz(p, olusturan), new UTF8Encoding(false));
                 Uygulama.Yaz("Proje dosyası yazıldı: " + yol);
-                Uygulama.Yaz("Telefona aktarmak için dosyayı Google Drive'a koyun; telefonda Projeler › Dosyadan Aç ile açın.");
+                Uygulama.Yaz("Telefona aktarmak için dosyayı Google Drive'a koyun; telefonda Projeler › \"AutoCAD dosyasından proje al\" ile seçin.");
             });
         }
 
@@ -101,20 +111,10 @@ namespace SebekeHakedis.Eklenti
             var belge = AcApp.DocumentManager.MdiActiveDocument;
             Calistir("Proje dosyasından rapor", () =>
             {
-                string kaynak;
-                using (var dlg = new WinForms.OpenFileDialog
-                {
-                    Title = "Proje dosyasını seçin",
-                    Filter = "Şebeke Hakediş projesi (*.sebeke.json)|*.sebeke.json|Tüm dosyalar (*.*)|*.*",
-                    InitialDirectory = belge != null ? Klasor(belge) : "",
-                })
-                {
-                    if (dlg.ShowDialog() != WinForms.DialogResult.OK) return;
-                    kaynak = dlg.FileName;
-                }
-                var p = ProjeDosyasi.Oku(File.ReadAllText(kaynak, Encoding.UTF8));
-                string ad = Path.GetFileName(kaynak);
-                if (ad.EndsWith(ProjeDosyasi.Uzanti, StringComparison.OrdinalIgnoreCase)) ad = ad.Substring(0, ad.Length - ProjeDosyasi.Uzanti.Length);
+                string kaynak = ProjeDosyasiSec("Proje dosyasını seçin", belge != null ? Klasor(belge) : "");
+                if (kaynak == null) return;
+                var p = ProjeDosyasi.Oku(ProjeMetniOku(kaynak));
+                string ad = ProjeDosyaAdi(kaynak);
                 string yol = KayitYeriSor("Durum Tespit raporunu kaydet", "Excel dosyası (*.xlsx)|*.xlsx",
                     ad + "_DURUMTESPIT_" + DateTime.Now.ToString("dd.MM.yyyy_HH_mm") + ".xlsx", Path.GetDirectoryName(kaynak));
                 if (yol == null) return;
@@ -171,7 +171,7 @@ namespace SebekeHakedis.Eklenti
             if (ed == null) return;
             ed.WriteMessage("\nŞebeke Hakediş AutoCAD eklentisi " + Uygulama.Surum + " (" + System.Runtime.InteropServices.RuntimeEnvironment.GetSystemVersion() + ")");
             ed.WriteMessage("\n  Telefon");
-            ed.WriteMessage("\n  SH_ICEAL       Telefona gönder: çizimi proje dosyasına yaz (.sebeke.json)");
+            ed.WriteMessage("\n  SH_ICEAL       Telefona gönder: çizimi proje dosyasına yaz (.sebeke.json ya da .volt.json)");
             ed.WriteMessage("\n  SH_PROJEAL     Telefondan al: telefondaki değişiklikleri çizime aktar");
             ed.WriteMessage("\n  Çizim");
             ed.WriteMessage("\n  SH_ELEMAN      Direk, box, pano, trafo, mufu koy (GIS numarası kendiliğinden)");
@@ -234,6 +234,51 @@ namespace SebekeHakedis.Eklenti
                 }
                 catch { }
             }
+        }
+
+        /// <summary>Proje dosyası türleri: AutoCAD (.sebeke.json), telefon (.volt.json), telefonun teslim paketi (.zip).</summary>
+        internal const string ProjeDosyasiFiltresi =
+            "Proje dosyaları (*.sebeke.json;*.volt.json;*.json;*.zip)|*.sebeke.json;*.volt.json;*.json;*.zip|" +
+            "AutoCAD proje dosyası (*.sebeke.json)|*.sebeke.json|Telefon proje dosyası (*.volt.json)|*.volt.json|" +
+            "Telefon teslim paketi (*.zip)|*.zip|Tüm dosyalar (*.*)|*.*";
+
+        internal static string ProjeDosyasiSec(string baslik, string klasor)
+        {
+            using (var dlg = new WinForms.OpenFileDialog { Title = baslik, Filter = ProjeDosyasiFiltresi, InitialDirectory = klasor ?? "" })
+            {
+                return dlg.ShowDialog() == WinForms.DialogResult.OK ? dlg.FileName : null;
+            }
+        }
+
+        /// <summary>
+        /// Proje dosyasının metnini okur. Zip (telefonun teslim paketi) ise içindeki PROJECT_INFO/project.json alınır;
+        /// biçim ayrımını (AutoCAD / telefon) ProjeDosyasi.Oku yapar.
+        /// </summary>
+        internal static string ProjeMetniOku(string yol)
+        {
+            if (!yol.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) return File.ReadAllText(yol, Encoding.UTF8);
+            using (var fs = File.OpenRead(yol))
+            using (var zip = new ZipArchive(fs, ZipArchiveMode.Read))
+            {
+                ZipArchiveEntry secilen = null;
+                foreach (var e in zip.Entries)
+                {
+                    string ad = e.FullName.Replace('\\', '/');
+                    if (ad.EndsWith("PROJECT_INFO/project.json", StringComparison.OrdinalIgnoreCase)) { secilen = e; break; }
+                    if (secilen == null && ad.EndsWith(ProjeDosyasi.Uzanti, StringComparison.OrdinalIgnoreCase)) secilen = e;
+                }
+                if (secilen == null) throw new FormatException("Zip içinde proje dosyası bulunamadı (PROJECT_INFO/project.json ya da *.sebeke.json).");
+                using (var r = new StreamReader(secilen.Open(), Encoding.UTF8)) return r.ReadToEnd();
+            }
+        }
+
+        /// <summary>Dosya adından proje adı (uzantılar atılır).</summary>
+        internal static string ProjeDosyaAdi(string yol)
+        {
+            string ad = Path.GetFileName(yol);
+            foreach (var u in new[] { ProjeDosyasi.Uzanti, ProjeDosyasi.VoltUzanti, "_teslim_paketi.zip", ".zip", ".json" })
+                if (ad.EndsWith(u, StringComparison.OrdinalIgnoreCase)) { ad = ad.Substring(0, ad.Length - u.Length); break; }
+            return string.IsNullOrEmpty(ad) ? "Proje" : ad;
         }
 
         private static string KayitYeriSor(string baslik, string filtre, string dosyaAdi, string klasor)

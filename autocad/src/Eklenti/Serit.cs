@@ -69,8 +69,8 @@ namespace SebekeHakedis.Eklenti
             serit.Tabs.Add(sekme);
 
             var telefon = Panel(sekme, "Telefon");
-            telefon.Items.Add(Dugme("Telefondan\nAl", "Telefonda çalışılan proje dosyasındaki (.sebeke.json) yeni ve değişen nesneleri bu çizime aktarır.", "_SH_PROJEAL ", "TA", Color.FromRgb(0x00, 0x7A, 0x87)));
-            telefon.Items.Add(Dugme("Telefona\nGönder", "Bu çizimi telefonda açılacak proje dosyasına (.sebeke.json) yazar.", "_SH_ICEAL ", "TG", Color.FromRgb(0x2F, 0x55, 0x97)));
+            telefon.Items.Add(Dugme("Telefondan\nAl", "Telefondan gelen proje dosyasındaki (.sebeke.json, .volt.json ya da teslim paketi .zip) yeni ve değişen nesneleri bu çizime aktarır.", "_SH_PROJEAL ", "TA", Color.FromRgb(0x00, 0x7A, 0x87)));
+            telefon.Items.Add(Dugme("Telefona\nGönder", "Bu çizimi telefonda açılacak proje dosyasına yazar (.sebeke.json ya da telefon biçimi .volt.json).", "_SH_ICEAL ", "TG", Color.FromRgb(0x2F, 0x55, 0x97)));
 
             var cizim = Panel(sekme, "Çizim");
             cizim.Items.Add(Dugme("Eleman", "Direk, box, pano, trafo, mufu koyar. Tip katalogdan seçilir, GIS numarası kendiliğinden verilir.", "_SH_ELEMAN ", "EL", Color.FromRgb(0xB4, 0x53, 0x09)));
@@ -88,7 +88,7 @@ namespace SebekeHakedis.Eklenti
 
             var rapor = Panel(sekme, "Rapor");
             rapor.Items.Add(Dugme("Durum\nTespit", "Bu çizimden Durum Tespit raporunu Excel olarak üretir.", "_SH_RAPOR ", "DT", Color.FromRgb(0x1E, 0x7B, 0x4F)));
-            rapor.Items.Add(Dugme("Dosyadan\nRapor", "Bir proje dosyasından (.sebeke.json) Durum Tespit raporu üretir.", "_SH_PROJERAPOR ", "PR", Color.FromRgb(0x2E, 0x8B, 0x57)));
+            rapor.Items.Add(Dugme("Dosyadan\nRapor", "Bir proje dosyasından (.sebeke.json, .volt.json ya da teslim paketi) Durum Tespit raporu üretir.", "_SH_PROJERAPOR ", "PR", Color.FromRgb(0x2E, 0x8B, 0x57)));
             rapor.Items.Add(Dugme("Proje\nÖzeti", "Çizimdeki bölge, direk, hat ve kanal sayılarını komut satırında gösterir.", "_SH_OZET ", "ÖZ", Color.FromRgb(0x3E, 0x7C, 0xB1)));
 
             var yardim = Panel(sekme, "Yardım");

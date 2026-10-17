@@ -775,18 +775,9 @@ namespace SebekeHakedis.Eklenti
             if (belge == null) return;
             Komutlar.Calistir("Telefondan proje alma", () =>
             {
-                string yol;
-                using (var dlg = new WinForms.OpenFileDialog
-                {
-                    Title = "Telefondan gelen proje dosyasını seçin",
-                    Filter = "Şebeke Hakediş projesi (*.sebeke.json)|*.sebeke.json|JSON (*.json)|*.json|Tüm dosyalar (*.*)|*.*",
-                    InitialDirectory = Komutlar.Klasor(belge),
-                })
-                {
-                    if (dlg.ShowDialog() != WinForms.DialogResult.OK) return;
-                    yol = dlg.FileName;
-                }
-                var tel = ProjeDosyasi.Oku(File.ReadAllText(yol, Encoding.UTF8));
+                string yol = Komutlar.ProjeDosyasiSec("Telefondan gelen proje dosyasını seçin", Komutlar.Klasor(belge));
+                if (yol == null) return;
+                var tel = ProjeDosyasi.Oku(Komutlar.ProjeMetniOku(yol));
                 var o = Ortam.Hazirla(belge, tel.KatmanOnEki);
                 var ed = o.Ed;
 

@@ -190,6 +190,7 @@ namespace SebekeHakedis.Test
             var tp = ProjeDosyasi.Oku(File.ReadAllText(telYol, Encoding.UTF8));
             Esit(true, tp.Elemanlar.Count > 20, "telefon projesi okundu");
             GidisDonus(tp, "telefon-proje");
+            TelefonDosyasi(tp);
             Esit("SC_1.HAK.AGDİR", PromagisYazici.ElemanKatmani("SC", "AG_DIREK", "M", 1), "katman: hakediş");
             Esit("SC_DEMONTAJ", PromagisYazici.ElemanKatmani("SC", "AG_DIREK", "DM", 3), "katman: demontaj");
             Esit("SC_STANDART", PromagisYazici.ElemanKatmani("SC", "KOFRE", "M+M", 2), "katman: kofre");
@@ -199,6 +200,48 @@ namespace SebekeHakedis.Test
 
             CizimAraclari();
             TelefondanAlma(varliklar, tp);
+        }
+
+        // ---------------- Telefonun proje dosyası (volt-project/3) ve telefon kimlikleri ----------------
+
+        private static void TelefonDosyasi(Proje tp)
+        {
+            // telefonId: çizimdeki SH_ID dosyaya yazılır, dosyadan okunur (telefon kaydını bununla bulur)
+            var kopya = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(tp, "test"));
+            kopya.Elemanlar[0].TelefonId = "01TELEFON";
+            kopya.Hatlar[0].TelefonId = "01HAT";
+            string yazilan = ProjeDosyasi.Yaz(kopya, "test");
+            Esit(true, yazilan.Contains("telefonId") && yazilan.Contains("01TELEFON") && yazilan.Contains("01HAT"), "telefonId dosyaya yazılır");
+            var geri = ProjeDosyasi.Oku(yazilan);
+            Esit("01TELEFON", geri.Elemanlar[0].TelefonId, "telefonId dosyadan okunur (eleman)");
+            Esit("01HAT", geri.Hatlar[0].TelefonId, "telefonId dosyadan okunur (hat)");
+            Esit("", geri.Elemanlar[1].TelefonId, "telefonId yoksa boş");
+            // Telefonun tam proje dosyası: AutoCAD bölümü okunur, aynı proje
+            string volt = ProjeDosyasi.VoltYaz(kopya, "test");
+            Esit(true, ProjeDosyasi.VoltDosyasiMi(volt), "telefon dosyası tanınır");
+            Esit(false, ProjeDosyasi.VoltDosyasiMi(yazilan), "AutoCAD dosyası telefon dosyası sayılmaz");
+            var vp = ProjeDosyasi.Oku(volt);
+            Esit(kopya.Elemanlar.Count, vp.Elemanlar.Count, "telefon dosyasından eleman sayısı");
+            Esit(kopya.Hatlar.Count, vp.Hatlar.Count, "telefon dosyasından hat sayısı");
+            Esit("01TELEFON", vp.Elemanlar[0].TelefonId, "telefon dosyasında telefonId");
+            Esit(0, RaporFarki(kopya, vp), "iki biçimden aynı Durum Tespit raporu");
+            // AutoCAD bölümü olmayan (eski) telefon dosyası: anlaşılır hata
+            string hata = "";
+            try { ProjeDosyasi.Oku("{\"format\":\"volt-project/2\",\"project\":{},\"data\":{}}"); }
+            catch (FormatException ex) { hata = ex.Message; }
+            Esit(true, hata.Contains("AutoCAD bölümü"), "eski telefon dosyasında anlaşılır hata");
+        }
+
+        /// <summary>İki projenin Durum Tespit satır sayısı ve kg toplamı farkı (0 = aynı).</summary>
+        private static int RaporFarki(Proje a, Proje b)
+        {
+            var ra = new DurumTespit(a).Satirlar;
+            var rb = new DurumTespit(b).Satirlar;
+            if (ra.Count != rb.Count) return 1;
+            double ta = 0, tb = 0;
+            foreach (var s in ra) ta += s.Toplam;
+            foreach (var s in rb) tb += s.Toplam;
+            return Math.Abs(ta - tb) < 1e-6 ? 0 : 2;
         }
 
         // ---------------- Çizim araçları: numara, metraj, ayarlar, katalog, nokta dosyası ----------------

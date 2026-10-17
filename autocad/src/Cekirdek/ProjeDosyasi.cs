@@ -13,8 +13,35 @@ namespace SebekeHakedis.Cekirdek
         public const string Bicim = "sebeke-hakedis.proje";
         public const int Surum = 1;
         public const string Uzanti = ".sebeke.json";
+        /// <summary>Telefonun tam proje dosyası (ham veri + AutoCAD bölümü): biçim adı ve uzantısı.</summary>
+        public const string VoltBicim = "volt-project/3";
+        public const string VoltUzanti = ".volt.json";
 
-        public static string Yaz(Proje p, string olusturan)
+        public static string Yaz(Proje p, string olusturan) => Json.Yaz(JsonYap(p, olusturan), true);
+
+        /// <summary>
+        /// Telefonun proje dosyası biçiminde yazar: AutoCAD bölümü ("sebeke") aynı projedir; telefon bu dosyayı da,
+        /// .sebeke.json'u da açar. Ham telefon verisi ("data") çizimden üretilemez, boş bırakılır.
+        /// </summary>
+        public static string VoltYaz(Proje p, string olusturan)
+        {
+            var k = new JsonNesne();
+            k["format"] = VoltBicim;
+            k["exportedAt"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
+            k["app"] = olusturan ?? "";
+            var pj = new JsonNesne();
+            pj["name"] = p.Ad;
+            pj["code"] = "";
+            var crs = new JsonNesne();
+            crs["datum"] = "TUREF"; crs["projection"] = "TM3"; crs["cm"] = p.Dom;
+            pj["crs"] = crs;
+            k["project"] = pj;
+            k["data"] = new JsonNesne();
+            k["sebeke"] = JsonYap(p, olusturan);
+            return Json.Yaz(k, true);
+        }
+
+        private static JsonNesne JsonYap(Proje p, string olusturan)
         {
             var k = new JsonNesne();
             k["bicim"] = Bicim;
@@ -55,6 +82,7 @@ namespace SebekeHakedis.Cekirdek
                 o["saga"] = Yuvarla(n.Saga); o["yukari"] = Yuvarla(n.Yukari); o["kot"] = Yuvarla(n.Kot);
                 o["hakedis"] = n.Hakedis; o["bolge"] = n.Bolge;
                 if (n.EkMetinler.Count > 0) o["ekMetinler"] = new List<object>(n.EkMetinler);
+                if (!string.IsNullOrEmpty(n.TelefonId)) o["telefonId"] = n.TelefonId;
                 noktalar.Add(o);
             }
             k["noktalar"] = noktalar;
@@ -75,6 +103,7 @@ namespace SebekeHakedis.Cekirdek
                 o["kontrol"] = e.Kontrol;
                 o["katman"] = e.Katman; o["blok"] = e.Blok;
                 o["kalemler"] = Kalemler(e.Kalemler);
+                if (!string.IsNullOrEmpty(e.TelefonId)) o["telefonId"] = e.TelefonId;
                 elemanlar.Add(o);
             }
             k["elemanlar"] = elemanlar;
@@ -90,6 +119,7 @@ namespace SebekeHakedis.Cekirdek
                 o["kontrol"] = h.Kontrol; o["katman"] = h.Katman;
                 o["kose"] = Koseler(h.Kose);
                 o["kalemler"] = Kalemler(h.Kalemler);
+                if (!string.IsNullOrEmpty(h.TelefonId)) o["telefonId"] = h.TelefonId;
                 hatlar.Add(o);
             }
             k["hatlar"] = hatlar;
@@ -106,6 +136,7 @@ namespace SebekeHakedis.Cekirdek
                 o["kontrol"] = c.Kontrol;
                 o["kose"] = Koseler(c.Kose);
                 o["kalemler"] = Kalemler(c.Kalemler);
+                if (!string.IsNullOrEmpty(c.TelefonId)) o["telefonId"] = c.TelefonId;
                 kanallar.Add(o);
             }
             k["kanallar"] = kanallar;
@@ -120,17 +151,36 @@ namespace SebekeHakedis.Cekirdek
                 o["kontrol"] = s.Kontrol;
                 o["kose"] = Koseler(s.Kose);
                 o["kalemler"] = Kalemler(s.Kalemler);
+                if (!string.IsNullOrEmpty(s.TelefonId)) o["telefonId"] = s.TelefonId;
                 sondajlar.Add(o);
             }
             k["sondajlar"] = sondajlar;
 
             if (p.Uyarilar.Count > 0) k["uyarilar"] = new List<object>(p.Uyarilar);
-            return Json.Yaz(k, true);
+            return k;
         }
 
+        /// <summary>Metin telefonun tam proje dosyası mı (volt-project/…)?</summary>
+        public static bool VoltDosyasiMi(string metin)
+        {
+            if (string.IsNullOrEmpty(metin)) return false;
+            int i = metin.IndexOf("\"format\"", StringComparison.Ordinal);
+            return i >= 0 && i < 400 && metin.IndexOf("volt-project/", i, StringComparison.Ordinal) > 0;
+        }
+
+        /// <summary>
+        /// Proje dosyasını okur. İki biçim tanınır: AutoCAD proje dosyası (.sebeke.json) ve telefonun tam proje dosyası
+        /// (.volt.json ya da teslim paketindeki PROJECT_INFO/project.json; AutoCAD bölümü "sebeke" okunur).
+        /// </summary>
         public static Proje Oku(string metin)
         {
             var k = Json.Oku(metin) as JsonNesne;
+            if (k != null && k.Metin("format").StartsWith("volt-project/", StringComparison.Ordinal))
+            {
+                var sb = k.Nesne("sebeke");
+                if (sb == null) throw new FormatException("Telefonun proje dosyasında AutoCAD bölümü yok (eski sürümle yazılmış). Telefonda projeyi yeniden dışa aktarın (Dışa Aktar › AutoCAD proje dosyası).");
+                k = sb;
+            }
             if (k == null || k.Metin("bicim") != Bicim)
                 throw new FormatException("Bu bir Şebeke Hakediş proje dosyası değil.");
             if (k.Tam("surum") > Surum)
@@ -154,7 +204,7 @@ namespace SebekeHakedis.Cekirdek
             }
             foreach (var o in Nesneler(k, "noktalar"))
             {
-                var n = new Nokta { Id = o.Metin("id"), Ad = o.Metin("ad"), Kod = o.Metin("kod"), Saga = o.Ondalik("saga"), Yukari = o.Ondalik("yukari"), Kot = o.Ondalik("kot"), Hakedis = o.Tam("hakedis"), Bolge = o.Metin("bolge") };
+                var n = new Nokta { Id = o.Metin("id"), Ad = o.Metin("ad"), Kod = o.Metin("kod"), Saga = o.Ondalik("saga"), Yukari = o.Ondalik("yukari"), Kot = o.Ondalik("kot"), Hakedis = o.Tam("hakedis"), Bolge = o.Metin("bolge"), TelefonId = o.Metin("telefonId") };
                 var em = o.Dizi("ekMetinler");
                 if (em != null) foreach (var m in em) n.EkMetinler.Add(Convert.ToString(m, CultureInfo.InvariantCulture));
                 p.Noktalar.Add(n);
@@ -167,7 +217,7 @@ namespace SebekeHakedis.Cekirdek
                     Durum = o.Metin("durum"), Hakedis = o.Tam("hakedis"), Bolge = o.Metin("bolge"),
                     Saga = o.Ondalik("saga"), Yukari = o.Ondalik("yukari"), Kot = o.Ondalik("kot"), Aci = o.Ondalik("aci"),
                     Guc = o.Metin("guc"), Gerilim = o.Metin("gerilim"), DmDurum = o.Metin("dmDurum"), Kontrol = o.Mantik("kontrol"),
-                    Katman = o.Metin("katman"), Blok = o.Metin("blok"), Kalemler = KalemOku(o.Dizi("kalemler")),
+                    Katman = o.Metin("katman"), Blok = o.Metin("blok"), Kalemler = KalemOku(o.Dizi("kalemler")), TelefonId = o.Metin("telefonId"),
                 });
             }
             foreach (var o in Nesneler(k, "hatlar"))
@@ -176,7 +226,7 @@ namespace SebekeHakedis.Cekirdek
                 {
                     Id = o.Metin("id"), Tur = o.Metin("tur"), AnaKesit = o.Metin("anaKesit"), Durum = o.Metin("durum"),
                     Hakedis = o.Tam("hakedis"), Bolge = o.Metin("bolge"), Etiket = o.Metin("etiket"), Kontrol = o.Mantik("kontrol"),
-                    Katman = o.Metin("katman"), Kose = KoseOku(o.Dizi("kose")), Kalemler = KalemOku(o.Dizi("kalemler")),
+                    Katman = o.Metin("katman"), Kose = KoseOku(o.Dizi("kose")), Kalemler = KalemOku(o.Dizi("kalemler")), TelefonId = o.Metin("telefonId"),
                 };
                 h.CizimUzunlugu = Geometri.Uzunluk(h.Kose);
                 p.Hatlar.Add(h);
@@ -188,7 +238,7 @@ namespace SebekeHakedis.Cekirdek
                     Id = o.Metin("id"), Kod = o.Tam("kod"), Zemin = o.Metin("zemin"),
                     AltGenislik = o.Ondalik("altGenislik"), UstGenislik = o.Ondalik("ustGenislik"), Derinlik = o.Ondalik("derinlik"),
                     BasNo = o.Metin("basNo"), BitNo = o.Metin("bitNo"), Durum = o.Metin("durum"), Hakedis = o.Tam("hakedis"),
-                    Bolge = o.Metin("bolge"), Kontrol = o.Mantik("kontrol"), Kose = KoseOku(o.Dizi("kose")), Kalemler = KalemOku(o.Dizi("kalemler")),
+                    Bolge = o.Metin("bolge"), Kontrol = o.Mantik("kontrol"), Kose = KoseOku(o.Dizi("kose")), Kalemler = KalemOku(o.Dizi("kalemler")), TelefonId = o.Metin("telefonId"),
                 };
                 c.CizimUzunlugu = Geometri.Uzunluk(c.Kose);
                 p.Kanallar.Add(c);
@@ -199,7 +249,7 @@ namespace SebekeHakedis.Cekirdek
                 {
                     Id = o.Metin("id"), Tip = o.Metin("tip"), Durum = o.Metin("durum"), Hakedis = o.Tam("hakedis"), Bolge = o.Metin("bolge"),
                     BasNo = o.Metin("basNo"), BitNo = o.Metin("bitNo"), Kontrol = o.Mantik("kontrol"),
-                    Kose = KoseOku(o.Dizi("kose")), Kalemler = KalemOku(o.Dizi("kalemler")),
+                    Kose = KoseOku(o.Dizi("kose")), Kalemler = KalemOku(o.Dizi("kalemler")), TelefonId = o.Metin("telefonId"),
                 };
                 s.CizimUzunlugu = Geometri.Uzunluk(s.Kose);
                 p.Sondajlar.Add(s);

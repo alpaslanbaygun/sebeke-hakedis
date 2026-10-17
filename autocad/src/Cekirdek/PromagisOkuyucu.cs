@@ -114,6 +114,7 @@ namespace SebekeHakedis.Cekirdek
                 Yukari = v.Y,
                 Kot = SayiCoz.Coz(v.XdIlk("ZKOORD"), v.Z),
                 Hakedis = SayiCoz.Tam(v.XdIlk("HAKNO")),
+                TelefonId = v.XdIlk(PromagisYazici.KimlikUygulamasi) ?? "",
             };
             for (int i = 3; i <= 6; i++)
             {
@@ -139,6 +140,7 @@ namespace SebekeHakedis.Cekirdek
                 Kontrol = Mantik(v.XdIlk("KONTROL")),
                 Katman = v.Katman,
                 Blok = v.Blok,
+                TelefonId = v.XdIlk(PromagisYazici.KimlikUygulamasi) ?? "",
             };
             if (string.IsNullOrEmpty(e.GisId)) e.GisId = (v.OzDeger("GIS_ID") ?? "").Trim();
             if (string.IsNullOrEmpty(e.Guc)) e.Guc = (v.OzDeger("GÜÇ") ?? "").Trim();
@@ -168,6 +170,7 @@ namespace SebekeHakedis.Cekirdek
                 Katman = v.Katman,
                 Kontrol = Mantik(v.XdIlk("KONTROL")),
                 AnaKesit = (v.XdIlk("ANAKESIT") ?? "").Trim(),
+                TelefonId = v.XdIlk(PromagisYazici.KimlikUygulamasi) ?? "",
             };
             foreach (var k in v.Kose) h.Kose.Add(new[] { k[0], k[1] });
             h.CizimUzunlugu = Geometri.Uzunluk(h.Kose);
@@ -215,6 +218,7 @@ namespace SebekeHakedis.Cekirdek
                 Durum = kalem.Durum,
                 Hakedis = kalem.Hakedis,
                 Kontrol = Mantik(v.XdIlk("KONTROL")),
+                TelefonId = v.XdIlk(PromagisYazici.KimlikUygulamasi) ?? "",
             };
             foreach (var p in v.Kose) k.Kose.Add(new[] { p[0], p[1] });
             k.CizimUzunlugu = Geometri.Uzunluk(k.Kose);
@@ -237,6 +241,7 @@ namespace SebekeHakedis.Cekirdek
                 BasNo = Alan(gis, 0),
                 BitNo = Alan(gis, 1),
                 Kontrol = Mantik(v.XdIlk("KONTROL")),
+                TelefonId = v.XdIlk(PromagisYazici.KimlikUygulamasi) ?? "",
             };
             foreach (var p in v.Kose) s.Kose.Add(new[] { p[0], p[1] });
             s.CizimUzunlugu = Geometri.Uzunluk(s.Kose);

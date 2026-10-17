@@ -53,6 +53,8 @@ namespace SebekeHakedis.Cekirdek
         public int Hakedis;
         public string Bolge = "";
         public List<string> EkMetinler = new List<string>();
+        /// <summary>Telefondaki kayıt kimliği (çizimde SH_ID); dosyada "telefonId".</summary>
+        public string TelefonId = "";
     }
 
     /// <summary>Noktasal şebeke elemanı: direk, box, pano, trafo, ek mufu, kofre...</summary>
@@ -74,6 +76,8 @@ namespace SebekeHakedis.Cekirdek
         public string Katman = "";
         public string Blok = "";
         public List<Kalem> Kalemler = new List<Kalem>();
+        /// <summary>Telefondaki kayıt kimliği (çizimde SH_ID); dosyada "telefonId". Telefon dosyayı geri alırken kaydını bununla bulur.</summary>
+        public string TelefonId = "";
     }
 
     /// <summary>Hat: AG/OG havai, yeraltı kablo, aydınlatma, rekortman (abone bağlantısı).</summary>
@@ -91,6 +95,7 @@ namespace SebekeHakedis.Cekirdek
         public bool? Kontrol;
         public string Katman = "";
         public List<Kalem> Kalemler = new List<Kalem>();
+        public string TelefonId = "";
     }
 
     /// <summary>Kablo kanalı. Kod, kanaldaki kablo türlerinin toplamıdır: REK 1, AYD 2, AG 4, OG 8.</summary>
@@ -108,6 +113,7 @@ namespace SebekeHakedis.Cekirdek
         public double CizimUzunlugu;
         public bool? Kontrol;
         public List<Kalem> Kalemler = new List<Kalem>();
+        public string TelefonId = "";
 
         public string Kablolar => KanalKodu.Kablolar(Kod);
     }
@@ -124,6 +130,7 @@ namespace SebekeHakedis.Cekirdek
         public double CizimUzunlugu;
         public bool? Kontrol;
         public List<Kalem> Kalemler = new List<Kalem>();
+        public string TelefonId = "";
     }
 
     public sealed class Proje
