@@ -26,7 +26,8 @@ Derleme
 2) Testler: node --test tests/scenarios.test.mjs   (33/33 geçmeli)
           python3 tests/ui/smoke.py                (arayüz duman testi, 0 hata)
           python3 tests/ui/upgrade.py              (2.1.0 ↔ 2.2.0 veri geçişi; önce v2.1.0 derlemesi gerekir)
-3) APK : ./tools/build_apk.sh  →  dist/VOLT-EDAS-Saha-2.4.0.apk
+3) APK araçları (bir kez): ./tools/setup_tools.sh  (npm + Java 17 gerekir; Android Studio gerekmez)
+4) APK : TOOLS=<araç klasörü> ./tools/build_apk.sh  →  dist/VOLT-EDAS-Saha-2.4.0.apk
 
 2.2.0 değişiklikleri (Teknik Spesifikasyon v2)
 - Veri kaynağı takibi: GNSS_RTK · GNSS_FLOAT · TELEFON_GPS · MANUEL · EXCEL · HARITADAN_SECILDI; harita, liste, rapor etiketleri.
