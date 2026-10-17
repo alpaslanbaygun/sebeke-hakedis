@@ -1,3 +1,8 @@
+> **Not (17.10.2026):** Bu dosya VOLT-EDAŞ Saha'nın eski deposundan geldi; tarihçe, kararlar ve açık işler için
+> saklanır. Uygulama artık **Şebeke Hakediş** deposunun `telefon/` klasöründedir; güncel durum ve kurallar depo
+> kökündeki `DEVIR.md`'de, AutoCAD ile birlikte kullanım `KULLANIM.md`'de. Aşağıdaki "yeni hesapta başlarken"
+> adımları ve `alpaslanbaygun/volt-edas-saha` deposu artık geçerli değil.
+
 # VOLT-EDAŞ Saha — Devam notu (yeni Claude hesabı için)
 
 Bu dosya projeyi başka bir Claude hesabında kaldığı yerden sürdürmek içindir. Yeni hesapta ilk iş bu dosyayı Claude'a okutun.

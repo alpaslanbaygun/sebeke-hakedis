@@ -2,7 +2,7 @@
 
 6 Ekim 2026 · Alpaslan
 
-Bu kılavuz, VOLT-EDAŞ Saha telefon uygulamasının 2.4.0 sürümünü sahada kullanacak kişiler içindir. Uygulama Android telefonda çalışır; internet olmadan da kayıt alır.
+Bu kılavuz, VOLT-EDAŞ Saha telefon uygulamasının 2.4.0 ve sonraki (2.5.x) sürümlerini sahada kullanacak kişiler içindir. Uygulama Android telefonda çalışır; internet olmadan da kayıt alır.
 
 ## Uygulama ne işe yarar
 
@@ -24,7 +24,7 @@ Ofiste bilgisayardan çalışmak için aynı uygulamanın web sürümü vardır.
 
 Uygulama bir kurulum dosyasıyla (APK) kurulur; mağazadan indirilmez. Android 8.0 ve üstü telefonlarda çalışır.
 
-1. `VOLT-EDAS-Saha-2.4.0.apk` dosyasını telefona alın (e-posta, Drive ya da kablo ile).
+1. `VOLT-EDAS-Saha-2.5.x.apk` dosyasını telefona alın (GitHub › Releases; e-posta, Drive ya da kablo ile).
 2. Dosyaya dokunun. Telefon "bu kaynaktan uygulama yüklemeye izin ver" diye sorarsa izin verin.
 3. Kurulum bitince uygulamayı açın.
 4. İlk açılışta sorulan izinleri verin: konum, yakındaki cihazlar (Bluetooth), kamera ve bildirim.
@@ -742,7 +742,9 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 
 | Çıktı | Dosya | İçeriği |
 | --- | --- | --- |
-| AutoCAD DXF | .dxf | Katmanlar, semboller, yazılar; 1/1000 |
+| AutoCAD proje dosyası | .sebeke.json | Şebeke Hakediş AutoCAD eklentisi "Telefondan Al" ile açar: direk, hat, kanal ve malzemeler PROMAGIS biçiminde (Durum Tespit raporu için). Varsayılan seçilidir |
+| Telefon proje dosyası | .volt.json | Projenin tam yedeği (tüm kayıtlar) + AutoCAD bölümü; eklenti ve telefon bunu da açar |
+| AutoCAD DXF | .dxf | Katmanlar, semboller (eklentiyle aynı bloklar), yazılar; 1/1000 |
 | Netcad NCN | .ncn | Nokta adı, Y, X, Z, kod. Netcad'e DXF ile birlikte alınır |
 | Google Earth KMZ | .kmz | Gerçek koordinatta 3 boyutlu direk ve tel |
 | CBS Shapefile | .zip | Ekipman, hat, açıklık ve ölçü katmanları |
@@ -753,6 +755,20 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 
 - Kontrol listesinde hata varken de çıktı alınabilir; uygulama önce sorar ve hatayı teslim paketine yazar.
 - Veri değişince önceki çıktılar "Son üretilenler" listesinde `ESKİDİ` olarak işaretlenir; yeniden üretin.
+
+### AutoCAD eklentisiyle çalışma (Şebeke Hakediş)
+
+Büroda PROMAGIS çizimleriyle çalışan Şebeke Hakediş AutoCAD eklentisi aynı proje dosyasını kullanır:
+
+1. AutoCAD'de **ŞEBEKE HAKEDİŞ › Telefona Gönder** ile yazılan dosyayı Drive'a koyun.
+2. Telefonda **Projeler › AutoCAD dosyasından proje al** (ya da açık projede **Proje merkezi › AutoCAD dosyasını bu
+   projeye al**) ile seçin. Direkler, hatlar, kanallar, bölgeler ve malzemeler gelir; telefon kataloğunda bulunamayan
+   kalemler Poz Kataloğu'nda "AutoCAD" kategorisinde DOĞRULANACAK olarak görünür.
+3. Sahada çalışın, sonra **Dışa Aktar › AutoCAD proje dosyası** ile geri gönderin. AutoCAD'de **Telefondan Al** yalnız
+   değişen ve eklenen nesneleri çizime işler.
+
+Durumlar şöyle çevrilir: Yeni → M (pozun temini yükleniciyse M+M), Mevcut → MEVCUT, Demontaj → DM, DMM → DM+M.
+**"İleride" durumundaki objeler AutoCAD dosyasına yazılmaz.** Ayrıntı ve komutlar: depo kökündeki `KULLANIM.md`.
 
 ### Ofisteki web sürümüyle veri alışverişi
 

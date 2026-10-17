@@ -1,7 +1,8 @@
 # Ortak veri modeli
 
-Telefon uygulaması ve AutoCAD eklentisi aynı **proje dosyasını** kullanır: `<ad>.sebeke.json`
-(UTF-8 JSON). Biçimi okuyan/yazan başvuru kodu: `autocad/src/Cekirdek/ProjeDosyasi.cs`.
+Telefon uygulaması (VOLT-EDAŞ Saha) ve AutoCAD eklentisi aynı **proje dosyasını** kullanır: `<ad>.sebeke.json`
+(UTF-8 JSON). Biçimi okuyan/yazan başvuru kodu: `autocad/src/Cekirdek/ProjeDosyasi.cs` (eklenti) ve
+`telefon/web/src/interop/sh-core.cjs` + `sebeke.js` (telefon).
 
 ## Koordinatlar
 
@@ -30,19 +31,68 @@ Karışıklık olmasın diye eksenler açık adla tutulur:
 }
 ```
 
-Okuyucular tanımadıkları alanları atlar, telefon yazarken korur. Telefonun eklediği alanlar:
+Okuyucular tanımadıkları alanları atlar. Telefonun (VOLT-EDAŞ Saha) eklediği alanlar:
 
 | Alan | Nerede | Anlamı |
 | --- | --- | --- |
-| `olcum` | eleman, nokta | ölçümün kaynağı ve kalitesi: `{kaynak: alici/telefon/harici/harita, cozum, hata, uydu, epok, zaman}` |
-| `fotolar` | her nesne | telefondaki fotoğraf dosyalarının adları (fotoğraflar ayrıca zip olarak dışa aktarılır) |
+| `telefonId` | eleman, hat, kanal, sondaj, nokta | telefondaki kayıt kimliği. Eklenti bunu çizime `SH_ID` olarak yazar ve "Telefona Gönder"de geri verir; telefon dosyayı alırken kaydını bununla bulur (çift kayıt olmaz) |
+| `olcum` | eleman, nokta | ölçümün kaynağı ve kalitesi: `{kaynak: alici/telefon/harici/harita, cozum, hata, uydu, zaman}` |
 | `not` | her nesne | serbest not |
-| `uclar` | hat | `[başlangıç elemanının kimliği, bitiş elemanının kimliği]` (taşımada uçlar birlikte gider) |
-| `olusturma` | her nesne | oluşturulma zamanı |
-| `ayarlar` | proje | telefon ayarları (metraj yuvarlama, ek paylar, ölçüm süresi, kanal varsayılanları…) |
+| `uclar` | hat | `[başlangıç elemanının kimliği, bitiş elemanının kimliği]` |
+| `kod` | proje | telefondaki proje kodu |
+| `servis`, `koken` | kalem | telefon kataloğundaki poz kodu ve kalemin kökeni (OTO / MANUEL) |
 
 Kimlikler: PROMAGIS/AutoCAD'den gelen nesnelerde AutoCAD tanıtıcısı (onaltılık, ör. `2F3A`), telefonda
-oluşturulanlarda `T` ile başlayan bir kimlik.
+oluşturulanlarda telefonun kayıt kimliği (26 karakter, ör. `01M2YSTNC0W31N21HHMX9V1EG4`). Telefon, AutoCAD'den
+aldığı nesnenin tanıtıcısını saklar (`sebekeId`) ve geri yazarken aynen kullanır.
+
+### Telefonun tam proje dosyası (`.volt.json`, `volt-project/3`)
+
+Telefonun kendi biçimi: ham kayıtlar (`data`), türetilmiş sonuçlar (`derived`) ve **AutoCAD bölümü `sebeke`**
+(yukarıdaki proje dosyasının aynısı). Teslim paketindeki `PROJECT_INFO/project.json` de bu biçimdedir. Eklenti
+üç dosyayı da açar: `.sebeke.json`, `.volt.json`, teslim paketi `.zip`. Eklenti "Telefona Gönder"de istenirse
+`.volt.json` yazar (`data` boş, `sebeke` dolu); telefon ikisini de alır.
+
+### Telefon ↔ PROMAGIS eşlemesi (`katalog/volt-eslesme.json`)
+
+Telefonun kataloğu TEDAŞ poz kodlarıyla (ör. `005.01.02.01-008`), eklentinin raporu PROMAGIS cins / tanım ile
+çalışır. Çeviri kuralları tek dosyadadır: `ortak/katalog/volt-eslesme.json` (telefon kopyası
+`telefon/web/src/ortak/volt-eslesme.js`, dönüştürücü `telefon/web/src/interop/sebeke.js`):
+
+- Direk grubu → tür, cins, tarife: `sehir → AG_DIREK / AG_DEMİR_GLV / 0107`, `mus → MUSTEREK_DIREK / MÜŞ_DEMİR_GLV`,
+  `bahh → ENH_DIREK / ENH_DEMİR_GLV`, `civ → ENH_GLV_CVT`, `beton → AG_BETON`, `beton562 → ENH_BETON`,
+  `agac → AG_AĞAÇ`, `ayd → AYD_DIREK / AYD_GLV_PLG`, `trafo → TRAFO_DIREGI / TR_DİREK_GLV`.
+- Tip adları: beton `9.3/8 → 9,3/8`; B.A. hava hattı `GD-10 (3 AWG) → G-D-10 (sw)`, `(1/0)` aynı; trafo
+  `G-T25 → G-T-25`. Ağırlıklar iki tarafta aynıdır (ör. G-K2 = 504 kg, 9,3/8 = 1510 kg).
+- İletkenler: `3xSwallow → 3xSW`, `3xRaven → 3x1\0`, `3xPigeon → 3x3\0`, `3xPartridge → 3x266`, `3xHawk → 3x477`;
+  çıplak AG kısa adları (R, P, A, O) aynı; `3x70/16+95 AER → 3X70/16+95 ALPEK`; yeraltı
+  `3x(1x150/25) NA2XSY → 1x150/25 Xlpe Alm.` (açıklama `3(1x150/25) Xlpe Alm.`), `NAYY 3x95+50 → 3x95+50 Nyy Alm.`.
+- Durumlar: `YENI → M` (pozun temini yüklenici "Y" ise `M+M`), `MEVCUT → MEVCUT`, `DEMONTAJ → DM`, `DMM → DM+M`;
+  trafoda `yeni/guc/ger/gucger/tadil/modul → M`, `tasinan → DM+M`, `demontaj → DM`. **"İleride" nesneler dosyaya
+  yazılmaz** (uyarı listesine düşer).
+- Kalemler: nesnenin kendi pozu (direk tipi, trafo direği, köşk gövdesi, SDK tipi) `ana` kalemdir; katsayı telefonun kg
+  değeridir (katalogda birebir eş varsa onun alanları). Diğer malzemelerde cins poz kategorisinden (`Travers → TRAVERS_VE_KONSOLLAR_GLV`,
+  `İzolatör|OG → OG_İZOLATÖR` …), tanım poz adından gelir. Telefona alınan ve telefon kataloğunda eşi olmayan kalemler
+  için kataloğa `AUTOCAD:…` kodlu kalem açılır; PROMAGIS alanları kalemde saklanır ve geri yazımda aynen döner.
+- Hat metrajı tam metreye yukarı yuvarlanır (PROMAGIS gibi); yeraltında telefonun payları (dikey iniş, çıkış, trafo,
+  SDK, rezerv) dahildir ve `3(1x…)` kablolarda üç damarın toplamı yazılır.
+- Yeraltı hattın kazı kanalı ayrı **Kanal** nesnesi olur: kod kablo türlerinden (OG 8, AG 4, AYD 2, REK 1), zemin
+  `toprak/tuvenan/asfalt/beton/parke → TOPRAK/TUVENAN/ASFALT/BETON/PARKE TUVENAN`, genişlik ve derinlik cm, borulu
+  geçişte boru kalemi; yatay sondaj ayrı **Sondaj** nesnesidir. Ters yönde kanal, aynı köşeleri paylaşan hatta
+  bağlanır; hattı olmayan kanal "kablosuz kanal / kazı" hattı olur.
+- Bölge: AutoCAD'den gelen bölgeler telefonda saklanır ve geri yazılır; telefonda açılan projede tek bölge projenin
+  kendisidir (tüm noktaları kapsayan kutu). Hakediş: hakedişe girmiş objede iş tarihinin düştüğü dönem, diğerlerinde
+  aktif (taslak) dönem.
+
+### Lejant simge takımı (`katalog/semboller.json`)
+
+Eklentinin kendi blokları (`SH_<aile>_<varyant>`) ve telefonun DXF çıktısı aynı tablodan çizilir; üretici
+`araclar/semboller-uret.mjs`, önizleme `araclar/semboller-onizle.mjs`. Aileler: `DIREK_AG` (beton / ağaç AG,
+daire 2,25 m), `KAFES_AG` (demir AG, kare 4,6 m), `DIREK_OG` / `KAFES_OG` (OG, müşterek, ENH; topraklama işaretli),
+`DIREK_AYD`, `TRAFO_DIREK` (üçgen), `TRAFO_BINA` (kare), `TRAFO_KOSK` (ev), `SDK`, `PANO`, `MUFU`, `KOFRE`, `MENHOL`,
+`ABONE`, `ARMATUR`, `DIGER`. Varyantlar: `YENI` dolu, `MEVCUT` boş, `DMM` yarım dolu, `DM` boş + çapraz çizgi.
+Boyutlar metre (1/1000 pafta); eklenti blokları 4 ölçekle koyduğundan blok birimi = metre / 4. Eklenti bu simgeleri
+yalnız çizimde PROMAGIS bloğu yoksa kullanır; PROMAGIS çizimlerinde oradaki bloklar korunur.
 
 ### Kalem (poz satırı)
 
@@ -123,7 +173,7 @@ Eklenti PROMAGIS'in yazdığı biçimle yazar (yukarıdaki XDATA ve katmanlar); 
 | --- | --- | --- |
 | `SH_ID` XDATA | telefondan gelen nesne | telefondaki kimlik; aynı dosya yeniden alınınca nesne bununla bulunur |
 | `SEBEKE_HAKEDIS` › `AYARLAR` | çizimin sözlüğü (Named Objects Dictionary) | çizim ayarları: ön ekler, aktif hakediş, dilim, ölçek, etiket, metraj payları, son seçimler |
-| `SH_DIREK`, `SH_BOX`, `SH_PANO`, `SH_TRAFO_DIREGI`, `SH_TRAFO_MERKEZI`, `SH_EK_MUFU`, `SH_KOFRE`, `SH_DIGER`, `GPS` | blok tanımları | çizimde aynı tür ve durumda PROMAGIS bloğu yoksa kullanılır (PROMAGIS gibi 4 ölçekle konur, öznitelikler aynı adlarla) |
+| `SH_<aile>_<varyant>` (ör. `SH_KAFES_AG_YENI`), `GPS` | blok tanımları | çizimde aynı tür ve durumda PROMAGIS bloğu yoksa kullanılır: lejant simgesi tür + malzeme + duruma göre (`katalog/semboller.json`; PROMAGIS gibi 4 ölçekle konur, öznitelikler aynı adlarla) |
 
 Hat etiketi PROMAGIS yazımıyladır: `^ kesit/341m/(tanıtıcı)` (M), `* …` (M+M), `>…<` (DM), `[…]` (DM+M),
 `(…)` (MEVCUT); kesit yerine hattın tam yazımı varsa o kullanılır.
@@ -140,7 +190,8 @@ Hat etiketi PROMAGIS yazımıyladır: `^ kesit/341m/(tanıtıcı)` (M), `* …` 
 
 ## Telefonda saklama
 
-Her proje telefonda bir klasördür: `proje.sebeke.json` (son derlenmiş hâl), `degisiklik.jsonl` (her
-değişiklik bir satır: `{"ops":[{"k":"elemanlar","put":{…}}, {"k":"hatlar","del":"kimlik"}, {"k":"proje","set":{…}}]}`),
-`bilgi.json` (liste için özet) ve `foto/`. Açılışta dosya + günlük uygulanır; günlük büyüyünce dosyaya
-derlenir. Böylece her dokunuş anında ve küçük bir yazmayla kaydedilir, uygulama kapansa da kaybolmaz.
+Telefon (VOLT-EDAŞ Saha) verisini kendi veritabanında tutar (IndexedDB `volt-edas-saha`; tablolar
+`telefon/web/src/core/schema.js`). AutoCAD'den alınan nesnelerde `sebekeId` (AutoCAD tanıtıcısı) ve `sebeke`
+(tür, cins, tip, katman, blok, bölge, hakediş; hatta ana kesit ve eşleşmeyen kalemler) saklanır; projede `sebeke`
+(katman / GIS ön eki, bölgeler, kaynak) tutulur. Böylece telefonda değiştirilip geri gönderilen dosya AutoCAD'deki
+nesnelerle eşleşir ve PROMAGIS alanları korunur.

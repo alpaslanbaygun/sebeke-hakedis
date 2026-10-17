@@ -32,18 +32,23 @@ test('A1 · ad ve tip yazımları iki yönde çevrilir', () => {
   assert.deepEqual(promagisKesit('NAYY 3x95+50', 'AG', 'yeralti'), { tanim: '3x95+50 Nyy Alm.', aciklama: '' });
 });
 
-test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Durum Tespit kg toplamı telefonun kg toplamıyla aynı', async () => {
+/** Deneme projesi: 4 OG direk + OG hat, mevcut beton direk, direk tipi trafo, SDK, 3 AG direk + AER hat, yeraltı kablo (asfalt, borulu). */
+async function ornekProje() {
   const { ps } = await setup(); await newProject(ps, { autoRecipe: false });
   const { poles } = await buildPoleLine(ps, OG_ROUTE, { group: 'bahh', typeNames: OG_TYPES, circuits: [{ role: 'OG', key: '3xSwallow', count: 1 }] });
   const beton = await ps.addEquipment('pole', { group: 'beton', typeId: ps.cat.poleTypeByName('beton', '9.3/8').id, state: 'MEVCUT' }, { obs: rtkObs(519400, 4282300, 1052) });
   const tr = await ps.addEquipment('transformer', { state: 'yeni', attrs: { post: 'direk', kva: 160, poleTypeId: ps.cat.poleTypeByName('trafo', 'G-T25').id } }, { obs: rtkObs(519450, 4282320, 1053) });
   const sdk = await ps.addEquipment('sdk', { state: 'YENI', attrs: { sdkTypeId: ps.cat.sdkTypes()[0].id } }, { obs: rtkObs(519470, 4282330, 1053) });
   await ps.addMaterial('equipment', poles[0].id, '011.06.04.01-001', 3, 'Askı izolatörü');  // elle malzeme
-  // AG demetli hat + yeraltı kablo (kanal)
   const agPts = [];
   for (let i = 0; i < 3; i++) { const t = ps.cat.poleTypeByName('sehir', 'G-K2'); agPts.push(await ps.addEquipment('pole', { group: 'sehir', typeId: t.id, state: 'YENI' }, { obs: rtkObs(519500 + i * 40, 4282400, 1055) })); }
   await ps.createLine({ lineType: 'AG', install: 'havai', circuits: [{ role: 'AG', key: '3x70/16+95 AER', count: 1 }], nodes: agPts.map((p) => p.pointId), state: 'YENI' });
   await ps.createLine({ lineType: 'AG', install: 'yeralti', circuits: [{ role: 'AG', key: 'NAYY 3x95+50', count: 1 }], nodes: [agPts[0].pointId, sdk.pointId], state: 'YENI', cable: { surface: 'asfalt', method: 'borulu', width: 0.4, depth: 0.8, pipeDia: 110, pipeCount: 1 } });
+  return { ps, poles, beton, tr, sdk, agPts };
+}
+
+test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Durum Tespit kg toplamı telefonun kg toplamıyla aynı', async () => {
+  const { ps, poles, beton, tr, sdk, agPts } = await ornekProje();
   const txt = sebekeYaz(ps);
   fs.writeFileSync(OUT + 'telefon.sebeke.json', txt);
   const sp = SH.projeOku(txt);
@@ -84,7 +89,7 @@ test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Dur
   const kn = sp.kanallar[0];
   assert.equal(kn.kod, 4); assert.equal(kn.zemin, 'ASFALT'); assert.equal(kn.altGenislik, 40); assert.equal(kn.derinlik, 80);
   assert.equal(kn.kalemler[0].cins, '4'); assert.equal(kn.kalemler[0].birim, 'mt/m³');
-  assert.ok(kn.kalemler.some((k) => /boru/i.test(k.tanim)), 'borulu geçişte boru kalemi');
+  assert.ok(!kn.kalemler.some((k) => /boru/i.test(k.tanim)) && yer.kalemler.some((k) => /boru/i.test(k.tanim) && k.kaynak === 'MALZEME'), 'borulu geçişte boru kalemi kablonun malzemesi (kanal yalnız kendi kalemini taşır)');
   assert.equal(kn.basNo, agPts[0].no); assert.equal(kn.bitNo, sdk.no);
   // Durum Tespit (telefondaki JS çekirdeğiyle): direk kg toplamı telefonun kg metrajıyla aynı
   const satirlar = SH.durumTespit(sp, SH.katsayiHazirla(KATSAYILAR));
@@ -203,4 +208,25 @@ test('A6 · katalog eşleme yardımcıları', async () => {
   assert.equal(direkEsle(ps.cat, 'MUSTEREK_DIREK', 'MÜŞ_DEMİR_GLV', 'G-K2"').grup, 'mus');
   assert.equal(direkEsle(ps.cat, 'AYD_DIREK', 'AYD_GLV_PLG', 'AD1-100/10').tip.name, 'AD1-100/10');
   assert.equal(direkEsle(ps.cat, 'TRAFO_DIREGI', 'TR_DİREK', 'T-25').tip.name, 'G-T25');
+});
+
+test('A7 · telefon projesi → AutoCAD dosyası → başka telefon → AutoCAD dosyası: nesneler, kimlikler, kanal ve rapor korunur', async () => {
+  const { ps } = await ornekProje();
+  const ilk = sebekeModel(ps);
+  const { ps: ps2 } = await setup();
+  const oz = await sebekeIceAl(ps2, SH.projeOku(SH.projeYaz(ilk)));
+  assert.equal(oz.yeniEleman, 10); assert.equal(oz.yeniHat, 3); assert.equal(oz.yeniKanal, 0, 'kanal aynı güzergâhtaki kabloya bağlanır');
+  assert.equal(oz.eslesmeyen.length, 0, JSON.stringify(oz.eslesmeyen));
+  const yer = ps2.data.lines.find((l) => l.install === 'yeralti');
+  assert.equal(yer.cable.method, 'borulu'); assert.equal(yer.cable.pipeCount, 1); assert.equal(yer.cable.surface, 'asfalt'); assert.equal(yer.cable.width, 0.4); assert.equal(yer.cable.depth, 0.8);
+  assert.deepEqual(yer.circuits.map((c) => c.key), ['NAYY 3x95+50']);
+  assert.equal(ps2.data.materials.filter((m) => m.ownerId === yer.id && m.status !== 'deleted').length, 0, 'boru malzeme olarak çoğaltılmaz');
+  const geri = sebekeModel(ps2);
+  assert.equal(geri.elemanlar.length, ilk.elemanlar.length); assert.equal(geri.hatlar.length, ilk.hatlar.length); assert.equal(geri.kanallar.length, 1);
+  // Kimlikler: ilk telefonun kimlikleri (telefonId) ikinci telefonda sebekeId olarak korunur ve geri yazılır
+  for (const e of ilk.elemanlar) { const g = geri.elemanlar.find((x) => x.id === e.id); assert.ok(g, 'kimlik korunur: ' + e.gisId); assert.equal(g.tur, e.tur); assert.equal(g.cins, e.cins); assert.equal(g.tip, e.tip); assert.equal(g.durum, e.durum); }
+  const kat = SH.katsayiHazirla(KATSAYILAR);
+  const kg = (p) => Math.round(SH.durumTespit(p, kat).filter((r) => r.birim.endsWith('/kg')).reduce((a, r) => a + r.toplam, 0) * 100) / 100;
+  assert.equal(kg(geri), kg(ilk));
+  assert.equal(SH.durumTespit(geri, kat).length, SH.durumTespit(ilk, kat).length, 'rapor satır sayısı');
 });

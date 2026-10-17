@@ -191,6 +191,22 @@ namespace SebekeHakedis.Test
             Esit(true, tp.Elemanlar.Count > 20, "telefon projesi okundu");
             GidisDonus(tp, "telefon-proje");
             TelefonDosyasi(tp);
+            // VOLT-EDAŞ Saha'nın yazdığı dosya (telefon/web/tests/sebeke.test.mjs çıktısı): boş çizime aktarılır, rapor aynı kalır
+            Console.WriteLine("VOLT-EDAŞ Saha dosyası:");
+            string voltYol = Path.Combine(AppContext.BaseDirectory, "volt-telefon.sebeke.json");
+            var vt = ProjeDosyasi.Oku(File.ReadAllText(voltYol, Encoding.UTF8));
+            Esit(10, vt.Elemanlar.Count, "telefon dosyası: 10 eleman");
+            Esit(3, vt.Hatlar.Count, "telefon dosyası: 3 hat");
+            Esit(1, vt.Kanallar.Count, "telefon dosyası: 1 kanal");
+            Esit("ENH_DIREK", vt.Elemanlar[0].Tur, "telefon dosyası: OG direk ENH_DIREK");
+            Esit("G-D-10 (sw)", vt.Elemanlar[0].Tip, "telefon dosyası: direk tipi PROMAGIS yazımıyla");
+            Esit(true, vt.Elemanlar[0].TelefonId.Length > 10, "telefon dosyası: telefonId dolu");
+            Esit("SH_KAFES_OG_YENI", Semboller.BlokAdi(vt.Elemanlar[0]), "telefon dosyası: OG demir direk simgesi");
+            Esit(279.0, vt.Elemanlar[0].Kalemler[0].Toplam, "telefon dosyası: direk kg");
+            var vdt = new DurumTespit(vt);
+            Esit(true, vdt.Satirlar.Exists(r => r.Cins == "AL_İLETKENLER" && r.Tip == "SWALLOW"), "telefon dosyası: OG hattı tel tel açılır");
+            Esit(true, vdt.Satirlar.Exists(r => r.Cins == "KABLO_KANALI" && r.Tip == "ASFALT"), "telefon dosyası: kanal paylaştırılır");
+            BosaAktar(voltYol);
             Esit("SC_1.HAK.AGDİR", PromagisYazici.ElemanKatmani("SC", "AG_DIREK", "M", 1), "katman: hakediş");
             Esit("SC_DEMONTAJ", PromagisYazici.ElemanKatmani("SC", "AG_DIREK", "DM", 3), "katman: demontaj");
             Esit("SC_STANDART", PromagisYazici.ElemanKatmani("SC", "KOFRE", "M+M", 2), "katman: kofre");

@@ -16,6 +16,7 @@
     <Compile Include="..\..\src\Cekirdek\**\*.cs" Link="Cekirdek\%(RecursiveDir)%(Filename)%(Extension)" />
     <None Include="ornek-dokum.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="telefon-proje.sebeke.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="volt-telefon.sebeke.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\katalog\kalemler.json" Link="kalemler.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\katalog\semboller.json" Link="semboller.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

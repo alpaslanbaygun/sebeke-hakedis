@@ -141,3 +141,29 @@ Testler
 - node --test tests/*.test.mjs   → 130/130 (… + 10 v2.4)
 - python3 tests/ui/{smoke,web,v23_grid,v23_team,v23_web,v24_ui,v24_web}.py   → 0 hata
 - python3 tests/ui/upgrade24.py  → 2.3.0 ↔ 2.4.0 aynı veritabanı (önce v2.3.0 derlemesi gerekir: git worktree add … v2.3.0)
+
+
+2.5.x değişiklikleri (Şebeke Hakediş deposuna birleşme · 17.10.2026)
+====================================================================
+Depo: alpaslanbaygun/sebeke-hakedis › telefon/. Derleme GitHub Actions'ta (.github/workflows/telefon.yml): npm ci →
+node --test → tools/setup_tools.sh → tools/build_apk.sh. Sürüm adı 2.5.N, sürüm kodu 1000+N (N = derleme sırası).
+İmza anahtarı aynı (keystore/voltsaha-release.jks): 2.1.0 ve sonrasının üzerine kurulur.
+
+Ne değişti
+- interop/sebeke.js: telefon projesi ↔ AutoCAD proje dosyası (.sebeke.json, ortak/VERI-MODELI.md). sebekeYaz / sebekeModel
+  (dışa), sebekeIceAl (içe; var olan projeye alınırsa sebekeId / telefonId ile eşleşen kayıtlar güncellenir), voltProjeYaz /
+  voltProjeOku (telefonun tam proje dosyası volt-project/3: ham veri + 'sebeke' bölümü). PROMAGIS kurallarının JS karşılığı
+  interop/sh-core.cjs (eski Şebeke Hakediş telefon çekirdeği; proje dosyası, etiket, kanal kodu, bölge, Durum Tespit).
+- Eşleme tabloları ortak/katalog/volt-eslesme.json; telefon kopyaları src/ortak/*.js (node araclar/ortak-tablolar.mjs).
+  Kayıtlara eklenen alanlar: equipment/lines/points.sebekeId ve .sebeke (AutoCAD alanları), project.sebeke (ön ekler,
+  bölgeler), materials.sebeke ve poz.sebeke (PROMAGIS cins / tanım / birim / katsayı / tarife; AUTOCAD:… kodlu kalemler).
+- export/dxf.js: bloklar src/ortak/semboller.js tablosundan (SH_<aile>_<varyant>; eklentiyle aynı). Demontajda çapraz
+  çizgi bloğun içindedir (ayrı DEMONTAJ çizgisi kaldırıldı).
+- exporter.js: 'sebeke' ve 'voltjson' biçimleri; teslim paketinde PROJECT_INFO/project.json volt-project/3 ve EXPORT/<ad>.sebeke.json.
+- ui/screens/project.js: autocadDosyasiAl (Projeler ekranı: yeni proje; Proje merkezi: açık projeye). export.js: 'sebeke' varsayılan seçili.
+- grid/checks.js: AutoCAD'den gelen iletkensiz hat uyarı (hata değil); yatay sondajda kanal ölçüsü aranmaz.
+
+Testler
+- node --test tests/*.test.mjs → 139 test (CI'da 104 geçer, 35 referans dosyası yok diye atlanır; paket kurulu değilse
+  'fake-indexeddb' isteyen 1 test başarısız olur). Yeni: tests/sebeke.test.mjs (6), tests/semboller.test.mjs (3).
+- Tarayıcı denemeleri (tests/ui/*.py) CI'da çalıştırılmıyor; yerelde Playwright + Chromium gerekir.

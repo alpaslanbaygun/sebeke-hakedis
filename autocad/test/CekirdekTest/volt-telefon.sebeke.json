@@ -1,0 +1,718 @@
+{
+ "bicim": "sebeke-hakedis.proje",
+ "surum": 1,
+ "olusturan": "VOLT-EDAŞ Saha",
+ "olusturma": "2026-10-17T19:23:00+03:00",
+ "proje": {
+  "ad": "OG-03 Hat Yenileme",
+  "kaynak": "telefon",
+  "koordinat": {
+   "sistem": "TM",
+   "datum": "ITRF96",
+   "dom": 39,
+   "eksenler": "saga = doğu (CAD X), yukari = kuzey (CAD Y)"
+  },
+  "aktifHakedis": 1,
+  "katmanOnEki": "SC",
+  "gisOnEki": "SC",
+  "kod": "ELZ-2026-OG03"
+ },
+ "bolgeler": [
+  {
+   "id": "B1",
+   "ad": "OG-03 Hat Yenileme",
+   "kod": "ELZ-2026-OG03",
+   "sinir": [
+    [
+     519290,
+     4282090
+    ],
+    [
+     519590,
+     4282090
+    ],
+    [
+     519590,
+     4282410
+    ],
+    [
+     519290,
+     4282410
+    ]
+   ]
+  }
+ ],
+ "noktalar": [],
+ "elemanlar": [
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HVC",
+   "tur": "ENH_DIREK",
+   "gisId": "D-001",
+   "cins": "ENH_DEMİR_GLV",
+   "tip": "G-D-10 (sw)",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519300,
+   "yukari": 4282100,
+   "kot": 1050,
+   "aci": 0,
+   "kontrol": null,
+   "katman": "",
+   "blok": "",
+   "kalemler": [
+    {
+     "cins": "ENH_DEMİR_GLV",
+     "tanim": "G-D-10 (sw)",
+     "durum": "M",
+     "miktar": 1,
+     "birim": "ad/kg",
+     "katsayi": 279,
+     "toplam": 279,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0103",
+     "sira": "",
+     "kontrol": null,
+     "ana": true,
+     "kaynak": "NIT"
+    },
+    {
+     "cins": "OG_İZOLATÖR",
+     "tanim": "Kompozit Silikon Askı-Gergi İzo-40kN/11B",
+     "durum": "M+M",
+     "miktar": 3,
+     "birim": "ad/ad",
+     "katsayi": 1,
+     "toplam": 3,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HVC",
+   "olcum": {
+    "kaynak": "alici",
+    "cozum": "FIX",
+    "hata": 0.009,
+    "uydu": 26,
+    "zaman": "2026-09-20T07:00:00.000Z"
+   }
+  },
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HVN",
+   "tur": "ENH_DIREK",
+   "gisId": "D-002",
+   "cins": "ENH_DEMİR_GLV",
+   "tip": "G-T-10 (sw)",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519369.282,
+   "yukari": 4282140,
+   "kot": 1052,
+   "aci": 0,
+   "kontrol": null,
+   "katman": "",
+   "blok": "",
+   "kalemler": [
+    {
+     "cins": "ENH_DEMİR_GLV",
+     "tanim": "G-T-10 (sw)",
+     "durum": "M",
+     "miktar": 1,
+     "birim": "ad/kg",
+     "katsayi": 258,
+     "toplam": 258,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0103",
+     "sira": "",
+     "kontrol": null,
+     "ana": true,
+     "kaynak": "NIT"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HVN",
+   "olcum": {
+    "kaynak": "alici",
+    "cozum": "FIX",
+    "hata": 0.009,
+    "uydu": 26,
+    "zaman": "2026-09-20T07:00:00.000Z"
+   }
+  },
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HVY",
+   "tur": "ENH_DIREK",
+   "gisId": "D-003",
+   "cins": "ENH_DEMİR_GLV",
+   "tip": "G-T-10 (sw)",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519438.5641,
+   "yukari": 4282180,
+   "kot": 1053,
+   "aci": 0,
+   "kontrol": null,
+   "katman": "",
+   "blok": "",
+   "kalemler": [
+    {
+     "cins": "ENH_DEMİR_GLV",
+     "tanim": "G-T-10 (sw)",
+     "durum": "M",
+     "miktar": 1,
+     "birim": "ad/kg",
+     "katsayi": 258,
+     "toplam": 258,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0103",
+     "sira": "",
+     "kontrol": null,
+     "ana": true,
+     "kaynak": "NIT"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HVY",
+   "olcum": {
+    "kaynak": "alici",
+    "cozum": "FIX",
+    "hata": 0.009,
+    "uydu": 26,
+    "zaman": "2026-09-20T07:00:00.000Z"
+   }
+  },
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HW7",
+   "tur": "ENH_DIREK",
+   "gisId": "D-004",
+   "cins": "ENH_DEMİR_GLV",
+   "tip": "G-N-10 (sw)",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519499.1858,
+   "yukari": 4282145,
+   "kot": 1052,
+   "aci": 0,
+   "kontrol": null,
+   "katman": "",
+   "blok": "",
+   "kalemler": [
+    {
+     "cins": "ENH_DEMİR_GLV",
+     "tanim": "G-N-10 (sw)",
+     "durum": "M",
+     "miktar": 1,
+     "birim": "ad/kg",
+     "katsayi": 293,
+     "toplam": 293,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0103",
+     "sira": "",
+     "kontrol": null,
+     "ana": true,
+     "kaynak": "NIT"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HW7",
+   "olcum": {
+    "kaynak": "alici",
+    "cozum": "FIX",
+    "hata": 0.009,
+    "uydu": 26,
+    "zaman": "2026-09-20T07:00:00.000Z"
+   }
+  },
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HWK",
+   "tur": "AG_DIREK",
+   "gisId": "A-01",
+   "cins": "AG_BETON",
+   "tip": "9,3/8",
+   "durum": "MEVCUT",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519400,
+   "yukari": 4282300,
+   "kot": 1052,
+   "aci": 0,
+   "kontrol": null,
+   "katman": "",
+   "blok": "",
+   "kalemler": [
+    {
+     "cins": "AG_BETON",
+     "tanim": "9,3/8",
+     "durum": "MEVCUT",
+     "miktar": 1,
+     "birim": "ad/kg",
+     "katsayi": 1510,
+     "toplam": 1510,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0107",
+     "sira": "",
+     "kontrol": null,
+     "ana": true,
+     "kaynak": "NIT"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HWK",
+   "olcum": {
+    "kaynak": "alici",
+    "cozum": "FIX",
+    "hata": 0.009,
+    "uydu": 26,
+    "zaman": "2026-09-20T07:00:00.000Z"
+   }
+  },
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HWW",
+   "tur": "TRAFO_DIREGI",
+   "gisId": "TR-01",
+   "cins": "TR_DİREK_GLV",
+   "tip": "G-T-25",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519450,
+   "yukari": 4282320,
+   "kot": 1053,
+   "aci": 0,
+   "guc": "160",
+   "kontrol": null,
+   "katman": "",
+   "blok": "",
+   "kalemler": [
+    {
+     "cins": "TR_DİREK_GLV",
+     "tanim": "G-T-25",
+     "durum": "M",
+     "miktar": 1,
+     "birim": "ad/kg",
+     "katsayi": 887,
+     "toplam": 887,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "ana": true,
+     "kaynak": "NIT"
+    },
+    {
+     "cins": "TRAFO_GENLEŞME_TANKLI",
+     "tanim": "160 kVA Dahili-Harici Tip 33/0.4 -0.231Hermetik Güç Transfor.-DirekTipi Tr.",
+     "durum": "M",
+     "miktar": 1,
+     "birim": "ad/ad",
+     "katsayi": 1,
+     "toplam": 1,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0102",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HWW",
+   "olcum": {
+    "kaynak": "alici",
+    "cozum": "FIX",
+    "hata": 0.009,
+    "uydu": 26,
+    "zaman": "2026-09-20T07:00:00.000Z"
+   }
+  },
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HX5",
+   "tur": "BOX",
+   "gisId": "SDK-01",
+   "cins": "BOX_PANO",
+   "tip": "TİP-B Cam Elyaf AG Saha Dağ. Kutusu (BOX)",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519470,
+   "yukari": 4282330,
+   "kot": 1053,
+   "aci": 0,
+   "kontrol": null,
+   "katman": "",
+   "blok": "",
+   "kalemler": [
+    {
+     "cins": "BOX_PANO",
+     "tanim": "TİP-B Cam Elyaf AG Saha Dağ. Kutusu (BOX)",
+     "durum": "M",
+     "miktar": 1,
+     "birim": "ad/ad",
+     "katsayi": 1,
+     "toplam": 1,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0105",
+     "sira": "",
+     "kontrol": null,
+     "ana": true,
+     "kaynak": "NIT"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HX5",
+   "olcum": {
+    "kaynak": "alici",
+    "cozum": "FIX",
+    "hata": 0.009,
+    "uydu": 26,
+    "zaman": "2026-09-20T07:00:00.000Z"
+   }
+  },
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HXH",
+   "tur": "AG_DIREK",
+   "gisId": "A-02",
+   "cins": "AG_DEMİR_GLV",
+   "tip": "G-K2",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519500,
+   "yukari": 4282400,
+   "kot": 1055,
+   "aci": 0,
+   "kontrol": null,
+   "katman": "",
+   "blok": "",
+   "kalemler": [
+    {
+     "cins": "AG_DEMİR_GLV",
+     "tanim": "G-K2",
+     "durum": "M",
+     "miktar": 1,
+     "birim": "ad/kg",
+     "katsayi": 504,
+     "toplam": 504,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0107",
+     "sira": "",
+     "kontrol": null,
+     "ana": true,
+     "kaynak": "NIT"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HXH",
+   "olcum": {
+    "kaynak": "alici",
+    "cozum": "FIX",
+    "hata": 0.009,
+    "uydu": 26,
+    "zaman": "2026-09-20T07:00:00.000Z"
+   }
+  },
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HXT",
+   "tur": "AG_DIREK",
+   "gisId": "A-03",
+   "cins": "AG_DEMİR_GLV",
+   "tip": "G-K2",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519540,
+   "yukari": 4282400,
+   "kot": 1055,
+   "aci": 0,
+   "kontrol": null,
+   "katman": "",
+   "blok": "",
+   "kalemler": [
+    {
+     "cins": "AG_DEMİR_GLV",
+     "tanim": "G-K2",
+     "durum": "M",
+     "miktar": 1,
+     "birim": "ad/kg",
+     "katsayi": 504,
+     "toplam": 504,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0107",
+     "sira": "",
+     "kontrol": null,
+     "ana": true,
+     "kaynak": "NIT"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HXT",
+   "olcum": {
+    "kaynak": "alici",
+    "cozum": "FIX",
+    "hata": 0.009,
+    "uydu": 26,
+    "zaman": "2026-09-20T07:00:00.000Z"
+   }
+  },
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HY3",
+   "tur": "AG_DIREK",
+   "gisId": "A-04",
+   "cins": "AG_DEMİR_GLV",
+   "tip": "G-K2",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519580,
+   "yukari": 4282400,
+   "kot": 1055,
+   "aci": 0,
+   "kontrol": null,
+   "katman": "",
+   "blok": "",
+   "kalemler": [
+    {
+     "cins": "AG_DEMİR_GLV",
+     "tanim": "G-K2",
+     "durum": "M",
+     "miktar": 1,
+     "birim": "ad/kg",
+     "katsayi": 504,
+     "toplam": 504,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0107",
+     "sira": "",
+     "kontrol": null,
+     "ana": true,
+     "kaynak": "NIT"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HY3",
+   "olcum": {
+    "kaynak": "alici",
+    "cozum": "FIX",
+    "hata": 0.009,
+    "uydu": 26,
+    "zaman": "2026-09-20T07:00:00.000Z"
+   }
+  }
+ ],
+ "hatlar": [
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HWA",
+   "tur": "OG_HAVAI",
+   "anaKesit": "3xSW",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "cizimUzunlugu": 230,
+   "etiket": "^ 3xSW/231m",
+   "kontrol": null,
+   "katman": "",
+   "kose": [
+    [
+     519300,
+     4282100
+    ],
+    [
+     519369.282,
+     4282140
+    ],
+    [
+     519438.5641,
+     4282180
+    ],
+    [
+     519499.1858,
+     4282145
+    ]
+   ],
+   "kalemler": [
+    {
+     "cins": "OG_İLETKEN",
+     "tanim": "3xSW",
+     "durum": "M",
+     "miktar": 231,
+     "birim": "mt/mt",
+     "katsayi": 1,
+     "toplam": 231,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "HAT"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HWA",
+   "uclar": [
+    "01M2YSTNC003BK531CBGJ25HVC",
+    "01M2YSTNC003BK531CBGJ25HW7"
+   ]
+  },
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HY6",
+   "tur": "AG_HAVAI",
+   "anaKesit": "3X70/16+95 ALPEK",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "cizimUzunlugu": 80,
+   "etiket": "^ 3X70/16+95 ALPEK/80m",
+   "kontrol": null,
+   "katman": "",
+   "kose": [
+    [
+     519500,
+     4282400
+    ],
+    [
+     519540,
+     4282400
+    ],
+    [
+     519580,
+     4282400
+    ]
+   ],
+   "kalemler": [
+    {
+     "cins": "ALPEK_KABLOLAR",
+     "tanim": "3X70/16+95 ALPEK",
+     "durum": "M",
+     "miktar": 80,
+     "birim": "mt/mt",
+     "katsayi": 1,
+     "toplam": 80,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0107",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "HAT"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HY6",
+   "uclar": [
+    "01M2YSTNC003BK531CBGJ25HXH",
+    "01M2YSTNC003BK531CBGJ25HY3"
+   ]
+  },
+  {
+   "id": "01M2YSTNC003BK531CBGJ25HY9",
+   "tur": "AG_YERALTI",
+   "anaKesit": "3x95+50 Nyy Alm.",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "cizimUzunlugu": 76.158,
+   "etiket": "^ 3x95+50 Nyy Alm./96m",
+   "kontrol": null,
+   "katman": "",
+   "kose": [
+    [
+     519500,
+     4282400
+    ],
+    [
+     519470,
+     4282330
+    ]
+   ],
+   "kalemler": [
+    {
+     "cins": "AG_ALİMİNYUM_KABLO",
+     "tanim": "3x95+50 Nyy Alm.",
+     "durum": "M",
+     "miktar": 96,
+     "birim": "mt/mt",
+     "katsayi": 1,
+     "toplam": 96,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0105",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "HAT"
+    },
+    {
+     "cins": "GALVANİZLİ_GAZ_BORUSU",
+     "tanim": "Ø110 boru",
+     "durum": "M",
+     "miktar": 77,
+     "birim": "mt/mt",
+     "katsayi": 1,
+     "toplam": 77,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0107",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HY9",
+   "uclar": [
+    "01M2YSTNC003BK531CBGJ25HXH",
+    "01M2YSTNC003BK531CBGJ25HX5"
+   ]
+  }
+ ],
+ "kanallar": [
+  {
+   "id": "K01M2YSTNC003BK531CBGJ25HY9",
+   "kod": 4,
+   "kablolar": "/AG",
+   "zemin": "ASFALT",
+   "altGenislik": 40,
+   "ustGenislik": 40,
+   "derinlik": 80,
+   "basNo": "A-02",
+   "bitNo": "SDK-01",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "cizimUzunlugu": 76.158,
+   "kontrol": null,
+   "kose": [
+    [
+     519500,
+     4282400
+    ],
+    [
+     519470,
+     4282330
+    ]
+   ],
+   "kalemler": [
+    {
+     "cins": "4",
+     "tanim": "ASFALT",
+     "durum": "M",
+     "miktar": 77,
+     "birim": "mt/m³",
+     "katsayi": 1,
+     "toplam": 24.64,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0104",
+     "sira": "",
+     "kontrol": null,
+     "ana": true,
+     "kaynak": "NIT"
+    }
+   ],
+   "telefonId": "01M2YSTNC003BK531CBGJ25HY9"
+  }
+ ],
+ "sondajlar": []
+}

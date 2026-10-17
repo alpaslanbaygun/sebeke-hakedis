@@ -205,7 +205,13 @@ export function sebekeModel(ps, opts = {}) {
         const kk = SH.kalemYap({ cins: String(c.kod), tanim: zemin, birim: 'mt/m³', katsayi: 1, tarife: cinsTarifesi('KABLO_KANALI', '0104') }, { miktar: Math.ceil(kn.uzunluk - 1e-6), durum, hakedis: hak, ana: true, kaynak: 'NIT' });
         SH.kalemToplami(kk, c);
         c.kalemler.push(kk);
-        if (kn.boru > 0) c.kalemler.push(SH.kalemYap({ cins: 'GALVANİZLİ_GAZ_BORUSU', tanim: 'Ø' + ((l.cable && l.cable.pipeDia) || 110) + ' boru', birim: 'mt/mt', katsayi: 1, tarife: cinsTarifesi('GALVANİZLİ_GAZ_BORUSU', '0104') }, { miktar: Math.ceil(kn.boru - 1e-6), durum, hakedis: hak, kaynak: 'MALZEME' }));
+        if (kn.boru > 0) {
+          // Boru PROMAGIS'te kanalın değil kablonun malzemesidir (kanal nesnesi yalnız kendi kalemini taşır)
+          const boru = SH.kalemYap({ cins: 'GALVANİZLİ_GAZ_BORUSU', tanim: 'Ø' + ((l.cable && l.cable.pipeDia) || 110) + ' boru', birim: 'mt/mt', katsayi: 1, tarife: cinsTarifesi('GALVANİZLİ_GAZ_BORUSU', '0104') }, { miktar: Math.ceil(kn.boru - 1e-6), durum, hakedis: hak, kaynak: 'MALZEME' });
+          const hat = kablolu ? sp.hatlar[sp.hatlar.length - 1] : null;
+          if (hat) hat.kalemler.push(boru);
+          else { c.kalemler.push(boru); uyarilar.push(l.lineNo + ': kablosuz kanaldaki boru kalemi AutoCAD çizimine yazılamaz (yalnız dosyadan raporda görünür)'); }
+        }
         sp.kanallar.push(c);
       }
     }
@@ -488,7 +494,9 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     }
     noktaIdByEleman.set(el.id, rec.pointId);
     if (el.telefonId) noktaIdByEleman.set(el.telefonId, rec.pointId);
-    await malzemeleriYaz(ps, 'equipment', rec.id, (el.kalemler || []).filter((k) => !k.ana), opts);
+    // Telefonun kendisinin ürettiği kalemler (trafo gücünden trafo kalemi) malzeme olarak ayrıca yazılmaz
+    const telefonUretir = (k) => trafo && attrs.kva && /^TRAFO/.test(k.cins || '') && !/B[İI]NA/.test(k.cins || '');
+    await malzemeleriYaz(ps, 'equipment', rec.id, (el.kalemler || []).filter((k) => !k.ana && !telefonUretir(k)), opts);
   }
 
   // Hatlar
@@ -517,18 +525,20 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
       sebekeId: h.id, note: h.not || undefined,
       sebeke: { id: h.id, tur: h.tur, anaKesit: h.anaKesit, etiket: h.etiket, katman: h.katman, hakedis: h.hakedis, bolge: h.bolge, kalemler: lt ? undefined : h.kalemler }
     };
-    if (kanal) { data.cable = kanalAyari(kanal); data.sebeke.kanalId = kanal.id; data.sebeke.kanalKod = kanal.kod; kanalIndeks.delete(koseAnahtari(h.kose)); }
+    let boruKalemi = null;
+    if (kanal) { const ka = kanalAyari(kanal, h); data.cable = ka.cable; boruKalemi = ka.boru; data.sebeke.kanalId = kanal.id; data.sebeke.kanalKod = kanal.kod; kanalIndeks.delete(koseAnahtari(h.kose)); }
     if (!lt && h.anaKesit) ozet.eslesmeyen.push((h.etiket || h.anaKesit) + ': hat tipi katalogda yok, metraj eklentideki kalemlerle korunur');
     const mevcut = bul(lineByKey, h);
     let rec;
     if (mevcut) { rec = await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi'); ozet.guncellenenHat++; }
     else { rec = await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı' }); ozet.yeniHat++; }
-    await malzemeleriYaz(ps, 'line', rec.id, (h.kalemler || []).filter((k) => !k.ana && k.kaynak !== 'HAT'), opts);
+    // Boru kalemi kanal ayarına (borulu geçiş, boru sayısı) çevrildi; malzeme olarak ayrıca yazılmaz (telefon kendisi hesaplar)
+    await malzemeleriYaz(ps, 'line', rec.id, (h.kalemler || []).filter((k) => !k.ana && k.kaynak !== 'HAT' && k !== boruKalemi), opts);
   }
   // Hattı olmayan kanallar ve sondajlar: kablosuz kanal / kazı hattı
   for (const c of kanalIndeks.values()) {
     const nodes = []; for (const xy of c.kose) { const pid = await koseNokta(xy, 'HAT'); if (!nodes.length || nodes[nodes.length - 1] !== pid) nodes.push(pid); }
-    const data = { lineType: c.kod & 8 ? 'OG' : c.kod & 4 ? 'AG' : c.kod & 2 ? 'AYD' : 'ABONE', install: 'yeralti', channelOnly: true, circuits: [], nodes, state: voltDurumu(c.durum), cable: kanalAyari(c), sebekeId: c.id, sebeke: { id: c.id, kanal: true, kanalId: c.id, kanalKod: c.kod, zemin: c.zemin, hakedis: c.hakedis, bolge: c.bolge } };
+    const data = { lineType: c.kod & 8 ? 'OG' : c.kod & 4 ? 'AG' : c.kod & 2 ? 'AYD' : 'ABONE', install: 'yeralti', channelOnly: true, circuits: [], nodes, state: voltDurumu(c.durum), cable: kanalAyari(c, null).cable, sebekeId: c.id, sebeke: { id: c.id, kanal: true, kanalId: c.id, kanalKod: c.kod, zemin: c.zemin, hakedis: c.hakedis, bolge: c.bolge } };
     const mevcut = bul(lineByKey, c);
     if (mevcut) await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi'); else await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı (kanal)' });
     ozet.yeniKanal++;
@@ -558,11 +568,14 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
 }
 
 function koseAnahtari(kose) { return (kose || []).map((q) => Math.round(q[0] * 100) + ',' + Math.round(q[1] * 100)).join(';'); }
-function kanalAyari(c) {
+/** Kanal nesnesinden telefonun kanal ayarı; boru kalemi kanalda ya da aynı güzergâhtaki hatta aranır. */
+function kanalAyari(c, hat) {
   const surface = ESLESME.zeminlerTers[(c.zemin || '').toUpperCase()] || 'toprak';
-  const boru = (c.kalemler || []).find((k) => /boru/i.test(k.tanim || '') || /BORU/i.test(k.cins || ''));
+  const boruMu = (k) => /boru/i.test(k.tanim || '') || /BORU/i.test(k.cins || '');
+  const boru = (c.kalemler || []).find(boruMu) || ((hat && hat.kalemler) || []).find((k) => !k.ana && k.kaynak !== 'HAT' && boruMu(k)) || null;
   const cap = boru ? /Ø\s*(\d+)/.exec(boru.tanim || '') : null;
-  return { surface, method: boru ? 'borulu' : 'acik', width: r3(((+c.altGenislik || 0) + (+c.ustGenislik || 0)) / 2 / 100), depth: r3((+c.derinlik || 0) / 100), pipeDia: cap ? +cap[1] : 110, pipeCount: boru ? Math.max(1, Math.round((+boru.miktar || 0) / Math.max(1, c.cizimUzunlugu || 1))) : 0 };
+  const uzunluk = Math.max(1, c.cizimUzunlugu || SH.uzunluk(c.kose) || 1);
+  return { cable: { surface, method: boru ? 'borulu' : 'acik', width: r3(((+c.altGenislik || 0) + (+c.ustGenislik || 0)) / 2 / 100), depth: r3((+c.derinlik || 0) / 100), pipeDia: cap ? +cap[1] : 110, pipeCount: boru ? Math.max(1, Math.round((+boru.miktar || 0) / uzunluk)) : 0 }, boru };
 }
 
 /**
