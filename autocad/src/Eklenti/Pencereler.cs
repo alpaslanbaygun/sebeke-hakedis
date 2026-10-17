@@ -350,6 +350,7 @@ namespace SebekeHakedis.Eklenti
             {
                 var tur = d.Satir("Tür", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
                 foreach (var t in Turler.Elemanlar) tur.Items.Add(t);
+                var cins = d.Satir("Cins (malzeme)", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
                 d.AraBaslik("Tip (katalogdan seçin, yazarak arayın)");
                 var liste = new KatalogListesi();
                 d.Tam(liste.Kap, -1);
@@ -369,16 +370,36 @@ namespace SebekeHakedis.Eklenti
                     kendimiz = false;
                 };
                 gis.TextChanged += (s, e) => { if (!kendimiz) elle = true; };
-                tur.SelectedIndexChanged += (s, e) =>
+                bool cinsDolduruluyor = false;
+                Action listele = () =>
                 {
                     var t = tur.SelectedItem as Tur;
                     if (t == null) return;
-                    var tipler = o.Katalog.AnaTipler(t.Kod);
+                    string secilenCins = cins.SelectedIndex > 0 ? Convert.ToString(cins.SelectedItem) : "";
+                    var tipler = o.Katalog.AnaTipler(t.Kod, secilenCins);
+                    if (tipler.Count == 0) tipler = o.Katalog.AnaTipler(t.Kod);
                     if (tipler.Count == 0) tipler = o.Katalog.Kalemler.FindAll(x => x.Rol == "ana");
                     string son = onceki != null && onceki.Tur == t.Kod && onceki.Tip != null ? onceki.Tip.Anahtar : o.Ayar.SonDeger("eleman.tip." + t.Kod, null);
                     liste.Doldur(tipler, son);
                     gisOner();
                 };
+                tur.SelectedIndexChanged += (s, e) =>
+                {
+                    var t = tur.SelectedItem as Tur;
+                    if (t == null) return;
+                    // Cins listesi: PROMAGIS'in bu tür için izin verdiği malzeme cinsleri (ör. AG direk: beton, demir, galvaniz, ağaç)
+                    cinsDolduruluyor = true;
+                    cins.Items.Clear();
+                    cins.Items.Add("(tümü)");
+                    foreach (var c in o.Katalog.Cinsler(t.Kod)) cins.Items.Add(c);
+                    string sonCins = onceki != null && onceki.Tur == t.Kod && onceki.Tip != null ? onceki.Tip.Cins : o.Ayar.SonDeger("eleman.cins." + t.Kod, "");
+                    int ci = string.IsNullOrEmpty(sonCins) ? -1 : cins.Items.IndexOf(sonCins);
+                    cins.SelectedIndex = ci > 0 ? ci : 0;
+                    cins.Enabled = cins.Items.Count > 2;
+                    cinsDolduruluyor = false;
+                    listele();
+                };
+                cins.SelectedIndexChanged += (s, e) => { if (!cinsDolduruluyor) listele(); };
                 liste.Liste.SelectedIndexChanged += (s, e) => gisOner();
                 liste.Secildi += () => d.Tamam.PerformClick();
                 Action dmAyarla = () => dm.Enabled = DurumKodu(durum).StartsWith("DM", StringComparison.Ordinal);
@@ -407,6 +428,7 @@ namespace SebekeHakedis.Eklenti
                 };
                 o.Ayar.Son["eleman.tur"] = sonuc.Tur;
                 o.Ayar.Son["eleman.tip." + sonuc.Tur] = sonuc.Tip.Anahtar;
+                o.Ayar.Son["eleman.cins." + sonuc.Tur] = sonuc.Tip.Cins;
                 o.Ayar.Son["eleman.durum"] = sonuc.Durum;
                 return sonuc;
             }

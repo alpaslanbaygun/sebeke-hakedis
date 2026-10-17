@@ -502,6 +502,7 @@
       if (!v) {
         v = {
           cins: it.cins, tanim: it.tanim, birim: it.birim || 'ad/ad', katsayi: Number(it.katsayi) || 1, tarife: it.tarife || '',
+          tarifeKoy: it.tarifeKoy || '', poz: it.poz || '', kesit: it.kesit || '', onem: Number(it.onem) || 0,
           rol: it.rol || 'malzeme', nesneler: new Set(it.nesneler || []), kullanim: 0, kaynak
         };
         anahtar.set(key, v);
@@ -529,23 +530,31 @@
     return liste;
   }
 
-  /** Eleman türünün kendi pozları (direk tipleri vb.), en çok kullanılan önce. */
+  /** Sıralama: çok kullanılan önce, sonra ana listedeki sıra (önem), sonra ad. */
+  const onemi = it => (it.onem > 0 ? it.onem : Number.MAX_SAFE_INTEGER);
+  const katalogSirasi = (a, b) => b.kullanim - a.kullanim || onemi(a) - onemi(b) || ordinal(a.tanim, b.tanim);
+
+  /** Eleman türünün kendi pozları (direk tipleri vb.): yalnız o türün cinsleri (katalogdaki nesneler listesi). */
   function anaTipler(katalog, tur) {
-    return katalog.filter(it => it.rol === 'ana' && (it.nesneler.has(tur) || cinstenElemanTuru(it.cins) === tur))
-      .sort((a, b) => b.kullanim - a.kullanim || ordinal(a.tanim, b.tanim));
+    let l = katalog.filter(it => it.rol === 'ana' && it.nesneler.has(tur));
+    if (!l.length) l = katalog.filter(it => it.rol === 'ana' && cinstenElemanTuru(it.cins) === tur);
+    return l.sort(katalogSirasi);
   }
 
-  /** Hat türünün kesitleri (hat kalemleri). */
+  /** Hat türünün kesitleri (yalnız o türün cinsleri), ardından diğer hat kalemleri. */
   function hatKesitleri(katalog, tur) {
     const nesne = 'HAT_' + tur;
-    return katalog.filter(it => it.nesneler.has(nesne) || (it.rol === 'hat' && cinstenHatTuru(it.cins) === tur))
-      .sort((a, b) => b.kullanim - a.kullanim || ordinal(a.tanim, b.tanim));
+    let l = katalog.filter(it => (it.rol === 'hat' || it.nesneler.has(nesne)) && it.nesneler.has(nesne));
+    if (!l.length) l = katalog.filter(it => it.rol === 'hat' && cinstenHatTuru(it.cins) === tur);
+    l.sort(katalogSirasi);
+    const diger = katalog.filter(it => it.rol === 'hat' && !l.includes(it)).sort(katalogSirasi);
+    return l.concat(diger);
   }
 
   /** Nesneye eklenebilecek malzemeler: önce o nesnede kullanılanlar, sonra diğerleri. */
   function malzemeler(katalog, nesne) {
     return katalog.filter(it => it.rol === 'malzeme' || it.rol === 'hat')
-      .sort((a, b) => (b.nesneler.has(nesne) - a.nesneler.has(nesne)) || b.kullanim - a.kullanim || ordinal(a.cins, b.cins) || ordinal(a.tanim, b.tanim));
+      .sort((a, b) => (b.nesneler.has(nesne) - a.nesneler.has(nesne)) || b.kullanim - a.kullanim || ordinal(a.cins, b.cins) || onemi(a) - onemi(b));
   }
 
   /** Katalog öğesinden kalem. o: {miktar, durum, hakedis, ana, kaynak, sira, dmDurum, aciklama}. */

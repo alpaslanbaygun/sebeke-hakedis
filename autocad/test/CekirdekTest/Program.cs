@@ -348,6 +348,24 @@ namespace SebekeHakedis.Test
             Esit(true, mz.Count > 10 && mz[0].Nesneler.Contains("AG_DIREK"), "katalog: direkte kullanılan malzemeler önce");
             var kl = Katalog.KalemYap(direkler[0], 1, "M", 2, true, "NIT", "5001");
             Esit(SayiCoz.Temiz(direkler[0].Katsayi), kl.Toplam, "katalog kaleminden poz: toplam = miktar × katsayı");
+            // Tam PROMAGIS listesi (sürüm 2): tür → cins süzgeçleri doğru, poz numaraları ve köy tarifesi var
+            Esit(true, k.Kalemler.Count > 2500, "katalog: PROMAGIS ana listesinin tamamı");
+            Esit(true, k.TurCinsleri.ContainsKey("AG_DIREK") && k.TurCinsleri["AG_DIREK"].Contains("AG_BETON"), "katalog: tür → cins tablosu");
+            Esit(true, direkler.TrueForAll(x => k.TurCinsleri["AG_DIREK"].Contains(x.Cins)), "katalog: AG direk listesinde yalnız AG direk cinsleri");
+            Esit(true, k.AnaTipler("ENH_DIREK").Exists(x => x.Cins == "ENH_GLV_CVT") && !k.AnaTipler("ENH_DIREK").Exists(x => x.Cins == "AG_BETON"), "katalog: ENH direk süzgeci");
+            Esit(true, k.AnaTipler("TRAFO_MERKEZI").TrueForAll(x => x.Cins == "BETON_KÖŞKLER" || x.Cins == "TRAFO_BİNASI"), "katalog: trafo merkezi süzgeci");
+            Esit("OG_İLETKEN", k.HatKesitleri("OG_HAVAI")[0].Cins, "katalog: OG havai kesitleri önce");
+            Esit(true, k.HatKesitleri("AG_YERALTI").FindAll(x => x.Nesneler.Contains("HAT_AG_YERALTI")).TrueForAll(x => x.Cins == "AG_ALİMİNYUM_KABLO" || x.Cins == "AG_BAKIR_KABLO" || x.Cins == "TOP_İLETKEN"), "katalog: AG yeraltı yalnız kablolar");
+            Esit(true, k.KanalZeminleri().Count >= 15 && k.KanalZeminleri().TrueForAll(x => x.Cins == "KABLO_KANALI"), "katalog: kanal zeminleri");
+            var g8i = k.Bul("AG_DEMİR_GLV", "G-8I");
+            Esit(true, g8i != null && g8i.Poz == "5.1" && g8i.Katsayi == 152 && g8i.Tarife == "0107" && g8i.TarifeKoy == "0116", "katalog: G-8I poz 5.1, 152 kg, tarife 0107 / köy 0116");
+            Esit("0116", g8i.TarifeSec(true), "katalog: köy tarifesi seçimi");
+            Esit("0307", Katalog.TarifeYap("0107", "03", ""), "tarife: karakteristik değişir");
+            Esit("0103", Katalog.TarifeYap("0107", "", "3"), "tarife: unsur değişir");
+            Esit("0103", Katalog.KalemYap(g8i, 1, "M", 1, true, "NIT", "1", "", false, "", "03").Tarife, "katalog kalemi: kategori unsuru");
+            Esit(true, k.Karakteristikler.ContainsKey("01") && k.Unsurlar.ContainsKey("07") && k.KanalOlculeri.Contains("40x40x80"), "katalog: karakteristik, unsur ve kanal ölçüsü listeleri");
+            var trafoTipleri = k.AnaTipler("TRAFO_DIREGI", "TR_DİREK_GLV");
+            Esit(true, trafoTipleri.Count > 0 && trafoTipleri.TrueForAll(x => x.Cins == "TR_DİREK_GLV"), "katalog: cinse daraltılmış tip listesi");
 
             // Nokta dosyaları
             var uy = new List<string>();
