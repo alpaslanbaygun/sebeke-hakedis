@@ -86,19 +86,65 @@ export async function favorites(toggleId) {
   return n;
 }
 
-// Altlık karo önbelleği (IndexedDB) → offline harita
-// Google / Yandex: Ayarlar'a anahtar girilirse resmî servis, girilmezse anahtarsız genel adresler kullanılır.
+// ---------------------------------------------------------------- Harita altlıkları
+// Her altlık: haritada gösterilecek atıf (attr), kullanım koşulu notu ve adresi, gereken anahtar (key: Ayarlar'daki
+// anahtarın adı) ve toplu / offline indirmeye izin (offline). Anahtarlar kodda yoktur: Ayarlar › Harita altlığı'nda
+// girilir, yalnız bu cihazda saklanır (proje dosyalarına, eşitlemeye ve paylaşıma girmez). Anahtar isteyen altlık
+// anahtarsız denenmez; anahtarsız ücretsiz seçenekler (OpenStreetMap, OpenTopoMap, Esri uydu) her zaman vardır.
+// Ücretsiz kullanım sınırsız değildir: sağlayıcı yoğun kullanımı kesebilir (notlarda yazılı).
 // Yandex karoları elipsoidal Mercator'dadır (proj '3395'); harita motoru karoyu buna göre yerleştirir.
+export const ALTLIK_GRUPLARI = [['ucretsiz', 'Ücretsiz (anahtarsız)'], ['anahtarli', 'Anahtarlı (ücretsiz katmanı olan)'], ['ozel', 'Özel']];
 export const BASEMAPS = [
   { id: 'none', label: 'Altlık yok' },
-  { id: 'osm', label: 'OpenStreetMap', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', maxZoom: 19, note: '© OpenStreetMap katkıda bulunanlar · toplu indirme sınırlı' },
-  { id: 'esri', label: 'Esri uydu görüntüsü', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', maxZoom: 19, note: 'Esri World Imagery kullanım koşulları geçerlidir' },
-  { id: 'google_m', label: 'Google Harita', provider: 'google', gType: 'roadmap', url: 'https://mt{s}.google.com/vt/lyrs=m&hl=tr&x={x}&y={y}&z={z}', sub: '0123', maxZoom: 21, note: 'Google kullanım koşulları geçerlidir' },
-  { id: 'google_s', label: 'Google Uydu', provider: 'google', gType: 'satellite', url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', sub: '0123', maxZoom: 20, note: 'Google kullanım koşulları geçerlidir' },
-  { id: 'google_h', label: 'Google Uydu + yol adları', provider: 'google', gType: 'hybrid', url: 'https://mt{s}.google.com/vt/lyrs=y&hl=tr&x={x}&y={y}&z={z}', sub: '0123', maxZoom: 20, note: 'Google kullanım koşulları geçerlidir' },
-  { id: 'yandex_m', label: 'Yandex Harita', provider: 'yandex', proj: '3395', url: 'https://core-renderer-tiles.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&scale=1&lang=tr_TR', keyUrl: 'https://tiles.api-maps.yandex.ru/v1/tiles/?x={x}&y={y}&z={z}&lang=tr_TR&l=map&apikey={key}', maxZoom: 19, note: 'Yandex kullanım koşulları geçerlidir' },
-  { id: 'yandex_s', label: 'Yandex Uydu', provider: 'yandex', proj: '3395', url: 'https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&scale=1&lang=tr_TR', maxZoom: 19, note: 'Yandex kullanım koşulları geçerlidir · resmî servis uydu vermediğinden anahtarsız adres' }
+  { id: 'osm', grup: 'ucretsiz', label: 'OpenStreetMap', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', maxZoom: 19,
+    attr: '© OpenStreetMap katkıda bulunanlar', kosul: 'https://operations.osmfoundation.org/policies/tiles/',
+    note: 'Ücretsiz, gönüllü sunucular. Toplu / offline indirme yasak; yoğun kullanımda erişim haber verilmeden kesilebilir.' },
+  { id: 'otm', grup: 'ucretsiz', label: 'OpenTopoMap (topoğrafik)', url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png', maxZoom: 17,
+    attr: '© OpenStreetMap katkıda bulunanlar, SRTM · © OpenTopoMap (CC-BY-SA)', kosul: 'https://opentopomap.org/about',
+    note: 'Ücretsiz; sunucu kapasitesi sınırlı, toplu indirme yok. Eş yükselti eğrili.' },
+  { id: 'esri', grup: 'ucretsiz', label: 'Esri uydu görüntüsü', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', maxZoom: 19,
+    attr: 'Kaynak: Esri, Vantor, Earthstar Geographics', kosul: 'https://goto.arcgisonline.com/maps/World_Imagery',
+    note: 'Esri kullanım koşulları geçerli. Karo dışa aktarımı kapalı (offline yok); yoğun ya da ticari kullanımda ArcGIS hesabı gerekebilir.' },
+  { id: 'maptiler_s', grup: 'anahtarli', key: 'maptiler', label: 'MapTiler sokak', url: 'https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key={key}', maxZoom: 20,
+    attr: '© MapTiler © OpenStreetMap katkıda bulunanlar', kosul: 'https://www.maptiler.com/cloud/terms/',
+    note: 'Ücretsiz planla alınan anahtar yeter: ayda 5 bin harita açılışı, ticari olmayan kullanım; sınır aşılınca ay sonuna kadar durur.' },
+  { id: 'maptiler_u', grup: 'anahtarli', key: 'maptiler', label: 'MapTiler uydu', url: 'https://api.maptiler.com/maps/satellite/256/{z}/{x}/{y}.jpg?key={key}', maxZoom: 20,
+    attr: '© MapTiler © OpenStreetMap katkıda bulunanlar', kosul: 'https://www.maptiler.com/cloud/terms/',
+    note: 'MapTiler sokak ile aynı anahtar ve kota.' },
+  { id: 'google_m', grup: 'anahtarli', key: 'google', provider: 'google', gType: 'roadmap', label: 'Google harita', maxZoom: 21,
+    attr: 'Harita verileri © Google', kosul: 'https://cloud.google.com/maps-platform/terms',
+    note: 'Google Map Tiles API anahtarı (Google Cloud hesabı) gerekir. Aylık ücretsiz kullanım payı vardır; aşılırsa ücretlendirilir.' },
+  { id: 'google_s', grup: 'anahtarli', key: 'google', provider: 'google', gType: 'satellite', label: 'Google uydu', maxZoom: 20,
+    attr: 'Görüntü © Google', kosul: 'https://cloud.google.com/maps-platform/terms', note: 'Google harita ile aynı anahtar.' },
+  { id: 'google_h', grup: 'anahtarli', key: 'google', provider: 'google', gType: 'hybrid', label: 'Google uydu + yol adları', maxZoom: 20,
+    attr: 'Görüntü ve harita verileri © Google', kosul: 'https://cloud.google.com/maps-platform/terms', note: 'Google harita ile aynı anahtar.' },
+  { id: 'yandex_m', grup: 'anahtarli', key: 'yandex', provider: 'yandex', proj: '3395', label: 'Yandex harita',
+    url: 'https://tiles.api-maps.yandex.ru/v1/tiles/?x={x}&y={y}&z={z}&lang=tr_TR&l=map&apikey={key}', maxZoom: 19,
+    attr: '© Yandex', kosul: 'https://yandex.com/dev/tiles/', note: 'Yandex Tiles API anahtarı gerekir; ücretsiz kullanım payı sınırlıdır.' },
+  { id: 'ozel', grup: 'ozel', key: 'ozelUrl', label: 'Özel karo sunucusu (XYZ)', maxZoom: 20, offline: true,
+    note: 'Kurumunuzun ya da izin aldığınız sağlayıcının XYZ adresi ({z}/{x}/{y}). Offline indirme açık; koşullara uymak kullanıcının sorumluluğundadır.' }
 ];
+
+export const basemapById = (id) => BASEMAPS.find((b) => b.id === id) || BASEMAPS[0];
+/** Altlığın anahtarı (yoksa ''). Özel altlıkta anahtar, karo adresinin kendisidir. */
+export const basemapKey = (bm, keys) => (bm && bm.key ? ((keys || app.state.mapKeys || {})[bm.key] || '').trim() : '');
+/** Altlık kullanılabilir mi (anahtar isteyende anahtar girilmiş mi)? */
+export const basemapReady = (bm, keys) => !!bm && bm.id !== 'none' && (!bm.key || !!basemapKey(bm, keys));
+/** Haritadaki atıf yazısı (özel altlıkta Ayarlar'da girilen). */
+export const basemapAttr = (bm, keys) => (bm && bm.id === 'ozel' ? ((keys || app.state.mapKeys || {}).ozelAttr || '') : (bm && bm.attr) || '');
+
+// Altlık hataları: aynı altlıkta art arda hata olunca haritada uyarı çıkar (tiles:error), başka altlığa geçilebilir
+export const tileErrors = new Map();
+function tileError(bm, reason) {
+  const cur = tileErrors.get(bm.id) || { count: 0 };
+  cur.count++; cur.reason = reason; cur.at = Date.now();
+  tileErrors.set(bm.id, cur);
+  if (cur.count === 3 && app.bus) app.bus.emit('tiles:error', { id: bm.id, reason });
+}
+function tileOk(bm) { if (tileErrors.has(bm.id)) { tileErrors.delete(bm.id); if (app.bus) app.bus.emit('tiles:error', { id: bm.id, ok: true }); } }
+const httpNeden = (st) => (st === 401 || st === 403 ? 'erişim reddedildi (' + st + '): anahtar geçersiz ya da kullanım izni yok'
+  : st === 429 ? 'kota ya da hız sınırı aşıldı (429)' : st === 504 || st === 502 ? 'sunucuya ulaşılamadı (' + st + ')' : 'sunucu hatası (' + st + ')');
+
 // Google Map Tiles (resmî): harita türü başına oturum belirteci alınır, süresi dolana kadar saklanır
 const gSessions = new Map();
 async function googleSession(bm, key) {
@@ -107,21 +153,20 @@ async function googleSession(bm, key) {
   if (cur && cur.expiry > Date.now() / 1000 + 60) return cur.session;
   const body = bm.gType === 'hybrid' ? { mapType: 'satellite', layerTypes: ['layerRoadmap'], language: 'tr', region: 'TR' } : { mapType: bm.gType, language: 'tr', region: 'TR' };
   const r = await fetch('https://tile.googleapis.com/v1/createSession?key=' + encodeURIComponent(key), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error('Google anahtarı kabul edilmedi (' + r.status + ')');
+  if (!r.ok) { const e = new Error('Google anahtarı kabul edilmedi (' + r.status + ')'); e.durum = r.status; throw e; }
   const j = await r.json();
   gSessions.set(k, { session: j.session, expiry: +j.expiry || Date.now() / 1000 + 3600 });
   return j.session;
 }
-// Karo adresi: anahtar varsa resmî servis; yoksa (ya da resmî servis hata verirse) genel adres
+/** Karo adresi. Anahtar isteyen altlıkta anahtar yoksa hata (anahtarsız genel adres denenmez). */
 export async function tileUrl(bm, z, x, y, keys) {
   keys = keys || app.state.mapKeys || {};
   const fill = (u) => u.replace('{z}', z).replace('{x}', x).replace('{y}', y).replace('{s}', bm.sub ? bm.sub[(x + y) % bm.sub.length] : '');
-  if (bm.provider === 'google' && keys.google && !app.state.googleKeyBad) {
-    try { const s = await googleSession(bm, keys.google); return 'https://tile.googleapis.com/v1/2dtiles/' + z + '/' + x + '/' + y + '?session=' + encodeURIComponent(s) + '&key=' + encodeURIComponent(keys.google); }
-    catch (e) { app.state.googleKeyBad = true; if (app.toast) app.toast(e.message + ' · anahtarsız adrese geçildi', 'warn', 6000); }
-  }
-  if (bm.provider === 'yandex' && keys.yandex && bm.keyUrl) return fill(bm.keyUrl).replace('{key}', encodeURIComponent(keys.yandex));
-  return fill(bm.url);
+  const key = basemapKey(bm, keys);
+  if (bm.key && !key) { const e = new Error(bm.label + ': anahtar girilmemiş (Ayarlar › Harita altlığı)'); e.anahtar = true; throw e; }
+  if (bm.provider === 'google') { const s = await googleSession(bm, key); return 'https://tile.googleapis.com/v1/2dtiles/' + z + '/' + x + '/' + y + '?session=' + encodeURIComponent(s) + '&key=' + encodeURIComponent(key); }
+  if (bm.id === 'ozel') return fill(key);
+  return fill(bm.url).replace('{key}', encodeURIComponent(key));
 }
 const inflight = new Map();
 export async function loadTile(bm, z, x, y) {
@@ -130,13 +175,15 @@ export async function loadTile(bm, z, x, y) {
   const p = (async () => {
     let rec = await app.ds.db.get('tiles', id);
     let blob = rec ? rec.blob : null;
-    if (!blob && navigator.onLine !== false && bm.url) {
+    // Görülen karolar cihazda saklanır (yeniden görüntüleme internetsiz de olur; koşullar buna izin verir)
+    if (!blob && navigator.onLine !== false && bm.id !== 'none') {
       try {
         const u = await tileUrl(bm, z, x, y);
-        // APK: yerel vekil (CORS yok, kimlik başlığı eklenir) · tarayıcı: doğrudan
+        // APK: yerel vekil (CORS yok, uygulama kimliği başlığı eklenir) · tarayıcı: doğrudan
         const r = await fetch(app.bridge && app.bridge.isNative() ? '/_tile?u=' + encodeURIComponent(u) : u);
-        if (r.ok) { blob = await r.blob(); await app.ds.db.put('tiles', { id, blob, at: Date.now() }); }
-      } catch (e) { /* offline */ }
+        if (r.ok) { blob = await r.blob(); await app.ds.db.put('tiles', { id, blob, at: Date.now() }); tileOk(bm); }
+        else tileError(bm, httpNeden(r.status));
+      } catch (e) { tileError(bm, e.anahtar ? e.message : e.durum ? httpNeden(e.durum) : 'ağ hatası: internet bağlantısını denetleyin'); }
     }
     if (!blob) return null;
     const img = new Image();
@@ -147,8 +194,9 @@ export async function loadTile(bm, z, x, y) {
   inflight.set(id, p);
   try { return await p; } finally { inflight.delete(id); }
 }
-// Görünen alanı offline indir (z..z+2, en fazla limit karo)
+// Görünen alanı offline indir (z..z+2, en fazla limit karo). Yalnız koşulları buna izin veren altlıkta (offline: true).
 export async function prefetchArea(bm, bboxLL, zMin, zMax, limit = 1200, onProg) {
+  if (!bm.offline) throw new Error(bm.label + ' kullanım koşulları toplu / offline indirmeye izin vermiyor. Gördüğünüz alanlar zaten cihazda saklanır.');
   const list = [];
   zMax = Math.min(zMax, bm.maxZoom || 19);
   for (let z = zMin; z <= zMax; z++) {

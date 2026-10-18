@@ -4,7 +4,7 @@ import { loadProfiles, activeProfile, updateActive, selectProfile, addProfile, r
 import { app } from '../ctx.js';
 import { makeCrs, crsSummary, zoneForLon, TM_ZONES, parseGeoidGrid } from '../../geo/crs.js';
 import { pendingChanges } from '../../core/sync.js';
-import { BASEMAPS, prefetchArea } from '../services.js';
+import { BASEMAPS, ALTLIK_GRUPLARI, basemapById, basemapReady, prefetchArea } from '../services.js';
 import { unproject } from '../../geo/crs.js';
 
 export function SettingsScreen() {
@@ -20,7 +20,7 @@ export function SettingsScreen() {
   const [ver, setVer] = useState(null);
   const [floatCap, setFloatCap] = useState(true);
   const [keys, setKeys] = useState(app.state.mapKeys || {});
-  const saveKeys = (p) => { const k = Object.assign({}, keys, p); setKeys(k); app.state.mapKeys = k; app.state.googleKeyBad = false; app.ds.setting('mapKeys', k); app.toast('Anahtar kaydedildi', 'ok', 2000); };
+  const saveKeys = (p) => { const k = Object.assign({}, keys, p); setKeys(k); app.state.mapKeys = k; app.ds.setting('mapKeys', k); app.bus.emit('tiles:error', { anahtar: true }); app.toast('Kaydedildi (yalnız bu cihazda saklanır)', 'ok', 2200); };
   useEffect(() => { app.ds.setting('floatCapture').then((v) => setFloatCap(v !== false)); }, []);
   useEffect(() => { pendingChanges(app.ds).then((x) => setPend(x.length)); Promise.all([app.ds.setting('ntripProfiles'), app.ds.setting('ntrip')]).then(([pv, v]) => { const st = loadProfiles(pv, v); setNp(st); app.state.ntripProfiles = st; app.state.ntripCfg = activeProfile(st); }); app.bridge.info().then(setVer).catch(() => {}); }, []);
   const native = app.bridge.isNative();
@@ -46,8 +46,9 @@ export function SettingsScreen() {
   const autoZone = () => { const lon = s.lon ?? (ps.data.points.find((p) => p.lon != null) || {}).lon; if (lon == null) return app.toast('Boylam için konum gerekli', 'warn'); setCrs({ cm: zoneForLon(lon) }); };
   const geoidFile = async (f) => { if (!f) return; try { const grid = parseGeoidGrid(await f.text()); await ps.updateProject({ geoid: { model: 'grid', name: f.name, grid } }, 'Geoit ızgarası yüklendi: ' + f.name); app.toast('Geoit ızgarası: ' + grid.rows + '×' + grid.cols); } catch (e) { app.toast(e.message, 'err'); } };
   const offline = async () => {
-    const bm = BASEMAPS.find((b) => b.id === (app.state.basemap || 'none'));
-    if (!bm || !bm.url) return app.toast('Önce haritada altlık seçin', 'warn');
+    const bm = basemapById(app.state.basemap || 'none');
+    if (!basemapReady(bm)) return app.toast('Önce haritada altlık seçin', 'warn');
+    if (!bm.offline) return app.toast(bm.label + ': kullanım koşulları toplu / offline indirmeye izin vermiyor. Gördüğünüz alanlar zaten cihazda saklanır.', 'warn', 7000);
     const v = app.state.view; if (!v) return app.toast('Haritayı açın', 'warn');
     const a = unproject(v.cE - v.res * 200, v.cN - v.res * 400, crs), b = unproject(v.cE + v.res * 200, v.cN + v.res * 400, crs);
     const z0 = Math.max(12, Math.round(Math.log2(156543 / v.res)) - 1);
@@ -132,12 +133,16 @@ export function SettingsScreen() {
     <div class="card row"><div class="grow"><b style="font-size:14px">${ps.approval().on ? (ps.member ? ps.member.name : 'Oturum açılmadı') : 'Onay mekanizması kapalı'}</b><div class="note">Roller, şifreli oturum, onay bekleyen işler</div></div><button class="btn sm pri" onClick=${() => app.nav.go('team')}>Aç →</button></div>` : null}
     <div class="sect">Tanımlar ve kayıtlar</div>
     <div class="card tight list">${[['projects', 'Projeler', 'Proje merkezi, akış, yeni proje'], ['definitions', 'Tanımlar (tek veri kaynağı)', 'Reçete kuralları, parametreler, standart sürümleri'], ['poz', 'Poz kataloğu (Yeşil Defter)', 'Veritabanından · sürümlü'], ['layers', 'Katmanlar ve lejant (TEDAŞ)', 'Lejant.dxf katman/ACI eşlemesi'], ['audit', 'Denetim kaydı', 'Kim · ne · ne zaman · eski/yeni · neden'], ['user', 'Kullanıcı ve cihaz', app.ds.user.name + ' · ' + app.ds.deviceId]].map(([k, t, d]) => html`<button class="li" onClick=${() => app.nav.go(k)}><div class="grow"><div class="t">${t}</div><div class="s">${d}</div></div><${Icon} n="next" s=${16} c="#94a3b8" /></button>`)}</div>
-    ${app.web ? null : html`    <div class="sect">Harita altlığı · Google ve Yandex</div>
-    <div class="card stack"><div class="note">Altlık, haritadaki Katmanlar düğmesinden seçilir. Anahtar girerseniz resmî servis kullanılır; boş bırakırsanız anahtarsız genel adresler denenir (sağlayıcı koşullarına uymayabilir, bir gün kesilebilir).</div>
-      <div class="fld"><label>Google Map Tiles anahtarı (isteğe bağlı)</label><input class="inp mono" type="password" autocomplete="off" value=${keys.google || ''} placeholder="boş: anahtarsız adres" onChange=${(e) => saveKeys({ google: e.target.value.trim() })} /></div>
-      <div class="fld"><label>Yandex Tiles anahtarı (isteğe bağlı · yalnız harita)</label><input class="inp mono" type="password" autocomplete="off" value=${keys.yandex || ''} placeholder="boş: anahtarsız adres" onChange=${(e) => saveKeys({ yandex: e.target.value.trim() })} /></div></div>
+    ${app.web ? null : html`    <div class="sect">Harita altlığı</div>
+    <div class="card stack"><div class="note">Altlık haritadaki Katmanlar düğmesinden seçilir; ölçüm, koordinat ve çizim altlıktan bağımsızdır. Ücretsiz altlıklar anahtarsız çalışır; anahtarlı sağlayıcıların ücretsiz kullanım payı vardır, ücretli plana geçmeniz gerekmez. Ücretsiz kullanım sınırsız değildir: sağlayıcı yoğun kullanımı kesebilir. Anahtarlar yalnız bu cihazda saklanır; proje dosyalarına ve paylaşıma girmez.</div>
+      ${ALTLIK_GRUPLARI.map(([gk, gl]) => html`<div class="lbl" style="margin-top:4px">${gl}</div>${BASEMAPS.filter((b) => b.grup === gk).map((b) => html`<div class="row" style="align-items:flex-start;gap:8px;padding:4px 0"><${Icon} n=${basemapReady(b) ? 'check' : 'minus'} s=${16} c=${basemapReady(b) ? '#10b981' : '#64748b'} /><div class="grow"><b style="font-size:13px">${b.label}</b><div class="note">${b.note || ''}${b.kosul ? html` · koşullar: <span class="mono">${b.kosul}</span>` : null}</div></div></div>`)}`)}
+      <div class="fld"><label>MapTiler anahtarı (ücretsiz plan yeterli)</label><input class="inp mono" type="password" autocomplete="off" value=${keys.maptiler || ''} placeholder="maptiler.com hesabından" onChange=${(e) => saveKeys({ maptiler: e.target.value.trim() })} /></div>
+      <div class="fld"><label>Google Map Tiles anahtarı</label><input class="inp mono" type="password" autocomplete="off" value=${keys.google || ''} placeholder="Google Cloud konsolundan" onChange=${(e) => saveKeys({ google: e.target.value.trim() })} /></div>
+      <div class="fld"><label>Yandex Tiles anahtarı</label><input class="inp mono" type="password" autocomplete="off" value=${keys.yandex || ''} placeholder="Yandex geliştirici hesabından" onChange=${(e) => saveKeys({ yandex: e.target.value.trim() })} /></div>
+      <div class="fld"><label>Özel karo sunucusu adresi (XYZ)</label><input class="inp mono" autocomplete="off" value=${keys.ozelUrl || ''} placeholder="https://…/{z}/{x}/{y}.png" onChange=${(e) => { const v = e.target.value.trim(); if (v && !/^https:\/\/.*\{z\}.*\{x\}.*\{y\}/i.test(v)) { app.toast('Adres https ile başlamalı ve {z}, {x}, {y} içermeli', 'warn', 5000); return; } saveKeys({ ozelUrl: v }); }} /></div>
+      <div class="fld"><label>Özel altlığın atıf yazısı</label><input class="inp" autocomplete="off" value=${keys.ozelAttr || ''} placeholder="ör. © Kurum adı" onChange=${(e) => saveKeys({ ozelAttr: e.target.value.trim() })} /></div></div>
     <div class="sect">Offline harita</div>
-    <div class="card stack"><div class="note">Haritada seçili altlık için ekrandaki alanı (4 yakınlaştırma seviyesi) cihaza kaydeder. Sağlayıcı kullanım koşullarına uyun.</div><button class="btn" onClick=${offline}>Görünen alanı offline indir</button></div>
+    <div class="card stack"><div class="note">Haritada gördüğünüz alanlar cihazda saklanır ve internetsiz de görünür. Toplu indirme (görünen alanı 4 yakınlaştırma seviyesinde kaydetme) yalnız koşulları izin veren altlıkta açıktır: OpenStreetMap, Esri, Google, Yandex ve MapTiler buna izin vermez; kendi karo sunucunuzda (Özel) kullanılabilir.</div><button class="btn" disabled=${!basemapById(app.state.basemap || 'none').offline} onClick=${offline}>Görünen alanı offline indir</button></div>
     <div class="sect">Test / eğitim</div>
     <div class="card stack"><div class="note">Simülatör gerçek alıcı yokken arayüzü denemek içindir; alınan noktalar SİM olarak işaretlenir ve teslim paketinde gerçek ölçü sayılmaz.</div>
       <div class="grid3">${['FIX', 'FLOAT', 'SINGLE'].map((p) => html`<button class="btn sm" onClick=${() => { if (g.state.source !== 'sim') { const p0 = ps.p && ps.data.points.find((x) => x.lat != null); g.startSimulator({ profile: p, base: p0 ? { lat: p0.lat, lon: p0.lon, alt: (p0.H || 1000) } : undefined }); } else g.setSimProfile(p); }}>Sim · ${p}</button>`)}</div></div>`}

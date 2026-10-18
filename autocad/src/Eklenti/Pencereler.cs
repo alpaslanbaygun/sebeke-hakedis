@@ -1046,7 +1046,8 @@ namespace SebekeHakedis.Eklenti
                 int icSon = f.IcerikSonu - 16;
 
                 Koy(f, new LogoKarti(), 16, 58, 300, 256);
-                Etiket(f, Marka.Ad, 336, 62, 420, KoyuYazi.Iri, KoyuRenk.Yazi);
+                var ad = Etiket(f, Marka.Ad, 336, 58, 420, KoyuYazi.Iri, KoyuRenk.Yazi);
+                ad.Height = S(38);
                 Etiket(f, "AutoCAD eklentisi · Sürüm " + surum, 336, 104, 420, KoyuYazi.Kalin, KoyuRenk.Yazi);
                 if (!string.IsNullOrEmpty(ortam)) Etiket(f, ortam, 336, 128, 420, KoyuYazi.Kucuk, KoyuRenk.Ikincil);
                 Aciklama(f, Marka.Aciklama + ". Çizimler telefon uygulamasıyla aynı simgelerle çizilir; proje dosyası iki yönde " +

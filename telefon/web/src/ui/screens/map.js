@@ -2,7 +2,7 @@
 import { html, useState, useEffect, useRef, useBus, Icon, Chip, Seg, Toggle, Sel, Badge, fmt, trn, FIXCOL } from '../kit.js';
 import { app } from '../ctx.js';
 import { MapEngine } from '../map-engine.js';
-import { measure, recent, favorites, loadTile, BASEMAPS } from '../services.js';
+import { measure, recent, favorites, loadTile, BASEMAPS, ALTLIK_GRUPLARI, basemapById, basemapReady, basemapAttr, tileErrors } from '../services.js';
 import { dist2, bearing, polygonArea, polylineLength, dms, segProject } from '../../geo/geom.js';
 import { STATUSES, TRAFO_STATUSES, HAK_STATUSES, HAK_ORDER, EQUIPMENT_KINDS, hakOf } from '../../core/schema.js';
 import { sourceInfo, sourceText } from '../../core/source.js';
@@ -37,12 +37,12 @@ export function mapData() {
   const pointMap = new Map(d.points.map((p) => [p.id, p]));
   const eqByPoint = new Map();
   for (const e of d.equipment) { if (!eqByPoint.has(e.pointId)) eqByPoint.set(e.pointId, []); eqByPoint.get(e.pointId).push(e); }
-  const bm = BASEMAPS.find((b) => b.id === (app.state.basemap || 'none'));
+  const bm = basemapById(app.state.basemap || 'none');
   const g = app.gnss.state;
   return {
     points: d.points, equipment: d.equipment, lines: d.lines, pointMap, eqByPoint, roles: r ? r.roles : new Map(),
     hakColor: (rec) => { const h = hakOf(rec); return h ? HAK_STATUSES[h].color : null; }, srcInfo: (p) => sourceInfo(p),
-    sel: app.state.sel, target: app.state.target, crs: ps.p.crs, basemap: bm && bm.url ? bm : null,
+    sel: app.state.sel, target: app.state.target, crs: ps.p.crs, basemap: basemapReady(bm) ? bm : null,
     cad: app.state.cadLayers || [], energy: energyState(),
     gnss: g.E != null ? g : null, gnssColor: g.source === 'phone' ? '#38bdf8' : FIXCOL[g.fix] || '#475569',
     groupVolt: (e) => { if (e.kind === 'lighting' || e.group === 'ayd') return 'AYD'; const gr = ps.cat.poleGroup(e.group); return gr && gr.og ? 'OG' : 'AG'; },
@@ -65,7 +65,7 @@ export function MapScreen() {
   const [busy, setBusy] = useState(false);
   const [lastCap, setLastCap] = useState(app.state.lastCap || null);
   const [, force] = useState(0);
-  useBus(['project:computed', 'project:open', 'ui:sel', 'cad:change']);
+  useBus(['project:computed', 'project:open', 'ui:sel', 'cad:change', 'tiles:error']);
   useBus('gnss:state', 300);
   // CAD çizimleri: görünür olanları belleğe al, haritaya ver
   const refreshCad = async () => { try { app.state.cadLayers = await visibleCad(ps); } catch (err) { app.state.cadLayers = []; } if (eng.current) eng.current.invalidate(); force((x) => x + 1); };
@@ -257,6 +257,7 @@ export function MapScreen() {
     ${tool === 'edit' ? html`<div class="maptag" style=${'left:12px;top:' + (active ? 156 : 124) + 'px;color:#fbbf24'}>Düğüm düzenleme: noktayı sürükleyin</div>` : null}
     ${tool === 'measure' || tool === 'area' ? html`<div class="maptag" style=${'left:12px;top:' + (active ? 156 : 124) + 'px;color:#22d3ee'}>${tool === 'area' ? 'Alan ölçümü' : 'Mesafe ölçümü'}: haritaya dokunun</div>` : null}
     ${layersOpen ? html`<${LayerPop} eng=${eng.current} close=${() => setLayersOpen(false)} />` : null}
+    <${AltlikDurumu} eng=${eng.current} padB=${padB} openLayers=${() => setLayersOpen(true)} />
     <div class="base" ref=${base}>
       ${m ? html`<${MeasurePanel} m=${m} clear=${() => { m.pts = []; eng.current.invalidate(); force((x) => x + 1); }} undo=${() => { m.pts.pop(); eng.current.invalidate(); force((x) => x + 1); }} close=${() => setTool(null)} />`
         : sel && sel.type === 'cad' ? html`<${CadPointPanel} sel=${sel} select=${select} curLabel=${cur.label} take=${async () => { app.state.forceCoord = { E: sel.x, N: sel.y }; select(null); await doTake(); }} />`
@@ -296,6 +297,31 @@ export function MapScreen() {
 MapScreen.flush = true;
 MapScreen.compactHud = true;
 
+/** Altlık seçimi: anahtar isteyen altlıkta anahtar yoksa Ayarlar'a yönlendirir. */
+async function altlikSec(id, eng, yenile) {
+  const b = basemapById(id);
+  if (b.key && !basemapReady(b)) {
+    if (await app.confirm(b.label, b.label + ' için ' + (b.id === 'ozel' ? 'karo adresi' : 'anahtar') + ' gerekli: Ayarlar › Harita altlığı bölümünden girin. ' + (b.note || '') + ' Ayarlar açılsın mı?', { ok: 'Ayarlara git' })) app.nav.tab('settings');
+    yenile();
+    return;
+  }
+  app.state.basemap = id; app.ds.setting('basemap', id);
+  tileErrors.delete(id);
+  if (eng) eng.invalidate();
+  yenile();
+}
+
+/** Altlığın atıfı (sağ altta, her zaman görünür) ve yüklenemezse uyarı + başka altlığa geçiş. */
+function AltlikDurumu({ eng, padB, openLayers }) {
+  const bm = basemapById(app.state.basemap || 'none');
+  if (!eng || bm.id === 'none' || !eng.layers.basemap) return null;
+  const attr = basemapAttr(bm), hata = tileErrors.get(bm.id);
+  const ready = basemapReady(bm);
+  return html`${attr ? html`<div class="mapattr" style=${'bottom:' + (padB + 4) + 'px'}>${attr}</div>` : null}
+    ${hata && hata.count >= 3 || !ready ? html`<div class="alert warn mapalert" role="alert"><${Icon} n="info" s=${16} /><span class="grow">${bm.label} yüklenemedi: ${!ready ? 'anahtar girilmemiş' : hata.reason}. Ölçüm ve çizim etkilenmez.</span>
+      <button class="btn xs" onClick=${openLayers}>Altlık değiştir</button><button class="btn xs" onClick=${() => { app.state.basemap = 'none'; app.ds.setting('basemap', 'none'); eng.invalidate(); app.bus.emit('tiles:error', { id: bm.id }); }}>Altlığı kapat</button></div>` : null}`;
+}
+
 function LayerPop({ eng, close }) {
   const [, f] = useState(0);
   const L = eng.layers;
@@ -304,7 +330,10 @@ function LayerPop({ eng, close }) {
   if (L.cad === undefined) L.cad = true;
   return html`<div class="card" style="position:absolute;right:68px;top:12px;z-index:6;width:230px;padding:6px;max-height:60%;overflow:auto">
     ${items.map(([k, l, c]) => html`<button class="li" style="min-height:40px;padding:6px 8px" onClick=${() => t(k)}><span style=${'width:18px;height:3px;background:' + c}></span><span class="grow" style="font-size:13px">${l}</span><${Icon} n=${L[k] ? 'check' : 'minus'} s=${16} c=${L[k] ? '#10b981' : '#475569'} /></button>`)}
-    <div class="row" hidden=${!!app.web && !app.state.tilesOk} style="padding:6px 8px"><span class="note grow">Altlık</span><select class="inp" style="height:34px;font-size:12px" value=${app.state.basemap || 'none'} onChange=${(e) => { app.state.basemap = e.target.value; app.ds.setting('basemap', e.target.value); eng.invalidate(); f((x) => x + 1); }}>${BASEMAPS.map((b) => html`<option value=${b.id}>${b.label}</option>`)}</select></div>
+    <div class="row" hidden=${!!app.web && !app.state.tilesOk} style="padding:6px 8px"><span class="note grow">Altlık</span><select class="inp" style="height:34px;font-size:12px;max-width:150px" value=${app.state.basemap || 'none'} onChange=${(e) => altlikSec(e.target.value, eng, () => f((x) => x + 1))}>
+      <option value="none">Altlık yok</option>
+      ${ALTLIK_GRUPLARI.map(([gk, gl]) => html`<optgroup label=${gl}>${BASEMAPS.filter((b) => b.grup === gk).map((b) => html`<option value=${b.id}>${b.label + (b.key && !basemapReady(b) ? ' · anahtar gerekli' : '')}</option>`)}</optgroup>`)}
+    </select></div>
     <button class="btn sm blk" onClick=${() => { close(); app.nav.go('layers'); }}>Lejant ve katman ayrıntıları</button>
   </div>`;
 }

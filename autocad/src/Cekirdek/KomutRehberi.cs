@@ -6,8 +6,8 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>[grup, komut, açıklama]</summary>
         public static readonly string[][] Liste =
         {
-            new[] { "Hızlı çizim (şerit: Kategori → öğe)", "SH_HIZLI", "Şeritte seçili öğeyi seçili tip, durum ve hakedişle çizer (pencere açılmaz)" },
-            new[] { "Hızlı çizim (şerit: Kategori → öğe)", "SH_HIZLIAYRINTI", "Şeritteki öğeyi süzgeçli, aramalı pencereyle çizer" },
+            new[] { "Hızlı çizim", "SH_HIZLI", "Şeritte seçili öğeyi seçili tip, durum ve hakedişle çizer (pencere açılmaz)" },
+            new[] { "Hızlı çizim", "SH_HIZLIAYRINTI", "Şeritteki öğeyi süzgeçli, aramalı pencereyle çizer" },
             new[] { "Çizim", "SH_ELEMAN", "Direk, box, pano, trafo, mufu koyar (GIS numarası kendiliğinden; malzeme hafızası açıksa son malzemeler eklenir)" },
             new[] { "Çizim", "SH_HAT", "Hat çizer (her direkte / elemanda parçalı; her parçanın metrajı ve etiketi ayrı; iki iletken, adet)" },
             new[] { "Çizim", "SH_KANAL", "Kablo kanalı çizer (box / direk aralarında parçalı; hacim ölçülerden)" },

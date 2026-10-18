@@ -138,13 +138,24 @@ public final class MainActivity extends Activity {
         if (l.endsWith(".svg")) return "image/svg+xml";
         return "application/octet-stream";
     }
-    // Altlık karo vekili: CORS yok, OSM kimlik başlığı eklenir
+    // Altlık karo vekili: CORS yok, uygulama kimliği başlığı eklenir (OSM karo kullanım kuralı: uygulamaya özgü,
+    // sürümlü User-Agent; yalnız ASCII). Sürüm her yayında değişir, ad sabit kalır.
+    private String tileUa;
+    private String tileUserAgent() {
+        if (tileUa == null) {
+            String v = "0";
+            try { v = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { }
+            tileUa = "SebekeM/" + v + " (Android; " + getPackageName() + "; saha olcum uygulamasi)";
+        }
+        return tileUa;
+    }
+
     private WebResourceResponse tile(String url) {
         if (url == null || !(url.startsWith("https://"))) return null;
         try {
             HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
             c.setConnectTimeout(8000); c.setReadTimeout(12000);
-            c.setRequestProperty("User-Agent", "VoltEdasSaha/2.0 (Android; saha GNSS uygulaması)");
+            c.setRequestProperty("User-Agent", tileUserAgent());
             int code = c.getResponseCode();
             if (code != 200) return new WebResourceResponse("text/plain", "utf-8", code == 0 ? 502 : code, "Tile", null, new ByteArrayInputStream(new byte[0]));
             String ct = c.getContentType() == null ? "image/png" : c.getContentType();
