@@ -209,9 +209,9 @@ Yakalama mesafesinin alt sınırı **Çizim Ayarları › Genel › Direğe yaka
 
 ### Malzeme hafızası ve toplu malzeme
 
-- **Malzeme hafızası** açıkken (şeritte **Malzeme Hafızası** düğmesi yeşil) son konan ya da malzemesi değiştirilen
-  direğin, trafonun, SDK'nın… malzemeleri hatırlanır ve **aynı tür ve tipteki** bir sonraki elemana kendiliğinden
-  eklenir (aynı tipte yoksa aynı türdeki son elemanınki). Şeridin özet satırında `+3 malzeme` görünür.
+- **Malzeme hafızası** açıkken (şeritte **Malzeme Hafızası** düğmesi basılı, simgesi yeşil) bir direğin, trafonun,
+  SDK'nın… malzemelerini düzenleyince (Malzeme, Toplu Malzeme ya da armatür ekleme) o malzemeler hatırlanır ve
+  **aynı tür ve tipteki** bir sonraki elemana kendiliğinden eklenir (aynı tipte yoksa aynı türdeki son elemanınki). Şeridin özet satırında `+3 malzeme` görünür.
   Kapatmak için düğmeye bir kez tıklayın. Hafıza AutoCAD kapanınca da kalır.
 - Malzemenin durumu elemanla aynıysa yeni elemanın durumunu alır (ör. yeni direğe M, sök-tak direğe DM+M);
   farklı seçilmişse (ör. mevcut direğe yeni travers) olduğu gibi kalır.

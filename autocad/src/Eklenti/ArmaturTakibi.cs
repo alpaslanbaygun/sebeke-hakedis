@@ -108,82 +108,126 @@ namespace SebekeHakedis.Eklenti
 
     /// <summary>
     /// Armatür simgesi direğiyle birlikte gider: direk AutoCAD komutlarıyla (Taşı, Uzat, tutamaç, Kopyala, Ayna, Sil,
-    /// Geri Al…) değişince komut bitiminde simgesi de taşınır, kopyalanır, silinir ya da geri gelir. Kullanıcı simgeyi tek
-    /// başına taşırsa yeni yeri direğe göre saklanır (sonraki taşımalarda korunur). Yalnız SH_ARM verili bloklara bakar.
+    /// yapıştırma…) değişince komut bitiminde simgesi de taşınır, kopyalanır ya da silinir. Kullanıcı simgeyi tek başına
+    /// taşırsa yeni yeri direğe göre saklanır. Geri Al / Yinele'de bir şey yapılmaz (AutoCAD ikisini birlikte geri getirir).
+    /// Yalnız SH_ARM verili, model alanındaki bloklara bakar.
     /// </summary>
     internal static class ArmaturTakibi
     {
         private const string Isaret = "SebekeHakedis.ArmaturTakibi";
 
-        private enum Olay { Direk, SimgeTasindi, SimgeEklendi }
-
-        private sealed class Is
+        /// <summary>Bir nesnenin bu komuttaki olayları (aynı nesnenin olayları birleştirilir).</summary>
+        private sealed class Not
         {
             public ObjectId Id;
-            public Olay Tur;
-            public bool Eklendi;
-            public string Tanitici, Simge;
+            public bool Direk;      // direk mi (değilse simge)
+            public bool Eklendi;    // çizime eklendi (kopya, yapıştırma, ayna)
+            public bool GeriGeldi;  // silinmişken geri geldi
+            public string Tanitici; // nesnenin tanıtıcısı
+            public string Simge;    // direkte: bağlı simgenin tanıtıcısı (olay anındaki)
         }
 
-        private static readonly List<Is> _isler = new List<Is>();
+        /// <summary>Bu komutta eklenen simge (kopya direklere sahiplenilebilir).</summary>
+        private sealed class Aday
+        {
+            public ObjectId Id, Blok;
+            public Point3d Konum;
+            public string Sahip;
+            public bool Alindi;
+        }
+
+        /// <summary>Çizim başına bekleyen işler (çizim kapanınca atılır: kapanmış çizimin nesnelerine asla dokunulmaz).</summary>
+        private static readonly Dictionary<Database, Dictionary<ObjectId, Not>> _kuyruk = new Dictionary<Database, Dictionary<ObjectId, Not>>();
+        private static readonly object _kilit = new object();
+        private static readonly HashSet<string> Atlanan = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "U", "UNDO", "REDO", "MREDO", "REFEDIT", "REFCLOSE", "REFSET" };
         private static bool _calisiyor, _bostaBagli;
+        private static int _hataSayisi;
 
         public static void Baslat()
         {
             var dm = AcApp.DocumentManager;
             foreach (Document d in dm) Bagla(d);
-            dm.DocumentCreated += (s, e) => Bagla(e.Document);
+            dm.DocumentCreated += (s, e) => { try { Bagla(e.Document); } catch { } };
+            dm.DocumentToBeDestroyed += (s, e) => { try { Birak(e.Document); } catch { } };
         }
 
         private static void Bagla(Document d)
         {
-            try
-            {
-                if (d == null || d.UserData.ContainsKey(Isaret)) return;
-                d.UserData[Isaret] = true;
-                var db = d.Database;
-                db.ObjectModified += (s, e) => Kaydet(e.DBObject, false);
-                db.ObjectAppended += (s, e) => Kaydet(e.DBObject, true);
-                db.ObjectReappended += (s, e) => Kaydet(e.DBObject, false);
-                db.ObjectUnappended += (s, e) => Kaydet(e.DBObject, false);
-                db.ObjectErased += (s, e) => Kaydet(e.DBObject, false);
-                d.CommandEnded += (s, e) => Isle(s as Document);
-                d.CommandCancelled += (s, e) => Isle(s as Document);
-                d.CommandFailed += (s, e) => Isle(s as Document);
-                d.LispEnded += (s, e) => Isle(s as Document);
-                d.LispCancelled += (s, e) => Isle(s as Document);
-            }
-            catch { }
+            if (d == null || d.UserData.ContainsKey(Isaret)) return;
+            d.UserData[Isaret] = true;
+            var db = d.Database;
+            db.ObjectModified += (s, e) => Kaydet(e.DBObject, false, false);
+            db.ObjectAppended += (s, e) => Kaydet(e.DBObject, true, false);
+            db.ObjectReappended += (s, e) => Kaydet(e.DBObject, false, true);
+            db.ObjectUnappended += (s, e) => Kaydet(e.DBObject, false, false);
+            db.ObjectErased += (s, e) => Kaydet(e.DBObject, false, !e.Erased);
+            d.CommandEnded += KomutBitti;
+            d.CommandCancelled += KomutBitti;
+            d.CommandFailed += KomutBitti;
+            d.LispEnded += LispBitti;
+            d.LispCancelled += LispBitti;
+        }
+
+        /// <summary>Çizimin bekleyen işlerini atar.</summary>
+        private static void Birak(Document d)
+        {
+            if (d == null) return;
+            lock (_kilit) _kuyruk.Remove(d.Database);
         }
 
         /// <summary>Olay anında yalnız not alınır (bildirim sırasında başka nesne değiştirilemez); iş komut bitiminde yapılır.</summary>
-        private static void Kaydet(DBObject o, bool eklendi)
+        private static void Kaydet(DBObject o, bool eklendi, bool geriGeldi)
         {
             if (_calisiyor) return;
             try
             {
                 var br = o as BlockReference;
                 if (br == null) return;
-                var x = new Is { Id = br.ObjectId, Eklendi = eklendi, Tanitici = br.Handle.ToString() };
                 string simge;
                 double dx, dy;
                 bool konumlu;
-                if (ArmaturBagi.DirekVerisi(br, out simge, out dx, out dy, out konumlu))
+                bool direk = ArmaturBagi.DirekVerisi(br, out simge, out dx, out dy, out konumlu);
+                if (!direk && ArmaturBagi.SimgeSahibi(br) == null) return;
+                var db = br.Database;
+                if (db == null) return;
+                lock (_kilit)
                 {
-                    x.Tur = Olay.Direk;
-                    x.Simge = simge;
-                }
-                else
-                {
-                    if (ArmaturBagi.SimgeSahibi(br) == null) return;
-                    x.Tur = eklendi ? Olay.SimgeEklendi : Olay.SimgeTasindi;
-                }
-                lock (_isler)
-                {
-                    if (_isler.Count > 200000) _isler.Clear(); // ne olursa olsun sınırsız büyümesin
-                    _isler.Add(x);
+                    Dictionary<ObjectId, Not> k;
+                    if (!_kuyruk.TryGetValue(db, out k)) _kuyruk[db] = k = new Dictionary<ObjectId, Not>();
+                    Not n;
+                    if (!k.TryGetValue(br.ObjectId, out n)) k[br.ObjectId] = n = new Not { Id = br.ObjectId, Direk = direk, Tanitici = br.Handle.ToString() };
+                    if (eklendi) n.Eklendi = true;
+                    if (geriGeldi) n.GeriGeldi = true;
+                    if (direk && string.IsNullOrEmpty(n.Simge)) n.Simge = simge;
                 }
                 BostaBagla();
+            }
+            catch { }
+        }
+
+        private static void KomutBitti(object sender, CommandEventArgs e)
+        {
+            try
+            {
+                var d = sender as Document;
+                if (d == null) return;
+                string komut = (e.GlobalCommandName ?? "").TrimStart('\'', '_', '.', '-', '+');
+                // Geri Al / Yinele ikisini birlikte geri getirir; blok yerinde düzenlemede nesneler blok tanımına döner
+                if (Atlanan.Contains(komut)) { Birak(d); return; }
+                // Başka bir komutun içinde biten komut (ör. Taşı sırasında saydam Yakınlaş): dıştaki bitince işlenir
+                string etkin = (d.CommandInProgress ?? "").TrimStart('\'', '_', '.', '-', '+');
+                if (etkin.Length > 0 && !string.Equals(etkin, komut, StringComparison.OrdinalIgnoreCase)) return;
+                Isle(d);
+            }
+            catch { }
+        }
+
+        private static void LispBitti(object sender, EventArgs e)
+        {
+            try
+            {
+                var d = sender as Document;
+                if (d != null && string.IsNullOrEmpty(d.CommandInProgress)) Isle(d); // komut içindeki LISP: komut bitince
             }
             catch { }
         }
@@ -202,10 +246,16 @@ namespace SebekeHakedis.Eklenti
             {
                 var d = AcApp.DocumentManager.MdiActiveDocument;
                 if (d == null) return;
-                if (!string.IsNullOrEmpty(d.CommandInProgress)) return; // komut sürüyor: bitince işlenir
+                if (!string.IsNullOrEmpty(d.CommandInProgress) || !d.Editor.IsQuiescent) return; // komut ya da LISP sürüyor
+                Isle(d);
+                lock (_kilit)
+                {
+                    bool bos = true;
+                    foreach (var k in _kuyruk.Values) if (k.Count > 0) { bos = false; break; }
+                    if (!bos) return; // başka çizimin işi var: o çizim etkin olunca
+                }
                 AcApp.Idle -= Bosta;
                 _bostaBagli = false;
-                Isle(d);
             }
             catch { }
         }
@@ -213,53 +263,79 @@ namespace SebekeHakedis.Eklenti
         private static void Isle(Document d)
         {
             if (d == null || _calisiyor) return;
-            List<Is> isler;
             var db = d.Database;
-            lock (_isler)
+            List<Not> notlar;
+            lock (_kilit)
             {
-                if (_isler.Count == 0) return;
-                isler = _isler.FindAll(x => x.Id.Database == db);
-                _isler.RemoveAll(x => x.Id.Database == db || !x.Id.IsValid);
+                Dictionary<ObjectId, Not> k;
+                if (!_kuyruk.TryGetValue(db, out k) || k.Count == 0) return;
+                notlar = new List<Not>(k.Values);
             }
-            if (isler.Count == 0) return;
+            // Açık bir işlem varken (başka bir eklentinin işi) dokunulmaz: sonra işlenir
+            if (db.TransactionManager.NumberOfActiveTransactions > 0) { BostaBagla(); return; }
+            // Blok yerinde düzenleme sürerken dokunulmaz (o nesneler blok tanımına geri yazılır)
+            if (!string.IsNullOrEmpty(Convert.ToString(AcApp.GetSystemVariable("REFEDITNAME"), CultureInfo.InvariantCulture))) { Birak(d); return; }
+            lock (_kilit) _kuyruk.Remove(db);
             _calisiyor = true;
             try
             {
                 using (d.LockDocument())
-                using (var tr = db.TransactionManager.StartTransaction())
                 {
+                    var ms = SymbolUtilityServices.GetBlockModelSpaceId(db);
                     // 1) Tek başına taşınan simgeler: direğe göre yeni yerleri saklanır
-                    var gorulen = new HashSet<ObjectId>();
-                    foreach (var x in isler)
-                        if (x.Tur == Olay.SimgeTasindi && gorulen.Add(x.Id)) Dene(() => SimgeTasindi(tr, x.Id));
-                    // 2) Bu komutta eklenen simgeler (direkle birlikte kopyalananlar): kopya direklere sahiplenilir
-                    var yeniSimgeler = new List<ObjectId>();
-                    foreach (var x in isler) if (x.Tur == Olay.SimgeEklendi && !yeniSimgeler.Contains(x.Id)) yeniSimgeler.Add(x.Id);
-                    // 3) Direkler: son durumlarına göre simge taşınır / kopyalanır / silinir / geri gelir
-                    var direkler = new Dictionary<ObjectId, Is>();
-                    foreach (var x in isler)
+                    foreach (var n in notlar)
+                        if (!n.Direk && !n.Eklendi) Dene(db, t => SimgeTasindi(t, db, n.Id));
+                    // 2) Bu komutta eklenen simgeler (direkle birlikte kopyalananlar): bir kez okunur, sahibine göre gruplanır
+                    var gruplar = new Dictionary<string, List<Aday>>(StringComparer.OrdinalIgnoreCase);
+                    var hepsi = new List<Aday>();
+                    using (var okuma = db.TransactionManager.StartTransaction())
                     {
-                        if (x.Tur != Olay.Direk) continue;
-                        Is onceki;
-                        if (direkler.TryGetValue(x.Id, out onceki))
+                        foreach (var n in notlar)
                         {
-                            if (x.Eklendi) onceki.Eklendi = true;
-                            if (string.IsNullOrEmpty(onceki.Simge)) onceki.Simge = x.Simge;
+                            if (n.Direk || !n.Eklendi) continue;
+                            var a = Ac(okuma, n.Id, false);
+                            if (a == null || a.OwnerId != ms) continue;
+                            var aday = new Aday { Id = n.Id, Blok = a.BlockTableRecord, Konum = a.Position, Sahip = ArmaturBagi.SimgeSahibi(a) ?? "" };
+                            hepsi.Add(aday);
+                            List<Aday> l;
+                            if (!gruplar.TryGetValue(aday.Sahip, out l)) gruplar[aday.Sahip] = l = new List<Aday>();
+                            l.Add(aday);
                         }
-                        else direkler[x.Id] = x;
+                        okuma.Commit();
                     }
-                    foreach (var x in direkler.Values) Dene(() => DirekIsle(tr, db, x, yeniSimgeler));
-                    tr.Commit();
+                    // 3) Direkler: son durumlarına göre simge taşınır, kopyalanır ya da silinir (her biri kendi işleminde)
+                    foreach (var n in notlar)
+                        if (n.Direk) Dene(db, t => DirekIsle(t, db, ms, n, gruplar, hepsi));
                 }
+                _hataSayisi = 0;
             }
-            catch (System.Exception ex) { HataKaydi(ex); }
+            catch (System.Exception ex)
+            {
+                HataKaydi(ex);
+                // Bütünüyle olmadıysa (ör. çizim kilitlenemedi) iki kez daha denenir
+                if (++_hataSayisi <= 2)
+                    lock (_kilit)
+                    {
+                        Dictionary<ObjectId, Not> k;
+                        if (!_kuyruk.TryGetValue(db, out k)) _kuyruk[db] = k = new Dictionary<ObjectId, Not>();
+                        foreach (var n in notlar) if (!k.ContainsKey(n.Id)) k[n.Id] = n;
+                    }
+            }
             finally { _calisiyor = false; }
         }
 
-        private static void Dene(Action is_)
+        /// <summary>Tek bir işi kendi işleminde yapar: yarıda kalırsa (kilitli katman vb.) hiçbiri yazılmaz, o iş atlanır.</summary>
+        private static void Dene(Database db, Action<Transaction> is_)
         {
-            try { is_(); }
-            catch (System.Exception ex) { HataKaydi(ex); } // kilitli katman vb.: o simge atlanır
+            try
+            {
+                using (var t = db.TransactionManager.StartTransaction())
+                {
+                    is_(t);
+                    t.Commit();
+                }
+            }
+            catch (System.Exception ex) { HataKaydi(ex); }
         }
 
         private static BlockReference Ac(Transaction tr, ObjectId id, bool silinmis)
@@ -274,11 +350,11 @@ namespace SebekeHakedis.Eklenti
             return ArmaturBagi.Bul(db, tanitici, out id) ? Ac(tr, id, true) : null;
         }
 
-        private static void SimgeTasindi(Transaction tr, ObjectId id)
+        private static void SimgeTasindi(Transaction t, Database db, ObjectId id)
         {
-            var s = Ac(tr, id, false);
+            var s = Ac(t, id, false);
             if (s == null) return;
-            var direk = TaniticiylaAc(tr, s.Database, ArmaturBagi.SimgeSahibi(s));
+            var direk = TaniticiylaAc(t, db, ArmaturBagi.SimgeSahibi(s));
             if (direk == null || direk.IsErased) return;
             string simge;
             double dx, dy;
@@ -289,34 +365,35 @@ namespace SebekeHakedis.Eklenti
             ArmaturBagi.DirekVerisiYaz(direk, simge, ndx, ndy);
         }
 
-        private static void DirekIsle(Transaction tr, Database db, Is x, List<ObjectId> yeniSimgeler)
+        private static void DirekIsle(Transaction t, Database db, ObjectId ms, Not n, Dictionary<string, List<Aday>> gruplar, List<Aday> hepsi)
         {
-            var direk = Ac(tr, x.Id, true);
+            var direk = Ac(t, n.Id, true);
             if (direk == null || direk.IsErased)
             {
-                // Direk silindi (ya da geri alındı): yalnız kendi simgesi silinir
-                var s = TaniticiylaAc(tr, db, x.Simge);
-                if (s != null && !s.IsErased && ArmaturBagi.SimgeSahibi(s) == x.Tanitici)
+                // Direk silindi: yalnız kendi simgesi (model alanında) silinir
+                var s = TaniticiylaAc(t, db, n.Simge);
+                if (s != null && !s.IsErased && s.OwnerId == ms && ArmaturBagi.SimgeSahibi(s) == n.Tanitici)
                 {
                     s.UpgradeOpen();
                     s.Erase();
                 }
                 return;
             }
-            // Yalnız model alanındaki direkler (blok tanımına giren kopyalara dokunulmaz)
-            if (direk.OwnerId != SymbolUtilityServices.GetBlockModelSpaceId(db)) return;
+            if (direk.OwnerId != ms) return; // blok tanımındaki nesnelere dokunulmaz
             string simge;
             double dx, dy;
             bool konumlu;
             if (!ArmaturBagi.DirekVerisi(direk, out simge, out dx, out dy, out konumlu)) return;
             string tanitici = direk.Handle.ToString();
-            var mevcut = TaniticiylaAc(tr, db, simge);
-            if (mevcut != null && ArmaturBagi.SimgeSahibi(mevcut) == null) mevcut = null; // tanıtıcı başka bir nesnenin (başka çizimden gelmiş)
-            if (mevcut != null && ArmaturBagi.SimgeSahibi(mevcut) == tanitici)
+            var mevcut = TaniticiylaAc(t, db, simge);
+            string mevcutSahibi = mevcut != null ? ArmaturBagi.SimgeSahibi(mevcut) : null;
+            if (mevcut != null && mevcutSahibi == tanitici)
             {
                 if (!konumlu) return;
                 if (mevcut.IsErased)
                 {
+                    // Simge silinmiş: yalnız direk de geri geldiyse simge de gelir; kullanıcı simgeyi kendisi sildiyse dokunulmaz
+                    if (!n.GeriGeldi) return;
                     mevcut.UpgradeOpen();
                     mevcut.Erase(false);
                 }
@@ -328,42 +405,55 @@ namespace SebekeHakedis.Eklenti
                 }
                 return;
             }
-            // Simge başka direğin (kopya direk): direkle birlikte kopyalanan simge varsa sahiplenilir, yoksa yenisi çizilir
-            if (mevcut == null)
-            {
-                ArmaturBagi.DirekVerisiYaz(direk, null, 0, 0);
-                return;
-            }
+            // Simge bu direğin değil: kopya ya da yapıştırılmış direk. Bağlı nesne simge değilse (başka çizimden gelen
+            // tanıtıcı) yok sayılır.
+            if (mevcut != null && mevcutSahibi == null) mevcut = null;
             if (!konumlu) { dx = -5; dy = 3; }
-            string kaynakSahibi = ArmaturBagi.SimgeSahibi(mevcut);
             var hedef = new Point3d(direk.Position.X + dx, direk.Position.Y + dy, direk.Position.Z);
-            BlockReference yeni = null;
-            double enYakin = Math.Max(1.0, 3 * Math.Sqrt(dx * dx + dy * dy));
-            ObjectId secilen = ObjectId.Null;
-            foreach (var id in yeniSimgeler)
+            // Bu komutta eklenen simgelerden sahiplenilecek olan: önce asıl simgeyle aynı sahipten (birlikte kopyalanan) en
+            // yakını; yoksa (başka çizimden yapıştırma) tam hedef yerdeki sahiplenilmemiş biri
+            Aday aday = null;
+            List<Aday> grup;
+            if (mevcutSahibi != null && gruplar.TryGetValue(mevcutSahibi, out grup))
             {
-                var a = Ac(tr, id, false);
-                if (a == null || a.BlockTableRecord != mevcut.BlockTableRecord || ArmaturBagi.SimgeSahibi(a) != kaynakSahibi) continue;
-                double u = a.Position.DistanceTo(hedef);
-                if (u < enYakin) { enYakin = u; yeni = a; secilen = id; }
+                double enYakin = Math.Max(1.0, 3 * Math.Sqrt(dx * dx + dy * dy));
+                foreach (var a in grup)
+                {
+                    if (a.Alindi || (mevcut != null && a.Blok != mevcut.BlockTableRecord)) continue;
+                    double u = a.Konum.DistanceTo(hedef);
+                    if (u < enYakin) { enYakin = u; aday = a; }
+                }
             }
-            if (yeni != null)
+            if (aday == null)
+                foreach (var a in hepsi)
+                    if (!a.Alindi && a.Konum.DistanceTo(hedef) < 1e-3) { aday = a; break; }
+            direk.UpgradeOpen(); // kilitli katmanda burada durur, yarım iş kalmaz
+            BlockReference yeni;
+            if (aday != null)
             {
-                yeniSimgeler.Remove(secilen);
+                yeni = Ac(t, aday.Id, false);
+                if (yeni == null) return;
+                aday.Alindi = true;
                 dx = yeni.Position.X - direk.Position.X;
                 dy = yeni.Position.Y - direk.Position.Y;
             }
             else
             {
-                if (mevcut.IsErased) return; // kaynak simge yok: kopyalanacak bir şey yok
+                if (mevcut == null)
+                {
+                    // Kopyalanacak simge yok: bağ silinir (eklenti direği yeniden yazınca simgeyi yeniden çizer)
+                    ArmaturBagi.DirekVerisiYaz(direk, null, 0, 0);
+                    return;
+                }
+                if (mevcut.IsErased) return; // asıl simge silinmiş: kopyalanacak bir şey yok
                 yeni = new BlockReference(hedef, mevcut.BlockTableRecord);
                 yeni.SetDatabaseDefaults(db);
                 yeni.LayerId = direk.LayerId;
                 yeni.Color = mevcut.Color;
                 yeni.ScaleFactors = mevcut.ScaleFactors;
-                var sahip = (BlockTableRecord)tr.GetObject(direk.OwnerId, OpenMode.ForWrite);
-                sahip.AppendEntity(yeni);
-                tr.AddNewlyCreatedDBObject(yeni, true);
+                var alan = (BlockTableRecord)t.GetObject(ms, OpenMode.ForWrite);
+                alan.AppendEntity(yeni);
+                t.AddNewlyCreatedDBObject(yeni, true);
             }
             ArmaturBagi.SahibiYaz(yeni, tanitici);
             ArmaturBagi.DirekVerisiYaz(direk, yeni.Handle.ToString(), dx, dy);
