@@ -106,7 +106,15 @@ namespace SebekeHakedis.Test
                     if (s == null) { eksik++; Console.WriteLine("    eksik sembol: " + aile + "_" + v); continue; }
                     if (s.Ilkeller.Count == 0) bos++;
                     var sb = new StringBuilder();
-                    foreach (var i in s.Ilkeller) { sb.Append(i.Tur); foreach (var d in i.Sayilar) sb.Append(' ').Append(d.ToString("0.###", CultureInfo.InvariantCulture)); sb.Append(i.Noktalar.Count).Append(';'); }
+                    // Görünüm izi: ilkel türü, sayıları ve noktaların kendisi (yalnız sayısı değil: kesik "//" ile sökük "X"
+                    // ikisi de iki çizgidir, yerleri farklıdır)
+                    foreach (var i in s.Ilkeller)
+                    {
+                        sb.Append(i.Tur);
+                        foreach (var d in i.Sayilar) sb.Append(' ').Append(d.ToString("0.###", CultureInfo.InvariantCulture));
+                        foreach (var n in i.Noktalar) sb.Append(" (").Append(n[0].ToString("0.###", CultureInfo.InvariantCulture)).Append(',').Append(n[1].ToString("0.###", CultureInfo.InvariantCulture)).Append(')');
+                        sb.Append(';');
+                    }
                     gorunum.Add(sb.ToString());
                 }
                 if (gorunum.Count != 6) Console.WriteLine("    aynı görünen varyant: " + aile);
