@@ -82,6 +82,8 @@ namespace SebekeHakedis.Eklenti
                 var ayar = AyarDeposu.Oku(belge.Database);
                 if (ayar.Dom > 0) p.Dom = ayar.Dom;
                 if (ayar.AktifHakedis > 0) p.AktifHakedis = ayar.AktifHakedis;
+                int hakNo = PromagisSozlugu.HakNoOku(belge.Database);
+                if (hakNo > 0) p.AktifHakedis = hakNo;
                 if (!string.IsNullOrEmpty(ayar.KatmanOnEki)) p.KatmanOnEki = ayar.KatmanOnEki;
                 if (string.IsNullOrEmpty(p.KatmanOnEki)) p.KatmanOnEki = "SC";
                 p.GisOnEki = string.IsNullOrEmpty(ayar.GisOnEki) ? p.KatmanOnEki : ayar.GisOnEki;
@@ -149,6 +151,90 @@ namespace SebekeHakedis.Eklenti
             });
         }
 
+        /// <summary>
+        /// Eksik malzeme sorgusu (PROMAGIS raporundaki DETAY): ör. "topraklaması olmayan AG direkleri". Bulunan elemanlar
+        /// çizimde seçilir; istenirse sonuç Excel'e yazılır. Son süzgeçler çizimin ayarlarında saklanır.
+        /// </summary>
+        [CommandMethod("SH_DETAY", CommandFlags.Modal | CommandFlags.Redraw)]
+        public void Detay()
+        {
+            var belge = AcApp.DocumentManager.MdiActiveDocument;
+            if (belge == null) return;
+            Calistir("Eksik malzeme sorgusu", () =>
+            {
+                var o = Ortam.Hazirla(belge);
+                var ed = o.Ed;
+                if (o.Proje.Elemanlar.Count == 0) { Pencereler.Bilgi("Bu çizimde şebeke elemanı (direk, pano, trafo…) yok."); return; }
+                var a = o.Ayar;
+                var f = new DetayFiltresi
+                {
+                    AnaCins = a.SonDeger("detay.anaCins"), AnaTip = a.SonDeger("detay.anaTip"), AnaDurum = a.SonDeger("detay.anaDurum"),
+                    Bolge = a.SonDeger("detay.bolge"), Cins = a.SonDeger("detay.cins"), Tip = a.SonDeger("detay.tip"), Durum = a.SonDeger("detay.durum"),
+                    Hakedis = SayiCoz.Tam(a.SonDeger("detay.hakedis", "0")),
+                    Kapsam = a.SonDeger("detay.kapsam") == "olanlar" ? DetayKapsami.Olanlar : a.SonDeger("detay.kapsam") == "hepsi" ? DetayKapsami.Hepsi : DetayKapsami.Olmayanlar,
+                };
+                if (!Pencereler.Detay(o, f)) return;
+                a.Son["detay.anaCins"] = f.AnaCins; a.Son["detay.anaTip"] = f.AnaTip; a.Son["detay.anaDurum"] = f.AnaDurum; a.Son["detay.bolge"] = f.Bolge;
+                a.Son["detay.cins"] = f.Cins; a.Son["detay.tip"] = f.Tip; a.Son["detay.durum"] = f.Durum;
+                a.Son["detay.hakedis"] = f.Hakedis.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                a.Son["detay.kapsam"] = f.Kapsam == DetayKapsami.Olanlar ? "olanlar" : f.Kapsam == DetayKapsami.Hepsi ? "hepsi" : "olmayanlar";
+                o.AyarKaydet();
+
+                var satirlar = DetaySorgu.Sorgula(o.Proje, f);
+                var olanlar = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var olmayanlar = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var s in satirlar) (s.Olan ? olanlar : olmayanlar).Add(s.Eleman.Id);
+                string aranan = DetayAciklamasi(f);
+                if (satirlar.Count == 0)
+                {
+                    Pencereler.Bilgi("Süzgece uyan eleman bulunamadı.\n\n" + aranan);
+                    return;
+                }
+
+                // Bulunan elemanlar çizimde seçili kalsın
+                var ids = new List<Autodesk.AutoCAD.DatabaseServices.ObjectId>();
+                var gorulen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var s in satirlar)
+                {
+                    Autodesk.AutoCAD.DatabaseServices.ObjectId id;
+                    if (gorulen.Add(s.Eleman.Id) && Toplayici.TaniticiylaBul(o.Db, s.Eleman.Id, out id)) ids.Add(id);
+                }
+                try { ed.SetImpliedSelection(ids.ToArray()); } catch { }
+
+                var sb = new StringBuilder();
+                sb.AppendLine(aranan);
+                sb.AppendLine();
+                if (f.Kapsam != DetayKapsami.Olmayanlar) sb.AppendLine("Malzemesi olan: " + olanlar.Count + " eleman (" + (satirlar.Count - olmayanlar.Count) + " malzeme satırı)");
+                if (f.Kapsam != DetayKapsami.Olanlar) sb.AppendLine("Malzemesi olmayan (eksik): " + olmayanlar.Count + " eleman");
+                sb.AppendLine(ids.Count + " eleman çizimde seçildi.");
+                sb.AppendLine();
+                sb.Append("Sonuç Excel dosyasına yazılsın mı?");
+                ed.WriteMessage("\nEksik malzeme sorgusu: " + (f.Kapsam != DetayKapsami.Olanlar ? olmayanlar.Count + " eksik" : "") +
+                                (f.Kapsam == DetayKapsami.Hepsi ? ", " : "") + (f.Kapsam != DetayKapsami.Olmayanlar ? olanlar.Count + " olan" : "") + " eleman; " + ids.Count + " eleman seçildi.");
+                if (!Pencereler.Onay(sb.ToString(), false)) return;
+                string yol = KayitYeriSor("Eksik malzeme sorgusunu kaydet", "Excel dosyası (*.xlsx)|*.xlsx",
+                    Ad(belge) + "_DETAY_" + DateTime.Now.ToString("dd.MM.yyyy_HH_mm") + ".xlsx", Klasor(belge));
+                if (yol == null) return;
+                RaporYazici.DetayYaz(o.Proje, satirlar, yol, Uygulama.Surum, aranan.Replace("\n", "  ·  "));
+                Uygulama.Yaz("Sorgu sonucu yazıldı: " + yol);
+                Ac(yol);
+            });
+        }
+
+        private static string DetayAciklamasi(DetayFiltresi f)
+        {
+            var el = new List<string>();
+            if (f.AnaCins.Length > 0) el.Add(f.AnaCins);
+            if (f.AnaTip.Length > 0) el.Add(f.AnaTip);
+            if (f.AnaDurum.Length > 0) el.Add("durum " + f.AnaDurum);
+            var ar = new List<string>();
+            if (f.Cins.Length > 0) ar.Add(f.Cins);
+            if (f.Tip.Length > 0) ar.Add(f.Tip);
+            if (f.Durum.Length > 0) ar.Add("durum " + f.Durum);
+            if (f.Hakedis > 0) ar.Add(f.Hakedis + ". hakediş");
+            return "Elemanlar: " + (el.Count > 0 ? string.Join(", ", el) : "hepsi") + "\nAranan malzeme: " + (ar.Count > 0 ? string.Join(", ", ar) : "herhangi bir ara malzeme");
+        }
+
         [CommandMethod("SH_DOKUM", CommandFlags.Modal)]
         public void Dokum()
         {
@@ -193,6 +279,7 @@ namespace SebekeHakedis.Eklenti
             ed.WriteMessage("\n  SH_RAPOR       Bu çizimden Durum Tespit raporu (Excel)");
             ed.WriteMessage("\n  SH_PROJERAPOR  Proje dosyasından Durum Tespit raporu");
             ed.WriteMessage("\n  SH_OZET        Çizimdeki proje özetini göster");
+            ed.WriteMessage("\n  SH_DETAY       Eksik malzeme bul (ör. topraklaması olmayan direkler); bulunanları seç, Excel'e yaz");
             ed.WriteMessage("\n  Diğer");
             ed.WriteMessage("\n  SH_SERIT       Şerit menü sekmesini yeniden kur");
             ed.WriteMessage("\n  SH_DOKUM       Destek için teknik döküm dosyası");

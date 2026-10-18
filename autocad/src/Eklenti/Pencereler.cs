@@ -624,13 +624,15 @@ namespace SebekeHakedis.Eklenti
 
         // ================= Bölge =================
 
-        public static bool Bolge(ref string ad, ref string kod)
+        public static bool Bolge(ref string ad, ref string kod, ref string grup)
         {
-            using (var d = new Duzen("Bölge (alt proje)", 520, 210, "Kaydet"))
+            using (var d = new Duzen("Bölge (alt proje)", 520, 260, "Kaydet"))
             {
                 var tAd = d.Satir("Bölge adı", new TextBox { Text = ad ?? "" });
                 var tKod = d.Satir("Proje kodu", new TextBox { Text = kod ?? "" });
-                d.Not("Raporun PROJE sütununa bu kod yazılır. Sınırın içindeki her nesne bu bölgeye sayılır.");
+                var tGrup = d.Satir("Grup kodu", new TextBox { Text = grup ?? "" });
+                d.Not("Raporun PROJE sütununa proje kodu yazılır; grup kodu PROMAGIS'teki bölge grup kodudur (boş bırakılabilir). " +
+                      "Sınırın içindeki her nesne bu bölgeye sayılır.");
                 d.Dogrula = () =>
                 {
                     if (tAd.Text.Trim().Length == 0 && tKod.Text.Trim().Length == 0) { Uyar("Bölge adını ya da proje kodunu yazın."); return false; }
@@ -639,6 +641,131 @@ namespace SebekeHakedis.Eklenti
                 if (!d.Goster()) return false;
                 ad = tAd.Text.Trim();
                 kod = tKod.Text.Trim();
+                grup = tGrup.Text.Trim();
+                return true;
+            }
+        }
+
+        // ================= Eksik malzeme sorgusu (DETAY) =================
+
+        private const string Hepsi = "(hepsi)";
+
+        private static ComboBox YaziliKutu(IEnumerable<string> l, string secili)
+        {
+            var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDown, AutoCompleteMode = AutoCompleteMode.SuggestAppend, AutoCompleteSource = AutoCompleteSource.ListItems, MaxDropDownItems = 20 };
+            Doldur(c, l, secili);
+            return c;
+        }
+
+        private static void Doldur(ComboBox c, IEnumerable<string> l, string secili)
+        {
+            c.BeginUpdate();
+            c.Items.Clear();
+            c.Items.Add(Hepsi);
+            foreach (var s in l) c.Items.Add(s);
+            c.EndUpdate();
+            c.Text = string.IsNullOrWhiteSpace(secili) ? Hepsi : secili;
+        }
+
+        private static string Deger(ComboBox c)
+        {
+            string s = (c.Text ?? "").Trim();
+            return s == Hepsi ? "" : s;
+        }
+
+        /// <summary>Sırasız, tekrarsız liste (Türkçe alfabe sırasıyla).</summary>
+        private static List<string> Sirali(IEnumerable<string> l)
+        {
+            var g = new HashSet<string>(StringComparer.Ordinal);
+            var r = new List<string>();
+            foreach (var s in l)
+            {
+                string t = (s ?? "").Trim();
+                if (t.Length > 0 && g.Add(t)) r.Add(t);
+            }
+            var tr = CultureInfo.GetCultureInfo("tr-TR").CompareInfo;
+            r.Sort((a, b) => tr.Compare(a, b, CompareOptions.IgnoreCase));
+            return r;
+        }
+
+        /// <summary>
+        /// Eksik malzeme sorgusu (PROMAGIS raporundaki DETAY): hangi elemanlarda hangi ara malzeme aranacak ve sonuçta
+        /// malzemesi olanlar mı olmayanlar mı gösterilecek. Son seçimler çizimin ayarlarında saklanır.
+        /// </summary>
+        public static bool Detay(OrtamVerisi o, DetayFiltresi f)
+        {
+            var p = o.Proje;
+            var k = o.Katalog;
+            var anaCinsler = new List<string>();
+            var araCinsler = new List<string>();
+            var durumlar = new List<string>(Turler.CizimDurumlari);
+            foreach (var e in p.Elemanlar)
+                foreach (var kl in e.Kalemler)
+                {
+                    (kl.Ana ? anaCinsler : araCinsler).Add(kl.Cins);
+                    durumlar.Add(kl.Durum);
+                }
+            foreach (var c in k.Cinsler) if (c.Rol == "malzeme") araCinsler.Add(c.Cins);
+
+            Func<string, bool, List<string>> tipler = (cins, ana) =>
+            {
+                var l = new List<string>();
+                foreach (var e in p.Elemanlar)
+                    foreach (var kl in e.Kalemler)
+                        if (kl.Ana == ana && DetaySorgu.Uyar(cins, kl.Cins)) l.Add(kl.Tanim);
+                if (!ana && !string.IsNullOrWhiteSpace(cins))
+                    foreach (var it in k.Kalemler) if (DetaySorgu.Uyar(cins, it.Cins)) l.Add(it.Tanim);
+                return Sirali(l);
+            };
+
+            using (var d = new Duzen("Eksik malzeme bul", 600, 610, "Bul"))
+            {
+                d.AraBaslik("Hangi elemanlar");
+                var anaCins = d.Satir("Ana cins", YaziliKutu(Sirali(anaCinsler), f.AnaCins));
+                var anaTip = d.Satir("Ana tip", YaziliKutu(tipler(f.AnaCins, true), f.AnaTip));
+                var anaDurum = d.Satir("Durum", YaziliKutu(Sirali(durumlar), f.AnaDurum));
+                var bolge = d.Satir("Bölge", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
+                bolge.Items.Add(Hepsi);
+                var bolgeIdleri = new List<string> { "" };
+                foreach (var b in p.Bolgeler)
+                {
+                    bolge.Items.Add(string.IsNullOrEmpty(b.Kod) ? b.Ad : b.Ad + "  ·  " + b.Kod);
+                    bolgeIdleri.Add(b.Id);
+                }
+                int bi = bolgeIdleri.FindIndex(x => x == (f.Bolge ?? ""));
+                bolge.SelectedIndex = bi >= 0 ? bi : 0;
+
+                d.AraBaslik("Aranan ara malzeme");
+                var cins = d.Satir("Cins", YaziliKutu(Sirali(araCinsler), f.Cins));
+                var tip = d.Satir("Tip", YaziliKutu(tipler(f.Cins, false), f.Tip));
+                var durum = d.Satir("Durum", YaziliKutu(Sirali(durumlar), f.Durum));
+                var hak = d.Satir("Hakediş", Sayi(0, 999, f.Hakedis));
+                d.Not("Hakediş 0: bütün hakedişler. Boş bırakılan (hepsi) alanlar süzgeç değildir.");
+
+                var kapsam = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false };
+                var rOlmayan = new RadioButton { Text = "Bu malzemesi OLMAYAN elemanlar (eksikler)", AutoSize = true };
+                var rOlan = new RadioButton { Text = "Bu malzemesi OLAN elemanlar (malzemenin her satırı)", AutoSize = true };
+                var rHepsi = new RadioButton { Text = "Hepsi", AutoSize = true };
+                kapsam.Controls.Add(rOlmayan);
+                kapsam.Controls.Add(rOlan);
+                kapsam.Controls.Add(rHepsi);
+                (f.Kapsam == DetayKapsami.Olanlar ? rOlan : f.Kapsam == DetayKapsami.Hepsi ? rHepsi : rOlmayan).Checked = true;
+                d.Satir("Göster", kapsam);
+                d.Not("Bulunan elemanlar çizimde seçilir; isterseniz sonuç Excel'e (DETAY sayfası) yazılır.");
+
+                anaCins.TextChanged += (s, e) => Doldur(anaTip, tipler(Deger(anaCins), true), Deger(anaTip));
+                cins.TextChanged += (s, e) => Doldur(tip, tipler(Deger(cins), false), Deger(tip));
+
+                if (!d.Goster()) return false;
+                f.AnaCins = Deger(anaCins);
+                f.AnaTip = Deger(anaTip);
+                f.AnaDurum = Deger(anaDurum);
+                f.Bolge = bolge.SelectedIndex > 0 ? bolgeIdleri[bolge.SelectedIndex] : "";
+                f.Cins = Deger(cins);
+                f.Tip = Deger(tip);
+                f.Durum = Deger(durum);
+                f.Hakedis = (int)hak.Value;
+                f.Kapsam = rOlan.Checked ? DetayKapsami.Olanlar : rHepsi.Checked ? DetayKapsami.Hepsi : DetayKapsami.Olmayanlar;
                 return true;
             }
         }

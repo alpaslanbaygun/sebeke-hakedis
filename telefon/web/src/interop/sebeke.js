@@ -155,6 +155,8 @@ export function sebekeModel(ps, opts = {}) {
       kalemler: [], telefonId: e.id, olcum: olcumBilgisi(p), not: e.note || undefined
     };
     if (e.sebekeId && e.sebekeId !== e.id) el.id = e.sebekeId;
+    // PROMAGIS'in telefonda düzenlenmeyen verisi (pano çıkış şeması ANA/CON, hücreler FIDER) aynen geri gider
+    if (e.sebeke && e.sebeke.ekVeri && Object.keys(e.sebeke.ekVeri).length) el.ekVeri = JSON.parse(JSON.stringify(e.sebeke.ekVeri));
     // Nesnenin kendi pozu: direk tipi, trafo direği, köşk gövdesi, SDK tipi, seçilen poz
     const kendiEtiketi = e.kind === 'pole' || e.kind === 'lighting' ? 'direk' : tanim.tur === 'TRAFO_DIREGI' ? 'direk' : tanim.tur === 'TRAFO_MERKEZI' ? 'kosk' : e.kind === 'sdk' ? 'sdk' : 'self';
     const kendi = ms.items.find((m) => m.origin === 'OTO' && m.tag === kendiEtiketi) || null;
@@ -525,7 +527,7 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     project = await ps.createProject({ name: opts.name || pj.ad || 'AutoCAD projesi', code: pj.kod || '', crs: opts.crs || makeCrs({ datum: 'TUREF', projection: 'TM3', cm: dom }), autoRecipe: false, mode: 'asbuilt' });
     await ps.open(project.id);
   }
-  const sebeke = Object.assign({}, project.sebeke || {}, { katmanOnEki: pj.katmanOnEki || (project.sebeke || {}).katmanOnEki || 'SC', gisOnEki: pj.gisOnEki || pj.katmanOnEki || 'SC', kaynak: pj.kaynak || '', dom, olusturan: sp.olusturan || '', bolgeler: (sp.bolgeler || []).map((b) => ({ id: b.id, ad: b.ad, kod: b.kod, aciklama: b.aciklama || '', sinir: b.sinir })), alinma: new Date().toISOString() });
+  const sebeke = Object.assign({}, project.sebeke || {}, { katmanOnEki: pj.katmanOnEki || (project.sebeke || {}).katmanOnEki || 'SC', gisOnEki: pj.gisOnEki || pj.katmanOnEki || 'SC', kaynak: pj.kaynak || '', dom, olusturan: sp.olusturan || '', bolgeler: (sp.bolgeler || []).map((b) => Object.assign({ id: b.id, ad: b.ad, kod: b.kod, aciklama: b.aciklama || '', sinir: b.sinir }, b.grup ? { grup: b.grup } : {})), alinma: new Date().toISOString() });
   await ps.updateProject({ sebeke, autoRecipe: project.autoRecipe === true }, 'AutoCAD dosyası alındı');
   if (opts.dry) return ozet;
 
@@ -545,7 +547,7 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     const et = ESLESME.elemanTurleri[el.tur] || ESLESME.elemanTurleri.DIGER;
     const trafo = et.kind === 'transformer';
     const state = voltDurumu(el.durum, trafo);
-    const data = { state, note: el.not || undefined, sebekeId: el.id, sebeke: { id: el.id, tur: el.tur, cins: el.cins, tip: el.tip, durum: el.durum, aci: el.aci, katman: el.katman, blok: el.blok, hakedis: el.hakedis, bolge: el.bolge, anaKalem: (el.kalemler || []).find((k) => k.ana) || null } };
+    const data = { state, note: el.not || undefined, sebekeId: el.id, sebeke: Object.assign({ id: el.id, tur: el.tur, cins: el.cins, tip: el.tip, durum: el.durum, aci: el.aci, katman: el.katman, blok: el.blok, hakedis: el.hakedis, bolge: el.bolge, anaKalem: (el.kalemler || []).find((k) => k.ana) || null }, el.ekVeri && Object.keys(el.ekVeri).length ? { ekVeri: el.ekVeri } : {}) };
     const anaKalem = (el.kalemler || []).find((k) => k.ana);
     const attrs = {};
     if (anaKalem && anaKalem.dmDurum) attrs.dmDurum = anaKalem.dmDurum;

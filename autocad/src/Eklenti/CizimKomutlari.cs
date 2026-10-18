@@ -711,15 +711,24 @@ namespace SebekeHakedis.Eklenti
                 else return;
 
                 if (sinir.Count < 3) { Pencereler.Uyar("Bölge sınırı için en az üç köşe gerekir."); return; }
-                string ad = "", kod = "";
-                if (!Pencereler.Bolge(ref ad, ref kod)) return;
-                var b = new Bolge { Ad = ad, Kod = kod, Sinir = sinir };
+                string ad = "", kod = "", grup = "";
+                if (!mevcut.IsNull)
+                {
+                    // Seçilen çizgi zaten bölgeyse bilgileri pencereye gelsin
+                    var eski = o.Proje.Bolgeler.Find(x => string.Equals(x.Id, mevcut.Handle.ToString(), StringComparison.OrdinalIgnoreCase));
+                    if (eski != null) { ad = eski.Ad; kod = eski.Kod; grup = eski.Grup; }
+                }
+                if (!Pencereler.Bolge(ref ad, ref kod, ref grup)) return;
+                var b = new Bolge { Ad = ad, Kod = kod, Grup = grup, Sinir = sinir };
                 var vb = PromagisYazici.Bolge(b, o.OnEk, null);
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
                     var y = Yazici(o, tr);
-                    if (mevcut.IsNull) y.Ekle(vb, null, 1);
+                    var id = mevcut;
+                    if (mevcut.IsNull) id = y.Ekle(vb, null, 1);
                     else y.Guncelle(mevcut, vb, null);
+                    // PROMAGIS raporu bölgeleri bu listeden bulur
+                    if (!id.IsNull) PromagisSozlugu.BolgeEkle(o.Db, tr, id.Handle.ToString());
                     tr.Commit();
                     UyarilariYaz(ed, y);
                 }
@@ -1103,7 +1112,8 @@ namespace SebekeHakedis.Eklenti
                                     v.Blok = y.KullanilabilirBlok(v.Blok, a.ElemanTuru, v.OzDeger("CİNS"), v.OzDeger("DURUM"), o.Proje.Elemanlar);
                                     olcek = o.Olcek(v.Blok);
                                 }
-                                y.Ekle(v, a.Etiket, olcek);
+                                var yeniId = y.Ekle(v, a.Etiket, olcek);
+                                if (a.Nesne == "bolge" && !yeniId.IsNull) PromagisSozlugu.BolgeEkle(o.Db, tr, yeniId.Handle.ToString());
                                 eklenen++;
                                 Kapsa(ref kapsam, ref kapsamVar, v);
                             }
@@ -1113,6 +1123,7 @@ namespace SebekeHakedis.Eklenti
                                 if (!Toplayici.TaniticiylaBul(o.Db, a.Hedef, out id)) { y.Uyarilar.Add("Nesne bulunamadı: " + a.Hedef + " " + a.Ad); continue; }
                                 if (a.Nesne == "eleman" && !y.BlokKullanilabilir(v.Blok)) v.Blok = "";
                                 y.Guncelle(id, v, a.Etiket);
+                                if (a.Nesne == "bolge") PromagisSozlugu.BolgeEkle(o.Db, tr, id.Handle.ToString());
                                 guncellenen++;
                             }
                         }
@@ -1129,6 +1140,7 @@ namespace SebekeHakedis.Eklenti
                             try
                             {
                                 y.Sil(id);
+                                PromagisSozlugu.BolgeCikar(o.Db, tr, h);
                                 silinen++;
                             }
                             catch (System.Exception ex)
@@ -1139,6 +1151,8 @@ namespace SebekeHakedis.Eklenti
                     tr.Commit();
                     UyarilariYaz(ed, y);
                 }
+                // Telefonda verilen sıra numaraları PROMAGIS sayacında da ilerlesin
+                PromagisSozlugu.SayacYaz(o.Db, Math.Max(o.Sira, Numara.EnBuyukSira(tel)));
                 if (o.Ayar.Dom == 0 && tel.Dom > 0) { o.Ayar.Dom = tel.Dom; o.AyarKaydet(); }
                 ed.WriteMessage("\nTelefondan alındı: " + eklenen + " yeni, " + guncellenen + " güncellendi" + (sil ? ", " + silinen + " silindi" : "") + ".");
                 if (!cizimdeNesneVar && kapsamVar) Yakinlas(ed, kapsam);

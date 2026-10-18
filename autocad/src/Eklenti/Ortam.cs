@@ -24,12 +24,31 @@ namespace SebekeHakedis.Eklenti
             var o = new Ortam { Belge = belge, Db = belge.Database, Ed = belge.Editor };
             var varliklar = Toplayici.Topla(o.Db);
             o.Doldur(varliklar, PromagisOkuyucu.Oku(varliklar, belge.Name), AyarDeposu.Oku(o.Db), yedekOnEk);
+            // PROMAGIS'in sayacı sıradaki boş numarayı tutar: eklenti bunun altında numara vermez.
+            long sayac = PromagisSozlugu.SayacOku(o.Db);
+            if (sayac - 1 > o.Sira) o.Sira = sayac - 1;
+            // PROMAGIS'in aktif hakedişi: eklenti hakediş seçilince buraya da yazar; farklıysa PROMAGIS'te sonradan değişmiştir.
+            // Ayar da eşitlenir: ayarlar sonradan kaydedilince PROMAGIS'in yeni değeri eskisiyle ezilmesin.
+            int hakNo = PromagisSozlugu.HakNoOku(o.Db);
+            if (hakNo > 0) { o.Hakedis = hakNo; o.Ayar.AktifHakedis = hakNo; }
             return o;
         }
 
+        /// <summary>Eklenti yeni sıra verdikçe PROMAGIS sayacı da ilerler (PROMAGIS'le sonradan çizilen kalem aynı numarayı almaz).</summary>
+        protected override void SiraVerildi(long sira) => PromagisSozlugu.SayacYaz(Db, sira);
+
         public void AyarKaydet()
         {
-            try { AyarDeposu.Yaz(Db, Ayar); }
+            try
+            {
+                AyarDeposu.Yaz(Db, Ayar);
+                if (Ayar.AktifHakedis > 0)
+                    using (var tr = Db.TransactionManager.StartTransaction())
+                    {
+                        PromagisSozlugu.HakNoYaz(Db, tr, Ayar.AktifHakedis);
+                        tr.Commit();
+                    }
+            }
             catch (Exception ex) { Ed.WriteMessage("\nAyarlar kaydedilemedi: " + ex.Message); }
         }
 

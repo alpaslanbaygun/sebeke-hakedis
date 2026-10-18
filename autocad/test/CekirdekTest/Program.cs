@@ -224,6 +224,80 @@ namespace SebekeHakedis.Test
 
             CizimAraclari();
             TelefondanAlma(varliklar, tp);
+            PromagisUyumu(varliklar, xlsx);
+        }
+
+        // ---------------- PROMAGIS uyumu: bölge grup kodu, pano/fider verisi, eksik malzeme (DETAY) ----------------
+
+        private static void PromagisUyumu(List<CadVarlik> ornekCizim, string xlsx)
+        {
+            Console.WriteLine("PROMAGIS uyumu");
+            var cizim = new List<CadVarlik>();
+            foreach (var v in ornekCizim) cizim.Add(CadVarlik.JsondanOku(v.JsonYap()));
+
+            // 1) Bölge grup kodu (FULLREG'in üçüncü alanı) ve pano çıkış şeması (ANA / CON): okunur, yazılır, dosyada taşınır
+            var bv = cizim.Find(x => x.Xd.ContainsKey("FULLREG"));
+            var f0 = bv.XdIlk("FULLREG").Split(';');
+            bv.Xd["FULLREG"] = new List<string> { f0[0] + ";" + (f0.Length > 1 ? f0[1] : "") + ";24.38.01 (NA)" };
+            var ev = cizim.Find(x => x.Tur == "INSERT" && x.Xd.ContainsKey("NIT"));
+            ev.Xd["ANA"] = new List<string> { "PANO;1" };
+            ev.Xd["CON"] = new List<string> { "C1;3X50", "C2;3X35" };
+            var p = PromagisOkuyucu.Oku(cizim, "ornek.dwg");
+            var b = p.Bolgeler.Find(x => x.Id == bv.H);
+            Esit("24.38.01 (NA)", b != null ? b.Grup : null, "bölge grup kodu okunur");
+            var e = p.Elemanlar.Find(x => x.Id == ev.H);
+            Esit(2, e != null && e.EkVeri.ContainsKey("CON") ? e.EkVeri["CON"].Count : 0, "pano çıkış şeması (CON) okunur");
+            var vb = PromagisYazici.Bolge(b, "SC", null);
+            Esit(true, vb.XdIlk("FULLREG").EndsWith(";24.38.01 (NA)", StringComparison.Ordinal), "grup kodu FULLREG'e yazılır");
+            var ve = PromagisYazici.Eleman(e, "SC", e.Blok, null);
+            Esit("C2;3X35", ve.Xd.ContainsKey("CON") && ve.Xd["CON"].Count == 2 ? ve.Xd["CON"][1] : "", "pano çıkış şeması aynen geri yazılır");
+            var pd = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(p, "test"));
+            var bd = pd.Bolgeler.Find(x => x.Id == b.Id);
+            Esit("24.38.01 (NA)", bd != null ? bd.Grup : null, "grup kodu proje dosyasında taşınır");
+            var ed = pd.Elemanlar.Find(x => x.Id == e.Id);
+            Esit("PANO;1", ed != null && ed.EkVeri.ContainsKey("ANA") ? ed.EkVeri["ANA"][0] : "", "ANA verisi proje dosyasında taşınır");
+            Esit(0, Aktarim.Planla(cizim, pd, "SC").Adimlar.Count, "grup kodu ve ek veriyle gidip gelen proje: iş yok");
+
+            // 2) Telefon ek veriyi bilmese de (dosyada yok) çizimdeki pano çıkış şeması korunur
+            ed.EkVeri.Clear();
+            var plan = Aktarim.Planla(cizim, pd, "SC");
+            Esit(0, plan.Adimlar.Count, "ek verisi dosyada olmayan eleman değişmiş sayılmaz");
+            ed.Saga += 1;
+            plan = Aktarim.Planla(cizim, pd, "SC");
+            var adim = plan.Adimlar.Find(x => x.Hedef == e.Id);
+            Esit(true, adim != null && adim.Varlik.Xd.ContainsKey("CON") && adim.Varlik.Xd["CON"].Count == 2, "taşınan elemanın pano çıkış şeması korunur");
+
+            // 3) Eksik malzeme (DETAY): ara malzemesi olan / olmayan elemanlar
+            var direk = p.Elemanlar.Find(x => x.GisId == "SC77");
+            var ara = direk.Kalemler.Find(x => !x.Ana);
+            var olan = DetaySorgu.Sorgula(p, new DetayFiltresi { Cins = ara.Cins.ToLowerInvariant(), Kapsam = DetayKapsami.Olanlar });
+            Esit(true, olan.Exists(r => r.Eleman == direk && r.Malzeme == ara), "eksik malzeme: olanlarda malzeme satırı (büyük/küçük harf farkı yok)");
+            Esit(true, olan.TrueForAll(r => r.Olan), "eksik malzeme: olanlarda hep malzeme var");
+            var yok = DetaySorgu.Sorgula(p, new DetayFiltresi { Cins = ara.Cins, Kapsam = DetayKapsami.Olmayanlar });
+            Esit(false, yok.Exists(r => r.Eleman == direk), "eksik malzeme: malzemesi olan direk eksiklerde yok");
+            int beklenen = p.Elemanlar.FindAll(x => !x.Kalemler.Exists(k => !k.Ana && DetaySorgu.Uyar(ara.Cins, k.Cins))).Count;
+            Esit(beklenen, yok.Count, "eksik malzeme: her eksik eleman bir satır");
+            Esit(true, yok.TrueForAll(r => r.Malzeme == null), "eksik malzeme: eksik satırında malzeme sütunları boş");
+            int araSayisi = 0, malzemesiz = 0;
+            foreach (var x in p.Elemanlar) { int n = x.Kalemler.FindAll(k => !k.Ana).Count; araSayisi += n; if (n == 0) malzemesiz++; }
+            Esit(araSayisi + malzemesiz, DetaySorgu.Sorgula(p, new DetayFiltresi()).Count, "DETAY: her ara malzeme bir satır, malzemesiz eleman bir satır");
+            var anaCins = direk.Kalemler.Find(k => k.Ana).Cins;
+            var suz = DetaySorgu.Sorgula(p, new DetayFiltresi { AnaCins = anaCins, Cins = "YOK_BOYLE_CINS", Kapsam = DetayKapsami.Olmayanlar });
+            Esit(true, suz.Count > 0 && suz.TrueForAll(r => DetaySorgu.Uyar(anaCins, r.Ana.Cins)), "eksik malzeme: ana cins süzgeci");
+            Esit(0, DetaySorgu.Sorgula(p, new DetayFiltresi { Cins = ara.Cins, Hakedis = 99, Kapsam = DetayKapsami.Olanlar }).Count, "eksik malzeme: hakediş süzgeci");
+            Esit(true, DetaySorgu.Uyar("ag_demir", "AG_DEMİR"), "süzgeç: Türkçe İ/i farkı yok sayılır");
+            Esit(true, DetaySorgu.Uyar("BER+2", "BER+2   "), "süzgeç: sondaki boşluklar yok sayılır");
+            Esit(DetaySorgu.Basliklar.Length, DetaySorgu.Satir(olan[0]).Length, "DETAY satırı başlık sayısı kadar");
+            using (var z = System.IO.Compression.ZipFile.OpenRead(xlsx))
+            {
+                var wb = z.GetEntry("xl/workbook.xml");
+                string icerik;
+                using (var r = new StreamReader(wb.Open(), Encoding.UTF8)) icerik = r.ReadToEnd();
+                Esit(true, icerik.Contains("name=\"DETAY\""), "raporda DETAY sayfası var");
+            }
+            string dx = Path.Combine(Path.GetTempPath(), "sebeke-detay.xlsx");
+            RaporYazici.DetayYaz(p, yok, dx, "test", "deneme");
+            Esit(true, new FileInfo(dx).Length > 1000, "eksik malzeme sorgusu Excel'e yazılır");
         }
 
         // ---------------- Telefonun proje dosyası (volt-project/3) ve telefon kimlikleri ----------------

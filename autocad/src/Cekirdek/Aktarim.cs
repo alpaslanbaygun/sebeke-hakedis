@@ -148,6 +148,9 @@ namespace SebekeHakedis.Cekirdek
                 var simdiki = cizimYaz(mevcut[hedef].Model, kimlik);
                 PromagisYazici.TaniticiYaz(istenen, hedef);
                 PromagisYazici.TaniticiYaz(simdiki, hedef);
+                // Telefonun düzenlemediği PROMAGIS verileri (pano çıkış şeması, hücreler): telefonda yoksa çizimdeki korunur
+                foreach (var u in PromagisYazici.EkUygulamalar)
+                    if (!istenen.Xd.ContainsKey(u) && simdiki.Xd.ContainsKey(u)) istenen.Xd[u] = new List<string>(simdiki.Xd[u]);
                 // Değişmeyen nesneye dokunulmaz (etiketi eski kalmış olsa bile); değişen hattın etiketi yeniden yazılır.
                 string fark;
                 if (CadVarlik.Ayni(simdiki, istenen, out fark)) { plan.Ayni++; return; }

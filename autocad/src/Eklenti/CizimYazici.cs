@@ -22,8 +22,8 @@ namespace SebekeHakedis.Eklenti
 
         private static readonly Regex EtiketTaniticisi = new Regex(@"/\(([0-9A-Fa-f]+)\)\s*$", RegexOptions.CultureInvariant);
 
-        /// <summary>Blok tanımının sürümü (blok sözlüğünde saklanır). 2: metre cinsinden geometri, 1 ölçek, telefon yazı düzeni.</summary>
-        private const string BlokSurumu = "2";
+        /// <summary>Blok tanımının sürümü (blok sözlüğünde saklanır). 2: metre cinsinden geometri, 1 ölçek, telefon yazı düzeni; 3: panoda çıkış şeması öznitelikleri (C_1…C_8).</summary>
+        private const string BlokSurumu = "3";
         private const string Sozluk = "SEBEKE_HAKEDIS", BlokKaydi = "BLOK";
 
         private readonly Database _db;
@@ -226,21 +226,24 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
-        private bool BlokGuncel(BlockTableRecord btr)
+        private bool BlokGuncel(BlockTableRecord btr) => BlokSurumuOku(btr) == BlokSurumu;
+
+        /// <summary>Blok tanımına yazılmış sürüm ("": damgasız, ilk sürüm).</summary>
+        private string BlokSurumuOku(BlockTableRecord btr)
         {
-            if (btr.ExtensionDictionary.IsNull) return false;
+            if (btr.ExtensionDictionary.IsNull) return "";
             var d = _tr.GetObject(btr.ExtensionDictionary, OpenMode.ForRead) as DBDictionary;
-            if (d == null || !d.Contains(Sozluk)) return false;
+            if (d == null || !d.Contains(Sozluk)) return "";
             var alt = _tr.GetObject(d.GetAt(Sozluk), OpenMode.ForRead) as DBDictionary;
-            if (alt == null || !alt.Contains(BlokKaydi)) return false;
+            if (alt == null || !alt.Contains(BlokKaydi)) return "";
             var xr = _tr.GetObject(alt.GetAt(BlokKaydi), OpenMode.ForRead) as Xrecord;
-            if (xr == null) return false;
+            if (xr == null) return "";
             using (var rb = xr.Data)
             {
-                if (rb == null) return false;
-                foreach (TypedValue tv in rb) return Convert.ToString(tv.Value, CultureInfo.InvariantCulture) == BlokSurumu;
+                if (rb == null) return "";
+                foreach (TypedValue tv in rb) return Convert.ToString(tv.Value, CultureInfo.InvariantCulture) ?? "";
             }
-            return false;
+            return "";
         }
 
         private void BlokSurumunuYaz(BlockTableRecord btr)
@@ -270,6 +273,9 @@ namespace SebekeHakedis.Eklenti
         /// <summary>Eski blok tanımını yeniden çizer ve çizimdeki örneklerinin ölçeğini / yazılarını yeni düzene getirir.</summary>
         private void BlokYenile(BlockTableRecord btr, string ad)
         {
+            // Damgasız (ilk sürüm) bloklar metre/4 geometriyle 4 ölçekliydi; 2. sürümden beri geometri metre, ölçek 1
+            string eskiSurum = BlokSurumuOku(btr);
+            bool olcekCevir = eskiSurum == "" || eskiSurum == "1";
             if (!btr.IsWriteEnabled) btr.UpgradeOpen();
             var eskiler = new List<ObjectId>();
             foreach (ObjectId eid in btr) eskiler.Add(eid);
@@ -287,7 +293,7 @@ namespace SebekeHakedis.Eklenti
                 if (br == null) continue;
                 // Eski geometri metre/4 idi: ölçek 4 → 1 (görünen boyut aynı kalır)
                 double s = br.ScaleFactors.X;
-                double yeni = Math.Abs(s) < 1e-9 ? 1 : s / 4.0;
+                double yeni = Math.Abs(s) < 1e-9 ? 1 : olcekCevir ? s / 4.0 : s;
                 var degerler = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 var attler = new List<ObjectId>();
                 foreach (ObjectId aid in br.AttributeCollection) attler.Add(aid);
@@ -359,6 +365,9 @@ namespace SebekeHakedis.Eklenti
             OznitelikTanimi(btr, "DURUM", x, y - satir - kucuk * 3.2, kucuk, true);
             OznitelikTanimi(btr, "GÜÇ", x, y - satir - kucuk * 4.8, kucuk, true);
             OznitelikTanimi(btr, "GERİLİM", x, y - satir - kucuk * 6.4, kucuk, true);
+            // Pano: PROMAGIS'in çıkış şeması öznitelikleri (gizli; PROMAGIS bloğundan geçişte değerler korunur)
+            if (ad.StartsWith(Semboller.OnEk + "PANO_", StringComparison.OrdinalIgnoreCase))
+                for (int i = 1; i <= 8; i++) OznitelikTanimi(btr, "C_" + i.ToString(CultureInfo.InvariantCulture), x, y - satir - kucuk * (8 + 1.6 * i), kucuk, true);
         }
 
         /// <summary>Sembol ilkelini AutoCAD varlıklarına çevirir (k: metre → blok birimi çarpanı).</summary>
@@ -570,17 +579,23 @@ namespace SebekeHakedis.Eklenti
             if (!string.IsNullOrEmpty(v.Blok) && !v.Blok.StartsWith("*", StringComparison.Ordinal)
                 && !string.Equals(EtkinAd(br), v.Blok, StringComparison.OrdinalIgnoreCase) && BlokKullanilabilir(v.Blok))
             {
+                // Eski bloğun öznitelikleri (ör. pano çıkış şeması C_1…C_8) yeni blokta aynı adla varsa korunur
+                var eskiDegerler = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 foreach (ObjectId aid in br.AttributeCollection)
                 {
                     var eski = _tr.GetObject(aid, OpenMode.ForWrite, false) as AttributeReference;
-                    if (eski != null) eski.Erase();
+                    if (eski == null) continue;
+                    eskiDegerler[eski.Tag] = eski.TextString;
+                    eski.Erase();
                 }
                 bool eskiSh = Semboller.EklentininBlogu(EtkinAd(br));
                 var yeniBlok = Blok(v.Blok);
                 br.BlockTableRecord = yeniBlok;
                 if (Semboller.EklentininBlogu(v.Blok) && Math.Abs(br.ScaleFactors.X - 1) > 1e-9) br.ScaleFactors = new Scale3d(1);
                 else if (eskiSh && !Semboller.EklentininBlogu(v.Blok)) br.ColorIndex = 256; // PROMAGIS bloğuna dönüşte KATMANA GÖRE
-                OznitelikleriKur(br, yeniBlok, v.Oz);
+                var yeniDegerler = new Dictionary<string, string>(eskiDegerler, StringComparer.OrdinalIgnoreCase);
+                foreach (var kv in v.Oz) yeniDegerler[kv.Key] = kv.Value;
+                OznitelikleriKur(br, yeniBlok, yeniDegerler);
                 return;
             }
 
@@ -717,6 +732,12 @@ namespace SebekeHakedis.Eklenti
                 foreach (var app in Yonetilen) Bolum(rb, app, v.XdHepsi(app));
                 List<string> kimlik;
                 if (v.Xd.TryGetValue(PromagisYazici.KimlikUygulamasi, out kimlik) && kimlik.Count > 0) Bolum(rb, PromagisYazici.KimlikUygulamasi, kimlik);
+                // PROMAGIS'in pano çıkış şeması / hücre verisi: yalnız tarifte varsa yazılır (yoksa çizimdeki olduğu gibi kalır)
+                foreach (var app in PromagisYazici.EkUygulamalar)
+                {
+                    List<string> l;
+                    if (v.Xd.TryGetValue(app, out l) && l.Count > 0) Bolum(rb, app, l);
+                }
                 e.XData = rb;
             }
         }

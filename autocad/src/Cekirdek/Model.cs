@@ -38,7 +38,9 @@ namespace SebekeHakedis.Cekirdek
     {
         public string Id = "";
         public string Ad = "";
-        public string Kod = "";         // ör. 11.22.33.19.12345
+        public string Kod = "";         // ör. 11.22.33.19.12345 (PROMAGIS: bölge tarifesi)
+        /// <summary>PROMAGIS grup kodu (FULLREG üçüncü alanı, ör. "24.38.01 (NA)").</summary>
+        public string Grup = "";
         public string Aciklama = "";
         public List<double[]> Sinir = new List<double[]>(); // [Saga, Yukari]
         public double Alan;              // m², hesaplanır
@@ -78,6 +80,11 @@ namespace SebekeHakedis.Cekirdek
         public List<Kalem> Kalemler = new List<Kalem>();
         /// <summary>Telefondaki kayıt kimliği (çizimde SH_ID); dosyada "telefonId". Telefon dosyayı geri alırken kaydını bununla bulur.</summary>
         public string TelefonId = "";
+        /// <summary>
+        /// PROMAGIS'in eklentinin düzenlemediği verileri (pano çıkış şeması ANA / CON, bina tipi trafonun hücreleri FIDER):
+        /// okunur, dosyada taşınır ve aynen geri yazılır.
+        /// </summary>
+        public Dictionary<string, List<string>> EkVeri = new Dictionary<string, List<string>>(StringComparer.Ordinal);
     }
 
     /// <summary>Hat: AG/OG havai, yeraltı kablo, aydınlatma, rekortman (abone bağlantısı).</summary>

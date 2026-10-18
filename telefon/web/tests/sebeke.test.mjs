@@ -265,6 +265,23 @@ test('A4 · AutoCAD örnek dosyası telefona alınır: direk tipleri katalogdan 
   assert.equal(ps.data.equipment.filter((e) => e.status !== 'deleted').length, 3);
 });
 
+test('A4b · PROMAGIS\'in telefonda düzenlenmeyen verileri gidip gelir: bölge grup kodu, pano çıkış şeması (ekVeri)', async () => {
+  const { ps } = await setup();
+  const { proje } = voltProjeOku(fs.readFileSync(ORNEK, 'utf8'));
+  proje.bolgeler[0].grup = '24.38.01 (NA)';
+  const sc1 = proje.elemanlar.find((e) => e.gisId === 'SC1');
+  sc1.ekVeri = { ANA: ['PANO;1'], CON: ['C1;3X50', 'C2;3X35'] };
+  await sebekeIceAl(ps, proje);
+  assert.equal(ps.p.sebeke.bolgeler[0].grup, '24.38.01 (NA)', 'grup kodu projede saklanır');
+  const eq = ps.data.equipment.find((e) => e.no === 'SC1');
+  assert.deepEqual(eq.sebeke.ekVeri.CON, ['C1;3X50', 'C2;3X35'], 'ek veri ekipmanda saklanır');
+  const geri = SH.projeOku(SH.projeYaz(sebekeModel(ps)));
+  assert.equal(geri.bolgeler.find((b) => b.id === proje.bolgeler[0].id).grup, '24.38.01 (NA)', 'grup kodu dosyaya geri yazılır');
+  const e1 = geri.elemanlar.find((e) => e.gisId === 'SC1');
+  assert.deepEqual(e1.ekVeri, { ANA: ['PANO;1'], CON: ['C1;3X50', 'C2;3X35'] }, 'ek veri aynen geri yazılır');
+  assert.equal(geri.elemanlar.find((e) => e.gisId === 'SC7').ekVeri, undefined, 'ek verisi olmayan elemanda alan yok');
+});
+
 test('A5 · telefonun tam proje dosyası (volt-project/3) AutoCAD bölümünü taşır ve geri okunur', async () => {
   const { ps } = await setup(); await newProject(ps, { autoRecipe: false });
   await buildPoleLine(ps, OG_ROUTE, { group: 'bahh', typeNames: OG_TYPES, circuits: [{ role: 'OG', key: '3xSwallow', count: 1 }] });

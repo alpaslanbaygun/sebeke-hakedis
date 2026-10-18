@@ -41,7 +41,7 @@ namespace SebekeHakedis.Cekirdek
                 var fr = v.XdIlk("FULLREG");
                 if (fr == null || !v.CizgiMi) continue;
                 var f = fr.Split(';');
-                var b = new Bolge { Id = v.H, Ad = Alan(f, 0).Trim(), Kod = Alan(f, 1).Trim() };
+                var b = new Bolge { Id = v.H, Ad = Alan(f, 0).Trim(), Kod = Alan(f, 1).Trim(), Grup = Alan(f, 2).Trim() };
                 foreach (var k in v.Kose) b.Sinir.Add(new[] { k[0], k[1] });
                 b.Alan = Geometri.Alan(b.Sinir);
                 p.Bolgeler.Add(b);
@@ -146,6 +146,11 @@ namespace SebekeHakedis.Cekirdek
             if (string.IsNullOrEmpty(e.Guc)) e.Guc = (v.OzDeger("GÜÇ") ?? "").Trim();
             if (string.IsNullOrEmpty(e.Gerilim)) e.Gerilim = (v.OzDeger("GERİLİM") ?? "").Trim();
 
+            foreach (var u in PromagisYazici.EkUygulamalar)
+            {
+                var l = v.XdHepsi(u);
+                if (l.Count > 0) e.EkVeri[u] = new List<string>(l);
+            }
             var ana = AnaKalemOku(v.XdIlk("NIT"));
             ana.Kontrol = e.Kontrol;
             e.Kalemler.Add(ana);

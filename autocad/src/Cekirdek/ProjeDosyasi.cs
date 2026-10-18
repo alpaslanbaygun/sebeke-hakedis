@@ -68,6 +68,7 @@ namespace SebekeHakedis.Cekirdek
             {
                 var o = new JsonNesne();
                 o["id"] = b.Id; o["ad"] = b.Ad; o["kod"] = b.Kod;
+                if (!string.IsNullOrEmpty(b.Grup)) o["grup"] = b.Grup;
                 if (!string.IsNullOrEmpty(b.Aciklama)) o["aciklama"] = b.Aciklama;
                 o["sinir"] = Koseler(b.Sinir);
                 bolgeler.Add(o);
@@ -104,6 +105,12 @@ namespace SebekeHakedis.Cekirdek
                 o["katman"] = e.Katman; o["blok"] = e.Blok;
                 o["kalemler"] = Kalemler(e.Kalemler);
                 if (!string.IsNullOrEmpty(e.TelefonId)) o["telefonId"] = e.TelefonId;
+                if (e.EkVeri.Count > 0)
+                {
+                    var ek = new JsonNesne();
+                    foreach (var kv in e.EkVeri) ek[kv.Key] = new List<object>(kv.Value);
+                    o["ekVeri"] = ek;
+                }
                 elemanlar.Add(o);
             }
             k["elemanlar"] = elemanlar;
@@ -198,7 +205,7 @@ namespace SebekeHakedis.Cekirdek
 
             foreach (var o in Nesneler(k, "bolgeler"))
             {
-                var b = new Bolge { Id = o.Metin("id"), Ad = o.Metin("ad"), Kod = o.Metin("kod"), Aciklama = o.Metin("aciklama"), Sinir = KoseOku(o.Dizi("sinir")) };
+                var b = new Bolge { Id = o.Metin("id"), Ad = o.Metin("ad"), Kod = o.Metin("kod"), Grup = o.Metin("grup"), Aciklama = o.Metin("aciklama"), Sinir = KoseOku(o.Dizi("sinir")) };
                 b.Alan = Geometri.Alan(b.Sinir);
                 p.Bolgeler.Add(b);
             }
@@ -211,14 +218,25 @@ namespace SebekeHakedis.Cekirdek
             }
             foreach (var o in Nesneler(k, "elemanlar"))
             {
-                p.Elemanlar.Add(new Eleman
+                var e = new Eleman
                 {
                     Id = o.Metin("id"), Tur = o.Metin("tur"), GisId = o.Metin("gisId"), Cins = o.Metin("cins"), Tip = o.Metin("tip"),
                     Durum = o.Metin("durum"), Hakedis = o.Tam("hakedis"), Bolge = o.Metin("bolge"),
                     Saga = o.Ondalik("saga"), Yukari = o.Ondalik("yukari"), Kot = o.Ondalik("kot"), Aci = o.Ondalik("aci"),
                     Guc = o.Metin("guc"), Gerilim = o.Metin("gerilim"), DmDurum = o.Metin("dmDurum"), Kontrol = o.Mantik("kontrol"),
                     Katman = o.Metin("katman"), Blok = o.Metin("blok"), Kalemler = KalemOku(o.Dizi("kalemler")), TelefonId = o.Metin("telefonId"),
-                });
+                };
+                var ek = o.Nesne("ekVeri");
+                if (ek != null)
+                    foreach (var kv in ek)
+                    {
+                        var d = kv.Value as List<object>;
+                        if (d == null || Array.IndexOf(PromagisYazici.EkUygulamalar, kv.Key) < 0) continue;
+                        var l = new List<string>();
+                        foreach (var x in d) l.Add(Convert.ToString(x, CultureInfo.InvariantCulture) ?? "");
+                        if (l.Count > 0) e.EkVeri[kv.Key] = l;
+                    }
+                p.Elemanlar.Add(e);
             }
             foreach (var o in Nesneler(k, "hatlar"))
             {

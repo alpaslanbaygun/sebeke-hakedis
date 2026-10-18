@@ -94,7 +94,10 @@ namespace SebekeHakedis.Cekirdek
             // 8) KATSAYILAR
             KatsayiSayfasi(x.SayfaEkle("KATSAYILAR"), k);
 
-            // 9) UYARILAR
+            // 9) DETAY: her elemanın ara malzemeleri satır satır (ara malzemesi olmayan eleman tek satır)
+            DetaySayfasi(x.SayfaEkle("DETAY"), DetaySorgu.Sorgula(p, new DetayFiltresi(), dt));
+
+            // 10) UYARILAR
             if (p.Uyarilar.Count > 0)
             {
                 var u = x.SayfaEkle("UYARILAR");
@@ -104,6 +107,24 @@ namespace SebekeHakedis.Cekirdek
             }
 
             x.Kaydet(yol);
+        }
+
+        /// <summary>Yalnız eksik malzeme sorgusunun sonucunu yazar (SH_DETAY).</summary>
+        public static void DetayYaz(Proje p, List<DetaySatiri> satirlar, string yol, string surum, string aciklama)
+        {
+            var x = new XlsxYazici();
+            var s = x.SayfaEkle("DETAY");
+            s.UstBilgi.Add("EKSİK MALZEME SORGUSU — " + p.Ad);
+            s.UstBilgi.Add((aciklama ?? "") + "   ·   Oluşturma: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) + "   ·   Şebeke Hakediş " + surum);
+            DetaySayfasi(s, satirlar);
+            x.Kaydet(yol);
+        }
+
+        private static void DetaySayfasi(XlsxYazici.Sayfa s, List<DetaySatiri> satirlar)
+        {
+            s.Basliklar.AddRange(DetaySorgu.Basliklar);
+            foreach (var r in satirlar) s.Satirlar.Add(DetaySorgu.Satir(r));
+            s.Genislikler[1] = 50; s.SayiBicimleri[15] = "0.00"; s.SayiBicimleri[16] = "0"; s.SayiBicimleri[19] = "0";
         }
 
         private static void KatsayiSayfasi(XlsxYazici.Sayfa s, Katsayilar k)

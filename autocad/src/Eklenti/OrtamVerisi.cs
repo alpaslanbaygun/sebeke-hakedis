@@ -45,7 +45,15 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>Yeni kalemin sıra numarası (INDEX).</summary>
-        public string YeniSira() => (++Sira).ToString(CultureInfo.InvariantCulture);
+        public string YeniSira()
+        {
+            ++Sira;
+            SiraVerildi(Sira);
+            return Sira.ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>Yeni sıra numarası verilince (AutoCAD'de PROMAGIS'in sayacı da ilerletilir).</summary>
+        protected virtual void SiraVerildi(long sira) { }
 
         /// <summary>
         /// Yeni elemanın blok ölçeği: eklentinin SH_ simgeleri metre cinsindendir, her zaman 1 ölçekle konur (telefonla

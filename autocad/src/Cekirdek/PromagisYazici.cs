@@ -22,8 +22,11 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Eklentinin parça metrajı yazılarının tanıtıcıları (hat / kanal / sondajda; her parça için bir yazı).</summary>
         public const string ParcaUygulamasi = "SH_PARCA";
 
+        /// <summary>PROMAGIS'in eklentinin düzenlemediği verileri: pano çıkış şeması (ANA, CON), bina tipi trafo hücreleri (FIDER).</summary>
+        public static readonly string[] EkUygulamalar = { "ANA", "CON", "FIDER" };
+
         /// <summary>XDATA uygulama adları (çizimde kayıtlı olmalı).</summary>
-        public static readonly string[] Uygulamalar = { "GIS", "NIT", "MALZEME", "HAT", "ANAKESIT", "ETK", "KONTROL", "FULLREG", "HAKNO", "ZKOORD", KimlikUygulamasi, ParcaUygulamasi };
+        public static readonly string[] Uygulamalar = { "GIS", "NIT", "MALZEME", "HAT", "ANAKESIT", "ETK", "KONTROL", "FULLREG", "HAKNO", "ZKOORD", KimlikUygulamasi, ParcaUygulamasi, "ANA", "CON", "FIDER" };
 
         /// <summary>
         /// Sembol takımı: true (varsayılan) → her eleman telefonla aynı SH_ simgesiyle çizilir (çizimdeki PROMAGIS blokları
@@ -264,6 +267,7 @@ namespace SebekeHakedis.Cekirdek
             Ekle(v, "KONTROL", Mantik(e.Kontrol ?? ana.Kontrol));
             Ekle(v, "NIT", NitSatiri(ana));
             foreach (var k in e.Kalemler) if (!k.Ana) Ekle(v, "MALZEME", MalzemeSatiri(k));
+            foreach (var kv in e.EkVeri) if (kv.Value != null && kv.Value.Count > 0) v.Xd[kv.Key] = new List<string>(kv.Value);
             if (!string.IsNullOrEmpty(kimlik)) Ekle(v, KimlikUygulamasi, kimlik);
             return v;
         }
@@ -399,7 +403,7 @@ namespace SebekeHakedis.Cekirdek
             var v = new CadVarlik { H = b.Id, Tur = "LWPOLYLINE", Katman = onEk + "_PROJE", Kapali = true };
             foreach (var k in b.Sinir) v.Kose.Add(new[] { k[0], k[1] });
             Stil(v, "PROJE", "");
-            Ekle(v, "FULLREG", A(b.Ad) + ";" + A(b.Kod) + ";");
+            Ekle(v, "FULLREG", A(b.Ad) + ";" + A(b.Kod) + ";" + A(b.Grup));
             if (!string.IsNullOrEmpty(kimlik)) Ekle(v, KimlikUygulamasi, kimlik);
             return v;
         }

@@ -129,17 +129,19 @@ namespace SebekeHakedis.PencereTest
 
             Dene("06-bolge", () =>
             {
-                string ad = "", kod = "";
-                bool ok = Pencereler.Bolge(ref ad, ref kod);
+                string ad = "", kod = "", grup = "";
+                bool ok = Pencereler.Bolge(ref ad, ref kod, ref grup);
                 Esit(true, ok, "bölge: Tamam");
                 Esit("Deneme Mahallesi", ad, "bölge: ad");
                 Esit("11.22.33.44.55555", kod, "bölge: kod");
+                Esit("24.38.01 (NA)", grup, "bölge: grup kodu");
             }, f =>
             {
                 var kutular = new List<TextBox>();
                 Hepsi(f, kutular);
                 kutular[0].Text = "Deneme Mahallesi";
                 kutular[1].Text = "11.22.33.44.55555";
+                kutular[2].Text = "24.38.01 (NA)";
             });
 
             Dene("07-ayarlar", () =>
@@ -239,6 +241,27 @@ namespace SebekeHakedis.PencereTest
                 bool hepsiAg = true;
                 foreach (var it in lb.Items) if (!((KatalogKalemi)it).Cins.StartsWith("EK_MUFU_AG", StringComparison.Ordinal)) hepsiAg = false;
                 Esit(true, lb.Items.Count > 5 && hepsiAg, "süzgeçli pencere: listede yalnız AG ek mufuları");
+            });
+
+            // Eksik malzeme sorgusu (PROMAGIS DETAY): aranan cins yazılınca tip listesi o cinsin tipleriyle dolar
+            var dEleman = o.Proje.Elemanlar.Find(e => e.Kalemler.Exists(k => !k.Ana));
+            var dAra = dEleman != null ? dEleman.Kalemler.Find(k => !k.Ana) : null;
+            var df = new DetayFiltresi();
+            Dene("18-eksik-malzeme", () =>
+            {
+                bool ok = Pencereler.Detay(o, df);
+                Esit(true, ok, "eksik malzeme: Bul");
+                Esit(dAra != null ? dAra.Cins : "-", df.Cins, "eksik malzeme: aranan cins döner");
+                Esit(DetayKapsami.Olmayanlar, df.Kapsam, "eksik malzeme: varsayılan eksikleri göster");
+                Esit("", df.AnaCins, "eksik malzeme: (hepsi) süzgeç sayılmaz");
+            }, f =>
+            {
+                var kutular = new List<ComboBox>();
+                Hepsi(f, kutular);
+                Esit(true, kutular.Count >= 7 && kutular[0].Items.Count > 1, "eksik malzeme: ana cinsler çizimden dolu");
+                kutular[4].Text = dAra != null ? dAra.Cins : "";
+                Esit(true, kutular[5].Items.Count > 1, "eksik malzeme: tip listesi aranan cinsin tipleriyle dolar");
+                Resim(f, "sonra");
             });
 
             // Şerit menü önizlemesi (AutoCAD olmadan; aynı veri ve simgelerle)
