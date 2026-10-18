@@ -18,7 +18,15 @@
   üç sütunlu çizim pencereleri, "Çizilecek: …" özet satırı. Simgeler `ArayuzSimgeleri.cs` (çizgi simgeleri),
   denetimler `KoyuTema.cs`.
 - Hat, kanal ve sondaj **parçalı**: her bağlantı düğümünde (direk, SDK, pano, trafo) biter ve yeniden başlar; her
-  parçanın metrajı ve etiketi ayrı. Telefonda tek hat olarak görünür, parça kimlikleri korunur.
+  parçanın metrajı ve etiketi ayrı. Telefonda tek hat olarak görünür, parça kimlikleri korunur. Hat çizerken elemana
+  simgesinin boyutunda (ve ekranda birkaç piksel payla) yakalanır; boş yere tıklamak yalnız köşe koyar (18.10.2026).
+- **Çoklu iletken** (18.10.2026): aynı hatta iki iletken ve adet (3 × ALPEK, OG + AG). Her iletken ayrı `HAT` kalemi,
+  adet `Nx(…)` yazımıyla; müşterek hatta 1. iletken OG, 2. iletken AG gelir; etiket `OG / AG`.
+- **Malzeme hafızası** (kullanıcı kararı: kendiliğinden eklensin, şeritten kapatılabilsin): son konan ya da malzemesi
+  değişen elemanın malzemeleri aynı tür ve tipteki yeni elemana eklenir. **Toplu malzeme**: seçilen direklere birden.
+- **Armatür** direğin malzemesidir; simgesi direğin yanına çizilir ve direkle birlikte gider (`SH_ARM` bağı).
+- **Durum simgeleri** telefonun haritası örnek alınarak ayrı: yeni dolu, mevcut boş, DM+M yarım, DM "/", kesik "//",
+  sökük "X" (taşan sarı çizgiler).
 - PROMAGIS'in çizimdeki ortak kayıtları (sayaç, aktif hakediş, bölge listesi, onaylar) eklentide de okunur ve yazılır;
   onaylı hakediş kilitlidir.
 - AutoCAD sürümleri: **2016–2024** ve **2025 ve sonrası** (LT yok).
@@ -50,6 +58,11 @@
   dar ekranda bölümlerin küçülmesi; AutoCAD açık temasında simgelerin okunması.
 - Koyu pencereler: yüksek DPI'da (125 %, 150 %) yazı ve kutuların taşmaması, başlıktan sürükleme, Enter / Esc.
 - Telefonla aynı görünüm: yeni simgeler (1 ölçek), renkler, parça metrajı yazıları; `SH_GORUNUM` ile eski çizimin çevrilmesi.
+- Hat çizerken direğe / SDK'ya / aydınlatma direğine tıklayınca yakalama (uzak ve yakın görünümde); boş tıkta yalnız köşe.
+- Cins seçimi (AG beton / ağaç / demir), iletken listesinin sırası, iki iletken / adet / müşterek hat etiketi ve raporu.
+- Malzeme hafızası (aç / kapat), Toplu Malzeme; armatürün direğe eklenmesi, simgesinin direkle taşınması / kopyalanması /
+  silinmesi ve Geri Al.
+- Durum simgeleri: yeni, mevcut, DM+M, DM, kesik, sökük direklerin çizimde ve şeritte ayırt edilmesi.
 - PROMAGIS ile aynı çizimde sırayla çalışma: INDEX sırası, aktif hakediş, bölge listesi, onaylar iki programda aynı mı?
 - `SH_ONAY` ile onaylanan hakedişte kilit; `SH_DETAY` ile eksik malzeme; raporun DETAY sayfası.
 - `SH_PROJEAL` gerçek bir çizimde: telefonda taşınan direk, değişen metraj, demontaja çevrilen eleman doğru yansıyor mu?

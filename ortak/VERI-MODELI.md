@@ -102,7 +102,11 @@ Eklentinin kendi blokları (`SH_<aile>_<varyant>`) ve telefonun DXF çıktısı 
 `araclar/semboller-uret.mjs`, önizleme `araclar/semboller-onizle.mjs`. Aileler: `DIREK_AG` (beton / ağaç AG,
 daire 2,25 m), `KAFES_AG` (demir AG, kare 4,6 m), `DIREK_OG` / `KAFES_OG` (OG, müşterek, ENH; topraklama işaretli),
 `DIREK_AYD`, `TRAFO_DIREK` (üçgen), `TRAFO_BINA` (kare), `TRAFO_KOSK` (ev), `SDK`, `PANO`, `MUFU`, `KOFRE`, `MENHOL`,
-`ABONE`, `ARMATUR`, `DIGER`. Varyantlar: `YENI` dolu, `MEVCUT` boş, `DMM` yarım dolu, `DM` boş + çapraz çizgi.
+`ABONE`, `ARMATUR`, `DIGER`. Varyantlar (sürüm 2, telefonun haritasıyla aynı): `YENI` dolu, `MEVCUT` boş (kafes
+direkte içi çarpı, SDK'da çapraz), `DMM` yarım dolu, `DM` boş + simgeden taşan `/`, `KESIK` boş + taşan `//`,
+`SOKUK` boş + taşan `X`. Taşma payı `R + min(3, max(1,5; 0,8 R))`; demontaj varyantlarında iç işaret (kafes çarpısı)
+yoktur. Varyant durumdan gelir: M, M+M, KM, ENH, ME → `YENI`; DM → elemanın demontaj türüne (`dmDurum`) göre `DM` / `KESIK` /
+`SOKUK`; DM+M → `DMM`. `aileler.<aile>.kapsam`: bütün varyantları içine alan yarı genişlik (şerit simgeleri).
 Boyutlar metre; bloklar 1 ölçekle konur (telefonun DXF'iyle aynı). Varsayılan "telefon simgeleri": her yeni eleman
 SH_ simgesiyle çizilir; çizimdeki değişmeyen PROMAGIS bloklarına dokunulmaz (`SH_GORUNUM` istenirse çevirir).
 Ayarlardan "PROMAGIS simgeleri" seçilirse çizimde o tür ve durumda PROMAGIS bloğu varsa o kullanılır.
@@ -121,7 +125,7 @@ Ayarlardan "PROMAGIS simgeleri" seçilirse çizimde o tür ve durumda PROMAGIS b
 | --- | --- | --- |
 | `cins` | AG_DEMİR_GLV | malzeme kategorisi |
 | `tanim` | G-K2 | tip; hatlarda ana kesit (1x150/25 Xlpe Alm.) |
-| `aciklama` | 3(1x150/25) Xlpe Alm. | hatlarda çizimdeki tam yazım |
+| `aciklama` | 3(1x150/25) Xlpe Alm. | hatlarda çizimdeki tam yazım; aynı iletkenden birkaç tane: `3x(3X50/16+70 ALPEK)` (adet × güzergâh = miktar) |
 | `durum` | M | M montaj · M+M malzeme+montaj · KM kurum malzemesi + montaj · ENH kilometrik · DM demontaj · DM+M sök-tak · ME mutabakat eksiği · MEVCUT |
 | `miktar` | 1 | giriş biriminde |
 | `birim` | ad/kg | giriş/rapor birimi |
@@ -143,6 +147,12 @@ Ayarlardan "PROMAGIS simgeleri" seçilirse çizimde o tür ve durumda PROMAGIS b
 ### Hat türleri
 
 `AG_HAVAI`, `AG_YERALTI`, `AYDINLATMA`, `OG_HAVAI`, `OG_YERALTI`, `REKORTMAN` (abone bağlantısı), `MUSTEREK`.
+
+Çok iletkenli hat: her iletken ayrı bir `HAT` kalemidir (müşterekte OG iletkeni `OG_İLETKEN`, AG iletkeni
+`AG_İLETKEN` / `ALPEK_KABLOLAR`). Adet `aciklama`daki `Nx(…)` yazımıyla, miktar adet × güzergâh metrajı. Tek
+iletkende `anaKesit` iletkenin tanımıdır (PROMAGIS gibi); birden çok iletkende birleşik yazım: OG'ler ` + ` ile, sonra
+` / `, sonra AG'ler ` + ` ile (ör. `3xSW / 4P+R`). Etiketteki uzunluk güzergâhın metrajıdır (ilk iletkenin miktarı / adedi).
+Telefonda her `HAT` kalemi bir devredir (`{role, key, count}`); eşlenemeyen iletken varsa kalemler olduğu gibi saklanır.
 
 ### Kanal kodu
 
@@ -197,6 +207,7 @@ Eklenti PROMAGIS'in yazdığı biçimle yazar (yukarıdaki XDATA ve katmanlar); 
 | --- | --- | --- |
 | `SH_ID` XDATA | telefondan gelen nesne | telefondaki kimlik; aynı dosya yeniden alınınca nesne bununla bulunur |
 | `SH_PARCA` XDATA | hat, kanal, sondaj | parça metrajı yazılarının tanıtıcıları (`<ön ek>_YAZI` katmanında) |
+| `SH_ARM` XDATA | armatürlü direk ve simgesi | direkte `[simgenin tanıtıcısı, dx, dy]` (simgenin direğe göre yeri), simgede `["@" + direğin tanıtıcısı]`. Simge `SH_ARMATUR_<varyant>` bloğudur, direğin katmanında; kendi poz verisi yoktur (armatür direğin `MALZEME` kalemidir). Direk AutoCAD'le taşınınca / kopyalanınca / silinince simge de gider |
 | `SEBEKE_HAKEDIS` › `AYARLAR` | çizimin sözlüğü (Named Objects Dictionary) | çizim ayarları: ön ekler, aktif hakediş, dilim, tarife, sembol takımı, etiket, metraj payları, son seçimler |
 | `SH_<aile>_<varyant>` (ör. `SH_KAFES_AG_YENI`), `GPS` | blok tanımları | lejant simgesi tür + malzeme + duruma göre (`katalog/semboller.json`; 1 ölçek, öznitelikler PROMAGIS adlarıyla; panoda ayrıca gizli `C_1…C_8`); tanımın sürümü blok sözlüğünde (`SEBEKE_HAKEDIS › BLOK`) |
 

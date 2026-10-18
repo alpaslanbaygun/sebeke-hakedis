@@ -249,7 +249,9 @@ için **Telefon Görünümü** (`SH_GORUNUM`); değişmeyen PROMAGIS bloklarına
 
 | Düğme | Komut | Ne yapar |
 | --- | --- | --- |
-| Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 934 kalemlik PROMAGIS kataloğu). |
+| Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 934 kalemlik PROMAGIS kataloğu). Hatta iletken eklerseniz hattın ikinci iletkeni olur (metrajı hattın boyu). |
+| Toplu Malzeme | `SH_TOPLUMALZEME` | Seçilen bütün direklere (trafo, SDK…) aynı malzemeleri birden ekler. |
+| Malzeme Hafızası | — | Açıkken son elemanın malzemeleri aynı tipteki yeni elemana kendiliğinden eklenir; tıklayınca kapanır / açılır. |
 | Metraj | `SH_METRAJ` | Seçilen hat / kanal / sondajın metrajını çizim uzunluğundan yeniden hesaplar (önce listeyi gösterip sorar). |
 | Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (simge, renk, etiket, parça metrajları). |
 | Aktif Hakediş | `SH_HAKEDIS` | Aktif hakediş: yeni çizilenler bu hakedişin katmanlarına (`SC_3.HAK.…`) konur. PROMAGIS'in aktif hakedişiyle ortaktır. |

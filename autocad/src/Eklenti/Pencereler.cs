@@ -839,7 +839,7 @@ namespace SebekeHakedis.Eklenti
         public static HatSecimi Hat(OrtamVerisi o, HatSecimi onceki)
         {
             Hazirla();
-            using (var f = new KoyuPencere("Hat çiz", 920, 640, Boya.Simge("hat_havai", KoyuRenk.Yesil, 20)))
+            using (var f = new KoyuPencere("Hat çiz", 920, 660, Boya.Simge("hat_havai", KoyuRenk.Yesil, 20)))
             {
                 var alt = AltKur(f, "Çiz");
                 int icSon = f.IcerikSonu - 16;
@@ -870,7 +870,7 @@ namespace SebekeHakedis.Eklenti
                 Etiket(f, "Hakediş", 604, y);
                 var hak = Koy(f, new SayiKutusu(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis), 604, y + 20, 120, 30);
                 y += 62;
-                const string normal = "Hat her direkte, SDK'da biter, yeni parça başlar; her parçaya hat bilgisi yazılır. 3 adette metraj 3 katı.";
+                const string normal = "Hat her direkte, SDK'da biter, yeni parça başlar; her parçaya hat bilgisi yazılır.";
                 var bilgi = Koy(f, new BilgiCubugu(BilgiTuru.Bilgi, normal), 604, y, 300, Math.Max(52, icSon - y));
 
                 var suzgec = onceki != null ? onceki.Cinsler : new List<string>();

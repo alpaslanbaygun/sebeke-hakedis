@@ -30,7 +30,10 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 17.10 işleri `volt-birlesim`, 18.10 işleri (PROMAGIS öneri listesinin tamamı + şerit + görünüm + parçalı hat)
 `serit-ve-stil` dalında yapıldı ve `main`'e alındı. 18.10 öğleden sonra: Google Stitch tasarımıyla şerit ve bütün
 pencereler koyu temada yeniden kuruldu (`koyu-tema` dalı; geri dönüş: `onceki-main-koyu-tema-oncesi` dalı ve
-Releases'teki eklenti 0.1.32). `main`'e her gönderim otomatik derler ve yeni sürüm çıkarır
+Releases'teki eklenti 0.1.32). 18.10 akşam (`hat-malzeme-simge` dalı; geri dönüş: `onceki-main-hat-malzeme-oncesi`
+dalı): hat çekerken elemanlara simge boyutunda yakalama, çoklu iletken / adet / müşterek OG + AG, cins seçimi ve
+katalog sırası, malzeme hafızası ve toplu malzeme, armatürün direğe malzeme + yanına simge (direkle birlikte gider),
+durum simgeleri (yeni, mevcut, DM+M, DM, kesik, sökük). `main`'e her gönderim otomatik derler ve yeni sürüm çıkarır
 (sürüm numarası derleme sırasından gelir: eklenti 0.1.N, telefon 2.5.N). Geri dönüş: `onceki-main-2026-10-18`
 dalı (önceki `main`; eklenti 0.1.16 ve telefon 2.5.8 Releases'te durur).
 
@@ -41,16 +44,19 @@ dalı (önceki `main`; eklenti 0.1.16 ve telefon 2.5.8 Releases'te durur).
   `araclar/semboller-uret.mjs`), `katalog/volt-eslesme.json` (telefon kataloğu ↔ PROMAGIS eşlemesi).
   Değişince `node araclar/ortak-tablolar.mjs` telefon kopyalarını (`telefon/web/src/ortak/*.js`) yeniler.
 - `autocad/src/Cekirdek/` — AutoCAD'den bağımsız C# çekirdek: `PromagisOkuyucu` (XDATA → model), `PromagisYazici`
-  (model → çizim tarifi, blok seçimi, `ANA`/`CON`/`FIDER` ek verisi), `Semboller` (tür + cins + durum →
-  `SH_<aile>_<varyant>`, geometri), `CizimStili` (ortak renk / çizgi tipi / yazı), `Kategoriler` (şerit kategorileri),
+  (model → çizim tarifi, blok seçimi, `ANA`/`CON`/`FIDER` ek verisi, armatür simgesi), `Semboller` (tür + cins + durum +
+  demontaj türü → `SH_<aile>_<varyant>`, geometri, aile ölçüleri), `Iletkenler` (çoklu iletken: adet yazımı `Nx(…)`,
+  birleşik ana kesit, metraj), `MalzemeHafizasi` (son elemanın malzemeleri; tür + cins + tip anahtarı), `CizimStili` (ortak renk / çizgi tipi / yazı), `Kategoriler` (şerit kategorileri),
   `DurumTespit` + `RaporYazici` + `XlsxYazici` (rapor), `DetaySorgu` (eksik malzeme / DETAY), `HakedisOnayi` (onay
   bitleri, kilit kuralları), `Aktarim` (telefondan alma planı; parça kuralı, ek veri, kilit), `Katalog` (sürüm 2,
   tarife kuralı), `Numara`, `CizimAyarlari` + `Metraj`, `NoktaDosyasi`, `ProjeDosyasi` (.sebeke.json ve .volt.json),
   `Model`.
 - `autocad/src/Eklenti/` — AutoCAD tarafı: `Komutlar` (rapor, içe alma, `SH_DETAY`, dosya seçme), `CizimKomutlari`
-  (çizim araçları, `SH_HIZLI`, `SH_GORUNUM`, `SH_ONAY`, `SH_PROJEAL`), `CizimYazici` (çizime yazma; blokları
-  `semboller.json`dan çizer, blok sürümü, parça metrajı yazıları), `Serit` + `SeritSimgeleri` + `HizliSecim` (dinamik
-  şerit; son seçimler ve pencerelerin "son kullanılanlar" listesi `%APPDATA%\SebekeHakedis\serit.json`),
+  (çizim araçları, `SH_HIZLI`, `SH_GORUNUM`, `SH_ONAY`, `SH_PROJEAL`, `SH_TOPLUMALZEME`; yakalama `Geometri.YakinEleman`),
+  `CizimYazici` (çizime yazma; blokları `semboller.json`dan çizer, blok sürümü, parça metrajı yazıları, armatür simgesi),
+  `ArmaturTakibi` (armatür simgesini AutoCAD komutlarında direkle birlikte taşır / kopyalar / siler; `SH_ARM` bağı),
+  `Serit` + `SeritSimgeleri` + `HizliSecim` (dinamik şerit: Cins / Tip / Ara, Durum, Adet / 2. iletken, Malzeme
+  bölümü; son seçimler, malzeme hafızası ve pencerelerin "son kullanılanlar" listesi `%APPDATA%\SebekeHakedis\serit.json`),
   `ArayuzSimgeleri` (şerit ve pencerelerin çizgi simgeleri, WPF ile çizilir), `KoyuTema` (koyu pencere parçaları:
   başlık çubuğu, düğme, onay / seçim kutusu, açılır liste, sayı kutusu, iki satırlı liste, sekme, bilgi çubuğu,
   koyu tablo ve ileti kutusu; ölçü 96 DPI'a göre, `Olcu.S()` ile büyür), `PromagisSozlugu` (PROMAGIS'in çizim sözlüğü: SAYAC,
@@ -60,7 +66,8 @@ dalı (önceki `main`; eklenti 0.1.16 ve telefon 2.5.8 Releases'te durur).
 - `autocad/test/CekirdekTest` — çekirdek denemeleri. Komutlar: `ornek` (CI), `dogrula`, `gidisdonus`, `aktarim`,
   `bosaaktar`, `katsayilar`, `semboller`.
 - `autocad/test/PencereTest` — pencereleri AutoCAD'siz açıp ekran görüntüsü alır; şeridin önizlemesini de çizer
-  (`ekran/14-serit-*.png`, `15-serit-demontaj.png`, `16`/`17` tip listeleri) (yalnız Windows/CI). Önizleme
+  (`ekran/14-serit-*.png`, `15-serit-demontaj.png`, `16`/`17` tip listeleri ve durum simgeleri, `18-serit-musterek-hat`;
+  pencerelerden `01c` cins + kesik, `03b` müşterek, `03c` adet, `23` toplu malzeme) (yalnız Windows/CI). Önizleme
   AutoCAD'in koyu temasına benzer zeminle çizilir; gerçek şeridin zemini AutoCAD temasından gelir.
 - `telefon/` — VOLT-EDAŞ Saha: `web/src` (Preact arayüz + hesap motoru), `web/seed/standard-tedas-2026.json`
   (TEDAŞ kataloğu), `web/src/interop/sebeke.js` (telefon ↔ .sebeke.json dönüşümü) ve `sh-core.cjs` (PROMAGIS
@@ -100,7 +107,9 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 ## 6. Sıradaki işler
 
 1. **AutoCAD'de ilk deneme** (kullanıcı yapacak): koyu şerit ve pencereler (kategori → öğe → çizim, Ara kutusu,
-   yüksek DPI'da pencereler), yeni görünüm, parçalı hat,
+   yüksek DPI'da pencereler), yeni görünüm, parçalı hat; 18.10 akşam işleri: direğe / SDK'ya tıklayınca yakalama,
+   cins seçimi, iki iletken / adet / müşterek, malzeme hafızası, toplu malzeme, armatür (taşı / kopyala / sil / geri al),
+   durum simgeleri;
    Telefona Gönder → telefonda aç → Telefondan Al, `SH_ONAY` / `SH_DETAY`; PROMAGIS'le aynı çizimde sırayla
    çalışma (INDEX, aktif hakediş, bölge listesi, onaylar). Hata ayrıntısı `%TEMP%\SebekeHakedis_hata.txt`'ye yazılır.
 2. **Telefonda deneme**: 2.5.x kurulumu, AutoCAD dosyasından proje alma, PROMAGIS durum kodları, dışa aktarma;
