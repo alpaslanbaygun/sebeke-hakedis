@@ -1073,6 +1073,20 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
+        private static string NesneAdi(string nesne)
+        {
+            switch (nesne)
+            {
+                case "bolge": return "Bölge";
+                case "nokta": return "GPS noktası";
+                case "eleman": return "Eleman";
+                case "hat": return "Hat";
+                case "kanal": return "Kablo kanalı";
+                case "sondaj": return "Yatay sondaj";
+                default: return nesne ?? "";
+            }
+        }
+
         private static string Ayrinti(AktarimPlani plan, string islem)
         {
             var say = new SortedDictionary<string, int>(StringComparer.Ordinal);
@@ -1119,31 +1133,27 @@ namespace SebekeHakedis.Eklenti
                     return;
                 }
 
-                var sb = new StringBuilder();
-                sb.AppendLine("Proje: " + tel.Ad + "  (" + Path.GetFileName(yol) + ")");
                 bool cizimdeNesneVar = o.Proje.Elemanlar.Count + o.Proje.Hatlar.Count + o.Proje.Bolgeler.Count > 0;
-                if (cizimdeNesneVar && plan.TaniticiylaEslesen == 0 && plan.KimlikleEslesen == 0)
-                    sb.AppendLine("Bu proje bu çizimden alınmamış görünüyor; telefondaki nesneler yeni olarak eklenecek.");
-                sb.AppendLine();
-                sb.AppendLine("Yeni eklenecek: " + plan.Sayi("yeni") + Ayrinti(plan, "yeni"));
-                sb.AppendLine("Güncellenecek: " + plan.Sayi("guncelle") + Ayrinti(plan, "guncelle"));
-                sb.AppendLine("Değişmeyen: " + plan.Ayni);
-                if (plan.Silinenler.Count > 0) sb.AppendLine("Telefonda silinmiş görünen: " + plan.Silinenler.Count + " (ayrıca sorulacak)");
-                if (cizimdeSilinmis > 0) sb.AppendLine("Bilgisayarda silinmiş, telefonda duran: " + cizimdeSilinmis + " (ayrıca sorulacak)");
-                if (plan.Kilitliler.Count + plan.KilitliSilinenler.Count > 0)
+                var oz = new AktarimOzeti
                 {
-                    sb.AppendLine("Onaylı (kilitli) hakedişe dokunduğu için aktarılmayacak: " + (plan.Kilitliler.Count + plan.KilitliSilinenler.Count));
-                    int i = 0;
-                    foreach (var a in plan.Kilitliler) if (i++ < 5) sb.AppendLine("   • " + a.Ad + (a.Islem == "yeni" ? " (yeni)" : ""));
-                    foreach (var kv in plan.KilitliSilinenler) if (i++ < 5) sb.AppendLine("   • " + kv.Value + " (telefonda silinmiş)");
-                    if (i > 5) sb.AppendLine("   … ve " + (i - 5) + " değişiklik daha");
+                    Proje = tel.Ad,
+                    Dosya = Path.GetFileName(yol),
+                    BaskaCizim = cizimdeNesneVar && plan.TaniticiylaEslesen == 0 && plan.KimlikleEslesen == 0,
+                    Degismeyen = plan.Ayni,
+                    CizimdeSilinmis = cizimdeSilinmis,
+                };
+                foreach (var a in plan.Adimlar)
+                {
+                    if (a.Islem == "yeni") oz.Yeniler.Add(new[] { a.Ad, NesneAdi(a.Nesne) + (a.CizimdeSilinmis ? " · bilgisayarda silinmişti" : "") });
+                    else oz.Guncellenenler.Add(new[] { a.Ad, string.IsNullOrEmpty(a.Fark) ? NesneAdi(a.Nesne) : a.Fark });
                 }
+                foreach (var a in plan.Kilitliler) oz.Kilitliler.Add(a.Ad + (a.Islem == "yeni" ? " (yeni)" : ""));
+                foreach (var kv in plan.KilitliSilinenler) oz.Kilitliler.Add(kv.Value + " (telefonda silinmiş)");
+                foreach (var kv in plan.Silinenler) oz.Silinenler.Add(kv.Value);
                 foreach (var n in yeniOnaylar)
-                    sb.AppendLine("Telefondaki onay: " + n + ". hakediş → " + HakedisOnayi.Metin(birlesikOnay[n]) + (HakedisOnayi.Kilitli(birlesikOnay, n) ? " (kilitlenecek)" : ""));
-                for (int i = 0; i < plan.Uyarilar.Count && i < 8; i++) sb.AppendLine("Uyarı: " + plan.Uyarilar[i]);
-                sb.AppendLine();
-                sb.Append("Çizime aktarılsın mı?");
-                if (!Pencereler.Onay(sb.ToString())) return;
+                    oz.Onaylar.Add(n + ". hakediş → " + HakedisOnayi.Metin(birlesikOnay[n]) + (HakedisOnayi.Kilitli(birlesikOnay, n) ? " (kilitlenecek)" : ""));
+                for (int i = 0; i < plan.Uyarilar.Count && i < 8; i++) oz.Uyarilar.Add(plan.Uyarilar[i]);
+                if (!Pencereler.AktarimOnayi(oz)) return;
 
                 bool sil = false;
                 if (plan.Silinenler.Count > 0)

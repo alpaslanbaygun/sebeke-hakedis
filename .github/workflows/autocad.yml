@@ -6,7 +6,7 @@ name: AutoCAD eklentisi
 
 on:
   push:
-    branches: [main, volt-birlesim, serit-ve-stil]
+    branches: [main, volt-birlesim, serit-ve-stil, koyu-tema]
     paths:
       - 'autocad/**'
       - 'ortak/**'

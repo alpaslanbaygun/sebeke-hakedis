@@ -93,6 +93,15 @@ namespace SebekeHakedis.PencereTest
                 Esit("", s?.Gis, "eleman: GIS elle girilmediyse kendiliğinden");
             });
 
+            // Onaylı (kilitli) hakediş seçiliyken Çiz düğmesi kapalı, uyarı görünür
+            o.Proje.Onaylar[2] = HakedisOnayi.Kontrol | HakedisOnayi.Hakedis;
+            Dene("01b-eleman-kilitli", () =>
+            {
+                var s = Pencereler.Eleman(o, new ElemanSecimi { Tur = "AG_DIREK", Durum = "M", Hakedis = 2 });
+                Esit(true, s == null, "kilitli hakediş: Çiz kapalı, seçim dönmez");
+            });
+            o.Proje.Onaylar.Remove(2);
+
             Dene("02-eleman-pano", () =>
             {
                 var s = Pencereler.Eleman(o, null);
@@ -100,9 +109,9 @@ namespace SebekeHakedis.PencereTest
                 Esit(true, s != null && s.Tip != null && s.Tip.Rol == "ana", "eleman: pano tipi seçildi");
             }, f =>
             {
-                var tur = Bul<ComboBox>(f, c => c.Items.Count == Turler.Elemanlar.Length);
+                var tur = Bul<SimgeListesi>(f, c => c.Items.Count == Turler.Elemanlar.Length);
                 tur.SelectedIndex = Array.FindIndex(Turler.Elemanlar, t => t.Kod == "PANO");
-                Esit(true, Bul<TextBox>(f, t => t.Text == "SCP01") != null, "eleman: pano için GIS önerisi SCP01");
+                Esit(true, Bul<MetinKutusu>(f, t => t.Ipucu == "kendiliğinden: SCP01") != null, "eleman: pano için GIS önerisi SCP01");
                 Resim(f, "sonra");
             });
 
@@ -151,8 +160,16 @@ namespace SebekeHakedis.PencereTest
                 Esit(39, o.Ayar.Dom, "ayarlar: DOM seçildi");
             }, f =>
             {
-                var dom = Bul<ComboBox>(f, c => c.Items.Count == Turler.Domlar.Length + 1);
-                dom.SelectedIndex = Array.IndexOf(Turler.Domlar, 39) + 1;
+                var dom = Bul<KoyuSecim>(f, r => r.Text == "39°");
+                dom.Checked = true;
+                var sekme = Bul<Sekmeler>(f, x => true);
+                string[] adlar = { "genel", "tarife", "gorunum", "metraj" };
+                for (int i = 1; i < adlar.Length; i++)
+                {
+                    sekme.Secili = i;
+                    Resim(f, adlar[i]);
+                }
+                sekme.Secili = 0;
             });
 
             var direk = o.Proje.Elemanlar.Find(e => e.GisId == "SC77");
@@ -200,7 +217,7 @@ namespace SebekeHakedis.PencereTest
                 Esit(Metraj.KanalHacmi(60, kanal.UstGenislik, kanal.Derinlik, ana.Miktar), ana.Toplam, "malzeme (kanal): hacim yeniden hesaplandı");
             }, f =>
             {
-                var sayilar = new List<NumericUpDown>();
+                var sayilar = new List<SayiKutusu>();
                 Hepsi(f, sayilar);
                 sayilar[0].Value = 60;
                 Resim(f, "sonra");
@@ -237,10 +254,17 @@ namespace SebekeHakedis.PencereTest
                 Esit(2, s != null ? s.Cinsler.Count : 0, "süzgeçli pencere: süzgeç seçimde kalır");
             }, f =>
             {
-                var lb = Bul<ListBox>(f, x => true);
+                var lb = Bul<IkiSatirListe>(f, x => true);
                 bool hepsiAg = true;
-                foreach (var it in lb.Items) if (!((KatalogKalemi)it).Cins.StartsWith("EK_MUFU_AG", StringComparison.Ordinal)) hepsiAg = false;
-                Esit(true, lb.Items.Count > 5 && hepsiAg, "süzgeçli pencere: listede yalnız AG ek mufuları");
+                int sayi = 0;
+                foreach (var it in lb.Items)
+                {
+                    var kk = it as KatalogKalemi;
+                    if (kk == null) continue;
+                    sayi++;
+                    if (!kk.Cins.StartsWith("EK_MUFU_AG", StringComparison.Ordinal)) hepsiAg = false;
+                }
+                Esit(true, sayi > 5 && hepsiAg, "süzgeçli pencere: listede yalnız AG ek mufuları");
             });
 
             // Eksik malzeme sorgusu (PROMAGIS DETAY): aranan cins yazılınca tip listesi o cinsin tipleriyle dolar
@@ -249,11 +273,13 @@ namespace SebekeHakedis.PencereTest
             var df = new DetayFiltresi();
             Dene("18-eksik-malzeme", () =>
             {
-                bool ok = Pencereler.Detay(o, df);
-                Esit(true, ok, "eksik malzeme: Bul");
+                List<DetaySatiri> bulunan;
+                var islem = Pencereler.Detay(o, df, out bulunan);
+                Esit(DetayIslemi.Sec, islem, "eksik malzeme: Çizimde seç");
                 Esit(dAra != null ? dAra.Cins : "-", df.Cins, "eksik malzeme: aranan cins döner");
                 Esit(DetayKapsami.Olanlar, df.Kapsam, "eksik malzeme: seçilen gösterim (olanlar) döner");
                 Esit("", df.AnaCins, "eksik malzeme: (hepsi) süzgeç sayılmaz");
+                Esit(true, bulunan != null && bulunan.Count > 0 && bulunan.TrueForAll(x => x.Olan), "eksik malzeme: bulunan satırlar döner (malzemesi olanlar)");
             }, f =>
             {
                 var kutular = new List<ComboBox>();
@@ -263,6 +289,7 @@ namespace SebekeHakedis.PencereTest
                 Esit(true, kutular[5].Items.Count > 1, "eksik malzeme: tip listesi aranan cinsin tipleriyle dolar");
                 var olan = Bul<RadioButton>(f, r => r.Text.StartsWith("Bu malzemesi OLAN", StringComparison.Ordinal));
                 if (olan != null) olan.Checked = true;
+                Bekle(450);
                 Resim(f, "sonra");
             });
 
@@ -302,6 +329,28 @@ namespace SebekeHakedis.PencereTest
             });
             o.Proje.Onaylar.Clear();
 
+            // Telefondan alma onayı (kutucuklar ve uyarılar)
+            var oz = new AktarimOzeti { Proje = "Deneme Projesi", Dosya = "saha_2026-10-18.sebeke.json", Degismeyen = 120 };
+            oz.Yeniler.Add(new[] { "SC100 AG Direk", "Eleman" });
+            oz.Yeniler.Add(new[] { "SC101 AG Direk", "Eleman" });
+            oz.Yeniler.Add(new[] { "Hat 3X50/16+70 ALPEK", "Hat" });
+            oz.Guncellenenler.Add(new[] { "SC103 Trafo", "DURUM: M → DM+M" });
+            oz.Guncellenenler.Add(new[] { "SC104 Aydınlatma Direği", "Konum değişti" });
+            oz.Guncellenenler.Add(new[] { "SC105 Pano", "Malzeme eklendi" });
+            oz.Kilitliler.Add("SC150 OG Direk (yeni)");
+            oz.Kilitliler.Add("SC151 Trafo");
+            oz.Silinenler.Add("SC175 AG Hat");
+            oz.Onaylar.Add("3. hakediş → Kontrol + Hakediş (kilitlenecek)");
+            Dene("21-telefondan-al", () => Esit(true, Pencereler.AktarimOnayi(oz), "telefondan al: Çizime aktar"));
+
+            // Koyu ileti kutusu
+            Dene("22-ileti", () =>
+            {
+                var r = KoyuMesaj.Goster("Bu nesne denetlenmiş (KONTROL işaretli). Değiştirirseniz denetim yeniden gerekir.\n\nYine de malzemeleri açılsın mı?",
+                    "Şebeke Hakediş", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2, Goster);
+                Esit(DialogResult.No, r, "ileti: varsayılan düğme Hayır");
+            });
+
             // Şerit menü önizlemesi (AutoCAD olmadan; aynı veri ve simgelerle)
             Console.WriteLine("14-serit");
             SeritOnizleme.Hepsi(_klasor);
@@ -334,6 +383,18 @@ namespace SebekeHakedis.PencereTest
                 if (c is T t) liste.Add(t);
                 Hepsi(c, liste);
             }
+        }
+
+        /// <summary>Pencerenin zamanlayıcıları çalışsın diye bekler (ör. eksik malzeme listesinin yenilenmesi).</summary>
+        private static void Bekle(int ms)
+        {
+            var son = DateTime.Now.AddMilliseconds(ms);
+            while (DateTime.Now < son)
+            {
+                Application.DoEvents();
+                Thread.Sleep(20);
+            }
+            Application.DoEvents();
         }
 
         private static void Resim(Form f, string ek)

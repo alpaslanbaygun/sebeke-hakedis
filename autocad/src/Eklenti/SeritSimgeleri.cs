@@ -9,11 +9,18 @@ using SebekeHakedis.Cekirdek;
 namespace SebekeHakedis.Eklenti
 {
     /// <summary>
-    /// Şerit simgeleri (AutoCAD'e bağlı değil; denemede de çizilir): öğelerde telefonun simgesi ve ekran rengi, telefonun
-    /// koyu zemini üstünde. Elemanlar simge takımından (semboller.json), hatlar kendi renk ve desenleriyle (cizim-stili.json).
+    /// Şerit ve pencere simgeleri (AutoCAD'e bağlı değil; denemede de çizilir). Kategori ve öğeler ince çizgi simgeleriyle,
+    /// kategorinin renginde (Google Stitch tasarımı); seçili kategori / öğe renkli kare üstünde beyaz. Tip listelerinde
+    /// elemanlar telefonun simge takımıyla (semboller.json) ve ekran rengiyle (cizim-stili.json) çizilir.
     /// </summary>
     internal static class SeritSimgeleri
     {
+        /// <summary>AutoCAD koyu temada mı (COLORTHEME 0)? Renksiz simgeler buna göre açık ya da koyu çizilir.</summary>
+        public static bool KoyuTema = true;
+
+        /// <summary>Renksiz komut simgelerinin rengi (temaya göre).</summary>
+        public static Color Notr => KoyuTema ? Color.FromRgb(0xE2, 0xE8, 0xF0) : Color.FromRgb(0x33, 0x41, 0x55);
+
         private static Color Zemin => HexRenk(CizimStili.Yuklu ? CizimStili.EkranZemini : "#0b1326", Color.FromRgb(0x0B, 0x13, 0x26));
 
         public static Color HexRenk(string hex, Color varsayilan)
@@ -26,27 +33,117 @@ namespace SebekeHakedis.Eklenti
             catch { return varsayilan; }
         }
 
-        private static ImageSource Resim(DrawingVisual dv, int boyut)
+        // ---------------- Adlar ve renkler ----------------
+
+        /// <summary>Kategori rengi (koyu zeminde okunur; telefonun AG yeşili, OG kırmızısı …).</summary>
+        public static Color KategoriRengi(MenuKategorisi k)
         {
-            var bmp = new RenderTargetBitmap(boyut, boyut, 96, 96, PixelFormats.Pbgra32);
-            bmp.Render(dv);
-            bmp.Freeze();
-            return bmp;
+            switch (k != null ? k.Kod : "")
+            {
+                case "AG_HAVAI":
+                case "AG_YERALTI": return Color.FromRgb(0x23, 0xA4, 0x55);
+                case "OG_HAVAI":
+                case "OG_YERALTI": return Color.FromRgb(0xFF, 0x4D, 0x4D);
+                case "MUSTEREK": return Color.FromRgb(0xE6, 0x4C, 0xE6);
+                case "AYDINLATMA": return Color.FromRgb(0x3B, 0x8F, 0xE6);
+                case "TRAFO": return Color.FromRgb(0x7C, 0x8C, 0xFF);
+                case "ABONE": return Color.FromRgb(0xF5, 0x9E, 0x0B);
+                case "KAZI": return Color.FromRgb(0xC9, 0x8A, 0x4B);
+                case "PROJE": return Color.FromRgb(0x60, 0xA5, 0xFA);
+                default: return HexRenk(k != null ? k.Renk : "", Colors.SlateGray);
+            }
         }
 
-        private static void ZeminCiz(DrawingContext dc, int boyut, Color renk)
+        public static string KategoriSimgeAdi(MenuKategorisi k)
         {
-            double r0 = boyut / 6.0;
-            dc.DrawRoundedRectangle(new SolidColorBrush(renk), null, new Rect(0.5, 0.5, boyut - 1, boyut - 1), r0, r0);
+            switch (k != null ? k.Kod : "")
+            {
+                case "AG_HAVAI": return "direk";
+                case "AG_YERALTI": return "box";
+                case "OG_HAVAI": return "direk_enh";
+                case "OG_YERALTI": return "hat_yeralti";
+                case "MUSTEREK": return "direk_mus";
+                case "AYDINLATMA": return "armatur";
+                case "TRAFO": return "kosk";
+                case "ABONE": return "ev";
+                case "KAZI": return "kanal";
+                case "PROJE": return "konum";
+                default: return k != null && k.Ogeler.Count > 0 ? OgeSimgeAdi(k.Ogeler[0]) : "diger";
+            }
         }
 
-        /// <summary>Dosya gerektirmeyen basit düğme simgesi: renkli kare üzerinde kısa yazı.</summary>
+        /// <summary>Eleman türünün simgesi (cinsler: menü öğesinin cins süzgeci; armatür ayrımı için).</summary>
+        public static string ElemanSimgeAdi(string tur, IList<string> cinsler)
+        {
+            switch (tur ?? "")
+            {
+                case "AG_DIREK": return "direk";
+                case "MUSTEREK_DIREK": return "direk_mus";
+                case "AYD_DIREK": return "direk_ayd";
+                case "ENH_DIREK": return "direk_enh";
+                case "TRAFO_DIREGI": return "trafo_direk";
+                case "TRAFO_MERKEZI": return "kosk";
+                case "PANO": return "pano";
+                case "BOX": return "box";
+                case "EK_MUFU": return "mufu";
+                case "KOFRE": return "kofre";
+                case "DIGER":
+                    if (cinsler != null) foreach (var c in cinsler) if ((c ?? "").StartsWith("ARMAT", StringComparison.OrdinalIgnoreCase)) return "armatur";
+                    return "diger";
+                default: return "diger";
+            }
+        }
+
+        public static string HatSimgeAdi(string tur)
+        {
+            switch (tur ?? "")
+            {
+                case "AG_YERALTI":
+                case "OG_YERALTI": return "hat_yeralti";
+                case "REKORTMAN": return "abone_hat";
+                default: return "hat_havai";
+            }
+        }
+
+        public static string OgeSimgeAdi(MenuOgesi oge)
+        {
+            if (oge == null) return "diger";
+            switch (oge.Komut)
+            {
+                case "SH_ELEMAN": return ElemanSimgeAdi(oge.Tur, oge.Cinsler);
+                case "SH_HAT": return HatSimgeAdi(oge.Tur);
+                case "SH_KANAL": return "kanal";
+                case "SH_SONDAJ": return "sondaj";
+                case "SH_BOLGE": return "bolge";
+                case "SH_NOKTAAL": return "nokta";
+                case "SH_PROJEAL": return "telefon_al";
+                case "SH_ICEAL": return "telefon_gonder";
+                default: return "diger";
+            }
+        }
+
+        public static Color OgeRengi(MenuOgesi oge) => oge != null && oge.Kategori != null ? KategoriRengi(oge.Kategori) : Notr;
+
+        // ---------------- Şerit simgeleri ----------------
+
+        public static ImageSource KategoriSimgesi(MenuKategorisi k, int boyut, bool secili = false) =>
+            ArayuzSimgeleri.Wpf(KategoriSimgeAdi(k), boyut, KategoriRengi(k), secili);
+
+        public static ImageSource OgeSimgesi(MenuOgesi oge, int boyut, bool secili = false) =>
+            ArayuzSimgeleri.Wpf(OgeSimgeAdi(oge), boyut, OgeRengi(oge), secili);
+
+        /// <summary>Komut simgesi (Malzeme, Metraj, Rapor …); renk verilmezse temanın renksiz tonu.</summary>
+        public static ImageSource KomutSimgesi(string ad, int boyut, Color? renk = null) =>
+            ArayuzSimgeleri.Wpf(ad, boyut, renk ?? Notr);
+
+        /// <summary>Eski düz simge (renkli kare üstünde kısa yazı); yeni simgesi olmayanlar için.</summary>
         public static ImageSource Simge(string harf, Color renk, int boyut)
         {
             var dv = new DrawingVisual();
             using (var dc = dv.RenderOpen())
             {
-                ZeminCiz(dc, boyut, renk);
+                double r0 = boyut / 6.0;
+                dc.DrawRoundedRectangle(new SolidColorBrush(renk), null, new Rect(0.5, 0.5, boyut - 1, boyut - 1), r0, r0);
                 if (boyut >= 24 || harf.Length == 1)
                 {
 #pragma warning disable 618
@@ -57,56 +154,16 @@ namespace SebekeHakedis.Eklenti
                     dc.DrawText(yazi, new Point((boyut - yazi.Width) / 2, (boyut - yazi.Height) / 2));
                 }
             }
-            return Resim(dv, boyut);
+            var bmp = new RenderTargetBitmap(boyut, boyut, 96, 96, PixelFormats.Pbgra32);
+            bmp.Render(dv);
+            bmp.Freeze();
+            return bmp;
         }
 
-        /// <summary>Kategori simgesi: kategorinin ilk öğesinin simgesi (AG Havai → AG direk, Kazı → kanal …).</summary>
-        public static ImageSource KategoriSimgesi(MenuKategorisi k, int boyut)
-        {
-            if (k != null && k.Ogeler.Count > 0) return OgeSimgesi(k.Ogeler[0], boyut);
-            return Simge(k != null ? k.Kisa : "?", k != null ? HexRenk(k.Renk, Colors.SlateGray) : Colors.SlateGray, boyut);
-        }
+        // ---------------- Telefonun simge takımı ----------------
 
-        /// <summary>Öğe simgesi: elemanlarda telefonun simgesi (yeni durum, telefondaki renk), hatlarda çizgi deseni.</summary>
-        public static ImageSource OgeSimgesi(MenuOgesi oge, int boyut)
-        {
-            try
-            {
-                switch (oge.Komut)
-                {
-                    case "SH_ELEMAN":
-                        {
-                            string cins = oge.Cinsler.Count > 0 ? oge.Cinsler[0] : IlkCins(oge.Tur);
-                            var s = Semboller.Bul(Semboller.BlokAdi(oge.Tur, cins, "M"));
-                            if (s != null) return SembolCiz(s, HexRenk(CizimStili.EkranElemanRengi(oge.Tur, cins), Colors.White), boyut);
-                            break;
-                        }
-                    case "SH_HAT":
-                        {
-                            var k = CizimStili.HatStili(oge.Tur);
-                            return CizgiCiz(HexRenk(CizimStili.EkranHatRengi(oge.Tur), Colors.White), k != null ? CizimStili.CizgiDeseni(k.Cizgi) : null, boyut, true);
-                        }
-                    case "SH_KANAL": return KanalCiz(boyut);
-                    case "SH_SONDAJ": return CizgiCiz(Color.FromRgb(0xFB, 0xBF, 0x24), new[] { 2.0, -1.5 }, boyut, false);
-                    case "SH_BOLGE": return BolgeCiz(boyut);
-                    case "SH_NOKTAAL": return NoktaCiz(boyut);
-                    case "SH_PROJEAL": return TelefonCiz(boyut, true);
-                    case "SH_ICEAL": return TelefonCiz(boyut, false);
-                }
-            }
-            catch { }
-            var kat = oge.Kategori;
-            return Simge(string.IsNullOrEmpty(oge.Kisa) ? "?" : oge.Kisa, kat != null ? HexRenk(kat.Renk, Colors.SlateGray) : Colors.SlateGray, boyut);
-        }
-
-        private static string IlkCins(string tur)
-        {
-            var l = HizliSecim.TemelKatalog.ElemanCinsListesi(tur);
-            return l.Count > 0 ? l[0] : "";
-        }
-
-        /// <summary>Simge takımındaki bir simgeyi (metre cinsinden ilkeller) koyu zemin üstüne çizer.</summary>
-        public static ImageSource SembolCiz(Sembol s, Color renk, int boyut)
+        /// <summary>Simge takımındaki bir simgeyi (metre cinsinden ilkeller) çizer; zeminli: telefonun koyu zemini üstünde.</summary>
+        public static ImageSource SembolCiz(Sembol s, Color renk, int boyut, bool zeminli = true)
         {
             double enBuyuk = 0.5;
             Action<double, double> kapsa = (x, y) => enBuyuk = Math.Max(enBuyuk, Math.Max(Math.Abs(x), Math.Abs(y)));
@@ -122,14 +179,14 @@ namespace SebekeHakedis.Eklenti
                     default: foreach (var p in i.Noktalar) kapsa(p[0], p[1]); break;
                 }
             }
-            double c = boyut / 2.0, k = boyut * 0.38 / enBuyuk;
+            double c = boyut / 2.0, k = boyut * (zeminli ? 0.38 : 0.44) / enBuyuk;
             Func<double, double, Point> P = (x, y) => new Point(c + x * k, c - y * k);
             var firca = new SolidColorBrush(renk);
             var kalem = new Pen(firca, Math.Max(1.0, boyut / 16.0));
             var dv = new DrawingVisual();
             using (var dc = dv.RenderOpen())
             {
-                ZeminCiz(dc, boyut, Zemin);
+                if (zeminli) dc.DrawRoundedRectangle(new SolidColorBrush(Zemin), null, new Rect(0.5, 0.5, boyut - 1, boyut - 1), boyut / 6.0, boyut / 6.0);
                 foreach (var i in s.Ilkeller)
                 {
                     var d = i.Sayilar;
@@ -179,123 +236,14 @@ namespace SebekeHakedis.Eklenti
                     }
                 }
             }
-            return Resim(dv, boyut);
+            var bmp = new RenderTargetBitmap(boyut, boyut, 96, 96, PixelFormats.Pbgra32);
+            bmp.Render(dv);
+            bmp.Freeze();
+            return bmp;
         }
 
-        /// <summary>Hat simgesi: iki direk arasında hattın renginde ve deseninde çizgi.</summary>
-        public static ImageSource CizgiCiz(Color renk, double[] desen, int boyut, bool direkler)
-        {
-            var dv = new DrawingVisual();
-            using (var dc = dv.RenderOpen())
-            {
-                ZeminCiz(dc, boyut, Zemin);
-                var kalem = new Pen(new SolidColorBrush(renk), Math.Max(1.5, boyut / 12.0));
-                if (desen != null && desen.Length >= 2)
-                {
-                    // Desen metre cinsinden (ör. 6 / -3); simgede kalem kalınlığı biriminde yarısı kadar
-                    var l = new List<double>();
-                    foreach (var x in desen) l.Add(Math.Max(0.5, Math.Abs(x) * 0.5));
-                    kalem.DashStyle = new DashStyle(l, 0);
-                }
-                double m = boyut * 0.2;
-                var a = new Point(m, boyut - m);
-                var b = new Point(boyut - m, m);
-                dc.DrawLine(kalem, a, b);
-                if (direkler)
-                {
-                    var f = new SolidColorBrush(Color.FromRgb(0xE5, 0xE7, 0xEB));
-                    double r = Math.Max(1.5, boyut / 10.0);
-                    dc.DrawEllipse(f, null, a, r, r);
-                    dc.DrawEllipse(f, null, b, r, r);
-                }
-            }
-            return Resim(dv, boyut);
-        }
-
-        /// <summary>Kanal simgesi: kazı (iki kenar ve dolgu çizgileri).</summary>
-        public static ImageSource KanalCiz(int boyut)
-        {
-            var dv = new DrawingVisual();
-            using (var dc = dv.RenderOpen())
-            {
-                ZeminCiz(dc, boyut, Zemin);
-                var renk = Color.FromRgb(0xFF, 0x6B, 0x6B); // telefonda yeraltı / kanal
-                var kalem = new Pen(new SolidColorBrush(renk), Math.Max(1.0, boyut / 16.0));
-                double m = boyut * 0.2, w = boyut * 0.18;
-                dc.DrawLine(kalem, new Point(m, m), new Point(m + w, boyut - m));
-                dc.DrawLine(kalem, new Point(boyut - m - w, boyut - m), new Point(boyut - m, m));
-                dc.DrawLine(kalem, new Point(m + w, boyut - m), new Point(boyut - m - w, boyut - m));
-                var ince = new Pen(new SolidColorBrush(Color.FromRgb(0xB4, 0x83, 0x4D)), Math.Max(1.0, boyut / 20.0));
-                for (int i = 1; i <= 2; i++)
-                {
-                    double y = m + (boyut - 2 * m) * i / 3.0;
-                    double sol = m + w * i / 3.0 + 1.5, sag = boyut - m - w * i / 3.0 - 1.5;
-                    dc.DrawLine(ince, new Point(sol, y), new Point(sag, y));
-                }
-            }
-            return Resim(dv, boyut);
-        }
-
-        private static ImageSource BolgeCiz(int boyut)
-        {
-            var dv = new DrawingVisual();
-            using (var dc = dv.RenderOpen())
-            {
-                ZeminCiz(dc, boyut, Zemin);
-                var kalem = new Pen(new SolidColorBrush(HexRenk(CizimStili.Yuklu ? CizimStili.EkranRengi("bolge", "#fde047") : "#fde047", Colors.Gold)), Math.Max(1.0, boyut / 16.0))
-                {
-                    DashStyle = new DashStyle(new[] { 3.0, 2.0 }, 0),
-                };
-                double m = boyut * 0.2;
-                var g = new StreamGeometry();
-                using (var ctx = g.Open())
-                {
-                    ctx.BeginFigure(new Point(m, boyut * 0.35), false, true);
-                    ctx.LineTo(new Point(boyut * 0.55, m), true, false);
-                    ctx.LineTo(new Point(boyut - m, boyut * 0.45), true, false);
-                    ctx.LineTo(new Point(boyut * 0.65, boyut - m), true, false);
-                    ctx.LineTo(new Point(m * 1.2, boyut * 0.75), true, false);
-                }
-                g.Freeze();
-                dc.DrawGeometry(null, kalem, g);
-            }
-            return Resim(dv, boyut);
-        }
-
-        private static ImageSource NoktaCiz(int boyut)
-        {
-            var dv = new DrawingVisual();
-            using (var dc = dv.RenderOpen())
-            {
-                ZeminCiz(dc, boyut, Zemin);
-                var renk = HexRenk(CizimStili.Yuklu ? CizimStili.EkranRengi("nokta", "#e2e8f0") : "#e2e8f0", Colors.White);
-                var kalem = new Pen(new SolidColorBrush(renk), Math.Max(1.0, boyut / 16.0));
-                double c = boyut / 2.0, r = boyut * 0.28;
-                dc.DrawLine(kalem, new Point(c - r - 2, c), new Point(c + r + 2, c));
-                dc.DrawLine(kalem, new Point(c, c - r - 2), new Point(c, c + r + 2));
-                dc.DrawEllipse(null, kalem, new Point(c, c), r * 0.6, r * 0.6);
-            }
-            return Resim(dv, boyut);
-        }
-
-        /// <summary>Telefon simgesi; al: aşağı ok (telefondan çizime), gönder: yukarı ok.</summary>
-        private static ImageSource TelefonCiz(int boyut, bool al)
-        {
-            var dv = new DrawingVisual();
-            using (var dc = dv.RenderOpen())
-            {
-                ZeminCiz(dc, boyut, Zemin);
-                var renk = al ? Color.FromRgb(0x22, 0xD3, 0xEE) : Color.FromRgb(0x8E, 0xA2, 0xFF);
-                var kalem = new Pen(new SolidColorBrush(renk), Math.Max(1.0, boyut / 16.0));
-                double w = boyut * 0.34, h = boyut * 0.62, x = boyut * 0.18, y = (boyut - h) / 2;
-                dc.DrawRoundedRectangle(null, kalem, new Rect(x, y, w, h), boyut / 16.0, boyut / 16.0);
-                double ax = boyut * 0.74, a0 = boyut * 0.28, a1 = boyut * 0.72;
-                dc.DrawLine(kalem, new Point(ax, a0), new Point(ax, a1));
-                double u = boyut * 0.1;
-                if (al) { dc.DrawLine(kalem, new Point(ax - u, a1 - u), new Point(ax, a1)); dc.DrawLine(kalem, new Point(ax + u, a1 - u), new Point(ax, a1)); }
-                else { dc.DrawLine(kalem, new Point(ax - u, a0 + u), new Point(ax, a0)); dc.DrawLine(kalem, new Point(ax + u, a0 + u), new Point(ax, a0)); }
-            }
-            return Resim(dv, boyut);
-        }
+        /// <summary>Pencereler için telefon simgesi (zeminsiz, GDI resmi).</summary>
+        public static System.Drawing.Bitmap SembolResmi(Sembol s, string renkHex, int px) =>
+            ArayuzSimgeleri.Donustur((BitmapSource)SembolCiz(s, HexRenk(renkHex, Colors.White), px, false));
     }
 }

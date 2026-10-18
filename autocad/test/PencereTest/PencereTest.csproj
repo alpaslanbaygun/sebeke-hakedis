@@ -24,6 +24,8 @@
     <Compile Include="..\..\src\Eklenti\OrtamVerisi.cs" Link="Eklenti\OrtamVerisi.cs" />
     <Compile Include="..\..\src\Eklenti\HizliSecim.cs" Link="Eklenti\HizliSecim.cs" />
     <Compile Include="..\..\src\Eklenti\SeritSimgeleri.cs" Link="Eklenti\SeritSimgeleri.cs" />
+    <Compile Include="..\..\src\Eklenti\ArayuzSimgeleri.cs" Link="Eklenti\ArayuzSimgeleri.cs" />
+    <Compile Include="..\..\src\Eklenti\KoyuTema.cs" Link="Eklenti\KoyuTema.cs" />
     <EmbeddedResource Include="..\..\..\ortak\katalog\kalemler.json" Link="Katalog\kalemler.json" LogicalName="SebekeHakedis.kalemler.json" />
     <EmbeddedResource Include="..\..\..\ortak\katalog\cizim-stili.json" Link="Katalog\cizim-stili.json" LogicalName="SebekeHakedis.cizim-stili.json" />
     <EmbeddedResource Include="..\..\..\ortak\katalog\semboller.json" Link="Katalog\semboller.json" LogicalName="SebekeHakedis.semboller.json" />

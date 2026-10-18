@@ -110,13 +110,97 @@ namespace SebekeHakedis.Eklenti
             if (oge == null || it == null) return;
             Yukle();
             _tip[oge.Kod] = it.Anahtar;
+            SonaKoy(oge.Kod, it);
+            SonaKoy(TurAnahtari(oge), it);
+            Kaydet();
+            Degisti?.Invoke();
+        }
+
+        private static void SonaKoy(string anahtar, KatalogKalemi it)
+        {
+            if (string.IsNullOrEmpty(anahtar) || it == null) return;
             List<string> son;
-            if (!_son.TryGetValue(oge.Kod, out son)) { son = new List<string>(); _son[oge.Kod] = son; }
+            if (!_son.TryGetValue(anahtar, out son)) { son = new List<string>(); _son[anahtar] = son; }
             son.Remove(it.Anahtar);
             son.Insert(0, it.Anahtar);
             while (son.Count > SonSayisi) son.RemoveAt(son.Count - 1);
+        }
+
+        /// <summary>Pencerelerdeki "Son kullanılanlar" anahtarı: "eleman/AG_DIREK", "hat/AG_HAVAI", "sondaj".</summary>
+        public static string TurAnahtari(MenuOgesi oge)
+        {
+            if (oge == null) return null;
+            switch (oge.Komut)
+            {
+                case "SH_ELEMAN": return "eleman/" + oge.Tur;
+                case "SH_HAT": return "hat/" + oge.Tur;
+                case "SH_SONDAJ": return "sondaj";
+                default: return null;
+            }
+        }
+
+        /// <summary>Pencerede seçilen tipi son kullanılanlara ekler (anahtar: TurAnahtari biçiminde).</summary>
+        public static void SonaEkle(string anahtar, KatalogKalemi it)
+        {
+            if (string.IsNullOrEmpty(anahtar) || it == null) return;
+            Yukle();
+            SonaKoy(anahtar, it);
             Kaydet();
-            Degisti?.Invoke();
+        }
+
+        /// <summary>Son kullanılan tipler (en yeni önde); icinden verilirse yalnız o listedekiler.</summary>
+        public static List<KatalogKalemi> SonTipler(string anahtar, Katalog k, IList<KatalogKalemi> icinden = null, int enCok = 5)
+        {
+            Yukle();
+            var l = new List<KatalogKalemi>();
+            List<string> son;
+            if (k == null || string.IsNullOrEmpty(anahtar) || !_son.TryGetValue(anahtar, out son)) return l;
+            foreach (var a in son)
+            {
+                if (l.Count >= enCok) break;
+                var it = Bul(k, a);
+                if (it == null || l.Contains(it)) continue;
+                if (icinden != null && !icinden.Contains(it)) continue;
+                l.Add(it);
+            }
+            return l;
+        }
+
+        /// <summary>Tip arama (şeritteki Ara kutusu): bütün sözcükler tanımda, cinste ya da cins adında geçmeli.</summary>
+        public static List<KatalogKalemi> Ara(List<KatalogKalemi> liste, string arama, int enCok = 40)
+        {
+            var sonuc = new List<KatalogKalemi>();
+            var sozcukler = Norm(arama).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (sozcukler.Length == 0 || liste == null) return sonuc;
+            var k = TemelKatalog;
+            foreach (var it in liste)
+            {
+                string y = Norm(it.Tanim + " " + it.Cins + " " + it.PozNo + " " + k.CinsAdi(it.Cins));
+                bool uygun = true;
+                foreach (var s in sozcukler) if (y.IndexOf(s, StringComparison.Ordinal) < 0) { uygun = false; break; }
+                if (!uygun) continue;
+                sonuc.Add(it);
+                if (sonuc.Count >= enCok) break;
+            }
+            return sonuc;
+        }
+
+        private static string Norm(string s) => (s ?? "").ToUpperInvariant().Replace('İ', 'I').Replace('ı', 'I');
+
+        /// <summary>Şeritteki özet satırı: "AG Direk · G-10I · M · 2. hakediş".</summary>
+        public static string Ozet()
+        {
+            var oge = Oge;
+            if (oge == null) return "Önce bir öğe seçin";
+            var parca = new List<string> { oge.Ad };
+            if (oge.TipliMi || oge.Komut == "SH_KANAL")
+            {
+                var t = SeciliTip(oge, TemelKatalog);
+                if (t != null) parca.Add(t.Tanim.Trim());
+                parca.Add(Durum + (Turler.DemontajMi(Durum) && !string.IsNullOrEmpty(DmDurum) ? " " + DmDurum : ""));
+                parca.Add(Hakedis > 0 ? Hakedis + ". hakediş" : "aktif hakediş");
+            }
+            return string.Join(" · ", parca);
         }
 
         public static void OgeSec(MenuKategorisi k, MenuOgesi oge)

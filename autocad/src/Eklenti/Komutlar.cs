@@ -175,14 +175,15 @@ namespace SebekeHakedis.Eklenti
                     Hakedis = SayiCoz.Tam(a.SonDeger("detay.hakedis", "0")),
                     Kapsam = a.SonDeger("detay.kapsam") == "olanlar" ? DetayKapsami.Olanlar : a.SonDeger("detay.kapsam") == "hepsi" ? DetayKapsami.Hepsi : DetayKapsami.Olmayanlar,
                 };
-                if (!Pencereler.Detay(o, f)) return;
+                List<DetaySatiri> satirlar;
+                var islem = Pencereler.Detay(o, f, out satirlar);
+                if (islem == DetayIslemi.Vazgec) return;
                 a.Son["detay.anaCins"] = f.AnaCins; a.Son["detay.anaTip"] = f.AnaTip; a.Son["detay.anaDurum"] = f.AnaDurum; a.Son["detay.bolge"] = f.Bolge;
                 a.Son["detay.cins"] = f.Cins; a.Son["detay.tip"] = f.Tip; a.Son["detay.durum"] = f.Durum;
                 a.Son["detay.hakedis"] = f.Hakedis.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 a.Son["detay.kapsam"] = f.Kapsam == DetayKapsami.Olanlar ? "olanlar" : f.Kapsam == DetayKapsami.Hepsi ? "hepsi" : "olmayanlar";
                 o.AyarKaydet();
 
-                var satirlar = DetaySorgu.Sorgula(o.Proje, f);
                 var olanlar = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var olmayanlar = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var s in satirlar) (s.Olan ? olanlar : olmayanlar).Add(s.Eleman.Id);
@@ -203,17 +204,9 @@ namespace SebekeHakedis.Eklenti
                 }
                 try { ed.SetImpliedSelection(ids.ToArray()); } catch { }
 
-                var sb = new StringBuilder();
-                sb.AppendLine(aranan);
-                sb.AppendLine();
-                if (f.Kapsam != DetayKapsami.Olmayanlar) sb.AppendLine("Malzemesi olan: " + olanlar.Count + " eleman (" + (satirlar.Count - olmayanlar.Count) + " malzeme satırı)");
-                if (f.Kapsam != DetayKapsami.Olanlar) sb.AppendLine("Malzemesi olmayan (eksik): " + olmayanlar.Count + " eleman");
-                sb.AppendLine(ids.Count + " eleman çizimde seçildi.");
-                sb.AppendLine();
-                sb.Append("Sonuç Excel dosyasına yazılsın mı?");
                 ed.WriteMessage("\nEksik malzeme sorgusu: " + (f.Kapsam != DetayKapsami.Olanlar ? olmayanlar.Count + " eksik" : "") +
                                 (f.Kapsam == DetayKapsami.Hepsi ? ", " : "") + (f.Kapsam != DetayKapsami.Olmayanlar ? olanlar.Count + " olan" : "") + " eleman; " + ids.Count + " eleman seçildi.");
-                if (!Pencereler.Onay(sb.ToString(), false)) return;
+                if (islem != DetayIslemi.Excel) return;
                 string yol = KayitYeriSor("Eksik malzeme sorgusunu kaydet", "Excel dosyası (*.xlsx)|*.xlsx",
                     Ad(belge) + "_DETAY_" + DateTime.Now.ToString("dd.MM.yyyy_HH_mm") + ".xlsx", Klasor(belge));
                 if (yol == null) return;
