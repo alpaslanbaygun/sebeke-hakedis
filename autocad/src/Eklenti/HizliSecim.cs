@@ -8,9 +8,9 @@ using SebekeHakedis.Cekirdek;
 namespace SebekeHakedis.Eklenti
 {
     /// <summary>
-    /// Şeritteki hızlı çizimin seçimi: kategori, etkin öğe (ör. AG Havai › AG Direk), öğe başına tip, durum, demontaj
-    /// türü ve hakediş. Şerit yazar, SH_HIZLI komutu okur. Son seçimler kullanıcının ayar klasöründe saklanır
-    /// (AutoCAD yeniden açılınca aynı kategori ve tipler gelir).
+    /// Şeritteki hızlı çizimin seçimi: kategori, etkin öğe (ör. AG Havai › AG Direk), öğe başına cins ve tip (hatlarda
+    /// adet ve ikinci iletken), durum, demontaj türü, hakediş ve malzeme hafızası. Şerit yazar, SH_HIZLI komutu okur.
+    /// Son seçimler kullanıcının ayar klasöründe saklanır (AutoCAD yeniden açılınca aynı kategori ve tipler gelir).
     /// </summary>
     internal static class HizliSecim
     {
@@ -22,13 +22,25 @@ namespace SebekeHakedis.Eklenti
         public static int Hakedis;
         /// <summary>Kanal öğelerinde kanaldaki kablolar (OG, AG, AYD, REK); boşsa öğenin kendi kablosu.</summary>
         public static string KanalKablolari = "";
+        /// <summary>Malzeme hafızası açık mı: yeni elemana aynı tür ve tipteki son elemanın malzemeleri kendiliğinden eklenir.</summary>
+        public static bool HafizaAcik = true;
 
         /// <summary>Öğe kodu → seçili tipin anahtarı (cins|tanım).</summary>
         private static readonly Dictionary<string, string> _tip = new Dictionary<string, string>(StringComparer.Ordinal);
+        /// <summary>Öğe kodu → şeritte seçili cins (tip listesi bu cinsin tipleri).</summary>
+        private static readonly Dictionary<string, string> _cins = new Dictionary<string, string>(StringComparer.Ordinal);
+        /// <summary>Hat öğesi → ana iletkenin adedi (ör. 3 adet ALPEK).</summary>
+        private static readonly Dictionary<string, int> _adet = new Dictionary<string, int>(StringComparer.Ordinal);
+        /// <summary>Hat öğesi → ikinci iletkenin anahtarı ("-": bilerek yok) ve adedi.</summary>
+        private static readonly Dictionary<string, string> _ek = new Dictionary<string, string>(StringComparer.Ordinal);
+        private static readonly Dictionary<string, int> _ekAdet = new Dictionary<string, int>(StringComparer.Ordinal);
         /// <summary>Öğe kodu → son kullanılan tipler (en yeni önde).</summary>
         private static readonly Dictionary<string, List<string>> _son = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         private const int SonSayisi = 8;
+        /// <summary>Şeritteki tip listesinin en çok satır sayısı (uzun cinslerde kullanılanlar ve son seçilenler kalır).</summary>
+        public const int ListeSiniri = 60;
         private static Katalog _katalog;
+        private static MalzemeHafizasi _hafiza = new MalzemeHafizasi();
         private static bool _yuklendi;
 
         /// <summary>Seçim değişince (şeritteki kutuları yenilemek için).</summary>
@@ -39,9 +51,24 @@ namespace SebekeHakedis.Eklenti
 
         // ---------------- Tipler ----------------
 
+        /// <summary>Öğenin cinsleri (menü süzgeci ya da türün cins grubu; katalog sırasıyla).</summary>
+        public static List<string> Cinsler(MenuOgesi oge, Katalog k)
+        {
+            if (oge == null || k == null) return new List<string>();
+            if (oge.Cinsler.Count > 0) return new List<string>(oge.Cinsler);
+            switch (oge.Komut)
+            {
+                case "SH_ELEMAN": return k.ElemanCinsListesi(oge.Tur);
+                case "SH_HAT": return k.HatCinsListesi(oge.Tur);
+                case "SH_SONDAJ": return new List<string>(k.SondajCinsleri);
+                case "SH_KANAL": return new List<string>(k.KanalCinsleri);
+                default: return new List<string>();
+            }
+        }
+
         /// <summary>
-        /// Öğenin tipleri (verilen katalogdan, öğenin tür ve cins süzgeciyle). genis: hatlarda türün cinslerinden sonra diğer
-        /// iletken ve kablolar da (arama penceresi için); değilse yalnız türün cinsleri (şeritteki kısa liste).
+        /// Öğenin tipleri (verilen katalogdan, öğenin tür ve cins süzgeciyle; cins cins, katalog sırasıyla). genis: hatlarda
+        /// türün cinslerinden sonra diğer iletken ve kablolar da (arama penceresi için); değilse yalnız türün cinsleri.
         /// </summary>
         public static List<KatalogKalemi> Tipler(MenuOgesi oge, Katalog k, bool genis = false)
         {
@@ -57,27 +84,40 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
-        /// <summary>Şeritteki kısa liste: son kullanılanlar, çok kullanılanlar, sonra katalog sırasıyla (en çok 16).</summary>
+        /// <summary>
+        /// Şeritteki tip listesi: seçili cinsin tipleri katalog (PROMAGIS) sırasıyla — ALPEK'ler alt alta, çıplak iletkenler
+        /// alt alta. Cinsin tipi çoksa (ör. 500 ENH beton direk) seçili tip, son kullanılanlar ve gerçek çizimlerde
+        /// kullanılanlar kalır; sıra yine katalog sırasıdır. Bütün tipler için "Ara".
+        /// </summary>
         public static List<KatalogKalemi> KisaListe(MenuOgesi oge)
         {
             var k = TemelKatalog;
             var hepsi = Tipler(oge, k);
-            var l = new List<KatalogKalemi>();
+            string cins = SeciliCins(oge, k);
+            var l = string.IsNullOrEmpty(cins) ? hepsi : hepsi.FindAll(x => x.Cins == cins);
+            if (l.Count == 0) l = hepsi;
+            return Kisalt(l, oge, k, ListeSiniri);
+        }
+
+        /// <summary>Uzun listeyi kısaltır: seçili, son kullanılan ve çok kullanılan tipler kalır; sıra katalog sırası.</summary>
+        private static List<KatalogKalemi> Kisalt(List<KatalogKalemi> l, MenuOgesi oge, Katalog k, int enCok)
+        {
+            if (l.Count <= enCok) return new List<KatalogKalemi>(l);
+            var kalan = new HashSet<KatalogKalemi>();
             var secili = SeciliTip(oge, k);
-            if (secili != null) l.Add(secili);
+            if (secili != null && l.Contains(secili)) kalan.Add(secili);
             List<string> son;
             if (oge != null && _son.TryGetValue(oge.Kod, out son))
                 foreach (var a in son)
                 {
                     var it = Bul(k, a);
-                    if (it != null && !l.Contains(it)) l.Add(it);
+                    if (it != null && l.Contains(it)) kalan.Add(it);
                 }
-            // Gerçek çizimlerde çok kullanılanlar (öğenin kendi cinslerinden)
-            var cok = hepsi.FindAll(x => x.Kullanim > 0);
+            var cok = l.FindAll(x => x.Kullanim > 0);
             cok.Sort((a, b) => b.Kullanim.CompareTo(a.Kullanim));
-            foreach (var it in cok) { if (l.Count >= 12) break; if (!l.Contains(it)) l.Add(it); }
-            foreach (var it in hepsi) { if (l.Count >= 16) break; if (!l.Contains(it)) l.Add(it); }
-            return l;
+            foreach (var it in cok) { if (kalan.Count >= enCok) break; kalan.Add(it); }
+            foreach (var it in l) { if (kalan.Count >= enCok) break; kalan.Add(it); }
+            return l.FindAll(x => kalan.Contains(x));
         }
 
         private static KatalogKalemi Bul(Katalog k, string anahtar)
@@ -87,7 +127,10 @@ namespace SebekeHakedis.Eklenti
             return i < 0 ? null : k.Bul(anahtar.Substring(0, i), anahtar.Substring(i + 1));
         }
 
-        /// <summary>Öğenin seçili tipi (verilen katalogda); seçilmemişse öğenin ilk tipi (çok kullanılan önce).</summary>
+        /// <summary>
+        /// Öğenin seçili tipi (verilen katalogda); seçilmemişse öğenin en çok kullanılan tipi (müşterek hatta OG iletken),
+        /// o da yoksa ilk tipi.
+        /// </summary>
         public static KatalogKalemi SeciliTip(MenuOgesi oge, Katalog k)
         {
             if (oge == null || k == null) return null;
@@ -100,9 +143,19 @@ namespace SebekeHakedis.Eklenti
             }
             var hepsi = Tipler(oge, k);
             if (hepsi.Count == 0) return null;
+            if (oge.HatMi && oge.Tur == "MUSTEREK")
+            {
+                var og = EnCokKullanilan(hepsi.FindAll(x => Iletkenler.OgMu(x.Cins)));
+                if (og != null) return og;
+            }
+            return EnCokKullanilan(hepsi) ?? hepsi[0];
+        }
+
+        private static KatalogKalemi EnCokKullanilan(List<KatalogKalemi> l)
+        {
             KatalogKalemi en = null;
-            foreach (var x in hepsi) if (x.Kullanim > 0 && (en == null || x.Kullanim > en.Kullanim)) en = x;
-            return en ?? hepsi[0];
+            foreach (var x in l) if (x.Kullanim > 0 && (en == null || x.Kullanim > en.Kullanim)) en = x;
+            return en ?? (l.Count > 0 ? l[0] : null);
         }
 
         public static void TipSec(MenuOgesi oge, KatalogKalemi it)
@@ -110,11 +163,139 @@ namespace SebekeHakedis.Eklenti
             if (oge == null || it == null) return;
             Yukle();
             _tip[oge.Kod] = it.Anahtar;
+            _cins[oge.Kod] = it.Cins;
             SonaKoy(oge.Kod, it);
             SonaKoy(TurAnahtari(oge), it);
             Kaydet();
             Degisti?.Invoke();
         }
+
+        // ---------------- Cins ----------------
+
+        /// <summary>Öğenin şeritte seçili cinsi: seçilmişse o, değilse seçili tipin cinsi, o da yoksa ilk cins.</summary>
+        public static string SeciliCins(MenuOgesi oge, Katalog k)
+        {
+            if (oge == null || k == null) return "";
+            Yukle();
+            var cinsler = Cinsler(oge, k);
+            string c;
+            if (_cins.TryGetValue(oge.Kod, out c) && cinsler.Contains(c)) return c;
+            var tip = SeciliTip(oge, k);
+            if (tip != null && cinsler.Contains(tip.Cins)) return tip.Cins;
+            return cinsler.Count > 0 ? cinsler[0] : "";
+        }
+
+        /// <summary>Cins seçilir; seçili tip bu cinsten değilse cinsin (en çok kullanılan) tipi seçilir.</summary>
+        public static void CinsSec(MenuOgesi oge, string cins)
+        {
+            if (oge == null || string.IsNullOrEmpty(cins)) return;
+            Yukle();
+            _cins[oge.Kod] = cins;
+            var k = TemelKatalog;
+            var tip = SeciliTip(oge, k);
+            if (tip == null || tip.Cins != cins)
+            {
+                var yeni = EnCokKullanilan(Tipler(oge, k).FindAll(x => x.Cins == cins));
+                if (yeni != null) _tip[oge.Kod] = yeni.Anahtar;
+            }
+            Kaydet();
+            Degisti?.Invoke();
+        }
+
+        // ---------------- Hatlar: adet ve ikinci iletken ----------------
+
+        /// <summary>Ana iletkenin adedi (aynı güzergâhta kaç tane; ör. 3 adet ALPEK).</summary>
+        public static int Adet(MenuOgesi oge)
+        {
+            Yukle();
+            int n;
+            return oge != null && _adet.TryGetValue(oge.Kod, out n) && n > 0 ? n : 1;
+        }
+
+        public static void AdetSec(MenuOgesi oge, int adet)
+        {
+            if (oge == null) return;
+            Yukle();
+            _adet[oge.Kod] = Math.Max(1, Math.Min(12, adet));
+            Kaydet();
+            Degisti?.Invoke();
+        }
+
+        /// <summary>
+        /// Hattın ikinci iletkeni (ör. müşterek hatta OG'nin yanında AG); yoksa null. Müşterek hatta seçim yapılmamışsa ana
+        /// iletkenin öbür gerilimindeki en çok kullanılan iletken (OG ile AG birlikte gelir).
+        /// </summary>
+        public static KatalogKalemi EkIletken(MenuOgesi oge, Katalog k)
+        {
+            if (oge == null || k == null || !oge.HatMi) return null;
+            Yukle();
+            string a;
+            if (_ek.TryGetValue(oge.Kod, out a)) return a == "-" ? null : Bul(k, a);
+            if (oge.Tur != "MUSTEREK") return null;
+            var ana = SeciliTip(oge, k);
+            bool og = ana != null && Iletkenler.OgMu(ana.Cins);
+            return EnCokKullanilan(Tipler(oge, k).FindAll(x => Iletkenler.OgMu(x.Cins) != og));
+        }
+
+        public static int EkAdet(MenuOgesi oge)
+        {
+            Yukle();
+            int n;
+            return oge != null && _ekAdet.TryGetValue(oge.Kod, out n) && n > 0 ? n : 1;
+        }
+
+        /// <summary>İkinci iletkeni seçer (null: yok).</summary>
+        public static void EkSec(MenuOgesi oge, KatalogKalemi it, int adet = 1)
+        {
+            if (oge == null) return;
+            Yukle();
+            _ek[oge.Kod] = it == null ? "-" : it.Anahtar;
+            _ekAdet[oge.Kod] = Math.Max(1, Math.Min(12, adet));
+            Kaydet();
+            Degisti?.Invoke();
+        }
+
+        /// <summary>Şeritteki ikinci iletken listesi: öğenin bütün iletkenleri, cins cins katalog sırasıyla.</summary>
+        public static List<KatalogKalemi> EkListe(MenuOgesi oge)
+        {
+            var k = TemelKatalog;
+            var l = Tipler(oge, k);
+            if (l.Count <= ListeSiniri * 2) return l;
+            var ek = EkIletken(oge, k);
+            var kisa = Kisalt(l, oge, k, ListeSiniri * 2);
+            if (ek != null && !kisa.Contains(ek)) kisa.Insert(0, ek);
+            return kisa;
+        }
+
+        /// <summary>Hat öğesinin çizilecek iletkenleri: ana iletken (adediyle) ve varsa ikinci iletken.</summary>
+        public static List<HatIletkeni> HatIletkenleri(MenuOgesi oge, Katalog k)
+        {
+            var l = new List<HatIletkeni>();
+            var ana = SeciliTip(oge, k);
+            if (ana == null) return l;
+            l.Add(new HatIletkeni(ana, Adet(oge)));
+            var ek = EkIletken(oge, k);
+            if (ek != null && ek.Anahtar != ana.Anahtar) l.Add(new HatIletkeni(ek, EkAdet(oge)));
+            return l;
+        }
+
+        /// <summary>Penceredeki hat seçimini şeride yazar (ana iletken, adedi, ikinci iletken).</summary>
+        public static void IletkenleriSec(MenuOgesi oge, IList<HatIletkeni> l)
+        {
+            if (oge == null || l == null || l.Count == 0 || l[0].Kesit == null) return;
+            Yukle();
+            _tip[oge.Kod] = l[0].Kesit.Anahtar;
+            _cins[oge.Kod] = l[0].Kesit.Cins;
+            _adet[oge.Kod] = Math.Max(1, l[0].Adet);
+            SonaKoy(oge.Kod, l[0].Kesit);
+            SonaKoy(TurAnahtari(oge), l[0].Kesit);
+            _ek[oge.Kod] = l.Count > 1 && l[1].Kesit != null ? l[1].Kesit.Anahtar : "-";
+            _ekAdet[oge.Kod] = l.Count > 1 ? Math.Max(1, l[1].Adet) : 1;
+            Kaydet();
+            Degisti?.Invoke();
+        }
+
+        // ---------------- Son kullanılanlar ----------------
 
         private static void SonaKoy(string anahtar, KatalogKalemi it)
         {
@@ -187,7 +368,53 @@ namespace SebekeHakedis.Eklenti
 
         private static string Norm(string s) => (s ?? "").ToUpperInvariant().Replace('İ', 'I').Replace('ı', 'I');
 
-        /// <summary>Şeritteki özet satırı: "AG Direk · G-10I · M · 2. hakediş".</summary>
+        // ---------------- Malzeme hafızası ----------------
+
+        /// <summary>Son elemanların malzemeleri (tür ve tipe göre).</summary>
+        public static MalzemeHafizasi Hafiza
+        {
+            get { Yukle(); return _hafiza; }
+        }
+
+        public static void HafizaSec(bool acik)
+        {
+            Yukle();
+            HafizaAcik = acik;
+            Kaydet();
+            Degisti?.Invoke();
+        }
+
+        /// <summary>Elemanın malzemelerini hafızaya yazar (malzemeleri düzenlenince / toplu eklenince).</summary>
+        public static void Hatirla(Eleman e)
+        {
+            if (e == null) return;
+            Yukle();
+            _hafiza.Hatirla(e);
+            Kaydet();
+            Degisti?.Invoke();
+        }
+
+        /// <summary>Elemanların malzemelerini hafızaya yazar (her tür ve tipin sondaki elemanı kalır).</summary>
+        public static void HepsiniHatirla(IEnumerable<Eleman> elemanlar)
+        {
+            if (elemanlar == null) return;
+            Yukle();
+            foreach (var e in elemanlar) if (e != null) _hafiza.Hatirla(e);
+            Kaydet();
+            Degisti?.Invoke();
+        }
+
+        /// <summary>Etkin öğenin seçili tipine kendiliğinden eklenecek malzeme sayısı (hafıza kapalıysa 0).</summary>
+        public static int HafizaSayisi(MenuOgesi oge)
+        {
+            if (!HafizaAcik || oge == null || !oge.ElemanMi) return 0;
+            var t = SeciliTip(oge, TemelKatalog);
+            return t == null ? 0 : Hafiza.Sayisi(oge.Tur, t.Cins, t.Tanim);
+        }
+
+        // ---------------- Özet ----------------
+
+        /// <summary>Şeritteki özet satırı: "AG Direk · G-10I · M · 2. hakediş · +3 malzeme", hatta "… · 3xSW / 4P+R · …".</summary>
         public static string Ozet()
         {
             var oge = Oge;
@@ -195,10 +422,22 @@ namespace SebekeHakedis.Eklenti
             var parca = new List<string> { oge.Ad };
             if (oge.TipliMi || oge.Komut == "SH_KANAL")
             {
-                var t = SeciliTip(oge, TemelKatalog);
-                if (t != null) parca.Add(t.Tanim.Trim());
+                if (oge.HatMi)
+                {
+                    string kesit = Iletkenler.AnaKesit(HatIletkenleri(oge, TemelKatalog));
+                    var l = HatIletkenleri(oge, TemelKatalog);
+                    if (l.Count == 1 && l[0].Adet > 1) kesit = Iletkenler.AdetYazimi(kesit, l[0].Adet);
+                    if (kesit.Length > 0) parca.Add(kesit);
+                }
+                else
+                {
+                    var t = SeciliTip(oge, TemelKatalog);
+                    if (t != null) parca.Add(t.Tanim.Trim());
+                }
                 parca.Add(Durum + (Turler.DemontajMi(Durum) && !string.IsNullOrEmpty(DmDurum) ? " " + DmDurum : ""));
                 parca.Add(Hakedis > 0 ? Hakedis + ". hakediş" : "aktif hakediş");
+                int m = HafizaSayisi(oge);
+                if (m > 0) parca.Add("+" + m + " malzeme");
             }
             return string.Join(" · ", parca);
         }
@@ -240,6 +479,18 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
+        private static void SozlukOku(JsonNesne kok, string ad, Dictionary<string, string> hedef)
+        {
+            var o = kok.Nesne(ad);
+            if (o != null) foreach (var kv in o) if (kv.Value is string) hedef[kv.Key] = (string)kv.Value;
+        }
+
+        private static void SayilariOku(JsonNesne kok, string ad, Dictionary<string, int> hedef)
+        {
+            var o = kok.Nesne(ad);
+            if (o != null) foreach (var kv in o) if (kv.Value is double) hedef[kv.Key] = (int)Math.Round((double)kv.Value);
+        }
+
         /// <summary>Son seçimleri bir kez okur (şerit kurulurken).</summary>
         public static void Yukle()
         {
@@ -258,8 +509,12 @@ namespace SebekeHakedis.Eklenti
                 DmDurum = kok.Metin("dm");
                 Hakedis = kok.Tam("hakedis");
                 KanalKablolari = kok.Metin("kanalKablolari");
-                var tip = kok.Nesne("tip");
-                if (tip != null) foreach (var kv in tip) if (kv.Value is string) _tip[kv.Key] = (string)kv.Value;
+                HafizaAcik = kok.Mantik("hafizaAcik") ?? true;
+                SozlukOku(kok, "tip", _tip);
+                SozlukOku(kok, "cins", _cins);
+                SozlukOku(kok, "ek", _ek);
+                SayilariOku(kok, "adet", _adet);
+                SayilariOku(kok, "ekAdet", _ekAdet);
                 var son = kok.Nesne("son");
                 if (son != null)
                     foreach (var kv in son)
@@ -270,6 +525,7 @@ namespace SebekeHakedis.Eklenti
                         foreach (var x in d) l.Add(Convert.ToString(x, CultureInfo.InvariantCulture));
                         _son[kv.Key] = l;
                     }
+                _hafiza = MalzemeHafizasi.JsondanOku(kok.Nesne("hafiza"));
             }
             catch { }
             if (Kategori == null) Varsayilan();
@@ -280,6 +536,20 @@ namespace SebekeHakedis.Eklenti
             var l = Kategoriler.Hepsi();
             Kategori = l.Count > 0 ? l[0] : null;
             Oge = Kategori != null && Kategori.Ogeler.Count > 0 ? Kategori.Ogeler[0] : null;
+        }
+
+        private static JsonNesne Sozluk(Dictionary<string, string> d)
+        {
+            var o = new JsonNesne();
+            foreach (var kv in d) o[kv.Key] = kv.Value;
+            return o;
+        }
+
+        private static JsonNesne Sayilar(Dictionary<string, int> d)
+        {
+            var o = new JsonNesne();
+            foreach (var kv in d) o[kv.Key] = (double)kv.Value;
+            return o;
         }
 
         private static void Kaydet()
@@ -294,12 +564,16 @@ namespace SebekeHakedis.Eklenti
                 kok["dm"] = DmDurum ?? "";
                 kok["hakedis"] = (double)Hakedis;
                 kok["kanalKablolari"] = KanalKablolari ?? "";
-                var tip = new JsonNesne();
-                foreach (var kv in _tip) tip[kv.Key] = kv.Value;
-                kok["tip"] = tip;
+                kok["hafizaAcik"] = HafizaAcik;
+                kok["tip"] = Sozluk(_tip);
+                kok["cins"] = Sozluk(_cins);
+                kok["ek"] = Sozluk(_ek);
+                kok["adet"] = Sayilar(_adet);
+                kok["ekAdet"] = Sayilar(_ekAdet);
                 var son = new JsonNesne();
                 foreach (var kv in _son) son[kv.Key] = new List<object>(kv.Value);
                 kok["son"] = son;
+                kok["hafiza"] = _hafiza.JsonYap();
                 Directory.CreateDirectory(Path.GetDirectoryName(Dosya));
                 File.WriteAllText(Dosya, Cekirdek.Json.Yaz(kok, true), new UTF8Encoding(false));
             }

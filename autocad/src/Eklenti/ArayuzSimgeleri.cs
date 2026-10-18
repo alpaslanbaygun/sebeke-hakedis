@@ -90,6 +90,12 @@ namespace SebekeHakedis.Eklenti
                 // ---- Komutlar ----
                 case "malzeme":
                     return new[] { "M12,3 L21,7.8 L12,12.6 L3,7.8 Z", "M3,12 L12,16.8 L21,12", "M3,16.2 L12,21 L21,16.2" };
+                case "hafiza":
+                    // malzeme küpü + geri dönen ok (son malzemeler yeniden kullanılır)
+                    return new[] { "M20,12 A8,8 0 1 1 17.66,6.34", "M17.4,2.8 V6.6 H21.2", "M12,8.4 L15.4,10.2 L12,12 L8.6,10.2 Z", "M8.6,10.2 V13.9 L12,15.7 L15.4,13.9 V10.2", "M12,12 V15.7" };
+                case "toplu":
+                    // üç küçük direk + artı (seçilenlere toplu malzeme)
+                    return new[] { "M5,8 V20", "M3,10 H7", "M11,8 V20", "M9,10 H13", "M17,13 V20", "M15,15 H19", "M18.5,3 V9", "M15.5,6 H21.5" };
                 case "metraj":
                     return new[] { "M3,16.5 L16.5,3 L21,7.5 L7.5,21 Z", "M7,12.5 L9,14.5", "M10,9.5 L12.5,12", "M13,6.5 L15,8.5" };
                 case "gorunum":

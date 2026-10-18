@@ -22,11 +22,14 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Eklentinin parça metrajı yazılarının tanıtıcıları (hat / kanal / sondajda; her parça için bir yazı).</summary>
         public const string ParcaUygulamasi = "SH_PARCA";
 
+        /// <summary>Direğin yanındaki armatür simgesinin tanıtıcısı (direkte armatür malzemesi varken).</summary>
+        public const string ArmaturUygulamasi = "SH_ARM";
+
         /// <summary>PROMAGIS'in eklentinin düzenlemediği verileri: pano çıkış şeması (ANA, CON), bina tipi trafo hücreleri (FIDER).</summary>
         public static readonly string[] EkUygulamalar = { "ANA", "CON", "FIDER" };
 
         /// <summary>XDATA uygulama adları (çizimde kayıtlı olmalı).</summary>
-        public static readonly string[] Uygulamalar = { "GIS", "NIT", "MALZEME", "HAT", "ANAKESIT", "ETK", "KONTROL", "FULLREG", "HAKNO", "ZKOORD", KimlikUygulamasi, ParcaUygulamasi, "ANA", "CON", "FIDER" };
+        public static readonly string[] Uygulamalar = { "GIS", "NIT", "MALZEME", "HAT", "ANAKESIT", "ETK", "KONTROL", "FULLREG", "HAKNO", "ZKOORD", KimlikUygulamasi, ParcaUygulamasi, ArmaturUygulamasi, "ANA", "CON", "FIDER" };
 
         /// <summary>
         /// Sembol takımı: true (varsayılan) → her eleman telefonla aynı SH_ simgesiyle çizilir (çizimdeki PROMAGIS blokları
@@ -106,7 +109,7 @@ namespace SebekeHakedis.Cekirdek
         /// Eklentinin kendi bloğu (çizimde PROMAGIS bloğu yoksa kullanılır): lejant simgesi, tür + malzeme + duruma göre
         /// (ör. SH_KAFES_AG_YENI). Bkz. Semboller.
         /// </summary>
-        public static string VarsayilanBlok(string tur, string cins, string durum) => Semboller.BlokAdi(tur, cins, durum);
+        public static string VarsayilanBlok(string tur, string cins, string durum, string dmDurum = "") => Semboller.BlokAdi(tur, cins, durum, dmDurum);
 
         public static string VarsayilanBlok(Eleman e) => Semboller.BlokAdi(e);
 
@@ -130,9 +133,9 @@ namespace SebekeHakedis.Cekirdek
         /// görünsün diye). Adsız bloklar (*U…) ve eklentinin kendi blokları (SH_…) sayılmaz. Bulunamazsa
         /// eklentinin lejant simgesi (malzeme ve duruma göre).
         /// </summary>
-        public static string BlokOner(IEnumerable<Eleman> mevcut, string tur, string cins, string durum)
+        public static string BlokOner(IEnumerable<Eleman> mevcut, string tur, string cins, string durum, string dmDurum = "")
         {
-            if (TelefonSembolleri) return Semboller.BlokAdi(tur, cins, durum);
+            if (TelefonSembolleri) return Semboller.BlokAdi(tur, cins, durum, dmDurum);
             var say = new Dictionary<string, int>(StringComparer.Ordinal);
             string grup = DurumGrubu(durum);
             foreach (var e in mevcut)
@@ -146,7 +149,7 @@ namespace SebekeHakedis.Cekirdek
             string en = null;
             int enCok = 0;
             foreach (var kv in say) if (kv.Value > enCok) { enCok = kv.Value; en = kv.Key; }
-            return en ?? Semboller.BlokAdi(tur, cins, durum);
+            return en ?? Semboller.BlokAdi(tur, cins, durum, dmDurum);
         }
 
         /// <summary>
@@ -158,13 +161,13 @@ namespace SebekeHakedis.Cekirdek
         /// </summary>
         public static string BlokSec(IEnumerable<Eleman> cizim, Eleman e)
         {
-            if (string.IsNullOrEmpty(e.Blok) || Semboller.EklentininBlogu(e.Blok)) return BlokOner(cizim, e.Tur, e.Cins, e.Durum);
+            if (string.IsNullOrEmpty(e.Blok) || Semboller.EklentininBlogu(e.Blok)) return BlokOner(cizim, e.Tur, e.Cins, e.Durum, e.DmDurum);
             if (e.Blok.StartsWith("*", StringComparison.Ordinal)) return e.Blok; // adsız blok: mevcut nesnede olduğu gibi kalır
             string grup = DurumGrubu(e.Durum);
             // PROMAGIS blok adı durumu söyler (YENİ_…, MEVCUT_…, DEMONTAJ_…): uyuyorsa blok korunur (çizime dokunulmaz),
             // uymuyorsa durum değişmiştir → yeni durumun bloğu (telefon simgeleri açıkken SH_ simgesi)
             string adGrubu = PromagisBlokGrubu(e.Blok);
-            if (adGrubu != null) return adGrubu == grup ? e.Blok : BlokOner(cizim, e.Tur, e.Cins, e.Durum);
+            if (adGrubu != null) return adGrubu == grup ? e.Blok : BlokOner(cizim, e.Tur, e.Cins, e.Durum, e.DmDurum);
             bool ayniGrup = false, baska = false;
             foreach (var x in cizim)
             {
@@ -174,7 +177,52 @@ namespace SebekeHakedis.Cekirdek
                 if (string.Equals(x.Blok, e.Blok, StringComparison.OrdinalIgnoreCase)) { ayniGrup = true; break; }
                 baska = true;
             }
-            return ayniGrup || !baska ? e.Blok : BlokOner(cizim, e.Tur, e.Cins, e.Durum);
+            return ayniGrup || !baska ? e.Blok : BlokOner(cizim, e.Tur, e.Cins, e.Durum, e.DmDurum);
+        }
+
+        /// <summary>
+        /// Durumu değişen elemanın bloğu: telefon simgeleri açıkken simgesi değişen durumda (ör. M → DM+M, DM → DM · KESİK)
+        /// PROMAGIS bloğu da telefon simgesine geçer (PROMAGIS'in YENİ_ bloğu sök-takı, DEMONTAJ_ bloğu kesik / sökükü
+        /// ayırmaz); simgesi değişmeyen düzenlemede BlokSec kuralı geçerlidir.
+        /// </summary>
+        public static string BlokSec(IEnumerable<Eleman> cizim, Eleman e, string eskiDurum, string eskiDm)
+        {
+            if (TelefonSembolleri && !string.IsNullOrEmpty(e.Blok) && !e.Blok.StartsWith("*", StringComparison.Ordinal)
+                && Semboller.Varyant(eskiDurum, eskiDm) != Semboller.Varyant(e.Durum, e.DmDurum))
+                return Semboller.BlokAdi(e);
+            return BlokSec(cizim, e);
+        }
+
+        // ---------------- Armatür (direğin malzemesi; simgesi direğin yanında) ----------------
+
+        /// <summary>Armatür taşıyabilen eleman türleri: direkler ve trafo direği.</summary>
+        public static bool DirekMi(string tur) =>
+            tur == "AG_DIREK" || tur == "MUSTEREK_DIREK" || tur == "AYD_DIREK" || tur == "ENH_DIREK" || tur == "TRAFO_DIREGI";
+
+        /// <summary>Kalem armatür mü (cinsi ARMATÜR …).</summary>
+        public static bool ArmaturMu(Kalem k) => k != null && Semboller.Aile("DIGER", k.Cins) == "ARMATUR";
+
+        /// <summary>
+        /// Direğin armatür malzemesinden simgenin bloğu ("": armatür yok). Durumu: demontaj olmayan ilk armatürün durumu
+        /// (hepsi demontajsa demontaj). Simge direğin sol üstüne, direğin simgesine değmeden konur.
+        /// </summary>
+        public static string ArmaturBlogu(Eleman e, out double dx, out double dy, out string durum)
+        {
+            dx = dy = 0;
+            durum = "";
+            if (e == null || !DirekMi(e.Tur)) return "";
+            Kalem secilen = null;
+            foreach (var k in e.Kalemler)
+            {
+                if (k.Ana || !ArmaturMu(k)) continue;
+                if (secilen == null || (Semboller.Varyant(secilen.Durum) == "DM" && Semboller.Varyant(k.Durum) != "DM")) secilen = k;
+            }
+            if (secilen == null) return "";
+            durum = secilen.Durum ?? "";
+            double R = Semboller.Yuklu ? Semboller.YariGenislik(e) : 2.25;
+            dx = -(R + 2.9);
+            dy = R + 0.9;
+            return Semboller.OnEk + "ARMATUR_" + Semboller.Varyant(durum);
         }
 
         /// <summary>Yeni bloğun ölçeği: çizimde aynı bloğun en çok kullanılan ölçeği, yoksa elemanların en çok kullanılan ölçeği.</summary>
@@ -269,6 +317,9 @@ namespace SebekeHakedis.Cekirdek
             foreach (var k in e.Kalemler) if (!k.Ana) Ekle(v, "MALZEME", MalzemeSatiri(k));
             foreach (var kv in e.EkVeri) if (kv.Value != null && kv.Value.Count > 0) v.Xd[kv.Key] = new List<string>(kv.Value);
             if (!string.IsNullOrEmpty(kimlik)) Ekle(v, KimlikUygulamasi, kimlik);
+            string armDurum;
+            v.Armatur = ArmaturBlogu(e, out v.ArmaturDx, out v.ArmaturDy, out armDurum);
+            if (v.Armatur.Length > 0 && CizimStili.Yuklu) v.ArmaturRengi = CizimStili.ElemanRengi("DIGER", "ARMATÜR", armDurum);
             return v;
         }
 
@@ -330,10 +381,14 @@ namespace SebekeHakedis.Cekirdek
         /// </summary>
         public static string HatEtiketi(Hat h)
         {
-            var kl = h.Kalemler.Find(k => k.Kaynak == "HAT");
-            double m = kl != null ? kl.Miktar : Math.Ceiling(Geometri.Uzunluk(h.Kose));
-            // PROMAGIS etikette hattın tam yazımını kullanır (ör. "3(1x150/25) Xlpe Alm."), yoksa ana kesit
-            string kesit = kl != null && !string.IsNullOrEmpty(kl.Aciklama) ? kl.Aciklama
+            var hatlar = Iletkenler.HatKalemleri(h);
+            var kl = hatlar.Count > 0 ? hatlar[0] : null;
+            // Etiketteki uzunluk güzergâhın metrajıdır (adetli satırda miktar / adet)
+            double m = kl != null ? kl.Miktar / Math.Max(1, Iletkenler.Adet(kl)) : Math.Ceiling(Geometri.Uzunluk(h.Kose));
+            // Çoklu iletken: hepsi telefondaki gibi (OG + … / AG + …). Tek iletken: PROMAGIS hattın tam yazımını kullanır
+            // (ör. "3(1x150/25) Xlpe Alm."), yoksa ana kesit.
+            string kesit = hatlar.Count > 1 ? Iletkenler.EtiketKesiti(hatlar)
+                : kl != null && !string.IsNullOrEmpty(kl.Aciklama) ? kl.Aciklama
                 : !string.IsNullOrEmpty(h.AnaKesit) ? h.AnaKesit : (kl != null ? kl.Tanim : "");
             string metraj = Metraj.Yazi(m) + "m";
             string govde;

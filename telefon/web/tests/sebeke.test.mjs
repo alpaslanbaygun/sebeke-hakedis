@@ -367,3 +367,54 @@ test('A7 · telefon projesi → AutoCAD dosyası → başka telefon → AutoCAD 
   assert.equal(kg(geri), kg(ilk));
   assert.equal(SH.durumTespit(geri, kat).length, SH.durumTespit(ilk, kat).length, 'rapor satır sayısı');
 });
+
+test('A8 · çok iletkenli hat: müşterekte OG + AG iki kalem ve birleşik ana kesit; 3 adet ALPEK ×3 ve "3x(…)"; geri alınınca devreler aynı', async () => {
+  const { ps } = await setup(); await newProject(ps, { autoRecipe: false });
+  const rMus = route({ E: 519300, N: 4282100, H: 1050 }, [[60, 50, 0], [60, 50, 0]]);
+  await buildPoleLine(ps, rMus, { group: 'mus', typeNames: "G-12U''", lineType: 'AG', musterek: true, circuits: [{ role: 'OG', key: '3xSwallow', count: 1 }, { role: 'AG', key: '3P+R', count: 1 }] });
+  const rAg = route({ E: 519500, N: 4282300, H: 1050 }, [[90, 40, 0]]);
+  await buildPoleLine(ps, rAg, { group: 'sehir', typeNames: 'G-K2', lineType: 'AG', circuits: [{ role: 'AG', key: '3x50/16+70 AER', count: 3 }] });
+  const sp = sebekeModel(ps);
+  // Müşterek: her parçada OG ve AG iletkeni ayrı kalem; ana kesit ve etiket eklentideki gibi "OG / AG"
+  const mus = sp.hatlar.filter((h) => h.tur === 'MUSTEREK');
+  assert.equal(mus.length, 2, 'müşterek hat direkten direğe iki parça');
+  for (const h of mus) {
+    const satir = h.kalemler.filter((k) => k.kaynak === 'HAT');
+    assert.deepEqual(satir.map((k) => k.cins + ' ' + k.tanim), ['OG_İLETKEN 3xSW', 'AG_İLETKEN 3P+R']);
+    assert.equal(h.anaKesit, '3xSW / 3P+R');
+    assert.equal(h.etiket, '^ 3xSW / 3P+R/' + SH.metrajYazisi(satir[0].miktar) + 'm');
+  }
+  // 3 adet ALPEK: tek kalem, miktar adet × güzergâh, tam yazım "3x(…)"; etiketteki uzunluk güzergâhın kendisi
+  const alpek = sp.hatlar.find((h) => h.tur === 'AG_HAVAI');
+  const ak = alpek.kalemler.filter((k) => k.kaynak === 'HAT');
+  assert.equal(ak.length, 1);
+  assert.equal(ak[0].cins, 'ALPEK_KABLOLAR'); assert.equal(ak[0].tanim, '3X50/16+70 ALPEK'); assert.equal(ak[0].aciklama, '3x(3X50/16+70 ALPEK)');
+  const metraj = ak[0].miktar / 3;
+  assert.ok(Number.isInteger(metraj) && metraj >= 40, 'güzergâh metrajı tam metre: ' + metraj);
+  assert.equal(alpek.etiket, '^ 3x(3X50/16+70 ALPEK)/' + metraj + 'm');
+  // Başka telefona al: devreler (rol, tip, adet) aynen gelir; geri yazınca kalemler değişmez
+  const { ps: ps2 } = await setup();
+  const oz = await sebekeIceAl(ps2, SH.projeOku(SH.projeYaz(sp)), { name: 'cok-iletken' });
+  assert.equal(oz.eslesmeyen.length, 0, JSON.stringify(oz.eslesmeyen));
+  const m2 = ps2.data.lines.find((l) => l.musterek);
+  assert.deepEqual(m2.circuits.map((c) => c.role + ' ' + c.key + ' ' + c.count), ['OG 3xSwallow 1', 'AG 3P+R 1']);
+  const a2 = ps2.data.lines.find((l) => !l.musterek);
+  assert.deepEqual(a2.circuits.map((c) => c.role + ' ' + c.key + ' ' + c.count), ['AG 3x50/16+70 AER 3']);
+  const geri = sebekeModel(ps2);
+  const ozet = (p) => p.hatlar.map((h) => h.tur + ' ' + h.anaKesit + ' ' + h.kalemler.filter((k) => k.kaynak === 'HAT').map((k) => k.cins + ':' + k.tanim + ':' + (k.aciklama || '') + ':' + k.miktar).join(',')).sort();
+  assert.deepEqual(ozet(geri), ozet(sp));
+  // Eklentide çizilmiş, telefonda karşılığı olmayan iletkenli (4P+R) müşterek hat: kalemler aynen korunur ve geri döner
+  const dosya = SH.projeOku(SH.projeYaz(sp));
+  const cad = dosya.hatlar.find((h) => h.tur === 'MUSTEREK');
+  dosya.hatlar = [cad]; dosya.kanallar = [];
+  delete cad.telefonId; cad.id = 'H77'; delete cad.parca;
+  const ag = cad.kalemler.find((k) => k.cins === 'AG_İLETKEN'); ag.tanim = '4P+R';
+  cad.anaKesit = '3xSW / 4P+R';
+  const { ps: ps3 } = await setup();
+  await sebekeIceAl(ps3, dosya, { name: 'eklenti' });
+  const l3 = ps3.data.lines.find((l) => l.musterek);
+  assert.equal(l3.circuits.length, 0, 'eşleşmeyen iletken: devre açılmaz');
+  const h3 = sebekeModel(ps3).hatlar.find((h) => h.tur === 'MUSTEREK');
+  assert.equal(h3.anaKesit, '3xSW / 4P+R');
+  assert.deepEqual(h3.kalemler.filter((k) => k.kaynak === 'HAT').map((k) => k.cins + ' ' + k.tanim), ['OG_İLETKEN 3xSW', 'AG_İLETKEN 4P+R']);
+});

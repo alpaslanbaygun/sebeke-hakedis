@@ -65,6 +65,29 @@ namespace SebekeHakedis.Cekirdek
             return true;
         }
 
+        /// <summary>
+        /// Hat çizerken tıklanan noktanın yapıştığı eleman: simgesinin üstüne (yarı genişliğinin biraz dışına kadar) ya da
+        /// verilen mesafe içine tıklanan elemanlardan merkezi en yakın olan. mesafe: en az yakalama mesafesi (ayar; 0 ise
+        /// yakalama kapalı), ekran: ekrandaki birkaç piksellik pay (uzaktan bakarken küçük simgeler de yakalansın).
+        /// Simge tablosu yüklü değilse yalnız mesafe ve ekran payı kullanılır.
+        /// </summary>
+        public static Eleman YakinEleman(IEnumerable<Eleman> elemanlar, double x, double y, double mesafe, double ekran = 0)
+        {
+            if (elemanlar == null || mesafe <= 0) return null;
+            Eleman en = null;
+            double enKisa = double.MaxValue;
+            foreach (var e in elemanlar)
+            {
+                if (e == null) continue;
+                double dx = e.Saga - x, dy = e.Yukari - y;
+                double d = Math.Sqrt(dx * dx + dy * dy);
+                double r = Math.Max(mesafe, ekran);
+                if (Semboller.Yuklu) r = Math.Max(r, Semboller.YariGenislik(e) * 1.15);
+                if (d <= r && d < enKisa) { enKisa = d; en = e; }
+            }
+            return en;
+        }
+
         /// <summary>Nokta çokgenin içinde mi (ışın yöntemi).</summary>
         public static bool Icinde(double[] p, IList<double[]> cokgen)
         {

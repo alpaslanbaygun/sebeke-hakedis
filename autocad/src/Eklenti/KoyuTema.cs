@@ -1231,6 +1231,160 @@ namespace SebekeHakedis.Eklenti
         }
     }
 
+    /// <summary>
+    /// Cins seçimi: yuvarlak düğmeler (ör. "Hepsi 79 · Galvanizli demir 19 · Beton 37 · Ağaç 4"); seçili olan yeşil. Sığmayan
+    /// düğme alt satıra geçer; yükseklik GerekenYukseklik ile bulunur. Sol / sağ ok tuşlarıyla da seçilir.
+    /// </summary>
+    internal sealed class CinsSecici : Control
+    {
+        public sealed class Secenek
+        {
+            public string Kod = "", Ad = "";
+            public int Sayi = -1;
+            public string Ipucu = "";
+        }
+
+        private readonly List<Secenek> _l = new List<Secenek>();
+        private readonly List<Rectangle> _alanlar = new List<Rectangle>();
+        private int _secili = -1, _uzerinde = -1;
+        private readonly ToolTip _ipucu = new ToolTip();
+        public event Action Degisti;
+
+        public CinsSecici()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.Selectable, true);
+            Font = KoyuYazi.Govde;
+            TabStop = true;
+            Height = Olcu.S(30);
+            Cursor = Cursors.Hand;
+        }
+
+        public IList<Secenek> Secenekler => _l;
+
+        public void Doldur(IEnumerable<Secenek> l, string seciliKod)
+        {
+            _l.Clear();
+            _l.AddRange(l);
+            _secili = _l.FindIndex(x => x.Kod == (seciliKod ?? ""));
+            if (_secili < 0 && _l.Count > 0) _secili = 0;
+            Hesapla();
+            Invalidate();
+        }
+
+        public string SeciliKod => _secili >= 0 && _secili < _l.Count ? _l[_secili].Kod : "";
+
+        /// <summary>Kodu verilen seçeneği seçer (Degisti olayı çalışır); yoksa bir şey yapmaz.</summary>
+        public void Sec(string kod)
+        {
+            int i = _l.FindIndex(x => x.Kod == (kod ?? ""));
+            if (i >= 0) Secili = i;
+        }
+
+        public int Secili
+        {
+            get => _secili;
+            set
+            {
+                if (value < 0 || value >= _l.Count || value == _secili) return;
+                _secili = value;
+                Invalidate();
+                Degisti?.Invoke();
+            }
+        }
+
+        private string Yazi(Secenek s) => s.Ad;
+        private string SayiYazisi(Secenek s) => s.Sayi >= 0 ? s.Sayi.ToString("N0", CultureInfo.GetCultureInfo("tr-TR")) : "";
+
+        private void Hesapla()
+        {
+            _alanlar.Clear();
+            int x = 0, y = 0, h = Olcu.S(28), ara = Olcu.S(6);
+            foreach (var s in _l)
+            {
+                int w = TextRenderer.MeasureText(Yazi(s), KoyuYazi.Kalin, Size.Empty, TextFormatFlags.NoPrefix | TextFormatFlags.SingleLine).Width + Olcu.S(24);
+                string sayi = SayiYazisi(s);
+                if (sayi.Length > 0) w += TextRenderer.MeasureText(sayi, KoyuYazi.Kucuk, Size.Empty, TextFormatFlags.NoPrefix | TextFormatFlags.SingleLine).Width + Olcu.S(4);
+                w = Math.Min(w, Math.Max(Olcu.S(60), Width));
+                if (x > 0 && x + w > Width) { x = 0; y += h + ara; }
+                _alanlar.Add(new Rectangle(x, y, w, h));
+                x += w + ara;
+            }
+        }
+
+        /// <summary>Bütün düğmelerin sığdığı yükseklik (piksel).</summary>
+        public int GerekenYukseklik
+        {
+            get
+            {
+                Hesapla();
+                int alt = 0;
+                foreach (var r in _alanlar) alt = Math.Max(alt, r.Bottom);
+                return Math.Max(Olcu.S(28), alt);
+            }
+        }
+
+        protected override void OnResize(EventArgs e) { base.OnResize(e); Hesapla(); Invalidate(); }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            using (var b = new SolidBrush(Boya.Zemin(this))) g.FillRectangle(b, ClientRectangle);
+            for (int i = 0; i < _alanlar.Count && i < _l.Count; i++)
+            {
+                var r = _alanlar[i];
+                bool s = i == _secili;
+                var zemin = s ? KoyuRenk.Vurgu : i == _uzerinde ? KoyuRenk.Uzerinde : KoyuRenk.Kart;
+                var kenar = s ? (Focused ? KoyuRenk.Yesil : KoyuRenk.Vurgu) : KoyuRenk.Kenar;
+                Boya.Kutu(g, r, zemin, kenar, r.Height / 2);
+                string sayi = SayiYazisi(_l[i]);
+                int sayiEn = sayi.Length > 0 ? TextRenderer.MeasureText(sayi, KoyuYazi.Kucuk, Size.Empty, TextFormatFlags.NoPrefix | TextFormatFlags.SingleLine).Width + Olcu.S(4) : 0;
+                var ra = new Rectangle(r.X + Olcu.S(12), r.Y, Math.Max(1, r.Width - Olcu.S(24) - sayiEn), r.Height);
+                Boya.Yazi(g, Yazi(_l[i]), KoyuYazi.Kalin, ra, s ? Color.White : KoyuRenk.Yazi,
+                    TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine);
+                if (sayiEn > 0)
+                    Boya.Yazi(g, sayi, KoyuYazi.Kucuk, new Rectangle(ra.Right + Olcu.S(2), r.Y, sayiEn, r.Height), s ? Color.FromArgb(0xD8, 0xF5, 0xE6) : KoyuRenk.Soluk,
+                        TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine);
+            }
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+            for (int i = 0; i < _alanlar.Count; i++)
+                if (_alanlar[i].Contains(e.Location)) { Focus(); Secili = i; return; }
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            int u = _alanlar.FindIndex(r => r.Contains(e.Location));
+            if (u == _uzerinde) return;
+            _uzerinde = u;
+            Invalidate();
+            try { _ipucu.SetToolTip(this, u >= 0 && u < _l.Count ? _l[u].Ipucu : ""); } catch { }
+        }
+
+        protected override void OnMouseLeave(EventArgs e) { base.OnMouseLeave(e); _uzerinde = -1; Invalidate(); }
+        protected override void OnGotFocus(EventArgs e) { base.OnGotFocus(e); Invalidate(); }
+        protected override void OnLostFocus(EventArgs e) { base.OnLostFocus(e); Invalidate(); }
+
+        protected override bool IsInputKey(Keys keyData) => keyData == Keys.Left || keyData == Keys.Right || base.IsInputKey(keyData);
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            if (_l.Count == 0) return;
+            if (e.KeyCode == Keys.Right) Secili = Math.Min(_l.Count - 1, _secili + 1);
+            else if (e.KeyCode == Keys.Left) Secili = Math.Max(0, _secili - 1);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) _ipucu.Dispose();
+            base.Dispose(disposing);
+        }
+    }
+
     internal enum BilgiTuru { Bilgi, Uyari, Hata }
 
     /// <summary>Bilgi / uyarı / hata çubuğu: renkli zemin, simge, sarılan yazı.</summary>

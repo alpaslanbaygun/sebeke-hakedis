@@ -184,11 +184,35 @@ namespace SebekeHakedis.Eklenti
                 var secim = Pencereler.Eleman(o, null);
                 if (secim == null) return;
                 o.AyarKaydet();
+                if (secim.Hafiza != HizliSecim.HafizaAcik) HizliSecim.HafizaSec(secim.Hafiza);
                 ElemanDongusu(o, secim, null);
             });
         }
 
-        /// <summary>Eleman koyma döngüsü: her tıklamada bir eleman (telefon simgesiyle). oge: şeritteki hızlı çizim öğesi (varsa seçimi güncellenir).</summary>
+        /// <summary>Seçim armatür mü (Aydınlatma › Armatür: diğer türünde ARMATÜR cinsi)?</summary>
+        private static bool ArmaturSecimi(ElemanSecimi secim) =>
+            secim != null && secim.Tip != null && Semboller.Aile(secim.Tur, secim.Tip.Cins) == "ARMATUR";
+
+        /// <summary>Tıklanan noktadaki direk (armatürü malzeme olarak eklemek için); yoksa null.</summary>
+        private static Eleman DirekBul(Ortam o, Point3d p) =>
+            Geometri.YakinEleman(o.Proje.Elemanlar.FindAll(x => PromagisYazici.DirekMi(x.Tur)), p.X, p.Y, Math.Max(0.01, o.Ayar.YakalamaMesafesi), o.EkranToleransi());
+
+        /// <summary>Elemana eklenen malzemenin varsayılan durumu: elemanınki (mevcut elemana yeni malzeme M).</summary>
+        internal static string MalzemeDurumu(string elemanDurumu) => string.IsNullOrEmpty(elemanDurumu) || elemanDurumu == "MEVCUT" ? "M" : elemanDurumu;
+
+        private static string HafizaBilgisi(ElemanSecimi secim)
+        {
+            if (secim == null || !secim.Hafiza || secim.Tip == null) return "";
+            string kaynak;
+            var l = HizliSecim.Hafiza.Bul(secim.Tur, secim.Tip.Cins, secim.Tip.Tanim, out kaynak);
+            return l == null || l.Count == 0 ? "" : "\nMalzeme hafızası açık: her yeni elemana " + MalzemeHafizasi.Ozet(l, kaynak) + " eklenir (şeritteki Malzeme Hafızası ile kapatılır).";
+        }
+
+        /// <summary>
+        /// Eleman koyma döngüsü: her tıklamada bir eleman (telefon simgesiyle). Malzeme hafızası açıksa aynı tür ve tipteki son
+        /// elemanın malzemeleri yeni elemana eklenir. Armatür direğe tıklanırsa direğin malzemesi olur (simgesi direğin yanında).
+        /// oge: şeritteki hızlı çizim öğesi (varsa seçimi güncellenir).
+        /// </summary>
         private static void ElemanDongusu(Ortam o, ElemanSecimi secim, MenuOgesi oge)
         {
             var ed = o.Ed;
@@ -196,8 +220,13 @@ namespace SebekeHakedis.Eklenti
             string ilkGis = secim.Gis;
             ObjectId sonId = ObjectId.Null;
             Eleman son = null;
-            int sayi = 0;
-            ed.WriteMessage("\nEleman: " + secim);
+            // Son işlem armatürün direğe eklenmesiyse Geri onu direkten çıkarır
+            Eleman sonDirek = null;
+            Kalem sonArmatur = null;
+            int sayi = 0, armaturSayisi = 0;
+            ed.WriteMessage("\nEleman: " + secim + HafizaBilgisi(secim));
+            if (ArmaturSecimi(secim))
+                ed.WriteMessage("\nArmatür: direğin üstüne tıklarsanız direğe malzeme olarak eklenir ve simgesi direğin yanına çizilir; boş yere tıklarsanız ayrı armatür konur.");
             while (true)
             {
                 Point3d p;
@@ -210,12 +239,23 @@ namespace SebekeHakedis.Eklenti
                     {
                         secim = s2; ilkGis = s2.Gis; o.AyarKaydet();
                         if (oge != null && s2.Tur == oge.Tur) { HizliSecim.TipSec(oge, s2.Tip); HizliSecim.DurumSec(s2.Durum, s2.DmDurum); }
-                        ed.WriteMessage("\nEleman: " + secim);
+                        if (s2.Hafiza != HizliSecim.HafizaAcik) HizliSecim.HafizaSec(s2.Hafiza);
+                        ed.WriteMessage("\nEleman: " + secim + HafizaBilgisi(secim));
                     }
                     continue;
                 }
                 if (g == Giris.Kelime && k == "Geri")
                 {
+                    if (sonDirek != null && sonArmatur != null)
+                    {
+                        sonDirek.Kalemler.Remove(sonArmatur);
+                        DirekYaz(o, sonDirek);
+                        ed.WriteMessage("\nArmatür " + Ad(sonDirek) + " direğinden çıkarıldı.");
+                        sonDirek = null;
+                        sonArmatur = null;
+                        armaturSayisi--;
+                        continue;
+                    }
                     if (son == null) { ed.WriteMessage("\nGeri alınacak eleman yok."); continue; }
                     using (var tr = o.Db.TransactionManager.StartTransaction())
                     {
@@ -231,6 +271,25 @@ namespace SebekeHakedis.Eklenti
                 }
                 if (g != Giris.Nokta) break;
 
+                // Armatür direğin üstüne: direğin malzemesi olur, simgesi direğin yanına çizilir
+                if (ArmaturSecimi(secim))
+                {
+                    var direk = DirekBul(o, p);
+                    if (direk != null)
+                    {
+                        var kl = Katalog.KalemYap(secim.Tip, 1, secim.Durum, secim.Hakedis, false, "MALZEME", o.YeniSira(), "", o.Ayar.Karakteristik, o.Ayar.Koy);
+                        direk.Kalemler.Add(kl);
+                        if (!DirekYaz(o, direk)) { direk.Kalemler.Remove(kl); continue; }
+                        sonDirek = direk;
+                        sonArmatur = kl;
+                        son = null;
+                        armaturSayisi++;
+                        HizliSecim.Hatirla(direk);
+                        ed.WriteMessage("\n" + secim.Tip.Tanim.Trim() + " " + Ad(direk) + " direğine malzeme olarak eklendi.");
+                        continue;
+                    }
+                }
+
                 string gis = !string.IsNullOrEmpty(ilkGis) ? ilkGis : Numara.SonrakiGis(o.Proje.Elemanlar, secim.Tur, o.GisOnEki, secim.Tip.Cins);
                 ilkGis = null;
                 var e = new Eleman
@@ -239,10 +298,13 @@ namespace SebekeHakedis.Eklenti
                     Hakedis = secim.Hakedis, Saga = p.X, Yukari = p.Y, Kot = p.Z,
                 };
                 e.Kalemler.Add(Katalog.KalemYap(secim.Tip, 1, secim.Durum, secim.Hakedis, true, "NIT", o.YeniSira(), secim.DmDurum, o.Ayar.Karakteristik, o.Ayar.Koy));
+                // Malzeme hafızası: aynı tür ve tipteki son elemanın malzemeleri
+                var hafiza = secim.Hafiza ? HizliSecim.Hafiza.Uygula(e, o.Katalog, o.YeniSira, o.Ayar.Karakteristik, o.Ayar.Koy) : new List<Kalem>();
+                e.Kalemler.AddRange(hafiza);
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
                     var y = Yazici(o, tr);
-                    string blok = y.KullanilabilirBlok(PromagisYazici.BlokSec(o.Proje.Elemanlar, e), e.Tur, e.Cins, e.Durum, o.Proje.Elemanlar);
+                    string blok = y.KullanilabilirBlok(PromagisYazici.BlokSec(o.Proje.Elemanlar, e), e.Tur, e.Cins, e.Durum, e.DmDurum, o.Proje.Elemanlar);
                     var v = PromagisYazici.Eleman(e, o.OnEk, blok, null);
                     sonId = y.Ekle(v, null, o.Olcek(blok));
                     e.Id = v.H;
@@ -253,10 +315,36 @@ namespace SebekeHakedis.Eklenti
                 }
                 o.Proje.Elemanlar.Add(e);
                 son = e;
+                sonDirek = null;
+                sonArmatur = null;
                 sayi++;
-                ed.WriteMessage("\n" + Ad(e) + " konuldu.");
+                ed.WriteMessage("\n" + Ad(e) + " konuldu." + (hafiza.Count > 0 ? " +" + hafiza.Count + " malzeme (hafızadan)." : ""));
             }
             if (sayi > 0) ed.WriteMessage("\n" + sayi + " eleman konuldu.");
+            if (armaturSayisi > 0) ed.WriteMessage("\n" + armaturSayisi + " armatür direklere malzeme olarak eklendi.");
+        }
+
+        /// <summary>Modeldeki elemanı çizimdeki karşılığına yazar (malzemesi değişen direk); başarılıysa true.</summary>
+        private static bool DirekYaz(Ortam o, Eleman e)
+        {
+            ObjectId id;
+            if (!Toplayici.TaniticiylaBul(o.Db, e.Id, out id) || id.IsErased) { o.Ed.WriteMessage("\n" + Ad(e) + " çizimde bulunamadı."); return false; }
+            using (var tr = o.Db.TransactionManager.StartTransaction())
+            {
+                var y = Yazici(o, tr);
+                try
+                {
+                    NesneyiYaz(o, y, id, e, e.Durum, e.Hakedis);
+                    tr.Commit();
+                }
+                catch (System.Exception ex)
+                {
+                    o.Ed.WriteMessage("\n" + Ad(e) + " güncellenemedi (katmanı kilitli olabilir): " + ex.Message);
+                    return false;
+                }
+                UyarilariYaz(o.Ed, y);
+            }
+            return true;
         }
 
         // ================= SH_HAT =================
@@ -286,19 +374,21 @@ namespace SebekeHakedis.Eklenti
             if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(HakedisOnayi.KilitMesaji(secim.Hakedis)); return; }
             int sayi = 0;
             ed.WriteMessage("\nHat: " + secim);
+            ed.WriteMessage("\nDireğe, SDK'ya, aydınlatma direğine ya da başka bir elemana (simgesinin üstüne) tıklayınca hat orada biter ve " +
+                            "yeni parça başlar; her parçaya hat bilgisi ve uzunluğu yazılır. Boş yere tıklamak yalnız köşe noktasıdır.");
             while (true)
             {
                 string katman = PromagisYazici.HatKatmani(o.OnEk, secim.Tur, secim.Durum, secim.Hakedis);
                 var uclar = new List<Eleman>();
                 string sonuc;
-                var noktalar = KoseleriIste(o, katman, false, 2, null, "\nHattın başlangıcı — direğe tıklayın [Ayarlar/Bitir] <Bitir>: ", "Ayarlar Bitir", uclar, out sonuc);
+                var noktalar = KoseleriIste(o, katman, false, 2, null, "\nHattın başlangıcı — direğe ya da elemana tıklayın [Ayarlar/Bitir] <Bitir>: ", "Ayarlar Bitir", uclar, out sonuc);
                 if (sonuc == "ayarlar")
                 {
                     var s2 = Pencereler.Hat(o, secim);
                     if (s2 != null)
                     {
                         secim = s2; o.AyarKaydet();
-                        if (oge != null && s2.Tur == oge.Tur) { HizliSecim.TipSec(oge, s2.Kesit); HizliSecim.DurumSec(s2.Durum, ""); }
+                        if (oge != null && s2.Tur == oge.Tur) { HizliSecim.IletkenleriSec(oge, s2.Iletkenleri); HizliSecim.DurumSec(s2.Durum, ""); }
                         ed.WriteMessage("\nHat: " + secim);
                     }
                     continue;
@@ -316,10 +406,11 @@ namespace SebekeHakedis.Eklenti
                         parcaNo++;
                         double L = Uzunluk(pc.Noktalar);
                         double m = o.Ayar.HatMetraji(L, secim.Tur);
-                        var h = new Hat { Tur = secim.Tur, AnaKesit = secim.Kesit.Tanim, Durum = secim.Durum, Hakedis = secim.Hakedis };
+                        var h = new Hat { Tur = secim.Tur, AnaKesit = Iletkenler.AnaKesit(secim.Iletkenleri), Durum = secim.Durum, Hakedis = secim.Hakedis };
                         foreach (var q in pc.Noktalar) h.Kose.Add(new[] { q.X, q.Y });
                         h.CizimUzunlugu = L;
-                        h.Kalemler.Add(Katalog.KalemYap(secim.Kesit, m, secim.Durum, secim.Hakedis, false, "HAT", o.YeniSira(), "", o.Ayar.Karakteristik, o.Ayar.Koy));
+                        // Her iletken hattın ayrı satırı (müşterek: OG ve AG; adetli: miktar = adet × metraj)
+                        h.Kalemler.AddRange(Iletkenler.Kalemler(secim.Iletkenleri, m, secim.Durum, secim.Hakedis, o.YeniSira, o.Ayar.Karakteristik, o.Ayar.Koy));
                         var v = PromagisYazici.Hat(h, o.OnEk, null);
                         string etiket = PromagisYazici.HatEtiketi(h);
                         y.Ekle(v, etiket, 1);
@@ -543,13 +634,14 @@ namespace SebekeHakedis.Eklenti
             {
                 case "SH_ELEMAN":
                     {
-                        var secim = new ElemanSecimi { Tur = oge.Tur, Tip = tip, Durum = durum, DmDurum = HizliSecim.DmDurum, Hakedis = hak, Cinsler = new List<string>(oge.Cinsler) };
+                        var secim = new ElemanSecimi { Tur = oge.Tur, Tip = tip, Durum = durum, DmDurum = HizliSecim.DmDurum, Hakedis = hak, Cinsler = new List<string>(oge.Cinsler), Hafiza = HizliSecim.HafizaAcik };
                         if (pencere || tip == null)
                         {
                             secim = Pencereler.Eleman(o, secim);
                             if (secim == null) return;
                             HizliSecim.TipSec(oge, secim.Tip);
                             HizliSecim.DurumSec(secim.Durum, secim.DmDurum);
+                            if (secim.Hafiza != HizliSecim.HafizaAcik) HizliSecim.HafizaSec(secim.Hafiza);
                         }
                         o.AyarKaydet();
                         ElemanDongusu(o, secim, oge);
@@ -557,12 +649,12 @@ namespace SebekeHakedis.Eklenti
                     }
                 case "SH_HAT":
                     {
-                        var secim = new HatSecimi { Tur = oge.Tur, Kesit = tip, Durum = durum, Hakedis = hak, Cinsler = new List<string>(oge.Cinsler) };
+                        var secim = new HatSecimi { Tur = oge.Tur, Iletkenleri = HizliSecim.HatIletkenleri(oge, o.Katalog), Durum = durum, Hakedis = hak, Cinsler = new List<string>(oge.Cinsler) };
                         if (pencere || tip == null)
                         {
                             secim = Pencereler.Hat(o, secim);
                             if (secim == null) return;
-                            HizliSecim.TipSec(oge, secim.Kesit);
+                            HizliSecim.IletkenleriSec(oge, secim.Iletkenleri);
                             HizliSecim.DurumSec(secim.Durum, "");
                         }
                         o.AyarKaydet();
@@ -828,15 +920,18 @@ namespace SebekeHakedis.Eklenti
 
         private static string DurumGrubu(string d) => d == "MEVCUT" ? "MEVCUT" : d == "DM" ? "DM" : "YENI";
 
-        /// <summary>Modeldeki nesneyi çizimdeki karşılığına yazar (katman hakediş/durum değiştiyse yeniden hesaplanır).</summary>
-        private static void NesneyiYaz(Ortam o, CizimYazici y, ObjectId id, object nesne, string eskiDurum, int eskiHakedis)
+        /// <summary>
+        /// Modeldeki nesneyi çizimdeki karşılığına yazar (katman hakediş/durum değiştiyse yeniden hesaplanır). eskiDm verilirse
+        /// simgesi değişen eleman (ör. M → DM+M, DM → DM · KESİK) telefon simgesine geçer.
+        /// </summary>
+        private static void NesneyiYaz(Ortam o, CizimYazici y, ObjectId id, object nesne, string eskiDurum, int eskiHakedis, string eskiDm = null)
         {
             CadVarlik v;
             string etiket = null;
             if (nesne is Eleman e)
             {
                 if (e.Hakedis != eskiHakedis || DurumGrubu(e.Durum) != DurumGrubu(eskiDurum)) e.Katman = "";
-                string blok = PromagisYazici.BlokSec(o.Proje.Elemanlar, e);
+                string blok = eskiDm == null ? PromagisYazici.BlokSec(o.Proje.Elemanlar, e) : PromagisYazici.BlokSec(o.Proje.Elemanlar, e, eskiDurum, eskiDm);
                 if (!y.BlokKullanilabilir(blok)) blok = e.Blok;
                 v = PromagisYazici.Eleman(e, o.OnEk, blok, null);
             }
@@ -888,17 +983,113 @@ namespace SebekeHakedis.Eklenti
                 string eskiDurum;
                 int eskiHakedis;
                 DurumVeHakedis(nesne, out eskiDurum, out eskiHakedis);
+                var el = nesne as Eleman;
+                string eskiDm = el != null ? el.DmDurum ?? "" : null;
+                string eskiMalzemeler = el != null ? MalzemeImzasi(el) : null;
                 if (Denetlenmis(nesne) && !Pencereler.Onay("Bu nesne denetlenmiş (KONTROL işaretli). Değiştirirseniz denetim yeniden gerekir.\n\n" +
                                                           "Yine de malzemeleri açılsın mı?", false)) return;
                 if (!Pencereler.Kalemler(o, nesne)) return;
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
                     var y = Yazici(o, tr);
-                    NesneyiYaz(o, y, r.ObjectId, nesne, eskiDurum, eskiHakedis);
+                    NesneyiYaz(o, y, r.ObjectId, nesne, eskiDurum, eskiHakedis, eskiDm);
                     tr.Commit();
                     UyarilariYaz(ed, y);
                 }
+                // Malzeme hafızası: bu elemanın malzemeleri aynı tür ve tipteki yeni elemanlara eklenir
+                if (el != null && MalzemeImzasi(el) != eskiMalzemeler)
+                {
+                    HizliSecim.Hatirla(el);
+                    if (HizliSecim.HafizaAcik)
+                        ed.WriteMessage("\nMalzeme hafızası: bundan sonra konulan " + Turler.ElemanAdi(el.Tur) + " (" + el.Tip + ") elemanlarına bu malzemeler eklenir.");
+                }
                 ed.WriteMessage("\nMalzemeler kaydedildi.");
+            });
+        }
+
+        /// <summary>Elemanın (kendi pozu dışındaki) malzemelerinin kısa imzası: malzemeleri değişti mi diye.</summary>
+        private static string MalzemeImzasi(Eleman e)
+        {
+            var sb = new StringBuilder();
+            foreach (var k in e.Kalemler)
+                if (!k.Ana) sb.Append(k.Cins).Append('|').Append(k.Tanim).Append('|').Append(k.Durum).Append('|').Append(k.Miktar.ToString("R", CultureInfo.InvariantCulture)).Append(';');
+            return sb.ToString();
+        }
+
+        /// <summary>Eleman tarifinin NIT satırındaki demontaj türü (KESİK / SÖKÜK; 12. alan).</summary>
+        private static string NitDmDurumu(CadVarlik v)
+        {
+            var f = (v.XdIlk("NIT") ?? "").Split(';');
+            return f.Length > 11 ? f[11].Trim() : "";
+        }
+
+        // ================= SH_TOPLUMALZEME: seçilen elemanlara hızlı malzeme =================
+
+        /// <summary>
+        /// Seçilen direklere / elemanlara aynı malzemeleri tek seferde ekler (PROMAGIS'teki toplu malzeme ekleme gibi).
+        /// Önceden seçilmiş nesneler varsa onlar kullanılır. Eklenenler malzeme hafızasına da yazılır.
+        /// </summary>
+        [CommandMethod("SH_TOPLUMALZEME", CommandFlags.Modal | CommandFlags.UsePickSet)]
+        public void TopluMalzeme()
+        {
+            var belge = AcApp.DocumentManager.MdiActiveDocument;
+            if (belge == null) return;
+            Komutlar.Calistir("Toplu malzeme", () =>
+            {
+                var o = Ortam.Hazirla(belge);
+                var ed = o.Ed;
+                ObjectId[] idler = null;
+                var onceden = ed.SelectImplied();
+                if (onceden.Status == PromptStatus.OK && onceden.Value != null) idler = onceden.Value.GetObjectIds();
+                if (idler == null || idler.Length == 0)
+                {
+                    var pso = new PromptSelectionOptions { MessageForAdding = "\nMalzeme eklenecek direkleri / elemanları seçin: " };
+                    var filtre = new SelectionFilter(new[] { new TypedValue((int)DxfCode.Start, "INSERT") });
+                    var r = ed.GetSelection(pso, filtre);
+                    if (r.Status != PromptStatus.OK) return;
+                    idler = r.Value.GetObjectIds();
+                }
+                var secilen = new List<KeyValuePair<ObjectId, Eleman>>();
+                foreach (var id in idler)
+                {
+                    var e = o.Proje.Elemanlar.Find(x => string.Equals(x.Id, id.Handle.ToString(), StringComparison.OrdinalIgnoreCase));
+                    if (e != null) secilen.Add(new KeyValuePair<ObjectId, Eleman>(id, e));
+                }
+                if (secilen.Count == 0) { ed.WriteMessage("\nSeçimde şebeke elemanı yok (direk, trafo, box, pano …)."); return; }
+                var eklenecek = Pencereler.TopluMalzeme(o, secilen.ConvertAll(x => x.Value));
+                if (eklenecek == null || eklenecek.Count == 0) return;
+                int yazilan = 0, satir = 0;
+                using (var tr = o.Db.TransactionManager.StartTransaction())
+                {
+                    var y = Yazici(o, tr);
+                    foreach (var kv in secilen)
+                    {
+                        var e = kv.Value;
+                        var eklenen = new List<Kalem>();
+                        foreach (var t in eklenecek)
+                        {
+                            string durum = string.IsNullOrEmpty(t.Durum) ? MalzemeDurumu(e.Durum) : t.Durum;
+                            eklenen.Add(Katalog.KalemYap(t.Kalem, t.Miktar, durum, t.Hakedis, false, "MALZEME", o.YeniSira(), "", o.Ayar.Karakteristik, o.Ayar.Koy));
+                        }
+                        e.Kalemler.AddRange(eklenen);
+                        try
+                        {
+                            NesneyiYaz(o, y, kv.Key, e, e.Durum, e.Hakedis);
+                            yazilan++;
+                            satir += eklenen.Count;
+                        }
+                        catch (System.Exception ex)
+                        {
+                            foreach (var k in eklenen) e.Kalemler.Remove(k);
+                            y.Uyarilar.Add(Ad(e) + " güncellenemedi (katmanı kilitli olabilir): " + ex.Message);
+                        }
+                    }
+                    tr.Commit();
+                    UyarilariYaz(ed, y);
+                }
+                // Malzeme hafızası: her tür ve tipin son elemanı
+                HizliSecim.HepsiniHatirla(secilen.ConvertAll(x => x.Value));
+                ed.WriteMessage("\n" + yazilan + " elemana toplam " + satir + " malzeme satırı eklendi.");
             });
         }
 
@@ -928,13 +1119,12 @@ namespace SebekeHakedis.Eklenti
                     if (nesne != null && HakedisOnayi.NesneKilitli(o.Proje.Onaylar, nesne)) { kilitli++; continue; }
                     if (nesne is Hat h)
                     {
-                        var kl = h.Kalemler.Find(x => x.Kaynak == "HAT");
-                        if (kl == null) continue;
+                        if (Iletkenler.HatKalemleri(h).Count == 0) continue;
+                        double eski = Iletkenler.GuzergahMetraji(h);
                         double yeni = o.Ayar.HatMetraji(h.CizimUzunlugu, h.Tur);
-                        if (Math.Abs(kl.Miktar - yeni) < 1e-6) continue;
-                        satirlar.Add("Hat " + h.AnaKesit + ": " + Metraj.Yazi(kl.Miktar) + " → " + Metraj.Yazi(yeni) + " m");
-                        kl.Miktar = yeni;
-                        Metraj.Toplam(kl);
+                        // Bütün iletken satırları (çoklu iletkende adet × metraj)
+                        if (!Iletkenler.MetrajUygula(h, yeni)) continue;
+                        satirlar.Add("Hat " + h.AnaKesit + ": " + Metraj.Yazi(eski) + " → " + Metraj.Yazi(yeni) + " m");
                         degisen.Add(new KeyValuePair<ObjectId, object>(id, h));
                     }
                     else if (nesne is Kanal c)
@@ -1188,7 +1378,7 @@ namespace SebekeHakedis.Eklenti
                                 double olcek = 1;
                                 if (a.Nesne == "eleman")
                                 {
-                                    v.Blok = y.KullanilabilirBlok(v.Blok, a.ElemanTuru, v.OzDeger("CİNS"), v.OzDeger("DURUM"), o.Proje.Elemanlar);
+                                    v.Blok = y.KullanilabilirBlok(v.Blok, a.ElemanTuru, v.OzDeger("CİNS"), v.OzDeger("DURUM"), NitDmDurumu(v), o.Proje.Elemanlar);
                                     olcek = o.Olcek(v.Blok);
                                 }
                                 var yeniId = y.Ekle(v, a.Etiket, olcek);

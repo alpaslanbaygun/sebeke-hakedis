@@ -192,7 +192,9 @@ namespace SebekeHakedis.Cekirdek
             {
                 case "YENI": return 1;
                 case "DMM": return 2;
-                case "DM": return -1;
+                case "DM":
+                case "KESIK":
+                case "SOKUK": return -1;
                 default: return 0;
             }
         }

@@ -179,12 +179,22 @@ namespace SebekeHakedis.Cekirdek
             };
             foreach (var k in v.Kose) h.Kose.Add(new[] { k[0], k[1] });
             h.CizimUzunlugu = Geometri.Uzunluk(h.Kose);
-            foreach (var s in v.XdHepsi("HAT"))
+            var satirlar = v.XdHepsi("HAT").FindAll(x => !string.IsNullOrWhiteSpace(x));
+            foreach (var s in satirlar)
             {
-                if (string.IsNullOrWhiteSpace(s)) continue;
                 var kl = HatKalemiOku(s);
-                // Raporda hat satırının tipi ana kesittir (ör. "3(1x150/25) Xlpe" yerine "1x150/25 Xlpe")
-                if (!string.IsNullOrEmpty(h.AnaKesit) && kl.Tanim != h.AnaKesit)
+                int adet;
+                string ic;
+                // Adetli yazım (çoklu iletken, telefondaki gibi): "3x(3X50/16+70 ALPEK)" → tip iç kesit, tam yazım korunur
+                if (Iletkenler.AdetliMi(kl.Tanim, out adet, out ic))
+                {
+                    kl.Aciklama = kl.Tanim;
+                    kl.Tanim = ic;
+                }
+                // Raporda hat satırının tipi ana kesittir (ör. "3(1x150/25) Xlpe" yerine "1x150/25 Xlpe"). Çok satırlı hatta
+                // (birden çok iletken) yalnız ana kesitin bir yazımı olan satır (ana kesiti içeren) değişir; diğer iletkenler
+                // kendi tipiyle kalır.
+                else if (!string.IsNullOrEmpty(h.AnaKesit) && kl.Tanim != h.AnaKesit && (satirlar.Count == 1 || Iletkenler.Iceriyor(kl.Tanim, h.AnaKesit)))
                 {
                     kl.Aciklama = kl.Tanim;
                     kl.Tanim = h.AnaKesit;

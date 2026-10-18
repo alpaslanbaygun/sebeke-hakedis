@@ -54,8 +54,26 @@ namespace SebekeHakedis.Eklenti
             catch (Exception ex) { Ed.WriteMessage("\nAyarlar kaydedilemedi: " + ex.Message); }
         }
 
-        /// <summary>Noktaya en yakın eleman (yakalama mesafesi içinde); yoksa null.</summary>
-        public Eleman YakinEleman(Point3d p, double mesafe) => YakinEleman(p.X, p.Y, mesafe);
+        /// <summary>Noktanın yapıştığı eleman (simgesinin üstü, yakalama mesafesi ya da ekrandaki yakalama kutusu içinde); yoksa null.</summary>
+        public Eleman YakinEleman(Point3d p, double mesafe) => YakinEleman(p.X, p.Y, mesafe, EkranToleransi());
+
+        /// <summary>
+        /// Ekrandaki yakalama kutusunun (APERTURE, piksel) çizimdeki karşılığı (metre): uzaktan bakarken küçük görünen
+        /// simgeye de tıklanabilsin. En çok 15 m. Okunamazsa 0.
+        /// </summary>
+        public double EkranToleransi()
+        {
+            try
+            {
+                double gorunum = Convert.ToDouble(Autodesk.AutoCAD.ApplicationServices.Application.GetSystemVariable("VIEWSIZE"), CultureInfo.InvariantCulture);
+                object ekran = Autodesk.AutoCAD.ApplicationServices.Application.GetSystemVariable("SCREENSIZE");
+                double piksel = ekran is Point2d ? ((Point2d)ekran).Y : 0;
+                double kutu = Convert.ToDouble(Autodesk.AutoCAD.ApplicationServices.Application.GetSystemVariable("APERTURE"), CultureInfo.InvariantCulture);
+                if (piksel <= 0 || gorunum <= 0) return 0;
+                return Math.Min(15.0, gorunum / piksel * Math.Max(5, kutu));
+            }
+            catch { return 0; }
+        }
     }
 
     /// <summary>Çizimin içinde saklanan ayarlar (Named Objects Dictionary → SEBEKE_HAKEDIS → AYARLAR).</summary>

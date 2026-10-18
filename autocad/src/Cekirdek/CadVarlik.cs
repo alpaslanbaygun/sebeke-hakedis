@@ -28,6 +28,14 @@ namespace SebekeHakedis.Cekirdek
         public string CizgiTipi = "";
         /// <summary>Çizgi nesnesinin her parçasına (iki köşe arası) uzunluk yazısı yazılsın mı (hat, kanal, sondaj).</summary>
         public bool ParcaMetraji;
+        /// <summary>
+        /// Direğin hemen yanına çizilecek armatür simgesinin bloğu ("": yok). Direkte armatür malzemesi varsa dolar; simge
+        /// direğe bağlı bir süsdür (kendi verisi yoktur), direkle birlikte güncellenir ve silinir.
+        /// </summary>
+        public string Armatur = "";
+        /// <summary>Armatür simgesinin rengi (-1: dokunma) ve direğe göre yeri (metre, dünya ekseninde).</summary>
+        public short ArmaturRengi = -1;
+        public double ArmaturDx, ArmaturDy;
         /// <summary>Blok öznitelikleri (etiket → değer).</summary>
         public Dictionary<string, string> Oz = new Dictionary<string, string>(StringComparer.Ordinal);
         /// <summary>Çoklu çizgi köşeleri: her biri [X, Y].</summary>

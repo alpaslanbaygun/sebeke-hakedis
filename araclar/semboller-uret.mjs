@@ -59,7 +59,23 @@ function toprak(y0) {
 const kare = (a) => { const h = a / 2; return [[-h, -h], [h, -h], [h, h], [-h, h]]; };
 const dikdortgen = (w, h) => [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]];
 const elmas = (r) => [[0, r], [r, 0], [0, -r], [-r, 0]];
-const capraz = (R) => { const d = r4(Math.max(3, R * 1.2)); return ['L', -d, -d, d, d]; };
+
+// Demontaj işaretleri: simgenin dışına belirgin taşan çizgiler (telefonun haritasındaki sarı çapraz gibi). Taşma payı
+// küçük simgede 1,5 m, büyükte en çok 3 m; böylece içi çarpılı kafes direkte de "mevcut"tan ayrılır.
+//   DM     "/"   tek çapraz (demontaj)
+//   KESIK  "//"  iki paralel çapraz (kesilerek demontaj)
+//   SOKUK  "X"   iki çapraz (sökülerek demontaj)
+const tasma = (R) => r4(R + Math.min(3, Math.max(1.5, R * 0.8)));
+function dmIsareti(R, varyant) {
+  const d = tasma(R);
+  if (varyant === 'SOKUK') return [['L', -d, -d, d, d], ['L', -d, d, d, -d]];
+  if (varyant === 'KESIK') {
+    // Çapraza dik yönde ±h kaydırılmış iki çizgi (aralık simgenin yarısı kadar)
+    const h = r4(Math.max(0.7, R * 0.42));
+    return [['L', r4(-d - h), r4(-d + h), r4(d - h), r4(d + h)], ['L', r4(-d + h), r4(-d - h), r4(d + h), r4(d - h)]];
+  }
+  return [['L', -d, -d, d, d]];
+}
 
 // ---- Aileler ----------------------------------------------------------------------------------
 // daire: {r, toprak}   çokgen: {kose, bosIsaret (yalnız MEVCUT/DM'de), herZaman (her varyantta), toprak}
@@ -82,8 +98,15 @@ const AILELER = {
   DIGER: { ad: 'Diğer', kose: elmas(2.5) }
 };
 
-// Varyantlar: YENI (montaj: dolu) · MEVCUT (boş) · DMM (sök-tak: yarım dolu) · DM (demontaj: boş + çapraz çizgi)
-const VARYANTLAR = ['YENI', 'MEVCUT', 'DMM', 'DM'];
+// Varyantlar (telefonun haritasındaki simgeler örnek alındı):
+//   YENI   montaj (M, M+M, KM, ENH, ME): dolu
+//   MEVCUT mevcut: boş (kafes direkte içi çarpı)
+//   DMM    sök-tak (DM+M): yarım dolu (kafes direkte sol ve sağ üçgenler)
+//   DM     demontaj: boş + simgeden taşan tek çapraz "/"
+//   KESIK  demontaj, kesik: boş + iki paralel çapraz "//"
+//   SOKUK  demontaj, sökük: boş + taşan çarpı "X"
+const VARYANTLAR = ['YENI', 'MEVCUT', 'DMM', 'DM', 'KESIK', 'SOKUK'];
+const demontajMi = (v) => v === 'DM' || v === 'KESIK' || v === 'SOKUK';
 
 function uret(aile, varyant) {
   const a = AILELER[aile], out = [];
@@ -105,33 +128,59 @@ function uret(aile, varyant) {
         out.push(['S', [[-h, -h], [0, 0], [-h, h], [-h, h]]], ['S', [[h, -h], [0, 0], [h, h], [h, h]]]);
       } else out.push(...yelpaze(solYari(k)));
     }
-    if (varyant === 'MEVCUT' || varyant === 'DM') {
+    if (varyant === 'MEVCUT' || demontajMi(varyant)) {
       if (a.bosIsaret === 'X') { const h = R; out.push(['L', -h, -h, h, h], ['L', h, -h, -h, h]); }
       if (a.bosIsaret === 'capraz') { const [p0, , p2] = k; out.push(['L', ...pt(p0), ...pt(p2)]); }
     }
   }
   if (a.herZaman) out.push(...a.herZaman.map((x) => x.slice()));
   if (a.toprak) out.push(...toprak(-R));
-  if (varyant === 'DM') out.push(capraz(R));
+  if (demontajMi(varyant)) out.push(...dmIsareti(R, varyant));
   return { yariGenislik: r4(R), ilkeller: out };
+}
+
+/** İlkellerin merkezden en uzak noktası (x ya da y yönünde, metre). */
+function kapsam(ilkeller) {
+  let m = 0;
+  const k = (x, y) => { m = Math.max(m, Math.abs(x), Math.abs(y)); };
+  for (const i of ilkeller) {
+    if (i[0] === 'L') { k(i[1], i[2]); k(i[3], i[4]); }
+    else if (i[0] === 'C') k(Math.abs(i[1]) + i[3], Math.abs(i[2]) + i[3]);
+    else if (i[0] === 'D' || i[0] === 'Y') k(i[1], i[1]);
+    else for (const p of i[1]) k(p[0], p[1]);
+  }
+  return m;
 }
 
 const semboller = {};
 const aileler = {};
 for (const aile of Object.keys(AILELER)) {
-  aileler[aile] = { ad: AILELER[aile].ad, yariGenislik: r4(AILELER[aile].daire || Math.max(...AILELER[aile].kose.map((p) => Math.max(Math.abs(p[0]), Math.abs(p[1]))))) };
-  for (const v of VARYANTLAR) semboller[aile + '_' + v] = uret(aile, v).ilkeller;
+  let enBuyuk = 0;
+  for (const v of VARYANTLAR) {
+    const s = uret(aile, v).ilkeller;
+    semboller[aile + '_' + v] = s;
+    enBuyuk = Math.max(enBuyuk, kapsam(s));
+  }
+  // kapsam: bütün varyantları içine alan yarı genişlik (şerit ve pencere simgeleri aynı ölçekte çizilsin diye)
+  aileler[aile] = { ad: AILELER[aile].ad, yariGenislik: r4(AILELER[aile].daire || Math.max(...AILELER[aile].kose.map((p) => Math.max(Math.abs(p[0]), Math.abs(p[1]))))), kapsam: r4(enBuyuk) };
 }
 
 const cikti = {
   bicim: 'sebeke-hakedis.semboller',
-  surum: 1,
+  surum: 2,
   aciklama: 'Lejant simge takımı. Boyutlar metre (1/1000 pafta). AutoCAD eklentisi blokları SH_<ad> adıyla metre cinsinden tanımlar ve 1 ölçekle koyar; telefonun DXF çıktısı aynı blokları aynı adla yazar. Üretici: araclar/semboller-uret.mjs — bu dosya elle düzenlenmez.',
   ilkeller: {
     L: 'doğru: x1 y1 x2 y2', C: 'daire: cx cy r', P: 'çoklu doğru: [[x,y],...] kapali',
     S: 'dolu dörtgen: 4 köşe, AutoCAD SOLID sırası (1 2 4 3)', D: 'dolu daire: r', Y: 'yarım dolu daire (sol yarı): r'
   },
-  varyantlar: { YENI: 'montaj (M, M+M): dolu', MEVCUT: 'mevcut: boş', DMM: 'sök-tak (DM+M): yarım dolu', DM: 'demontaj: boş + çapraz çizgi' },
+  varyantlar: {
+    YENI: 'montaj (M, M+M, KM, ENH, ME): dolu',
+    MEVCUT: 'mevcut: boş',
+    DMM: 'sök-tak (DM+M): yarım dolu',
+    DM: 'demontaj: boş + simgeden taşan çapraz "/"',
+    KESIK: 'demontaj, kesik (DM · KESİK): boş + iki paralel çapraz "//"',
+    SOKUK: 'demontaj, sökük (DM · SÖKÜK): boş + taşan çarpı "X"'
+  },
   aileler,
   semboller
 };

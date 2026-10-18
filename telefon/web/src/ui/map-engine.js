@@ -252,6 +252,15 @@ export class MapEngine {
     this.drawScale(g);
   }
   path(g, pts, off = 0) { g.beginPath(); pts.forEach((p, i) => { const s = this.toScreen(p.E, p.N); if (i) g.lineTo(s.x + off, s.y + off); else g.moveTo(s.x + off, s.y + off); }); }
+  /** Demontaj işareti (sarı, simgeden taşar): "/" demontaj · "//" kesik · "X" sökük — AutoCAD simgeleriyle aynı. */
+  dmIsareti(g, s, dmDurum) {
+    const d = String(dmDurum || '').toLocaleUpperCase('tr');
+    const kesik = d.startsWith('KES'), sokuk = d.startsWith('SÖK') || d.startsWith('SOK');
+    g.strokeStyle = '#ffff00'; g.lineWidth = 2.5; g.beginPath();
+    if (kesik) { g.moveTo(s.x - 14, s.y + 8); g.lineTo(s.x + 8, s.y - 14); g.moveTo(s.x - 8, s.y + 14); g.lineTo(s.x + 14, s.y - 8); }
+    else { g.moveTo(s.x - 11, s.y + 11); g.lineTo(s.x + 11, s.y - 11); if (sokuk) { g.moveTo(s.x - 11, s.y - 11); g.lineTo(s.x + 11, s.y + 11); } }
+    g.stroke();
+  }
   cross(g, s, col) { g.strokeStyle = col; g.lineWidth = 1.6; g.beginPath(); g.moveTo(s.x - 6, s.y); g.lineTo(s.x + 6, s.y); g.moveTo(s.x, s.y - 6); g.lineTo(s.x, s.y + 6); g.stroke(); }
   symbol(g, s, e, d) {
     const st = e.state || 'YENI';
@@ -262,7 +271,7 @@ export class MapEngine {
       for (let k = 0; k < 8; k++) { const a = (k * Math.PI) / 4; g.moveTo(s.x + Math.cos(a) * 8, s.y + Math.sin(a) * 8); g.lineTo(s.x + Math.cos(a) * 12, s.y + Math.sin(a) * 12); }
       g.stroke();
       g.fillStyle = st === 'MEVCUT' || st === 'ILERIDE' ? '#0b1326' : Y; g.lineWidth = 2; g.beginPath(); g.arc(s.x, s.y, 5.5, 0, Math.PI * 2); g.fill(); g.stroke();
-      if (st === 'DEMONTAJ' && this.layers.demontaj) { g.strokeStyle = '#ffff00'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(s.x - 11, s.y + 11); g.lineTo(s.x + 11, s.y - 11); g.stroke(); }
+      if (st === 'DEMONTAJ' && this.layers.demontaj) this.dmIsareti(g, s, (e.attrs || {}).dmDurum);
       return;
     }
     if (e.kind === 'pole' || e.kind === 'lighting') {
@@ -276,7 +285,7 @@ export class MapEngine {
       g.beginPath(); if (sq) g.rect(s.x - r, s.y - r, 2 * r, 2 * r); else g.arc(s.x, s.y, r, 0, Math.PI * 2); g.fill(); g.stroke();
       if (mode === 'half') { g.fillStyle = col; g.beginPath(); if (sq) { g.moveTo(s.x - r, s.y - r); g.lineTo(s.x, s.y); g.lineTo(s.x - r, s.y + r); g.closePath(); g.moveTo(s.x + r, s.y - r); g.lineTo(s.x, s.y); g.lineTo(s.x + r, s.y + r); g.closePath(); } else { g.arc(s.x, s.y, r, Math.PI / 2, Math.PI * 1.5); g.closePath(); } g.fill(); }
       if (mode === 'none' && sq) { g.beginPath(); g.moveTo(s.x - r, s.y - r); g.lineTo(s.x + r, s.y + r); g.moveTo(s.x + r, s.y - r); g.lineTo(s.x - r, s.y + r); g.stroke(); }
-      if (st === 'DEMONTAJ' && this.layers.demontaj) { g.strokeStyle = '#ffff00'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(s.x - 11, s.y + 11); g.lineTo(s.x + 11, s.y - 11); g.stroke(); }
+      if (st === 'DEMONTAJ' && this.layers.demontaj) this.dmIsareti(g, s, (e.attrs || {}).dmDurum);
       if (st === 'ILERIDE') { g.fillStyle = '#0b1326'; g.beginPath(); g.arc(s.x, s.y, r / 2.2, 0, Math.PI * 2); g.fill(); }
       // Aydınlatma direği: konsol kolu + sarı lamba başlığı (AG/OG direklerinden net ayrılır)
       if (volt === 'AYD') {

@@ -64,19 +64,14 @@ namespace SebekeHakedis.Eklenti
         /// </summary>
         public double Olcek(string blok) => Semboller.EklentininBlogu(blok) ? 1 : Ayar.SembolOlcegi > 0 ? Ayar.SembolOlcegi : PromagisYazici.OlcekOner(Varliklar, blok, 4);
 
-        /// <summary>Noktaya en yakın eleman (mesafe içinde); yoksa null.</summary>
-        public Eleman YakinEleman(double x, double y, double mesafe)
+        /// <summary>
+        /// Noktanın yapıştığı eleman: simgesinin üstüne ya da mesafe içine tıklanan elemanlardan merkezi en yakın olan; yoksa null.
+        /// ekran: ekrandaki birkaç piksellik pay (uzaktan bakarken küçük simgeler de yakalansın).
+        /// </summary>
+        public Eleman YakinEleman(double x, double y, double mesafe, double ekran = 0)
         {
-            if (mesafe <= 0) return null;
-            Eleman en = null;
-            double enKisa = mesafe;
-            foreach (var e in Proje.Elemanlar)
-            {
-                double dx = e.Saga - x, dy = e.Yukari - y;
-                double d = Math.Sqrt(dx * dx + dy * dy);
-                if (d <= enKisa) { enKisa = d; en = e; }
-            }
-            return en;
+            KatalogKaynagi.SembolleriYukle();
+            return Geometri.YakinEleman(Proje.Elemanlar, x, y, mesafe, ekran);
         }
     }
 

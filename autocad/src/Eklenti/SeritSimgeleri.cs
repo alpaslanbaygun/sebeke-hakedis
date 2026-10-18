@@ -162,12 +162,16 @@ namespace SebekeHakedis.Eklenti
 
         // ---------------- Telefonun simge takımı ----------------
 
-        /// <summary>Simge takımındaki bir simgeyi (metre cinsinden ilkeller) çizer; zeminli: telefonun koyu zemini üstünde.</summary>
+        /// <summary>
+        /// Simge takımındaki bir simgeyi (metre cinsinden ilkeller) çizer; zeminli: telefonun koyu zemini üstünde. Ölçek ailenin
+        /// "mevcut" simgesinden alınır: bütün durumlar aynı boyda görünür, demontaj işaretleri ("/", "//", "X") kenara kadar uzar.
+        /// </summary>
         public static ImageSource SembolCiz(Sembol s, Color renk, int boyut, bool zeminli = true)
         {
             double enBuyuk = 0.5;
             Action<double, double> kapsa = (x, y) => enBuyuk = Math.Max(enBuyuk, Math.Max(Math.Abs(x), Math.Abs(y)));
-            foreach (var i in s.Ilkeller)
+            var olcu = Semboller.Bul(Semboller.OnEk + s.Aile + "_MEVCUT") ?? s;
+            foreach (var i in olcu.Ilkeller)
             {
                 var d = i.Sayilar;
                 switch (i.Tur)

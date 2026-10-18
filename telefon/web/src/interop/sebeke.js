@@ -198,6 +198,9 @@ export function sebekeModel(ps, opts = {}) {
     if (kablolu) {
       hatKalemleri = iletkenKalemleri(l, li, iletkenler, hatTuru, kesit, durum, hak, cat);
       if (!hatKalemleri.length && Array.isArray(sb.kalemler)) hatKalemleri = sb.kalemler.map((k) => Object.assign({}, k, { hakedis: hak }));
+      // Çok iletkenli hat (müşterek OG + AG, iki kablo): ana kesit eklentideki gibi "OG + … / AG + …"
+      const satirlar = hatKalemleri.filter((k) => k.kaynak === 'HAT');
+      if (satirlar.length > 1) { kesit.tanim = etiketKesiti(satirlar); kesit.aciklama = ''; }
       for (const m of li.items) if (m.manual) { const k = malzemeKalemi(Object.assign({}, m, { kgPer: null, origin: 'MANUEL' }), { cins: '', voltaj: hatTuru.voltaj, tarife: hatTuru.tarife }, hak, li.job, cat); if (k) manuel.push(k); }
     }
     const kn = km && !km.kazisiz && li.cable && li.cable.kanal ? li.cable.kanal : null;
@@ -222,7 +225,9 @@ export function sebekeModel(ps, opts = {}) {
         if (k === 0) hat.kalemler.push(...manuel); // elle eklenen malzemeler ilk parçaya
         kalemBilgisiUygula(hat.kalemler, kayitliBilgi(sb, kimlik));
         const ana = hat.kalemler.find((x) => x.kaynak === 'HAT') || hat.kalemler[0];
-        hat.etiket = SH.hatEtiketi(durum, kesit.aciklama || kesit.tanim, ana ? ana.miktar : Math.ceil(hat.cizimUzunlugu - 1e-6));
+        // Etiketteki uzunluk güzergâhın metrajıdır (adetli iletkende miktar / adet); tek iletkende adetli tam yazım
+        const tekAdetli = ana && hat.kalemler.filter((x) => x.kaynak === 'HAT').length === 1 && iletkenAdedi(ana) > 1;
+        hat.etiket = SH.hatEtiketi(durum, tekAdetli ? ana.aciklama : kesit.aciklama || kesit.tanim, ana ? ana.miktar / iletkenAdedi(ana) : Math.ceil(hat.cizimUzunlugu - 1e-6));
         sp.hatlar.push(hat);
       }
       // Yeraltı: kazı kanalı ya da yatay sondaj ayrı nesnedir (parça parça)
@@ -439,6 +444,19 @@ function kanalKablolari(l) {
   return out;
 }
 
+/** Kalemin adedi: tam yazımdaki "3x(…)" ön ekinden (eklentideki Iletkenler.Adet ile aynı); yoksa 1. */
+export function iletkenAdedi(k) {
+  const m = /^\s*(\d+)\s*[x×]\s*\((.+)\)\s*$/i.exec(String((k && (k.aciklama || k.tanim)) || ''));
+  return m ? Math.max(1, +m[1]) : 1;
+}
+/** Çok iletkenli hattın ana kesiti / etiket yazısı: OG'ler " + ", sonra " / ", sonra AG'ler " + " (eklentideki gibi). */
+export function etiketKesiti(satirlar) {
+  const yazi = (k) => String(k.aciklama || k.tanim || '').trim();
+  const og = satirlar.filter((k) => String(k.cins || '').startsWith('OG_')).map(yazi).filter(Boolean);
+  const ag = satirlar.filter((k) => !String(k.cins || '').startsWith('OG_')).map(yazi).filter(Boolean);
+  return [og.join(' + '), ag.join(' + ')].filter(Boolean).join(' / ');
+}
+
 /** Hattın iletken / kablo kalemleri. Havai çıplakta: tek kalem (3xSW) metre cinsinden, rapor tel tel açar. Demetli ve kabloda: metre, kg katsayısı bilinmiyorsa 1. */
 function iletkenKalemleri(l, li, items, hatTuru, kesit, durum, hak, cat) {
   const out = [];
@@ -451,7 +469,9 @@ function iletkenKalemleri(l, li, items, hatTuru, kesit, durum, hak, cat) {
     const label = c.custom ? cp.label : c.key;
     const n = c.count || 1;
     const ks = promagisKesit(label, l.lineType, l.install);
-    const cins = yeralti ? hatTuru.kablo : ciplak ? hatTuru.ciplak : hatTuru.demetli;
+    // Müşterek hatta OG devresi OG iletkenidir (eklentideki gibi); ana kesitteki "OG / AG" ayrımı ve geri alım buna bakar
+    const ogDevre = hatTuru.tur === 'MUSTEREK' && (c.role === 'OG' || c.role === 'ENH');
+    const cins = yeralti ? hatTuru.kablo : ogDevre ? ESLESME.hatlar['OG:havai'].ciplak : ciplak ? hatTuru.ciplak : hatTuru.demetli;
     const parca = items.filter((x) => x.role === c.role && (x.conductor === c.key || x.conductor === label || (cp && cp.parts.some((p) => p.conductor === x.conductor))));
     // Metre: yeraltında tüm damarların toplamı (3(1x150/25) = 3 kablo), havai demetlide hattın boyu (pay dahil),
     // çıplakta hattın boyu (rapor tel tel açar). PROMAGIS gibi tam metreye yukarı yuvarlanır.
@@ -463,8 +483,11 @@ function iletkenKalemleri(l, li, items, hatTuru, kesit, durum, hak, cat) {
     const kat = katalogKalemi(cins, ks.tanim);
     const kgM = ciplak && metre > 0 && kg > 0 ? kg / metre : 0;
     const it = kat || { cins, tanim: ks.tanim, birim: kgM ? 'mt/kg' : 'mt/mt', katsayi: kgM || 1, tarife: cinsTarifesi(cins, hatTuru.tarife) };
-    // Katalogda mt/mt ise (rapor tel tel açar) telefonun kg'si katsayıya yazılmaz
-    const k = SH.kalemYap(it, { miktar: metre * (n > 1 && !ciplak ? n : 1), durum, hakedis: hak, kaynak: 'HAT', aciklama: ks.aciklama || (n > 1 ? n + 'x(' + ks.tanim + ')' : undefined) });
+    // Katalogda mt/mt ise (rapor tel tel açar) telefonun kg'si katsayıya yazılmaz. Adet (ör. 3 ALPEK, 2 devre 4P+R): miktar
+    // adet × güzergâh, tam yazım "3x(…)" — eklentideki çoklu iletkenle aynı. Kg katsayılı özel çıplak kombinasyonda kg zaten
+    // bütün devreleri içerir (çarpılmaz).
+    const carpan = n > 1 && !(ciplak && !kat && kgM) ? n : 1;
+    const k = SH.kalemYap(it, { miktar: metre * carpan, durum, hakedis: hak, kaynak: 'HAT', aciklama: ks.aciklama || (carpan > 1 ? n + 'x(' + ks.tanim + ')' : undefined) });
     const yd = parca[0] ? parca[0].servis : null;
     if (yd) k.servis = yd;
     out.push(k);
@@ -517,6 +540,24 @@ export function hatTipiEsle(cat, anaKesit, lineType, install) {
   }
   if (lt) { const c = cat.conductor(lt.parts[0].conductor); const kind = c ? c.kind : null; if (install === 'yeralti' && kind !== 'KABLO') return null; }
   return lt || null;
+}
+
+/**
+ * Çok iletkenli (ya da adetli) hattın telefon devreleri: her HAT satırı bir devre — OG iletken OG devresi, diğerleri hattın
+ * türünün devresi (müşterekte AG); adet "3x(…)" yazımından. Tek, adetsiz iletkende ya da eşleşmeyen satır varsa null.
+ */
+function hatDevreleri(cat, h, ht) {
+  const satirlar = (h.kalemler || []).filter((k) => k.kaynak === 'HAT');
+  if (!satirlar.length || (satirlar.length === 1 && iletkenAdedi(satirlar[0]) === 1)) return null;
+  const out = [];
+  for (const k of satirlar) {
+    const og = String(k.cins || '').startsWith('OG_');
+    const tur = og ? 'OG' : ht.lineType === 'OG' ? 'AG' : ht.lineType;
+    const lt = hatTipiEsle(cat, k.tanim, tur, ht.install);
+    if (!lt) return null;
+    out.push({ role: ht.lineType === 'ABONE' ? 'ABONE' : tur, key: lt.name, count: iletkenAdedi(k) });
+  }
+  return out;
 }
 
 /**
@@ -607,7 +648,9 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
   const hatlarById = new Map((sp.hatlar || []).map((x) => [x.id, x]));
   for (const h of hatlariBirlestir(sp.hatlar || [])) {
     const ht = ESLESME.hatTurleriTers[h.tur] || ESLESME.hatTurleriTers.AG_HAVAI;
-    const lt = hatTipiEsle(ps.cat, h.anaKesit, ht.lineType, ht.install);
+    // Çok iletkenli hat (müşterek OG + AG, 3 adet ALPEK): her iletken satırı bir devre; eşleşmeyen varsa kalemler korunur
+    const devreler = hatDevreleri(ps.cat, h, ht);
+    const lt = devreler ? null : hatTipiEsle(ps.cat, h.anaKesit, ht.lineType, ht.install);
     const nodes = [];
     const koseNoktalari = [];
     for (let i = 0; i < h.kose.length; i++) {
@@ -632,16 +675,16 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
       if (!kanal) kanal = c;
     }
     const data = {
-      lineType: ht.lineType, install: ht.install, musterek: !!ht.musterek, state: voltDurumu(h.durum), nodes, name: lt ? '' : h.anaKesit,
-      circuits: lt ? [{ role: ht.lineType === 'ABONE' ? 'ABONE' : ht.lineType, key: lt.name, count: 1 }] : [],
+      lineType: ht.lineType, install: ht.install, musterek: !!ht.musterek, state: voltDurumu(h.durum), nodes, name: lt || devreler ? '' : h.anaKesit,
+      circuits: devreler || (lt ? [{ role: ht.lineType === 'ABONE' ? 'ABONE' : ht.lineType, key: lt.name, count: 1 }] : []),
       sebekeId: h.id, note: h.not || undefined,
-      sebeke: { id: h.id, tur: h.tur, anaKesit: h.anaKesit, durum: h.durum, etiket: h.etiket, katman: h.katman, hakedis: h.hakedis, bolge: h.bolge, kalemler: lt ? undefined : h.kalemler, parcalar: Object.keys(parcalar).length > 1 ? parcalar : undefined, kalemBilgisi: bilgi }
+      sebeke: { id: h.id, tur: h.tur, anaKesit: h.anaKesit, durum: h.durum, etiket: h.etiket, katman: h.katman, hakedis: h.hakedis, bolge: h.bolge, kalemler: lt || devreler ? undefined : h.kalemler, parcalar: Object.keys(parcalar).length > 1 ? parcalar : undefined, kalemBilgisi: bilgi }
     };
     if (kanal) {
       const ka = kanalAyari(kanal, h); data.cable = ka.cable; boruKalemi = ka.boru; data.sebeke.kanalId = kanal.id; data.sebeke.kanalKod = kanal.kod; data.sebeke.kanalDurum = kanal.durum;
       if (Object.keys(kanalParcalari).length > 1) data.sebeke.kanalParcalari = kanalParcalari;
     }
-    if (!lt && h.anaKesit) ozet.eslesmeyen.push((h.etiket || h.anaKesit) + ': hat tipi katalogda yok, metraj eklentideki kalemlerle korunur');
+    if (!lt && !devreler && h.anaKesit) ozet.eslesmeyen.push((h.etiket || h.anaKesit) + ': hat tipi katalogda yok, metraj eklentideki kalemlerle korunur');
     // Telefondaki hat: kimlikle, kimliğin köküyle ya da parçalardan birinin kimliğiyle; aynı hat iki kez kullanılmaz
     // (AutoCAD'de ortadan bir parça silinip hat ikiye ayrıldıysa ikinci kısım yeni hat olur)
     const adaylar = [bul(lineByKey, h), h.telefonId ? lineByKey.get(kokKimlik(h.telefonId)) : null, ...h.parcalar.map((pc) => lineByKey.get(pc.id) || lineByKey.get(kokKimlik(pc.id)))];

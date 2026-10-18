@@ -22,8 +22,14 @@ namespace SebekeHakedis.Eklenti
 
         private static readonly Regex EtiketTaniticisi = new Regex(@"/\(([0-9A-Fa-f]+)\)\s*$", RegexOptions.CultureInvariant);
 
-        /// <summary>Blok tanımının sürümü (blok sözlüğünde saklanır). 2: metre cinsinden geometri, 1 ölçek, telefon yazı düzeni; 3: panoda çıkış şeması öznitelikleri (C_1…C_8).</summary>
-        private const string BlokSurumu = "3";
+        /// <summary>
+        /// Blok tanımının sürümü (blok sözlüğünde saklanır). 2: metre cinsinden geometri, 1 ölçek, telefon yazı düzeni;
+        /// 3: panoda çıkış şeması öznitelikleri (C_1…C_8); 4: demontaj işaretleri simgeden taşar (DM "/", KESİK "//", SÖKÜK "X").
+        /// </summary>
+        private const string BlokSurumu = "4";
+
+        /// <summary>Direğin armatür simgesinin tanıtıcısı (direğin genişletilmiş verisinde).</summary>
+        private const string ArmaturUygulamasi = PromagisYazici.ArmaturUygulamasi;
         private const string Sozluk = "SEBEKE_HAKEDIS", BlokKaydi = "BLOK";
 
         private readonly Database _db;
@@ -169,13 +175,13 @@ namespace SebekeHakedis.Eklenti
         /// Yeni eleman için kullanılabilecek blok: istenen blok çizimde varsa (ya da SH_ simgesiyse) o; yoksa telefon
         /// simgeleri açıkken SH_ simgesi, kapalıyken çizimde aynı tür ve durumdaki elemanların PROMAGIS bloğu, o da yoksa SH_ simgesi.
         /// </summary>
-        public string KullanilabilirBlok(string istenen, string tur, string cins, string durum, IEnumerable<Eleman> cizimElemanlari)
+        public string KullanilabilirBlok(string istenen, string tur, string cins, string durum, string dmDurum, IEnumerable<Eleman> cizimElemanlari)
         {
             if (BlokKullanilabilir(istenen)) return istenen;
-            if (PromagisYazici.TelefonSembolleri) return PromagisYazici.VarsayilanBlok(tur, cins, durum);
-            string oneri = PromagisYazici.BlokOner(cizimElemanlari, tur, cins, durum);
+            if (PromagisYazici.TelefonSembolleri) return PromagisYazici.VarsayilanBlok(tur, cins, durum, dmDurum);
+            string oneri = PromagisYazici.BlokOner(cizimElemanlari, tur, cins, durum, dmDurum);
             if (BlokKullanilabilir(oneri)) return oneri;
-            return PromagisYazici.VarsayilanBlok(tur, cins, durum);
+            return PromagisYazici.VarsayilanBlok(tur, cins, durum, dmDurum);
         }
 
         /// <summary>Blok tanımı; eklentinin kendi bloklarıysa ve çizimde yoksa oluşturulur, eski sürümse yenilenir.</summary>
@@ -466,6 +472,7 @@ namespace SebekeHakedis.Eklenti
             PromagisYazici.TaniticiYaz(v, h);
             OznitelikleriKur(br, btrId, v.Oz);
             XdataYaz(br, v);
+            ArmaturYaz(br, v);
             return id;
         }
 
@@ -552,6 +559,7 @@ namespace SebekeHakedis.Eklenti
             else KoseleriGuncelle(ent, v);
             StilUygula(ent, v);
             XdataYaz(ent, v);
+            if (br != null) ArmaturYaz(br, v);
             if (br == null && v.ParcaMetraji) ParcaMetrajlariYaz(ent, v.Kose);
             if (etiket != null) EtiketYaz(ent, etiket.Replace(PromagisYazici.Tanitici, h), v.Kose);
         }
@@ -720,7 +728,79 @@ namespace SebekeHakedis.Eklenti
                 yazi.Erase();
             }
             ParcaMetrajlariSil(ent);
+            var arm = ent is BlockReference ? ArmaturBul((BlockReference)ent) : null;
+            if (arm != null)
+            {
+                arm.UpgradeOpen();
+                arm.Erase();
+            }
             ent.Erase();
+        }
+
+        // ---------------- Armatür simgesi (direğin malzemesi) ----------------
+
+        /// <summary>Direğin armatür simgesi (SH_ARM verisindeki tanıtıcıyla); yoksa null.</summary>
+        private BlockReference ArmaturBul(BlockReference direk)
+        {
+            var xd = Toplayici.XdataOku(direk);
+            List<string> l;
+            if (!xd.TryGetValue(ArmaturUygulamasi, out l) || l.Count == 0 || string.IsNullOrEmpty(l[0])) return null;
+            ObjectId id;
+            if (!Toplayici.TaniticiylaBul(_db, l[0], out id) || id.IsErased) return null;
+            var br = _tr.GetObject(id, OpenMode.ForRead, false) as BlockReference;
+            return br != null && !br.IsErased ? br : null;
+        }
+
+        private void ArmaturVerisiYaz(BlockReference direk, string tanitici)
+        {
+            UygulamalariKaydet();
+            if (!direk.IsWriteEnabled) direk.UpgradeOpen();
+            using (var rb = string.IsNullOrEmpty(tanitici)
+                ? new ResultBuffer(new TypedValue((int)DxfCode.ExtendedDataRegAppName, ArmaturUygulamasi))
+                : new ResultBuffer(new TypedValue((int)DxfCode.ExtendedDataRegAppName, ArmaturUygulamasi), new TypedValue((int)DxfCode.ExtendedDataAsciiString, tanitici)))
+                direk.XData = rb;
+        }
+
+        /// <summary>
+        /// Direkte armatür malzemesi varsa armatürün simgesini direğin hemen yanına çizer (ya da yerini, durumunu, rengini
+        /// günceller); armatür kalmadıysa simgeyi siler. Simge direğin katmanındadır, kendi verisi yoktur (rapora girmez).
+        /// </summary>
+        private void ArmaturYaz(BlockReference direk, CadVarlik v)
+        {
+            var mevcut = ArmaturBul(direk);
+            bool gerek = !string.IsNullOrEmpty(v.Armatur) && BlokKullanilabilir(v.Armatur);
+            if (!gerek)
+            {
+                if (mevcut != null)
+                {
+                    mevcut.UpgradeOpen();
+                    mevcut.Erase();
+                    ArmaturVerisiYaz(direk, null);
+                }
+                return;
+            }
+            var konum = new Point3d(direk.Position.X + v.ArmaturDx, direk.Position.Y + v.ArmaturDy, direk.Position.Z);
+            var btrId = Blok(v.Armatur);
+            if (mevcut == null)
+            {
+                var br = new BlockReference(konum, btrId);
+                br.SetDatabaseDefaults(_db);
+                br.LayerId = direk.LayerId;
+                if (v.ArmaturRengi >= 0) br.Color = Color.FromColorIndex(ColorMethod.ByAci, v.ArmaturRengi);
+                Ms.AppendEntity(br);
+                _tr.AddNewlyCreatedDBObject(br, true);
+                ArmaturVerisiYaz(direk, br.Handle.ToString());
+                return;
+            }
+            mevcut.UpgradeOpen();
+            if (mevcut.Position.DistanceTo(konum) > 1e-6) mevcut.Position = konum;
+            if (mevcut.BlockTableRecord != btrId) mevcut.BlockTableRecord = btrId;
+            if (mevcut.LayerId != direk.LayerId) mevcut.LayerId = direk.LayerId;
+            if (v.ArmaturRengi >= 0)
+            {
+                var renk = Color.FromColorIndex(ColorMethod.ByAci, v.ArmaturRengi);
+                if (!mevcut.Color.Equals(renk)) mevcut.Color = renk;
+            }
         }
 
         // ---------------- Genişletilmiş veri ----------------

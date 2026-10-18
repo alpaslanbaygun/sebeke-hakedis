@@ -68,10 +68,37 @@ namespace SebekeHakedis.PencereTest
                 HizliSecim.DurumSec(eskiDurum, eskiDm);
             }
             var agDirek = agHavai != null ? agHavai.Ogeler.Find(x => x.Tur == "AG_DIREK") : null;
-            if (agDirek != null) Kaydet(TipListesi(agDirek), Path.Combine(klasor, "16-serit-tip-listesi-AG-direk.png"));
+            if (agDirek != null)
+            {
+                // Cins seçimi: beton direkler (eskiden kısa listede yalnız demir direkler vardı)
+                string eskiCins = HizliSecim.SeciliCins(agDirek, HizliSecim.TemelKatalog);
+                HizliSecim.CinsSec(agDirek, "AG_BETON");
+                Kaydet(SeritCiz(agHavai, agDirek), Path.Combine(klasor, "16-serit-AG-direk-beton.png"));
+                Kaydet(TipListesi(agDirek), Path.Combine(klasor, "16-serit-tip-listesi-AG-direk-beton.png"));
+                Kaydet(DurumListesi(agDirek), Path.Combine(klasor, "16-serit-durum-simgeleri-beton.png"));
+                HizliSecim.CinsSec(agDirek, "AG_DEMİR_GLV");
+                Kaydet(DurumListesi(agDirek), Path.Combine(klasor, "16-serit-durum-simgeleri-demir.png"));
+                HizliSecim.CinsSec(agDirek, eskiCins);
+            }
+            var agHat = agHavai != null ? agHavai.Ogeler.Find(x => x.Tur == "AG_HAVAI") : null;
+            if (agHat != null)
+            {
+                string eskiCins = HizliSecim.SeciliCins(agHat, HizliSecim.TemelKatalog);
+                HizliSecim.CinsSec(agHat, "ALPEK_KABLOLAR");
+                Kaydet(TipListesi(agHat), Path.Combine(klasor, "17-serit-tip-listesi-AG-hat-ALPEK.png"));
+                HizliSecim.CinsSec(agHat, eskiCins);
+            }
             var ogHavai = Kategoriler.Bul("OG_HAVAI");
             var ogHat = ogHavai != null ? ogHavai.Ogeler.Find(x => x.Tur == "OG_HAVAI") : null;
             if (ogHat != null) Kaydet(TipListesi(ogHat), Path.Combine(klasor, "17-serit-tip-listesi-OG-hat.png"));
+            // Müşterek hat: OG ve AG birlikte
+            var mus = Kategoriler.Bul("MUSTEREK");
+            var musHat = mus != null ? mus.Ogeler.Find(x => x.Tur == "MUSTEREK" && x.HatMi) : null;
+            if (musHat != null)
+            {
+                HizliSecim.OgeSec(mus, musHat);
+                Kaydet(SeritCiz(mus, musHat), Path.Combine(klasor, "18-serit-musterek-hat.png"));
+            }
             // Varsayılana dön (sonraki denemeler etkilenmesin)
             if (agHavai != null) HizliSecim.OgeSec(agHavai, agHavai.Ogeler[0]);
         }
@@ -100,7 +127,8 @@ namespace SebekeHakedis.PencereTest
                     x0 => KategoriPaneli(dc, x0, k),
                     x0 => ElemanlarPaneli(dc, x0, k, etkin),
                     x0 => AyarlarPaneli(dc, x0, etkin),
-                    x0 => BuyukPanel(dc, x0, "Düzenle", new (string, string, Color?)[] { ("Malzeme", "malzeme", null), ("Metraj", "metraj", null), ("Telefon\nGörünümü", "gorunum", null), ("Çizim\nAyarları", "ayarlar", null) }),
+                    x0 => MalzemePaneli(dc, x0),
+                    x0 => BuyukPanel(dc, x0, "Düzenle", new (string, string, Color?)[] { ("Metraj", "metraj", null), ("Telefon\nGörünümü", "gorunum", null), ("Çizim\nAyarları", "ayarlar", null) }),
                     x0 => BuyukPanel(dc, x0, "Hakediş", new (string, string, Color?)[] { ("Aktif\nHakediş", "aktif_hakedis", Color.FromRgb(0x23, 0xA4, 0x55)), ("Hakediş\nOnayı", "onay", null) }),
                     x0 => BuyukPanel(dc, x0, "Telefon", new (string, string, Color?)[] { ("Telefondan\nAl", "telefon_al", Color.FromRgb(0x3B, 0xA4, 0xF6)), ("Telefona\nGönder", "telefon_gonder", Color.FromRgb(0x3B, 0xA4, 0xF6)) }),
                     x0 => BuyukPanel(dc, x0, "Rapor", new (string, string, Color?)[] { ("Durum\nTespit", "rapor", null), ("Dosyadan\nRapor", "dosya_rapor", null), ("Proje\nÖzeti", "ozet", null), ("Eksik\nMalzeme", "eksik", null) }),
@@ -264,26 +292,34 @@ namespace SebekeHakedis.PencereTest
 
         private static double AyarlarPaneli(DrawingContext dc, double x, MenuOgesi oge)
         {
+            var k = HizliSecim.TemelKatalog;
             bool tipli = oge != null && (oge.TipliMi || oge.Komut == "SH_KANAL");
-            var secili = tipli ? HizliSecim.SeciliTip(oge, HizliSecim.TemelKatalog) : null;
+            var secili = tipli ? HizliSecim.SeciliTip(oge, k) : null;
             string tip = secili != null ? secili.Tanim.Trim() : oge == null ? "(öğe seçin)" : "(tip gerekmez)";
-            bool dm = tipli && oge.ElemanMi && Turler.DemontajMi(HizliSecim.Durum);
-            const double etiket = 52, kutu1 = 190, kutu2 = 116;
-            double w = 8 + etiket + kutu1 + 14 + 1 + 10 + etiket + kutu2 + 12 + 66 + 6;
+            string cins = tipli ? k.CinsAdi(HizliSecim.SeciliCins(oge, k)) : "—";
+            bool eleman = tipli && oge.ElemanMi, hat = tipli && oge.HatMi;
+            bool dm = eleman && Turler.DemontajMi(HizliSecim.Durum);
+            const double etiket = 52, kutu1 = 190, kutu2 = 116, etiket3 = 66, kutu3 = 170;
+            double w = 8 + etiket + kutu1 + 14 + 1 + 10 + etiket + kutu2 + 14 + 1 + 10 + etiket3 + kutu3 + 12 + 66 + 6;
             PanelZemini(dc, x, w, "Ayarlar");
             double lx = x + 8, kx = lx + etiket, y0 = SekmeYuk + 7;
-            dc.DrawText(Metin("Tip", 11.5, Yazi), new Point(lx, y0 + 3));
-            KutuCiz(dc, kx, y0, kutu1, tip, !tipli);
-            dc.DrawText(Metin("Ara", 11.5, Yazi), new Point(lx, y0 + Satir + 3));
-            KutuCiz(dc, kx, y0 + Satir, kutu1, "tip ara (Enter)", true, false);
-            var ozet = HizliSecim.Ozet();
-            if (oge != null) dc.DrawImage(SeritSimgeleri.OgeSimgesi(oge, 16), new Rect(lx, y0 + 2 * Satir + 3, 16, 16));
-            dc.DrawText(Metin(Kisalt(ozet, etiket + kutu1 - 22, 11.5), 11.5, Yazi, true), new Point(lx + 22, y0 + 2 * Satir + 3));
+            dc.DrawText(Metin("Cins", 11.5, Yazi), new Point(lx, y0 + 3));
+            KutuCiz(dc, kx, y0, kutu1, cins, !tipli);
+            dc.DrawText(Metin("Tip", 11.5, Yazi), new Point(lx, y0 + Satir + 3));
+            KutuCiz(dc, kx, y0 + Satir, kutu1, tip, !tipli);
+            dc.DrawText(Metin("Ara", 11.5, Yazi), new Point(lx, y0 + 2 * Satir + 3));
+            KutuCiz(dc, kx, y0 + 2 * Satir, kutu1, "tip ara (Enter)", true, false);
+
             double sx = kx + kutu1 + 14;
             dc.DrawRectangle(new SolidColorBrush(Ayrac), null, new Rect(sx, SekmeYuk + 8, 1, Yuk - 36));
             double lx2 = sx + 10, kx2 = lx2 + etiket;
             dc.DrawText(Metin("Durum", 11.5, tipli ? Yazi : Soluk), new Point(lx2, y0 + 3));
-            KutuCiz(dc, kx2, y0, kutu2, HizliSecim.Durum, !tipli);
+            KutuCiz(dc, kx2, y0, kutu2, (eleman ? "     " : "") + HizliSecim.Durum, !tipli);
+            if (eleman && secili != null)
+            {
+                var sim = DurumSimgesi(oge.Tur, secili.Cins, HizliSecim.Durum, HizliSecim.DmDurum);
+                if (sim != null) dc.DrawImage(sim, new Rect(kx2 + 4, y0 + 3, 16, 16));
+            }
             dc.DrawText(Metin("Hakediş", 11.5, tipli ? Yazi : Soluk), new Point(lx2, y0 + Satir + 3));
             KutuCiz(dc, kx2, y0 + Satir, kutu2, HizliSecim.Hakedis > 0 ? HizliSecim.Hakedis + ". hakediş" : "Aktif hakediş", !tipli);
             if (dm)
@@ -291,8 +327,80 @@ namespace SebekeHakedis.PencereTest
                 dc.DrawText(Metin("DM türü", 11.5, Yazi), new Point(lx2, y0 + 2 * Satir + 3));
                 KutuCiz(dc, kx2, y0 + 2 * Satir, kutu2, string.IsNullOrEmpty(HizliSecim.DmDurum) ? "Yok" : HizliSecim.DmDurum);
             }
-            BuyukDugme(dc, kx2 + kutu2 + 10, "Ayrıntılı…", SeritSimgeleri.KomutSimgesi("bilgi", 32), false);
+
+            double sx3 = kx2 + kutu2 + 14;
+            dc.DrawRectangle(new SolidColorBrush(Ayrac), null, new Rect(sx3, SekmeYuk + 8, 1, Yuk - 36));
+            double lx3 = sx3 + 10, kx3 = lx3 + etiket3;
+            if (hat)
+            {
+                dc.DrawText(Metin("Adet", 11.5, Yazi), new Point(lx3, y0 + 3));
+                KutuCiz(dc, kx3, y0, 64, HizliSecim.Adet(oge) + " ×");
+                var ek = HizliSecim.EkIletken(oge, k);
+                dc.DrawText(Metin("2. iletken", 11.5, Yazi), new Point(lx3, y0 + Satir + 3));
+                KutuCiz(dc, kx3, y0 + Satir, kutu3, ek != null ? ek.Tanim.Trim() : "Yok");
+            }
+            var ozet = HizliSecim.Ozet();
+            ImageSource ozetSimge = null;
+            if (eleman && secili != null) ozetSimge = DurumSimgesi(oge.Tur, secili.Cins, HizliSecim.Durum, HizliSecim.DmDurum);
+            if (ozetSimge == null && oge != null) ozetSimge = SeritSimgeleri.OgeSimgesi(oge, 16);
+            if (ozetSimge != null) dc.DrawImage(ozetSimge, new Rect(lx3, y0 + 2 * Satir + 3, 16, 16));
+            dc.DrawText(Metin(Kisalt(ozet, etiket3 + kutu3 - 22, 11.5), 11.5, Yazi, true), new Point(lx3 + 22, y0 + 2 * Satir + 3));
+            BuyukDugme(dc, kx3 + kutu3 + 10, "Ayrıntılı…", SeritSimgeleri.KomutSimgesi("bilgi", 32), false);
             return w;
+        }
+
+        /// <summary>Şeritteki durum simgesi (Serit.DurumSimgesi ile aynı).</summary>
+        private static ImageSource DurumSimgesi(string tur, string cins, string durum, string dm)
+        {
+            var s = Semboller.Bul(Semboller.BlokAdi(tur, cins, durum, dm));
+            if (s == null) return null;
+            bool demontaj = Semboller.DemontajVaryanti(Semboller.Varyant(durum, dm));
+            return SeritSimgeleri.SembolCiz(s, SeritSimgeleri.HexRenk(demontaj ? "#e6b800" : CizimStili.EkranElemanRengi(tur, cins), SeritSimgeleri.Notr), 16, false);
+        }
+
+        private static double MalzemePaneli(DrawingContext dc, double x)
+        {
+            var dugmeler = new (string yazi, string simge)[] { ("Malzeme", "malzeme"), ("Toplu\nMalzeme", "toplu"), ("Malzeme\nHafızası", "hafiza") };
+            double w = 8;
+            foreach (var d in dugmeler) w += Math.Max(54, MetinGenisligi(d.yazi, 11.5) + 14) + 2;
+            w += 6;
+            PanelZemini(dc, x, w, "Malzeme");
+            double bx = x + 6;
+            foreach (var d in dugmeler)
+            {
+                bool hafiza = d.simge == "hafiza";
+                Color? renk = hafiza && HizliSecim.HafizaAcik ? Color.FromRgb(0x23, 0xA4, 0x55) : (Color?)null;
+                bx += BuyukDugme(dc, bx, d.yazi, SeritSimgeleri.KomutSimgesi(d.simge, 32, renk), hafiza && HizliSecim.HafizaAcik) + 2;
+            }
+            return w;
+        }
+
+        /// <summary>Durum listesinin açılmış hâli: her durumun yanında simgesi (seçili öğenin cinsiyle).</summary>
+        private static DrawingVisual DurumListesi(MenuOgesi oge)
+        {
+            var dv = new DrawingVisual();
+            using (var dc = dv.RenderOpen())
+            {
+                var k = HizliSecim.TemelKatalog;
+                var t = HizliSecim.SeciliTip(oge, k);
+                var satirlar = new List<(string yazi, string aciklama, string durum, string dm)>();
+                foreach (var d in Turler.CizimDurumlari) satirlar.Add((d, Turler.DurumAdi(d), d, ""));
+                satirlar.Add(("DM · KESİK", "Kesilerek demontaj", "DM", "KESİK"));
+                satirlar.Add(("DM · SÖKÜK", "Sökülerek demontaj", "DM", "SÖKÜK"));
+                double w = 300, h = 30 * satirlar.Count + 30;
+                dc.DrawRectangle(new SolidColorBrush(Kutu), new Pen(new SolidColorBrush(KutuKenar), 1), new Rect(0, 0, w, h));
+                dc.DrawText(Metin(oge.Ad + " · " + (t != null ? t.Tanim.Trim() + " (" + k.CinsAdi(t.Cins) + ")" : "") + " · durum", 11, Soluk, true), new Point(8, 6));
+                double y = 26;
+                foreach (var r in satirlar)
+                {
+                    var sim = t != null ? DurumSimgesi(oge.Tur, t.Cins, r.durum, r.dm) : null;
+                    if (sim != null) dc.DrawImage(sim, new Rect(10, y + 4, 22, 22));
+                    dc.DrawText(Metin(r.yazi, 12, Yazi, true), new Point(42, y + 6));
+                    dc.DrawText(Metin(r.aciklama, 10.5, Soluk), new Point(150, y + 8));
+                    y += 30;
+                }
+            }
+            return dv;
         }
 
         // ---------------- Açılır tip listesi ----------------

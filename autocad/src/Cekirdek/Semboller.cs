@@ -20,8 +20,10 @@ namespace SebekeHakedis.Cekirdek
     {
         public string Ad = "";          // ör. DIREK_AG_YENI (blok adı: SH_ + Ad)
         public string Aile = "";        // ör. DIREK_AG
-        public string Varyant = "";     // YENI, MEVCUT, DMM, DM
+        public string Varyant = "";     // YENI, MEVCUT, DMM, DM, KESIK, SOKUK
         public double YariGenislik;     // metre (yazı konumları için)
+        /// <summary>Ailenin bütün varyantlarını içine alan yarı genişlik (metre; demontaj işaretleri dahil). Simge resimleri bu ölçekle çizilir.</summary>
+        public double Kapsam;
         public List<SembolIlkeli> Ilkeller = new List<SembolIlkeli>();
     }
 
@@ -39,6 +41,10 @@ namespace SebekeHakedis.Cekirdek
 
         private static Dictionary<string, Sembol> _tablo;
         private static Dictionary<string, string> _aileAdlari;
+        private static Dictionary<string, double[]> _aileOlculeri;
+
+        /// <summary>Varyantlar (semboller.json sırası): montaj, mevcut, sök-tak, demontaj, demontaj kesik, demontaj sökük.</summary>
+        public static readonly string[] Varyantlar = { "YENI", "MEVCUT", "DMM", "DM", "KESIK", "SOKUK" };
 
         public static bool Yuklu => _tablo != null;
 
@@ -47,6 +53,7 @@ namespace SebekeHakedis.Cekirdek
         {
             var tablo = new Dictionary<string, Sembol>(StringComparer.Ordinal);
             var aileler = new Dictionary<string, string>(StringComparer.Ordinal);
+            var olculer = new Dictionary<string, double[]>(StringComparer.Ordinal);
             var kok = Json.Oku(json) as JsonNesne;
             if (kok == null) throw new InvalidOperationException("semboller.json okunamadı");
             var aileNesnesi = kok.Nesne("aileler");
@@ -55,6 +62,8 @@ namespace SebekeHakedis.Cekirdek
                 {
                     var a = kv.Value as JsonNesne;
                     aileler[kv.Key] = a != null ? a.Metin("ad", kv.Key) : kv.Key;
+                    double yg = a != null ? a.Ondalik("yariGenislik", 2) : 2;
+                    olculer[kv.Key] = new[] { yg, a != null ? Math.Max(yg, a.Ondalik("kapsam", yg * 1.8)) : yg * 1.8 };
                 }
             var semboller = kok.Nesne("semboller");
             if (semboller == null) throw new InvalidOperationException("semboller.json: 'semboller' yok");
@@ -64,8 +73,9 @@ namespace SebekeHakedis.Cekirdek
                 int alt = kv.Key.LastIndexOf('_');
                 s.Aile = alt > 0 ? kv.Key.Substring(0, alt) : kv.Key;
                 s.Varyant = alt > 0 ? kv.Key.Substring(alt + 1) : "";
-                var aile = aileNesnesi != null ? aileNesnesi.Nesne(s.Aile) : null;
-                s.YariGenislik = aile != null ? aile.Ondalik("yariGenislik", 2) : 2;
+                double[] olcu;
+                if (olculer.TryGetValue(s.Aile, out olcu)) { s.YariGenislik = olcu[0]; s.Kapsam = olcu[1]; }
+                else { s.YariGenislik = 2; s.Kapsam = 3.6; }
                 var dizi = kv.Value as List<object>;
                 if (dizi != null)
                     foreach (var x in dizi)
@@ -77,6 +87,7 @@ namespace SebekeHakedis.Cekirdek
             }
             _tablo = tablo;
             _aileAdlari = aileler;
+            _aileOlculeri = olculer;
         }
 
         private static SembolIlkeli IlkelOku(List<object> d)
@@ -120,6 +131,16 @@ namespace SebekeHakedis.Cekirdek
             return _aileAdlari.Keys;
         }
 
+        /// <summary>Ailenin simge yarı genişliği (metre); tablo yüklenmediyse ya da aile yoksa 2.</summary>
+        public static double YariGenislik(string aile)
+        {
+            double[] o;
+            return _aileOlculeri != null && _aileOlculeri.TryGetValue(aile ?? "", out o) ? o[0] : 2;
+        }
+
+        /// <summary>Elemanın simgesinin yarı genişliği (metre): hat çizerken tıklamanın elemana yapışma mesafesi buna göre.</summary>
+        public static double YariGenislik(Eleman e) => e == null ? 2 : YariGenislik(Aile(e.Tur, e.Cins));
+
         public static string AileAdi(string aile)
         {
             Denetle();
@@ -148,10 +169,10 @@ namespace SebekeHakedis.Cekirdek
         // ---------------- Seçim: tür + malzeme + durum → blok adı ----------------
 
         /// <summary>
-        /// Durumdan varyant: M, M+M, KM, ENH, ME → YENI (PROMAGIS'te YENİ_ blokları) · DM → DM · DM+M → DMM ·
-        /// MEVCUT ve boş → MEVCUT.
+        /// Durumdan varyant: M, M+M, KM, ENH, ME → YENI (PROMAGIS'te YENİ_ blokları) · DM → DM, demontaj türü KESİK ise KESIK,
+        /// SÖKÜK ise SOKUK · DM+M → DMM · MEVCUT ve boş → MEVCUT.
         /// </summary>
-        public static string Varyant(string durum)
+        public static string Varyant(string durum, string dmDurum = "")
         {
             switch ((durum ?? "").Trim().ToUpperInvariant())
             {
@@ -160,11 +181,23 @@ namespace SebekeHakedis.Cekirdek
                 case "KM":
                 case "ENH":
                 case "ME": return "YENI";
-                case "DM": return "DM";
+                case "DM": return DmVaryanti(dmDurum);
                 case "DM+M": return "DMM";
                 default: return "MEVCUT";
             }
         }
+
+        /// <summary>Demontaj türünden varyant: KESİK → KESIK, SÖKÜK → SOKUK, diğerleri DM.</summary>
+        public static string DmVaryanti(string dmDurum)
+        {
+            string d = (dmDurum ?? "").Trim().ToUpperInvariant().Replace('İ', 'I').Replace('Ö', 'O').Replace('Ü', 'U');
+            if (d.StartsWith("KES", StringComparison.Ordinal)) return "KESIK";
+            if (d.StartsWith("SOK", StringComparison.Ordinal)) return "SOKUK";
+            return "DM";
+        }
+
+        /// <summary>Demontaj varyantı mı (DM, KESIK, SOKUK)?</summary>
+        public static bool DemontajVaryanti(string varyant) => varyant == "DM" || varyant == "KESIK" || varyant == "SOKUK";
 
         /// <summary>Cins yazısından malzeme: demir (kafes) mi? BETON / AĞAÇ geçiyorsa hayır; DEMİR, GLV, CVT, KAFES geçiyorsa evet.</summary>
         public static bool DemirMi(string cins)
@@ -205,9 +238,9 @@ namespace SebekeHakedis.Cekirdek
             }
         }
 
-        /// <summary>Eklentinin bloğu: SH_&lt;aile&gt;_&lt;varyant&gt;, ör. SH_KAFES_AG_YENI.</summary>
-        public static string BlokAdi(string tur, string cins, string durum) => OnEk + Aile(tur, cins) + "_" + Varyant(durum);
+        /// <summary>Eklentinin bloğu: SH_&lt;aile&gt;_&lt;varyant&gt;, ör. SH_KAFES_AG_YENI, SH_DIREK_AG_KESIK.</summary>
+        public static string BlokAdi(string tur, string cins, string durum, string dmDurum = "") => OnEk + Aile(tur, cins) + "_" + Varyant(durum, dmDurum);
 
-        public static string BlokAdi(Eleman e) => BlokAdi(e.Tur, e.Cins, e.Durum);
+        public static string BlokAdi(Eleman e) => BlokAdi(e.Tur, e.Cins, e.Durum, e.DmDurum);
     }
 }

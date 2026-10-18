@@ -122,6 +122,54 @@ namespace SebekeHakedis.PencereTest
                 Esit("AG_HAVAI", s?.Tur, "hat: varsayılan tür AG havai");
             });
 
+            // Cins düğmeleri: AG beton direk seçilir; demontaj · kesik simgesi listede ve özette
+            Dene("01c-eleman-beton-kesik", () =>
+            {
+                var s = Pencereler.Eleman(o, new ElemanSecimi { Tur = "AG_DIREK", Durum = "M", Hakedis = 1 });
+                Esit("AG_BETON", s?.Tip?.Cins, "eleman: cins düğmesiyle beton direk");
+                Esit("DM", s?.Durum, "eleman: durum demontaj");
+                Esit("KESİK", s?.DmDurum, "eleman: demontaj türü kesik");
+                Esit("SH_DIREK_AG_KESIK", s != null ? Semboller.BlokAdi(s.Tur, s.Tip.Cins, s.Durum, s.DmDurum) : "", "eleman: kesik beton direğin simgesi");
+            }, f =>
+            {
+                var cins = Bul<CinsSecici>(f, x => true);
+                Esit(true, cins != null && cins.Secenekler.Count == 5, "eleman: AG direkte 5 cins düğmesi (hepsi, galvanizli demir, demir, beton, ağaç)");
+                cins.Sec("AG_BETON");
+                var lb = Bul<IkiSatirListe>(f, x => true);
+                bool hepsiBeton = true;
+                int sayi = 0;
+                foreach (var it in lb.Items) { var kk = it as KatalogKalemi; if (kk == null) continue; sayi++; if (kk.Cins != "AG_BETON") hepsiBeton = false; }
+                Esit(true, sayi > 20 && hepsiBeton, "eleman: listede yalnız beton direkler");
+                Bul<KoyuSecim>(f, r => (string)r.Tag == "DM").Checked = true;
+                var dm = Bul<KoyuAcilir>(f, c => c.Items.Count == 3 && Convert.ToString(c.Items[1]) == "KESİK");
+                dm.SelectedIndex = 1;
+                Resim(f, "sonra");
+            });
+
+            // Müşterek hat: OG ve AG iletken birlikte gelir
+            Dene("03b-hat-musterek", () =>
+            {
+                var s = Pencereler.Hat(o, new HatSecimi { Tur = "MUSTEREK", Durum = "M", Hakedis = 1 });
+                Esit(2, s != null ? s.Iletkenleri.Count : 0, "müşterek hat: iki iletken");
+                Esit(true, s != null && s.Iletkenleri.Count == 2 && Iletkenler.OgMu(s.Iletkenleri[0].Kesit.Cins) != Iletkenler.OgMu(s.Iletkenleri[1].Kesit.Cins), "müşterek hat: biri OG, biri AG");
+            });
+
+            // Çoklu iletken: 3 adet ALPEK
+            Dene("03c-hat-adet", () =>
+            {
+                var s = Pencereler.Hat(o, new HatSecimi { Tur = "AG_HAVAI", Durum = "M", Hakedis = 1 });
+                Esit(true, s != null && s.Kesit != null && s.Kesit.Cins == "ALPEK_KABLOLAR", "hat: ALPEK seçildi");
+                Esit(3, s != null && s.Iletkenleri.Count > 0 ? s.Iletkenleri[0].Adet : 0, "hat: 3 adet");
+                Esit(true, s != null && s.IletkenYazisi.StartsWith("3x(", StringComparison.Ordinal), "hat: yazımı 3x(…)");
+            }, f =>
+            {
+                var cins = Bul<CinsSecici>(f, x => true);
+                cins.Sec("ALPEK_KABLOLAR");
+                var adet = Bul<SayiKutusu>(f, x => x.Parent != null && x.Parent.GetType().Name == "IletkenYuvasi");
+                adet.Value = 3;
+                Resim(f, "sonra");
+            });
+
             Dene("04-kanal", () =>
             {
                 var s = Pencereler.Kanal(o, null);
@@ -328,6 +376,22 @@ namespace SebekeHakedis.PencereTest
                 Esit(kilitliOnce, g.Rows.Count, "kilitli: silme düğmesi kilitli satırı silmez");
             });
             o.Proje.Onaylar.Clear();
+
+            // Toplu malzeme: seçilen direklere aynı malzeme
+            var direkler = o.Proje.Elemanlar.FindAll(e => PromagisYazici.DirekMi(e.Tur));
+            Dene("23-toplu-malzeme", () =>
+            {
+                var l = Pencereler.TopluMalzeme(o, direkler);
+                Esit(1, l != null ? l.Count : 0, "toplu malzeme: bir satır döner");
+                Esit(2.0, l != null && l.Count > 0 ? l[0].Miktar : 0, "toplu malzeme: miktar düzenlendi");
+            }, f =>
+            {
+                Bul<Button>(f, b => b.Text == "Ekle").PerformClick();
+                var g = Bul<DataGridView>(f, x => true);
+                Esit(1, g.Rows.Count, "toplu malzeme: listeye eklendi");
+                g.Rows[0].Cells[1].Value = "2";
+                Resim(f, "sonra");
+            });
 
             // Telefondan alma onayı (kutucuklar ve uyarılar)
             var oz = new AktarimOzeti { Proje = "Deneme Projesi", Dosya = "saha_2026-10-18.sebeke.json", Degismeyen = 120 };

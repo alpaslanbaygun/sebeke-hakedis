@@ -15,8 +15,10 @@ namespace SebekeHakedis.Eklenti
     ///   Kategori   — AG Havai, AG Yeraltı, OG Havai / ENH … düğmeleri (sütunlar: havai | yeraltı | diğer | proje); tek tıkla seçilir.
     ///   Elemanlar  — yalnız seçili kategorinin öğeleri (ör. AG Havai: AG Direk, AG Hat, Kofre, Abone Hattı); öğeye tıklayınca
     ///                pencere açılmadan çizime başlanır.
-    ///   Ayarlar    — etkin öğenin tipi (son kullanılanlar önde, "Ara" ile bütün tipler), durum, hakediş, demontaj türü ve
-    ///                "sıradaki tıklamada ne çizilecek" özeti; Ayrıntılı… süzgeçli pencereyi açar.
+    ///   Ayarlar    — etkin öğenin cinsi (ör. AG direkte galvanizli demir / demir / beton / ağaç) ve o cinsin tipleri (katalog
+    ///                sırasıyla; "Ara" ile bütün tipler), durum (her durumun simgesiyle), hakediş, demontaj türü; hatlarda
+    ///                adet ve ikinci iletken (müşterek hatta OG ile AG birlikte); "sıradaki tıklamada ne çizilecek" özeti.
+    ///   Malzeme    — seçilen nesnenin malzemeleri, seçilen elemanlara toplu malzeme, malzeme hafızası (açık / kapalı).
     ///   Düzenle, Hakediş, Telefon, Rapor, Yardım — diğer komutlar.
     /// Kategori ve öğeler ortak/katalog/kategoriler.json'dan, tipler kalemler.json'un cins gruplarından gelir.
     /// Şeridin zemin rengi AutoCAD'in temasından gelir; simgeler koyu ve açık temaya göre çizilir.
@@ -26,9 +28,10 @@ namespace SebekeHakedis.Eklenti
         private const string SekmeKimligi = "SEBEKE_HAKEDIS_SEKME";
         private static bool _bekliyor, _yukleniyor, _olayBagli;
 
-        private static RibbonCombo _tip, _durum, _dm, _hakedis;
+        private static RibbonCombo _cins, _tip, _durum, _dm, _hakedis, _adet, _ek;
         private static RibbonTextBox _ara;
-        private static RibbonLabel _ozet, _dmEtiket;
+        private static RibbonLabel _ozet, _dmEtiket, _adetEtiket, _ekEtiket;
+        private static RibbonToggleButton _hafiza;
         private static RibbonPanelSource _elemanlar;
         private static readonly List<RibbonToggleButton> _kategoriDugmeleri = new List<RibbonToggleButton>();
         private static readonly List<RibbonToggleButton> _ogeDugmeleri = new List<RibbonToggleButton>();
@@ -158,9 +161,14 @@ namespace SebekeHakedis.Eklenti
             // 2) Elemanlar (kategoriye göre dolar)
             _elemanlar = Panel(sekme, "Elemanlar");
 
-            // 3) Ayarlar: tip, arama, özet | durum, hakediş, demontaj | ayrıntılı
+            // 3) Ayarlar: cins, tip, arama | durum, hakediş, demontaj | adet, ikinci iletken, özet | ayrıntılı
             var ay = Panel(sekme, "Ayarlar");
             var s1 = new RibbonRowPanel();
+            s1.Items.Add(Etiket("Cins"));
+            _cins = new RibbonCombo { Width = 190, ShowText = false, Size = RibbonItemSize.Standard };
+            _cins.CurrentChanged += (s, e) => { if (!_yukleniyor) CinsSecildi(_cins.Current as RibbonButton); };
+            s1.Items.Add(_cins);
+            s1.Items.Add(new RibbonRowBreak());
             s1.Items.Add(Etiket("Tip"));
             _tip = new RibbonCombo { Width = 190, ShowText = false, Size = RibbonItemSize.Standard };
             _tip.CurrentChanged += (s, e) => { if (!_yukleniyor) TipSecildi(_tip.Current as RibbonButton); };
@@ -176,9 +184,6 @@ namespace SebekeHakedis.Eklenti
             Ozellik(_ara, "Prompt", "tip ara (Enter)");
             Ozellik(_ara, "CommandHandler", new AraIsleyici());
             s1.Items.Add(_ara);
-            s1.Items.Add(new RibbonRowBreak());
-            _ozet = new RibbonLabel { Text = "", ShowText = true, ShowImage = true, ToolTip = "Sıradaki tıklamada çizilecek olan" };
-            s1.Items.Add(_ozet);
             ay.Items.Add(s1);
             ay.Items.Add(new RibbonSeparator());
 
@@ -186,7 +191,7 @@ namespace SebekeHakedis.Eklenti
             s2.Items.Add(Etiket("Durum"));
             _durum = new RibbonCombo { Width = 116, ShowText = false, Size = RibbonItemSize.Standard };
             foreach (var d in Turler.CizimDurumlari)
-                _durum.Items.Add(new RibbonButton { Text = d, ShowText = true, Tag = d, ToolTip = d + " — " + Turler.DurumAdi(d), Description = Turler.DurumAdi(d) });
+                _durum.Items.Add(new RibbonButton { Text = d, ShowText = true, ShowImage = true, Tag = d, ToolTip = d + " — " + Turler.DurumAdi(d), Description = Turler.DurumAdi(d) });
             _durum.CurrentChanged += (s, e) => { if (!_yukleniyor) DurumSecildi(); };
             s2.Items.Add(_durum);
             s2.Items.Add(new RibbonRowBreak());
@@ -200,38 +205,77 @@ namespace SebekeHakedis.Eklenti
             _dmEtiket = Etiket("DM türü");
             s2.Items.Add(_dmEtiket);
             _dm = new RibbonCombo { Width = 116, ShowText = false, Size = RibbonItemSize.Standard };
-            foreach (var d in Turler.DmDurumlari) _dm.Items.Add(new RibbonButton { Text = d.Length == 0 ? "Yok" : d, ShowText = true, Tag = d });
+            foreach (var d in Turler.DmDurumlari)
+                _dm.Items.Add(new RibbonButton { Text = d.Length == 0 ? "Yok" : d, ShowText = true, ShowImage = true, Tag = d, ToolTip = d.Length == 0 ? "Demontaj (\"/\")" : d == "KESİK" ? "Kesilerek demontaj (\"//\")" : "Sökülerek demontaj (\"X\")" });
             _dm.CurrentChanged += (s, e) => { if (!_yukleniyor) DurumSecildi(); };
             s2.Items.Add(_dm);
             ay.Items.Add(s2);
-            ay.Items.Add(Dugme("Ayrıntılı…", "Etkin öğeyi süzgeçli, aramalı pencereyle çizer (bütün tipler, GIS numarası, demontaj türü).", "_SH_HIZLIAYRINTI ", "bilgi", null));
+            ay.Items.Add(new RibbonSeparator());
 
-            // 4) Düzenle
+            var s3 = new RibbonRowPanel();
+            _adetEtiket = Etiket("Adet");
+            s3.Items.Add(_adetEtiket);
+            _adet = new RibbonCombo { Width = 64, ShowText = false, Size = RibbonItemSize.Standard, ToolTip = "Aynı güzergâhta kaç tane (ör. 3 adet ALPEK). Metraj adet kadar katlanır, etikette 3x(…) yazar." };
+            for (int i = 1; i <= 8; i++) _adet.Items.Add(new RibbonButton { Text = i.ToString(CultureInfo.InvariantCulture) + " ×", ShowText = true, Tag = i });
+            _adet.CurrentChanged += (s, e) => { if (!_yukleniyor) AdetSecildi(); };
+            s3.Items.Add(_adet);
+            s3.Items.Add(new RibbonRowBreak());
+            _ekEtiket = Etiket("2. iletken");
+            s3.Items.Add(_ekEtiket);
+            _ek = new RibbonCombo { Width = 170, ShowText = false, Size = RibbonItemSize.Standard, ToolTip = "Aynı hatta ikinci iletken / kablo (müşterek hatta OG ile AG birlikte gelir). Daha fazlası için Ayrıntılı…" };
+            _ek.CurrentChanged += (s, e) => { if (!_yukleniyor) EkSecildi(_ek.Current as RibbonButton); };
+            s3.Items.Add(_ek);
+            s3.Items.Add(new RibbonRowBreak());
+            _ozet = new RibbonLabel { Text = "", ShowText = true, ShowImage = true, ToolTip = "Sıradaki tıklamada çizilecek olan" };
+            s3.Items.Add(_ozet);
+            ay.Items.Add(s3);
+            ay.Items.Add(Dugme("Ayrıntılı…", "Etkin öğeyi süzgeçli, aramalı pencereyle çizer (bütün tipler, cins düğmeleri, GIS numarası, demontaj türü; hatlarda iki iletken ve adet).", "_SH_HIZLIAYRINTI ", "bilgi", null));
+
+            // 4) Malzeme
+            var malzeme = Panel(sekme, "Malzeme");
+            malzeme.Items.Add(Dugme("Malzeme", "Seçilen direğin, hattın, kanalın ya da sondajın malzemelerini düzenler. Direğe armatür eklenirse simgesi direğin yanına çizilir.", "_SH_MALZEME ", "malzeme", null));
+            malzeme.Items.Add(Dugme("Toplu\nMalzeme", "Seçilen direklere / elemanlara aynı malzemeleri tek seferde ekler (önce seçebilir ya da düğmeden sonra seçebilirsiniz).", "_SH_TOPLUMALZEME ", "toplu", null));
+            _hafiza = new RibbonToggleButton
+            {
+                Text = "Malzeme\nHafızası",
+                ShowText = true,
+                ShowImage = true,
+                Size = RibbonItemSize.Large,
+                Orientation = System.Windows.Controls.Orientation.Vertical,
+                LargeImage = SeritSimgeleri.KomutSimgesi("hafiza", 32, HafizaRengi),
+                Image = SeritSimgeleri.KomutSimgesi("hafiza", 16, HafizaRengi),
+                ToolTip = "Açıkken yeni konan direğe, trafoya … aynı tür ve tipteki son elemanın malzemeleri kendiliğinden eklenir. " +
+                          "Hafıza, bir elemanın malzemeleri düzenlenince (Malzeme, Toplu Malzeme) güncellenir.",
+                IsChecked = HizliSecim.HafizaAcik,
+                CommandHandler = new HafizaIsleyici(),
+            };
+            malzeme.Items.Add(_hafiza);
+
+            // 5) Düzenle
             var duzen = Panel(sekme, "Düzenle");
-            duzen.Items.Add(Dugme("Malzeme", "Seçilen direğin, hattın, kanalın ya da sondajın malzemelerini düzenler.", "_SH_MALZEME ", "malzeme", null));
             duzen.Items.Add(Dugme("Metraj", "Seçilen hat, kanal ve sondajların metrajını çizim uzunluğundan yeniden hesaplar (parça metrajları yenilenir).", "_SH_METRAJ ", "metraj", null));
-            duzen.Items.Add(Dugme("Telefon\nGörünümü", "Çizimi telefonun görünümüne çevirir: simgeler, renkler, hat etiketleri, her parçanın uzunluğu. Veriye dokunmaz.", "_SH_GORUNUM ", "gorunum", null));
-            duzen.Items.Add(Dugme("Çizim\nAyarları", "Katman ön eki, tarife (şehir / köy), simge takımı, etiket yüksekliği, metraj payları, kanal ölçüleri.", "_SH_AYARLAR ", "ayarlar", null));
+            duzen.Items.Add(Dugme("Telefon\nGörünümü", "Çizimi telefonun görünümüne çevirir: simgeler (durumuna göre), renkler, hat etiketleri, her parçanın uzunluğu, direklerin yanındaki armatürler. Veriye dokunmaz.", "_SH_GORUNUM ", "gorunum", null));
+            duzen.Items.Add(Dugme("Çizim\nAyarları", "Katman ön eki, tarife (şehir / köy), simge takımı, etiket yüksekliği, yakalama, metraj payları, kanal ölçüleri.", "_SH_AYARLAR ", "ayarlar", null));
 
-            // 5) Hakediş
+            // 6) Hakediş
             var hakedis = Panel(sekme, "Hakediş");
             hakedis.Items.Add(Dugme("Aktif\nHakediş", "Aktif hakedişi değiştirir; yeni nesneler bu hakedişin katmanlarına konur.", "_SH_HAKEDIS ", "aktif_hakedis", Color.FromRgb(0x23, 0xA4, 0x55)));
             hakedis.Items.Add(Dugme("Hakediş\nOnayı", "Hakediş onayı (PROMAGIS'teki gibi Kontrol → Hakediş → GIS). Onaylanan hakediş kilitlenir: satırları değiştirilemez, o hakedişe yeni nesne çizilemez.", "_SH_ONAY ", "onay", null));
 
-            // 6) Telefon
+            // 7) Telefon
             var telefon = Panel(sekme, "Telefon");
             var telRengi = Color.FromRgb(0x3B, 0xA4, 0xF6);
             telefon.Items.Add(Dugme("Telefondan\nAl", "Telefondan gelen proje dosyasındaki (.sebeke.json, .volt.json ya da teslim paketi .zip) yeni ve değişen nesneleri bu çizime aktarır.", "_SH_PROJEAL ", "telefon_al", telRengi));
             telefon.Items.Add(Dugme("Telefona\nGönder", "Bu çizimi telefonda açılacak proje dosyasına yazar (.sebeke.json ya da telefon biçimi .volt.json).", "_SH_ICEAL ", "telefon_gonder", telRengi));
 
-            // 7) Rapor
+            // 8) Rapor
             var rapor = Panel(sekme, "Rapor");
             rapor.Items.Add(Dugme("Durum\nTespit", "Bu çizimden Durum Tespit raporunu Excel olarak üretir.", "_SH_RAPOR ", "rapor", null));
             rapor.Items.Add(Dugme("Dosyadan\nRapor", "Bir proje dosyasından (.sebeke.json, .volt.json ya da teslim paketi) Durum Tespit raporu üretir.", "_SH_PROJERAPOR ", "dosya_rapor", null));
             rapor.Items.Add(Dugme("Proje\nÖzeti", "Çizimdeki bölge, direk, hat ve kanal sayılarını ve hakediş onaylarını gösterir.", "_SH_OZET ", "ozet", null));
             rapor.Items.Add(Dugme("Eksik\nMalzeme", "Eksik malzeme bul (PROMAGIS DETAY sorgusu): ör. topraklaması olmayan direkler. Bulunanlar çizimde seçilir, istenirse Excel'e yazılır.", "_SH_DETAY ", "eksik", null));
 
-            // 8) Yardım
+            // 9) Yardım
             var yardim = Panel(sekme, "Yardım");
             yardim.Items.Add(Dugme("Hakkında", "Sürüm ve komut listesi.", "_SH_HAKKINDA ", "bilgi", null));
 
@@ -413,7 +457,12 @@ namespace SebekeHakedis.Eklenti
             catch { }
         }
 
-        /// <summary>Etkin öğenin tip listesini, durumu, hakedişi ve özeti şeritte gösterir.</summary>
+        private static Color? HafizaRengi => HizliSecim.HafizaAcik ? Color.FromRgb(0x23, 0xA4, 0x55) : (Color?)null;
+
+        /// <summary>
+        /// Etkin öğenin cinslerini, tip listesini (seçili cinsin tipleri, katalog sırasıyla), durumu (her durumun simgesiyle),
+        /// hakedişi, hatlarda adet ve ikinci iletkeni ve özeti şeritte gösterir.
+        /// </summary>
         private static void SecimiGoster()
         {
             if (_tip == null) return;
@@ -421,9 +470,27 @@ namespace SebekeHakedis.Eklenti
             try
             {
                 var oge = HizliSecim.Oge;
+                var k = HizliSecim.TemelKatalog;
                 bool tipli = oge != null && (oge.TipliMi || oge.Komut == "SH_KANAL");
+
+                // Cins
+                _cins.Items.Clear();
+                var cinsler = tipli ? HizliSecim.Cinsler(oge, k) : new List<string>();
+                string seciliCins = tipli ? HizliSecim.SeciliCins(oge, k) : "";
+                RibbonButton curCins = null;
+                foreach (var c in cinsler)
+                {
+                    var b = new RibbonButton { Text = k.CinsAdi(c), ShowText = true, Tag = c, ToolTip = k.CinsAdi(c) + " · " + c, Description = c };
+                    _cins.Items.Add(b);
+                    if (c == seciliCins) curCins = b;
+                }
+                if (cinsler.Count == 0) _cins.Items.Add(new RibbonButton { Text = oge == null ? "(öğe seçin)" : "—", ShowText = true });
+                _cins.Current = curCins ?? (_cins.Items.Count > 0 ? _cins.Items[0] : null);
+                _cins.IsEnabled = cinsler.Count > 1 && _aramaSonucu == null;
+
+                // Tip
                 _tip.Items.Clear();
-                var secili = tipli ? HizliSecim.SeciliTip(oge, HizliSecim.TemelKatalog) : null;
+                var secili = tipli ? HizliSecim.SeciliTip(oge, k) : null;
                 var liste = !tipli ? new List<KatalogKalemi>() : new List<KatalogKalemi>(_aramaSonucu ?? HizliSecim.KisaListe(oge));
                 if (secili != null && !liste.Contains(secili)) liste.Insert(0, secili);
                 RibbonButton cur = null;
@@ -439,17 +506,113 @@ namespace SebekeHakedis.Eklenti
                 _tip.IsEnabled = liste.Count > 0;
                 if (_ara != null) Ozellik(_ara, "IsEnabled", tipli);
 
-                foreach (var it in _durum.Items) { var b = it as RibbonButton; if (b != null && (string)b.Tag == HizliSecim.Durum) { _durum.Current = b; break; } }
-                foreach (var it in _dm.Items) { var b = it as RibbonButton; if (b != null && (string)b.Tag == (HizliSecim.DmDurum ?? "")) { _dm.Current = b; break; } }
+                // Durum ve demontaj türü: her seçeneğin yanında simgesi (yeni dolu, mevcut boş, sök-tak yarım, demontaj "/", kesik "//", sökük "X")
+                bool eleman = tipli && oge.ElemanMi;
+                foreach (var it in _durum.Items)
+                {
+                    var b = it as RibbonButton;
+                    if (b == null) continue;
+                    b.Image = eleman && secili != null ? DurumSimgesi(oge.Tur, secili.Cins, (string)b.Tag, HizliSecim.DmDurum) : null;
+                    if ((string)b.Tag == HizliSecim.Durum) _durum.Current = b;
+                }
+                foreach (var it in _dm.Items)
+                {
+                    var b = it as RibbonButton;
+                    if (b == null) continue;
+                    b.Image = eleman && secili != null ? DurumSimgesi(oge.Tur, secili.Cins, "DM", (string)b.Tag) : null;
+                    if ((string)b.Tag == (HizliSecim.DmDurum ?? "")) _dm.Current = b;
+                }
                 foreach (var it in _hakedis.Items) { var b = it as RibbonButton; if (b != null && (int)b.Tag == HizliSecim.Hakedis) { _hakedis.Current = b; break; } }
                 _durum.IsEnabled = tipli;
                 _hakedis.IsEnabled = tipli;
-                bool dm = tipli && oge.ElemanMi && Turler.DemontajMi(HizliSecim.Durum);
+                bool dm = eleman && Turler.DemontajMi(HizliSecim.Durum);
                 Ozellik(_dm, "IsVisible", dm);
                 Ozellik(_dmEtiket, "IsVisible", dm);
+
+                // Hatlar: adet ve ikinci iletken
+                bool hat = tipli && oge.HatMi;
+                Ozellik(_adet, "IsVisible", hat);
+                Ozellik(_adetEtiket, "IsVisible", hat);
+                Ozellik(_ek, "IsVisible", hat);
+                Ozellik(_ekEtiket, "IsVisible", hat);
+                if (hat)
+                {
+                    int adet = HizliSecim.Adet(oge);
+                    foreach (var it in _adet.Items) { var b = it as RibbonButton; if (b != null && (int)b.Tag == adet) { _adet.Current = b; break; } }
+                    _ek.Items.Clear();
+                    var yok = new RibbonButton { Text = "Yok", ShowText = true, Tag = null, ToolTip = "Hatta tek iletken" };
+                    _ek.Items.Add(yok);
+                    var ek = HizliSecim.EkIletken(oge, k);
+                    RibbonButton curEk = yok;
+                    foreach (var it in HizliSecim.EkListe(oge))
+                    {
+                        string ac = TipAciklamasi(it);
+                        var b = new RibbonButton { Text = it.Tanim.Trim(), ShowText = true, Tag = it, ToolTip = it.Tanim.Trim() + " · " + ac, Description = ac };
+                        _ek.Items.Add(b);
+                        if (ek != null && it.Anahtar == ek.Anahtar) curEk = b;
+                    }
+                    _ek.Current = curEk;
+                }
+                Hafiza_();
                 OzetiGoster();
             }
             finally { _yukleniyor = false; }
+        }
+
+        /// <summary>Elemanın verilen durumdaki simgesi (şeritteki durum listesinde).</summary>
+        private static ImageSource DurumSimgesi(string tur, string cins, string durum, string dm)
+        {
+            try
+            {
+                var s = Semboller.Bul(Semboller.BlokAdi(tur, cins, durum, dm));
+                if (s == null) return null;
+                bool demontaj = Semboller.DemontajVaryanti(Semboller.Varyant(durum, dm));
+                var renk = SeritSimgeleri.HexRenk(demontaj ? "#e6b800" : CizimStili.EkranElemanRengi(tur, cins), SeritSimgeleri.Notr);
+                return SeritSimgeleri.SembolCiz(s, renk, 16, false);
+            }
+            catch { return null; }
+        }
+
+        /// <summary>Malzeme hafızası düğmesi: açık / kapalı görünümü ve ipucu (etkin öğe için kaç malzeme eklenecek).</summary>
+        private static void Hafiza_()
+        {
+            if (_hafiza == null) return;
+            _hafiza.IsChecked = HizliSecim.HafizaAcik;
+            _hafiza.LargeImage = SeritSimgeleri.KomutSimgesi("hafiza", 32, HafizaRengi);
+            _hafiza.Image = SeritSimgeleri.KomutSimgesi("hafiza", 16, HafizaRengi);
+            var oge = HizliSecim.Oge;
+            string ek = "";
+            if (oge != null && oge.ElemanMi)
+            {
+                var t = HizliSecim.SeciliTip(oge, HizliSecim.TemelKatalog);
+                string kaynak = "";
+                var l = t != null ? HizliSecim.Hafiza.Bul(oge.Tur, t.Cins, t.Tanim, out kaynak) : null;
+                ek = l != null && l.Count > 0 ? "\n\n" + oge.Ad + " · " + t.Tanim.Trim() + ": " + MalzemeHafizasi.Ozet(l, kaynak) : "\n\n" + oge.Ad + " için hafızada malzeme yok.";
+            }
+            _hafiza.ToolTip = (HizliSecim.HafizaAcik ? "AÇIK: " : "KAPALI: ") +
+                              "yeni konan direğe, trafoya … aynı tür ve tipteki son elemanın malzemeleri kendiliğinden eklenir. Hafıza, bir elemanın malzemeleri düzenlenince (Malzeme, Toplu Malzeme) güncellenir." + ek;
+        }
+
+        private sealed class HafizaIsleyici : ICommand
+        {
+#pragma warning disable 67
+            public event EventHandler CanExecuteChanged;
+#pragma warning restore 67
+            public bool CanExecute(object parameter) => true;
+
+            public void Execute(object parameter)
+            {
+                try
+                {
+                    _yukleniyor = true;
+                    try { HizliSecim.HafizaSec(!HizliSecim.HafizaAcik); }
+                    finally { _yukleniyor = false; }
+                    Hafiza_();
+                    OzetiGoster();
+                    Uygulama.Yaz("Şerit: malzeme hafızası " + (HizliSecim.HafizaAcik ? "açık — yeni elemanlara son malzemeler eklenir." : "kapalı."));
+                }
+                catch (Exception ex) { Uygulama.Yaz("Şerit: " + ex.Message); }
+            }
         }
 
         private static string TipAciklamasi(KatalogKalemi it)
@@ -471,7 +634,13 @@ namespace SebekeHakedis.Eklenti
             string ozet = HizliSecim.Ozet();
             _ozet.Text = ozet.Length > 46 ? ozet.Substring(0, 45).TrimEnd() + "…" : ozet;
             _ozet.ToolTip = "Sıradaki tıklamada çizilecek: " + ozet;
-            _ozet.Image = oge != null ? SeritSimgeleri.OgeSimgesi(oge, 16) : null;
+            ImageSource simge = null;
+            if (oge != null && oge.ElemanMi)
+            {
+                var t = HizliSecim.SeciliTip(oge, HizliSecim.TemelKatalog);
+                if (t != null) simge = DurumSimgesi(oge.Tur, t.Cins, HizliSecim.Durum, HizliSecim.DmDurum);
+            }
+            _ozet.Image = simge ?? (oge != null ? SeritSimgeleri.OgeSimgesi(oge, 16) : null);
         }
 
         private static void TipSecildi(RibbonButton b)
@@ -480,6 +649,38 @@ namespace SebekeHakedis.Eklenti
             if (it == null || HizliSecim.Oge == null) return;
             _yukleniyor = true;
             try { HizliSecim.TipSec(HizliSecim.Oge, it); }
+            finally { _yukleniyor = false; }
+            // Aramadan gelen tip başka cinsten olabilir; cins ve durum simgeleri yenilensin
+            OzetiGoster();
+            YenileErtele();
+        }
+
+        private static void CinsSecildi(RibbonButton b)
+        {
+            string c = b != null ? b.Tag as string : null;
+            if (string.IsNullOrEmpty(c) || HizliSecim.Oge == null) return;
+            _aramaSonucu = null;
+            _yukleniyor = true;
+            try { HizliSecim.CinsSec(HizliSecim.Oge, c); }
+            finally { _yukleniyor = false; }
+            YenileErtele();
+        }
+
+        private static void AdetSecildi()
+        {
+            var b = _adet.Current as RibbonButton;
+            if (b == null || HizliSecim.Oge == null) return;
+            _yukleniyor = true;
+            try { HizliSecim.AdetSec(HizliSecim.Oge, (int)b.Tag); }
+            finally { _yukleniyor = false; }
+            OzetiGoster();
+        }
+
+        private static void EkSecildi(RibbonButton b)
+        {
+            if (b == null || HizliSecim.Oge == null) return;
+            _yukleniyor = true;
+            try { HizliSecim.EkSec(HizliSecim.Oge, b.Tag as KatalogKalemi); }
             finally { _yukleniyor = false; }
             OzetiGoster();
         }
@@ -495,6 +696,28 @@ namespace SebekeHakedis.Eklenti
             Ozellik(_dm, "IsVisible", goster);
             Ozellik(_dmEtiket, "IsVisible", goster);
             OzetiGoster();
+            YenileErtele();
+        }
+
+        private static bool _yenileBekliyor;
+
+        /// <summary>
+        /// Şeritteki listeleri AutoCAD boşa çıkınca yeniden kurar: açılır liste kendi seçim olayının içindeyken öğeleri
+        /// değiştirilmesin diye.
+        /// </summary>
+        private static void YenileErtele()
+        {
+            if (_yenileBekliyor) return;
+            _yenileBekliyor = true;
+            try { AcApp.Idle += BostaYenile; }
+            catch { _yenileBekliyor = false; }
+        }
+
+        private static void BostaYenile(object sender, EventArgs e)
+        {
+            AcApp.Idle -= BostaYenile;
+            _yenileBekliyor = false;
+            try { SecimiGoster(); } catch { }
         }
 
         private static void HakedisSecildi()

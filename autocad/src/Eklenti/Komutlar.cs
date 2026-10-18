@@ -258,14 +258,15 @@ namespace SebekeHakedis.Eklenti
             ed.WriteMessage("\n  SH_HIZLI       Şeritte seçili öğeyi seçili tip, durum ve hakedişle çiz (pencere açılmaz)");
             ed.WriteMessage("\n  SH_HIZLIAYRINTI Şeritteki öğeyi süzgeçli, aramalı pencereyle çiz");
             ed.WriteMessage("\n  Çizim");
-            ed.WriteMessage("\n  SH_ELEMAN      Direk, box, pano, trafo, mufu koy (GIS numarası kendiliğinden)");
-            ed.WriteMessage("\n  SH_HAT         Hat çiz (direkten direğe parçalı; her parçanın metrajı ve etiketi ayrı)");
+            ed.WriteMessage("\n  SH_ELEMAN      Direk, box, pano, trafo, mufu koy (GIS numarası kendiliğinden; malzeme hafızası açıksa son malzemeler eklenir)");
+            ed.WriteMessage("\n  SH_HAT         Hat çiz (her direkte / elemanda parçalı; her parçanın metrajı ve etiketi ayrı; iki iletken, adet)");
             ed.WriteMessage("\n  SH_KANAL       Kablo kanalı çiz (box/direk aralarında parçalı; hacim ölçülerden)");
             ed.WriteMessage("\n  SH_SONDAJ      Yatay sondaj çiz");
             ed.WriteMessage("\n  SH_BOLGE       Bölge (alt proje) sınırı çiz ya da var olan çizgiyi bölge yap");
             ed.WriteMessage("\n  SH_NOKTAAL     Ölçü noktalarını dosyadan al (CSV/TXT)");
             ed.WriteMessage("\n  Düzenleme");
-            ed.WriteMessage("\n  SH_MALZEME     Seçilen nesnenin malzemelerini düzenle");
+            ed.WriteMessage("\n  SH_MALZEME     Seçilen nesnenin malzemelerini düzenle (direğe armatür: simgesi direğin yanında)");
+            ed.WriteMessage("\n  SH_TOPLUMALZEME Seçilen direklere / elemanlara aynı malzemeleri tek seferde ekle");
             ed.WriteMessage("\n  SH_METRAJ      Hat/kanal metrajını çizim uzunluğundan yeniden hesapla");
             ed.WriteMessage("\n  SH_HAKEDIS     Aktif hakedişi değiştir");
             ed.WriteMessage("\n  SH_ONAY        Hakediş onayı (Kontrol → Hakediş → GIS); onaylanan hakediş kilitlenir");

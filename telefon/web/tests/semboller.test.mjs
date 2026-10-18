@@ -18,10 +18,10 @@ test('S1 · telefondaki ortak tablolar (src/ortak/*.js) depodaki ortak/katalog/*
   assert.equal(SEMBOLLER.bicim, 'sebeke-hakedis.semboller');
 });
 
-test('S2 · her aile için YENI · MEVCUT · DMM · DM varyantları var ve geometrisi boş değil', () => {
+test('S2 · her aile için YENI · MEVCUT · DMM · DM · KESIK · SOKUK varyantları var ve geometrisi boş değil', () => {
   const aileler = Object.keys(SEMBOLLER.aileler);
   assert.ok(aileler.length >= 16);
-  for (const a of aileler) for (const v of ['YENI', 'MEVCUT', 'DMM', 'DM']) {
+  for (const a of aileler) for (const v of ['YENI', 'MEVCUT', 'DMM', 'DM', 'KESIK', 'SOKUK']) {
     const s = SEMBOLLER.semboller[a + '_' + v];
     assert.ok(Array.isArray(s) && s.length > 0, a + '_' + v);
     for (const i of s) assert.ok(['L', 'C', 'P', 'S', 'D', 'Y'].includes(i[0]), 'ilkel türü ' + i[0]);
@@ -30,6 +30,20 @@ test('S2 · her aile için YENI · MEVCUT · DMM · DM varyantları var ve geome
   assert.ok(SEMBOLLER.semboller.DIREK_AG_YENI.some((i) => i[0] === 'D'));
   assert.ok(!SEMBOLLER.semboller.DIREK_AG_MEVCUT.some((i) => i[0] === 'D' || i[0] === 'S'));
   assert.ok(SEMBOLLER.semboller.KAFES_OG_DM.some((i) => i[0] === 'L' && i[1] < 0 && i[3] > 0 && i[1] === i[2]));
+  // Altı durum birbirinden farklı (kafes direkte de): demontaj işareti simgenin dışına taşar
+  for (const a of aileler) {
+    const goruntu = ['YENI', 'MEVCUT', 'DMM', 'DM', 'KESIK', 'SOKUK'].map((v) => JSON.stringify(SEMBOLLER.semboller[a + '_' + v]));
+    assert.equal(new Set(goruntu).size, 6, a + ': altı varyant farklı');
+  }
+  const R = SEMBOLLER.aileler.KAFES_AG.yariGenislik;
+  const tasan = (s) => s.filter((i) => i[0] === 'L' && Math.max(Math.abs(i[1]), Math.abs(i[2]), Math.abs(i[3]), Math.abs(i[4])) > R + 1);
+  assert.equal(tasan(SEMBOLLER.semboller.KAFES_AG_MEVCUT).length, 0, 'mevcut kafeste taşan çizgi yok');
+  assert.equal(tasan(SEMBOLLER.semboller.KAFES_AG_DM).length, 1, 'DM: tek taşan çapraz');
+  assert.equal(tasan(SEMBOLLER.semboller.KAFES_AG_KESIK).length, 2, 'KESİK: iki paralel çapraz');
+  assert.equal(tasan(SEMBOLLER.semboller.KAFES_AG_SOKUK).length, 2, 'SÖKÜK: taşan çarpı');
+  const [k1, k2] = tasan(SEMBOLLER.semboller.KAFES_AG_KESIK);
+  assert.ok(Math.abs((k1[4] - k1[2]) / (k1[3] - k1[1]) - (k2[4] - k2[2]) / (k2[3] - k2[1])) < 1e-9, 'KESİK çizgileri paralel');
+  for (const a of aileler) assert.ok(SEMBOLLER.aileler[a].kapsam >= SEMBOLLER.aileler[a].yariGenislik, a + ': kapsam');
   // OG direklerde topraklama işareti (alta inen çizgi), AG'de yok
   assert.ok(SEMBOLLER.semboller.DIREK_OG_MEVCUT.some((i) => i[0] === 'L' && i[1] === 0 && i[3] === 0 && i[4] < -3));
   assert.ok(!SEMBOLLER.semboller.DIREK_AG_MEVCUT.some((i) => i[0] === 'L'));
@@ -56,6 +70,13 @@ test('S3 · blok adları eklentiyle aynı kurala göre seçilir (SH_<aile>_<vary
   assert.equal(sembolBlogu({ kind: 'subscriber', state: 'YENI' }), 'SH_ABONE_YENI');
   assert.equal(sembolAilesi({ kind: 'kiosk', state: 'yeni', attrs: {} }), 'TRAFO_DIREK'); // post yoksa direk tipi sayılır (eski davranış)
   assert.equal(sembolVaryanti('tasinan'), 'DMM');
+  // Demontaj türü: KESİK / SÖKÜK ayrı simge (DM+M sök-tak yarım dolu kalır)
+  assert.equal(sembolBlogu(direk({ state: 'DEMONTAJ', attrs: { dmDurum: 'KESİK' } })), 'SH_KAFES_AG_KESIK');
+  assert.equal(sembolBlogu(direk({ symbol: 'c', group: 'beton', state: 'DEMONTAJ', attrs: { dmDurum: 'SÖKÜK' } })), 'SH_DIREK_AG_SOKUK');
+  assert.equal(sembolBlogu(direk({ state: 'DEMONTAJ', attrs: { dmDurum: '' } })), 'SH_KAFES_AG_DM');
+  assert.equal(sembolBlogu(direk({ state: 'DMM', attrs: { dmDurum: 'KESİK' } })), 'SH_KAFES_AG_DMM');
+  assert.equal(sembolVaryanti('YENI', 'DM', 'kesik'), 'KESIK');
+  assert.equal(sembolVaryanti('', 'DM', 'sökük'), 'SOKUK');
   for (const e of [direk({}), { kind: 'transformer', state: 'yeni', attrs: { post: 'direk' } }, { kind: 'sdk', state: 'YENI' }])
     assert.ok(SEMBOLLER.semboller[sembolBlogu(e).slice(3)], 'tabloda var: ' + sembolBlogu(e));
 });

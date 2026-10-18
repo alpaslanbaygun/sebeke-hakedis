@@ -188,7 +188,7 @@ namespace SebekeHakedis.Cekirdek
                 string ad = (string.IsNullOrEmpty(t.GisId) ? "" : t.GisId + " ") + Turler.ElemanAdi(t.Tur);
                 isle("eleman", t.Id,
                     (h, k) => PromagisYazici.Eleman(t, onEk, PromagisYazici.BlokSec(cp.Elemanlar, t), k),
-                    (o, k) => { var d = (Eleman)o; return PromagisYazici.Eleman(d, onEk, string.IsNullOrEmpty(d.Blok) ? PromagisYazici.BlokOner(cp.Elemanlar, d.Tur, d.Cins, d.Durum) : d.Blok, k); },
+                    (o, k) => { var d = (Eleman)o; return PromagisYazici.Eleman(d, onEk, string.IsNullOrEmpty(d.Blok) ? PromagisYazici.BlokOner(cp.Elemanlar, d.Tur, d.Cins, d.Durum, d.DmDurum) : d.Blok, k); },
                     null, ad, t.Tur, t);
             }
             foreach (var hat in tel.Hatlar)

@@ -35,20 +35,29 @@ const DEMONTAJ_ACI = STIL.direkRenkleri.demontaj;
 const stIdx = (st) => (st === 'YENI' ? 1 : st === 'DMM' ? 2 : 0);
 const YAZI = () => KAT('YAZI'), OLCU = () => KAT('OLCU');
 
+/** Demontaj türünden (KESİK / SÖKÜK) demontaj varyantı: DM · KESIK · SOKUK (eklentideki Semboller.Varyant ile aynı). */
+export function dmVaryanti(dmDurum) {
+  const d = String(dmDurum || '').trim().toLocaleUpperCase('tr').replace(/İ/g, 'I').replace(/Ö/g, 'O').replace(/Ü/g, 'U');
+  if (d.startsWith('KES')) return 'KESIK';
+  if (d.startsWith('SOK')) return 'SOKUK';
+  return 'DM';
+}
+
 /**
- * Sembol varyantı: durumdan (ekipman ve hat durum kodları → YENI · MEVCUT · DMM · DM). PROMAGIS durumu verilmişse
- * eklentiyle aynı kural: M, M+M, KM, ENH, ME → YENI · DM → DM · DM+M → DMM · MEVCUT → MEVCUT.
+ * Sembol varyantı: durumdan (ekipman ve hat durum kodları → YENI · MEVCUT · DMM · DM · KESIK · SOKUK). PROMAGIS durumu
+ * verilmişse eklentiyle aynı kural: M, M+M, KM, ENH, ME → YENI · DM → DM (KESİK → KESIK, SÖKÜK → SOKUK) · DM+M → DMM ·
+ * MEVCUT → MEVCUT.
  */
-export function sembolVaryanti(state, promagisDurumu) {
+export function sembolVaryanti(state, promagisDurumu, dmDurum) {
   const pd = String(promagisDurumu || '').toUpperCase();
   if (pd === 'M' || pd === 'M+M' || pd === 'KM' || pd === 'ENH' || pd === 'ME') return 'YENI';
-  if (pd === 'DM') return 'DM';
+  if (pd === 'DM') return dmVaryanti(dmDurum);
   if (pd === 'DM+M') return 'DMM';
   if (pd === 'MEVCUT') return 'MEVCUT';
   const st = String(state || '').toUpperCase();
   if (st === 'YENI') return 'YENI';
   if (st === 'DMM' || st === 'TASINAN') return 'DMM';
-  if (st === 'DEMONTAJ') return 'DM';
+  if (st === 'DEMONTAJ') return dmVaryanti(dmDurum);
   return 'MEVCUT'; // MEVCUT, ILERIDE, güç/gerilim değişen, tadil…
 }
 /** Ekipmanın sembol ailesi (ortak tablo adları). */
@@ -69,10 +78,10 @@ export function sembolAilesi(e) {
   if (e.kind === 'other') return 'DIGER';
   return 'ABONE';
 }
-/** Ekipmanın blok adı: SH_<aile>_<varyant> (eklentiyle aynı). */
+/** Ekipmanın blok adı: SH_<aile>_<varyant> (eklentiyle aynı); demontajda türü (KESİK / SÖKÜK) ayrı simgedir. */
 export function sembolBlogu(e) {
   const st = e.kind === 'transformer' || e.kind === 'kiosk' || e.kind === 'substation' ? { yeni: 'YENI', tasinan: 'DMM', demontaj: 'DEMONTAJ' }[e.state] || 'MEVCUT' : e.state;
-  return 'SH_' + sembolAilesi(e) + '_' + sembolVaryanti(st, e.promagisDurumu);
+  return 'SH_' + sembolAilesi(e) + '_' + sembolVaryanti(st, e.promagisDurumu, (e.attrs || {}).dmDurum);
 }
 
 function blocks(w) {
