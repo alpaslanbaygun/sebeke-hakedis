@@ -30,6 +30,7 @@ namespace SebekeHakedis.Eklenti
         public void Initialize()
         {
             try { Serit.Kur(); } catch (System.Exception ex) { Yaz("Şerit menü kurulamadı: " + ex.Message); }
+            try { ArmaturTakibi.Baslat(); } catch (System.Exception ex) { Yaz("Armatür takibi başlatılamadı: " + ex.Message); }
             Yaz("Şebeke Hakediş " + Surum + " yüklendi. Şeritte ŞEBEKE HAKEDİŞ sekmesi; komut listesi için SH_HAKKINDA.");
         }
 

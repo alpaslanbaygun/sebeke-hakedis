@@ -140,15 +140,19 @@ Renk teması: **Koyu**). Simgeler açık temada da okunur.
 2. **Elemanlar**: öğeye tıklayın, **pencere açılmadan** çizim başlar (ör. AG Direk → her tıklamada bir direk;
    AG Hat → direkten direğe tıklayın, Enter). Etkin öğe yeşil kare içinde görünür.
 3. **Ayarlar**:
-   - **Tip**: yalnız o öğenin tipleri (son kullanılanlar ve çok kullanılanlar üstte).
+   - **Cins**: önce cinsi seçin (ör. AG direkte *Beton*, *Ağaç*, *Demir*; AG hatta *Çıplak*, *ALPEK*). **Tip**
+     listesi yalnız o cinsin tiplerini katalog sırasıyla gösterir (ALPEK'ler bir arada, araya çıplak iletken girmez).
    - **Ara**: yazıp Enter'a basın (ör. `k2`, `beton 9,3`, `alpek 50`); öğenin bütün tipleri arasında arar, bulunanlar
-     Tip listesine gelir, ilki seçilir. Boş Enter kısa listeye döner.
-   - Altındaki satır **sıradaki tıklamada ne çizileceğini** gösterir: `AG Direk · G-10I · M · 2. hakediş`.
-   - **Durum** (M, M+M, KM, DM, DM+M, MEVCUT), **Hakediş** ("Aktif hakediş" ya da bir numara); **DM türü**
-     (KESİK / SÖKÜK) yalnız DM ve DM+M seçiliyken görünür.
+     Tip listesine gelir, ilki seçilir (cinsi de seçilir). Boş Enter kısa listeye döner.
+   - **Durum** (M, M+M, KM, DM, DM+M, MEVCUT): her durumun yanında çizilecek simge görünür. **Hakediş** ("Aktif
+     hakediş" ya da bir numara); **DM türü** (KESİK / SÖKÜK) yalnız DM ve DM+M seçiliyken görünür.
+   - **Adet** ve **2. iletken** yalnız hat öğelerinde görünür: aynı hatta 3 adet ALPEK, ya da OG + AG (bkz. aşağıda).
+   - Altındaki satır **sıradaki tıklamada ne çizileceğini** gösterir: `AG Direk · 9,3/3 · M · 2. hakediş · +3 malzeme`.
    - **Ayrıntılı…**: aynı öğeyi pencereyle çizer (bütün tipler, GIS numarasını elle verme vb.).
    Seçimler hatırlanır (AutoCAD yeniden açılınca da).
-4. Sağdaki bölümler: **Düzenle** (Malzeme, Metraj, Telefon Görünümü, Çizim Ayarları), **Hakediş** (Aktif Hakediş,
+4. **Malzeme** bölümü: **Malzeme** (seçilen nesnenin malzemeleri), **Toplu Malzeme** (seçilen direklerin hepsine
+   birden malzeme ekler) ve **Malzeme Hafızası** (açık / kapalı; bkz. aşağıda).
+5. Sağdaki bölümler: **Düzenle** (Metraj, Telefon Görünümü, Çizim Ayarları), **Hakediş** (Aktif Hakediş,
    Hakediş Onayı), **Telefon**, **Rapor**, **Yardım**. Ekran darsa AutoCAD sağdaki bölümleri kendisi küçültür.
 
 Çizerken: **Geri** son nesneyi kaldırır, **Ayarlar** seçimleri değiştirir, **Enter** bitirir. GIS numarası
@@ -159,10 +163,17 @@ kendiliğinden artar. Her komut AutoCAD'in **U** (Geri Al) komutuyla tek seferde
 Bütün pencereler koyu temadadır; **Enter** birincil düğmeye (Çiz, Kaydet), **Esc** Vazgeç'e basar. Pencere
 başlığından tutup taşınır.
 
-- **Eleman koy / Hat çiz**: solda tür, ortada arama kutusu + cins süzgeci + tip listesi (**Son kullanılanlar** ve
-  **Tüm tipler**; her satırda tanım, cins, ağırlık, poz no), sağda durum (her kodun anlamıyla), demontaj türü,
-  hakediş ve ilk GIS numarası (boş bırakılırsa kendiliğinden; kutuda önerilen numara görünür). Altta
-  "Çizilecek: …" satırı. **Onaylı (kilitli) bir hakediş** seçilirse sarı uyarı çıkar ve Çiz düğmesi kapanır.
+- **Eleman koy / Hat çiz**: solda tür, ortada arama kutusu + **cins düğmeleri** (Beton, Ağaç, Demir…; yanında
+  tip sayısı) + tip listesi (**Son kullanılanlar** ve **Tüm tipler**; her satırda simge, tanım, cins, ağırlık, poz
+  no), sağda durum (her kodun anlamıyla), demontaj türü, hakediş ve ilk GIS numarası (boş bırakılırsa
+  kendiliğinden; kutuda önerilen numara görünür). Altta "Çizilecek: …" satırı ve simgesi. **Onaylı (kilitli) bir
+  hakediş** seçilirse sarı uyarı çıkar ve Çiz düğmesi kapanır.
+  - Eleman penceresinde **Son malzemeleri ekle (malzeme hafızası)** kutusu: hafızada ne varsa yanında yazar.
+  - Hat penceresinde **1. iletken** ve **2. iletken** yuvaları, her birinin **Adet** kutusu (1–12). 2. iletkeni
+    kaldırmak için yanındaki **Boşalt**.
+- **Toplu malzeme**: solda katalog (arama kutusuyla), **Ekle** ile sağdaki tabloya; tabloda miktar ve durum
+  ("elemana göre" ya da bir durum), altta hakediş. **Hafızadakiler** son konan elemanın malzemelerini tabloya getirir.
+  **Malzemeleri ekle** seçilen bütün direklere yazar.
 - **Kablo kanalı çiz**: kanaldaki kablolar, zemin listesi, ölçüler ve **hızlı seçim** düğmeleri (40×40×80 …).
 - **Yatay sondaj çiz**: tip listesi, durum, hakediş.
 - **Malzemeler**: nesnenin kendi pozu en üstte (kalın, simgeli); hücreye tıklayıp durum, miktar, hakediş, DM
@@ -175,16 +186,64 @@ başlığından tutup taşınır.
 
 ### Hat, kanal ve sondaj parça parça çizilir
 
+Hat çizerken direğe, SDK'ya, aydınlatma direğine, ENH direğine, pano / trafoya **simgesinin üstüne** tıklamanız
+yeter; eklenti en yakın elemanı yakalar (simge ne kadar büyükse o kadar geniş; ekran uzaktaysa da birkaç piksel
+payla). **Boş yere tıklamak yalnız köşe koyar**, direk konmaz.
+
 Hat her direkte, SDK'da ya da pano/trafoda **biter ve yeniden başlar**: iki direk arası ayrı bir nesnedir, metrajı
-ve etiketi kendine aittir. Direksiz ara köşeler parçanın içinde kalır. Her parçanın uzunluğu iki direğin arasında
-yazılır. Kanal ve sondaj da aynıdır. Telefon bu parçaları tek hat olarak gösterir, geri gönderince parçalar korunur.
+ve etiketi kendine aittir. Direksiz ara köşeler parçanın içinde kalır. Her parçanın üstüne **hat bilgisi**
+(durum işareti, iletken, uzunluk) ve iki direğin arasına uzunluğu yazılır. Kanal ve sondaj da aynıdır. Telefon bu
+parçaları tek hat olarak gösterir, geri gönderince parçalar korunur.
+
+Yakalama mesafesinin alt sınırı **Çizim Ayarları › Genel › Direğe yakalama mesafesi**'dir; **0** yakalamayı kapatır.
+
+### İki iletken, adet ve müşterek hat
+
+- **Adet**: aynı iletkenden birkaç tane (ör. 3 adet 3X50/16+70 ALPEK). Malzeme miktarı adet × hat boyu olur;
+  etikete `3x(3X50/16+70 ALPEK)/40m` yazılır (40 m hattın kendi boyu).
+- **2. iletken**: aynı hatta ikinci bir iletken ya da kablo (ör. 3P+R yanına 1X16+25 ALPEK). Her iletken ayrı malzeme
+  satırıdır; etikette `+` ile birleşir.
+- **Müşterek hat**: 1. iletken OG, 2. iletken AG olarak gelir (ör. 3xSW + 4P+R). Etiket `OG / AG` biçimindedir:
+  `^ 3xSW / 4P+R/120m`. Raporda OG ve AG iletkeni ayrı satırlarda çıkar.
+- Telefona gönderince her iletken telefonda ayrı devre olur (adediyle); geri gelince yine aynı satırlar yazılır.
+
+### Malzeme hafızası ve toplu malzeme
+
+- **Malzeme hafızası** açıkken (şeritte **Malzeme Hafızası** düğmesi yeşil) son konan ya da malzemesi değiştirilen
+  direğin, trafonun, SDK'nın… malzemeleri hatırlanır ve **aynı tür ve tipteki** bir sonraki elemana kendiliğinden
+  eklenir (aynı tipte yoksa aynı türdeki son elemanınki). Şeridin özet satırında `+3 malzeme` görünür.
+  Kapatmak için düğmeye bir kez tıklayın. Hafıza AutoCAD kapanınca da kalır.
+- Malzemenin durumu elemanla aynıysa yeni elemanın durumunu alır (ör. yeni direğe M, sök-tak direğe DM+M);
+  farklı seçilmişse (ör. mevcut direğe yeni travers) olduğu gibi kalır.
+- **Toplu Malzeme** (`SH_TOPLUMALZEME`): direkleri seçin (ya da önce seçip düğmeye basın), pencerede malzemeleri
+  ve miktarlarını girin, **Malzemeleri ekle**. Hepsine birden eklenir; onaylı (kilitli) hakedişe eklenmez.
+
+### Armatür
+
+Aydınlatma kategorisinde **Armatür**'ü seçip bir **direğin üstüne** tıklayın: armatür o direğin malzemesi olur ve
+**simgesi direğin hemen yanına** (sol üstüne) çizilir. Boş yere tıklarsanız ayrı bir armatür konur. **Geri** son
+eklenen armatürü direkten çıkarır. **Malzeme** penceresinden bir direğe armatür kalemi eklenirse de simgesi
+kendiliğinden çizilir; kalem silinince simge de kalkar. Direği AutoCAD'in komutlarıyla taşır, kopyalar ya da
+silerseniz simgesi de onunla gider (Geri Al dahil). Simgeyi tek başına başka yere çekerseniz o yer direğe göre
+saklanır.
 
 ### Görünüm: telefondakiyle aynı
 
 Simgeler, renkler, çizgi tipleri ve yazılar telefondaki çizimle birebir aynıdır (`ortak/katalog/cizim-stili.json`).
-Beton / ağaç direk daire, demir direk kare; yeni dolu, mevcut boş, sök-tak yarım, demontaj çapraz. Simgeler
-metre cinsindendir, 1 ölçekle konur. Eski bir çizimi bu görünüme çevirmek için **Telefon Görünümü** (`SH_GORUNUM`);
-değişmeyen PROMAGIS bloklarına dokunulmaz. PROMAGIS simgeleri istenirse **Çizim Ayarları › Görünüm**.
+Beton / ağaç direk daire, demir direk kare. Her durumun simgesi ayrıdır:
+
+| Durum | Simge |
+| --- | --- |
+| Yeni (M, M+M, KM) | dolu |
+| Mevcut | boş |
+| Sök-tak (DM+M) | yarım dolu |
+| Demontaj (DM) | boş + simgeden taşan tek çizgi `/` |
+| Demontaj, KESİK | boş + iki paralel çizgi `//` |
+| Demontaj, SÖKÜK | boş + çarpı `X` |
+
+Demontaj simgeleri sarı çizilir. Simgeler metre cinsindendir, 1 ölçekle konur. Eski bir çizimi bu görünüme çevirmek
+için **Telefon Görünümü** (`SH_GORUNUM`); değişmeyen PROMAGIS bloklarına dokunulmaz. PROMAGIS simgeleri istenirse
+**Çizim Ayarları › Görünüm**.
 
 ### Diğer düğmeler
 

@@ -171,6 +171,9 @@ namespace SebekeHakedis.Eklenti
             double enBuyuk = 0.5;
             Action<double, double> kapsa = (x, y) => enBuyuk = Math.Max(enBuyuk, Math.Max(Math.Abs(x), Math.Abs(y)));
             var olcu = Semboller.Bul(Semboller.OnEk + s.Aile + "_MEVCUT") ?? s;
+            // Demontaj işaretleri simgeden taşar (kafes direkte "/" ile "X"in farkı yalnız taşan uçlardadır): ölçek ailenin
+            // kapsamına göre küçülür ki taşan uçlar simgede görünsün (köşede biraz kırpılır). Bütün varyantlar aynı ölçekte.
+            enBuyuk = Math.Max(enBuyuk, s.Kapsam * 0.8);
             foreach (var i in olcu.Ilkeller)
             {
                 var d = i.Sayilar;

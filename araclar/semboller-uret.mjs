@@ -78,7 +78,7 @@ function dmIsareti(R, varyant) {
 }
 
 // ---- Aileler ----------------------------------------------------------------------------------
-// daire: {r, toprak}   çokgen: {kose, bosIsaret (yalnız MEVCUT/DM'de), herZaman (her varyantta), toprak}
+// daire: {r, toprak}   çokgen: {kose, bosIsaret (yalnız MEVCUT'ta), herZaman (her varyantta), toprak}
 const AILELER = {
   DIREK_AG: { ad: 'AG direk · beton / ağaç', daire: 2.25 },
   KAFES_AG: { ad: 'AG direk · demir (kafes)', kose: kare(4.6), bosIsaret: 'X' },
@@ -102,7 +102,7 @@ const AILELER = {
 //   YENI   montaj (M, M+M, KM, ENH, ME): dolu
 //   MEVCUT mevcut: boş (kafes direkte içi çarpı)
 //   DMM    sök-tak (DM+M): yarım dolu (kafes direkte sol ve sağ üçgenler)
-//   DM     demontaj: boş + simgeden taşan tek çapraz "/"
+//   DM     demontaj: boş (kafesin çarpısı da yok) + simgeden taşan tek çapraz "/"
 //   KESIK  demontaj, kesik: boş + iki paralel çapraz "//"
 //   SOKUK  demontaj, sökük: boş + taşan çarpı "X"
 const VARYANTLAR = ['YENI', 'MEVCUT', 'DMM', 'DM', 'KESIK', 'SOKUK'];
@@ -128,7 +128,9 @@ function uret(aile, varyant) {
         out.push(['S', [[-h, -h], [0, 0], [-h, h], [-h, h]]], ['S', [[h, -h], [0, 0], [h, h], [h, h]]]);
       } else out.push(...yelpaze(solYari(k)));
     }
-    if (varyant === 'MEVCUT' || demontajMi(varyant)) {
+    // İç işaret (kafes çarpısı, SDK çaprazı) yalnız mevcutta: demontajda simge boştur, içinde yalnız demontaj işareti
+    // görünür ("/" ile "X" kafesin çarpısıyla karışmasın diye)
+    if (varyant === 'MEVCUT') {
       if (a.bosIsaret === 'X') { const h = R; out.push(['L', -h, -h, h, h], ['L', h, -h, -h, h]); }
       if (a.bosIsaret === 'capraz') { const [p0, , p2] = k; out.push(['L', ...pt(p0), ...pt(p2)]); }
     }

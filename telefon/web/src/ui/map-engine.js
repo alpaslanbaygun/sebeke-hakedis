@@ -284,7 +284,8 @@ export class MapEngine {
       g.lineWidth = 2; g.strokeStyle = col; g.fillStyle = mode === 'full' ? col : '#0b1326';
       g.beginPath(); if (sq) g.rect(s.x - r, s.y - r, 2 * r, 2 * r); else g.arc(s.x, s.y, r, 0, Math.PI * 2); g.fill(); g.stroke();
       if (mode === 'half') { g.fillStyle = col; g.beginPath(); if (sq) { g.moveTo(s.x - r, s.y - r); g.lineTo(s.x, s.y); g.lineTo(s.x - r, s.y + r); g.closePath(); g.moveTo(s.x + r, s.y - r); g.lineTo(s.x, s.y); g.lineTo(s.x + r, s.y + r); g.closePath(); } else { g.arc(s.x, s.y, r, Math.PI / 2, Math.PI * 1.5); g.closePath(); } g.fill(); }
-      if (mode === 'none' && sq) { g.beginPath(); g.moveTo(s.x - r, s.y - r); g.lineTo(s.x + r, s.y + r); g.moveTo(s.x + r, s.y - r); g.lineTo(s.x - r, s.y + r); g.stroke(); }
+      // Kafesin iç çarpısı yalnız mevcutta; demontajda simge boş, içinde yalnız demontaj işareti (AutoCAD simgeleriyle aynı)
+      if (mode === 'none' && sq && st !== 'DEMONTAJ') { g.beginPath(); g.moveTo(s.x - r, s.y - r); g.lineTo(s.x + r, s.y + r); g.moveTo(s.x + r, s.y - r); g.lineTo(s.x - r, s.y + r); g.stroke(); }
       if (st === 'DEMONTAJ' && this.layers.demontaj) this.dmIsareti(g, s, (e.attrs || {}).dmDurum);
       if (st === 'ILERIDE') { g.fillStyle = '#0b1326'; g.beginPath(); g.arc(s.x, s.y, r / 2.2, 0, Math.PI * 2); g.fill(); }
       // Aydınlatma direği: konsol kolu + sarı lamba başlığı (AG/OG direklerinden net ayrılır)

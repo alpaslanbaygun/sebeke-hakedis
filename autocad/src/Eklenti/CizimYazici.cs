@@ -24,12 +24,11 @@ namespace SebekeHakedis.Eklenti
 
         /// <summary>
         /// Blok tanımının sürümü (blok sözlüğünde saklanır). 2: metre cinsinden geometri, 1 ölçek, telefon yazı düzeni;
-        /// 3: panoda çıkış şeması öznitelikleri (C_1…C_8); 4: demontaj işaretleri simgeden taşar (DM "/", KESİK "//", SÖKÜK "X").
+        /// 3: panoda çıkış şeması öznitelikleri (C_1…C_8); 4: demontaj işaretleri simgeden taşar (DM "/", KESİK "//", SÖKÜK "X"),
+        /// demontajda kafes direğin iç çarpısı yok.
         /// </summary>
         private const string BlokSurumu = "4";
 
-        /// <summary>Direğin armatür simgesinin tanıtıcısı (direğin genişletilmiş verisinde).</summary>
-        private const string ArmaturUygulamasi = PromagisYazici.ArmaturUygulamasi;
         private const string Sozluk = "SEBEKE_HAKEDIS", BlokKaydi = "BLOK";
 
         private readonly Database _db;
@@ -739,47 +738,56 @@ namespace SebekeHakedis.Eklenti
 
         // ---------------- Armatür simgesi (direğin malzemesi) ----------------
 
-        /// <summary>Direğin armatür simgesi (SH_ARM verisindeki tanıtıcıyla); yoksa null.</summary>
-        private BlockReference ArmaturBul(BlockReference direk)
+        /// <summary>
+        /// Direğin armatür simgesi (SH_ARM verisindeki tanıtıcıyla; simgenin sahibi bu direk olmalı — AutoCAD'le kopyalanmış
+        /// direk asıl direğin simgesini almasın); yoksa null. dx, dy: simgenin direğe göre saklı yeri (konumlu: yazılı mı).
+        /// </summary>
+        private BlockReference ArmaturBul(BlockReference direk, out double dx, out double dy, out bool konumlu)
         {
-            var xd = Toplayici.XdataOku(direk);
-            List<string> l;
-            if (!xd.TryGetValue(ArmaturUygulamasi, out l) || l.Count == 0 || string.IsNullOrEmpty(l[0])) return null;
+            string tanitici;
+            if (!ArmaturBagi.DirekVerisi(direk, out tanitici, out dx, out dy, out konumlu)) return null;
             ObjectId id;
-            if (!Toplayici.TaniticiylaBul(_db, l[0], out id) || id.IsErased) return null;
+            if (!Toplayici.TaniticiylaBul(_db, tanitici, out id) || id.IsErased) return null;
             var br = _tr.GetObject(id, OpenMode.ForRead, false) as BlockReference;
-            return br != null && !br.IsErased ? br : null;
+            if (br == null || br.IsErased) return null;
+            string sahip = ArmaturBagi.SimgeSahibi(br);
+            return sahip == null || sahip == direk.Handle.ToString() ? br : null;
         }
 
-        private void ArmaturVerisiYaz(BlockReference direk, string tanitici)
+        private BlockReference ArmaturBul(BlockReference direk)
         {
-            UygulamalariKaydet();
-            if (!direk.IsWriteEnabled) direk.UpgradeOpen();
-            using (var rb = string.IsNullOrEmpty(tanitici)
-                ? new ResultBuffer(new TypedValue((int)DxfCode.ExtendedDataRegAppName, ArmaturUygulamasi))
-                : new ResultBuffer(new TypedValue((int)DxfCode.ExtendedDataRegAppName, ArmaturUygulamasi), new TypedValue((int)DxfCode.ExtendedDataAsciiString, tanitici)))
-                direk.XData = rb;
+            double dx, dy;
+            bool konumlu;
+            return ArmaturBul(direk, out dx, out dy, out konumlu);
         }
 
         /// <summary>
-        /// Direkte armatür malzemesi varsa armatürün simgesini direğin hemen yanına çizer (ya da yerini, durumunu, rengini
-        /// günceller); armatür kalmadıysa simgeyi siler. Simge direğin katmanındadır, kendi verisi yoktur (rapora girmez).
+        /// Direkte armatür malzemesi varsa armatürün simgesini direğin hemen yanına çizer (ya da durumunu, rengini günceller;
+        /// kullanıcının taşıdığı yer korunur); armatür kalmadıysa simgeyi siler. Simge direğin katmanındadır; verisinde
+        /// yalnız sahibi olan direk yazılıdır (rapora girmez). Direk AutoCAD'le taşınınca simge ArmaturTakibi ile gider.
         /// </summary>
         private void ArmaturYaz(BlockReference direk, CadVarlik v)
         {
-            var mevcut = ArmaturBul(direk);
+            double dx, dy;
+            bool konumlu;
+            var mevcut = ArmaturBul(direk, out dx, out dy, out konumlu);
             bool gerek = !string.IsNullOrEmpty(v.Armatur) && BlokKullanilabilir(v.Armatur);
+            UygulamalariKaydet();
             if (!gerek)
             {
                 if (mevcut != null)
                 {
                     mevcut.UpgradeOpen();
                     mevcut.Erase();
-                    ArmaturVerisiYaz(direk, null);
                 }
+                string eski;
+                double ex, ey;
+                bool ek;
+                if (ArmaturBagi.DirekVerisi(direk, out eski, out ex, out ey, out ek)) ArmaturBagi.DirekVerisiYaz(direk, null, 0, 0);
                 return;
             }
-            var konum = new Point3d(direk.Position.X + v.ArmaturDx, direk.Position.Y + v.ArmaturDy, direk.Position.Z);
+            if (mevcut == null || !konumlu) { dx = v.ArmaturDx; dy = v.ArmaturDy; }
+            var konum = new Point3d(direk.Position.X + dx, direk.Position.Y + dy, direk.Position.Z);
             var btrId = Blok(v.Armatur);
             if (mevcut == null)
             {
@@ -789,10 +797,13 @@ namespace SebekeHakedis.Eklenti
                 if (v.ArmaturRengi >= 0) br.Color = Color.FromColorIndex(ColorMethod.ByAci, v.ArmaturRengi);
                 Ms.AppendEntity(br);
                 _tr.AddNewlyCreatedDBObject(br, true);
-                ArmaturVerisiYaz(direk, br.Handle.ToString());
+                ArmaturBagi.SahibiYaz(br, direk.Handle.ToString());
+                ArmaturBagi.DirekVerisiYaz(direk, br.Handle.ToString(), dx, dy);
                 return;
             }
             mevcut.UpgradeOpen();
+            if (!konumlu) ArmaturBagi.DirekVerisiYaz(direk, mevcut.Handle.ToString(), dx, dy);
+            if (ArmaturBagi.SimgeSahibi(mevcut) == null) ArmaturBagi.SahibiYaz(mevcut, direk.Handle.ToString());
             if (mevcut.Position.DistanceTo(konum) > 1e-6) mevcut.Position = konum;
             if (mevcut.BlockTableRecord != btrId) mevcut.BlockTableRecord = btrId;
             if (mevcut.LayerId != direk.LayerId) mevcut.LayerId = direk.LayerId;

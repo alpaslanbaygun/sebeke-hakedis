@@ -770,7 +770,7 @@ namespace SebekeHakedis.Eklenti
                 set
                 {
                     _kesit = value;
-                    Adet.Enabled = value != null;
+                    Adet.Visible = value != null;
                     if (Bosalt != null) Bosalt.Visible = value != null;
                     Invalidate();
                 }
@@ -807,17 +807,18 @@ namespace SebekeHakedis.Eklenti
             {
                 base.OnPaint(e);
                 var g = e.Graphics;
-                int w = Adet.Left - Olcu.S(20);
-                Boya.Yazi(g, Baslik + (_etkin ? "  ·  listeden seçin" : ""), KoyuYazi.Kucuk, new Rectangle(Olcu.S(12), Olcu.S(6), Width - Olcu.S(24), Olcu.S(16)),
+                // Boş yuvada adet kutusu gizlidir: yazı bütün genişliği kullanır
+                int w = (_kesit != null ? Adet.Left : Width) - Olcu.S(20);
+                Boya.Yazi(g, Baslik + (_etkin ? "  ·  listeden seçin" : ""), KoyuYazi.Kucuk, new Rectangle(Olcu.S(12), Olcu.S(6), Math.Max(1, w), Olcu.S(16)),
                     _etkin ? KoyuRenk.Yesil : KoyuRenk.Ikincil, TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
-                Boya.Yazi(g, "Adet", KoyuYazi.Kucuk, new Rectangle(Adet.Left, Olcu.S(6), Adet.Width, Olcu.S(16)), KoyuRenk.Ikincil,
-                    TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.SingleLine);
                 if (_kesit == null)
                 {
                     Boya.Yazi(g, "Yok — eklemek için tıklayıp listeden seçin", KoyuYazi.Govde, new Rectangle(Olcu.S(12), Olcu.S(26), Math.Max(1, w), Olcu.S(22)), KoyuRenk.Soluk,
                         TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
                     return;
                 }
+                Boya.Yazi(g, "Adet", KoyuYazi.Kucuk, new Rectangle(Adet.Left, Olcu.S(6), Adet.Width, Olcu.S(16)), KoyuRenk.Ikincil,
+                    TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.SingleLine);
                 Boya.Yazi(g, _kesit.Tanim.Trim(), KoyuYazi.Kalin, new Rectangle(Olcu.S(12), Olcu.S(24), Math.Max(1, w), Olcu.S(20)), KoyuRenk.Yazi,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
                 Boya.Yazi(g, _k != null ? _k.CinsAdi(_kesit.Cins) : _kesit.Cins, KoyuYazi.Kucuk, new Rectangle(Olcu.S(12), Olcu.S(44), Math.Max(1, w), Olcu.S(16)), KoyuRenk.Ikincil,
@@ -863,14 +864,13 @@ namespace SebekeHakedis.Eklenti
                 // Sağ: iletkenler (iki yuva), durum, hakediş
                 Etiket(f, "Bu hattaki iletkenler", 604, 56, 300, KoyuYazi.Kalin, KoyuRenk.Yazi);
                 var yuva1 = Koy(f, new IletkenYuvasi("1. iletken", o.Katalog, false), 604, 80, 300, 70);
-                var yuva2 = Koy(f, new IletkenYuvasi("2. iletken (müşterek hatta AG / OG, ya da ikinci kablo)", o.Katalog, true), 604, 158, 300, 70);
+                var yuva2 = Koy(f, new IletkenYuvasi("2. iletken (isteğe bağlı)", o.Katalog, true), 604, 158, 300, 70);
                 var durum = new DurumSecici(f, 604, 240, 300, onceki != null ? onceki.Durum : o.Ayar.SonDeger("hat.durum", "M"));
                 int y = 240 + durum.Boy + 12;
                 Etiket(f, "Hakediş", 604, y);
                 var hak = Koy(f, new SayiKutusu(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis), 604, y + 20, 120, 30);
                 y += 62;
-                const string normal = "Her direkte, SDK'da ya da başka bir elemanda hat biter, yeni parça başlar; her parçaya hat bilgisi ve uzunluğu yazılır. " +
-                                      "Metraj çizim uzunluğundan (ayarlardaki yuvarlama ve ek pay); 3 adet iletkende 3 katı.";
+                const string normal = "Hat her direkte, SDK'da biter, yeni parça başlar; her parçaya hat bilgisi yazılır. 3 adette metraj 3 katı.";
                 var bilgi = Koy(f, new BilgiCubugu(BilgiTuru.Bilgi, normal), 604, y, 300, Math.Max(52, icSon - y));
 
                 var suzgec = onceki != null ? onceki.Cinsler : new List<string>();
@@ -1655,8 +1655,8 @@ namespace SebekeHakedis.Eklenti
                 Koy(w, new Cerceve(g), 542, 108, 422, icSon - 108 - 44);
                 var hafiza = Koy(w, new KoyuDugme("Hafızadakiler", DugmeTuru.Ikincil, Boya.Simge("malzeme", KoyuRenk.Ikincil, 16)), 542, icSon - 36, 150, 34);
                 var sil = Koy(w, new KoyuDugme("Satırı sil", DugmeTuru.Ikincil, Boya.Simge("sil", KoyuRenk.Ikincil, 16)), 702, icSon - 36, 120, 34);
-                Etiket(w, "Hakediş", 836, icSon - 58);
-                var hak = Koy(w, new SayiKutusu(1, 999, o.Hakedis), 836, icSon - 36, 128, 34);
+                Etiket(w, "Hakediş", 834, icSon - 28, 56);
+                var hak = Koy(w, new SayiKutusu(1, 999, o.Hakedis), 890, icSon - 36, 74, 34);
 
                 var satirlar = new List<TopluMalzemeSatiri>();
                 Action ozetYaz = () =>

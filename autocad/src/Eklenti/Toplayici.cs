@@ -30,6 +30,7 @@ namespace SebekeHakedis.Eklenti
 
                     var xd = XdataOku(ent);
                     if (xd.Count == 0) continue; // PROMAGIS nesneleri her zaman genişletilmiş veri taşır
+                    if (xd.Count == 1 && xd.ContainsKey(PromagisYazici.ArmaturUygulamasi)) continue; // direğin armatür simgesi (süs)
 
                     var v = Cevir(ent, tr);
                     if (v == null) continue;
