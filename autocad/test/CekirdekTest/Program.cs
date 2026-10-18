@@ -71,7 +71,15 @@ namespace SebekeHakedis.Test
             Esit("SH_DIREK_AYD_YENI", Semboller.BlokAdi("AYD_DIREK", "AYD_GLV_PLG", "M"), "simge: aydınlatma direği (galvaniz olsa da daire)");
             Esit("SH_TRAFO_DIREK_MEVCUT", Semboller.BlokAdi("TRAFO_DIREGI", "TR_DİREK_GLV", "MEVCUT"), "simge: trafo direği");
             Esit("SH_TRAFO_KOSK_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "M"), "simge: beton köşk");
-            Esit("SH_TRAFO_BINA_MEVCUT", Semboller.BlokAdi("TRAFO_MERKEZI", "TRAFO_BİNASI", "KM"), "simge: trafo binası (KM → mevcut)");
+            Esit("SH_TRAFO_BINA_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "TRAFO_BİNASI", "KM"), "simge: trafo binası (KM → PROMAGIS'teki gibi yeni)");
+            Esit("SH_KAFES_AG_YENI", Semboller.BlokAdi("AG_DIREK", "AG_DEMİR_GLV", "ME"), "simge: mutabakat eksiği → yeni");
+            Esit("SH_ARMATUR_YENI", Semboller.BlokAdi("DIGER", "ARMATÜR", "M"), "simge: diğer › armatür");
+            Esit("SH_MENHOL_MEVCUT", Semboller.BlokAdi("DIGER", "MENHOL", "MEVCUT"), "simge: diğer › menhol");
+            var kmHat = new Hat { Tur = "OG_HAVAI", AnaKesit = "3xSW", Durum = "KM" };
+            kmHat.Kalemler.Add(new Kalem { Kaynak = "HAT", Tanim = "3xSW", Miktar = 120 });
+            Esit("/3xSW\\/120m/({H})", PromagisYazici.HatEtiketi(kmHat), "hat etiketi: KM → /tip\\");
+            kmHat.Durum = "ENH";
+            Esit("{3xSW}/120m/({H})", PromagisYazici.HatEtiketi(kmHat), "hat etiketi: ENH → {tip}");
             Esit("SH_SDK_YENI", Semboller.BlokAdi("BOX", "BOX_PANO", "M"), "simge: box → SDK");
             Esit("SH_PANO_YENI", Semboller.BlokAdi("PANO", "AG_PANO_HT", "M+M"), "simge: pano");
             Esit("SH_MUFU_MEVCUT", Semboller.BlokAdi("EK_MUFU", "EK_MUFU_AG_ALM", "MEVCUT"), "simge: ek mufu");

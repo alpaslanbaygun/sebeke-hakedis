@@ -57,6 +57,19 @@ export function promagisDurumu(state, supply) {
 }
 /** İş türü (montaj / demontaj / dmm) → PROMAGIS durumu. */
 const isDurumu = (job, supply) => (job === 'montaj' ? (supply && ESLESME.tedarik[supply]) || 'M' : ESLESME.isler[job] || 'M');
+/**
+ * Kaydın PROMAGIS durumu: AutoCAD'den gelen ya da kullanıcının seçtiği özgün kod (sebeke.durum) telefondaki durumla
+ * hâlâ uyuşuyorsa aynen döner (KM, ENH, ME ve M / M+M ayrımı korunur); yoksa telefon durumundan üretilir.
+ */
+export function korunanDurum(sb, state, trafo, supply) {
+  const d = sb && sb.durum ? String(sb.durum).trim().toUpperCase() : '';
+  if (d && ESLESME.durumlarTers[d] && voltDurumu(d, trafo) === state) return d;
+  return promagisDurumu(state, supply);
+}
+/** Telefon durumuna uyan PROMAGIS kodları (seçim listesi için): [[kod, ad], …]. */
+export function promagisSecenekleri(state, trafo) {
+  return Object.keys(ESLESME.durumlarTers).filter((k) => k !== 'aciklama' && voltDurumu(k, trafo) === state).map((k) => [k, k + ' · ' + (ESLESME.durumAdlari[k] || k)]);
+}
 
 /** Direk tipi adı: telefon → PROMAGIS yazımı (beton 9.3/8 → 9,3/8; GD-10 (3 AWG) → G-D-10 (sw)). */
 export function promagisTip(grup, ad) {
@@ -131,7 +144,7 @@ export function sebekeModel(ps, opts = {}) {
     if (!p || p.E == null) { uyarilar.push(e.no + ': konumu yok, dosyaya yazılmadı'); continue; }
     const ms = result.matsByEq.get(e.id) || { items: [], job: jobOf(e) };
     const tanim = elemanTanimi(e, cat);
-    const durum = promagisDurumu(e.state, tanim.tedarik);
+    const durum = korunanDurum(e.sebeke, e.state, e.kind === 'transformer', tanim.tedarik);
     if (durum === null) { uyarilar.push(e.no + ': "ileride" durumundaki obje AutoCAD dosyasına yazılmaz'); continue; }
     const hak = hakedisi(e);
     const bolge = bolgeIdi(p.E, p.N);
@@ -168,7 +181,7 @@ export function sebekeModel(ps, opts = {}) {
     const hatTuru = hatTuruSec(l);
     const iletkenler = li.items.filter((x) => !x.kanal && !x.material && !x.manual && (x.conductor || x.role));
     const tedarik = tedarikOf(cat, iletkenler.length ? iletkenler[0].servis : null);
-    const durum = promagisDurumu(l.state, tedarik);
+    const durum = korunanDurum(l.sebeke, l.state, false, tedarik);
     if (durum === null) { uyarilar.push(l.lineNo + ': "ileride" durumundaki hat AutoCAD dosyasına yazılmaz'); continue; }
     const km = l.install === 'yeralti' ? kanalModel(l.cable) : null;
     const kablolu = !(l.channelOnly && !(l.circuits || []).length);
@@ -293,7 +306,7 @@ function anaKalemYap(tanim, kendi, durum, hak, e) {
   const kat = katalogKalemi(tanim.cins, tanim.tip);
   const kg = kendi && kendi.kgPer ? kendi.kgPer : tanim.kg;
   const it = kat || sb || { cins: tanim.cins, tanim: tanim.tip || (kendi ? kendi.name : ''), birim: kg ? 'ad/kg' : 'ad/ad', katsayi: kg || 1, tarife: tanim.tarife || cinsTarifesi(tanim.cins) };
-  const k = SH.kalemYap(it, { miktar: kendi ? kendi.qty : 1, durum: kendi && kendi.jobOverride ? isDurumu(kendi.jobOverride, tanim.tedarik) : durum, hakedis: hak, ana: true, kaynak: 'NIT', dmDurum: durum === 'DM' ? (e.attrs && e.attrs.dmDurum) || '' : '' });
+  const k = SH.kalemYap(it, { miktar: kendi ? kendi.qty : 1, durum: kendi && kendi.jobOverride ? isDurumu(kendi.jobOverride, tanim.tedarik) : durum, hakedis: hak, ana: true, kaynak: 'NIT', dmDurum: durum === 'DM' || durum === 'DM+M' ? (e.attrs && e.attrs.dmDurum) || '' : '' });
   if (kendi && kendi.servis) k.servis = kendi.servis;
   return k;
 }
@@ -462,9 +475,10 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     const et = ESLESME.elemanTurleri[el.tur] || ESLESME.elemanTurleri.DIGER;
     const trafo = et.kind === 'transformer';
     const state = voltDurumu(el.durum, trafo);
-    const data = { state, note: el.not || undefined, sebekeId: el.id, sebeke: { id: el.id, tur: el.tur, cins: el.cins, tip: el.tip, aci: el.aci, katman: el.katman, blok: el.blok, hakedis: el.hakedis, bolge: el.bolge, anaKalem: (el.kalemler || []).find((k) => k.ana) || null } };
+    const data = { state, note: el.not || undefined, sebekeId: el.id, sebeke: { id: el.id, tur: el.tur, cins: el.cins, tip: el.tip, durum: el.durum, aci: el.aci, katman: el.katman, blok: el.blok, hakedis: el.hakedis, bolge: el.bolge, anaKalem: (el.kalemler || []).find((k) => k.ana) || null } };
     const anaKalem = (el.kalemler || []).find((k) => k.ana);
     const attrs = {};
+    if (anaKalem && anaKalem.dmDurum) attrs.dmDurum = anaKalem.dmDurum;
     if (et.kind === 'pole' || et.kind === 'lighting') {
       const d = direkEsle(ps.cat, el.tur, el.cins, el.tip);
       data.group = d.grup;
@@ -474,7 +488,6 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
       if (el.guc) attrs.kva = parseFloat(String(el.guc).replace(',', '.')) || undefined;
       if (el.tur === 'TRAFO_DIREGI') { const d = direkEsle(ps.cat, 'TRAFO_DIREGI', el.cins, el.tip); if (d.tip) attrs.poleTypeId = d.tip.id; else if (el.tip) attrs.typeName = el.tip; }
       else if (el.tip) attrs.govde = el.tip;
-      if (anaKalem && anaKalem.dmDurum) attrs.dmDurum = anaKalem.dmDurum;
     } else {
       if (el.tip) attrs.typeName = el.tip;
       if (et.kind === 'sdk') { const t = ps.cat.sdkTypes().find((x) => adNormal(x.name) === adNormal(el.tip)); if (t) attrs.sdkTypeId = t.id; }
@@ -523,7 +536,7 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
       lineType: ht.lineType, install: ht.install, musterek: !!ht.musterek, state: voltDurumu(h.durum), nodes, name: lt ? '' : h.anaKesit,
       circuits: lt ? [{ role: ht.lineType === 'ABONE' ? 'ABONE' : ht.lineType, key: lt.name, count: 1 }] : [],
       sebekeId: h.id, note: h.not || undefined,
-      sebeke: { id: h.id, tur: h.tur, anaKesit: h.anaKesit, etiket: h.etiket, katman: h.katman, hakedis: h.hakedis, bolge: h.bolge, kalemler: lt ? undefined : h.kalemler }
+      sebeke: { id: h.id, tur: h.tur, anaKesit: h.anaKesit, durum: h.durum, etiket: h.etiket, katman: h.katman, hakedis: h.hakedis, bolge: h.bolge, kalemler: lt ? undefined : h.kalemler }
     };
     let boruKalemi = null;
     if (kanal) { const ka = kanalAyari(kanal, h); data.cable = ka.cable; boruKalemi = ka.boru; data.sebeke.kanalId = kanal.id; data.sebeke.kanalKod = kanal.kod; kanalIndeks.delete(koseAnahtari(h.kose)); }

@@ -268,6 +268,7 @@ namespace SebekeHakedis.Cekirdek
 
         /// <summary>
         /// Hat etiketi: "^ 3X50/16+70 ALPEK/341m/(tanıtıcı)" (telefondaki etikete PROMAGIS gibi tanıtıcı eklenir).
+        /// Ön ekler PROMAGIS ile aynı: * M+M · ^ M · [ ] DM+M · &gt; &lt; DM · / \ KM · { } ENH · ( ) MEVCUT.
         /// Gerçek bir PROMAGIS çiziminde 3.377 etiketin 3.340'ı bununla birebir aynıdır; kalanlar PROMAGIS'in
         /// güncellemediği eski etiketlerdir.
         /// </summary>
@@ -286,8 +287,10 @@ namespace SebekeHakedis.Cekirdek
                 case "M+M": govde = "* " + kesit + "/" + metraj; break;
                 case "DM": govde = ">" + kesit + "</" + metraj; break;
                 case "DM+M": govde = "[" + kesit + "]/" + metraj; break;
+                case "KM": govde = "/" + kesit + "\\/" + metraj; break;
+                case "ENH": govde = "{" + kesit + "}/" + metraj; break;
                 case "MEVCUT": govde = "(" + kesit + ")/" + metraj; break;
-                default: govde = kesit + "/" + metraj; break;
+                default: govde = kesit + "/" + metraj; break; // ME ve bilinmeyenler düz (PROMAGIS "TANIMSIZ" yazar)
             }
             return govde + "/(" + Tanitici + ")";
         }

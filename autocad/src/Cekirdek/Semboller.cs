@@ -146,13 +146,19 @@ namespace SebekeHakedis.Cekirdek
 
         // ---------------- Seçim: tür + malzeme + durum → blok adı ----------------
 
-        /// <summary>Durumdan varyant: M, M+M → YENI · DM → DM · DM+M → DMM · diğerleri (MEVCUT, KM, ME, boş) → MEVCUT.</summary>
+        /// <summary>
+        /// Durumdan varyant: M, M+M, KM, ENH, ME → YENI (PROMAGIS'te YENİ_ blokları) · DM → DM · DM+M → DMM ·
+        /// MEVCUT ve boş → MEVCUT.
+        /// </summary>
         public static string Varyant(string durum)
         {
             switch ((durum ?? "").Trim().ToUpperInvariant())
             {
                 case "M":
-                case "M+M": return "YENI";
+                case "M+M":
+                case "KM":
+                case "ENH":
+                case "ME": return "YENI";
                 case "DM": return "DM";
                 case "DM+M": return "DMM";
                 default: return "MEVCUT";

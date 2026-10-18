@@ -43,10 +43,16 @@
   "yeni": "M", "mevcut": "MEVCUT", "guc": "M", "ger": "M", "gucger": "M", "tasinan": "DM+M", "tadil": "M", "modul": "M", "demontaj": "DM", "ileride": null
  },
  "durumlarTers": {
-  "aciklama": "PROMAGIS durumu → telefon durumu (direk, hat) ve trafo durumu",
+  "aciklama": "PROMAGIS durumu → telefon durumu (direk, hat) ve trafo durumu. Telefon kaydı sebeke.durum alanında özgün kodu saklar; durum değişmediyse dışa aktarımda aynen döner (KM, ENH, ME ve M / M+M ayrımı kaybolmaz).",
   "M": { "state": "YENI", "trafo": "yeni" }, "M+M": { "state": "YENI", "trafo": "yeni" }, "DM": { "state": "DEMONTAJ", "trafo": "demontaj" },
-  "DM+M": { "state": "DMM", "trafo": "tasinan" }, "MEVCUT": { "state": "MEVCUT", "trafo": "mevcut" }, "KM": { "state": "MEVCUT", "trafo": "mevcut" }, "ME": { "state": "MEVCUT", "trafo": "mevcut" }
+  "DM+M": { "state": "DMM", "trafo": "tasinan" }, "MEVCUT": { "state": "MEVCUT", "trafo": "mevcut" }, "KM": { "state": "YENI", "trafo": "yeni" }, "ENH": { "state": "MEVCUT", "trafo": "mevcut" }, "ME": { "state": "MEVCUT", "trafo": "mevcut" }
  },
+ "durumAdlari": {
+  "aciklama": "PROMAGIS durum kodlarının okunur adları (telefon ve eklenti aynı yazıyı gösterir)",
+  "M": "Montaj (malzeme kurumdan)", "M+M": "Malzeme + montaj (yüklenici)", "KM": "Kurum montajı, malzeme yükleniciden",
+  "DM": "Demontaj", "DM+M": "Sök-tak", "MEVCUT": "Mevcut", "ENH": "Kilometrik bedelli iş", "ME": "Mutabakat eksiği"
+ },
+ "dmDurumlari": ["", "KESİK", "SÖKÜK"],
  "tedarik": { "Y": "M+M", "Ş": "M" },
  "isler": { "montaj": "M", "demontaj": "DM", "dmm": "DM+M" },
  "kategoriler": {

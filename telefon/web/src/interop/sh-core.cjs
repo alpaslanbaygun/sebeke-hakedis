@@ -444,8 +444,10 @@
       case 'M+M': return '* ' + k + '/' + m;
       case 'DM': return '>' + k + '</' + m;
       case 'DM+M': return '[' + k + ']/' + m;
+      case 'KM': return '/' + k + '\\/' + m;
+      case 'ENH': return '{' + k + '}/' + m;
       case 'MEVCUT': return '(' + k + ')/' + m;
-      default: return k + '/' + m;
+      default: return k + '/' + m; // ME ve bilinmeyenler düz yazılır (PROMAGIS "TANIMSIZ" yazar)
     }
   }
 

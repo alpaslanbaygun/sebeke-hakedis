@@ -120,6 +120,39 @@ test('A3 · "ileride" objeler yazılmaz, demontaj / sök-tak durumları çevrili
   assert.equal(k.durum, 'DM', 'demontaj objesinde malzeme de DM');
 });
 
+test('A3b · PROMAGIS durum kodu korunur: KM / ME / M+M seçimi ve demontaj türü (KESİK) dışa aktarımda döner, durum değişince düşer', async () => {
+  const { ps } = await setup(); await newProject(ps, { autoRecipe: false });
+  const t = ps.cat.poleTypeByName('sehir', 'G-K2');
+  const km = await ps.addEquipment('pole', { group: 'sehir', typeId: t.id, state: 'YENI', sebeke: { durum: 'KM' } }, { obs: rtkObs(519500, 4282400, 1055) });
+  const me = await ps.addEquipment('pole', { group: 'sehir', typeId: t.id, state: 'MEVCUT', sebeke: { durum: 'ME' } }, { obs: rtkObs(519520, 4282400, 1055) });
+  const mm = await ps.addEquipment('pole', { group: 'sehir', typeId: t.id, state: 'YENI', sebeke: { durum: 'M+M' } }, { obs: rtkObs(519540, 4282400, 1055) });
+  const dm = await ps.addEquipment('pole', { group: 'sehir', typeId: t.id, state: 'DEMONTAJ', attrs: { dmDurum: 'KESİK' } }, { obs: rtkObs(519560, 4282400, 1055) });
+  const eski = await ps.addEquipment('pole', { group: 'sehir', typeId: t.id, state: 'MEVCUT', sebeke: { durum: 'KM' } }, { obs: rtkObs(519580, 4282400, 1055) });
+  const sp = sebekeModel(ps);
+  const el = (e) => sp.elemanlar.find((x) => x.gisId === e.no);
+  assert.equal(el(km).durum, 'KM', 'KM korunur (YENI ile uyumlu)');
+  assert.equal(el(km).kalemler[0].durum, 'KM', 'nesnenin kendi pozu da KM');
+  assert.equal(el(me).durum, 'ME', 'ME korunur (MEVCUT ile uyumlu)');
+  assert.equal(el(mm).durum, 'M+M', 'M+M seçimi korunur');
+  assert.equal(el(dm).durum, 'DM');
+  assert.equal(el(dm).kalemler[0].dmDurum, 'KESİK', 'demontaj türü nesnenin kendi pozuna yazılır');
+  assert.equal(el(eski).durum, 'MEVCUT', 'durum MEVCUT olunca KM düşer');
+  assert.equal(SH.hatEtiketi('KM', '3xSW', 120), '/3xSW\\/120m');
+  assert.equal(SH.hatEtiketi('ENH', '3xSW', 120), '{3xSW}/120m');
+  // Geri alma: sebeke.durum ve dmDurum telefon kaydına yazılır
+  const { ps: ps2 } = await setup();
+  const ozet = await sebekeIceAl(ps2, JSON.parse(sebekeYaz(ps)), { name: 'durumlar' });
+  assert.equal(ozet.yeniEleman, 5);
+  const geriKm = ps2.data.equipment.find((e) => e.no === km.no);
+  assert.equal(geriKm.sebeke.durum, 'KM');
+  assert.equal(geriKm.state, 'YENI', 'KM telefonda yeni direk');
+  const geriDm = ps2.data.equipment.find((e) => e.no === dm.no);
+  assert.equal(geriDm.attrs.dmDurum, 'KESİK');
+  const sp2 = sebekeModel(ps2);
+  assert.equal(sp2.elemanlar.find((x) => x.gisId === km.no).durum, 'KM', 'ikinci turda da KM');
+  assert.equal(sp2.elemanlar.find((x) => x.gisId === me.no).durum, 'ME', 'ikinci turda da ME');
+});
+
 test('A4 · AutoCAD örnek dosyası telefona alınır: direk tipleri katalogdan bulunur, hatlar uçlara bağlanır, kanal ve sondaj gelir; geri yazınca aynı kalır', async () => {
   const { ps } = await setup();
   const { proje } = voltProjeOku(fs.readFileSync(ORNEK, 'utf8'));
