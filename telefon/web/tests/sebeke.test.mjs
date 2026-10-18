@@ -75,12 +75,24 @@ test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Dur
   // SDK: BOX · BOX_PANO
   const s = sp.elemanlar.find((e) => e.gisId === sdk.no);
   assert.equal(s.tur, 'BOX'); assert.equal(s.cins, 'BOX_PANO'); assert.ok(s.tip.includes('TİP-B'));
-  // Hatlar: OG havai 3xSW (mt/mt, rapor tel tel açar), AG havai ALPEK, AG yeraltı Nyy + kanal
-  const og = sp.hatlar.find((h) => h.tur === 'OG_HAVAI');
-  assert.equal(og.anaKesit, '3xSW'); assert.equal(og.kalemler[0].cins, 'OG_İLETKEN'); assert.equal(og.kalemler[0].birim, 'mt/mt'); assert.equal(og.kalemler[0].miktar, Math.ceil(og.cizimUzunlugu - 1e-6) >= og.kalemler[0].miktar - 1 ? og.kalemler[0].miktar : -1);
+  // Hatlar: OG havai 3xSW (mt/mt, rapor tel tel açar), AG havai ALPEK, AG yeraltı Nyy + kanal.
+  // Parçalı yapı: 4 direkli OG hattı direkten direğe 3 ayrı hat nesnesidir; metrajların toplamı hattın metrajıdır.
+  const ogler = sp.hatlar.filter((h) => h.tur === 'OG_HAVAI');
+  assert.equal(ogler.length, 3, 'direkten direğe üç parça');
+  const og = ogler[0];
+  assert.equal(og.anaKesit, '3xSW'); assert.equal(og.kalemler[0].cins, 'OG_İLETKEN'); assert.equal(og.kalemler[0].birim, 'mt/mt');
   assert.ok(/^\^ 3xSW\/\d+m$/.test(og.etiket), og.etiket);
-  assert.equal(og.kose.length, 4);
-  assert.deepEqual(og.uclar, [poles[0].id, poles[3].id]);
+  assert.equal(og.kose.length, 2);
+  assert.deepEqual(og.uclar, [poles[0].id, poles[1].id]);
+  assert.deepEqual(ogler[2].uclar, [poles[2].id, poles[3].id]);
+  assert.ok(ogler.every((h) => h.telefonId === ogler[0].telefonId && Number.isInteger(h.kalemler[0].miktar)), 'parçalar aynı telefon hattına ait, metrajlar tam sayı');
+  assert.deepEqual(ogler.map((h) => h.id), [ogler[0].id.replace(/-1$/, '') + '-1', ogler[0].id.replace(/-1$/, '') + '-2', ogler[0].id.replace(/-1$/, '') + '-3']);
+  const ogLine = ps.data.lines.find((l) => l.lineType === 'OG');
+  const ogInfo = ps.result.lineInfo.get(ogLine.id);
+  const ogIletken = ogInfo.items.find((x) => x.role === 'OG' && !x.kanal && !x.manual);
+  assert.equal(ogler.reduce((a, h) => a + h.kalemler[0].miktar, 0), Math.ceil(ogInfo.length3D - 1e-6), 'parça metrajlarının toplamı hattın metrajı');
+  assert.ok(ogIletken);
+  assert.ok(Math.abs(ogler.reduce((a, h) => a + h.cizimUzunlugu, 0) - ogInfo.length2D) < 0.01, 'çizim uzunlukları toplamı');
   const ag = sp.hatlar.find((h) => h.tur === 'AG_HAVAI');
   assert.equal(ag.anaKesit, '3X70/16+95 ALPEK'); assert.equal(ag.kalemler[0].cins, 'ALPEK_KABLOLAR'); assert.equal(ag.kalemler[0].tarife, '0107');
   const yer = sp.hatlar.find((h) => h.tur === 'AG_YERALTI');
@@ -151,6 +163,34 @@ test('A3b · PROMAGIS durum kodu korunur: KM / ME / M+M seçimi ve demontaj tür
   const sp2 = sebekeModel(ps2);
   assert.equal(sp2.elemanlar.find((x) => x.gisId === km.no).durum, 'KM', 'ikinci turda da KM');
   assert.equal(sp2.elemanlar.find((x) => x.gisId === me.no).durum, 'ME', 'ikinci turda da ME');
+});
+
+test('A3c · parçalı hat gidiş-dönüş: parçalar telefonda tek hat olur, parça kimlikleri korunur, eklentide çizilen parçalar zincirlenir', async () => {
+  const { ps } = await setup(); await newProject(ps, { autoRecipe: false });
+  const { poles } = await buildPoleLine(ps, OG_ROUTE, { group: 'bahh', typeNames: OG_TYPES, circuits: [{ role: 'OG', key: '3xSwallow', count: 1 }] });
+  const sp = sebekeModel(ps);
+  const parcalar = sp.hatlar.filter((h) => h.tur === 'OG_HAVAI');
+  assert.equal(parcalar.length, 3);
+  // Başka telefona al: üç parça → bir hat, 4 düğüm, parça kimlikleri saklı
+  const { ps: ps2 } = await setup();
+  const oz = await sebekeIceAl(ps2, SH.projeOku(SH.projeYaz(sp)), { name: 'parcali' });
+  assert.equal(oz.yeniHat, 1, 'parçalar tek hat olarak alınır');
+  const hat = ps2.data.lines.find((l) => l.lineType === 'OG');
+  assert.equal(hat.nodes.length, 4);
+  assert.equal(Object.keys(hat.sebeke.parcalar).length, 3, 'parça kimlikleri düğüm çiftine göre saklanır');
+  assert.equal(ps2.result.roles.get(ps2.data.equipment.find((e) => e.no === poles[1].no).id).role !== 'N', true, 'ara direk nihayet değil (hat bölünmedi)');
+  // Geri yaz: aynı parça kimlikleri, aynı sırayla
+  const geri = sebekeModel(ps2);
+  assert.deepEqual(geri.hatlar.filter((h) => h.tur === 'OG_HAVAI').map((h) => h.id), parcalar.map((h) => h.id));
+  // Eklentide çizilmiş (telefon kimliksiz) uç uca üç parça: tanımı aynıysa zincirlenir, farklıysa ayrı hat
+  const { ps: ps3 } = await setup();
+  const dosya = SH.projeOku(SH.projeYaz(sp));
+  for (const h of dosya.hatlar) { delete h.telefonId; h.id = 'H' + h.id.slice(-1); }
+  dosya.hatlar[2].anaKesit = '3x477'; dosya.hatlar[2].kalemler[0].tanim = '3x477'; dosya.hatlar[2].etiket = '^ 3x477/50m';
+  const oz3 = await sebekeIceAl(ps3, dosya, { name: 'zincir' });
+  assert.equal(oz3.yeniHat, 2, 'aynı tanımlı iki parça tek hat, farklı kesitli üçüncü parça ayrı hat');
+  const uzun = ps3.data.lines.find((l) => l.nodes.length === 3);
+  assert.ok(uzun && uzun.sebeke.parcalar && Object.keys(uzun.sebeke.parcalar).length === 2);
 });
 
 test('A4 · AutoCAD örnek dosyası telefona alınır: direk tipleri katalogdan bulunur, hatlar uçlara bağlanır, kanal ve sondaj gelir; geri yazınca aynı kalır', async () => {

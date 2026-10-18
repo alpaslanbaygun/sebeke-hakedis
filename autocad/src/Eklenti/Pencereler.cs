@@ -556,8 +556,8 @@ namespace SebekeHakedis.Eklenti
                 var der = d.Satir("Derinlik (cm)", Sayi(0, 1000, D(onceki != null ? onceki.Derinlik : a.KanalDerinlik), 0, 5));
                 var durum = d.Satir("Durum", DurumKutusu(onceki != null ? onceki.Durum : a.SonDeger("kanal.durum", "M+M")));
                 var hak = d.Satir("Hakediş", Sayi(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis));
-                d.Not("Kanalın köşelerini sırayla gösterin; başta ve sonda direğe tıklarsanız baş/bit numarası yazılır. " +
-                      "Metraj çizim uzunluğundan yukarı yuvarlanır; hacim ölçülerden hesaplanır.");
+                d.Not("Kanalın köşelerini sırayla gösterin. Kanal, tıkladığınız her box / pano / direkte biter ve yeniden başlar; " +
+                      "her parçanın baş/bit numarası, metrajı ve hacmi kendine aittir. Metraj çizim uzunluğundan yukarı yuvarlanır.");
 
                 string kablolar = onceki != null
                     ? (onceki.Og ? "OG," : "") + (onceki.Ag ? "AG," : "") + (onceki.Ayd ? "AYD," : "") + (onceki.Rek ? "REK," : "")
@@ -601,7 +601,8 @@ namespace SebekeHakedis.Eklenti
                 d.Tam(liste.Kap, -1);
                 var durum = d.Satir("Durum", DurumKutusu(onceki != null ? onceki.Durum : o.Ayar.SonDeger("sondaj.durum", "M")));
                 var hak = d.Satir("Hakediş", Sayi(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis));
-                d.Not("Sondajın başlangıç ve bitiş noktalarını (gerekirse ara köşeleri) gösterin; Enter ile bitirin.");
+                d.Not("Sondajın başlangıç ve bitiş noktalarını (gerekirse ara köşeleri) gösterin; Enter ile bitirin. " +
+                      "Tıklanan her elemanda sondaj biter ve yeni parça başlar; her parçanın metrajı ayrı yazılır.");
                 liste.Doldur(o.Katalog.SondajTipleri(), onceki != null && onceki.Tip != null ? onceki.Tip.Anahtar : o.Ayar.SonDeger("sondaj.tip", null));
                 liste.Secildi += () => d.Tamam.PerformClick();
                 d.Dogrula = () =>
