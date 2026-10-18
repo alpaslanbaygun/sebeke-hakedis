@@ -21,15 +21,17 @@ GitHub › **Releases**:
 | --- | --- | --- |
 | Proje dosyasını açma / yazma | Projeler › AutoCAD dosyasından al · Dışa Aktar › AutoCAD proje dosyası | `SH_PROJEAL`, `SH_ICEAL` |
 | PROMAGIS çizimini okuma | — | ✓ |
-| Eleman koyma (direk, trafo, SDK, pano, abone…) | GNSS ile ölçerek (RTK, telefon konumu, elle, haritadan, Excel) | `SH_ELEMAN` |
-| Hat, kablo kanalı, yatay sondaj | ✓ (kaplama + yöntem) | `SH_HAT`, `SH_KANAL`, `SH_SONDAJ` |
-| Bölge (alt proje) | AutoCAD'den gelen bölgeler korunur | `SH_BOLGE` |
+| Eleman koyma (direk, trafo, SDK, pano, abone…) | GNSS ile ölçerek (RTK, telefon konumu, elle, haritadan, Excel) | şeritte kategori › öğe, tek tıkla (`SH_HIZLI`); `SH_ELEMAN` |
+| Hat, kablo kanalı, yatay sondaj | ✓ (kaplama + yöntem) | direkten direğe parçalı, her parçanın metrajı ayrı; `SH_HAT`, `SH_KANAL`, `SH_SONDAJ` |
+| Görünüm (simge, renk, çizgi tipi, yazı) | ✓ | telefonla birebir aynı (`SH_GORUNUM` eski çizimi çevirir) |
+| Bölge (alt proje) | AutoCAD'den gelen bölgeler korunur (grup kodu dahil) | `SH_BOLGE` |
 | Ölçü noktaları | ölçerek, CSV / NCN çıktısı | `SH_NOKTAAL` (CSV/TXT) |
 | Malzeme (TEDAŞ poz kataloğu) | ✓ elle ekleme, otomatik reçete seçeneği | `SH_MALZEME` (PROMAGIS kataloğu) |
 | Kabin / köşk yerleşimi, tepe kuvveti, enerji kontrolü | ✓ | — |
 | Fotoğraf ve not | ✓ | — |
-| Metraj, Yeşil Defter, hakediş dönemi ve onay | ✓ (Excel) | `SH_OZET` |
+| Metraj, Yeşil Defter, hakediş dönemi ve onay | ✓ (Excel; onaylı dönem AutoCAD'e onay olarak gider) | `SH_OZET`, `SH_ONAY` (PROMAGIS onayı: Kontrol → Hakediş → GIS, onaylı hakediş kilitli) |
 | Durum Tespit raporu (Excel, PROMAGIS biçimi) | telefondan gelen dosyayla eklentide | `SH_RAPOR`, `SH_PROJERAPOR` |
+| Eksik malzeme (PROMAGIS DETAY) | — | `SH_DETAY` |
 | DXF, KMZ, SHP, GeoJSON, teslim paketi | ✓ (DXF simgeleri eklentiyle aynı) | — |
 
 Telefon tarafı: her marka Bluetooth GNSS alıcısı (NMEA) + NTRIP (TUSAGA-Aktif, sabit istasyon profilleri) ya da
@@ -41,7 +43,7 @@ telefonun konumu; OpenStreetMap / Google / Yandex altlık; çevrimdışı çalı
 | --- | --- |
 | `telefon/` | Telefon uygulaması VOLT-EDAŞ Saha (Java kabuk + WebView, Preact arayüz, JS hesap motoru, TEDAŞ kataloğu). Ayrıntı: [telefon/README.md](telefon/README.md), kaynak notları [telefon/README_KAYNAK.txt](telefon/README_KAYNAK.txt) |
 | `autocad/` | AutoCAD eklentisi (C#): `src/Cekirdek` AutoCAD'den bağımsız hesap çekirdeği, `src/Eklenti` AutoCAD tarafı, `test/` denemeler, `paket/` kurulum |
-| `ortak/` | Proje dosyası biçimi ([VERI-MODELI.md](ortak/VERI-MODELI.md)), rapor katsayıları, PROMAGIS malzeme kataloğu, lejant simge takımı (`semboller.json`), telefon ↔ PROMAGIS eşlemesi (`volt-eslesme.json`) |
+| `ortak/` | Proje dosyası biçimi ([VERI-MODELI.md](ortak/VERI-MODELI.md)), rapor katsayıları, PROMAGIS malzeme kataloğu (2 934 kalem), lejant simge takımı (`semboller.json`), ortak çizim stili (`cizim-stili.json`), şerit kategorileri (`kategoriler.json`), telefon ↔ PROMAGIS eşlemesi (`volt-eslesme.json`), PROMAGIS inceleme notları ([PROMAGIS-NOTLARI.md](ortak/PROMAGIS-NOTLARI.md)) |
 | `araclar/` | Geliştirme araçları: AutoCAD olmadan DWG okuma, simge takımı üretimi ve önizlemesi, ortak tabloların telefona kopyalanması |
 
 ## Doğrulama
@@ -53,7 +55,8 @@ telefonun konumu; OpenStreetMap / Google / Yandex altlık; çevrimdışı çalı
 - Telefondan alma: o çizimden çıkmış, değişmemiş bir proje 17.837 nesnede **sıfır** değişiklik üretir;
   aynı dosyayı iki kez almak ikinci seferde iş çıkarmaz.
 - Telefon ↔ AutoCAD dönüşümü: telefon projesinin direk ağırlıkları Durum Tespit'te telefonun metrajıyla aynı;
-  AutoCAD örnek dosyası telefona alınıp geri yazılınca rapor satırları ve kg toplamı aynı kalır
+  AutoCAD örnek dosyası telefona alınıp geri yazılınca rapor satırları ve kg toplamı aynı kalır; kalemlerin INDEX
+  sırası, hakedişi ve KONTROL işareti, bölge grup kodu, pano çıkış şeması, hat parçaları ve hakediş onayları korunur
   (`telefon/web/tests/sebeke.test.mjs`).
 
 ## Geliştirme

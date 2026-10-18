@@ -19,16 +19,18 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 - Çalışan özellikleri bozma; büyük değişiklikten önce geri dönüş noktası (dal / etiket + önceki APK) bırak.
 - Değişiklik açıklamaları (commit) Türkçe yazılır. Çalışma dalı → ana dala (`main`) alınınca sürümler çıkar.
 
-## 2. Durum (17.10.2026, akşam)
+## 2. Durum (18.10.2026)
 
 | Parça | Sürüm | Durum |
 | --- | --- | --- |
-| Telefon uygulaması (VOLT-EDAŞ Saha) | 2.5.N (APK, `main`'e alınınca Releases) · önceki 2.4.0 | Birleştirildi, AutoCAD dosya uyumu eklendi; telefonda denenmedi |
-| AutoCAD eklentisi | 0.1.N (zip, Releases) | Lejant simgeleri ve telefon dosyası okuma eklendi; AutoCAD'de denenmedi (derleme, çekirdek ve pencere denemeleri geçti) |
-| Belgeler | KULLANIM, README, PLAN, VERI-MODELI, DEVIR | Güncel |
+| Telefon uygulaması (VOLT-EDAŞ Saha) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, PROMAGIS durum kodları, INDEX / KONTROL / onayların korunması; telefonda denenmedi |
+| AutoCAD eklentisi | 0.1.N (zip, Releases) | Dinamik şerit, telefonla aynı görünüm, parçalı hat, tam katalog, PROMAGIS ortak kayıtları, eksik malzeme, hakediş onayı; AutoCAD'de denenmedi (derleme, çekirdek ve pencere denemeleri geçti) |
+| Belgeler | KULLANIM, README, PLAN, VERI-MODELI, PROMAGIS-NOTLARI, DEVIR | Güncel |
 
-17.10.2026 işleri `volt-birlesim` dalında yapıldı; kullanıcı onayıyla `main`'e alınır. `main`'e her gönderim
-otomatik derler ve yeni sürüm çıkarır (sürüm numarası derleme sırasından gelir: eklenti 0.1.N, telefon 2.5.N).
+17.10 işleri `volt-birlesim`, 18.10 işleri (PROMAGIS öneri listesinin tamamı + şerit + görünüm + parçalı hat)
+`serit-ve-stil` dalında yapıldı ve `main`'e alındı. `main`'e her gönderim otomatik derler ve yeni sürüm çıkarır
+(sürüm numarası derleme sırasından gelir: eklenti 0.1.N, telefon 2.5.N). Geri dönüş: `onceki-main-2026-10-18`
+etiketi (eklenti 0.1.16, telefon 2.5.8 Releases'te durur).
 
 ## 3. Kod haritası
 
@@ -37,15 +39,23 @@ otomatik derler ve yeni sürüm çıkarır (sürüm numarası derleme sırasınd
   `araclar/semboller-uret.mjs`), `katalog/volt-eslesme.json` (telefon kataloğu ↔ PROMAGIS eşlemesi).
   Değişince `node araclar/ortak-tablolar.mjs` telefon kopyalarını (`telefon/web/src/ortak/*.js`) yeniler.
 - `autocad/src/Cekirdek/` — AutoCAD'den bağımsız C# çekirdek: `PromagisOkuyucu` (XDATA → model), `PromagisYazici`
-  (model → çizim tarifi, blok seçimi), `Semboller` (tür + cins + durum → `SH_<aile>_<varyant>`, geometri),
-  `DurumTespit` + `RaporYazici` + `XlsxYazici` (rapor), `Aktarim` (telefondan alma planı), `Katalog`, `Numara`,
-  `CizimAyarlari` + `Metraj`, `NoktaDosyasi`, `ProjeDosyasi` (.sebeke.json ve telefonun .volt.json'u; `telefonId`), `Model`.
-- `autocad/src/Eklenti/` — AutoCAD tarafı: `Komutlar` (rapor, içe alma, dosya seçme: json / volt.json / zip),
-  `CizimKomutlari` (çizim araçları, `SH_PROJEAL`), `CizimYazici` (çizime yazma; blokları `semboller.json`dan çizer),
-  `Toplayici`, `Ortam`/`OrtamVerisi` (gömülü kalemler.json ve semboller.json), `Pencereler`, `Serit`.
+  (model → çizim tarifi, blok seçimi, `ANA`/`CON`/`FIDER` ek verisi), `Semboller` (tür + cins + durum →
+  `SH_<aile>_<varyant>`, geometri), `CizimStili` (ortak renk / çizgi tipi / yazı), `Kategoriler` (şerit kategorileri),
+  `DurumTespit` + `RaporYazici` + `XlsxYazici` (rapor), `DetaySorgu` (eksik malzeme / DETAY), `HakedisOnayi` (onay
+  bitleri, kilit kuralları), `Aktarim` (telefondan alma planı; parça kuralı, ek veri, kilit), `Katalog` (sürüm 2,
+  tarife kuralı), `Numara`, `CizimAyarlari` + `Metraj`, `NoktaDosyasi`, `ProjeDosyasi` (.sebeke.json ve .volt.json),
+  `Model`.
+- `autocad/src/Eklenti/` — AutoCAD tarafı: `Komutlar` (rapor, içe alma, `SH_DETAY`, dosya seçme), `CizimKomutlari`
+  (çizim araçları, `SH_HIZLI`, `SH_GORUNUM`, `SH_ONAY`, `SH_PROJEAL`), `CizimYazici` (çizime yazma; blokları
+  `semboller.json`dan çizer, blok sürümü, parça metrajı yazıları), `Serit` + `SeritSimgeleri` + `HizliSecim` (dinamik
+  şerit; son seçimler `%APPDATA%\SebekeHakedis\serit.json`), `PromagisSozlugu` (PROMAGIS'in çizim sözlüğü: SAYAC,
+  HakNo, DicBölge, HAK_ONAY), `Toplayici`, `Ortam`/`OrtamVerisi` (gömülü kalemler / semboller / cizim-stili /
+  kategoriler), `Pencereler`.
+- `araclar/promagis-katalog-aktar.py` — PROMAGIS veri dosyasından (kullanıcıdan alınır, depoya konmaz) `kalemler.json` üretir.
 - `autocad/test/CekirdekTest` — çekirdek denemeleri. Komutlar: `ornek` (CI), `dogrula`, `gidisdonus`, `aktarim`,
   `bosaaktar`, `katsayilar`, `semboller`.
-- `autocad/test/PencereTest` — pencereleri AutoCAD'siz açıp ekran görüntüsü alır (yalnız Windows/CI).
+- `autocad/test/PencereTest` — pencereleri AutoCAD'siz açıp ekran görüntüsü alır; şeridin önizlemesini de çizer
+  (`ekran/14-serit-*.png`) (yalnız Windows/CI).
 - `telefon/` — VOLT-EDAŞ Saha: `web/src` (Preact arayüz + hesap motoru), `web/seed/standard-tedas-2026.json`
   (TEDAŞ kataloğu), `web/src/interop/sebeke.js` (telefon ↔ .sebeke.json dönüşümü) ve `sh-core.cjs` (PROMAGIS
   kurallarının JS karşılığı: proje dosyası, etiket, kanal, rapor), `web/src/export/dxf.js` (DXF; simgeler ortak tablodan),
@@ -83,14 +93,16 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
-1. **`volt-birlesim` dalını `main`'e almak** (kullanıcı onayı) → yeni sürümler Releases'e çıkar.
-2. **AutoCAD'de ilk deneme** (kullanıcı yapacak): yeni simgeler, Telefona Gönder → telefonda aç → Telefondan Al.
-   Hata ayrıntısı `%TEMP%\SebekeHakedis_hata.txt`'ye yazılır.
-3. **Telefonda deneme**: 2.5.x kurulumu (2.4.0 üzerine), AutoCAD dosyasından proje alma, dışa aktarma; sahada
-   Bluetooth alıcı + NTRIP ile Fixed çözüm.
-4. **Bulut eşitleme** (Faz 7): dosyayı Drive'a elle taşımadan eşitleme. Yöntem kullanıcıyla konuşulmalı.
+1. **AutoCAD'de ilk deneme** (kullanıcı yapacak): şerit (kategori → öğe → çizim), yeni görünüm, parçalı hat,
+   Telefona Gönder → telefonda aç → Telefondan Al, `SH_ONAY` / `SH_DETAY`; PROMAGIS'le aynı çizimde sırayla
+   çalışma (INDEX, aktif hakediş, bölge listesi, onaylar). Hata ayrıntısı `%TEMP%\SebekeHakedis_hata.txt`'ye yazılır.
+2. **Telefonda deneme**: 2.5.x kurulumu, AutoCAD dosyasından proje alma, PROMAGIS durum kodları, dışa aktarma;
+   sahada Bluetooth alıcı + NTRIP ile Fixed çözüm.
+3. **Bulut eşitleme** (Faz 7): dosyayı Drive'a elle taşımadan eşitleme. Yöntem kullanıcıyla konuşulmalı.
+4. İstenirse: pano çıkış şeması / hücre düzenleme penceresi, sondaj metrajının telefonda AutoCAD değeriyle korunması
+   (şimdi telefon geometriden hesaplar), PROMAGIS parolaları ve `HAK_YETKİ`.
 5. Telefonun ofis (web) sürümü 2.3.0'da kaldı; istenirse yeni hesapta yeniden yayınlanır (`telefon/DEVAM-NOTU.md`).
-6. Açık sorular PLAN.md'de (KONTROL / KM / ME, birim fiyat, malzeme eşlemesinin inceltilmesi, "ileride" objeler).
+6. Açık sorular PLAN.md'de (birim fiyat, malzeme eşlemesinin inceltilmesi, "ileride" objeler).
 
 ## 7. Başka hesaba geçiş
 

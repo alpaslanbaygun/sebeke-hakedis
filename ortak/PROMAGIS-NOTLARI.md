@@ -151,36 +151,42 @@ Her hakediş numarası için üç aşamalı onay: **KONTROL → HAKEDİŞ → GI
 saklanır (`HAK_ONAY/ONAY_DURUM<n>`, bitler 4/2/1). Denetlenmiş (`KONTROL=True`) öğeler denetim kipi kapalıyken
 değiştirilemez; hakediş yetkisi olmayan numaradaki kayıtlar da kilitlidir (`HAK_YETKİ`).
 
-## 8. Alınabilecekler (öneri listesi)
+## 8. Alınabilecekler (öneri listesi) — 18.10.2026 durumu
 
-1. **Tam katalog**: ana listedeki 2 982 tipin cins, tip, poz no, metrik ağırlık, ölçü birimleri ve standart
-   tarifelerini `kalemler.json`'a almak (fiyatsız). Telefon ve eklenti her PROMAGIS tipini seçebilir; `volt-eslesme.json
-   › kalemler` birebir eşleme için zemin olur.
-2. **Durum kodları**: `KM`, `ENH`, `ME` eklentide ve telefonda seçilebilir olsun; hat etiketleri `/tip\` ve `{tip}`;
-   DM'de KESİK / SÖKÜK seçimi.
-3. **Tarife kuralı**: kalemde karakteristik + unsur (şehir / köy-bakım) ayrı; çizim ayarında şehir/köy anahtarı.
-4. **Katman stilleri**: KT komutundaki RGB renk, kalınlık ve çizgi tipleri birebir.
-5. **Sıra numarası**: yeni kayıtların INDEX'i çizimdeki `AYARLAR/SAYAC` ile uyumlu verilsin (max(SAYAC, en büyük
-   sıra) + 1; SAYAC geri yazılsın); aktif hakediş ve yazı yüksekliği için `HakNo_Rec` / `TXSCALE` okunsun.
-6. **Bölge**: `FULLREG` üçüncü alanı (grup kodu) yazılsın; proje kodu biçimi `YIL.İL.GRUP..PROJE`.
-7. **Raporda FARK sütunu** (girilen / ölçülen uzunluk − çizim uzunluğu) ve **DETAY** mantığı (eksik malzeme bulma).
-8. **Onay akışı** (kontrol → hakediş → GIS) ve denetlenen öğenin kilitlenmesi: telefonda ve eklentide sade bir
-   karşılığı düşünülebilir (ileride).
-9. Pano çıkış şeması (`ANA`/`CON`) ve bina TR hücreleri (`FIDER`): okunup korunsun; düzenleme ileride.
+Hepsi yapıldı (`serit-ve-stil` dalı); ayrıntı KULLANIM.md › Bölüm 4 ve VERI-MODELI.md.
+
+1. ✓ **Tam katalog**: 2 934 tip `kalemler.json`'da (cins, tip, poz no, metrik ağırlık, birimler, karakteristik +
+   şehir / köy unsuru; fiyatsız). Telefon ve eklenti her PROMAGIS tipini seçebilir.
+2. ✓ **Durum kodları**: `KM`, `ENH`, `ME` iki tarafta seçilir; hat etiketleri `/tip\` ve `{tip}`; DM'de KESİK / SÖKÜK.
+3. ✓ **Tarife kuralı**: karakteristik + unsur ayrı; çizim ayarında şehir / köy-bakım anahtarı.
+4. ✓ **Katman stilleri ve görünüm**: telefonun çizim stili (`cizim-stili.json`) iki tarafta aynı; PROMAGIS
+   katman adları korunur.
+5. ✓ **Sıra numarası**: yeni INDEX `AYARLAR/SAYAC`'tan devam eder, sayaç ilerletilir; aktif hakediş `HakNo_Rec`
+   ile ortak. Telefon AutoCAD'den gelen kalemin INDEX'ini, hakedişini ve KONTROL'ünü korur.
+6. ✓ **Bölge**: `FULLREG` üçüncü alanı (grup kodu) yazılır / okunur; bölgeler `DicBölge/RecBölge`'ye kaydedilir.
+7. ✓ **FARK** sütunu (raporda vardı) ve **DETAY** (eksik malzeme bulma: `SH_DETAY`, raporda DETAY sayfası).
+8. ✓ **Onay akışı**: `SH_ONAY` (`HAK_ONAY/ONAY_DURUM<n>`, Kontrol → Hakediş → GIS, parolasız). Hakediş onayı
+   verilen hakediş eklentide kilitlidir (satır düzeyinde; kilitli nesneye açık hakedişte malzeme eklenebilir).
+   Denetlenmiş (`KONTROL`) nesnede uyarı. Telefonda onaylanan dönem eklentiye onay olarak gelir.
+   Yapılmayan: PROMAGIS'in parolaları (`KEY`) ve `HAK_YETKİ` bayrakları (eklenti tek kullanıcılı; telefonda roller var).
+9. ✓ Pano çıkış şeması (`ANA`/`CON`, öznitelik `C_1..C_8`) ve bina TR hücreleri (`FIDER`): okunur, telefonda ve
+   dosyada taşınır, aynen geri yazılır. Düzenleme penceresi yok (ileride istenirse).
 
 ## 9. Bizde olan / olmayan — özet
 
 | Konu | PROMAGIS | Bizde |
 | --- | --- | --- |
 | Çizimden okuma/yazma (XDATA, katman, blok) | — | var (aynı biçim) |
-| Katalog | 2 982 tip, Excel | 244 kalem (JSON); genişletilebilir |
-| Durumlar | M+M, M, KM, ENH, DM+M, DM, ME, MEVCUT | M+M, M, DM+M, DM, MEVCUT; KM/ME/ENH yalnız okunur |
-| DM'de KESİK/SÖKÜK | var | alan okunup yazılır, telefonda seçim yok |
-| Tarife | katalogdan karakteristik+unsur, şehir/köy anahtarı | kalemde tek tarife |
-| Katman stili | RGB + kalınlık + HIDDENX2 | yaklaşık ACI renk |
-| Hat uzunluğu | elle | geometri / telefon ölçümü |
-| Pano çıkış şeması (`ANA`, `CON`), hücre (`FIDER`) | var | yok |
-| Onay akışı, denetim kilidi | var | yok |
+| Katalog | 2 982 tip, Excel | 2 934 tip (JSON, gömülü) |
+| Durumlar | M+M, M, KM, ENH, DM+M, DM, ME, MEVCUT | aynı (iki tarafta seçilir) |
+| DM'de KESİK/SÖKÜK | var | var (iki tarafta) |
+| Tarife | katalogdan karakteristik+unsur, şehir/köy anahtarı | aynı |
+| Katman stili | RGB + kalınlık + HIDDENX2 | telefonla ortak stil (ACI renk, çizgi tipleri) |
+| Hat uzunluğu | elle | geometri / telefon ölçümü; direkten direğe parçalı |
+| Sıra sayacı, aktif hakediş, bölge listesi | çizim sözlüğü | aynı kayıtlar okunur / yazılır |
+| Pano çıkış şeması (`ANA`, `CON`), hücre (`FIDER`) | var | korunur (düzenleme yok) |
+| Onay akışı, denetim kilidi | var (parolalı) | var (parolasız; satır düzeyinde kilit) |
+| DETAY (eksik malzeme), FARK | var | var |
 | Rapor | Excel (COM) | kendi `.xlsx` yazıcısı |
 | Proje kodları | merkezi SQL Server | dosyadaki bölgeler |
 | Lisans/kayıt | disk seri no | yok |

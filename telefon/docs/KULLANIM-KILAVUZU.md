@@ -768,7 +768,16 @@ Büroda PROMAGIS çizimleriyle çalışan Şebeke Hakediş AutoCAD eklentisi ayn
    değişen ve eklenen nesneleri çizime işler.
 
 Durumlar şöyle çevrilir: Yeni → M (pozun temini yükleniciyse M+M), Mevcut → MEVCUT, Demontaj → DM, DMM → DM+M.
-**"İleride" durumundaki objeler AutoCAD dosyasına yazılmaz.** Ayrıntı ve komutlar: depo kökündeki `KULLANIM.md`.
+Objenin ekranında PROMAGIS kodu ayrıca seçilebilir (KM, ENH, ME; demontajda KESİK / SÖKÜK); AutoCAD'den gelen kod korunur.
+**"İleride" durumundaki objeler AutoCAD dosyasına yazılmaz.**
+
+AutoCAD'den gelen ve telefonda değişmeyen bilgiler aynen geri gider: kalemlerin sıra numarası (INDEX), hakedişi ve
+kontrol işareti, bölgenin grup kodu, panonun çıkış şeması, hat parçalarının numaraları. Böylece değişmeyen nesne
+AutoCAD'de "değişmiş" görünmez.
+
+**Hakediş onayları**: AutoCAD'deki (PROMAGIS) onaylar **Hakediş** ekranında görünür (Kontrol / Hakediş / GIS). AutoCAD'de
+onaylı hakediş kilitlidir; o hakedişe dokunan değişiklikler orada aktarılmaz. Telefonda onaylanan dönem AutoCAD'e
+kontrol + hakediş onayı olarak gider. Ayrıntı ve komutlar: depo kökündeki `KULLANIM.md`.
 
 ### Ofisteki web sürümüyle veri alışverişi
 

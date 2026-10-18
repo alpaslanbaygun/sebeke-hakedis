@@ -8,8 +8,15 @@
   PROMAGIS cins / tanım ile çevrilir (`ortak/katalog/volt-eslesme.json`).
 - Eklenti **PROMAGIS'in yerine geçer**: PROMAGIS çizimleri okunur; eklentinin çizdikleri de PROMAGIS
   biçimindedir (aynı katmanlar ve XDATA), böylece eski ve yeni nesneler aynı çizimde, aynı raporda durur.
-- Simgeler: çizimde PROMAGIS bloğu varsa o korunur; yoksa lejant simge takımı (`ortak/katalog/semboller.json`,
-  telefonun DXF çıktısıyla aynı bloklar).
+- Görünüm: AutoCAD çizimi telefondakiyle **birebir aynı** (18.10.2026 kararı): simgeler `ortak/katalog/semboller.json`
+  (1 ölçek), renk / çizgi tipi / yazı `ortak/katalog/cizim-stili.json`. Çizimdeki değişmeyen PROMAGIS bloklarına
+  dokunulmaz; `SH_GORUNUM` istenirse çevirir. Ayarlardan PROMAGIS simgelerine dönülebilir.
+- Şerit menü kategoriye göre değişir (kategori → yalnız o kategorinin öğeleri, pencere açmadan çizim); öğenin tip
+  listesi yalnız o öğenin cinslerinden gelir (`ortak/katalog/kategoriler.json`).
+- Hat, kanal ve sondaj **parçalı**: her bağlantı düğümünde (direk, SDK, pano, trafo) biter ve yeniden başlar; her
+  parçanın metrajı ve etiketi ayrı. Telefonda tek hat olarak görünür, parça kimlikleri korunur.
+- PROMAGIS'in çizimdeki ortak kayıtları (sayaç, aktif hakediş, bölge listesi, onaylar) eklentide de okunur ve yazılır;
+  onaylı hakediş kilitlidir.
 - AutoCAD sürümleri: **2016–2024** ve **2025 ve sonrası** (LT yok).
 - Veri aktarımı: **önce dosya** (Google Drive'da `.sebeke.json`; telefonun `.volt.json` ve teslim paketi de
   eklentide açılır), **sonra bulut eşitleme**.
@@ -30,10 +37,14 @@
 | 5–6 | İlk telefon uygulaması | bırakıldı (yerine VOLT-EDAŞ Saha) |
 | 7 | Bulut eşitleme (Drive'daki dosyayı elle taşımadan) | sırada |
 | 8 | VOLT-EDAŞ Saha birleşmesi: depo + otomatik APK derlemesi, lejant simge takımı, telefon ↔ AutoCAD dosya uyumu (iki yön, iki biçim) | tamam (sahada ve AutoCAD'de deneme bekliyor) |
+| 9 | PROMAGIS'ten alınanlar ve şerit: tam katalog, durum kodları, tarife, telefonla aynı görünüm, dinamik şerit, parçalı hat, sayaç / hakediş / bölge kayıtları, eksik malzeme (DETAY), hakediş onayı ve kilit, pano / hücre verisinin korunması | tamam (AutoCAD'de ve sahada deneme bekliyor) |
 
 ## Sahada / AutoCAD'de denenecekler
 
-- Eklentinin çizdiği lejant simgeleri (ölçek 4, etiket 0,5) ve PROMAGIS çizimlerinde oradaki blokların korunması.
+- Şerit: kategori seçince öğelerin değişmesi, öğeye tıklayınca pencere açılmadan çizim, Tip / Durum / Hakediş kutuları.
+- Telefonla aynı görünüm: yeni simgeler (1 ölçek), renkler, parça metrajı yazıları; `SH_GORUNUM` ile eski çizimin çevrilmesi.
+- PROMAGIS ile aynı çizimde sırayla çalışma: INDEX sırası, aktif hakediş, bölge listesi, onaylar iki programda aynı mı?
+- `SH_ONAY` ile onaylanan hakedişte kilit; `SH_DETAY` ile eksik malzeme; raporun DETAY sayfası.
 - `SH_PROJEAL` gerçek bir çizimde: telefonda taşınan direk, değişen metraj, demontaja çevrilen eleman doğru yansıyor mu?
 - Telefonda **AutoCAD dosyasından proje al** → sahada değişiklik → **Dışa Aktar › AutoCAD proje dosyası** →
   `SH_PROJEAL`: nesneler çoğalmadan güncelleniyor mu? Durum Tespit raporu beklenen kg'yi veriyor mu?

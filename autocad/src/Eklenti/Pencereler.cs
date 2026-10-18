@@ -793,7 +793,7 @@ namespace SebekeHakedis.Eklenti
             foreach (var n in onaylar.Keys) son = Math.Max(son, n);
             foreach (var n in say.Keys) son = Math.Max(son, n);
 
-            using (var d = new Duzen("Hakediş onayı", 600, Math.Min(760, 300 + son * 27), "Kaydet"))
+            using (var d = new Duzen("Hakediş onayı", 600, Math.Min(760, 210 + son * 24), "Kaydet"))
             {
                 d.Not("Her hakediş için sırayla: Kontrol → Hakediş → GIS (PROMAGIS'teki onay kaydı). Hakediş onayı verilen hakediş " +
                       "kilitlenir: eklenti o hakedişin nesnelerini ve malzeme satırlarını değiştirmez, silmez; o hakedişe yeni nesne " +
