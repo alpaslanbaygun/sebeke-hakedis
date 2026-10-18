@@ -303,12 +303,15 @@ namespace SebekeHakedis.Eklenti
                 }
                 return;
             }
+            // Yalnız model alanındaki direkler (blok tanımına giren kopyalara dokunulmaz)
+            if (direk.OwnerId != SymbolUtilityServices.GetBlockModelSpaceId(db)) return;
             string simge;
             double dx, dy;
             bool konumlu;
             if (!ArmaturBagi.DirekVerisi(direk, out simge, out dx, out dy, out konumlu)) return;
             string tanitici = direk.Handle.ToString();
             var mevcut = TaniticiylaAc(tr, db, simge);
+            if (mevcut != null && ArmaturBagi.SimgeSahibi(mevcut) == null) mevcut = null; // tanıtıcı başka bir nesnenin (başka çizimden gelmiş)
             if (mevcut != null && ArmaturBagi.SimgeSahibi(mevcut) == tanitici)
             {
                 if (!konumlu) return;

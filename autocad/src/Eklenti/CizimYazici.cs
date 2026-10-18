@@ -750,8 +750,7 @@ namespace SebekeHakedis.Eklenti
             if (!Toplayici.TaniticiylaBul(_db, tanitici, out id) || id.IsErased) return null;
             var br = _tr.GetObject(id, OpenMode.ForRead, false) as BlockReference;
             if (br == null || br.IsErased) return null;
-            string sahip = ArmaturBagi.SimgeSahibi(br);
-            return sahip == null || sahip == direk.Handle.ToString() ? br : null;
+            return ArmaturBagi.SimgeSahibi(br) == direk.Handle.ToString() ? br : null;
         }
 
         private BlockReference ArmaturBul(BlockReference direk)
@@ -803,7 +802,6 @@ namespace SebekeHakedis.Eklenti
             }
             mevcut.UpgradeOpen();
             if (!konumlu) ArmaturBagi.DirekVerisiYaz(direk, mevcut.Handle.ToString(), dx, dy);
-            if (ArmaturBagi.SimgeSahibi(mevcut) == null) ArmaturBagi.SahibiYaz(mevcut, direk.Handle.ToString());
             if (mevcut.Position.DistanceTo(konum) > 1e-6) mevcut.Position = konum;
             if (mevcut.BlockTableRecord != btrId) mevcut.BlockTableRecord = btrId;
             if (mevcut.LayerId != direk.LayerId) mevcut.LayerId = direk.LayerId;
