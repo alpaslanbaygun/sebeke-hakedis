@@ -338,16 +338,47 @@ namespace SebekeHakedis.Test
             // Katalog (eklentiye gömülen dosya)
             string katalogYolu = Path.Combine(AppContext.BaseDirectory, "kalemler.json");
             var k = Katalog.Oku(File.ReadAllText(katalogYolu, Encoding.UTF8), null);
-            Esit(true, k.Kalemler.Count > 100, "katalog okundu");
+            Esit(true, k.Kalemler.Count > 2500, "katalog okundu (PROMAGIS'in tam listesi)");
+            Esit(2, k.Surum, "katalog sürümü 2");
             var direkler = k.AnaTipler("AG_DIREK");
-            Esit(true, direkler.Count > 3 && direkler.TrueForAll(x => x.Rol == "ana"), "katalog: AG direk tipleri");
+            Esit(true, direkler.Count > 50 && direkler.TrueForAll(x => x.Rol == "ana"), "katalog: AG direk tipleri");
+            Esit("AG_DEMİR_GLV", direkler[0].Cins, "katalog: AG direkte önce galvanizli demir (grup sırası)");
+            Esit("G-8I", direkler[0].Tanim, "katalog: cins içinde PROMAGIS önem sırası");
+            Esit(true, direkler.TrueForAll(x => k.ElemanCinsListesi("AG_DIREK").Contains(x.Cins)), "katalog: yalnız türün cinsleri");
+            var mufular = k.AnaTipler("EK_MUFU", new[] { "EK_MUFU_AG_ALM", "EK_MUFU_AG_BAKIR" });
+            Esit(true, mufular.Count > 5 && mufular.TrueForAll(x => x.Cins.StartsWith("EK_MUFU_AG", StringComparison.Ordinal)), "katalog: cins süzgeci (yalnız AG ek mufu)");
             var kesitler = k.HatKesitleri("AG_HAVAI");
-            Esit(true, kesitler.Count > 0 && kesitler[0].Nesneler.Contains("HAT_AG_HAVAI"), "katalog: AG havai kesitleri önce");
-            Esit(true, k.SondajTipleri().Count > 0, "katalog: sondaj tipleri");
+            Esit(true, kesitler.Count > 0 && k.HatCinsListesi("AG_HAVAI").Contains(kesitler[0].Cins), "katalog: AG havai kesitleri önce");
+            Esit("AG_İLETKEN", kesitler[0].Cins, "katalog: AG havaide önce çıplak iletken");
+            Esit(true, k.HatKesitleri("OG_YERALTI")[0].Cins == "OG_ALİMİNYUM_KABLO", "katalog: OG yeraltında önce alüminyum kablo");
+            Esit(true, k.SondajTipleri().Count > 0 && k.SondajTipleri()[0].Cins == "YATAY_DELGİ", "katalog: sondaj tipleri");
+            Esit(true, k.KanalZeminleri().Count >= 10 && k.KanalZeminleri().TrueForAll(x => x.Cins == "KABLO_KANALI"), "katalog: kanal zeminleri");
             var mz = k.Malzemeler("AG_DIREK");
             Esit(true, mz.Count > 10 && mz[0].Nesneler.Contains("AG_DIREK"), "katalog: direkte kullanılan malzemeler önce");
             var kl = Katalog.KalemYap(direkler[0], 1, "M", 2, true, "NIT", "5001");
             Esit(SayiCoz.Temiz(direkler[0].Katsayi), kl.Toplam, "katalog kaleminden poz: toplam = miktar × katsayı");
+            Esit("0107", kl.Tarife, "tarife: şehir unsuru (varsayılan)");
+            Esit("0116", Katalog.TarifeSec(direkler[0], "", true), "tarife: köy / bakım unsuru");
+            Esit("0307", Katalog.TarifeSec(direkler[0], "03", false), "tarife: karakteristik ayardan");
+            Esit("5.1", direkler[0].PozNo, "katalog: poz numarası");
+            Esit(true, k.Bul("ENH_GLV_CVT", "BER+2") != null && k.Bul("ENH_GLV_CVT", "BER+2") == k.Bul("ENH_GLV_CVT", "BER+2   "), "katalog: boşluk farkıyla aynı kalem");
+            Esit("AG galvanizli demir direk", k.CinsAdi("AG_DEMİR_GLV"), "katalog: cins adı");
+            Esit(true, k.Karakteristikler.ContainsKey("01") && k.Unsurlar.ContainsKey("16"), "katalog: tarife kod listeleri");
+            Esit(8, k.Durumlar.Count, "katalog: PROMAGIS durum kodları");
+
+            // Menü kategorileri
+            Kategoriler.Yukle(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kategoriler.json"), Encoding.UTF8));
+            Esit(10, Kategoriler.Hepsi().Count, "kategoriler: 10 kategori");
+            var agHavai = Kategoriler.Bul("AG_HAVAI");
+            Esit(true, agHavai != null && agHavai.Ogeler.Count >= 2 && agHavai.Ogeler[0].Tur == "AG_DIREK" && agHavai.Ogeler[1].Tur == "AG_HAVAI", "kategoriler: AG Havai → AG Direk, AG Hat");
+            var mufu = Kategoriler.Oge("AG_YERALTI", "EK_MUFU_AG");
+            Esit(true, mufu != null && mufu.Cinsler.Count == 2 && k.AnaTipler(mufu.Tur, mufu.Cinsler).Count > 0, "kategoriler: öğe cins süzgeci katalogla uyumlu");
+            foreach (var kat in Kategoriler.Hepsi())
+                foreach (var og in kat.Ogeler)
+                {
+                    if (og.ElemanMi) Esit(true, k.AnaTipler(og.Tur, og.Cinsler.Count > 0 ? og.Cinsler : null).Count > 0, "kategoriler: " + kat.Ad + " › " + og.Ad + " tipleri var");
+                    if (og.HatMi) Esit(true, k.HatKesitleri(og.Tur, og.Cinsler.Count > 0 ? og.Cinsler : null).Count > 0, "kategoriler: " + kat.Ad + " › " + og.Ad + " kesitleri var");
+                }
 
             // Nokta dosyaları
             var uy = new List<string>();

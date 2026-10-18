@@ -40,6 +40,8 @@
     <EmbeddedResource Include="..\..\..\ortak\katalog\kalemler.json" Link="Katalog\kalemler.json" LogicalName="SebekeHakedis.kalemler.json" />
     <!-- Lejant simge takımı (telefonun DXF çıktısıyla aynı bloklar) -->
     <EmbeddedResource Include="..\..\..\ortak\katalog\semboller.json" Link="Katalog\semboller.json" LogicalName="SebekeHakedis.semboller.json" />
+    <!-- Menü kategorileri (şerit: kategori → hızlı çizim öğeleri) -->
+    <EmbeddedResource Include="..\..\..\ortak\katalog\kategoriler.json" Link="Katalog\kategoriler.json" LogicalName="SebekeHakedis.kategoriler.json" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net46'">

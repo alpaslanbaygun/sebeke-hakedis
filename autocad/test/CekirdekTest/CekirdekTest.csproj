@@ -19,6 +19,7 @@
     <None Include="volt-telefon.sebeke.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\katalog\kalemler.json" Link="kalemler.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\katalog\semboller.json" Link="semboller.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\ortak\katalog\kategoriler.json" Link="kategoriler.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

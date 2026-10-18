@@ -46,9 +46,16 @@ namespace SebekeHakedis.Cekirdek
             new Tur("MUSTEREK", "Müşterek"),
         };
 
-        public static readonly string[] Durumlar = { "M", "M+M", "DM", "DM+M", "MEVCUT" };
+        /// <summary>PROMAGIS durum kodları (Sayfa1 sırasıyla; sık kullanılanlar önde).</summary>
+        public static readonly string[] Durumlar = { "M", "M+M", "KM", "DM", "DM+M", "MEVCUT", "ENH", "ME" };
+
+        /// <summary>Çizimde yeni nesne için seçilebilen durumlar (ENH ve ME yalnız kalem düzenlemede).</summary>
+        public static readonly string[] CizimDurumlari = { "M", "M+M", "KM", "DM", "DM+M", "MEVCUT" };
 
         public static readonly string[] DmDurumlari = { "", "KESİK", "SÖKÜK" };
+
+        /// <summary>Demontaj türü durumlar (KESİK / SÖKÜK seçilebilir; etiket köşeli ayraçla).</summary>
+        public static bool DemontajMi(string durum) => durum == "DM" || durum == "DM+M";
 
         public static readonly string[] Zeminler =
         {
@@ -63,11 +70,14 @@ namespace SebekeHakedis.Cekirdek
         {
             switch (durum)
             {
-                case "M": return "Montaj";
-                case "M+M": return "Malzeme + Montaj";
+                case "M": return "Montaj (malzeme kurumdan)";
+                case "M+M": return "Malzeme + Montaj (yüklenici)";
+                case "KM": return "Kurum montajı, malzeme yükleniciden";
                 case "DM": return "Demontaj";
                 case "DM+M": return "Sök-Tak";
                 case "MEVCUT": return "Mevcut";
+                case "ENH": return "Kilometrik bedelli iş";
+                case "ME": return "Mutabakat eksiği";
                 default: return durum ?? "";
             }
         }

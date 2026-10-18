@@ -20,9 +20,11 @@ namespace SebekeHakedis.Eklenti
         public int Hakedis = 1;
         /// <summary>İlk elemanın elle yazılan GIS numarası; boşsa kendiliğinden verilir.</summary>
         public string Gis = "";
+        /// <summary>Menü öğesinden gelen cins süzgeci (boş: türün bütün cinsleri).</summary>
+        public List<string> Cinsler = new List<string>();
 
         public override string ToString() =>
-            Turler.ElemanAdi(Tur) + " · " + (Tip != null ? Tip.Tanim : "") + " · " + Durum + " · " + Hakedis + ". hakediş";
+            Turler.ElemanAdi(Tur) + " · " + (Tip != null ? Tip.Tanim.Trim() : "") + " · " + Durum + " · " + Hakedis + ". hakediş";
     }
 
     internal sealed class HatSecimi
@@ -31,9 +33,10 @@ namespace SebekeHakedis.Eklenti
         public KatalogKalemi Kesit;
         public string Durum = "M";
         public int Hakedis = 1;
+        public List<string> Cinsler = new List<string>();
 
         public override string ToString() =>
-            Turler.HatAdi(Tur) + " · " + (Kesit != null ? Kesit.Tanim : "") + " · " + Durum + " · " + Hakedis + ". hakediş";
+            Turler.HatAdi(Tur) + " · " + (Kesit != null ? Kesit.Tanim.Trim() : "") + " · " + Durum + " · " + Hakedis + ". hakediş";
     }
 
     internal sealed class KanalSecimi
@@ -266,13 +269,13 @@ namespace SebekeHakedis.Eklenti
         private static ComboBox DurumKutusu(string secili)
         {
             var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
-            foreach (var d in Turler.Durumlar) c.Items.Add(d + "   —   " + Turler.DurumAdi(d));
-            int i = Array.IndexOf(Turler.Durumlar, secili);
+            foreach (var d in Turler.CizimDurumlari) c.Items.Add(d + "   —   " + Turler.DurumAdi(d));
+            int i = Array.IndexOf(Turler.CizimDurumlari, secili);
             c.SelectedIndex = i >= 0 ? i : 0;
             return c;
         }
 
-        private static string DurumKodu(ComboBox c) => c.SelectedIndex >= 0 && c.SelectedIndex < Turler.Durumlar.Length ? Turler.Durumlar[c.SelectedIndex] : "M";
+        private static string DurumKodu(ComboBox c) => c.SelectedIndex >= 0 && c.SelectedIndex < Turler.CizimDurumlari.Length ? Turler.CizimDurumlari[c.SelectedIndex] : "M";
 
         private static ComboBox DmKutusu(string secili)
         {
@@ -344,12 +347,43 @@ namespace SebekeHakedis.Eklenti
 
         // ================= Eleman =================
 
+        /// <summary>Cins süzgeci kutusu: "(hepsi)" + verilen cinsler (okunur adla).</summary>
+        private sealed class CinsSecenegi
+        {
+            public string Cins; public string Ad;
+            public override string ToString() => Ad;
+        }
+
+        private static ComboBox CinsKutusu()
+        {
+            return new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
+        }
+
+        private static void CinsleriDoldur(ComboBox c, OrtamVerisi o, List<string> cinsler, string secili)
+        {
+            c.BeginUpdate();
+            c.Items.Clear();
+            c.Items.Add(new CinsSecenegi { Cins = "", Ad = cinsler.Count > 1 ? "(hepsi)" : cinsler.Count == 1 ? o.Katalog.CinsAdi(cinsler[0]) + "  —  " + cinsler[0] : "(hepsi)" });
+            int sec = 0;
+            if (cinsler.Count > 1)
+                foreach (var cins in cinsler)
+                {
+                    int i = c.Items.Add(new CinsSecenegi { Cins = cins, Ad = o.Katalog.CinsAdi(cins) + "  —  " + cins });
+                    if (cins == secili) sec = i;
+                }
+            c.EndUpdate();
+            c.SelectedIndex = sec;
+        }
+
+        private static string SeciliCins(ComboBox c) => (c.SelectedItem as CinsSecenegi)?.Cins ?? "";
+
         public static ElemanSecimi Eleman(OrtamVerisi o, ElemanSecimi onceki)
         {
-            using (var d = new Duzen("Eleman koy — direk, box, pano, trafo, mufu", 640, 600, "Yerleştir"))
+            using (var d = new Duzen("Eleman koy — direk, box, pano, trafo, mufu", 640, 640, "Yerleştir"))
             {
                 var tur = d.Satir("Tür", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
                 foreach (var t in Turler.Elemanlar) tur.Items.Add(t);
+                var cins = d.Satir("Cins (malzeme sınıfı)", CinsKutusu());
                 d.AraBaslik("Tip (katalogdan seçin, yazarak arayın)");
                 var liste = new KatalogListesi();
                 d.Tam(liste.Kap, -1);
@@ -359,7 +393,8 @@ namespace SebekeHakedis.Eklenti
                 var gis = d.Satir("İlk GIS numarası", new TextBox());
                 d.Not("Her tıklamada bir eleman konur; sonraki GIS numaraları kendiliğinden artar. Bitirmek için Enter'a basın.");
 
-                bool kendimiz = false, elle = false;
+                var suzgec = onceki != null ? onceki.Cinsler : new List<string>();
+                bool kendimiz = false, elle = false, yukleniyor = false;
                 Action gisOner = () =>
                 {
                     if (elle) return;
@@ -369,16 +404,30 @@ namespace SebekeHakedis.Eklenti
                     kendimiz = false;
                 };
                 gis.TextChanged += (s, e) => { if (!kendimiz) elle = true; };
-                tur.SelectedIndexChanged += (s, e) =>
+                Action tipleriDoldur = () =>
                 {
                     var t = tur.SelectedItem as Tur;
                     if (t == null) return;
-                    var tipler = o.Katalog.AnaTipler(t.Kod);
+                    string secCins = SeciliCins(cins);
+                    var tipler = secCins.Length > 0 ? o.Katalog.AnaTipler(t.Kod, new[] { secCins }) : o.Katalog.AnaTipler(t.Kod, suzgec.Count > 0 ? suzgec : null);
+                    if (tipler.Count == 0) tipler = o.Katalog.AnaTipler(t.Kod);
                     if (tipler.Count == 0) tipler = o.Katalog.Kalemler.FindAll(x => x.Rol == "ana");
                     string son = onceki != null && onceki.Tur == t.Kod && onceki.Tip != null ? onceki.Tip.Anahtar : o.Ayar.SonDeger("eleman.tip." + t.Kod, null);
                     liste.Doldur(tipler, son);
                     gisOner();
                 };
+                tur.SelectedIndexChanged += (s, e) =>
+                {
+                    var t = tur.SelectedItem as Tur;
+                    if (t == null) return;
+                    yukleniyor = true;
+                    var cinsler = suzgec.Count > 0 ? new List<string>(suzgec) : o.Katalog.ElemanCinsListesi(t.Kod);
+                    string sonCins = onceki != null && onceki.Tur == t.Kod && onceki.Tip != null ? onceki.Tip.Cins : "";
+                    CinsleriDoldur(cins, o, cinsler, suzgec.Count > 0 ? "" : o.Ayar.SonDeger("eleman.cins." + t.Kod, sonCins));
+                    yukleniyor = false;
+                    tipleriDoldur();
+                };
+                cins.SelectedIndexChanged += (s, e) => { if (!yukleniyor) tipleriDoldur(); };
                 liste.Liste.SelectedIndexChanged += (s, e) => gisOner();
                 liste.Secildi += () => d.Tamam.PerformClick();
                 Action dmAyarla = () => dm.Enabled = DurumKodu(durum).StartsWith("DM", StringComparison.Ordinal);
@@ -404,9 +453,11 @@ namespace SebekeHakedis.Eklenti
                     DmDurum = dm.Enabled ? DmKodu(dm) : "",
                     Hakedis = (int)hak.Value,
                     Gis = elle ? gis.Text.Trim() : "",
+                    Cinsler = suzgec,
                 };
                 o.Ayar.Son["eleman.tur"] = sonuc.Tur;
                 o.Ayar.Son["eleman.tip." + sonuc.Tur] = sonuc.Tip.Anahtar;
+                o.Ayar.Son["eleman.cins." + sonuc.Tur] = SeciliCins(cins);
                 o.Ayar.Son["eleman.durum"] = sonuc.Durum;
                 return sonuc;
             }
@@ -416,25 +467,44 @@ namespace SebekeHakedis.Eklenti
 
         public static HatSecimi Hat(OrtamVerisi o, HatSecimi onceki)
         {
-            using (var d = new Duzen("Hat çiz — AG/OG havai, yeraltı, aydınlatma, rekortman", 640, 580, "Çiz"))
+            using (var d = new Duzen("Hat çiz — AG/OG havai, yeraltı, aydınlatma, rekortman", 640, 620, "Çiz"))
             {
                 var tur = d.Satir("Hat türü", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
                 foreach (var t in Turler.Hatlar) tur.Items.Add(t);
+                var cins = d.Satir("Cins (iletken / kablo sınıfı)", CinsKutusu());
                 d.AraBaslik("Kesit / iletken (katalogdan seçin, yazarak arayın)");
                 var liste = new KatalogListesi();
                 d.Tam(liste.Kap, -1);
                 var durum = d.Satir("Durum", DurumKutusu(onceki != null ? onceki.Durum : o.Ayar.SonDeger("hat.durum", "M")));
                 var hak = d.Satir("Hakediş", Sayi(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis));
-                d.Not("Başlangıç direğine, gerekirse ara köşelere ve bitiş direğine tıklayın; Enter ile bitirin. " +
-                      "Metraj çizim uzunluğundan hesaplanır (ayarlardaki yuvarlama ve ek pay), onaylamadan önce değiştirebilirsiniz.");
+                d.Not("Başlangıç direğine, sonra sıradaki direklere tıklayın; Enter ile bitirin. Hat her direkte (düğümde) " +
+                      "biter ve yeniden başlar; her parçanın metrajı ayrı yazılır. Metraj çizim uzunluğundan hesaplanır " +
+                      "(ayarlardaki yuvarlama ve ek pay), onaylamadan önce değiştirebilirsiniz.");
 
+                var suzgec = onceki != null ? onceki.Cinsler : new List<string>();
+                bool yukleniyor = false;
+                Action kesitleriDoldur = () =>
+                {
+                    var t = tur.SelectedItem as Tur;
+                    if (t == null) return;
+                    string secCins = SeciliCins(cins);
+                    var kesitler = secCins.Length > 0 ? o.Katalog.HatKesitleri(t.Kod, new[] { secCins }) : o.Katalog.HatKesitleri(t.Kod, suzgec.Count > 0 ? suzgec : null);
+                    if (kesitler.Count == 0) kesitler = o.Katalog.HatKesitleri(t.Kod);
+                    string son = onceki != null && onceki.Tur == t.Kod && onceki.Kesit != null ? onceki.Kesit.Anahtar : o.Ayar.SonDeger("hat.kesit." + t.Kod, null);
+                    liste.Doldur(kesitler, son);
+                };
                 tur.SelectedIndexChanged += (s, e) =>
                 {
                     var t = tur.SelectedItem as Tur;
                     if (t == null) return;
-                    string son = onceki != null && onceki.Tur == t.Kod && onceki.Kesit != null ? onceki.Kesit.Anahtar : o.Ayar.SonDeger("hat.kesit." + t.Kod, null);
-                    liste.Doldur(o.Katalog.HatKesitleri(t.Kod), son);
+                    yukleniyor = true;
+                    var cinsler = suzgec.Count > 0 ? new List<string>(suzgec) : o.Katalog.HatCinsListesi(t.Kod);
+                    string sonCins = onceki != null && onceki.Tur == t.Kod && onceki.Kesit != null ? onceki.Kesit.Cins : "";
+                    CinsleriDoldur(cins, o, cinsler, suzgec.Count > 0 ? "" : o.Ayar.SonDeger("hat.cins." + t.Kod, sonCins));
+                    yukleniyor = false;
+                    kesitleriDoldur();
                 };
+                cins.SelectedIndexChanged += (s, e) => { if (!yukleniyor) kesitleriDoldur(); };
                 liste.Secildi += () => d.Tamam.PerformClick();
                 string ilkTur = onceki != null ? onceki.Tur : o.Ayar.SonDeger("hat.tur", "AG_HAVAI");
                 tur.SelectedIndex = Math.Max(0, Array.FindIndex(Turler.Hatlar, t => t.Kod == ilkTur));
@@ -445,9 +515,10 @@ namespace SebekeHakedis.Eklenti
                     return true;
                 };
                 if (!d.Goster()) return null;
-                var sonuc = new HatSecimi { Tur = ((Tur)tur.SelectedItem).Kod, Kesit = liste.Secili, Durum = DurumKodu(durum), Hakedis = (int)hak.Value };
+                var sonuc = new HatSecimi { Tur = ((Tur)tur.SelectedItem).Kod, Kesit = liste.Secili, Durum = DurumKodu(durum), Hakedis = (int)hak.Value, Cinsler = suzgec };
                 o.Ayar.Son["hat.tur"] = sonuc.Tur;
                 o.Ayar.Son["hat.kesit." + sonuc.Tur] = sonuc.Kesit.Anahtar;
+                o.Ayar.Son["hat.cins." + sonuc.Tur] = SeciliCins(cins);
                 o.Ayar.Son["hat.durum"] = sonuc.Durum;
                 return sonuc;
             }
@@ -459,8 +530,9 @@ namespace SebekeHakedis.Eklenti
         {
             var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDown };
             var gorulen = new HashSet<string>(StringComparer.Ordinal);
+            // Önce katalogdaki kanal zeminleri (PROMAGIS sırası), sonra sabit liste ve çizimde geçenler
+            foreach (var it in o.Katalog.KanalZeminleri()) if (gorulen.Add(it.Tanim)) c.Items.Add(it.Tanim);
             foreach (var z in Turler.Zeminler) if (gorulen.Add(z)) c.Items.Add(z);
-            foreach (var it in o.Katalog.Kalemler) if (it.Rol == "kanal" && gorulen.Add(it.Tanim)) c.Items.Add(it.Tanim);
             foreach (var k in o.Proje.Kanallar) if (!string.IsNullOrEmpty(k.Zemin) && gorulen.Add(k.Zemin)) c.Items.Add(k.Zemin);
             c.Text = string.IsNullOrEmpty(secili) ? "TOPRAK" : secili;
             return c;
@@ -622,7 +694,25 @@ namespace SebekeHakedis.Eklenti
                 var der = IkiliEkle(kanalTablosu, 2, "Derinlik", Sayi(0, 1000, D(a.KanalDerinlik), 0, 5));
                 d.Tam(kanalTablosu, 0);
                 var zemin = d.Satir("Kanal zemini", ZeminKutusu(o, a.KanalZemin));
+                d.AraBaslik("Tarife (PROMAGIS: karakteristik + unsur)");
+                var kar = d.Satir("Karakteristik", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
+                kar.Items.Add("Katalogdaki standart (çoğunlukla 01)");
+                var karKodlari = new List<string>(o.Katalog.Karakteristikler.Keys);
+                karKodlari.Sort(StringComparer.Ordinal);
+                foreach (var kod in karKodlari) kar.Items.Add(kod + "   —   " + o.Katalog.Karakteristikler[kod]);
+                kar.SelectedIndex = Math.Max(0, karKodlari.IndexOf(a.Karakteristik) + 1);
+                var unsur = d.Satir("Unsur sütunu", new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
+                unsur.Items.Add("Şehir (yatırım unsuru)");
+                unsur.Items.Add("Köy / bakım unsuru");
+                unsur.SelectedIndex = a.Koy ? 1 : 0;
+                d.Not("Yeni konan her kalemin tarifesi bu ayarla üretilir; var olan kalemler değişmez.");
+                d.AraBaslik("Görünüm");
+                var sembol = d.Satir("Semboller", new CheckBox { Text = "Telefonla aynı simgeler (SH_ blokları, 1 ölçek)", Checked = a.TelefonSembolleri, AutoSize = true });
+                d.Not("Kapalıysa çizimde o tür için kullanılan PROMAGIS bloğu ve ölçeği korunur.");
                 if (!d.Goster()) return false;
+                a.Karakteristik = kar.SelectedIndex > 0 ? karKodlari[kar.SelectedIndex - 1] : "";
+                a.Koy = unsur.SelectedIndex == 1;
+                a.TelefonSembolleri = sembol.Checked;
 
                 a.KatmanOnEki = onEk.Text.Trim();
                 a.GisOnEki = gisOnEki.Text.Trim();
@@ -835,7 +925,7 @@ namespace SebekeHakedis.Eklenti
                     var it = KatalogdanSec("Malzeme ekle — " + baslik, o.Katalog.Malzemeler(katalogNesnesi), d.F);
                     if (it == null) return;
                     string dur = nesneDurumu == "MEVCUT" || string.IsNullOrEmpty(nesneDurumu) ? "M" : nesneDurumu;
-                    var k = Katalog.KalemYap(it, 1, dur, o.Hakedis, false, "MALZEME", o.YeniSira());
+                    var k = Katalog.KalemYap(it, 1, dur, o.Hakedis, false, "MALZEME", o.YeniSira(), "", o.Ayar.Karakteristik, o.Ayar.Koy);
                     kalemler.Add(k);
                     int r = satirEkle(k);
                     g.ClearSelection();

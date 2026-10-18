@@ -212,7 +212,7 @@ namespace SebekeHakedis.Eklenti
                         Tur = secim.Tur, GisId = gis, Cins = secim.Tip.Cins, Tip = secim.Tip.Tanim, Durum = secim.Durum, DmDurum = secim.DmDurum,
                         Hakedis = secim.Hakedis, Saga = p.X, Yukari = p.Y, Kot = p.Z,
                     };
-                    e.Kalemler.Add(Katalog.KalemYap(secim.Tip, 1, secim.Durum, secim.Hakedis, true, "NIT", o.YeniSira(), secim.DmDurum));
+                    e.Kalemler.Add(Katalog.KalemYap(secim.Tip, 1, secim.Durum, secim.Hakedis, true, "NIT", o.YeniSira(), secim.DmDurum, o.Ayar.Karakteristik, o.Ayar.Koy));
                     using (var tr = o.Db.TransactionManager.StartTransaction())
                     {
                         var y = Yazici(o, tr);
@@ -270,7 +270,7 @@ namespace SebekeHakedis.Eklenti
                     if (m == null) { ed.WriteMessage("\nHat çizilmedi."); break; }
                     var h = new Hat { Tur = secim.Tur, AnaKesit = secim.Kesit.Tanim, Durum = secim.Durum, Hakedis = secim.Hakedis };
                     foreach (var q in noktalar) h.Kose.Add(new[] { q.X, q.Y });
-                    h.Kalemler.Add(Katalog.KalemYap(secim.Kesit, m.Value, secim.Durum, secim.Hakedis, false, "HAT", o.YeniSira()));
+                    h.Kalemler.Add(Katalog.KalemYap(secim.Kesit, m.Value, secim.Durum, secim.Hakedis, false, "HAT", o.YeniSira(), "", o.Ayar.Karakteristik, o.Ayar.Koy));
                     var v = PromagisYazici.Hat(h, o.OnEk, null);
                     string etiket = PromagisYazici.HatEtiketi(h);
                     using (var tr = o.Db.TransactionManager.StartTransaction())
@@ -328,10 +328,13 @@ namespace SebekeHakedis.Eklenti
                         BitNo = uclar.Count > 1 && uclar[uclar.Count - 1] != null ? uclar[uclar.Count - 1].GisId : "",
                     };
                     foreach (var q in noktalar) c.Kose.Add(new[] { q.X, q.Y });
+                    // Kanalın tarifesi katalogdaki zemin kaleminden (KABLO_KANALI), zemin katalogda yoksa 0104
+                    var zeminKalemi = o.Katalog.KanalZeminleri().Find(z => KatalogKalemi.Sade(z.Tanim) == KatalogKalemi.Sade(c.Zemin));
                     var kl = new Kalem
                     {
                         Cins = c.Kod.ToString(CultureInfo.InvariantCulture), Tanim = c.Zemin, Durum = c.Durum, Miktar = m.Value, Birim = "mt/m³",
-                        Katsayi = 1, Hakedis = c.Hakedis, Tarife = "0104", Sira = o.YeniSira(), Ana = true, Kaynak = "NIT",
+                        Katsayi = 1, Hakedis = c.Hakedis, Tarife = zeminKalemi != null ? o.Ayar.Tarife(zeminKalemi) : Katalog.TarifeSec(new KatalogKalemi { Tarife = "0104", UnsurKoy = "16" }, o.Ayar.Karakteristik, o.Ayar.Koy),
+                        Sira = o.YeniSira(), Ana = true, Kaynak = "NIT",
                     };
                     Metraj.Toplam(kl, c);
                     c.Kalemler.Add(kl);
@@ -390,7 +393,7 @@ namespace SebekeHakedis.Eklenti
                         BitNo = uclar.Count > 1 && uclar[uclar.Count - 1] != null ? uclar[uclar.Count - 1].GisId : "",
                     };
                     foreach (var q in noktalar) s.Kose.Add(new[] { q.X, q.Y });
-                    s.Kalemler.Add(Katalog.KalemYap(secim.Tip, m.Value, secim.Durum, secim.Hakedis, true, "NIT", o.YeniSira()));
+                    s.Kalemler.Add(Katalog.KalemYap(secim.Tip, m.Value, secim.Durum, secim.Hakedis, true, "NIT", o.YeniSira(), "", o.Ayar.Karakteristik, o.Ayar.Koy));
                     var v = PromagisYazici.Sondaj(s, o.OnEk, null);
                     using (var tr = o.Db.TransactionManager.StartTransaction())
                     {

@@ -186,7 +186,15 @@ namespace SebekeHakedis.Cekirdek
                 case "BOX": return "SDK";
                 case "EK_MUFU": return "MUFU";
                 case "KOFRE": return "KOFRE";
-                default: return "DIGER";
+                default:
+                    {
+                        // Telefonun "diğer" nesneleri cinsle ayrılır: armatür, menhol, abone bağlantısı
+                        string c = (cins ?? "").ToUpperInvariant().Replace('İ', 'I').Replace('Ü', 'U');
+                        if (c.StartsWith("ARMATUR", StringComparison.Ordinal)) return "ARMATUR";
+                        if (c.StartsWith("MENHOL", StringComparison.Ordinal)) return "MENHOL";
+                        if (c.StartsWith("ABONE", StringComparison.Ordinal)) return "ABONE";
+                        return "DIGER";
+                    }
             }
         }
 

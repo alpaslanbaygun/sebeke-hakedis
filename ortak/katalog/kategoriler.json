@@ -1,0 +1,103 @@
+{
+ "bicim": "sebeke-hakedis.kategoriler",
+ "surum": 1,
+ "aciklama": "Çizim menüsünün kategorileri (şerit: önce kategori seçilir, yalnız o kategorinin öğeleri görünür). Öğe: komut + tür (+ cins süzgeci). Tip listeleri kalemler.json › gruplar tablosundan gelir; 'cinsler' verilirse yalnız o cinsler listelenir. Aynı öğe birden çok kategoride olabilir.",
+ "kategoriler": [
+  {
+   "kod": "AG_HAVAI", "ad": "AG Havai", "kisa": "AG", "renk": "#1f7f00",
+   "aciklama": "Alçak gerilim havai şebeke: direkler, çıplak / demetli iletken, kofre, abone bağlantısı",
+   "ogeler": [
+    { "kod": "AG_DIREK", "ad": "AG Direk", "kisa": "AD", "komut": "SH_ELEMAN", "tur": "AG_DIREK" },
+    { "kod": "AG_HAT", "ad": "AG Hat", "kisa": "AH", "komut": "SH_HAT", "tur": "AG_HAVAI" },
+    { "kod": "KOFRE", "ad": "Kofre", "kisa": "KF", "komut": "SH_ELEMAN", "tur": "KOFRE" },
+    { "kod": "ABONE_HAT", "ad": "Abone Hattı", "kisa": "AB", "komut": "SH_HAT", "tur": "REKORTMAN" }
+   ]
+  },
+  {
+   "kod": "AG_YERALTI", "ad": "AG Yeraltı", "kisa": "AGY", "renk": "#166534",
+   "aciklama": "Alçak gerilim yeraltı şebeke: box / SDK, pano, kablo, ek mufu, kanal ve sondaj",
+   "ogeler": [
+    { "kod": "BOX", "ad": "Box / SDK", "kisa": "BX", "komut": "SH_ELEMAN", "tur": "BOX" },
+    { "kod": "PANO", "ad": "Pano", "kisa": "PN", "komut": "SH_ELEMAN", "tur": "PANO" },
+    { "kod": "AG_KABLO", "ad": "AG Kablo", "kisa": "AK", "komut": "SH_HAT", "tur": "AG_YERALTI" },
+    { "kod": "EK_MUFU_AG", "ad": "AG Ek Mufu", "kisa": "EM", "komut": "SH_ELEMAN", "tur": "EK_MUFU", "cinsler": ["EK_MUFU_AG_ALM", "EK_MUFU_AG_BAKIR"] },
+    { "kod": "KANAL_AG", "ad": "Kablo Kanalı", "kisa": "KN", "komut": "SH_KANAL", "kablolar": "AG" },
+    { "kod": "SONDAJ", "ad": "Yatay Sondaj", "kisa": "SN", "komut": "SH_SONDAJ" }
+   ]
+  },
+  {
+   "kod": "OG_HAVAI", "ad": "OG Havai / ENH", "kisa": "OG", "renk": "#ff0000",
+   "aciklama": "Orta gerilim havai şebeke ve enerji nakil hattı: ENH direkleri, OG iletken, trafo direği",
+   "ogeler": [
+    { "kod": "ENH_DIREK", "ad": "ENH / OG Direk", "kisa": "OD", "komut": "SH_ELEMAN", "tur": "ENH_DIREK" },
+    { "kod": "OG_HAT", "ad": "OG Hat", "kisa": "OH", "komut": "SH_HAT", "tur": "OG_HAVAI" },
+    { "kod": "TRAFO_DIREGI", "ad": "Trafo Direği", "kisa": "TD", "komut": "SH_ELEMAN", "tur": "TRAFO_DIREGI" }
+   ]
+  },
+  {
+   "kod": "OG_YERALTI", "ad": "OG Yeraltı", "kisa": "OGY", "renk": "#991b1b",
+   "aciklama": "Orta gerilim yeraltı şebeke: OG kablo, ek mufu, köşk / bina tipi trafo, kanal ve sondaj",
+   "ogeler": [
+    { "kod": "OG_KABLO", "ad": "OG Kablo", "kisa": "OK", "komut": "SH_HAT", "tur": "OG_YERALTI" },
+    { "kod": "EK_MUFU_OG", "ad": "OG Ek Mufu", "kisa": "EM", "komut": "SH_ELEMAN", "tur": "EK_MUFU", "cinsler": ["EK_MUFU_OG_ALM", "EK_MUFU_OG_BAKIR"] },
+    { "kod": "TRAFO_MERKEZI", "ad": "Köşk / Bina TR", "kisa": "TM", "komut": "SH_ELEMAN", "tur": "TRAFO_MERKEZI" },
+    { "kod": "KANAL_OG", "ad": "Kablo Kanalı", "kisa": "KN", "komut": "SH_KANAL", "kablolar": "OG" },
+    { "kod": "SONDAJ", "ad": "Yatay Sondaj", "kisa": "SN", "komut": "SH_SONDAJ" }
+   ]
+  },
+  {
+   "kod": "MUSTEREK", "ad": "Müşterek", "kisa": "MŞ", "renk": "#ff00ff",
+   "aciklama": "Aynı direkte AG + OG: müşterek direkler ve hatlar",
+   "ogeler": [
+    { "kod": "MUSTEREK_DIREK", "ad": "Müşterek Direk", "kisa": "MD", "komut": "SH_ELEMAN", "tur": "MUSTEREK_DIREK" },
+    { "kod": "MUSTEREK_HAT", "ad": "Müşterek Hat", "kisa": "MH", "komut": "SH_HAT", "tur": "MUSTEREK" },
+    { "kod": "AG_HAT", "ad": "AG Hat", "kisa": "AH", "komut": "SH_HAT", "tur": "AG_HAVAI" },
+    { "kod": "OG_HAT", "ad": "OG Hat", "kisa": "OH", "komut": "SH_HAT", "tur": "OG_HAVAI" }
+   ]
+  },
+  {
+   "kod": "AYDINLATMA", "ad": "Aydınlatma", "kisa": "AY", "renk": "#0891b2",
+   "aciklama": "Aydınlatma direkleri, aydınlatma hattı / kablosu, armatür",
+   "ogeler": [
+    { "kod": "AYD_DIREK", "ad": "Aydınlatma Direği", "kisa": "YD", "komut": "SH_ELEMAN", "tur": "AYD_DIREK" },
+    { "kod": "AYD_HAT", "ad": "Aydınlatma Hattı", "kisa": "YH", "komut": "SH_HAT", "tur": "AYDINLATMA" },
+    { "kod": "ARMATUR", "ad": "Armatür", "kisa": "AR", "komut": "SH_ELEMAN", "tur": "DIGER", "cinsler": ["ARMATÜR"] }
+   ]
+  },
+  {
+   "kod": "TRAFO", "ad": "Trafo", "kisa": "TR", "renk": "#2563eb",
+   "aciklama": "Direk tipi trafo, köşk / bina tipi trafo merkezi, AG pano",
+   "ogeler": [
+    { "kod": "TRAFO_DIREGI", "ad": "Trafo Direği", "kisa": "TD", "komut": "SH_ELEMAN", "tur": "TRAFO_DIREGI" },
+    { "kod": "TRAFO_MERKEZI", "ad": "Köşk / Bina TR", "kisa": "TM", "komut": "SH_ELEMAN", "tur": "TRAFO_MERKEZI" },
+    { "kod": "PANO", "ad": "Pano", "kisa": "PN", "komut": "SH_ELEMAN", "tur": "PANO" }
+   ]
+  },
+  {
+   "kod": "ABONE", "ad": "Abone", "kisa": "AB", "renk": "#d97706",
+   "aciklama": "Abone bağlantıları: rekortman hattı, kofre",
+   "ogeler": [
+    { "kod": "ABONE_HAT", "ad": "Abone Hattı", "kisa": "AB", "komut": "SH_HAT", "tur": "REKORTMAN" },
+    { "kod": "KOFRE", "ad": "Kofre", "kisa": "KF", "komut": "SH_ELEMAN", "tur": "KOFRE" }
+   ]
+  },
+  {
+   "kod": "KAZI", "ad": "Kazı", "kisa": "KZ", "renk": "#8b5a2b",
+   "aciklama": "Kablo kanalı ve yatay sondaj",
+   "ogeler": [
+    { "kod": "KANAL", "ad": "Kablo Kanalı", "kisa": "KN", "komut": "SH_KANAL" },
+    { "kod": "SONDAJ", "ad": "Yatay Sondaj", "kisa": "SN", "komut": "SH_SONDAJ" }
+   ]
+  },
+  {
+   "kod": "PROJE", "ad": "Proje", "kisa": "PR", "renk": "#6b7280",
+   "aciklama": "Bölge sınırı, ölçü noktaları, telefonla alışveriş",
+   "ogeler": [
+    { "kod": "BOLGE", "ad": "Bölge", "kisa": "BL", "komut": "SH_BOLGE" },
+    { "kod": "NOKTAAL", "ad": "Nokta Al", "kisa": "NK", "komut": "SH_NOKTAAL" },
+    { "kod": "PROJEAL", "ad": "Telefondan Al", "kisa": "TA", "komut": "SH_PROJEAL" },
+    { "kod": "ICEAL", "ad": "Telefona Gönder", "kisa": "TG", "komut": "SH_ICEAL" }
+   ]
+  }
+ ]
+}

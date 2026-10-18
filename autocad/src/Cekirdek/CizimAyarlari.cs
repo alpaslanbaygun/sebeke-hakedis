@@ -55,6 +55,12 @@ namespace SebekeHakedis.Cekirdek
         public readonly Dictionary<string, double> EkPay = new Dictionary<string, double>(StringComparer.Ordinal);
         public double KanalAlt = 40, KanalUst = 40, KanalDerinlik = 100;
         public string KanalZemin = "TOPRAK";
+        /// <summary>Tarife karakteristiği (2 hane, ör. 01); boş: katalogdaki standart karakteristik (PROMAGIS KRTNALINACAK).</summary>
+        public string Karakteristik = "";
+        /// <summary>Unsur sütunu: false şehir (yatırım), true köy / bakım (PROMAGIS SMIKMU 1/2).</summary>
+        public bool Koy;
+        /// <summary>Sembol takımı: true telefonla aynı SH_ simgeler (varsayılan), false çizimdeki PROMAGIS blokları.</summary>
+        public bool TelefonSembolleri = true;
 
         /// <summary>Son seçimler (tür, tip, kesit, durum...): bir sonraki komutta hazır gelir.</summary>
         public readonly Dictionary<string, string> Son = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -66,6 +72,9 @@ namespace SebekeHakedis.Cekirdek
         }
 
         public double HatMetraji(double cizim, string hatTuru) => Metraj.Hat(cizim, YukariYuvarla, EkPayi(hatTuru));
+
+        /// <summary>Katalog kaleminin bu çizimdeki tarifesi (karakteristik ve şehir/köy ayarına göre).</summary>
+        public string Tarife(KatalogKalemi it) => Katalog.TarifeSec(it, Karakteristik, Koy);
 
         public string SonDeger(string anahtar, string varsayilan = "")
         {
@@ -94,6 +103,9 @@ namespace SebekeHakedis.Cekirdek
                 new KeyValuePair<string, string>("kanalUst", S(KanalUst)),
                 new KeyValuePair<string, string>("kanalDerinlik", S(KanalDerinlik)),
                 new KeyValuePair<string, string>("kanalZemin", KanalZemin ?? ""),
+                new KeyValuePair<string, string>("karakteristik", Karakteristik ?? ""),
+                new KeyValuePair<string, string>("koy", Koy ? "1" : "0"),
+                new KeyValuePair<string, string>("telefonSembolleri", TelefonSembolleri ? "1" : "0"),
             };
             foreach (var kv in EkPay) l.Add(new KeyValuePair<string, string>("ekPay." + kv.Key, S(kv.Value)));
             foreach (var kv in Son) l.Add(new KeyValuePair<string, string>("son." + kv.Key, kv.Value ?? ""));
@@ -123,6 +135,9 @@ namespace SebekeHakedis.Cekirdek
                     case "kanalUst": a.KanalUst = SayiCoz.Coz(v, 40); break;
                     case "kanalDerinlik": a.KanalDerinlik = SayiCoz.Coz(v, 100); break;
                     case "kanalZemin": a.KanalZemin = string.IsNullOrEmpty(v) ? "TOPRAK" : v; break;
+                    case "karakteristik": a.Karakteristik = v.Trim(); break;
+                    case "koy": a.Koy = v == "1"; break;
+                    case "telefonSembolleri": a.TelefonSembolleri = v != "0"; break;
                 }
             }
             if (a.EtiketYuksekligi <= 0) a.EtiketYuksekligi = 0.5;

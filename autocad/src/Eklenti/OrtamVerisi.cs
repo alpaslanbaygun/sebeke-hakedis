@@ -64,7 +64,7 @@ namespace SebekeHakedis.Eklenti
         }
     }
 
-    /// <summary>Eklentiye gömülü ortak dosyalar: malzeme kataloğu (kalemler.json) ve simge takımı (semboller.json).</summary>
+    /// <summary>Eklentiye gömülü ortak dosyalar: malzeme kataloğu (kalemler.json), simge takımı (semboller.json), menü kategorileri (kategoriler.json).</summary>
     internal static class KatalogKaynagi
     {
         private static string _json;
@@ -83,6 +83,17 @@ namespace SebekeHakedis.Eklenti
             string json = Kaynak("SebekeHakedis.semboller.json");
             if (!string.IsNullOrEmpty(json)) Semboller.Yukle(json);
             _sembollerYuklendi = true;
+        }
+
+        private static bool _kategorilerYuklendi;
+
+        /// <summary>Menü kategorilerini bir kez yükler (şerit ve hızlı çizim komutları çağırır).</summary>
+        public static void KategorileriYukle()
+        {
+            if (_kategorilerYuklendi || Kategoriler.Yuklu) { _kategorilerYuklendi = true; return; }
+            string json = Kaynak("SebekeHakedis.kategoriler.json");
+            if (!string.IsNullOrEmpty(json)) Kategoriler.Yukle(json);
+            _kategorilerYuklendi = true;
         }
 
         private static string Kaynak(string ad)
