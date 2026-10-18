@@ -225,6 +225,74 @@ namespace SebekeHakedis.Test
             CizimAraclari();
             TelefondanAlma(varliklar, tp);
             PromagisUyumu(varliklar, xlsx);
+            OnayAkisi(varliklar);
+        }
+
+        // ---------------- Hakediş onayı (PROMAGIS HAK_ONAY) ve kilit ----------------
+
+        private static void OnayAkisi(List<CadVarlik> ornekCizim)
+        {
+            Console.WriteLine("Hakediş onayı");
+            Esit(6, HakedisOnayi.Duzelt(HakedisOnayi.Hakedis), "onay sırası: hakediş onayı kontrolü de işaretler");
+            Esit(7, HakedisOnayi.Duzelt(HakedisOnayi.Gis), "onay sırası: GIS onayı hepsini işaretler");
+            var on = new SortedDictionary<int, int> { { 1, 6 }, { 2, 4 } };
+            Esit(true, HakedisOnayi.Kilitli(on, 1), "hakediş onayı verilen hakediş kilitli");
+            Esit(false, HakedisOnayi.Kilitli(on, 2), "yalnız kontrol onayı kilitlemez");
+            var bir = HakedisOnayi.Birlestir(on, new SortedDictionary<int, int> { { 2, 2 }, { 3, 1 } });
+            Esit(6, bir[2], "birleştirme: telefondaki hakediş onayı kontrolü de getirir");
+            Esit(7, bir[3], "birleştirme: GIS onayı sıradakileri de getirir");
+            Esit(6, bir[1], "birleştirme: çizimdeki onay kalır");
+
+            var cizim = new List<CadVarlik>();
+            foreach (var v in ornekCizim) cizim.Add(CadVarlik.JsondanOku(v.JsonYap()));
+            var p = PromagisOkuyucu.Oku(cizim, "ornek.dwg");
+            p.Onaylar[1] = 6; p.Onaylar[2] = 7;
+            var pd = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(p, "test"));
+            Esit(6, HakedisOnayi.Bitler(pd.Onaylar, 1), "onaylar proje dosyasında taşınır (1)");
+            Esit(7, HakedisOnayi.Bitler(pd.Onaylar, 2), "onaylar proje dosyasında taşınır (2)");
+            Esit(0, Aktarim.Planla(cizim, pd, "SC", pd.Onaylar).Adimlar.Count, "onaylı projede değişiklik yoksa iş yok");
+
+            // Onaylı hakedişteki direk telefonda taşınırsa aktarılmaz; aynı değişiklik onaysız hakedişte aktarılır
+            var direk = pd.Elemanlar.Find(x => x.GisId == "SC77");
+            var kilit = new SortedDictionary<int, int> { { direk.Hakedis, 6 } };
+            var acik = new SortedDictionary<int, int> { { 99, 6 } };
+            direk.Saga += 2;
+            var plan = Aktarim.Planla(cizim, pd, "SC", kilit);
+            Esit(true, plan.Kilitliler.Exists(a => a.Hedef == direk.Id) && !plan.Adimlar.Exists(a => a.Hedef == direk.Id), "kilit: onaylı hakedişteki direğin taşınması aktarılmaz");
+            plan = Aktarim.Planla(cizim, pd, "SC", acik);
+            Esit(true, plan.Adimlar.Exists(a => a.Hedef == direk.Id) && plan.Kilitliler.Count == 0, "kilit: onaysız hakedişte aynı değişiklik aktarılır");
+            direk.Saga -= 2;
+
+            // Kilitli direğe açık hakedişte yeni malzeme eklemek serbest (PROMAGIS'te satır düzeyinde yetki)
+            int acikHakedis = direk.Hakedis + 1;
+            direk.Kalemler.Add(new Kalem { Cins = "TOPRAKLAMA", Tanim = "T-1", Durum = "M", Miktar = 1, Birim = "ad/ad", Katsayi = 1, Toplam = 1, Hakedis = acikHakedis, Tarife = "0107", Sira = "9100", Kaynak = "MALZEME" });
+            plan = Aktarim.Planla(cizim, pd, "SC", kilit);
+            Esit(true, plan.Adimlar.Exists(a => a.Hedef == direk.Id) && plan.Kilitliler.Count == 0, "kilit: onaylı direğe açık hakedişte malzeme eklenebilir");
+            // Kilitli satır değişirse (miktar) aktarılmaz
+            var kilitliSatir = direk.Kalemler.Find(k => !k.Ana && k.Hakedis == direk.Hakedis);
+            if (kilitliSatir != null)
+            {
+                kilitliSatir.Miktar += 1;
+                plan = Aktarim.Planla(cizim, pd, "SC", kilit);
+                Esit(true, plan.Kilitliler.Exists(a => a.Hedef == direk.Id), "kilit: onaylı hakedişteki satırın miktarı değişmez");
+                kilitliSatir.Miktar -= 1;
+            }
+            direk.Kalemler.RemoveAt(direk.Kalemler.Count - 1);
+
+            // Onaylı hakedişe telefonda yeni nesne: aktarılmaz; telefonda silinen kilitli nesne: silinmez
+            var yeni = new Eleman
+            {
+                Id = "TkOnay", Tur = "AG_DIREK", GisId = "SC500", Cins = "AG_DEMİR_GLV", Tip = "G-K2", Durum = "M", Hakedis = direk.Hakedis, Saga = direk.Saga + 40, Yukari = direk.Yukari,
+                Kalemler = { new Kalem { Cins = "AG_DEMİR_GLV", Tanim = "G-K2", Durum = "M", Miktar = 1, Birim = "ad/kg", Katsayi = 504, Toplam = 504, Hakedis = direk.Hakedis, Tarife = "0107", Sira = "9101", Ana = true, Kaynak = "NIT" } },
+            };
+            pd.Elemanlar.Add(yeni);
+            pd.Elemanlar.Remove(direk);
+            plan = Aktarim.Planla(cizim, pd, "SC", kilit);
+            Esit(true, plan.Kilitliler.Exists(a => a.Kimlik == "TkOnay" && a.Islem == "yeni"), "kilit: onaylı hakedişe yeni nesne aktarılmaz");
+            Esit(true, plan.KilitliSilinenler.ContainsKey(direk.Id) && !plan.Silinenler.ContainsKey(direk.Id), "kilit: onaylı hakedişteki nesne telefonda silinse de silinmez");
+            yeni.Hakedis = acikHakedis; yeni.Kalemler[0].Hakedis = acikHakedis;
+            plan = Aktarim.Planla(cizim, pd, "SC", kilit);
+            Esit(true, plan.Adimlar.Exists(a => a.Kimlik == "TkOnay" && a.Islem == "yeni"), "kilit: açık hakedişe yeni nesne aktarılır");
         }
 
         // ---------------- PROMAGIS uyumu: bölge grup kodu, pano/fider verisi, eksik malzeme (DETAY) ----------------

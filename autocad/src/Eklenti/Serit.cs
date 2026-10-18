@@ -137,6 +137,7 @@ namespace SebekeHakedis.Eklenti
             duzen.Items.Add(Dugme("Metraj", "Seçilen hat, kanal ve sondajların metrajını çizim uzunluğundan yeniden hesaplar (parça metrajları yenilenir).", "_SH_METRAJ ", "MT", Color.FromRgb(0x4B, 0x55, 0x63)));
             duzen.Items.Add(Dugme("Telefon\nGörünümü", "Çizimi telefonun görünümüne çevirir: simgeler, renkler, hat etiketleri, her parçanın uzunluğu. Veriye dokunmaz.", "_SH_GORUNUM ", "TG", Color.FromRgb(0x0F, 0x76, 0x6E)));
             duzen.Items.Add(Dugme("Hakediş", "Aktif hakedişi değiştirir; yeni nesneler bu hakedişin katmanlarına konur.", "_SH_HAKEDIS ", "HK", Color.FromRgb(0x9D, 0x17, 0x4D)));
+            duzen.Items.Add(Dugme("Hakediş\nOnayı", "Hakediş onayı (PROMAGIS'teki gibi Kontrol → Hakediş → GIS). Onaylanan hakediş kilitlenir: satırları değiştirilemez, o hakedişe yeni nesne çizilemez.", "_SH_ONAY ", "ON", Color.FromRgb(0x15, 0x80, 0x3D)));
             duzen.Items.Add(Dugme("Ayarlar", "Katman ön eki, tarife (şehir / köy), sembol takımı, etiket yüksekliği, metraj payları.", "_SH_AYARLAR ", "AY", Color.FromRgb(0x6B, 0x6B, 0x6B)));
 
             // 5) Telefon

@@ -17,6 +17,8 @@ namespace SebekeHakedis.Cekirdek
             var oz = x.SayfaEkle("ÖZET");
             oz.UstBilgi.Add("DURUM TESPİT ÖZETİ — " + p.Ad);
             oz.UstBilgi.Add("Kaynak: " + p.Kaynak + "   ·   Oluşturma: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) + "   ·   Şebeke Hakediş " + surum);
+            var onaylar = HakedisOnayi.Ozet(p.Onaylar);
+            if (onaylar.Count > 0) oz.UstBilgi.Add("Hakediş onayları: " + string.Join("   ·   ", onaylar.ToArray()));
             oz.Basliklar.AddRange(new[] { "PROJE", "PROJE KODU", "HAK. NO", "DURUM", "CİNS", "TİP", "BİRİM", "MİKTAR", "TOP. MİK.", "TOP. TL.", "SATIR" });
             var kodlar = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var b in p.Bolgeler) kodlar[b.Ad] = b.Kod;

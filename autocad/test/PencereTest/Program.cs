@@ -252,7 +252,7 @@ namespace SebekeHakedis.PencereTest
                 bool ok = Pencereler.Detay(o, df);
                 Esit(true, ok, "eksik malzeme: Bul");
                 Esit(dAra != null ? dAra.Cins : "-", df.Cins, "eksik malzeme: aranan cins döner");
-                Esit(DetayKapsami.Olmayanlar, df.Kapsam, "eksik malzeme: varsayılan eksikleri göster");
+                Esit(DetayKapsami.Olanlar, df.Kapsam, "eksik malzeme: seçilen gösterim (olanlar) döner");
                 Esit("", df.AnaCins, "eksik malzeme: (hepsi) süzgeç sayılmaz");
             }, f =>
             {
@@ -261,8 +261,46 @@ namespace SebekeHakedis.PencereTest
                 Esit(true, kutular.Count >= 7 && kutular[0].Items.Count > 1, "eksik malzeme: ana cinsler çizimden dolu");
                 kutular[4].Text = dAra != null ? dAra.Cins : "";
                 Esit(true, kutular[5].Items.Count > 1, "eksik malzeme: tip listesi aranan cinsin tipleriyle dolar");
+                var olan = Bul<RadioButton>(f, r => r.Text.StartsWith("Bu malzemesi OLAN", StringComparison.Ordinal));
+                if (olan != null) olan.Checked = true;
                 Resim(f, "sonra");
             });
+
+            // Hakediş onayı (PROMAGIS HAK_ONAY): sıra kuralı Kontrol → Hakediş → GIS
+            var onaylar = new SortedDictionary<int, int> { { 1, 6 } };
+            Dene("19-hakedis-onayi", () =>
+            {
+                bool ok = Pencereler.Onaylar(o, onaylar);
+                Esit(true, ok, "onay: Kaydet");
+                Esit(7, HakedisOnayi.Bitler(onaylar, 2), "onay: GIS işaretlenince kontrol ve hakediş de işaretlenir");
+                Esit(0, HakedisOnayi.Bitler(onaylar, 1), "onay: kontrol kaldırılınca sonraki aşamalar da kalkar");
+            }, f =>
+            {
+                var kutular = new List<CheckBox>();
+                Hepsi(f, kutular);
+                Esit(true, kutular.Count >= 36 && kutular[0].Checked && kutular[1].Checked && !kutular[2].Checked, "onay: kayıtlı onay işaretli gelir");
+                kutular[5].Checked = true;   // 2. hakediş · GIS
+                kutular[0].Checked = false;  // 1. hakediş · Kontrol
+                Resim(f, "sonra");
+            });
+
+            // Onaylı hakedişteki satırlar kilitli: değiştirilemez, silinemez
+            o.Proje.Onaylar[direk.Hakedis] = HakedisOnayi.Kontrol | HakedisOnayi.Hakedis;
+            int kilitliOnce = direk.Kalemler.Count;
+            Dene("20-malzeme-kilitli", () =>
+            {
+                bool ok = Pencereler.Kalemler(o, direk);
+                Esit(true, ok, "kilitli: Kaydet");
+                Esit(kilitliOnce, direk.Kalemler.Count, "kilitli: onaylı hakedişin satırı silinmedi");
+            }, f =>
+            {
+                var g = Bul<DataGridView>(f, x => true);
+                Esit(true, g.Rows.Count > 0 && g.Rows[0].ReadOnly, "kilitli: onaylı hakedişin satırı salt okunur");
+                g.CurrentCell = g.Rows[g.Rows.Count - 1].Cells[0];
+                Bul<Button>(f, b => b.Text == "Satırı sil").PerformClick();
+                Esit(kilitliOnce, g.Rows.Count, "kilitli: silme düğmesi kilitli satırı silmez");
+            });
+            o.Proje.Onaylar.Clear();
 
             // Şerit menü önizlemesi (AutoCAD olmadan; aynı veri ve simgelerle)
             Console.WriteLine("14-serit");

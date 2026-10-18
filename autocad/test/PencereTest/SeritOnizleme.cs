@@ -81,7 +81,7 @@ namespace SebekeHakedis.PencereTest
                     x0 => KategoriPaneli(dc, x0, k),
                     x0 => HizliPanel(dc, x0, k, etkin),
                     x0 => SecimPaneli(dc, x0, etkin),
-                    x0 => BuyukPanel(dc, x0, "Düzenle", new[] { ("Malzeme", "MZ", "#374151"), ("Metraj", "MT", "#4B5563"), ("Telefon\nGörünümü", "TG", "#0F766E"), ("Hakediş", "HK", "#9D174D"), ("Ayarlar", "AY", "#6B6B6B") }),
+                    x0 => BuyukPanel(dc, x0, "Düzenle", new[] { ("Malzeme", "MZ", "#374151"), ("Metraj", "MT", "#4B5563"), ("Telefon\nGörünümü", "TG", "#0F766E"), ("Hakediş", "HK", "#9D174D"), ("Hakediş\nOnayı", "ON", "#15803D"), ("Ayarlar", "AY", "#6B6B6B") }),
                     x0 => BuyukPanel(dc, x0, "Telefon", new[] { ("Telefondan\nAl", "TA", "#007A87"), ("Telefona\nGönder", "TG", "#2F5597") }),
                     x0 => BuyukPanel(dc, x0, "Rapor", new[] { ("Durum\nTespit", "DT", "#1E7B4F"), ("Dosyadan\nRapor", "PR", "#2E8B57"), ("Proje\nÖzeti", "ÖZ", "#3E7CB1"), ("Eksik\nMalzeme", "EK", "#B45309") }),
                     x0 => BuyukPanel(dc, x0, "Yardım", new[] { ("Hakkında", "?", "#6B6B6B") }),

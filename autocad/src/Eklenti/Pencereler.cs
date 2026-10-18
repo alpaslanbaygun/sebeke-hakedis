@@ -443,6 +443,7 @@ namespace SebekeHakedis.Eklenti
                 d.Dogrula = () =>
                 {
                     if (liste.Secili == null) { Uyar("Listeden bir tip seçin."); return false; }
+                    if (o.Kilitli((int)hak.Value)) { Uyar(HakedisOnayi.KilitMesaji((int)hak.Value)); return false; }
                     return true;
                 };
                 if (!d.Goster()) return null;
@@ -516,6 +517,7 @@ namespace SebekeHakedis.Eklenti
                 d.Dogrula = () =>
                 {
                     if (liste.Secili == null) { Uyar("Listeden bir kesit seçin."); return false; }
+                    if (o.Kilitli((int)hak.Value)) { Uyar(HakedisOnayi.KilitMesaji((int)hak.Value)); return false; }
                     return true;
                 };
                 if (!d.Goster()) return null;
@@ -575,6 +577,7 @@ namespace SebekeHakedis.Eklenti
                 {
                     if (!(og.Checked || ag.Checked || ayd.Checked || rek.Checked)) { Uyar("Kanaldaki kabloları seçin."); return false; }
                     if (zemin.Text.Trim().Length == 0) { Uyar("Zemin türünü yazın ya da seçin."); return false; }
+                    if (o.Kilitli((int)hak.Value)) { Uyar(HakedisOnayi.KilitMesaji((int)hak.Value)); return false; }
                     return true;
                 };
                 if (!d.Goster()) return null;
@@ -612,6 +615,7 @@ namespace SebekeHakedis.Eklenti
                 d.Dogrula = () =>
                 {
                     if (liste.Secili == null) { Uyar("Listeden bir sondaj tipi seçin."); return false; }
+                    if (o.Kilitli((int)hak.Value)) { Uyar(HakedisOnayi.KilitMesaji((int)hak.Value)); return false; }
                     return true;
                 };
                 if (!d.Goster()) return null;
@@ -718,7 +722,7 @@ namespace SebekeHakedis.Eklenti
                 return Sirali(l);
             };
 
-            using (var d = new Duzen("Eksik malzeme bul", 600, 610, "Bul"))
+            using (var d = new Duzen("Eksik malzeme bul", 600, 545, "Bul"))
             {
                 d.AraBaslik("Hangi elemanlar");
                 var anaCins = d.Satir("Ana cins", YaziliKutu(Sirali(anaCinsler), f.AnaCins));
@@ -766,6 +770,85 @@ namespace SebekeHakedis.Eklenti
                 f.Durum = Deger(durum);
                 f.Hakedis = (int)hak.Value;
                 f.Kapsam = rOlan.Checked ? DetayKapsami.Olanlar : rHepsi.Checked ? DetayKapsami.Hepsi : DetayKapsami.Olmayanlar;
+                return true;
+            }
+        }
+
+        // ================= Hakediş onayı =================
+
+        /// <summary>
+        /// Hakediş onayı (PROMAGIS'in onay penceresi gibi): her hakediş için sırayla Kontrol → Hakediş → GIS. Sonraki aşama
+        /// işaretlenince öncekiler de işaretlenir, önceki kaldırılınca sonrakiler de kalkar. onaylar yerinde güncellenir.
+        /// </summary>
+        public static bool Onaylar(OrtamVerisi o, SortedDictionary<int, int> onaylar)
+        {
+            var p = o.Proje;
+            var say = new Dictionary<int, int>();
+            Action<int> ekle = h => { int c; say.TryGetValue(h, out c); say[h] = c + 1; };
+            foreach (var e in p.Elemanlar) ekle(e.Hakedis);
+            foreach (var h in p.Hatlar) ekle(h.Hakedis);
+            foreach (var c in p.Kanallar) ekle(c.Hakedis);
+            foreach (var s in p.Sondajlar) ekle(s.Hakedis);
+            int son = Math.Max(HakedisOnayi.PromagisSayisi, o.Hakedis);
+            foreach (var n in onaylar.Keys) son = Math.Max(son, n);
+            foreach (var n in say.Keys) son = Math.Max(son, n);
+
+            using (var d = new Duzen("Hakediş onayı", 600, Math.Min(760, 300 + son * 27), "Kaydet"))
+            {
+                d.Not("Her hakediş için sırayla: Kontrol → Hakediş → GIS (PROMAGIS'teki onay kaydı). Hakediş onayı verilen hakediş " +
+                      "kilitlenir: eklenti o hakedişin nesnelerini ve malzeme satırlarını değiştirmez, silmez; o hakedişe yeni nesne " +
+                      "çizilmez; telefondan gelen değişiklik o hakedişe dokunuyorsa aktarılmaz.");
+                var t = new TableLayoutPanel { ColumnCount = 5, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = new Padding(0, 4, 0, 4) };
+                t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170F));
+                t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90F));
+                for (int i = 0; i < 3; i++) t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90F));
+                var bas = new[] { "Hakediş", "Nesne", "Kontrol", "Hakediş", "GIS" };
+                t.RowCount = 1;
+                t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                for (int i = 0; i < bas.Length; i++)
+                    t.Controls.Add(new Label { Text = bas[i], AutoSize = true, Font = new Font(d.F.Font, FontStyle.Bold), Margin = new Padding(0, 2, 8, 4) }, i, 0);
+                var kutular = new Dictionary<int, CheckBox[]>();
+                bool ayarlaniyor = false;
+                for (int n = 1; n <= son; n++)
+                {
+                    int r = t.RowCount++;
+                    t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                    int c0;
+                    say.TryGetValue(n, out c0);
+                    var ad = new Label { Text = n + ". hakediş" + (n == o.Hakedis ? "  (aktif)" : ""), AutoSize = true, Margin = new Padding(0, 5, 8, 3) };
+                    if (n == o.Hakedis) ad.Font = new Font(d.F.Font, FontStyle.Bold);
+                    t.Controls.Add(ad, 0, r);
+                    t.Controls.Add(new Label { Text = c0 > 0 ? c0 + " nesne" : "—", AutoSize = true, ForeColor = SystemColors.GrayText, Margin = new Padding(0, 5, 8, 3) }, 1, r);
+                    int b = HakedisOnayi.Bitler(onaylar, n);
+                    var k = new CheckBox { Text = "", AutoSize = true, Checked = (b & HakedisOnayi.Kontrol) != 0, Margin = new Padding(14, 3, 0, 1) };
+                    var h = new CheckBox { Text = "", AutoSize = true, Checked = (b & HakedisOnayi.Hakedis) != 0, Margin = new Padding(14, 3, 0, 1) };
+                    var g = new CheckBox { Text = "", AutoSize = true, Checked = (b & HakedisOnayi.Gis) != 0, Margin = new Padding(14, 3, 0, 1) };
+                    t.Controls.Add(k, 2, r);
+                    t.Controls.Add(h, 3, r);
+                    t.Controls.Add(g, 4, r);
+                    kutular[n] = new[] { k, h, g };
+                    EventHandler sira = (s, e) =>
+                    {
+                        if (ayarlaniyor) return;
+                        ayarlaniyor = true;
+                        if (s == g && g.Checked) { h.Checked = true; k.Checked = true; }
+                        else if (s == h && h.Checked) k.Checked = true;
+                        else if (s == k && !k.Checked) { h.Checked = false; g.Checked = false; }
+                        else if (s == h && !h.Checked) g.Checked = false;
+                        ayarlaniyor = false;
+                    };
+                    k.CheckedChanged += sira;
+                    h.CheckedChanged += sira;
+                    g.CheckedChanged += sira;
+                }
+                d.Tam(t, 0);
+                if (!d.Goster()) return false;
+                onaylar.Clear();
+                foreach (var kv in kutular)
+                {
+                    int b = (kv.Value[0].Checked ? HakedisOnayi.Kontrol : 0) | (kv.Value[1].Checked ? HakedisOnayi.Hakedis : 0) | (kv.Value[2].Checked ? HakedisOnayi.Gis : 0);
+                    if (b != 0) onaylar[kv.Key] = HakedisOnayi.Duzelt(b);
+                }
                 return true;
             }
         }
@@ -893,6 +976,9 @@ namespace SebekeHakedis.Eklenti
 
             var kalemler = kaynak.ConvertAll(k => k.Kopya());
             Kalem ana = hat != null ? kalemler.Find(k => k.Kaynak == "HAT") : kalemler.Find(k => k.Ana);
+            // Onaylı (kilitli) hakedişin satırları değiştirilemez; nesnenin kendi pozu kilitliyse nesnenin bilgileri de
+            bool anaKilitli = ana != null && o.Kilitli(ana.Hakedis);
+            bool kilitVar = kalemler.Exists(k => o.Kilitli(k.Hakedis));
             var kanalKopya = kanal == null ? null : new Kanal { AltGenislik = kanal.AltGenislik, UstGenislik = kanal.UstGenislik, Derinlik = kanal.Derinlik };
 
             using (var d = new Duzen("Malzemeler — " + baslik, 900, 560, "Kaydet"))
@@ -986,6 +1072,12 @@ namespace SebekeHakedis.Eklenti
                     row.Cells[7].Value = k.DmDurum ?? "";
                     row.Tag = k;
                     if (ReferenceEquals(k, ana)) row.DefaultCellStyle.Font = new Font(g.Font, FontStyle.Bold);
+                    if (o.Kilitli(k.Hakedis))
+                    {
+                        row.ReadOnly = true;
+                        row.DefaultCellStyle.ForeColor = SystemColors.GrayText;
+                        row.DefaultCellStyle.BackColor = Color.FromArgb(0xF1, 0xF3, 0xF5);
+                    }
                     yukleniyor = false;
                 };
                 Func<Kalem, int> satirEkle = k =>
@@ -1020,7 +1112,8 @@ namespace SebekeHakedis.Eklenti
                         case 6:
                             {
                                 int h = SayiCoz.Tam(deger, k.Hakedis);
-                                if (h > 0) k.Hakedis = h;
+                                if (h > 0 && o.Kilitli(h)) Uyar(HakedisOnayi.KilitMesaji(h));
+                                else if (h > 0) k.Hakedis = h;
                                 break;
                             }
                         case 7: k.DmDurum = deger; break;
@@ -1032,6 +1125,12 @@ namespace SebekeHakedis.Eklenti
                 d.Tam(g, -1);
                 d.Not("Durum, miktar, hakediş ve demontaj durumunu hücreye tıklayıp değiştirin; toplam kendiliğinden hesaplanır. " +
                       "Kalın satır nesnenin kendi pozudur (silinemez).");
+                if (kilitVar)
+                    d.Not("Gri satırlar onaylı (kilitli) hakedişte: değiştirilemez, silinemez." +
+                          (anaKilitli ? " Nesnenin kendi pozu da kilitli olduğundan nesnenin bilgileri değiştirilemez." : ""));
+                if (anaKilitli)
+                    foreach (var c in new Control[] { gis, guc, gerilim, bas, bit, zemin, alt, ust, der, og, ag, ayd, rek })
+                        if (c != null) c.Enabled = false;
 
                 if (kanal != null)
                 {
@@ -1055,6 +1154,7 @@ namespace SebekeHakedis.Eklenti
                 d.Alt.Controls.Add(ekle);
                 ekle.Click += (s, e) =>
                 {
+                    if (o.Kilitli(o.Hakedis)) { Uyar(HakedisOnayi.KilitMesaji(o.Hakedis)); return; }
                     var it = KatalogdanSec("Malzeme ekle — " + baslik, o.Katalog.Malzemeler(katalogNesnesi), d.F);
                     if (it == null) return;
                     string dur = nesneDurumu == "MEVCUT" || string.IsNullOrEmpty(nesneDurumu) ? "M" : nesneDurumu;
@@ -1072,6 +1172,7 @@ namespace SebekeHakedis.Eklenti
                     var k = g.CurrentRow.Tag as Kalem;
                     if (k == null) return;
                     if (ReferenceEquals(k, ana)) { Uyar("Nesnenin kendi pozu silinemez. Nesneyi silmek için AutoCAD'de silin."); return; }
+                    if (o.Kilitli(k.Hakedis)) { Uyar(k.Hakedis + ". hakediş onaylı (kilitli): bu satır silinemez."); return; }
                     kalemler.Remove(k);
                     g.Rows.Remove(g.CurrentRow);
                 };

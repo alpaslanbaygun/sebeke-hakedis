@@ -192,6 +192,7 @@ namespace SebekeHakedis.Eklenti
         private static void ElemanDongusu(Ortam o, ElemanSecimi secim, MenuOgesi oge)
         {
             var ed = o.Ed;
+            if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(HakedisOnayi.KilitMesaji(secim.Hakedis)); return; }
             string ilkGis = secim.Gis;
             ObjectId sonId = ObjectId.Null;
             Eleman son = null;
@@ -282,6 +283,7 @@ namespace SebekeHakedis.Eklenti
         private static void HatDongusu(Ortam o, HatSecimi secim, MenuOgesi oge)
         {
             var ed = o.Ed;
+            if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(HakedisOnayi.KilitMesaji(secim.Hakedis)); return; }
             int sayi = 0;
             ed.WriteMessage("\nHat: " + secim);
             while (true)
@@ -357,6 +359,7 @@ namespace SebekeHakedis.Eklenti
         private static void KanalDongusu(Ortam o, KanalSecimi secim, MenuOgesi oge)
         {
             var ed = o.Ed;
+            if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(HakedisOnayi.KilitMesaji(secim.Hakedis)); return; }
             int sayi = 0;
             ed.WriteMessage("\n" + secim);
             while (true)
@@ -442,6 +445,7 @@ namespace SebekeHakedis.Eklenti
         private static void SondajDongusu(Ortam o, SondajSecimi secim, MenuOgesi oge)
         {
             var ed = o.Ed;
+            if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(HakedisOnayi.KilitMesaji(secim.Hakedis)); return; }
             int sayi = 0;
             ed.WriteMessage("\n" + secim);
             while (true)
@@ -812,6 +816,16 @@ namespace SebekeHakedis.Eklenti
             return p.Sondajlar.Find(x => string.Equals(x.Id, h, StringComparison.OrdinalIgnoreCase));
         }
 
+        /// <summary>Nesne denetlenmiş mi (PROMAGIS KONTROL işareti).</summary>
+        private static bool Denetlenmis(object n)
+        {
+            if (n is Eleman e) return e.Kontrol == true || (e.Kontrol == null && e.Kalemler.Exists(k => k.Ana && k.Kontrol == true));
+            if (n is Hat h) return h.Kalemler.Exists(k => k.Kaynak == "HAT" && k.Kontrol == true);
+            if (n is Kanal c) return c.Kontrol == true;
+            if (n is Sondaj s) return s.Kontrol == true;
+            return false;
+        }
+
         private static string DurumGrubu(string d) => d == "MEVCUT" ? "MEVCUT" : d == "DM" ? "DM" : "YENI";
 
         /// <summary>Modeldeki nesneyi çizimdeki karşılığına yazar (katman hakediş/durum değiştiyse yeniden hesaplanır).</summary>
@@ -874,6 +888,8 @@ namespace SebekeHakedis.Eklenti
                 string eskiDurum;
                 int eskiHakedis;
                 DurumVeHakedis(nesne, out eskiDurum, out eskiHakedis);
+                if (Denetlenmis(nesne) && !Pencereler.Onay("Bu nesne denetlenmiş (KONTROL işaretli). Değiştirirseniz denetim yeniden gerekir.\n\n" +
+                                                          "Yine de malzemeleri açılsın mı?", false)) return;
                 if (!Pencereler.Kalemler(o, nesne)) return;
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
@@ -905,9 +921,11 @@ namespace SebekeHakedis.Eklenti
                 var degisen = new List<KeyValuePair<ObjectId, object>>();
                 var eskiler = new Dictionary<ObjectId, string>();
                 var satirlar = new List<string>();
+                int kilitli = 0;
                 foreach (ObjectId id in r.Value.GetObjectIds())
                 {
                     var nesne = NesneBul(o.Proje, id.Handle.ToString());
+                    if (nesne != null && HakedisOnayi.NesneKilitli(o.Proje.Onaylar, nesne)) { kilitli++; continue; }
                     if (nesne is Hat h)
                     {
                         var kl = h.Kalemler.Find(x => x.Kaynak == "HAT");
@@ -942,6 +960,7 @@ namespace SebekeHakedis.Eklenti
                         degisen.Add(new KeyValuePair<ObjectId, object>(id, s));
                     }
                 }
+                if (kilitli > 0) ed.WriteMessage("\n" + kilitli + " nesne onaylı (kilitli) hakedişte olduğu için atlandı.");
                 if (degisen.Count == 0) { ed.WriteMessage("\nSeçilen nesnelerin metrajı çizim uzunluğuyla zaten uyumlu."); return; }
                 var sb = new StringBuilder(degisen.Count + " nesnenin metrajı değişecek:\n");
                 for (int i = 0; i < satirlar.Count && i < 15; i++) sb.AppendLine("  • " + satirlar[i]);
@@ -1007,6 +1026,39 @@ namespace SebekeHakedis.Eklenti
             });
         }
 
+        // ================= SH_ONAY: hakediş onayı (PROMAGIS HAK_ONAY) =================
+
+        [CommandMethod("SH_ONAY", CommandFlags.Modal)]
+        public void HakedisOnayla()
+        {
+            var belge = AcApp.DocumentManager.MdiActiveDocument;
+            if (belge == null) return;
+            Komutlar.Calistir("Hakediş onayı", () =>
+            {
+                var o = Ortam.Hazirla(belge);
+                var ed = o.Ed;
+                var eski = new SortedDictionary<int, int>(o.Proje.Onaylar);
+                var yeni = new SortedDictionary<int, int>(o.Proje.Onaylar);
+                if (!Pencereler.Onaylar(o, yeni)) return;
+                var hepsi = new SortedSet<int>(eski.Keys);
+                hepsi.UnionWith(yeni.Keys);
+                var degisen = new List<int>();
+                foreach (var n in hepsi) if (HakedisOnayi.Bitler(eski, n) != HakedisOnayi.Bitler(yeni, n)) degisen.Add(n);
+                if (degisen.Count == 0) { ed.WriteMessage("\nOnaylar değişmedi."); return; }
+                using (var tr = o.Db.TransactionManager.StartTransaction())
+                {
+                    // PROMAGIS'in penceresindeki 12 hakediş her zaman yazılır (PROMAGIS hepsini okur)
+                    for (int n = 1; n <= HakedisOnayi.PromagisSayisi; n++) PromagisSozlugu.OnayYaz(o.Db, tr, n, HakedisOnayi.Bitler(yeni, n));
+                    foreach (var n in hepsi) if (n > HakedisOnayi.PromagisSayisi) PromagisSozlugu.OnayYaz(o.Db, tr, n, HakedisOnayi.Bitler(yeni, n));
+                    tr.Commit();
+                }
+                foreach (var n in degisen)
+                    ed.WriteMessage("\n" + n + ". hakediş: " + HakedisOnayi.Metin(HakedisOnayi.Bitler(yeni, n)) + (HakedisOnayi.Kilitli(yeni, n) ? "  → kilitli" : ""));
+                if (HakedisOnayi.Kilitli(yeni, o.Hakedis))
+                    ed.WriteMessage("\nDikkat: aktif hakediş (" + o.Hakedis + ") artık kilitli; yeni çizim için Hakediş (SH_HAKEDIS) ile açık bir hakediş seçin.");
+            });
+        }
+
         // ================= SH_PROJEAL: telefondan proje alma =================
 
         private static void Kapsa(ref Extents3d kapsam, ref bool kapsamVar, CadVarlik v)
@@ -1051,12 +1103,19 @@ namespace SebekeHakedis.Eklenti
                     return;
 
                 ed.WriteMessage("\nKarşılaştırılıyor...");
-                var plan = Aktarim.Planla(o.Varliklar, tel, o.OnEk);
+                var plan = Aktarim.Planla(o.Varliklar, tel, o.OnEk, o.Proje.Onaylar);
+                // Telefonda onaylanan hakedişler (dönem onayı): aktarımdan sonra çizimin onay kaydına da eklenir
+                var birlesikOnay = HakedisOnayi.Birlestir(o.Proje.Onaylar, tel.Onaylar);
+                var yeniOnaylar = new List<int>();
+                foreach (var kv in birlesikOnay) if (HakedisOnayi.Bitler(o.Proje.Onaylar, kv.Key) != kv.Value) yeniOnaylar.Add(kv.Key);
                 int cizimdeSilinmis = 0;
                 foreach (var a in plan.Adimlar) if (a.CizimdeSilinmis) cizimdeSilinmis++;
-                if (plan.Adimlar.Count == 0 && plan.Silinenler.Count == 0)
+                if (plan.Adimlar.Count == 0 && plan.Silinenler.Count == 0 && yeniOnaylar.Count == 0)
                 {
-                    Pencereler.Bilgi("Telefondaki proje bu çizimle aynı; aktarılacak değişiklik yok.\n(" + plan.Ayni + " nesne karşılaştırıldı.)");
+                    Pencereler.Bilgi("Telefondaki proje bu çizimle aynı; aktarılacak değişiklik yok.\n(" + plan.Ayni + " nesne karşılaştırıldı.)" +
+                                     (plan.Kilitliler.Count + plan.KilitliSilinenler.Count > 0
+                                         ? "\n\nOnaylı (kilitli) hakedişe dokunduğu için aktarılmayan: " + (plan.Kilitliler.Count + plan.KilitliSilinenler.Count) + " değişiklik."
+                                         : ""));
                     return;
                 }
 
@@ -1071,6 +1130,16 @@ namespace SebekeHakedis.Eklenti
                 sb.AppendLine("Değişmeyen: " + plan.Ayni);
                 if (plan.Silinenler.Count > 0) sb.AppendLine("Telefonda silinmiş görünen: " + plan.Silinenler.Count + " (ayrıca sorulacak)");
                 if (cizimdeSilinmis > 0) sb.AppendLine("Bilgisayarda silinmiş, telefonda duran: " + cizimdeSilinmis + " (ayrıca sorulacak)");
+                if (plan.Kilitliler.Count + plan.KilitliSilinenler.Count > 0)
+                {
+                    sb.AppendLine("Onaylı (kilitli) hakedişe dokunduğu için aktarılmayacak: " + (plan.Kilitliler.Count + plan.KilitliSilinenler.Count));
+                    int i = 0;
+                    foreach (var a in plan.Kilitliler) if (i++ < 5) sb.AppendLine("   • " + a.Ad + (a.Islem == "yeni" ? " (yeni)" : ""));
+                    foreach (var kv in plan.KilitliSilinenler) if (i++ < 5) sb.AppendLine("   • " + kv.Value + " (telefonda silinmiş)");
+                    if (i > 5) sb.AppendLine("   … ve " + (i - 5) + " değişiklik daha");
+                }
+                foreach (var n in yeniOnaylar)
+                    sb.AppendLine("Telefondaki onay: " + n + ". hakediş → " + HakedisOnayi.Metin(birlesikOnay[n]) + (HakedisOnayi.Kilitli(birlesikOnay, n) ? " (kilitlenecek)" : ""));
                 for (int i = 0; i < plan.Uyarilar.Count && i < 8; i++) sb.AppendLine("Uyarı: " + plan.Uyarilar[i]);
                 sb.AppendLine();
                 sb.Append("Çizime aktarılsın mı?");
@@ -1153,6 +1222,16 @@ namespace SebekeHakedis.Eklenti
                 }
                 // Telefonda verilen sıra numaraları PROMAGIS sayacında da ilerlesin
                 PromagisSozlugu.SayacYaz(o.Db, Math.Max(o.Sira, Numara.EnBuyukSira(tel)));
+                // Telefonda onaylanan hakedişler çizimin onay kaydına (PROMAGIS HAK_ONAY) eklenir
+                if (yeniOnaylar.Count > 0)
+                {
+                    using (var tr = o.Db.TransactionManager.StartTransaction())
+                    {
+                        foreach (var n in yeniOnaylar) PromagisSozlugu.OnayYaz(o.Db, tr, n, birlesikOnay[n]);
+                        tr.Commit();
+                    }
+                    foreach (var n in yeniOnaylar) ed.WriteMessage("\nOnay (telefondan): " + n + ". hakediş · " + HakedisOnayi.Metin(birlesikOnay[n]));
+                }
                 if (o.Ayar.Dom == 0 && tel.Dom > 0) { o.Ayar.Dom = tel.Dom; o.AyarKaydet(); }
                 ed.WriteMessage("\nTelefondan alındı: " + eklenen + " yeni, " + guncellenen + " güncellendi" + (sil ? ", " + silinen + " silindi" : "") + ".");
                 if (!cizimdeNesneVar && kapsamVar) Yakinlas(ed, kapsam);

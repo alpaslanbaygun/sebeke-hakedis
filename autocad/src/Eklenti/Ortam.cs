@@ -31,6 +31,8 @@ namespace SebekeHakedis.Eklenti
             // Ayar da eşitlenir: ayarlar sonradan kaydedilince PROMAGIS'in yeni değeri eskisiyle ezilmesin.
             int hakNo = PromagisSozlugu.HakNoOku(o.Db);
             if (hakNo > 0) { o.Hakedis = hakNo; o.Ayar.AktifHakedis = hakNo; }
+            // Hakediş onayları (PROMAGIS HAK_ONAY): onaylı hakedişler kilitlidir
+            o.Proje.Onaylar = PromagisSozlugu.OnaylariOku(o.Db);
             return o;
         }
 

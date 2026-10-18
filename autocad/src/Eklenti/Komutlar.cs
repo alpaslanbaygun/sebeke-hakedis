@@ -147,6 +147,8 @@ namespace SebekeHakedis.Eklenti
                 var sb = new StringBuilder();
                 foreach (var kv in hak) sb.Append("  H" + kv.Key + ": " + kv.Value);
                 ed.WriteMessage("\nHakedişe göre eleman:" + sb);
+                foreach (var kv in p.Onaylar)
+                    if ((kv.Value & 7) != 0) ed.WriteMessage("\nOnay · " + kv.Key + ". hakediş: " + HakedisOnayi.Metin(kv.Value) + (HakedisOnayi.Kilitli(p.Onaylar, kv.Key) ? "  (kilitli)" : ""));
                 if (p.Uyarilar.Count > 0) ed.WriteMessage("\nUyarı: " + p.Uyarilar.Count + " nesne okunamadı (ayrıntı raporun UYARILAR sayfasında).");
             });
         }
@@ -273,6 +275,7 @@ namespace SebekeHakedis.Eklenti
             ed.WriteMessage("\n  SH_MALZEME     Seçilen nesnenin malzemelerini düzenle");
             ed.WriteMessage("\n  SH_METRAJ      Hat/kanal metrajını çizim uzunluğundan yeniden hesapla");
             ed.WriteMessage("\n  SH_HAKEDIS     Aktif hakedişi değiştir");
+            ed.WriteMessage("\n  SH_ONAY        Hakediş onayı (Kontrol → Hakediş → GIS); onaylanan hakediş kilitlenir");
             ed.WriteMessage("\n  SH_GORUNUM     Çizimi telefon görünümüne çevir (simge, renk, etiket, parça metrajı)");
             ed.WriteMessage("\n  SH_AYARLAR     Çizim ayarları (ön ek, ölçek, etiket, metraj payı)");
             ed.WriteMessage("\n  Rapor");
@@ -306,6 +309,7 @@ namespace SebekeHakedis.Eklenti
                 return null;
             }
             var p = PromagisOkuyucu.Oku(varliklar, belge.Name);
+            p.Onaylar = PromagisSozlugu.OnaylariOku(belge.Database);
             ed.WriteMessage("\n" + p.Bolgeler.Count + " bölge, " + p.Elemanlar.Count + " eleman, " + p.Hatlar.Count + " hat, " + p.Kanallar.Count + " kanal okundu (" + sure.ElapsedMilliseconds + " ms).");
             if (p.Bolgeler.Count == 0) ed.WriteMessage("\nUyarı: çizimde bölge sınırı yok; PROJE sütunları boş kalacak.");
             return p;

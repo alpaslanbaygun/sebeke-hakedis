@@ -61,6 +61,18 @@ namespace SebekeHakedis.Cekirdek
             pj["aktifHakedis"] = p.AktifHakedis;
             pj["katmanOnEki"] = p.KatmanOnEki;
             if (!string.IsNullOrEmpty(p.GisOnEki)) pj["gisOnEki"] = p.GisOnEki;
+            var onaylar = new List<object>();
+            foreach (var kv in p.Onaylar)
+            {
+                if ((kv.Value & 7) == 0) continue;
+                var o = new JsonNesne();
+                o["no"] = kv.Key;
+                o["kontrol"] = (kv.Value & HakedisOnayi.Kontrol) != 0;
+                o["hakedis"] = (kv.Value & HakedisOnayi.Hakedis) != 0;
+                o["gis"] = (kv.Value & HakedisOnayi.Gis) != 0;
+                onaylar.Add(o);
+            }
+            if (onaylar.Count > 0) pj["onaylar"] = onaylar;
             k["proje"] = pj;
 
             var bolgeler = new List<object>();
@@ -202,6 +214,12 @@ namespace SebekeHakedis.Cekirdek
             p.AktifHakedis = pj.Tam("aktifHakedis", 1);
             p.KatmanOnEki = pj.Metin("katmanOnEki");
             p.GisOnEki = pj.Metin("gisOnEki");
+            foreach (var o in Nesneler(pj, "onaylar"))
+            {
+                int no = o.Tam("no");
+                int b = (o.Mantik("kontrol") == true ? HakedisOnayi.Kontrol : 0) | (o.Mantik("hakedis") == true ? HakedisOnayi.Hakedis : 0) | (o.Mantik("gis") == true ? HakedisOnayi.Gis : 0);
+                if (no > 0 && b != 0) p.Onaylar[no] = b;
+            }
 
             foreach (var o in Nesneler(k, "bolgeler"))
             {

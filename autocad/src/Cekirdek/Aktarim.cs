@@ -36,6 +36,10 @@ namespace SebekeHakedis.Cekirdek
         public int Ayni;
         /// <summary>Telefonda silinmiş görünen çizim nesneleri: tanıtıcı → kısa ad.</summary>
         public readonly Dictionary<string, string> Silinenler = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        /// <summary>Onaylı (kilitli) hakedişe dokunduğu için aktarılmayacak işler (bkz. HakedisOnayi).</summary>
+        public readonly List<AktarimAdimi> Kilitliler = new List<AktarimAdimi>();
+        /// <summary>Telefonda silinmiş görünen ama onaylı hakedişte olduğu için silinmeyecek nesneler: tanıtıcı → kısa ad.</summary>
+        public readonly Dictionary<string, string> KilitliSilinenler = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public readonly List<string> Uyarilar = new List<string>();
         /// <summary>Çizimdeki tanıtıcıyla eşleşen telefon nesnesi sayısı (proje bu çizimden alınmış mı?).</summary>
         public int TaniticiylaEslesen;
@@ -64,7 +68,8 @@ namespace SebekeHakedis.Cekirdek
             public object Model;
         }
 
-        public static AktarimPlani Planla(IList<CadVarlik> cizim, Proje tel, string onEk)
+        /// <param name="onaylar">Çizimin hakediş onayları: onaylı hakedişe dokunan işler Kilitliler'e ayrılır (null: kilit yok).</param>
+        public static AktarimPlani Planla(IList<CadVarlik> cizim, Proje tel, string onEk, IDictionary<int, int> onaylar = null)
         {
             var plan = new AktarimPlani();
             if (string.IsNullOrEmpty(onEk)) onEk = "SC";
@@ -93,8 +98,8 @@ namespace SebekeHakedis.Cekirdek
             long enBuyukTanitici = -1;
 
             // Her nesne türü için ortak iş
-            Action<string, string, Func<string, string, CadVarlik>, Func<object, string, CadVarlik>, Func<string, string>, string, string> isle =
-                (nesne, id, telYaz, cizimYaz, telEtiket, ad, elemanTuru) =>
+            Action<string, string, Func<string, string, CadVarlik>, Func<object, string, CadVarlik>, Func<string, string>, string, string, object> isle =
+                (nesne, id, telYaz, cizimYaz, telEtiket, ad, elemanTuru, telNesne) =>
             {
                 if (!string.IsNullOrEmpty(id) && !gorulen.Add(nesne + "|" + id))
                 {
@@ -125,10 +130,12 @@ namespace SebekeHakedis.Cekirdek
                 if (hedef == null)
                 {
                     var yeni = telYaz(id, string.IsNullOrEmpty(id) ? null : id);
-                    plan.Adimlar.Add(new AktarimAdimi
+                    var adim = new AktarimAdimi
                     {
                         Islem = "yeni", Nesne = nesne, Kimlik = id ?? "", Varlik = yeni, Etiket = telEtiket?.Invoke(null), Ad = ad, ElemanTuru = elemanTuru ?? "",
-                    });
+                    };
+                    if (HakedisOnayi.KilidiBozar(onaylar, null, telNesne)) { adim.Fark = "onaylı hakedişe yeni nesne"; plan.Kilitliler.Add(adim); }
+                    else plan.Adimlar.Add(adim);
                     return;
                 }
 
@@ -154,24 +161,26 @@ namespace SebekeHakedis.Cekirdek
                 // Değişmeyen nesneye dokunulmaz (etiketi eski kalmış olsa bile); değişen hattın etiketi yeniden yazılır.
                 string fark;
                 if (CadVarlik.Ayni(simdiki, istenen, out fark)) { plan.Ayni++; return; }
-                plan.Adimlar.Add(new AktarimAdimi
+                var guncelle = new AktarimAdimi
                 {
                     Islem = "guncelle", Nesne = nesne, Hedef = hedef, Kimlik = id ?? "", Varlik = istenen,
                     Etiket = telEtiket?.Invoke(null), Ad = ad, Fark = fark ?? "", ElemanTuru = elemanTuru ?? "",
-                });
+                };
+                if (HakedisOnayi.KilidiBozar(onaylar, mevcut[hedef].Model, telNesne)) plan.Kilitliler.Add(guncelle);
+                else plan.Adimlar.Add(guncelle);
             };
 
             foreach (var b in tel.Bolgeler)
             {
                 var t = b;
                 isle("bolge", t.Id, (h, k) => PromagisYazici.Bolge(t, onEk, k), (o, k) => PromagisYazici.Bolge((Bolge)o, onEk, k), null,
-                    "Bölge " + (string.IsNullOrEmpty(t.Kod) ? t.Ad : t.Kod), null);
+                    "Bölge " + (string.IsNullOrEmpty(t.Kod) ? t.Ad : t.Kod), null, t);
             }
             foreach (var n in tel.Noktalar)
             {
                 var t = n;
                 isle("nokta", t.Id, (h, k) => PromagisYazici.Nokta(t, k), (o, k) => PromagisYazici.Nokta((Nokta)o, k), null,
-                    "GPS " + t.Ad, null);
+                    "GPS " + t.Ad, null, t);
             }
             foreach (var e in tel.Elemanlar)
             {
@@ -180,7 +189,7 @@ namespace SebekeHakedis.Cekirdek
                 isle("eleman", t.Id,
                     (h, k) => PromagisYazici.Eleman(t, onEk, PromagisYazici.BlokSec(cp.Elemanlar, t), k),
                     (o, k) => { var d = (Eleman)o; return PromagisYazici.Eleman(d, onEk, string.IsNullOrEmpty(d.Blok) ? PromagisYazici.BlokOner(cp.Elemanlar, d.Tur, d.Cins, d.Durum) : d.Blok, k); },
-                    null, ad, t.Tur);
+                    null, ad, t.Tur, t);
             }
             foreach (var hat in tel.Hatlar)
             {
@@ -188,19 +197,19 @@ namespace SebekeHakedis.Cekirdek
                 string ad = "Hat " + t.AnaKesit + " (" + Turler.HatAdi(t.Tur) + ")";
                 isle("hat", t.Id, (h, k) => PromagisYazici.Hat(t, onEk, k), (o, k) => PromagisYazici.Hat((Hat)o, onEk, k),
                     h => { var e = PromagisYazici.HatEtiketi(t); return h == null ? e : e.Replace(PromagisYazici.Tanitici, h); },
-                    ad, null);
+                    ad, null, t);
             }
             foreach (var c in tel.Kanallar)
             {
                 var t = c;
                 isle("kanal", t.Id, (h, k) => PromagisYazici.Kanal(t, onEk, k), (o, k) => PromagisYazici.Kanal((Kanal)o, onEk, k), null,
-                    "Kanal " + t.Kablolar + " " + t.Zemin, null);
+                    "Kanal " + t.Kablolar + " " + t.Zemin, null, t);
             }
             foreach (var s in tel.Sondajlar)
             {
                 var t = s;
                 isle("sondaj", t.Id, (h, k) => PromagisYazici.Sondaj(t, onEk, k), (o, k) => PromagisYazici.Sondaj((Sondaj)o, onEk, k), null,
-                    "Sondaj " + t.Tip, null);
+                    "Sondaj " + t.Tip, null, t);
             }
 
             // Telefonda silinmiş görünenler. Yalnız bu çizimden alınmış projede ve dışa aktarımdan önce
@@ -226,7 +235,9 @@ namespace SebekeHakedis.Cekirdek
                     else if (long.TryParse(kv.Key, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out n)) aday = n <= enBuyukTanitici;
                     else aday = true; // onaltılık olmayan tanıtıcı (yalnız test dökümlerinde): yaşı bilinmez, sorulur
                 }
-                if (aday) plan.Silinenler[kv.Key] = KisaAd(kv.Value);
+                if (!aday) continue;
+                if (HakedisOnayi.NesneKilitli(onaylar, kv.Value.Model)) plan.KilitliSilinenler[kv.Key] = KisaAd(kv.Value);
+                else plan.Silinenler[kv.Key] = KisaAd(kv.Value);
             }
 
             // Çizimden alınmış ama çizimde artık bulunmayan nesneler (bilgisayarda silinmiş olabilir)

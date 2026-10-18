@@ -282,6 +282,35 @@ test('A4b · PROMAGIS\'in telefonda düzenlenmeyen verileri gidip gelir: bölge 
   assert.equal(geri.elemanlar.find((e) => e.gisId === 'SC7').ekVeri, undefined, 'ek verisi olmayan elemanda alan yok');
 });
 
+test('A4c · AutoCAD kalemlerinin INDEX sırası, hakedişi ve KONTROL işareti telefondan aynen döner; hakediş onayları gidip gelir', async () => {
+  const { ps } = await setup();
+  const { proje } = voltProjeOku(fs.readFileSync(ORNEK, 'utf8'));
+  proje.proje.onaylar = [{ no: 2, kontrol: true, hakedis: false, gis: false }];
+  const sc1 = proje.elemanlar.find((e) => e.gisId === 'SC1');
+  sc1.kalemler.find((k) => !k.ana).hakedis = 3; // malzeme sonraki hakedişte eklenmiş
+  await sebekeIceAl(ps, proje);
+  assert.deepEqual(ps.p.sebeke.onaylar, [{ no: 2, kontrol: true, hakedis: false, gis: false }], 'onaylar projede saklanır');
+  const geri = SH.projeOku(SH.projeYaz(sebekeModel(ps)));
+  const metin = (v) => String(v ?? '');
+  for (const tur of ['elemanlar', 'hatlar', 'kanallar', 'sondajlar']) {
+    for (const o of proje[tur]) {
+      const g = geri[tur].find((x) => x.id === o.id);
+      assert.ok(g, tur + ' ' + o.id + ' geri yazıldı');
+      assert.deepEqual(g.kalemler.map((k) => k.sira), o.kalemler.map((k) => k.sira), tur + ' ' + o.id + ': INDEX sırası korunur');
+      assert.deepEqual(g.kalemler.map((k) => k.hakedis), o.kalemler.map((k) => k.hakedis), tur + ' ' + o.id + ': kalemin hakedişi korunur');
+      o.kalemler.forEach((k, i) => { if (k.miktar === g.kalemler[i].miktar) assert.equal(metin(g.kalemler[i].kontrol), metin(k.kontrol), tur + ' ' + o.id + ': KONTROL korunur'); });
+    }
+  }
+  assert.equal(geri.kanallar[0].durum, proje.kanallar[0].durum, 'kanalın PROMAGIS durumu (M+M) korunur');
+  assert.deepEqual(geri.proje.onaylar, [{ no: 2, kontrol: true, hakedis: false, gis: false }], 'onaylar dosyaya geri yazılır');
+  // Telefonda onaylanan dönem AutoCAD'e kontrol + hakediş onayı olarak gider
+  await ps.createWorkProgram();
+  const d1 = await ps.createPeriod({ start: '2026-09-01', end: '2026-09-30' });
+  await ps.approvePeriod(d1.id);
+  assert.deepEqual(sebekeModel(ps).proje.onaylar, [{ no: 1, kontrol: true, hakedis: true, gis: false }, { no: 2, kontrol: true, hakedis: false, gis: false }],
+    'telefonda onaylanan 1. dönem kontrol + hakediş onayı olarak gider, AutoCAD onayı da kalır');
+});
+
 test('A5 · telefonun tam proje dosyası (volt-project/3) AutoCAD bölümünü taşır ve geri okunur', async () => {
   const { ps } = await setup(); await newProject(ps, { autoRecipe: false });
   await buildPoleLine(ps, OG_ROUTE, { group: 'bahh', typeNames: OG_TYPES, circuits: [{ role: 'OG', key: '3xSwallow', count: 1 }] });

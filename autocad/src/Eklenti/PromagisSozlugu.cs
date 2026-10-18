@@ -60,7 +60,7 @@ namespace SebekeHakedis.Eklenti
             if (nod.Contains(sozluk)) d = (DBDictionary)tr.GetObject(nod.GetAt(sozluk), OpenMode.ForWrite);
             else
             {
-                nod.UpgradeOpen();
+                if (!nod.IsWriteEnabled) nod.UpgradeOpen();
                 d = new DBDictionary();
                 nod.SetAt(sozluk, d);
                 tr.AddNewlyCreatedDBObject(d, true);
@@ -114,6 +114,52 @@ namespace SebekeHakedis.Eklenti
 
         public static void HakNoYaz(Database db, Transaction tr, int hakedis) =>
             Yaz(db, tr, HakNoSozlugu, HakNoKaydi, new[] { hakedis.ToString(CultureInfo.InvariantCulture) });
+
+        public const string OnaySozlugu = "HAK_ONAY", OnayKaydi = "ONAY_DURUM";
+
+        /// <summary>Hakediş onayları (HAK_ONAY / ONAY_DURUM&lt;n&gt;): hakediş no → bitler (Kontrol 4, Hakediş 2, GIS 1).</summary>
+        public static SortedDictionary<int, int> OnaylariOku(Database db)
+        {
+            var r = new SortedDictionary<int, int>();
+            try
+            {
+                using (var tr = db.TransactionManager.StartTransaction())
+                {
+                    var nod = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForRead);
+                    if (nod.Contains(OnaySozlugu))
+                    {
+                        var d = tr.GetObject(nod.GetAt(OnaySozlugu), OpenMode.ForRead) as DBDictionary;
+                        if (d != null)
+                            foreach (DBDictionaryEntry g in d)
+                            {
+                                if (!g.Key.StartsWith(OnayKaydi, StringComparison.OrdinalIgnoreCase)) continue;
+                                int no;
+                                if (!int.TryParse(g.Key.Substring(OnayKaydi.Length), NumberStyles.Integer, CultureInfo.InvariantCulture, out no) || no <= 0) continue;
+                                var xr = tr.GetObject(g.Value, OpenMode.ForRead) as Xrecord;
+                                if (xr == null) continue;
+                                using (var rb = xr.Data)
+                                {
+                                    if (rb == null) continue;
+                                    foreach (TypedValue tv in rb)
+                                    {
+                                        int b;
+                                        if (int.TryParse((Convert.ToString(tv.Value, CultureInfo.InvariantCulture) ?? "").Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out b) && (b & 7) != 0)
+                                            r[no] = b & 7;
+                                        break;
+                                    }
+                                }
+                            }
+                    }
+                    tr.Commit();
+                }
+            }
+            catch { }
+            return r;
+        }
+
+        /// <summary>Bir hakedişin onay bitlerini yazar (PROMAGIS da aynı kaydı okur).</summary>
+        public static void OnayYaz(Database db, Transaction tr, int hakedis, int bitler) =>
+            Yaz(db, tr, OnaySozlugu, OnayKaydi + hakedis.ToString(CultureInfo.InvariantCulture), new[] { (bitler & 7).ToString(CultureInfo.InvariantCulture) });
 
         /// <summary>Bölge çizgisini PROMAGIS'in bölge listesine ekler (zaten varsa dokunmaz).</summary>
         public static void BolgeEkle(Database db, Transaction tr, string handle)

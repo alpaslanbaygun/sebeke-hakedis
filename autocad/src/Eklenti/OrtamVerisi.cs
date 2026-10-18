@@ -44,6 +44,9 @@ namespace SebekeHakedis.Eklenti
             return "";
         }
 
+        /// <summary>Hakediş onaylı (kilitli) mı: bu hakedişe yeni nesne çizilmez, satırları değiştirilmez.</summary>
+        public bool Kilitli(int hakedis) => HakedisOnayi.Kilitli(Proje.Onaylar, hakedis);
+
         /// <summary>Yeni kalemin sıra numarası (INDEX).</summary>
         public string YeniSira()
         {
