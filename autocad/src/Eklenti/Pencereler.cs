@@ -674,9 +674,10 @@ namespace SebekeHakedis.Eklenti
                 dom.Items.Add("Bilinmiyor");
                 foreach (var m in Turler.Domlar) dom.Items.Add(m.ToString(CultureInfo.InvariantCulture) + "°");
                 dom.SelectedIndex = Math.Max(0, Array.IndexOf(Turler.Domlar, a.Dom) + 1);
-                var olcek = d.Satir("Sembol ölçeği", Sayi(0, 1000, D(a.SembolOlcegi), 2, 0.5m));
-                d.Not("0 = çizimdeki elemanlarla aynı ölçek (PROMAGIS çizimlerinde genellikle 4).");
+                var olcek = d.Satir("PROMAGIS blok ölçeği", Sayi(0, 1000, D(a.SembolOlcegi), 2, 0.5m));
+                d.Not("Yalnız PROMAGIS blokları için (0 = çizimdekilerle aynı, genellikle 4). Telefon simgeleri her zaman 1 ölçekle konur (1/1000 pafta).");
                 var etiket = d.Satir("Hat etiketi yüksekliği (m)", Sayi(0.05m, 50, D(a.EtiketYuksekligi), 2, 0.1m));
+                d.Not("Telefonun çizimiyle aynı: 1,8 m (parça metrajı 1,44 m).");
                 var yakala = d.Satir("Direğe yakalama (m)", Sayi(0, 50, D(a.YakalamaMesafesi), 2, 0.5m));
                 var yukari = d.Satir("Metraj", new CheckBox { Text = "Çizim uzunluğunu yukarı yuvarla", Checked = a.YukariYuvarla, AutoSize = true });
                 d.AraBaslik("Hat metrajına eklenecek pay (m)");

@@ -110,6 +110,19 @@ namespace SebekeHakedis.Cekirdek
         private static string DurumGrubu(string durum) => durum == "MEVCUT" ? "MEVCUT" : durum == "DM" ? "DM" : "YENI";
 
         /// <summary>
+        /// PROMAGIS blok adının durum grubu: YENİ_* → YENI (M+M, M, KM, ENH, DM+M, ME), MEVCUT_* → MEVCUT, DEMONTAJ_* → DM;
+        /// ad bu düzende değilse null.
+        /// </summary>
+        public static string PromagisBlokGrubu(string blok)
+        {
+            string b = (blok ?? "").ToUpperInvariant().Replace('İ', 'I');
+            if (b.StartsWith("YENI_", StringComparison.Ordinal)) return "YENI";
+            if (b.StartsWith("MEVCUT_", StringComparison.Ordinal)) return "MEVCUT";
+            if (b.StartsWith("DEMONTAJ_", StringComparison.Ordinal)) return "DM";
+            return null;
+        }
+
+        /// <summary>
         /// Çizimde aynı tür ve durumdaki elemanlarda en çok kullanılan PROMAGIS bloğu (PROMAGIS bloklarıyla aynı
         /// görünsün diye). Adsız bloklar (*U…) ve eklentinin kendi blokları (SH_…) sayılmaz. Bulunamazsa
         /// eklentinin lejant simgesi (malzeme ve duruma göre).
@@ -135,15 +148,20 @@ namespace SebekeHakedis.Cekirdek
 
         /// <summary>
         /// Elemanın bloğu: kendi bloğu bu çizimde aynı tür ve durumdaki elemanlarda kullanılıyorsa (ya da
-        /// başka seçenek yoksa) korunur; durumu değişmişse (ör. montajdan demontaja) o durumun bloğu önerilir.
-        /// Eklentinin kendi (SH_) blokları her zaman güncel tür, malzeme ve duruma göre yeniden seçilir.
+        /// başka seçenek yoksa) korunur; durumu değişmişse (ör. montajdan demontaja) o durumun bloğu önerilir
+        /// (telefon simgeleri açıkken telefonun SH_ simgesi). Eklentinin kendi (SH_) blokları her zaman güncel tür,
+        /// malzeme ve duruma göre yeniden seçilir. Böylece değişmeyen PROMAGIS nesnelerine dokunulmaz; yeni ve
+        /// değişen her eleman telefonla aynı görünür.
         /// </summary>
         public static string BlokSec(IEnumerable<Eleman> cizim, Eleman e)
         {
-            if (TelefonSembolleri) return Semboller.BlokAdi(e.Tur, e.Cins, e.Durum);
             if (string.IsNullOrEmpty(e.Blok) || Semboller.EklentininBlogu(e.Blok)) return BlokOner(cizim, e.Tur, e.Cins, e.Durum);
             if (e.Blok.StartsWith("*", StringComparison.Ordinal)) return e.Blok; // adsız blok: mevcut nesnede olduğu gibi kalır
             string grup = DurumGrubu(e.Durum);
+            // PROMAGIS blok adı durumu söyler (YENİ_…, MEVCUT_…, DEMONTAJ_…): uyuyorsa blok korunur (çizime dokunulmaz),
+            // uymuyorsa durum değişmiştir → yeni durumun bloğu (telefon simgeleri açıkken SH_ simgesi)
+            string adGrubu = PromagisBlokGrubu(e.Blok);
+            if (adGrubu != null) return adGrubu == grup ? e.Blok : BlokOner(cizim, e.Tur, e.Cins, e.Durum);
             bool ayniGrup = false, baska = false;
             foreach (var x in cizim)
             {
@@ -231,7 +249,8 @@ namespace SebekeHakedis.Cekirdek
                 Blok = blok,
                 X = e.Saga, Y = e.Yukari, Z = e.Kot, Aci = e.Aci,
             };
-            if (CizimStili.Yuklu) v.Renk = CizimStili.ElemanRengi(e.Tur, ana.Cins, ana.Durum);
+            // Telefon simgesine (SH_, parçaları BLOĞA GÖRE) telefonun rengi yazılır; PROMAGIS bloklarının rengine dokunulmaz
+            if (CizimStili.Yuklu && Semboller.EklentininBlogu(blok)) v.Renk = CizimStili.ElemanRengi(e.Tur, ana.Cins, ana.Durum);
             v.Oz["SIRA_NO"] = Tanitici;
             v.Oz["GIS_ID"] = e.GisId ?? "";
             v.Oz["CİNS"] = ana.Cins;

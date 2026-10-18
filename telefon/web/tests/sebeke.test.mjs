@@ -191,6 +191,24 @@ test('A3c · parçalı hat gidiş-dönüş: parçalar telefonda tek hat olur, pa
   assert.equal(oz3.yeniHat, 2, 'aynı tanımlı iki parça tek hat, farklı kesitli üçüncü parça ayrı hat');
   const uzun = ps3.data.lines.find((l) => l.nodes.length === 3);
   assert.ok(uzun && uzun.sebeke.parcalar && Object.keys(uzun.sebeke.parcalar).length === 2);
+  // AutoCAD'den gelmiş tek parça hat (tanıtıcı H1): telefon H1-1, H1-2, H1-3 diye böler; eklenti ilk parçada H1'i
+  // korur, diğerlerine yeni tanıtıcı + telefon kimliği (SH_ID) verir; geri gelince yine tek hat, tanıtıcılar haritada
+  const { ps: ps4 } = await setup(); await newProject(ps4, { autoRecipe: false });
+  await buildPoleLine(ps4, OG_ROUTE, { group: 'bahh', typeNames: OG_TYPES, circuits: [{ role: 'OG', key: '3xSwallow', count: 1 }] });
+  const hatId = ps4.data.lines.find((l) => l.lineType === 'OG').id;
+  await ps4.updateLine(hatId, { sebekeId: 'H1', sebeke: { id: 'H1' } }, 'AutoCAD kimliği');
+  const sp4 = sebekeModel(ps4);
+  assert.deepEqual(sp4.hatlar.filter((h) => h.tur === 'OG_HAVAI').map((h) => h.id), ['H1-1', 'H1-2', 'H1-3']);
+  const cad = SH.projeOku(SH.projeYaz(sp4));
+  const tanitici = ['H1', '9A01', '9A02'];
+  cad.hatlar.filter((h) => h.tur === 'OG_HAVAI').forEach((h, i) => { h.telefonId = i === 0 ? '' : h.id; h.id = tanitici[i]; delete h.uclar; });
+  const oz4 = await sebekeIceAl(ps4, cad, { projectId: ps4.p.id });
+  assert.equal(oz4.yeniHat, 0, 'yeni hat açılmaz');
+  const ogHatlar = ps4.data.lines.filter((l) => l.lineType === 'OG' && l.status !== 'deleted');
+  assert.equal(ogHatlar.length, 1, 'üç parça yine tek hat');
+  assert.equal(ogHatlar[0].nodes.length, 4);
+  assert.deepEqual(Object.values(ogHatlar[0].sebeke.parcalar), tanitici);
+  assert.deepEqual(sebekeModel(ps4).hatlar.filter((h) => h.tur === 'OG_HAVAI').map((h) => h.id), tanitici, 'dışa aktarımda AutoCAD tanıtıcıları');
 });
 
 test('A4 · AutoCAD örnek dosyası telefona alınır: direk tipleri katalogdan bulunur, hatlar uçlara bağlanır, kanal ve sondaj gelir; geri yazınca aynı kalır', async () => {

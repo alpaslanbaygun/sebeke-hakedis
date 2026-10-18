@@ -304,7 +304,8 @@ namespace SebekeHakedis.Test
             Esit("BOX", b.SonDeger("eleman.tur"), "ayar: son seçim");
             Esit(12.5, b.HatMetraji(10.4, "AG_HAVAI"), "ayar ile hat metrajı (en yakına + ek pay)");
 
-            // Blok seçimi: durumu değişen eleman o durumun bloğunu alır
+            // Blok seçimi (PROMAGIS blokları kipi): durumu değişen eleman o durumun bloğunu alır
+            PromagisYazici.TelefonSembolleri = false;
             var cizimEl = new List<Eleman>
             {
                 new Eleman { Id = "1", Tur = "AG_DIREK", Durum = "M", Blok = "YENİ_AG_DİR" },
@@ -318,6 +319,17 @@ namespace SebekeHakedis.Test
             Esit("*U5", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "*U5" }), "blok: adsız blok korunur");
             Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "M", Blok = "SH_DIREK_AG_YENI" }), "blok: eklenti bloğu yerine çizimdeki PROMAGIS bloğu");
             Esit("SH_KAFES_AG_DMM", PromagisYazici.BlokSec(new List<Eleman>(), new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "DM+M", Blok = "SH_KAFES_AG_YENI" }), "blok: eklenti bloğu duruma göre yeniden seçilir");
+            Esit("DEMONTAJ_AG_DİR", PromagisYazici.BlokSec(new List<Eleman> { cizimEl[1] }, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "YENİ_AG_DİR" }), "blok: PROMAGIS adı (YENİ_) durumla çelişince değişir");
+            // Telefon simgeleri kipi (varsayılan): yeni ve durumu değişen eleman telefon simgesini alır, değişmeyen PROMAGIS elemanına dokunulmaz
+            PromagisYazici.TelefonSembolleri = true;
+            Esit("SH_KAFES_AG_YENI", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "M" }), "telefon simgesi: yeni direk SH_ simgesiyle");
+            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "M", Blok = "YENİ_AG_DİR" }), "telefon simgesi: değişmeyen PROMAGIS direği bloğunu korur");
+            Esit("SH_DIREK_AG_DM", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "DM", Blok = "YENİ_AG_DİR" }), "telefon simgesi: demontaja çevrilen PROMAGIS direği SH_ simgesine geçer");
+            Esit("*U5", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "*U5" }), "telefon simgesi: adsız blok korunur");
+            Esit("SH_DIREK_AG_YENI", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "M", Blok = "SH_DIREK_AG_YENI" }), "telefon simgesi: SH_ bloğu korunur");
+            Esit("YENI", PromagisYazici.PromagisBlokGrubu("YENİ_ENH_DİREK"), "PROMAGIS blok adı: YENİ_");
+            Esit("DM", PromagisYazici.PromagisBlokGrubu("DEMONTAJ_BOX"), "PROMAGIS blok adı: DEMONTAJ_");
+            Esit(null, PromagisYazici.PromagisBlokGrubu("AG_DIREK_4"), "PROMAGIS blok adı: düzensiz ad");
             Semboller_();
             var olcekler = new List<CadVarlik>
             {
@@ -565,6 +577,41 @@ namespace SebekeHakedis.Test
             Esit(0, plan.Adimlar.Count, "ikinci alma: iş yok");
             Esit(1, plan.KimlikleEslesen > 0 ? 1 : 0, "ikinci alma: yeni nesneler kimlikle eşleşti");
             Esit(0, plan.Silinenler.Count, "ikinci alma: silinen yok");
+
+            // 5) Telefon tek parça hattı direkten direğe böldü ("<kimlik>-1", "-2"): ilk parça eski hattı günceller
+            //    (tanıtıcı korunur, silme sorulmaz), ikinci parça yeni nesne; ikinci almada iş yok
+            {
+                var c5 = new List<CadVarlik>();
+                foreach (var v in ornekCizim) c5.Add(CadVarlik.JsondanOku(v.JsonYap()));
+                var p5 = PromagisOkuyucu.Oku(c5, "ornek.dwg");
+                var t5 = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(p5, "test"));
+                var eski = t5.Hatlar[0];
+                var a0 = eski.Kose[0];
+                var a1 = eski.Kose[1];
+                var orta = new[] { (a0[0] + a1[0]) / 2, (a0[1] + a1[1]) / 2 };
+                var p1 = new Hat { Id = eski.Id + "-1", Tur = eski.Tur, AnaKesit = eski.AnaKesit, Durum = eski.Durum, Hakedis = eski.Hakedis, Katman = eski.Katman };
+                p1.Kose.Add(a0); p1.Kose.Add(orta);
+                foreach (var k in eski.Kalemler) p1.Kalemler.Add(k.Kopya());
+                var p2 = new Hat { Id = eski.Id + "-2", Tur = eski.Tur, AnaKesit = eski.AnaKesit, Durum = eski.Durum, Hakedis = eski.Hakedis, Katman = eski.Katman };
+                p2.Kose.Add(orta);
+                for (int i = 1; i < eski.Kose.Count; i++) p2.Kose.Add(eski.Kose[i]);
+                var hk2 = eski.Kalemler.Find(x => x.Kaynak == "HAT").Kopya();
+                hk2.Miktar = 10; hk2.Toplam = 10 * hk2.Katsayi;
+                p2.Kalemler.Add(hk2);
+                t5.Hatlar.Remove(eski);
+                t5.Hatlar.Add(p1);
+                t5.Hatlar.Add(p2);
+                var plan5 = Aktarim.Planla(c5, t5, "SC");
+                Esit(1, plan5.Sayi("guncelle", "hat"), "bölünen hat: ilk parça eski hattı günceller");
+                Esit(1, plan5.Sayi("yeni", "hat"), "bölünen hat: ikinci parça yeni nesne");
+                var ilkParca = plan5.Adimlar.Find(x => x.Kimlik == p1.Id);
+                Esit(eski.Id, ilkParca != null ? ilkParca.Hedef : "", "bölünen hat: tanıtıcı korunur");
+                Esit(0, plan5.Silinenler.Count, "bölünen hat: silme sorulmaz");
+                Uygula(c5, plan5, true);
+                Esit(0, Aktarim.Planla(c5, t5, "SC").Adimlar.Count, "bölünen hat: ikinci alma iş yok");
+                Esit("ABC", Aktarim.IlkParcaKoku("ABC-1"), "ilk parça kökü");
+                Esit(null, Aktarim.IlkParcaKoku("ABC-2"), "ikinci parçanın kökü yok");
+            }
 
             // 4) Telefonda yeni açılmış proje boş çizime: hepsi yeni; ikinci kez: iş yok
             var bos = new List<CadVarlik>();

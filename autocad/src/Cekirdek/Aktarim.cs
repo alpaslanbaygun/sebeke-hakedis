@@ -102,13 +102,24 @@ namespace SebekeHakedis.Cekirdek
                     id = "";
                 }
                 string hedef = null;
-                bool kimlikle = false;
+                bool kimlikle = false, parcaya = false;
                 Mevcut m;
                 if (!string.IsNullOrEmpty(id) && mevcut.TryGetValue(id, out m) && m.Nesne == nesne) hedef = id;
                 else
                 {
                     string h;
                     if (!string.IsNullOrEmpty(id) && kimlikten.TryGetValue(id, out h) && mevcut.TryGetValue(h, out m) && m.Nesne == nesne) { hedef = h; kimlikle = true; }
+                    else
+                    {
+                        // Parçalı hat / kanal / sondaj: telefon, çizimde tek parça olan nesneyi direkten direğe böler
+                        // ("<kimlik>-1", "-2"…). İlk parça eski nesneyi günceller (tanıtıcı ve bağlantıları korunur), diğerleri yeni.
+                        string kok = IlkParcaKoku(id);
+                        if (kok != null)
+                        {
+                            if (mevcut.TryGetValue(kok, out m) && m.Nesne == nesne && !eslesen.Contains(kok)) { hedef = kok; parcaya = true; }
+                            else if (kimlikten.TryGetValue(kok, out h) && mevcut.TryGetValue(h, out m) && m.Nesne == nesne && !eslesen.Contains(h)) { hedef = h; kimlikle = true; parcaya = true; }
+                        }
+                    }
                 }
 
                 if (hedef == null)
@@ -132,6 +143,7 @@ namespace SebekeHakedis.Cekirdek
 
                 string kimlik;
                 kimligi.TryGetValue(hedef, out kimlik);
+                if (parcaya && kimlikle) kimlik = id; // telefondan alınmış eski nesne artık ilk parça: kimliği parçanın kimliği
                 var istenen = telYaz(hedef, kimlik);
                 var simdiki = cizimYaz(mevcut[hedef].Model, kimlik);
                 PromagisYazici.TaniticiYaz(istenen, hedef);
@@ -234,6 +246,14 @@ namespace SebekeHakedis.Cekirdek
                 if (gisler.Contains(t.GisId)) plan.Uyarilar.Add(t.GisId + " numarası çizimde başka bir elemanda da var (" + Turler.ElemanAdi(t.Tur) + "). Numarayı kontrol edin.");
             }
             return plan;
+        }
+
+        /// <summary>"ABC-1" → "ABC" (parçalı nesnenin ilk parçası); değilse null.</summary>
+        public static string IlkParcaKoku(string id)
+        {
+            if (string.IsNullOrEmpty(id) || id.Length < 3 || !id.EndsWith("-1", StringComparison.Ordinal)) return null;
+            string kok = id.Substring(0, id.Length - 2);
+            return kok.Trim().Length == 0 ? null : kok;
         }
 
         private static string KisaAd(Mevcut m)
