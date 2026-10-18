@@ -106,8 +106,15 @@ namespace SebekeHakedis.PencereTest
                     x0 => BuyukPanel(dc, x0, "Rapor", new (string, string, Color?)[] { ("Durum\nTespit", "rapor", null), ("Dosyadan\nRapor", "dosya_rapor", null), ("Proje\nÖzeti", "ozet", null), ("Eksik\nMalzeme", "eksik", null) }),
                     x0 => BuyukPanel(dc, x0, "Yardım", new (string, string, Color?)[] { ("Hakkında", "bilgi", null) }),
                 };
+                double x = 0;
+                foreach (var p in paneller)
+                {
+                    x += p(x);
+                    dc.DrawRectangle(new SolidColorBrush(Ayrac), null, new Rect(x, SekmeYuk, 1, Yuk));
+                    x += 1;
+                }
                 // Sekme şeridi (yalnız görüntü için; AutoCAD'in kendi sekmeleri)
-                dc.DrawRectangle(new SolidColorBrush(Bant), null, new Rect(0, 0, 2200, SekmeYuk));
+                dc.DrawRectangle(new SolidColorBrush(Bant), null, new Rect(0, 0, x, SekmeYuk));
                 var sekmeler = new[] { "Giriş", "Ekle", "Açıklama", "Parametrik", "Görünüş", "Yönet", "Çıktı", "ŞEBEKE HAKEDİŞ" };
                 double sx = 8;
                 foreach (var s in sekmeler)
@@ -118,14 +125,6 @@ namespace SebekeHakedis.PencereTest
                     dc.DrawText(t, new Point(sx, (SekmeYuk - t.Height) / 2 + 1));
                     sx += t.Width + 20;
                 }
-                double x = 0;
-                foreach (var p in paneller)
-                {
-                    x += p(x);
-                    dc.DrawRectangle(new SolidColorBrush(Ayrac), null, new Rect(x, SekmeYuk, 1, Yuk));
-                    x += 1;
-                }
-                dc.DrawRectangle(new SolidColorBrush(Bant), null, new Rect(x, SekmeYuk, 2200 - x, Yuk));
             }
             return dv;
         }
@@ -269,7 +268,7 @@ namespace SebekeHakedis.PencereTest
             var secili = tipli ? HizliSecim.SeciliTip(oge, HizliSecim.TemelKatalog) : null;
             string tip = secili != null ? secili.Tanim.Trim() : oge == null ? "(öğe seçin)" : "(tip gerekmez)";
             bool dm = tipli && oge.ElemanMi && Turler.DemontajMi(HizliSecim.Durum);
-            const double etiket = 62, kutu1 = 220, kutu2 = 130;
+            const double etiket = 52, kutu1 = 190, kutu2 = 116;
             double w = 8 + etiket + kutu1 + 14 + 1 + 10 + etiket + kutu2 + 12 + 66 + 6;
             PanelZemini(dc, x, w, "Ayarlar");
             double lx = x + 8, kx = lx + etiket, y0 = SekmeYuk + 7;
@@ -289,7 +288,7 @@ namespace SebekeHakedis.PencereTest
             KutuCiz(dc, kx2, y0 + Satir, kutu2, HizliSecim.Hakedis > 0 ? HizliSecim.Hakedis + ". hakediş" : "Aktif hakediş", !tipli);
             if (dm)
             {
-                dc.DrawText(Metin("Demontaj", 11.5, Yazi), new Point(lx2, y0 + 2 * Satir + 3));
+                dc.DrawText(Metin("DM türü", 11.5, Yazi), new Point(lx2, y0 + 2 * Satir + 3));
                 KutuCiz(dc, kx2, y0 + 2 * Satir, kutu2, string.IsNullOrEmpty(HizliSecim.DmDurum) ? "Yok" : HizliSecim.DmDurum);
             }
             BuyukDugme(dc, kx2 + kutu2 + 10, "Ayrıntılı…", SeritSimgeleri.KomutSimgesi("bilgi", 32), false);

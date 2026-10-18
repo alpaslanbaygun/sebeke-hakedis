@@ -162,13 +162,13 @@ namespace SebekeHakedis.Eklenti
             var ay = Panel(sekme, "Ayarlar");
             var s1 = new RibbonRowPanel();
             s1.Items.Add(Etiket("Tip"));
-            _tip = new RibbonCombo { Width = 220, ShowText = false, Size = RibbonItemSize.Standard };
+            _tip = new RibbonCombo { Width = 190, ShowText = false, Size = RibbonItemSize.Standard };
             _tip.CurrentChanged += (s, e) => { if (!_yukleniyor) TipSecildi(_tip.Current as RibbonButton); };
             s1.Items.Add(_tip);
             s1.Items.Add(new RibbonRowBreak());
             s1.Items.Add(Etiket("Ara"));
             _ara = new RibbonTextBox { ShowText = false, ShowImage = false, ToolTip = "Etkin öğenin bütün tipleri arasında arar (ör. k2, beton 9,3, alpek 50). Enter'a basın; boş Enter kısa listeye döner." };
-            Ozellik(_ara, "Width", 220.0);
+            Ozellik(_ara, "Width", 190.0);
             Ozellik(_ara, "IsEmptyTextValid", true);
             Ozellik(_ara, "AcceptTextOnLostFocus", false);
             Ozellik(_ara, "SelectTextOnFocus", true);
@@ -184,22 +184,22 @@ namespace SebekeHakedis.Eklenti
 
             var s2 = new RibbonRowPanel();
             s2.Items.Add(Etiket("Durum"));
-            _durum = new RibbonCombo { Width = 130, ShowText = false, Size = RibbonItemSize.Standard };
+            _durum = new RibbonCombo { Width = 116, ShowText = false, Size = RibbonItemSize.Standard };
             foreach (var d in Turler.CizimDurumlari)
                 _durum.Items.Add(new RibbonButton { Text = d, ShowText = true, Tag = d, ToolTip = d + " — " + Turler.DurumAdi(d), Description = Turler.DurumAdi(d) });
             _durum.CurrentChanged += (s, e) => { if (!_yukleniyor) DurumSecildi(); };
             s2.Items.Add(_durum);
             s2.Items.Add(new RibbonRowBreak());
             s2.Items.Add(Etiket("Hakediş"));
-            _hakedis = new RibbonCombo { Width = 130, ShowText = false, Size = RibbonItemSize.Standard };
+            _hakedis = new RibbonCombo { Width = 116, ShowText = false, Size = RibbonItemSize.Standard };
             _hakedis.Items.Add(new RibbonButton { Text = "Aktif hakediş", ShowText = true, Tag = 0, ToolTip = "Çizimin aktif hakedişi (Aktif Hakediş düğmesi)" });
             for (int i = 1; i <= 20; i++) _hakedis.Items.Add(new RibbonButton { Text = i.ToString(CultureInfo.InvariantCulture) + ". hakediş", ShowText = true, Tag = i });
             _hakedis.CurrentChanged += (s, e) => { if (!_yukleniyor) HakedisSecildi(); };
             s2.Items.Add(_hakedis);
             s2.Items.Add(new RibbonRowBreak());
-            _dmEtiket = Etiket("Demontaj");
+            _dmEtiket = Etiket("DM türü");
             s2.Items.Add(_dmEtiket);
-            _dm = new RibbonCombo { Width = 130, ShowText = false, Size = RibbonItemSize.Standard };
+            _dm = new RibbonCombo { Width = 116, ShowText = false, Size = RibbonItemSize.Standard };
             foreach (var d in Turler.DmDurumlari) _dm.Items.Add(new RibbonButton { Text = d.Length == 0 ? "Yok" : d, ShowText = true, Tag = d });
             _dm.CurrentChanged += (s, e) => { if (!_yukleniyor) DurumSecildi(); };
             s2.Items.Add(_dm);
@@ -574,8 +574,8 @@ namespace SebekeHakedis.Eklenti
         private static RibbonLabel Etiket(string yazi)
         {
             var l = new RibbonLabel { Text = yazi, ShowText = true, ShowImage = false };
-            Ozellik(l, "Width", 62.0);
-            Ozellik(l, "MinWidth", 62.0);
+            Ozellik(l, "Width", 52.0);
+            Ozellik(l, "MinWidth", 52.0);
             return l;
         }
 

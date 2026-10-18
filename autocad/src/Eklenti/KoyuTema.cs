@@ -880,15 +880,15 @@ namespace SebekeHakedis.Eklenti
             try
             {
                 if (m.Msg == 0x000F) // WM_PAINT
-                    using (var g = Graphics.FromHwnd(Handle)) Cerceve(g);
+                    using (var g = Graphics.FromHwnd(Handle)) KenarCiz(g);
                 else if ((m.Msg == 0x0317 || m.Msg == 0x0318) && m.WParam != IntPtr.Zero) // WM_PRINT / WM_PRINTCLIENT (ekran görüntüsü)
-                    using (var g = Graphics.FromHdc(m.WParam)) Cerceve(g);
+                    using (var g = Graphics.FromHdc(m.WParam)) KenarCiz(g);
             }
             catch { }
         }
 
         /// <summary>Windows'un düz çizdiği açık renkli kenarı ve ok düğmesini koyu temayla yeniden çizer.</summary>
-        private void Cerceve(Graphics g)
+        private void KenarCiz(Graphics g)
         {
             var r = ClientRectangle;
             if (r.Width <= 2 || r.Height <= 2) return;
@@ -913,7 +913,16 @@ namespace SebekeHakedis.Eklenti
         }
 
         protected override void OnGotFocus(EventArgs e) { base.OnGotFocus(e); Invalidate(); }
-        protected override void OnLostFocus(EventArgs e) { base.OnLostFocus(e); Invalidate(); }
+        protected override void OnLostFocus(EventArgs e) { base.OnLostFocus(e); SecimiKaldir(); Invalidate(); }
+        protected override void OnResize(EventArgs e) { base.OnResize(e); SecimiKaldir(); }
+        protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); SecimiKaldir(); }
+        protected override void OnTextChanged(EventArgs e) { base.OnTextChanged(e); SecimiKaldir(); }
+
+        /// <summary>Windows yazılabilir listede yazının tamamını seçili (mavi) bırakır; odak yokken kaldırılır.</summary>
+        private void SecimiKaldir()
+        {
+            try { if (DropDownStyle == ComboBoxStyle.DropDown && IsHandleCreated && !Focused) SelectionLength = 0; } catch { }
+        }
     }
 
     // =====================================================================================================
@@ -1344,6 +1353,7 @@ namespace SebekeHakedis.Eklenti
             g.ColumnHeadersDefaultCellStyle.SelectionForeColor = KoyuRenk.Ikincil;
             g.ColumnHeadersDefaultCellStyle.Font = KoyuYazi.Kalin;
             g.ColumnHeadersDefaultCellStyle.Padding = new Padding(Olcu.S(6), 0, Olcu.S(4), 0);
+            g.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False;
             g.DefaultCellStyle.BackColor = KoyuRenk.Kutu;
             g.DefaultCellStyle.ForeColor = KoyuRenk.Yazi;
             g.DefaultCellStyle.SelectionBackColor = KoyuRenk.Secili;

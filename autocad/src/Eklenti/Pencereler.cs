@@ -213,7 +213,7 @@ namespace SebekeHakedis.Eklenti
             if (ozet)
             {
                 a.Ozet = new OzetSatiri();
-                a.Ozet.SetBounds(S(16), 0, Math.Max(S(20), a.Tamam.Left - S(32)), alt.Height);
+                a.Ozet.SetBounds(S(16), 1, Math.Max(S(20), a.Tamam.Left - S(32)), alt.Height - 1);
                 alt.Controls.Add(a.Ozet);
             }
             f.AcceptButton = a.Tamam;
@@ -264,12 +264,12 @@ namespace SebekeHakedis.Eklenti
 
         private static readonly Dictionary<string, Image> _semboller = new Dictionary<string, Image>(StringComparer.Ordinal);
 
-        /// <summary>Telefonun simge takımından elemanın simgesi (tip listesinde: beton daire, demir kare …).</summary>
+        /// <summary>Telefonun simge takımından elemanın simgesi (tip listesinde: beton daire, demir kare …; içi boş çizilir).</summary>
         private static Image SembolResmi(string tur, string cins)
         {
             if (string.IsNullOrEmpty(tur)) return null;
             string blok;
-            try { blok = Semboller.BlokAdi(tur, cins, "M"); }
+            try { blok = Semboller.BlokAdi(tur, cins, "MEVCUT"); }
             catch { return null; }
             Image r;
             if (_semboller.TryGetValue(blok, out r)) return r;
@@ -277,7 +277,7 @@ namespace SebekeHakedis.Eklenti
             try
             {
                 var s = Semboller.Bul(blok);
-                if (s != null) r = SeritSimgeleri.SembolResmi(s, CizimStili.EkranElemanRengi(tur, cins), S(24));
+                if (s != null) r = SeritSimgeleri.SembolResmi(s, CizimStili.EkranElemanRengi(tur, cins), S(22));
             }
             catch { r = null; }
             if (r == null) r = TurSimgesi(tur, false, false);
@@ -777,8 +777,12 @@ namespace SebekeHakedis.Eklenti
                 Func<string> zeminDegeri = () => zemin.SelectedItem as string ?? "";
                 Action ozetYaz = () =>
                 {
-                    int kod = KanalKodu.Kod(og.Checked, ag.Checked, ayd.Checked, rek.Checked);
-                    alt.Ozet.Text = "Çizilecek: Kablo kanalı · " + (kod > 0 ? KanalKodu.Kablolar(kod) : "kablo seçin") + " · " + zeminDegeri() + " · " +
+                    var kl = new List<string>();
+                    if (og.Checked) kl.Add("OG");
+                    if (ag.Checked) kl.Add("AG");
+                    if (ayd.Checked) kl.Add("Aydınlatma");
+                    if (rek.Checked) kl.Add("Rekortman");
+                    alt.Ozet.Text = "Çizilecek: Kablo kanalı · " + (kl.Count > 0 ? string.Join(" + ", kl) : "kablo seçin") + " · " + zeminDegeri() + " · " +
                                     altG.Value.ToString("0.#", Tr) + "/" + ust.Value.ToString("0.#", Tr) + " × " + der.Value.ToString("0.#", Tr) + " cm · " +
                                     durum.Secili + " · " + (int)hak.Value + ". hakediş";
                     alt.Ozet.Simge = Boya.Simge("kanal", KanalRengi, 18);
@@ -1638,7 +1642,7 @@ namespace SebekeHakedis.Eklenti
                 g.Columns[5].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
                 g.Columns[6].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
                 foreach (DataGridViewColumn c in g.Columns) c.SortMode = DataGridViewColumnSortMode.NotSortable;
-                var kilitResmi = Boya.Simge("kilit", KoyuRenk.Soluk, 14);
+                var kilitResmi = Boya.Simge("kilit", KoyuRenk.Ikincil, 14);
                 var anaResmi = Boya.Simge(simgeAdi, simgeRengi, 18);
 
                 var toplamYazi = Etiket(w, "", 16, 530, 320, KoyuYazi.Kalin, KoyuRenk.Yazi);
