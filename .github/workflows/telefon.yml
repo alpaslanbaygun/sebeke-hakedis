@@ -6,7 +6,7 @@ name: Telefon uygulaması
 
 on:
   push:
-    branches: [main, volt-birlesim]
+    branches: [main, volt-birlesim, serit-ve-stil]
     paths:
       - 'telefon/**'
       - 'ortak/**'
