@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Şebeke Hakediş AutoCAD eklentisi.
+    Şebeke-M AutoCAD eklentisi.
     İki derleme çıkar:
       net46           → AutoCAD 2016–2024 (.NET Framework)
       net8.0-windows  → AutoCAD 2025 ve sonrası (.NET 8)
@@ -17,8 +17,8 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Version>0.1.0</Version>
-    <Product>Şebeke Hakediş</Product>
-    <Company>Şebeke Hakediş</Company>
+    <Product>Şebeke-M</Product>
+    <Company>Şebeke-M</Company>
     <Description>Elektrik dağıtım şebekesi hakediş ve durum tespit eklentisi</Description>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>

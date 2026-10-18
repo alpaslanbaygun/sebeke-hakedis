@@ -1,5 +1,5 @@
 /*
- * Şebeke Hakediş — telefonun hesap çekirdeği.
+ * Şebeke-M — telefonun hesap çekirdeği.
  *
  * AutoCAD eklentisindeki C# çekirdeğinin (autocad/src/Cekirdek) karşılığıdır; kurallar aynıdır:
  *  - proje dosyası (.sebeke.json) okuma / yazma (ortak/VERI-MODELI.md)
@@ -585,7 +585,7 @@
   function yeniProje(o) {
     const a = o || {};
     return {
-      bicim: BICIM, surum: SURUM, olusturan: 'Şebeke Hakediş (telefon)', olusturma: zaman(),
+      bicim: BICIM, surum: SURUM, olusturan: 'Şebeke-M (telefon)', olusturma: zaman(),
       proje: {
         ad: a.ad || 'Yeni Proje', kaynak: 'telefon',
         koordinat: { sistem: 'TM', datum: 'ITRF96', dom: Number(a.dom) || 0, eksenler: 'saga = doğu (CAD X), yukari = kuzey (CAD Y)' },
@@ -634,7 +634,7 @@
    */
   function projeOku(girdi) {
     const k = typeof girdi === 'string' ? JSON.parse(girdi.replace(/^﻿/, '')) : girdi;
-    if (!k || k.bicim !== BICIM) throw new Error('Bu bir Şebeke Hakediş proje dosyası değil.');
+    if (!k || k.bicim !== BICIM) throw new Error('Bu bir Şebeke-M proje dosyası değil.');
     if (num(k.surum) > SURUM) throw new Error('Proje dosyası daha yeni bir sürümle hazırlanmış (' + k.surum + '). Uygulamayı güncelleyin.');
     const pj = k.proje || {};
     const kor = pj.koordinat || {};
@@ -740,7 +740,7 @@
   function projeYaz(p, olusturan, girintili) {
     const pj = p.proje;
     const k = {
-      bicim: BICIM, surum: SURUM, olusturan: olusturan || p.olusturan || 'Şebeke Hakediş (telefon)', olusturma: zaman(),
+      bicim: BICIM, surum: SURUM, olusturan: olusturan || p.olusturan || 'Şebeke-M (telefon)', olusturma: zaman(),
       proje: sirala(pj, [['ad', pj.ad], ['kaynak', pj.kaynak],
         ['koordinat', Object.assign({ sistem: 'TM', datum: 'ITRF96', dom: 0 }, pj.koordinat, { eksenler: 'saga = doğu (CAD X), yukari = kuzey (CAD Y)' })],
         ['aktifHakedis', pj.aktifHakedis], ['katmanOnEki', pj.katmanOnEki], ['gisOnEki', pj.gisOnEki]]),
