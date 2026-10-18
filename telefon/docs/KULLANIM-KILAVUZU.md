@@ -742,7 +742,7 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 
 | Çıktı | Dosya | İçeriği |
 | --- | --- | --- |
-| AutoCAD proje dosyası | .sebeke.json | Şebeke Hakediş AutoCAD eklentisi "Telefondan Al" ile açar: direk, hat, kanal ve malzemeler PROMAGIS biçiminde (Durum Tespit raporu için). Varsayılan seçilidir |
+| AutoCAD proje dosyası | .sebeke.json | Şebeke Hakediş AutoCAD eklentisi "Telefondan Al" ile açar: direk, hat, kanal ve malzemeler çizim biçiminde (Durum Tespit raporu için). Varsayılan seçilidir |
 | Telefon proje dosyası | .volt.json | Projenin tam yedeği (tüm kayıtlar) + AutoCAD bölümü; eklenti ve telefon bunu da açar |
 | AutoCAD DXF | .dxf | Katmanlar, semboller (eklentiyle aynı bloklar), yazılar; 1/1000 |
 | Netcad NCN | .ncn | Nokta adı, Y, X, Z, kod. Netcad'e DXF ile birlikte alınır |
@@ -758,7 +758,7 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 
 ### AutoCAD eklentisiyle çalışma (Şebeke Hakediş)
 
-Büroda PROMAGIS çizimleriyle çalışan Şebeke Hakediş AutoCAD eklentisi aynı proje dosyasını kullanır:
+Büroda AutoCAD çizimleriyle çalışan Şebeke Hakediş AutoCAD eklentisi aynı proje dosyasını kullanır:
 
 1. AutoCAD'de **ŞEBEKE HAKEDİŞ › Telefona Gönder** ile yazılan dosyayı Drive'a koyun.
 2. Telefonda **Projeler › AutoCAD dosyasından proje al** (ya da açık projede **Proje merkezi › AutoCAD dosyasını bu
@@ -768,14 +768,14 @@ Büroda PROMAGIS çizimleriyle çalışan Şebeke Hakediş AutoCAD eklentisi ayn
    değişen ve eklenen nesneleri çizime işler.
 
 Durumlar şöyle çevrilir: Yeni → M (pozun temini yükleniciyse M+M), Mevcut → MEVCUT, Demontaj → DM, DMM → DM+M.
-Objenin ekranında PROMAGIS kodu ayrıca seçilebilir (KM, ENH, ME; demontajda KESİK / SÖKÜK); AutoCAD'den gelen kod korunur.
+Objenin ekranında AutoCAD kodu ayrıca seçilebilir (KM, ENH, ME; demontajda KESİK / SÖKÜK); AutoCAD'den gelen kod korunur.
 **"İleride" durumundaki objeler AutoCAD dosyasına yazılmaz.**
 
 AutoCAD'den gelen ve telefonda değişmeyen bilgiler aynen geri gider: kalemlerin sıra numarası (INDEX), hakedişi ve
 kontrol işareti, bölgenin grup kodu, panonun çıkış şeması, hat parçalarının numaraları. Böylece değişmeyen nesne
 AutoCAD'de "değişmiş" görünmez.
 
-**Hakediş onayları**: AutoCAD'deki (PROMAGIS) onaylar **Hakediş** ekranında görünür (Kontrol / Hakediş / GIS). AutoCAD'de
+**Hakediş onayları**: AutoCAD'deki (AutoCAD) onaylar **Hakediş** ekranında görünür (Kontrol / Hakediş / GIS). AutoCAD'de
 onaylı hakediş kilitlidir; o hakedişe dokunan değişiklikler orada aktarılmaz. Telefonda onaylanan dönem AutoCAD'e
 kontrol + hakediş onayı olarak gider. Ayrıntı ve komutlar: depo kökündeki `KULLANIM.md`.
 

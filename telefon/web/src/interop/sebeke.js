@@ -5,7 +5,7 @@
 //   voltProjeYaz(ps)     telefonun tam proje dosyası (volt-project/3): ham veri + AutoCAD için hazır 'sebeke' bölümü
 //   voltProjeOku(metin)  her iki biçimi tanır, AutoCAD proje nesnesini döndürür
 //
-// Eşleme tabloları ortak/katalog/volt-eslesme.json'dadır (telefon kopyası: src/ortak/volt-eslesme.js). PROMAGIS
+// Eşleme tabloları ortak/katalog/volt-eslesme.json'dadır (telefon kopyası: src/ortak/volt-eslesme.js). AutoCAD
 // kurallarının JavaScript karşılığı sh-core.cjs'dir (etiket, kanal kodu, bölge seçimi, proje dosyası yazımı, rapor).
 import SH from './sh-core.cjs';
 import ESLESME from '../ortak/volt-eslesme.js';
@@ -23,7 +23,7 @@ const low = (s) => String(s || '').toLocaleLowerCase('tr-TR');
 // ---------------------------------------------------------------- Katalog yardımcıları
 
 let _katalog = null;
-/** PROMAGIS kalem kataloğu (ortak/katalog/kalemler.json): cins|tanım → kalem. */
+/** AutoCAD kalem kataloğu (ortak/katalog/kalemler.json): cins|tanım → kalem. */
 function katalog() {
   if (_katalog) return _katalog;
   const liste = SH.katalogHazirla(KALEMLER, null);
@@ -48,38 +48,38 @@ function cinsTarifesi(cins, varsayilan) { return katalog().enCokTarife.get(cins)
 
 // ---------------------------------------------------------------- Durum ve ad eşlemeleri
 
-/** Telefon durumu → PROMAGIS durumu; YENI'de tedarik: Y → M+M, Ş → M. null: dosyaya yazılmaz (ileride). */
-export function promagisDurumu(state, supply) {
+/** Telefon durumu → çizim durumu; YENI'de tedarik: Y → M+M, Ş → M. null: dosyaya yazılmaz (ileride). */
+export function cizimDurumu(state, supply) {
   const d = ESLESME.durumlar[state];
   if (d === undefined) return 'MEVCUT';
   if (d === 'M' && supply && ESLESME.tedarik[supply]) return ESLESME.tedarik[supply];
   return d;
 }
-/** İş türü (montaj / demontaj / dmm) → PROMAGIS durumu. */
+/** İş türü (montaj / demontaj / dmm) → çizim durumu. */
 const isDurumu = (job, supply) => (job === 'montaj' ? (supply && ESLESME.tedarik[supply]) || 'M' : ESLESME.isler[job] || 'M');
 /**
- * Kaydın PROMAGIS durumu: AutoCAD'den gelen ya da kullanıcının seçtiği özgün kod (sebeke.durum) telefondaki durumla
+ * Kaydın çizim durumu: AutoCAD'den gelen ya da kullanıcının seçtiği özgün kod (sebeke.durum) telefondaki durumla
  * hâlâ uyuşuyorsa aynen döner (KM, ENH, ME ve M / M+M ayrımı korunur); yoksa telefon durumundan üretilir.
  */
 export function korunanDurum(sb, state, trafo, supply) {
   const d = sb && sb.durum ? String(sb.durum).trim().toUpperCase() : '';
   if (d && ESLESME.durumlarTers[d] && voltDurumu(d, trafo) === state) return d;
-  return promagisDurumu(state, supply);
+  return cizimDurumu(state, supply);
 }
-/** Telefon durumuna uyan PROMAGIS kodları (seçim listesi için): [[kod, ad], …]. */
-export function promagisSecenekleri(state, trafo) {
+/** Telefon durumuna uyan AutoCAD kodları (seçim listesi için): [[kod, ad], …]. */
+export function durumSecenekleri(state, trafo) {
   return Object.keys(ESLESME.durumlarTers).filter((k) => k !== 'aciklama' && voltDurumu(k, trafo) === state).map((k) => [k, k + ' · ' + (ESLESME.durumAdlari[k] || k)]);
 }
 
-/** Direk tipi adı: telefon → PROMAGIS yazımı (beton 9.3/8 → 9,3/8; GD-10 (3 AWG) → G-D-10 (sw)). */
-export function promagisTip(grup, ad) {
+/** Direk tipi adı: telefon → AutoCAD yazımı (beton 9.3/8 → 9,3/8; GD-10 (3 AWG) → G-D-10 (sw)). */
+export function cizimTip(grup, ad) {
   const s = String(ad || '').trim();
   if (grup === 'beton' || grup === 'beton562') return s.replace(/\./g, ',');
   if (grup === 'bahh') { const m = /^G([A-Z]{1,2})-(\d+)\s*\((3 AWG|1\/0)\)$/i.exec(s); if (m) return 'G-' + m[1].toUpperCase() + '-' + m[2] + ' (' + (m[3].toUpperCase() === '3 AWG' ? 'sw' : '1/0') + ')'; }
   if (grup === 'trafo') { const m = /^G-?T-?(\d+)$/i.exec(s); if (m) return 'G-T-' + m[1]; }
   return s;
 }
-/** Direk tipi adı: PROMAGIS → telefon yazımı. */
+/** Direk tipi adı: AutoCAD → telefon yazımı. */
 export function voltTip(grup, ad) {
   const s = String(ad || '').trim();
   if (grup === 'beton' || grup === 'beton562') return s.replace(/,/g, '.');
@@ -88,7 +88,7 @@ export function voltTip(grup, ad) {
   return s;
 }
 /** Çıplak OG iletkeni / hat etiketi: 3xSwallow → 3xSW, 3x(1x240/25) NA2XSY → 1x240/25 Xlpe Alm. vb. */
-export function promagisKesit(label, lineType, install) {
+export function cizimKesit(label, lineType, install) {
   let s = String(label || '').trim();
   if (!s) return { tanim: '', aciklama: '' };
   if (install === 'yeralti') {
@@ -157,7 +157,7 @@ export function sebekeModel(ps, opts = {}) {
       kalemler: [], telefonId: e.id, olcum: olcumBilgisi(p), not: e.note || undefined
     };
     if (e.sebekeId && e.sebekeId !== e.id) el.id = e.sebekeId;
-    // PROMAGIS'in telefonda düzenlenmeyen verisi (pano çıkış şeması ANA/CON, hücreler FIDER) aynen geri gider
+    // AutoCAD'in telefonda düzenlenmeyen verisi (pano çıkış şeması ANA/CON, hücreler FIDER) aynen geri gider
     if (e.sebeke && e.sebeke.ekVeri && Object.keys(e.sebeke.ekVeri).length) el.ekVeri = JSON.parse(JSON.stringify(e.sebeke.ekVeri));
     // Nesnenin kendi pozu: direk tipi, trafo direği, köşk gövdesi, SDK tipi, seçilen poz
     const kendiEtiketi = e.kind === 'pole' || e.kind === 'lighting' ? 'direk' : tanim.tur === 'TRAFO_DIREGI' ? 'direk' : tanim.tur === 'TRAFO_MERKEZI' ? 'kosk' : e.kind === 'sdk' ? 'sdk' : 'self';
@@ -194,7 +194,7 @@ export function sebekeModel(ps, opts = {}) {
     // Hattın tamamı için kalemler; parçalara uzunluk payıyla bölünür (son parça kalanı alır → toplam değişmez)
     let hatKalemleri = [], manuel = [];
     const etiketTam = sb.anaKesit && !(l.circuits || []).length ? sb.anaKesit : lineLabel(l, cat);
-    const kesit = promagisKesit(etiketTam, l.lineType, l.install);
+    const kesit = cizimKesit(etiketTam, l.lineType, l.install);
     if (kablolu) {
       hatKalemleri = iletkenKalemleri(l, li, iletkenler, hatTuru, kesit, durum, hak, cat);
       if (!hatKalemleri.length && Array.isArray(sb.kalemler)) hatKalemleri = sb.kalemler.map((k) => Object.assign({}, k, { hakedis: hak }));
@@ -257,7 +257,7 @@ export function sebekeModel(ps, opts = {}) {
         SH.kalemToplami(kk, c);
         c.kalemler.push(kk);
         if (kn.boru > 0) {
-          // Boru PROMAGIS'te kanalın değil kablonun malzemesidir (kanal nesnesi yalnız kendi kalemini taşır)
+          // Boru AutoCAD'de kanalın değil kablonun malzemesidir (kanal nesnesi yalnız kendi kalemini taşır)
           const boru = SH.kalemYap({ cins: 'GALVANİZLİ_GAZ_BORUSU', tanim: 'Ø' + ((l.cable && l.cable.pipeDia) || 110) + ' boru', birim: 'mt/mt', katsayi: 1, tarife: cinsTarifesi('GALVANİZLİ_GAZ_BORUSU', '0104') }, { miktar: Math.ceil(kn.boru * pay - 1e-6), durum, hakedis: hak, kaynak: 'MALZEME' });
           if (hat) hat.kalemler.push(boru);
           else { c.kalemler.push(boru); if (k === 0) uyarilar.push(l.lineNo + ': kablosuz kanaldaki boru kalemi AutoCAD çizimine yazılamaz (yalnız dosyadan raporda görünür)'); }
@@ -268,7 +268,7 @@ export function sebekeModel(ps, opts = {}) {
     }
   }
 
-  // Ekipmansız ölçü noktaları (detay / kontrol): PROMAGIS GPS noktaları
+  // Ekipmansız ölçü noktaları (detay / kontrol): AutoCAD GPS noktaları
   const eqPts = new Set(eqs.map((e) => e.pointId));
   const linePts = new Set(); for (const l of lines) for (const id of l.nodes || []) linePts.add(id);
   for (const p of pts.values()) {
@@ -298,7 +298,7 @@ const parcaUzunlugu = (pc) => { let t = 0; for (let i = 1; i < pc.length; i++) t
 /** Parçaların uzunluk payları (toplamı 1). */
 function parcaPaylari(uzunluklar) { const t = uzunluklar.reduce((a, b) => a + b, 0) || 1; return uzunluklar.map((u) => u / t); }
 /**
- * Kalemin parça payı: miktar uzunluk payıyla bölünür; toplam değişmez. Tam sayı miktar (PROMAGIS metrajı) tam
+ * Kalemin parça payı: miktar uzunluk payıyla bölünür; toplam değişmez. Tam sayı miktar (AutoCAD metrajı) tam
  * sayı parçalara dağıtılır (en büyük kalan yöntemi: kalan metreler payı en çok kesilen parçalara gider); ondalıklı
  * miktar 2 ondalıkla bölünür, son parça kalanı alır.
  */
@@ -356,7 +356,7 @@ function olcumBilgisi(p) {
 }
 function tedarikOf(cat, servis) { const pz = servis ? cat.poz(servis) : null; return pz ? pz.supply : null; }
 
-/** Ekipmanın PROMAGIS türü, cinsi, tipi ve tedarik bilgisi. */
+/** Ekipmanın AutoCAD türü, cinsi, tipi ve tedarik bilgisi. */
 export function elemanTanimi(e, cat) {
   const sb = e.sebeke || {};
   if (e.kind === 'pole' || e.kind === 'lighting') {
@@ -364,7 +364,7 @@ export function elemanTanimi(e, cat) {
     const grup = e.group || (t && t.group) || (e.kind === 'lighting' ? 'ayd' : 'sehir');
     const g = ESLESME.direkGruplari[grup] || ESLESME.direkGruplari.sehir;
     const pz = t ? cat.poz(t.servis) : null;
-    return { tur: sb.tur || g.tur, cins: sb.cins || g.cins, tip: sb.tip || (t ? promagisTip(grup, t.name) : (e.attrs && e.attrs.typeName) || ''), tarife: g.tarife, kg: t ? t.kg : 0, servis: t ? t.servis : null, tedarik: pz ? pz.supply : null, voltaj: g.tur === 'ENH_DIREK' || g.tur === 'MUSTEREK_DIREK' ? 'OG' : g.tur === 'AYD_DIREK' ? 'AYD' : 'AG' };
+    return { tur: sb.tur || g.tur, cins: sb.cins || g.cins, tip: sb.tip || (t ? cizimTip(grup, t.name) : (e.attrs && e.attrs.typeName) || ''), tarife: g.tarife, kg: t ? t.kg : 0, servis: t ? t.servis : null, tedarik: pz ? pz.supply : null, voltaj: g.tur === 'ENH_DIREK' || g.tur === 'MUSTEREK_DIREK' ? 'OG' : g.tur === 'AYD_DIREK' ? 'AYD' : 'AG' };
   }
   if (e.kind === 'transformer' || e.kind === 'kiosk' || e.kind === 'substation') {
     const a = e.attrs || {};
@@ -372,7 +372,7 @@ export function elemanTanimi(e, cat) {
     const n = ESLESME.nesneler[e.kind === 'transformer' ? 'transformer:' + (post === 'direk' ? 'direk' : post === 'bina' || post === 'ba' ? 'bina' : 'kosk') : e.kind];
     const td = a.poleTypeId ? cat.poleType(a.poleTypeId) : null;
     const kva = +a.kva || 0;
-    const tip = sb.tip || (post === 'direk' ? (td ? promagisTip('trafo', td.name) : (kva ? kva + ' kVA' : '')) : (a.govde || (a.kioskServis && cat.kiosk(a.kioskServis) ? cat.kiosk(a.kioskServis).label : '') || (kva ? kva + ' kVA' : '')));
+    const tip = sb.tip || (post === 'direk' ? (td ? cizimTip('trafo', td.name) : (kva ? kva + ' kVA' : '')) : (a.govde || (a.kioskServis && cat.kiosk(a.kioskServis) ? cat.kiosk(a.kioskServis).label : '') || (kva ? kva + ' kVA' : '')));
     return { tur: sb.tur || n.tur, cins: sb.cins || n.cins, tip, tarife: n.tarife, kg: td ? td.kg : 0, servis: td ? td.servis : null, tedarik: td ? tedarikOf(cat, td.servis) : null, guc: kva ? String(kva) : '', gerilim: a.gerilim || '', voltaj: 'OG' };
   }
   const n = ESLESME.nesneler[e.kind] || ESLESME.nesneler.other;
@@ -401,7 +401,7 @@ function malzemeKalemi(m, tanim, hak, job, cat) {
   const servis = m.servis || null;
   const pz = servis && cat ? cat.poz(servis) : null;
   if (pz && pz.sebeke && pz.sebeke.cins) {
-    // AutoCAD'den gelen (ya da kullanıcının PROMAGIS alanlarını girdiği) kalem: alanlar aynen döner
+    // AutoCAD'den gelen (ya da kullanıcının AutoCAD alanlarını girdiği) kalem: alanlar aynen döner
     const sb = pz.sebeke;
     const k = SH.kalemYap({ cins: sb.cins, tanim: sb.tanim, birim: sb.birim, katsayi: sb.katsayi, tarife: sb.tarife }, { miktar: m.qty, durum: isDurumu(m.jobOverride || job || 'montaj', pz.supply), hakedis: hak, kaynak: 'MALZEME' });
     k.servis = servis;
@@ -468,13 +468,13 @@ function iletkenKalemleri(l, li, items, hatTuru, kesit, durum, hak, cat) {
     const ciplak = !yeralti && (c.custom || (cp && cp.unit === 'kg'));
     const label = c.custom ? cp.label : c.key;
     const n = c.count || 1;
-    const ks = promagisKesit(label, l.lineType, l.install);
+    const ks = cizimKesit(label, l.lineType, l.install);
     // Müşterek hatta OG devresi OG iletkenidir (eklentideki gibi); ana kesitteki "OG / AG" ayrımı ve geri alım buna bakar
     const ogDevre = hatTuru.tur === 'MUSTEREK' && (c.role === 'OG' || c.role === 'ENH');
     const cins = yeralti ? hatTuru.kablo : ogDevre ? ESLESME.hatlar['OG:havai'].ciplak : ciplak ? hatTuru.ciplak : hatTuru.demetli;
     const parca = items.filter((x) => x.role === c.role && (x.conductor === c.key || x.conductor === label || (cp && cp.parts.some((p) => p.conductor === x.conductor))));
     // Metre: yeraltında tüm damarların toplamı (3(1x150/25) = 3 kablo), havai demetlide hattın boyu (pay dahil),
-    // çıplakta hattın boyu (rapor tel tel açar). PROMAGIS gibi tam metreye yukarı yuvarlanır.
+    // çıplakta hattın boyu (rapor tel tel açar). AutoCAD gibi tam metreye yukarı yuvarlanır.
     let metre = 0, kg = 0;
     if (yeralti) { const x = parca[0]; metre = x ? x.meters / n : li.length2D; }
     else if (ciplak) { metre = li.length3D; for (const x of parca) kg += x.unit === 'Kg' ? x.qty : 0; }
@@ -728,7 +728,7 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
 }
 
 /**
- * AutoCAD'den gelen kalemlerin telefonda tutulmayan PROMAGIS bilgileri: INDEX sırası, kalemin hakedişi ve KONTROL işareti.
+ * AutoCAD'den gelen kalemlerin telefonda tutulmayan AutoCAD bilgileri: INDEX sırası, kalemin hakedişi ve KONTROL işareti.
  * Telefon kalemleri malzemeden yeniden üretir; geri yazımda aynı cins / tanımlı kaleme bu bilgiler verilir (KONTROL
  * yalnız miktar değişmediyse). Böylece değişmeyen nesne AutoCAD'e "değişmiş" gitmez, onaylı hakediş kilidi bozulmaz.
  */
@@ -750,7 +750,7 @@ function kalemBilgisiUygula(kalemler, bilgi) {
 }
 
 /**
- * Hakediş onayları (AutoCAD / PROMAGIS HAK_ONAY ile aynı): [{ no, kontrol, hakedis, gis }]. AutoCAD'den gelenler korunur;
+ * Hakediş onayları (AutoCAD / AutoCAD HAK_ONAY ile aynı): [{ no, kontrol, hakedis, gis }]. AutoCAD'den gelenler korunur;
  * telefonda onaylanan dönem (hakediş onayı) kontrol + hakediş onayı sayılır. Sıra: kontrol → hakediş → GIS.
  */
 export function onaylariHazirla(kayitli, periods) {
@@ -844,7 +844,7 @@ function kanalAyari(c, hat) {
 /**
  * Eklentideki malzeme kalemlerini telefonun malzeme tablosuna yazar. Telefon kataloğunda eşi olmayan kalem için
  * kataloğa "AUTOCAD:…" kodlu bir kalem açılır (Poz Kataloğu ekranında DOĞRULANACAK görünür, ad / poz no düzeltilebilir);
- * PROMAGIS alanları (cins, tanım, birim, katsayı, tarife) kalemde saklanır ve dışa aktarımda aynen döner.
+ * AutoCAD alanları (cins, tanım, birim, katsayı, tarife) kalemde saklanır ve dışa aktarımda aynen döner.
  */
 async function malzemeleriYaz(ps, ownerType, ownerId, kalemler, opts) {
   const eski = (ps.data.materials || []).filter((x) => x.ownerId === ownerId && x.status !== 'deleted' && x.sebeke);
@@ -860,7 +860,7 @@ async function malzemeleriYaz(ps, ownerType, ownerId, kalemler, opts) {
   }
   if (kalemler.length || eski.length) await ps.reload('materials');
 }
-/** PROMAGIS birimi → telefon birimi (giriş birimi). */
+/** AutoCAD birimi → telefon birimi (giriş birimi). */
 function birimVolt(birim) { const g = SH.birimler(birim)[0]; return g === 'mt' ? 'm' : g === 'kg' ? 'Kg' : g === 'm³' || g === 'm3' ? 'm3' : 'Ad'; }
 /** Telefon kataloğunda AutoCAD kalemi: AUTOCAD:<CİNS>-<TANIM> (aynı kalem ikinci kez açılmaz). */
 async function autocadPozu(ps, k) {

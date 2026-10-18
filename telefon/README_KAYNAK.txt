@@ -152,11 +152,11 @@ node --test → tools/setup_tools.sh → tools/build_apk.sh. Sürüm adı 2.5.N,
 Ne değişti
 - interop/sebeke.js: telefon projesi ↔ AutoCAD proje dosyası (.sebeke.json, ortak/VERI-MODELI.md). sebekeYaz / sebekeModel
   (dışa), sebekeIceAl (içe; var olan projeye alınırsa sebekeId / telefonId ile eşleşen kayıtlar güncellenir), voltProjeYaz /
-  voltProjeOku (telefonun tam proje dosyası volt-project/3: ham veri + 'sebeke' bölümü). PROMAGIS kurallarının JS karşılığı
+  voltProjeOku (telefonun tam proje dosyası volt-project/3: ham veri + 'sebeke' bölümü). AutoCAD kurallarının JS karşılığı
   interop/sh-core.cjs (eski Şebeke Hakediş telefon çekirdeği; proje dosyası, etiket, kanal kodu, bölge, Durum Tespit).
 - Eşleme tabloları ortak/katalog/volt-eslesme.json; telefon kopyaları src/ortak/*.js (node araclar/ortak-tablolar.mjs).
   Kayıtlara eklenen alanlar: equipment/lines/points.sebekeId ve .sebeke (AutoCAD alanları), project.sebeke (ön ekler,
-  bölgeler), materials.sebeke ve poz.sebeke (PROMAGIS cins / tanım / birim / katsayı / tarife; AUTOCAD:… kodlu kalemler).
+  bölgeler), materials.sebeke ve poz.sebeke (AutoCAD cins / tanım / birim / katsayı / tarife; AUTOCAD:… kodlu kalemler).
 - export/dxf.js: bloklar src/ortak/semboller.js tablosundan (SH_<aile>_<varyant>; eklentiyle aynı). Demontajda çapraz
   çizgi bloğun içindedir (ayrı DEMONTAJ çizgisi kaldırıldı).
 - exporter.js: 'sebeke' ve 'voltjson' biçimleri; teslim paketinde PROJECT_INFO/project.json volt-project/3 ve EXPORT/<ad>.sebeke.json.

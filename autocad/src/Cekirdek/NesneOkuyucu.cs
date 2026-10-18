@@ -5,8 +5,8 @@ using System.Text.RegularExpressions;
 namespace SebekeHakedis.Cekirdek
 {
     /// <summary>
-    /// PROMAGIS eklentisiyle hazırlanmış bir çizimi ortak proje modeline çevirir.
-    /// PROMAGIS veriyi nesnelerin genişletilmiş verisinde (XDATA) tutar:
+    /// AutoCAD eklentisiyle hazırlanmış bir çizimi ortak proje modeline çevirir.
+    /// AutoCAD veriyi nesnelerin genişletilmiş verisinde (XDATA) tutar:
     ///   GIS      kimlik;GIS no;cins;tip;durum[;güç;gerilim]   (kanalda: baş;bit;uzunluk;derinlik;alt;üst)
     ///   NIT      nesnenin kendi pozu
     ///   MALZEME  nesneye bağlı malzeme satırları
@@ -15,12 +15,12 @@ namespace SebekeHakedis.Cekirdek
     ///   FULLREG  bölge sınırı: proje adı;proje kodu
     ///   HAKNO, ZKOORD  GPS noktasının hakedişi ve kotu
     /// </summary>
-    public static class PromagisOkuyucu
+    public static class NesneOkuyucu
     {
         private static readonly Regex HakedisKatmani = new Regex(@"^(?<on>.+?)_(?<hak>\d+)\.HAK\.(?<tur>.+)$", RegexOptions.CultureInvariant);
         private static readonly Regex OzelKatman = new Regex(@"^(?<on>.+?)_(?<ozel>DEMONTAJ|MEVCUT|STANDART|KABLO_KANALI|YATAY_SONDAJ|PROJE)$", RegexOptions.CultureInvariant);
 
-        public static bool PromagisCizimiMi(IEnumerable<CadVarlik> varliklar)
+        public static bool SebekeCizimiMi(IEnumerable<CadVarlik> varliklar)
         {
             foreach (var v in varliklar)
                 if (v.Xd.ContainsKey("NIT") || v.Xd.ContainsKey("FULLREG") || v.Xd.ContainsKey("HAT")) return true;
@@ -114,7 +114,7 @@ namespace SebekeHakedis.Cekirdek
                 Yukari = v.Y,
                 Kot = SayiCoz.Coz(v.XdIlk("ZKOORD"), v.Z),
                 Hakedis = SayiCoz.Tam(v.XdIlk("HAKNO")),
-                TelefonId = v.XdIlk(PromagisYazici.KimlikUygulamasi) ?? "",
+                TelefonId = v.XdIlk(NesneYazici.KimlikUygulamasi) ?? "",
             };
             for (int i = 3; i <= 6; i++)
             {
@@ -140,13 +140,13 @@ namespace SebekeHakedis.Cekirdek
                 Kontrol = Mantik(v.XdIlk("KONTROL")),
                 Katman = v.Katman,
                 Blok = v.Blok,
-                TelefonId = v.XdIlk(PromagisYazici.KimlikUygulamasi) ?? "",
+                TelefonId = v.XdIlk(NesneYazici.KimlikUygulamasi) ?? "",
             };
             if (string.IsNullOrEmpty(e.GisId)) e.GisId = (v.OzDeger("GIS_ID") ?? "").Trim();
             if (string.IsNullOrEmpty(e.Guc)) e.Guc = (v.OzDeger("GÜÇ") ?? "").Trim();
             if (string.IsNullOrEmpty(e.Gerilim)) e.Gerilim = (v.OzDeger("GERİLİM") ?? "").Trim();
 
-            foreach (var u in PromagisYazici.EkUygulamalar)
+            foreach (var u in NesneYazici.EkUygulamalar)
             {
                 var l = v.XdHepsi(u);
                 if (l.Count > 0) e.EkVeri[u] = new List<string>(l);
@@ -175,7 +175,7 @@ namespace SebekeHakedis.Cekirdek
                 Katman = v.Katman,
                 Kontrol = Mantik(v.XdIlk("KONTROL")),
                 AnaKesit = (v.XdIlk("ANAKESIT") ?? "").Trim(),
-                TelefonId = v.XdIlk(PromagisYazici.KimlikUygulamasi) ?? "",
+                TelefonId = v.XdIlk(NesneYazici.KimlikUygulamasi) ?? "",
             };
             foreach (var k in v.Kose) h.Kose.Add(new[] { k[0], k[1] });
             h.CizimUzunlugu = Geometri.Uzunluk(h.Kose);
@@ -233,7 +233,7 @@ namespace SebekeHakedis.Cekirdek
                 Durum = kalem.Durum,
                 Hakedis = kalem.Hakedis,
                 Kontrol = Mantik(v.XdIlk("KONTROL")),
-                TelefonId = v.XdIlk(PromagisYazici.KimlikUygulamasi) ?? "",
+                TelefonId = v.XdIlk(NesneYazici.KimlikUygulamasi) ?? "",
             };
             foreach (var p in v.Kose) k.Kose.Add(new[] { p[0], p[1] });
             k.CizimUzunlugu = Geometri.Uzunluk(k.Kose);
@@ -256,7 +256,7 @@ namespace SebekeHakedis.Cekirdek
                 BasNo = Alan(gis, 0),
                 BitNo = Alan(gis, 1),
                 Kontrol = Mantik(v.XdIlk("KONTROL")),
-                TelefonId = v.XdIlk(PromagisYazici.KimlikUygulamasi) ?? "",
+                TelefonId = v.XdIlk(NesneYazici.KimlikUygulamasi) ?? "",
             };
             foreach (var p in v.Kose) s.Kose.Add(new[] { p[0], p[1] });
             s.CizimUzunlugu = Geometri.Uzunluk(s.Kose);

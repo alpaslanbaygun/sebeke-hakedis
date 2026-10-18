@@ -169,7 +169,7 @@ namespace SebekeHakedis.Cekirdek
         // ---------------- Seçim: tür + malzeme + durum → blok adı ----------------
 
         /// <summary>
-        /// Durumdan varyant: M, M+M, KM, ENH, ME → YENI (PROMAGIS'te YENİ_ blokları) · DM → DM, demontaj türü KESİK ise KESIK,
+        /// Durumdan varyant: M, M+M, KM, ENH, ME → YENI (AutoCAD'de YENİ_ blokları) · DM → DM, demontaj türü KESİK ise KESIK,
         /// SÖKÜK ise SOKUK · DM+M → DMM · MEVCUT ve boş → MEVCUT.
         /// </summary>
         public static string Varyant(string durum, string dmDurum = "")

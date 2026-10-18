@@ -20,5 +20,5 @@ Bu depo özeldir; içinde APK imza anahtarı bulunur (`keystore/`). Herkese aç�
 - **Dışa Aktar › AutoCAD proje dosyası (.sebeke.json)** ve **Telefon proje dosyası (.volt.json)**; teslim
   paketindeki `PROJECT_INFO/project.json` artık AutoCAD bölümünü de taşır.
 - DXF çıktısındaki simgeler eklentiyle aynı ortak tablodan gelir (`SH_…` blokları, `../ortak/katalog/semboller.json`).
-- Dönüşüm kuralları: `../ortak/VERI-MODELI.md` ("Telefon ↔ PROMAGIS eşlemesi"), kod: `web/src/interop/sebeke.js`,
+- Dönüşüm kuralları: `../ortak/VERI-MODELI.md` ("Telefon ↔ AutoCAD eşlemesi"), kod: `web/src/interop/sebeke.js`,
   testler: `web/tests/sebeke.test.mjs`.

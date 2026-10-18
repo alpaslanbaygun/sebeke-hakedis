@@ -67,7 +67,7 @@ namespace SebekeHakedis.PencereTest
         {
             var o = new OrtamVerisi();
             var v = CadVarlik.DokumOku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, dokum), Encoding.UTF8));
-            o.Doldur(v, PromagisOkuyucu.Oku(v, "ornek.dwg"), new CizimAyarlari());
+            o.Doldur(v, NesneOkuyucu.Oku(v, "ornek.dwg"), new CizimAyarlari());
             return o;
         }
 
@@ -315,7 +315,7 @@ namespace SebekeHakedis.PencereTest
                 Esit(true, sayi > 5 && hepsiAg, "süzgeçli pencere: listede yalnız AG ek mufuları");
             });
 
-            // Eksik malzeme sorgusu (PROMAGIS DETAY): aranan cins yazılınca tip listesi o cinsin tipleriyle dolar
+            // Eksik malzeme sorgusu (AutoCAD DETAY): aranan cins yazılınca tip listesi o cinsin tipleriyle dolar
             var dEleman = o.Proje.Elemanlar.Find(e => e.Kalemler.Exists(k => !k.Ana));
             var dAra = dEleman != null ? dEleman.Kalemler.Find(k => !k.Ana) : null;
             var df = new DetayFiltresi();
@@ -341,7 +341,7 @@ namespace SebekeHakedis.PencereTest
                 Resim(f, "sonra");
             });
 
-            // Hakediş onayı (PROMAGIS HAK_ONAY): sıra kuralı Kontrol → Hakediş → GIS
+            // Hakediş onayı (AutoCAD HAK_ONAY): sıra kuralı Kontrol → Hakediş → GIS
             var onaylar = new SortedDictionary<int, int> { { 1, 6 } };
             Dene("19-hakedis-onayi", () =>
             {
@@ -378,7 +378,7 @@ namespace SebekeHakedis.PencereTest
             o.Proje.Onaylar.Clear();
 
             // Toplu malzeme: seçilen direklere aynı malzeme
-            var direkler = o.Proje.Elemanlar.FindAll(e => PromagisYazici.DirekMi(e.Tur));
+            var direkler = o.Proje.Elemanlar.FindAll(e => NesneYazici.DirekMi(e.Tur));
             Dene("23-toplu-malzeme", () =>
             {
                 var l = Pencereler.TopluMalzeme(o, direkler);

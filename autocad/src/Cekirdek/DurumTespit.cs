@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace SebekeHakedis.Cekirdek
 {
-    /// <summary>DURUM TESPİT sayfasının bir satırı (PROMAGIS raporuyla aynı sütunlar).</summary>
+    /// <summary>DURUM TESPİT sayfasının bir satırı (AutoCAD raporuyla aynı sütunlar).</summary>
     public sealed class RaporSatiri
     {
         public string Handle = "", Proje = "", Cins = "", Tip = "", Durum = "";
@@ -17,7 +17,7 @@ namespace SebekeHakedis.Cekirdek
     }
 
     /// <summary>
-    /// Proje modelinden "Durum Tespit" raporunu üretir. Kurallar PROMAGIS'in rapor dosyasındaki
+    /// Proje modelinden "Durum Tespit" raporunu üretir. Kurallar AutoCAD'in rapor dosyasındaki
     /// hesaplarla aynıdır ve gerçek bir projede satır satır karşılaştırılarak doğrulanmıştır:
     ///  - her poz satırı bir rapor satırıdır;
     ///  - kanalın kendi satırı yerine, kanal hacmi kanaldaki kablolara paylaştırılır (KABLO_KANALI);
@@ -152,7 +152,7 @@ namespace SebekeHakedis.Cekirdek
             public int SatirSayisi;
         }
 
-        /// <summary>Proje × hakediş × durum × cins × tip × birim toplamları (PROMAGIS ÖZET TABLO).</summary>
+        /// <summary>Proje × hakediş × durum × cins × tip × birim toplamları (AutoCAD ÖZET TABLO).</summary>
         public List<OzetSatiri> Ozet()
         {
             var sozluk = new Dictionary<string, OzetSatiri>(StringComparer.Ordinal);

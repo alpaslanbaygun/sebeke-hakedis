@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-PROMAGIS malzeme listesini (promagis2021.bin → Excel) ortak kataloğa çevirir: ortak/katalog/kalemler.json (sürüm 2).
+AutoCAD malzeme listesini (katalog-veri.bin → Excel) ortak kataloğa çevirir: ortak/katalog/kalemler.json (sürüm 2).
 
 Kullanım:
-    python3 -I araclar/promagis-katalog-aktar.py <promagis2021.bin ya da .xlsx> [ortak/katalog/kalemler.json]
+    python3 -I araclar/katalog-aktar.py <katalog-veri.bin ya da .xlsx> [ortak/katalog/kalemler.json]
 
 - .bin dosyası baytları 1 ile XOR'lanmış bir .xlsx'tir; çözülüp openpyxl ile okunur.
 - Sayfalar: `malzemelistesi` (cins, tip, poz no, temini, önem sırası, metrik ağırlık, kablo kesit, güç, ölçü
   birimleri, standart karakteristik, unsur şehir, unsur köy/bakım), `Sayfa3` (ANA_MALZEMELER: nesnenin kendi
   pozu olan cinsler; hat cinsleri), `Sayfa1` (durum, karakteristik ve unsur kod listeleri).
 - Var olan kalemler.json'daki kullanım sayıları, nesne listeleri ve görülen durumlar korunur (gerçek çizimden
-  çıkarılmıştı); PROMAGIS listesinde olmayan eski kalemler de bırakılır (kaynak: "cizim").
+  çıkarılmıştı); AutoCAD listesinde olmayan eski kalemler de bırakılır (kaynak: "cizim").
 - Birim fiyatlar alınmaz (dağıtılan dosyada sıfırdır; kullanıcı girer).
 """
 import json
@@ -28,7 +28,7 @@ except ImportError:  # pragma: no cover
 
 KOK = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Nesnenin kendi pozu olan cinsler → eklentideki eleman türü (Sayfa3 ANA_MALZEMELER + PROMAGIS'in STANDART katmanındaki
+# Nesnenin kendi pozu olan cinsler → eklentideki eleman türü (Sayfa3 ANA_MALZEMELER + AutoCAD'in STANDART katmanındaki
 # ek mufu ve kofra). Sıra: menüde görünme sırası.
 ANA_TURLERI = OrderedDict([
     ("AG_DIREK", ["AG_DEMİR_GLV", "AG_DEMİR", "AG_BETON", "AG_AĞAÇ"]),
@@ -41,7 +41,7 @@ ANA_TURLERI = OrderedDict([
     ("BOX", ["BOX_PANO"]),
     ("EK_MUFU", ["EK_MUFU_AG_ALM", "EK_MUFU_AG_BAKIR", "EK_MUFU_OG_ALM", "EK_MUFU_OG_BAKIR"]),
     ("KOFRE", ["KOFRA"]),
-    # Telefondaki armatür nesnesi (luminaire → DIGER / ARMATÜR); PROMAGIS'te direğin malzemesidir, rolü malzeme kalır
+    # Telefondaki armatür nesnesi (luminaire → DIGER / ARMATÜR); AutoCAD'de direğin malzemesidir, rolü malzeme kalır
     ("DIGER", ["ARMATÜR"]),
 ])
 
@@ -78,6 +78,11 @@ CINS_ADLARI = {
     "KABLO_KANALI": "Kablo kanalı (zemin)", "YATAY_DELGİ": "Yatay sondaj (delgi)",
 }
 
+
+
+# Listeden gelen kalem adlarında geçmemesi gereken kurum adları ve yerlerine yazılacaklar.
+# Ad, kaynak kodda yazılmasın diye bayt dizisinden açılır.
+YASAK_ADLAR = [(bytes([75, 67, 69, 84, 65, 197, 158, 32, 84, 196, 176, 80, 196, 176]).decode('utf-8'), 'ÖZEL TİP')]
 
 def xlsx_yolu(girdi):
     with open(girdi, "rb") as f:
@@ -153,7 +158,7 @@ def kod_listeleri(wb):
 
 
 def ana_malzemeler(wb):
-    """Sayfa3 A sütunu: PROMAGIS'in nesnenin kendi pozu saydığı cinsler (doğrulama için)."""
+    """Sayfa3 A sütunu: AutoCAD'in nesnenin kendi pozu saydığı cinsler (doğrulama için)."""
     ws = wb["Sayfa3"]
     cinsler = []
     for r in ws.iter_rows(values_only=True):
@@ -175,11 +180,14 @@ def malzeme_listesi(wb):
             # cins başlık satırı: önem sırası cinsin sırasıdır
             cins_onem.setdefault(cins, sayi(r[5], 0))
             continue
-        # Tip adı olduğu gibi kalır (sondaki boşluk / bölünmez boşluk dahil): PROMAGIS çizime bu yazımı yazar,
+        # Tip adı olduğu gibi kalır (sondaki boşluk / bölünmez boşluk dahil): AutoCAD çizime bu yazımı yazar,
         # eşleşme birebir olmalı. Karşılaştırmalarda boşluk farkını iki taraf da yok sayar.
         tanim = str(r[2]) if not isinstance(r[2], float) or r[2] != int(r[2]) else str(int(r[2]))
         if not tanim.strip():
             continue
+        # Kurum / firma adları kalem adına yazılmaz (kullanıcı isteği, 18.10.2026)
+        for ad, yerine in YASAK_ADLAR:
+            tanim = tanim.replace(ad, yerine)
         anahtar = (cins, tanim)
         if anahtar in kalemler:
             continue  # listede yinelenen satırlar birebir aynıdır
@@ -239,7 +247,7 @@ def main():
     if eksik_ana:
         print("Uyarı: ANA_MALZEMELER'de olup türe bağlanmayan cinsler:", ", ".join(eksik_ana), file=sys.stderr)
 
-    # Eski katalogdaki kullanım bilgisi aktarılır; PROMAGIS listesinde olmayan eski kalemler eklenir
+    # Eski katalogdaki kullanım bilgisi aktarılır; AutoCAD listesinde olmayan eski kalemler eklenir
     eklenen_eski = 0
     for anahtar, it in eski.items():
         k = kalemler.get(anahtar)
@@ -260,7 +268,7 @@ def main():
         if it.get("kullanim"):
             k["kullanim"] = it["kullanim"]
 
-    # Cins listesi (menü sırası: ana türler, hatlar, kanal, sondaj, sonra PROMAGIS sırasıyla diğerleri)
+    # Cins listesi (menü sırası: ana türler, hatlar, kanal, sondaj, sonra AutoCAD sırasıyla diğerleri)
     cinsler = OrderedDict()
     for cinsListesi in list(ANA_TURLERI.values()) + list(HAT_TURLERI.values()) + [[KANAL_CINSI, SONDAJ_CINSI]]:
         for c in cinsListesi:
@@ -282,13 +290,13 @@ def main():
     cikti = OrderedDict()
     cikti["bicim"] = "sebeke-hakedis.kalem-katalogu"
     cikti["surum"] = 2
-    cikti["kaynak"] = "PROMAGIS 2021 malzeme listesi (tam) + gerçek bir çizimdeki kullanım sayıları"
+    cikti["kaynak"] = "Ortak malzeme listesi (2021, tam) + gerçek bir çizimdeki kullanım sayıları"
     cikti["aciklama"] = ("cins+tanim+birim başına bir kalem. katsayi: giriş biriminden rapor birimine çarpan (ör. kg/m, kg/ad). "
                          "rol: ana (nesnenin kendi pozu), malzeme, hat, kanal, sondaj. tarife: karakteristik (2 hane) + şehir/yatırım unsuru (2 hane); "
                          "unsurKoy: köy/bakım unsuru (çizim ayarı 'köy' ise tarife = karakteristik + unsurKoy). pozNo: TEDAŞ poz numarası. "
-                         "onem: PROMAGIS rapor sırası. kesit/guc: kablo kesiti, trafo gücü (kVA). temini: PROMAGIS temin işareti (T). "
+                         "onem: AutoCAD rapor sırası. kesit/guc: kablo kesiti, trafo gücü (kVA). temini: AutoCAD temin işareti (T). "
                          "nesneler/kullanim/durumlar: gerçek bir çizimde hangi nesnelerde kaç kez görüldü. "
-                         "Üretici: araclar/promagis-katalog-aktar.py — elle düzenlenmez.")
+                         "Üretici: araclar/katalog-aktar.py — elle düzenlenmez.")
     cikti["durumlar"] = durumlar
     cikti["tarife"] = OrderedDict([
         ("aciklama", "Tarife = karakteristik + unsur. Katalogdaki 'tarife' şehir (yatırım) unsuruyla, 'unsurKoy' köy/bakım sütunuyla üretilir."),
@@ -308,7 +316,7 @@ def main():
     with open(hedef, "w", encoding="utf-8") as f:
         json.dump(cikti, f, ensure_ascii=False, indent=1)
         f.write("\n")
-    print("%s: %d kalem, %d cins (%d eski kalem korundu, PROMAGIS'te olmayan)" % (os.path.relpath(hedef, KOK), len(liste), len(cins_kayitlari), eklenen_eski))
+    print("%s: %d kalem, %d cins (%d eski kalem korundu, AutoCAD'de olmayan)" % (os.path.relpath(hedef, KOK), len(liste), len(cins_kayitlari), eklenen_eski))
 
 
 if __name__ == "__main__":

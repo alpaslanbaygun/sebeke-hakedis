@@ -11,7 +11,7 @@ import { MaterialPicker } from './matpick.js';
 import { offsetPolyline, dms } from '../../geo/geom.js';
 import { unproject } from '../../geo/crs.js';
 import { sourceInfo, sourceText } from '../../core/source.js';
-import { PromagisDurum } from '../promagis.js';
+import { CizimDurum } from '../durum-kodu.js';
 import { overlayLines, buildExif, extractExif, resetOrientation, withExif, nextPhotoName, photoPath, projectFolder, kindLabel } from '../../services/photo-service.js';
 
 const toDMS = (v, pos, neg) => { if (v == null) return '—'; const a = Math.abs(v), d = Math.floor(a), m = Math.floor((a - d) * 60), s = ((a - d) * 60 - m) * 60; return d + '° ' + String(m).padStart(2, '0') + '′ ' + s.toFixed(4).padStart(7, '0') + '″ ' + (v >= 0 ? pos : neg); };
@@ -111,7 +111,7 @@ export function LineScreen({ id }) {
       <div class="fld"><label>Hat tipi</label><${Seg} value=${d.lineType} options=${['AG', 'OG', 'AYD', 'ENH', 'ABONE']} onChange=${(v) => set({ lineType: v })} /></div>
       <div class="grid2"><div class="fld"><label>Tesis</label><${Seg} value=${d.install} options=${[['havai', 'Havai'], ['yeralti', 'Yeraltı']]} onChange=${(v) => set({ install: v })} /></div><div class="fld"><label>Gerilim (kV)</label><input class="inp mono" type="number" step="0.1" value=${d.voltageKV ?? (d.lineType === 'OG' || d.lineType === 'ENH' ? 34.5 : 0.4)} onChange=${(e) => set({ voltageKV: +e.target.value })} /></div></div>
       <div class="fld"><label>Durum</label><div class="chips">${Object.entries(STATUSES).map(([k, v]) => html`<${Chip} on=${d.state === k} onClick=${() => set({ state: k })}>${v.label.split(' ·')[0]}</${Chip}>`)}</div></div>
-      <${PromagisDurum} d=${d} set=${set} />
+      <${CizimDurum} d=${d} set=${set} />
       <div class="row"><span class="grow">${d.install === 'yeralti' ? 'Aynı kanalda AG ve OG kablosu' : 'Müşterek (AG+OG aynı direk)'}</span><${Toggle} on=${!!d.musterek} onChange=${(v) => set({ musterek: v })} label="Müşterek" /></div>
       <div class="row"><span class="grow">Ana ring</span><${Toggle} on=${!!d.ring} onChange=${(v) => set({ ring: v })} label="Ring" /></div>
       ${d.lineType === 'ABONE' ? html`<div class="grid2"><div class="fld"><label>Faz</label><${Seg} value=${d.abonePhase || 'uc'} options=${[['tek', 'Tek'], ['uc', 'Üç']]} onChange=${(v) => set({ abonePhase: v })} /></div><div class="fld"><label>Bağlantı sayısı</label><input class="inp mono" type="number" value=${d.aboneCount || 1} onChange=${(e) => set({ aboneCount: +e.target.value })} /></div></div>` : null}

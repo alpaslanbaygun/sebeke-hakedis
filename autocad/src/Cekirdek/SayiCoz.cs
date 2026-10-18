@@ -4,7 +4,7 @@ using System.Globalization;
 namespace SebekeHakedis.Cekirdek
 {
     /// <summary>
-    /// PROMAGIS verisindeki sayılar Türkçe biçimde yazılır ("16,8", ",00") ama bazı alanlarda
+    /// AutoCAD verisindeki sayılar Türkçe biçimde yazılır ("16,8", ",00") ama bazı alanlarda
     /// nokta da görülür ("10.5"). Hepsini kültürden bağımsız çözer.
     /// </summary>
     public static class SayiCoz

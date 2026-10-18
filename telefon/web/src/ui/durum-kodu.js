@@ -1,11 +1,11 @@
-// AutoCAD / PROMAGIS alanları: kaydın PROMAGIS durum kodu (M, M+M, KM, DM, DM+M, MEVCUT, ENH, ME) ve demontaj türü
+// AutoCAD / AutoCAD alanları: kaydın çizim durum kodu (M, M+M, KM, DM, DM+M, MEVCUT, ENH, ME) ve demontaj türü
 // (KESİK / SÖKÜK). Telefondaki durumla uyuşan kodlar listelenir; seçilmezse dışa aktarımda durumdan üretilir.
 import { html, Sel, Seg } from './kit.js';
 import ESLESME from '../ortak/volt-eslesme.js';
-import { promagisSecenekleri } from '../interop/sebeke.js';
+import { durumSecenekleri } from '../interop/sebeke.js';
 
-export function PromagisDurum({ d, set, setA, trafo }) {
-  const sec = promagisSecenekleri(d.state, !!trafo);
+export function CizimDurum({ d, set, setA, trafo }) {
+  const sec = durumSecenekleri(d.state, !!trafo);
   if (!sec.length) return null;
   const cur = d.sebeke && d.sebeke.durum && sec.some(([k]) => k === d.sebeke.durum) ? d.sebeke.durum : '';
   const oto = (ESLESME.durumlar[d.state] || 'MEVCUT') + (d.state === 'YENI' || d.state === 'yeni' ? ' ya da M+M (tedarike göre)' : '');

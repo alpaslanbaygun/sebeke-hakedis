@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { setup, newProject, buildPoleLine, rtkObs, route } from './helpers.mjs';
-import { sebekeYaz, sebekeModel, sebekeIceAl, voltProjeYaz, voltProjeOku, promagisTip, voltTip, promagisKesit, hatTipiEsle, direkEsle, SH } from '../src/interop/sebeke.js';
+import { sebekeYaz, sebekeModel, sebekeIceAl, voltProjeYaz, voltProjeOku, cizimTip, voltTip, cizimKesit, hatTipiEsle, direkEsle, SH } from '../src/interop/sebeke.js';
 import KATSAYILAR from '../src/ortak/katsayilar.js';
 import { exportFormat } from '../src/export/exporter.js';
 
@@ -16,20 +16,20 @@ const OG_ROUTE = route({ E: 519300, N: 4282100, H: 1050 }, [[60, 80, 2], [60, 80
 const OG_TYPES = ['GD-10 (3 AWG)', 'GT-10 (3 AWG)', 'GT-10 (3 AWG)', 'GN-10 (3 AWG)'];
 
 test('A1 · ad ve tip yazımları iki yönde çevrilir', () => {
-  assert.equal(promagisTip('beton', '9.3/8'), '9,3/8');
+  assert.equal(cizimTip('beton', '9.3/8'), '9,3/8');
   assert.equal(voltTip('beton', '9,3/8'), '9.3/8');
-  assert.equal(promagisTip('bahh', 'GD-10 (3 AWG)'), 'G-D-10 (sw)');
+  assert.equal(cizimTip('bahh', 'GD-10 (3 AWG)'), 'G-D-10 (sw)');
   assert.equal(voltTip('bahh', 'G-D-10 (sw)'), 'GD-10 (3 AWG)');
-  assert.equal(promagisTip('bahh', 'GT-12 (1/0)'), 'G-T-12 (1/0)');
-  assert.equal(promagisTip('sehir', 'G-K2'), 'G-K2');
-  assert.equal(promagisTip('trafo', 'G-T25'), 'G-T-25');
+  assert.equal(cizimTip('bahh', 'GT-12 (1/0)'), 'G-T-12 (1/0)');
+  assert.equal(cizimTip('sehir', 'G-K2'), 'G-K2');
+  assert.equal(cizimTip('trafo', 'G-T25'), 'G-T-25');
   assert.equal(voltTip('trafo', 'G-T-25'), 'G-T25');
-  assert.deepEqual(promagisKesit('3xSwallow', 'OG', 'havai'), { tanim: '3xSW', aciklama: '' });
-  assert.deepEqual(promagisKesit('3xRaven', 'OG', 'havai'), { tanim: '3x1\\0', aciklama: '' });
-  assert.deepEqual(promagisKesit('3P+R', 'AG', 'havai'), { tanim: '3P+R', aciklama: '' });
-  assert.deepEqual(promagisKesit('3x70/16+95 AER', 'AG', 'havai'), { tanim: '3X70/16+95 ALPEK', aciklama: '' });
-  assert.deepEqual(promagisKesit('3x(1x150/25) NA2XSY', 'OG', 'yeralti'), { tanim: '1x150/25 Xlpe Alm.', aciklama: '3(1x150/25) Xlpe Alm.' });
-  assert.deepEqual(promagisKesit('NAYY 3x95+50', 'AG', 'yeralti'), { tanim: '3x95+50 Nyy Alm.', aciklama: '' });
+  assert.deepEqual(cizimKesit('3xSwallow', 'OG', 'havai'), { tanim: '3xSW', aciklama: '' });
+  assert.deepEqual(cizimKesit('3xRaven', 'OG', 'havai'), { tanim: '3x1\\0', aciklama: '' });
+  assert.deepEqual(cizimKesit('3P+R', 'AG', 'havai'), { tanim: '3P+R', aciklama: '' });
+  assert.deepEqual(cizimKesit('3x70/16+95 AER', 'AG', 'havai'), { tanim: '3X70/16+95 ALPEK', aciklama: '' });
+  assert.deepEqual(cizimKesit('3x(1x150/25) NA2XSY', 'OG', 'yeralti'), { tanim: '1x150/25 Xlpe Alm.', aciklama: '3(1x150/25) Xlpe Alm.' });
+  assert.deepEqual(cizimKesit('NAYY 3x95+50', 'AG', 'yeralti'), { tanim: '3x95+50 Nyy Alm.', aciklama: '' });
 });
 
 /** Deneme projesi: 4 OG direk + OG hat, mevcut beton direk, direk tipi trafo, SDK, 3 AG direk + AER hat, yeraltı kablo (asfalt, borulu). */
@@ -132,7 +132,7 @@ test('A3 · "ileride" objeler yazılmaz, demontaj / sök-tak durumları çevrili
   assert.equal(k.durum, 'DM', 'demontaj objesinde malzeme de DM');
 });
 
-test('A3b · PROMAGIS durum kodu korunur: KM / ME / M+M seçimi ve demontaj türü (KESİK) dışa aktarımda döner, durum değişince düşer', async () => {
+test('A3b · çizim durum kodu korunur: KM / ME / M+M seçimi ve demontaj türü (KESİK) dışa aktarımda döner, durum değişince düşer', async () => {
   const { ps } = await setup(); await newProject(ps, { autoRecipe: false });
   const t = ps.cat.poleTypeByName('sehir', 'G-K2');
   const km = await ps.addEquipment('pole', { group: 'sehir', typeId: t.id, state: 'YENI', sebeke: { durum: 'KM' } }, { obs: rtkObs(519500, 4282400, 1055) });
@@ -265,7 +265,7 @@ test('A4 · AutoCAD örnek dosyası telefona alınır: direk tipleri katalogdan 
   assert.equal(ps.data.equipment.filter((e) => e.status !== 'deleted').length, 3);
 });
 
-test('A4b · PROMAGIS\'in telefonda düzenlenmeyen verileri gidip gelir: bölge grup kodu, pano çıkış şeması (ekVeri)', async () => {
+test('A4b · AutoCAD\'in telefonda düzenlenmeyen verileri gidip gelir: bölge grup kodu, pano çıkış şeması (ekVeri)', async () => {
   const { ps } = await setup();
   const { proje } = voltProjeOku(fs.readFileSync(ORNEK, 'utf8'));
   proje.bolgeler[0].grup = '24.38.01 (NA)';
@@ -301,7 +301,7 @@ test('A4c · AutoCAD kalemlerinin INDEX sırası, hakedişi ve KONTROL işareti 
       o.kalemler.forEach((k, i) => { if (k.miktar === g.kalemler[i].miktar) assert.equal(metin(g.kalemler[i].kontrol), metin(k.kontrol), tur + ' ' + o.id + ': KONTROL korunur'); });
     }
   }
-  assert.equal(geri.kanallar[0].durum, proje.kanallar[0].durum, 'kanalın PROMAGIS durumu (M+M) korunur');
+  assert.equal(geri.kanallar[0].durum, proje.kanallar[0].durum, 'kanalın çizim durumu (M+M) korunur');
   assert.deepEqual(geri.proje.onaylar, [{ no: 2, kontrol: true, hakedis: false, gis: false }], 'onaylar dosyaya geri yazılır');
   // Telefonda onaylanan dönem AutoCAD'e kontrol + hakediş onayı olarak gider
   await ps.createWorkProgram();

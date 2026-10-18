@@ -6,13 +6,13 @@ namespace SebekeHakedis.Cekirdek
 {
     /// <summary>
     /// Proje modelinden çizim nesnelerinin tarifini (CadVarlik) üretir: katman, blok, öznitelikler,
-    /// köşeler ve PROMAGIS biçiminde genişletilmiş veri (XDATA). PromagisOkuyucu'nun tersidir; böylece
-    /// eklentiyle çizilen ya da telefondan gelen nesneler raporda PROMAGIS nesneleriyle aynı okunur.
+    /// köşeler ve çizim biçiminde genişletilmiş veri (XDATA). NesneOkuyucu'nun tersidir; böylece
+    /// eklentiyle çizilen ya da telefondan gelen nesneler raporda AutoCAD nesneleriyle aynı okunur.
     ///
     /// Nesnenin kendi tanıtıcısı (handle) çizime eklenince belli olur; metinlerde {H} olarak bırakılır,
     /// eklenti yazarken gerçek tanıtıcıyla değiştirir.
     /// </summary>
-    public static class PromagisYazici
+    public static class NesneYazici
     {
         public const string Tanitici = "{H}";
 
@@ -25,19 +25,14 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Direğin yanındaki armatür simgesinin tanıtıcısı (direkte armatür malzemesi varken).</summary>
         public const string ArmaturUygulamasi = "SH_ARM";
 
-        /// <summary>PROMAGIS'in eklentinin düzenlemediği verileri: pano çıkış şeması (ANA, CON), bina tipi trafo hücreleri (FIDER).</summary>
+        /// <summary>AutoCAD'in eklentinin düzenlemediği verileri: pano çıkış şeması (ANA, CON), bina tipi trafo hücreleri (FIDER).</summary>
         public static readonly string[] EkUygulamalar = { "ANA", "CON", "FIDER" };
 
         /// <summary>XDATA uygulama adları (çizimde kayıtlı olmalı).</summary>
         public static readonly string[] Uygulamalar = { "GIS", "NIT", "MALZEME", "HAT", "ANAKESIT", "ETK", "KONTROL", "FULLREG", "HAKNO", "ZKOORD", KimlikUygulamasi, ParcaUygulamasi, ArmaturUygulamasi, "ANA", "CON", "FIDER" };
 
-        /// <summary>
-        /// Sembol takımı: true (varsayılan) → her eleman telefonla aynı SH_ simgesiyle çizilir (çizimdeki PROMAGIS blokları
-        /// güncellemede de SH_ simgesine döner); false → çizimdeki PROMAGIS blokları korunur / önerilir. Çizim ayarından gelir.
-        /// </summary>
-        public static bool TelefonSembolleri = true;
 
-        // ---------------- Sayı ve alan yazımı (PROMAGIS: Türkçe ondalık virgül) ----------------
+        // ---------------- Sayı ve alan yazımı (AutoCAD: Türkçe ondalık virgül) ----------------
 
         public static string Sayi(double d)
         {
@@ -85,7 +80,7 @@ namespace SebekeHakedis.Cekirdek
             { "OG_YERALTI", "OG_YER_XLPE" }, { "REKORTMAN", "REKORTMAN" }, { "MUSTEREK", "MÜŞTEREK_HAT" },
         };
 
-        /// <summary>PROMAGIS katman adı: MEVCUT → önEk_MEVCUT, DM → önEk_DEMONTAJ, mufu/kofre → önEk_STANDART, diğerleri önEk_hakediş.HAK.tür</summary>
+        /// <summary>AutoCAD katman adı: MEVCUT → önEk_MEVCUT, DM → önEk_DEMONTAJ, mufu/kofre → önEk_STANDART, diğerleri önEk_hakediş.HAK.tür</summary>
         public static string ElemanKatmani(string onEk, string tur, string durum, int hakedis)
         {
             if (durum == "MEVCUT") return onEk + "_MEVCUT";
@@ -106,92 +101,31 @@ namespace SebekeHakedis.Cekirdek
         }
 
         /// <summary>
-        /// Eklentinin kendi bloğu (çizimde PROMAGIS bloğu yoksa kullanılır): lejant simgesi, tür + malzeme + duruma göre
+        /// Uygulamanın bloğu: lejant simgesi, tür + malzeme + duruma göre
         /// (ör. SH_KAFES_AG_YENI). Bkz. Semboller.
         /// </summary>
         public static string VarsayilanBlok(string tur, string cins, string durum, string dmDurum = "") => Semboller.BlokAdi(tur, cins, durum, dmDurum);
 
         public static string VarsayilanBlok(Eleman e) => Semboller.BlokAdi(e);
 
-        private static string DurumGrubu(string durum) => durum == "MEVCUT" ? "MEVCUT" : durum == "DM" ? "DM" : "YENI";
-
         /// <summary>
-        /// PROMAGIS blok adının durum grubu: YENİ_* → YENI (M+M, M, KM, ENH, DM+M, ME), MEVCUT_* → MEVCUT, DEMONTAJ_* → DM;
-        /// ad bu düzende değilse null.
+        /// Yeni elemanın bloğu: her zaman uygulamanın simgesi (telefonla aynı SH_ bloğu; tür, malzeme ve duruma göre).
         /// </summary>
-        public static string PromagisBlokGrubu(string blok)
-        {
-            string b = (blok ?? "").ToUpperInvariant().Replace('İ', 'I');
-            if (b.StartsWith("YENI_", StringComparison.Ordinal)) return "YENI";
-            if (b.StartsWith("MEVCUT_", StringComparison.Ordinal)) return "MEVCUT";
-            if (b.StartsWith("DEMONTAJ_", StringComparison.Ordinal)) return "DM";
-            return null;
-        }
+        public static string BlokOner(IEnumerable<Eleman> mevcut, string tur, string cins, string durum, string dmDurum = "") =>
+            Semboller.BlokAdi(tur, cins, durum, dmDurum);
 
         /// <summary>
-        /// Çizimde aynı tür ve durumdaki elemanlarda en çok kullanılan PROMAGIS bloğu (PROMAGIS bloklarıyla aynı
-        /// görünsün diye). Adsız bloklar (*U…) ve eklentinin kendi blokları (SH_…) sayılmaz. Bulunamazsa
-        /// eklentinin lejant simgesi (malzeme ve duruma göre).
-        /// </summary>
-        public static string BlokOner(IEnumerable<Eleman> mevcut, string tur, string cins, string durum, string dmDurum = "")
-        {
-            if (TelefonSembolleri) return Semboller.BlokAdi(tur, cins, durum, dmDurum);
-            var say = new Dictionary<string, int>(StringComparer.Ordinal);
-            string grup = DurumGrubu(durum);
-            foreach (var e in mevcut)
-            {
-                if (e.Tur != tur || DurumGrubu(e.Durum) != grup) continue;
-                if (string.IsNullOrEmpty(e.Blok) || e.Blok.StartsWith("*", StringComparison.Ordinal) || Semboller.EklentininBlogu(e.Blok)) continue;
-                int c;
-                say.TryGetValue(e.Blok, out c);
-                say[e.Blok] = c + 1;
-            }
-            string en = null;
-            int enCok = 0;
-            foreach (var kv in say) if (kv.Value > enCok) { enCok = kv.Value; en = kv.Key; }
-            return en ?? Semboller.BlokAdi(tur, cins, durum, dmDurum);
-        }
-
-        /// <summary>
-        /// Elemanın bloğu: kendi bloğu bu çizimde aynı tür ve durumdaki elemanlarda kullanılıyorsa (ya da
-        /// başka seçenek yoksa) korunur; durumu değişmişse (ör. montajdan demontaja) o durumun bloğu önerilir
-        /// (telefon simgeleri açıkken telefonun SH_ simgesi). Eklentinin kendi (SH_) blokları her zaman güncel tür,
-        /// malzeme ve duruma göre yeniden seçilir. Böylece değişmeyen PROMAGIS nesnelerine dokunulmaz; yeni ve
-        /// değişen her eleman telefonla aynı görünür.
+        /// Elemanın bloğu: her zaman uygulamanın simgesi (tür, malzeme ve duruma göre yeniden seçilir). Çizimde başka bir
+        /// blokla duran eleman da yazılırken bu simgeye geçer. Yalnız adsız bloklar (*U…) olduğu gibi kalır.
         /// </summary>
         public static string BlokSec(IEnumerable<Eleman> cizim, Eleman e)
         {
-            if (string.IsNullOrEmpty(e.Blok) || Semboller.EklentininBlogu(e.Blok)) return BlokOner(cizim, e.Tur, e.Cins, e.Durum, e.DmDurum);
-            if (e.Blok.StartsWith("*", StringComparison.Ordinal)) return e.Blok; // adsız blok: mevcut nesnede olduğu gibi kalır
-            string grup = DurumGrubu(e.Durum);
-            // PROMAGIS blok adı durumu söyler (YENİ_…, MEVCUT_…, DEMONTAJ_…): uyuyorsa blok korunur (çizime dokunulmaz),
-            // uymuyorsa durum değişmiştir → yeni durumun bloğu (telefon simgeleri açıkken SH_ simgesi)
-            string adGrubu = PromagisBlokGrubu(e.Blok);
-            if (adGrubu != null) return adGrubu == grup ? e.Blok : BlokOner(cizim, e.Tur, e.Cins, e.Durum, e.DmDurum);
-            bool ayniGrup = false, baska = false;
-            foreach (var x in cizim)
-            {
-                if (ReferenceEquals(x, e) || (x.Id == e.Id && !string.IsNullOrEmpty(e.Id))) continue;
-                if (x.Tur != e.Tur || DurumGrubu(x.Durum) != grup) continue;
-                if (string.IsNullOrEmpty(x.Blok) || x.Blok.StartsWith("*", StringComparison.Ordinal) || Semboller.EklentininBlogu(x.Blok)) continue;
-                if (string.Equals(x.Blok, e.Blok, StringComparison.OrdinalIgnoreCase)) { ayniGrup = true; break; }
-                baska = true;
-            }
-            return ayniGrup || !baska ? e.Blok : BlokOner(cizim, e.Tur, e.Cins, e.Durum, e.DmDurum);
+            if (!string.IsNullOrEmpty(e.Blok) && e.Blok.StartsWith("*", StringComparison.Ordinal)) return e.Blok;
+            return Semboller.BlokAdi(e.Tur, e.Cins, e.Durum, e.DmDurum);
         }
 
-        /// <summary>
-        /// Durumu değişen elemanın bloğu: telefon simgeleri açıkken simgesi değişen durumda (ör. M → DM+M, DM → DM · KESİK)
-        /// PROMAGIS bloğu da telefon simgesine geçer (PROMAGIS'in YENİ_ bloğu sök-takı, DEMONTAJ_ bloğu kesik / sökükü
-        /// ayırmaz); simgesi değişmeyen düzenlemede BlokSec kuralı geçerlidir.
-        /// </summary>
-        public static string BlokSec(IEnumerable<Eleman> cizim, Eleman e, string eskiDurum, string eskiDm)
-        {
-            if (TelefonSembolleri && !string.IsNullOrEmpty(e.Blok) && !e.Blok.StartsWith("*", StringComparison.Ordinal)
-                && Semboller.Varyant(eskiDurum, eskiDm) != Semboller.Varyant(e.Durum, e.DmDurum))
-                return Semboller.BlokAdi(e);
-            return BlokSec(cizim, e);
-        }
+        /// <summary>Durumu değişen elemanın bloğu (eski durum bilgisi artık gerekmez: simge her zaman güncel duruma göre).</summary>
+        public static string BlokSec(IEnumerable<Eleman> cizim, Eleman e, string eskiDurum, string eskiDm) => BlokSec(cizim, e);
 
         // ---------------- Armatür (direğin malzemesi; simgesi direğin yanında) ----------------
 
@@ -247,7 +181,7 @@ namespace SebekeHakedis.Cekirdek
 
         /// <summary>
         /// Yeni katmanın rengi (AutoCAD renk numarası) ve çizgi tipi: ortak çizim stilinden (telefonla aynı); stil
-        /// yüklenmemişse PROMAGIS çizimlerindeki eski renkler.
+        /// yüklenmemişse AutoCAD çizimlerindeki eski renkler.
         /// </summary>
         public static void KatmanStili(string katman, out short renk, out string cizgiTipi)
         {
@@ -300,7 +234,7 @@ namespace SebekeHakedis.Cekirdek
                 Blok = blok,
                 X = e.Saga, Y = e.Yukari, Z = e.Kot, Aci = e.Aci,
             };
-            // Telefon simgesine (SH_, parçaları BLOĞA GÖRE) telefonun rengi yazılır; PROMAGIS bloklarının rengine dokunulmaz
+            // Telefon simgesine (SH_, parçaları BLOĞA GÖRE) telefonun rengi yazılır; AutoCAD bloklarının rengine dokunulmaz
             if (CizimStili.Yuklu && Semboller.EklentininBlogu(blok)) v.Renk = CizimStili.ElemanRengi(e.Tur, ana.Cins, ana.Durum);
             v.Oz["SIRA_NO"] = Tanitici;
             v.Oz["GIS_ID"] = e.GisId ?? "";
@@ -374,9 +308,9 @@ namespace SebekeHakedis.Cekirdek
         }
 
         /// <summary>
-        /// Hat etiketi: "^ 3X50/16+70 ALPEK/341m/(tanıtıcı)" (telefondaki etikete PROMAGIS gibi tanıtıcı eklenir).
-        /// Ön ekler PROMAGIS ile aynı: * M+M · ^ M · [ ] DM+M · &gt; &lt; DM · / \ KM · { } ENH · ( ) MEVCUT.
-        /// Gerçek bir PROMAGIS çiziminde 3.377 etiketin 3.340'ı bununla birebir aynıdır; kalanlar PROMAGIS'in
+        /// Hat etiketi: "^ 3X50/16+70 ALPEK/341m/(tanıtıcı)" (telefondaki etikete AutoCAD gibi tanıtıcı eklenir).
+        /// Ön ekler AutoCAD ile aynı: * M+M · ^ M · [ ] DM+M · &gt; &lt; DM · / \ KM · { } ENH · ( ) MEVCUT.
+        /// Gerçek bir AutoCAD çiziminde 3.377 etiketin 3.340'ı bununla birebir aynıdır; kalanlar AutoCAD'in
         /// güncellemediği eski etiketlerdir.
         /// </summary>
         public static string HatEtiketi(Hat h)
@@ -385,7 +319,7 @@ namespace SebekeHakedis.Cekirdek
             var kl = hatlar.Count > 0 ? hatlar[0] : null;
             // Etiketteki uzunluk güzergâhın metrajıdır (adetli satırda miktar / adet)
             double m = kl != null ? kl.Miktar / Math.Max(1, Iletkenler.Adet(kl)) : Math.Ceiling(Geometri.Uzunluk(h.Kose));
-            // Çoklu iletken: hepsi telefondaki gibi (OG + … / AG + …). Tek iletken: PROMAGIS hattın tam yazımını kullanır
+            // Çoklu iletken: hepsi telefondaki gibi (OG + … / AG + …). Tek iletken: AutoCAD hattın tam yazımını kullanır
             // (ör. "3(1x150/25) Xlpe Alm."), yoksa ana kesit.
             string kesit = hatlar.Count > 1 ? Iletkenler.EtiketKesiti(hatlar)
                 : kl != null && !string.IsNullOrEmpty(kl.Aciklama) ? kl.Aciklama
@@ -401,7 +335,7 @@ namespace SebekeHakedis.Cekirdek
                 case "KM": govde = "/" + kesit + "\\/" + metraj; break;
                 case "ENH": govde = "{" + kesit + "}/" + metraj; break;
                 case "MEVCUT": govde = "(" + kesit + ")/" + metraj; break;
-                default: govde = kesit + "/" + metraj; break; // ME ve bilinmeyenler düz (PROMAGIS "TANIMSIZ" yazar)
+                default: govde = kesit + "/" + metraj; break; // ME ve bilinmeyenler düz (AutoCAD "TANIMSIZ" yazar)
             }
             return govde + "/(" + Tanitici + ")";
         }

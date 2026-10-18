@@ -83,7 +83,7 @@ namespace SebekeHakedis.Eklenti
                 var ayar = AyarDeposu.Oku(belge.Database);
                 if (ayar.Dom > 0) p.Dom = ayar.Dom;
                 if (ayar.AktifHakedis > 0) p.AktifHakedis = ayar.AktifHakedis;
-                int hakNo = PromagisSozlugu.HakNoOku(belge.Database);
+                int hakNo = CizimSozlugu.HakNoOku(belge.Database);
                 if (hakNo > 0) p.AktifHakedis = hakNo;
                 if (!string.IsNullOrEmpty(ayar.KatmanOnEki)) p.KatmanOnEki = ayar.KatmanOnEki;
                 if (string.IsNullOrEmpty(p.KatmanOnEki)) p.KatmanOnEki = "SC";
@@ -155,7 +155,7 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>
-        /// Eksik malzeme sorgusu (PROMAGIS raporundaki DETAY): ör. "topraklaması olmayan AG direkleri". Bulunan elemanlar
+        /// Eksik malzeme sorgusu (AutoCAD raporundaki DETAY): ör. "topraklaması olmayan AG direkleri". Bulunan elemanlar
         /// çizimde seçilir; istenirse sonuç Excel'e yazılır. Son süzgeçler çizimin ayarlarında saklanır.
         /// </summary>
         [CommandMethod("SH_DETAY", CommandFlags.Modal | CommandFlags.Redraw)]
@@ -288,13 +288,13 @@ namespace SebekeHakedis.Eklenti
             ed.WriteMessage("\nÇizim okunuyor...");
             var sure = Stopwatch.StartNew();
             List<CadVarlik> varliklar = Toplayici.Topla(belge.Database);
-            if (!PromagisOkuyucu.PromagisCizimiMi(varliklar))
+            if (!NesneOkuyucu.SebekeCizimiMi(varliklar))
             {
                 ed.WriteMessage("\nBu çizimde şebeke verisi bulunamadı (direk, hat ya da bölge bilgisi yok).");
                 return null;
             }
-            var p = PromagisOkuyucu.Oku(varliklar, belge.Name);
-            p.Onaylar = PromagisSozlugu.OnaylariOku(belge.Database);
+            var p = NesneOkuyucu.Oku(varliklar, belge.Name);
+            p.Onaylar = CizimSozlugu.OnaylariOku(belge.Database);
             ed.WriteMessage("\n" + p.Bolgeler.Count + " bölge, " + p.Elemanlar.Count + " eleman, " + p.Hatlar.Count + " hat, " + p.Kanallar.Count + " kanal okundu (" + sure.ElapsedMilliseconds + " ms).");
             if (p.Bolgeler.Count == 0) ed.WriteMessage("\nUyarı: çizimde bölge sınırı yok; PROJE sütunları boş kalacak.");
             return p;

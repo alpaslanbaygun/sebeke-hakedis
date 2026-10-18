@@ -22,7 +22,7 @@ Karışıklık olmasın diye eksenler açık adla tutulur:
 {
   "bicim": "sebeke-hakedis.proje", "surum": 1,
   "proje":    { ad, kaynak, koordinat{sistem, datum, dom}, aktifHakedis, katmanOnEki, gisOnEki, onaylar[] },
-  "bolgeler": [ { id, ad, kod, grup, sinir[[saga,yukari]...] } ],           alt projeler (PROMAGIS: BÖLGE)
+  "bolgeler": [ { id, ad, kod, grup, sinir[[saga,yukari]...] } ],           alt projeler (AutoCAD: BÖLGE)
   "noktalar": [ { id, ad, kod, saga, yukari, kot, hakedis, bolge } ],          saha ölçüm noktaları (NOKTA AL)
   "elemanlar":[ { id, tur, gisId, cins, tip, durum, hakedis, bolge, saga, yukari, aci, guc, gerilim, dmDurum, kontrol, kalemler[], ekVeri{} } ],
   "hatlar":   [ { id, tur, anaKesit, durum, hakedis, bolge, kose[], cizimUzunlugu, etiket, kontrol, kalemler[] } ],
@@ -31,11 +31,11 @@ Karışıklık olmasın diye eksenler açık adla tutulur:
 }
 ```
 
-- `proje.onaylar`: hakediş onayları `[{ no, kontrol, hakedis, gis }]` (PROMAGIS `HAK_ONAY`; sıra kontrol → hakediş → GIS).
+- `proje.onaylar`: hakediş onayları `[{ no, kontrol, hakedis, gis }]` (AutoCAD `HAK_ONAY`; sıra kontrol → hakediş → GIS).
   Hakediş onayı olan hakediş eklentide kilitlidir. Telefonda onaylanan dönem `kontrol + hakedis` olarak yazılır;
   eklenti telefondan gelen onayları çizimdekilere ekler (onay geri alınmaz).
-- `bolge.grup`: PROMAGIS grup kodu (`FULLREG` üçüncü alanı, boş olabilir).
-- `eleman.ekVeri`: PROMAGIS'in eklentide ve telefonda düzenlenmeyen verileri — pano çıkış şeması `ANA`, `CON`, bina
+- `bolge.grup`: AutoCAD grup kodu (`FULLREG` üçüncü alanı, boş olabilir).
+- `eleman.ekVeri`: AutoCAD'in eklentide ve telefonda düzenlenmeyen verileri — pano çıkış şeması `ANA`, `CON`, bina
   tipi trafonun hücreleri `FIDER` (her biri XDATA satırları dizisi). Okunur, taşınır, aynen geri yazılır; dosyada
   yoksa çizimdeki korunur.
 - **Parçalı hat**: hat, kanal ve sondaj her bağlantı düğümünde (direk, SDK, pano, trafo) biter; her parça ayrı nesnedir.
@@ -54,7 +54,7 @@ Okuyucular tanımadıkları alanları atlar. Telefonun (VOLT-EDAŞ Saha) ekledi�
 | `kod` | proje | telefondaki proje kodu |
 | `servis`, `koken` | kalem | telefon kataloğundaki poz kodu ve kalemin kökeni (OTO / MANUEL) |
 
-Kimlikler: PROMAGIS/AutoCAD'den gelen nesnelerde AutoCAD tanıtıcısı (onaltılık, ör. `2F3A`), telefonda
+Kimlikler: AutoCAD/AutoCAD'den gelen nesnelerde AutoCAD tanıtıcısı (onaltılık, ör. `2F3A`), telefonda
 oluşturulanlarda telefonun kayıt kimliği (26 karakter, ör. `01M2YSTNC0W31N21HHMX9V1EG4`). Telefon, AutoCAD'den
 aldığı nesnenin tanıtıcısını saklar (`sebekeId`) ve geri yazarken aynen kullanır.
 
@@ -65,9 +65,9 @@ Telefonun kendi biçimi: ham kayıtlar (`data`), türetilmiş sonuçlar (`derive
 üç dosyayı da açar: `.sebeke.json`, `.volt.json`, teslim paketi `.zip`. Eklenti "Telefona Gönder"de istenirse
 `.volt.json` yazar (`data` boş, `sebeke` dolu); telefon ikisini de alır.
 
-### Telefon ↔ PROMAGIS eşlemesi (`katalog/volt-eslesme.json`)
+### Telefon ↔ AutoCAD eşlemesi (`katalog/volt-eslesme.json`)
 
-Telefonun kataloğu TEDAŞ poz kodlarıyla (ör. `005.01.02.01-008`), eklentinin raporu PROMAGIS cins / tanım ile
+Telefonun kataloğu TEDAŞ poz kodlarıyla (ör. `005.01.02.01-008`), eklentinin raporu AutoCAD cins / tanım ile
 çalışır. Çeviri kuralları tek dosyadadır: `ortak/katalog/volt-eslesme.json` (telefon kopyası
 `telefon/web/src/ortak/volt-eslesme.js`, dönüştürücü `telefon/web/src/interop/sebeke.js`):
 
@@ -85,8 +85,8 @@ Telefonun kataloğu TEDAŞ poz kodlarıyla (ör. `005.01.02.01-008`), eklentinin
 - Kalemler: nesnenin kendi pozu (direk tipi, trafo direği, köşk gövdesi, SDK tipi) `ana` kalemdir; katsayı telefonun kg
   değeridir (katalogda birebir eş varsa onun alanları). Diğer malzemelerde cins poz kategorisinden (`Travers → TRAVERS_VE_KONSOLLAR_GLV`,
   `İzolatör|OG → OG_İZOLATÖR` …), tanım poz adından gelir. Telefona alınan ve telefon kataloğunda eşi olmayan kalemler
-  için kataloğa `AUTOCAD:…` kodlu kalem açılır; PROMAGIS alanları kalemde saklanır ve geri yazımda aynen döner.
-- Hat metrajı tam metreye yukarı yuvarlanır (PROMAGIS gibi); yeraltında telefonun payları (dikey iniş, çıkış, trafo,
+  için kataloğa `AUTOCAD:…` kodlu kalem açılır; AutoCAD alanları kalemde saklanır ve geri yazımda aynen döner.
+- Hat metrajı tam metreye yukarı yuvarlanır (AutoCAD gibi); yeraltında telefonun payları (dikey iniş, çıkış, trafo,
   SDK, rezerv) dahildir ve `3(1x…)` kablolarda üç damarın toplamı yazılır.
 - Yeraltı hattın kazı kanalı ayrı **Kanal** nesnesi olur: kod kablo türlerinden (OG 8, AG 4, AYD 2, REK 1), zemin
   `toprak/tuvenan/asfalt/beton/parke → TOPRAK/TUVENAN/ASFALT/BETON/PARKE TUVENAN`, genişlik ve derinlik cm, borulu
@@ -108,8 +108,8 @@ direkte içi çarpı, SDK'da çapraz), `DMM` yarım dolu, `DM` boş + simgeden t
 yoktur. Varyant durumdan gelir: M, M+M, KM, ENH, ME → `YENI`; DM → elemanın demontaj türüne (`dmDurum`) göre `DM` / `KESIK` /
 `SOKUK`; DM+M → `DMM`. `aileler.<aile>.kapsam`: bütün varyantları içine alan yarı genişlik (şerit simgeleri).
 Boyutlar metre; bloklar 1 ölçekle konur (telefonun DXF'iyle aynı). Varsayılan "telefon simgeleri": her yeni eleman
-SH_ simgesiyle çizilir; çizimdeki değişmeyen PROMAGIS bloklarına dokunulmaz (`SH_GORUNUM` istenirse çevirir).
-Ayarlardan "PROMAGIS simgeleri" seçilirse çizimde o tür ve durumda PROMAGIS bloğu varsa o kullanılır.
+SH_ simgesiyle çizilir; çizimdeki değişmeyen AutoCAD bloklarına dokunulmaz (`SH_GORUNUM` istenirse çevirir).
+Ayarlardan "AutoCAD simgeleri" seçilirse çizimde o tür ve durumda AutoCAD bloğu varsa o kullanılır.
 
 ### Çizim stili (`katalog/cizim-stili.json`) ve şerit kategorileri (`katalog/kategoriler.json`)
 
@@ -135,7 +135,7 @@ Ayarlardan "PROMAGIS simgeleri" seçilirse çizimde o tür ve durumda PROMAGIS b
 | `hakedis` | 2 | kalemin hakediş numarası (nesneninkinden farklı olabilir) |
 | `tarife` | 0107 | ilk iki hane karakteristik, son iki hane unsur |
 | `dmDurum` | KESİK | demontajda: KESİK / SÖKÜK |
-| `sira` | 330 | PROMAGIS kalem numarası (INDEX); yeni kalemde çizimdeki `AYARLAR/SAYAC`'tan devam eder. Telefon AutoCAD'den gelen kalemin sırasını, hakedişini ve kontrol işaretini saklar, geri yazarken aynı kaleme verir |
+| `sira` | 330 | AutoCAD kalem numarası (INDEX); yeni kalemde çizimdeki `AYARLAR/SAYAC`'tan devam eder. Telefon AutoCAD'den gelen kalemin sırasını, hakedişini ve kontrol işaretini saklar, geri yazarken aynı kaleme verir |
 | `kontrol` | true | kontrol işareti |
 | `ana` | true | nesnenin kendi pozu (direk, box, trafo...) |
 
@@ -150,7 +150,7 @@ Ayarlardan "PROMAGIS simgeleri" seçilirse çizimde o tür ve durumda PROMAGIS b
 
 Çok iletkenli hat: her iletken ayrı bir `HAT` kalemidir (müşterekte OG iletkeni `OG_İLETKEN`, AG iletkeni
 `AG_İLETKEN` / `ALPEK_KABLOLAR`). Adet `aciklama`daki `Nx(…)` yazımıyla, miktar adet × güzergâh metrajı. Tek
-iletkende `anaKesit` iletkenin tanımıdır (PROMAGIS gibi); birden çok iletkende birleşik yazım: OG'ler ` + ` ile, sonra
+iletkende `anaKesit` iletkenin tanımıdır (AutoCAD gibi); birden çok iletkende birleşik yazım: OG'ler ` + ` ile, sonra
 ` / `, sonra AG'ler ` + ` ile (ör. `3xSW / 4P+R`). Etiketteki uzunluk güzergâhın metrajıdır (ilk iletkenin miktarı / adedi).
 Telefonda her `HAT` kalemi bir devredir (`{role, key, count}`); eşlenemeyen iletken varsa kalemler olduğu gibi saklanır.
 
@@ -172,16 +172,16 @@ Kanal hacmi = (alt genişlik + üst genişlik) / 2 × derinlik × uzunluk (geni�
 
 ## Katalog dosyaları
 
-- `katalog/katsayilar.json` — rapor katsayıları (PROMAGIS Durum Tespit dosyasının KATSAYILAR sayfası)
-- `katalog/kalemler.json` — sürüm 2: PROMAGIS'in tam malzeme listesi (2 934 kalem; cins, tip, poz no, metrik ağırlık,
+- `katalog/katsayilar.json` — rapor katsayıları (Durum Tespit dosyasının KATSAYILAR sayfası)
+- `katalog/kalemler.json` — sürüm 2: AutoCAD'in tam malzeme listesi (2 934 kalem; cins, tip, poz no, metrik ağırlık,
   birimler, karakteristik + şehir / köy unsuru), nesne türü → cins grupları (pencere ve şerit süzgeçleri), durum
-  listesi. Üretici `araclar/promagis-katalog-aktar.py`. Telefon uygulamasına ve AutoCAD eklentisine gömülür.
+  listesi. Üretici `araclar/katalog-aktar.py`. Telefon uygulamasına ve AutoCAD eklentisine gömülür.
 - Tarife: kalemin tarifesi = karakteristik (çizim ayarı; boşsa katalogdaki) + unsur (çizim ayarı köy / bakımsa
   kalemin köy unsuru, yoksa şehir unsuru).
 
-## PROMAGIS çizimlerinden okuma
+## AutoCAD çizimlerinden okuma
 
-PROMAGIS veriyi nesnelerin genişletilmiş verisinde (XDATA) tutar. Okuyucu: `autocad/src/Cekirdek/PromagisOkuyucu.cs`.
+AutoCAD veriyi nesnelerin genişletilmiş verisinde (XDATA) tutar. Okuyucu: `autocad/src/Cekirdek/NesneOkuyucu.cs`.
 
 | XDATA | İçerik |
 | --- | --- |
@@ -201,7 +201,7 @@ Katmanlar: `<ön ek>_<hakediş>.HAK.<tür>` (ör. `SC_8.HAK.AG_HAV_HAT`) ve `<ö
 
 ## Eklentinin çizime yazdıkları
 
-Eklenti PROMAGIS'in yazdığı biçimle yazar (yukarıdaki XDATA ve katmanlar); ayrıca:
+Eklenti AutoCAD'in yazdığı biçimle yazar (yukarıdaki XDATA ve katmanlar); ayrıca:
 
 | Ne | Nerede | Anlamı |
 | --- | --- | --- |
@@ -209,18 +209,18 @@ Eklenti PROMAGIS'in yazdığı biçimle yazar (yukarıdaki XDATA ve katmanlar); 
 | `SH_PARCA` XDATA | hat, kanal, sondaj | parça metrajı yazılarının tanıtıcıları (`<ön ek>_YAZI` katmanında) |
 | `SH_ARM` XDATA | armatürlü direk ve simgesi | direkte `[simgenin tanıtıcısı, dx, dy]` (simgenin direğe göre yeri), simgede `["@" + direğin tanıtıcısı]`. Simge `SH_ARMATUR_<varyant>` bloğudur, direğin katmanında; kendi poz verisi yoktur (armatür direğin `MALZEME` kalemidir). Direk AutoCAD'le taşınınca / kopyalanınca / silinince simge de gider |
 | `SEBEKE_HAKEDIS` › `AYARLAR` | çizimin sözlüğü (Named Objects Dictionary) | çizim ayarları: ön ekler, aktif hakediş, dilim, tarife, sembol takımı, etiket, metraj payları, son seçimler |
-| `SH_<aile>_<varyant>` (ör. `SH_KAFES_AG_YENI`), `GPS` | blok tanımları | lejant simgesi tür + malzeme + duruma göre (`katalog/semboller.json`; 1 ölçek, öznitelikler PROMAGIS adlarıyla; panoda ayrıca gizli `C_1…C_8`); tanımın sürümü blok sözlüğünde (`SEBEKE_HAKEDIS › BLOK`) |
+| `SH_<aile>_<varyant>` (ör. `SH_KAFES_AG_YENI`), `GPS` | blok tanımları | lejant simgesi tür + malzeme + duruma göre (`katalog/semboller.json`; 1 ölçek, öznitelikler AutoCAD adlarıyla; panoda ayrıca gizli `C_1…C_8`); tanımın sürümü blok sözlüğünde (`SEBEKE_HAKEDIS › BLOK`) |
 
-PROMAGIS'in çizim sözlüğündeki kayıtlar da okunur ve yazılır (iki program aynı çizimde sırayla kullanılabilsin):
+AutoCAD'in çizim sözlüğündeki kayıtlar da okunur ve yazılır (iki program aynı çizimde sırayla kullanılabilsin):
 
 | Kayıt | Anlamı | Eklenti |
 | --- | --- | --- |
 | `AYARLAR` › `SAYAC` | sıradaki kalem numarası (INDEX) | yeni sıra bunun altına inmez; her yeni kalemde ve telefondan almada ilerletilir |
-| `HakNo_Dic` › `HakNo_Rec` | aktif hakediş | okunur (PROMAGIS'teki seçim geçerli); hakediş seçilince yazılır |
+| `HakNo_Dic` › `HakNo_Rec` | aktif hakediş | okunur (AutoCAD'deki seçim geçerli); hakediş seçilince yazılır |
 | `DicBölge` › `RecBölge` | bölge çizgilerinin tanıtıcı listesi | eklentinin çizdiği / telefondan gelen bölge eklenir, silinen çıkarılır |
 | `HAK_ONAY` › `ONAY_DURUM<n>` | n. hakedişin onayı: KONTROL 4, HAKEDİŞ 2, GIS 1 | `SH_ONAY` yazar; hakediş onaylı hakediş kilitlidir |
 
-Hat etiketi PROMAGIS yazımıyladır: `^ kesit/341m/(tanıtıcı)` (M), `* …` (M+M), `>…<` (DM), `[…]` (DM+M),
+Hat etiketi AutoCAD yazımıyladır: `^ kesit/341m/(tanıtıcı)` (M), `* …` (M+M), `>…<` (DM), `[…]` (DM+M),
 `(…)` (MEVCUT); kesit yerine hattın tam yazımı varsa o kullanılır.
 
 ## Telefondan alma (SH_PROJEAL)
@@ -243,4 +243,4 @@ Telefon (VOLT-EDAŞ Saha) verisini kendi veritabanında tutar (IndexedDB `volt-e
 (tür, cins, tip, katman, blok, bölge, hakediş; hatta ana kesit, eşleşmeyen kalemler ve parça kimlikleri; kalemlerin
 sıra / hakediş / kontrol bilgisi `kalemBilgisi`; elemanda `ekVeri`) saklanır; projede `sebeke` (katman / GIS ön eki,
 bölgeler, onaylar, kaynak) tutulur. Böylece telefonda değiştirilip geri gönderilen dosya AutoCAD'deki
-nesnelerle eşleşir ve PROMAGIS alanları korunur.
+nesnelerle eşleşir ve AutoCAD alanları korunur.

@@ -24,7 +24,7 @@ namespace SebekeHakedis.Cekirdek
         public int Hakedis;
         public string Tarife = "";      // ör. 0107 (ilk iki hane karakteristik, son iki hane unsur)
         public string DmDurum = "";     // demontajda KESİK / SÖKÜK
-        public string Sira = "";        // PROMAGIS'teki kalem numarası (INDEX)
+        public string Sira = "";        // AutoCAD'deki kalem numarası (INDEX)
         public bool? Kontrol;
         public bool Ana;                // nesnenin kendi pozu mu (direk, box, trafo...)
         public string Kaynak = "";      // NIT, MALZEME, HAT
@@ -38,8 +38,8 @@ namespace SebekeHakedis.Cekirdek
     {
         public string Id = "";
         public string Ad = "";
-        public string Kod = "";         // ör. 11.22.33.19.12345 (PROMAGIS: bölge tarifesi)
-        /// <summary>PROMAGIS grup kodu (FULLREG üçüncü alanı, ör. "24.38.01 (NA)").</summary>
+        public string Kod = "";         // ör. 11.22.33.19.12345 (AutoCAD: bölge tarifesi)
+        /// <summary>AutoCAD grup kodu (FULLREG üçüncü alanı, ör. "24.38.01 (NA)").</summary>
         public string Grup = "";
         public string Aciklama = "";
         public List<double[]> Sinir = new List<double[]>(); // [Saga, Yukari]
@@ -81,7 +81,7 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Telefondaki kayıt kimliği (çizimde SH_ID); dosyada "telefonId". Telefon dosyayı geri alırken kaydını bununla bulur.</summary>
         public string TelefonId = "";
         /// <summary>
-        /// PROMAGIS'in eklentinin düzenlemediği verileri (pano çıkış şeması ANA / CON, bina tipi trafonun hücreleri FIDER):
+        /// AutoCAD'in eklentinin düzenlemediği verileri (pano çıkış şeması ANA / CON, bina tipi trafonun hücreleri FIDER):
         /// okunur, dosyada taşınır ve aynen geri yazılır.
         /// </summary>
         public Dictionary<string, List<string>> EkVeri = new Dictionary<string, List<string>>(StringComparer.Ordinal);
@@ -158,7 +158,7 @@ namespace SebekeHakedis.Cekirdek
         public List<Kanal> Kanallar = new List<Kanal>();
         public List<Sondaj> Sondajlar = new List<Sondaj>();
         public List<string> Uyarilar = new List<string>();
-        /// <summary>Hakediş onayları (PROMAGIS HAK_ONAY): hakediş no → bitler (Kontrol 4, Hakediş 2, GIS 1). Bkz. HakedisOnayi.</summary>
+        /// <summary>Hakediş onayları (AutoCAD HAK_ONAY): hakediş no → bitler (Kontrol 4, Hakediş 2, GIS 1). Bkz. HakedisOnayi.</summary>
         public SortedDictionary<int, int> Onaylar = new SortedDictionary<int, int>();
 
         public Bolge BolgeBul(string id)
@@ -173,7 +173,7 @@ namespace SebekeHakedis.Cekirdek
     {
         public const int REK = 1, AYD = 2, AG = 4, OG = 8;
 
-        /// <summary>PROMAGIS raporundaki yazım: "OG", "/AG/AYD", "OG/AG/AYD/REK" ...</summary>
+        /// <summary>AutoCAD raporundaki yazım: "OG", "/AG/AYD", "OG/AG/AYD/REK" ...</summary>
         public static string Kablolar(int kod)
         {
             string s = "";

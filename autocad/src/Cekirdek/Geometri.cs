@@ -135,7 +135,7 @@ namespace SebekeHakedis.Cekirdek
 
         /// <summary>
         /// Noktanın bölgesi: içinde kaldığı en küçük bölge; hiçbirinin içinde değilse en yakın bölge.
-        /// PROMAGIS raporuyla 22.048 satırın %99'unda aynı sonucu verir.
+        /// AutoCAD raporuyla 22.048 satırın %99'unda aynı sonucu verir.
         /// </summary>
         public static Bolge BolgeSec(double[] p, IList<Bolge> bolgeler)
         {

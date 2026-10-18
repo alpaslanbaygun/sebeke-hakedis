@@ -70,7 +70,7 @@ namespace SebekeHakedis.Eklenti
         {
             if (_uygulamalar) return;
             var rat = (RegAppTable)_tr.GetObject(_db.RegAppTableId, OpenMode.ForRead);
-            foreach (var ad in PromagisYazici.Uygulamalar)
+            foreach (var ad in NesneYazici.Uygulamalar)
             {
                 if (rat.Has(ad)) continue;
                 if (!rat.IsWriteEnabled) rat.UpgradeOpen();
@@ -102,7 +102,7 @@ namespace SebekeHakedis.Eklenti
                 }
                 short renk;
                 string cizgi;
-                PromagisYazici.KatmanStili(ad, out renk, out cizgi);
+                NesneYazici.KatmanStili(ad, out renk, out cizgi);
                 var ltr = new LayerTableRecord { Name = ad, Color = Color.FromColorIndex(ColorMethod.ByAci, renk) };
                 var cizgiId = CizgiTipi(cizgi);
                 if (!cizgiId.IsNull) ltr.LinetypeObjectId = cizgiId;
@@ -118,7 +118,7 @@ namespace SebekeHakedis.Eklenti
         private ObjectId YaziKatmani(string nesneKatmani)
         {
             string onEk, tur; int hak;
-            PromagisOkuyucu.KatmanCoz(nesneKatmani, out onEk, out tur, out hak);
+            NesneOkuyucu.KatmanCoz(nesneKatmani, out onEk, out tur, out hak);
             if (string.IsNullOrEmpty(onEk))
             {
                 int i = (nesneKatmani ?? "").IndexOf('_');
@@ -171,16 +171,12 @@ namespace SebekeHakedis.Eklenti
         private static bool Tanimlayabilir(string ad) => ad == "GPS" || Semboller.EklentininBlogu(ad);
 
         /// <summary>
-        /// Yeni eleman için kullanılabilecek blok: istenen blok çizimde varsa (ya da SH_ simgesiyse) o; yoksa telefon
-        /// simgeleri açıkken SH_ simgesi, kapalıyken çizimde aynı tür ve durumdaki elemanların PROMAGIS bloğu, o da yoksa SH_ simgesi.
+        /// Yeni eleman için kullanılabilecek blok: istenen blok çizimde varsa (ya da SH_ simgesiyse) o; yoksa uygulamanın SH_ simgesi.
         /// </summary>
         public string KullanilabilirBlok(string istenen, string tur, string cins, string durum, string dmDurum, IEnumerable<Eleman> cizimElemanlari)
         {
             if (BlokKullanilabilir(istenen)) return istenen;
-            if (PromagisYazici.TelefonSembolleri) return PromagisYazici.VarsayilanBlok(tur, cins, durum, dmDurum);
-            string oneri = PromagisYazici.BlokOner(cizimElemanlari, tur, cins, durum, dmDurum);
-            if (BlokKullanilabilir(oneri)) return oneri;
-            return PromagisYazici.VarsayilanBlok(tur, cins, durum, dmDurum);
+            return NesneYazici.VarsayilanBlok(tur, cins, durum, dmDurum);
         }
 
         /// <summary>Blok tanımı; eklentinin kendi bloklarıysa ve çizimde yoksa oluşturulur, eski sürümse yenilenir.</summary>
@@ -208,7 +204,7 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>
-        /// Çizimdeki eski sürüm SH_ bloklarını (1/4 geometri, 4 ölçek; PROMAGIS düzeni yazılar) yeni düzene çevirir:
+        /// Çizimdeki eski sürüm SH_ bloklarını (1/4 geometri, 4 ölçek; AutoCAD düzeni yazılar) yeni düzene çevirir:
         /// geometri metre, ölçek 1, yazılar telefondaki gibi. Görünen boyut değişmez. Her yazma işleminin başında bir kez.
         /// </summary>
         public void EskiBloklariYenile()
@@ -357,7 +353,7 @@ namespace SebekeHakedis.Eklenti
                 for (int i = 1; i <= 6; i++) OznitelikTanimi(btr, "METIN" + i, 0.27, 0.12 - 0.17 * (i - 1), 0.1, true);
                 return;
             }
-            // Öznitelikler PROMAGIS bloklarıyla aynı adlarda; görünenler telefondaki yazı yerinde: sağ üstte
+            // Öznitelikler AutoCAD bloklarıyla aynı adlarda; görünenler telefondaki yazı yerinde: sağ üstte
             // GIS numarası, altında tip (telefon tek satırda "no tip" yazar). Diğerleri gizli, küçük.
             double yh = CizimStili.Yuklu ? CizimStili.YaziYuksekligi : 1.8;
             double x = CizimStili.Yuklu ? CizimStili.ElemanKaydirma[0] : 3.5, y = CizimStili.Yuklu ? CizimStili.ElemanKaydirma[1] : 3.0;
@@ -370,7 +366,7 @@ namespace SebekeHakedis.Eklenti
             OznitelikTanimi(btr, "DURUM", x, y - satir - kucuk * 3.2, kucuk, true);
             OznitelikTanimi(btr, "GÜÇ", x, y - satir - kucuk * 4.8, kucuk, true);
             OznitelikTanimi(btr, "GERİLİM", x, y - satir - kucuk * 6.4, kucuk, true);
-            // Pano: PROMAGIS'in çıkış şeması öznitelikleri (gizli; PROMAGIS bloğundan geçişte değerler korunur)
+            // Pano: AutoCAD'in çıkış şeması öznitelikleri (gizli; AutoCAD bloğundan geçişte değerler korunur)
             if (ad.StartsWith(Semboller.OnEk + "PANO_", StringComparison.OrdinalIgnoreCase))
                 for (int i = 1; i <= 8; i++) OznitelikTanimi(btr, "C_" + i.ToString(CultureInfo.InvariantCulture), x, y - satir - kucuk * (8 + 1.6 * i), kucuk, true);
         }
@@ -468,7 +464,7 @@ namespace SebekeHakedis.Eklenti
             _tr.AddNewlyCreatedDBObject(br, true);
             string h = br.Handle.ToString();
             v.H = h;
-            PromagisYazici.TaniticiYaz(v, h);
+            NesneYazici.TaniticiYaz(v, h);
             OznitelikleriKur(br, btrId, v.Oz);
             XdataYaz(br, v);
             ArmaturYaz(br, v);
@@ -488,10 +484,10 @@ namespace SebekeHakedis.Eklenti
             _tr.AddNewlyCreatedDBObject(pl, true);
             string h = pl.Handle.ToString();
             v.H = h;
-            PromagisYazici.TaniticiYaz(v, h);
+            NesneYazici.TaniticiYaz(v, h);
             XdataYaz(pl, v);
             if (v.ParcaMetraji) ParcaMetrajlariYaz(pl, v.Kose);
-            if (etiket != null) EtiketYaz(pl, etiket.Replace(PromagisYazici.Tanitici, h), v.Kose);
+            if (etiket != null) EtiketYaz(pl, etiket.Replace(NesneYazici.Tanitici, h), v.Kose);
             return id;
         }
 
@@ -499,11 +495,11 @@ namespace SebekeHakedis.Eklenti
         private void StilUygula(Entity e, CadVarlik v)
         {
             short r = v.Renk;
-            // Telefon simgesi sonradan seçildiyse (tarif PROMAGIS bloğuyla kurulmuştu) rengi buradan
+            // Telefon simgesi sonradan seçildiyse (tarif AutoCAD bloğuyla kurulmuştu) rengi buradan
             if (r < 0 && e is BlockReference && Semboller.EklentininBlogu(v.Blok) && CizimStili.Yuklu)
             {
                 string cins = v.OzDeger("CİNS") ?? "";
-                r = CizimStili.ElemanRengi(PromagisOkuyucu.ElemanTuru(cins), cins, v.OzDeger("DURUM") ?? "");
+                r = CizimStili.ElemanRengi(NesneOkuyucu.ElemanTuru(cins), cins, v.OzDeger("DURUM") ?? "");
             }
             if (r >= 0)
             {
@@ -550,7 +546,7 @@ namespace SebekeHakedis.Eklenti
             var ent = (Entity)_tr.GetObject(id, OpenMode.ForWrite);
             string h = ent.Handle.ToString();
             v.H = h;
-            PromagisYazici.TaniticiYaz(v, h);
+            NesneYazici.TaniticiYaz(v, h);
             var katman = Katman(v.Katman);
             if (ent.LayerId != katman) ent.LayerId = katman;
             var br = ent as BlockReference;
@@ -560,7 +556,7 @@ namespace SebekeHakedis.Eklenti
             XdataYaz(ent, v);
             if (br != null) ArmaturYaz(br, v);
             if (br == null && v.ParcaMetraji) ParcaMetrajlariYaz(ent, v.Kose);
-            if (etiket != null) EtiketYaz(ent, etiket.Replace(PromagisYazici.Tanitici, h), v.Kose);
+            if (etiket != null) EtiketYaz(ent, etiket.Replace(NesneYazici.Tanitici, h), v.Kose);
         }
 
         private string EtkinAd(BlockReference br)
@@ -582,7 +578,7 @@ namespace SebekeHakedis.Eklenti
             double fark = Math.IEEERemainder(v.Aci - br.Rotation, 2 * Math.PI);
             if (Math.Abs(fark) > 1e-9) br.TransformBy(Matrix3d.Rotation(fark, br.Normal, br.Position));
 
-            // Durumu değişen elemanın bloğu (ör. montajdan demontaja) ya da PROMAGIS bloğundan telefon simgesine geçiş
+            // Durumu değişen elemanın bloğu (ör. montajdan demontaja) ya da AutoCAD bloğundan telefon simgesine geçiş
             if (!string.IsNullOrEmpty(v.Blok) && !v.Blok.StartsWith("*", StringComparison.Ordinal)
                 && !string.Equals(EtkinAd(br), v.Blok, StringComparison.OrdinalIgnoreCase) && BlokKullanilabilir(v.Blok))
             {
@@ -599,7 +595,7 @@ namespace SebekeHakedis.Eklenti
                 var yeniBlok = Blok(v.Blok);
                 br.BlockTableRecord = yeniBlok;
                 if (Semboller.EklentininBlogu(v.Blok) && Math.Abs(br.ScaleFactors.X - 1) > 1e-9) br.ScaleFactors = new Scale3d(1);
-                else if (eskiSh && !Semboller.EklentininBlogu(v.Blok)) br.ColorIndex = 256; // PROMAGIS bloğuna dönüşte KATMANA GÖRE
+                else if (eskiSh && !Semboller.EklentininBlogu(v.Blok)) br.ColorIndex = 256; // AutoCAD bloğuna dönüşte KATMANA GÖRE
                 var yeniDegerler = new Dictionary<string, string>(eskiDegerler, StringComparer.OrdinalIgnoreCase);
                 foreach (var kv in v.Oz) yeniDegerler[kv.Key] = kv.Value;
                 OznitelikleriKur(br, yeniBlok, yeniDegerler);
@@ -820,9 +816,9 @@ namespace SebekeHakedis.Eklenti
             {
                 foreach (var app in Yonetilen) Bolum(rb, app, v.XdHepsi(app));
                 List<string> kimlik;
-                if (v.Xd.TryGetValue(PromagisYazici.KimlikUygulamasi, out kimlik) && kimlik.Count > 0) Bolum(rb, PromagisYazici.KimlikUygulamasi, kimlik);
-                // PROMAGIS'in pano çıkış şeması / hücre verisi: yalnız tarifte varsa yazılır (yoksa çizimdeki olduğu gibi kalır)
-                foreach (var app in PromagisYazici.EkUygulamalar)
+                if (v.Xd.TryGetValue(NesneYazici.KimlikUygulamasi, out kimlik) && kimlik.Count > 0) Bolum(rb, NesneYazici.KimlikUygulamasi, kimlik);
+                // AutoCAD'in pano çıkış şeması / hücre verisi: yalnız tarifte varsa yazılır (yoksa çizimdeki olduğu gibi kalır)
+                foreach (var app in NesneYazici.EkUygulamalar)
                 {
                     List<string> l;
                     if (v.Xd.TryGetValue(app, out l) && l.Count > 0) Bolum(rb, app, l);
@@ -904,7 +900,7 @@ namespace SebekeHakedis.Eklenti
             }
             using (var rb = new ResultBuffer())
             {
-                rb.Add(new TypedValue((int)DxfCode.ExtendedDataRegAppName, PromagisYazici.ParcaUygulamasi));
+                rb.Add(new TypedValue((int)DxfCode.ExtendedDataRegAppName, NesneYazici.ParcaUygulamasi));
                 foreach (var h in taniticilar) rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, h));
                 if (!cizgi.IsWriteEnabled) cizgi.UpgradeOpen();
                 cizgi.XData = rb;
@@ -915,7 +911,7 @@ namespace SebekeHakedis.Eklenti
         {
             var xd = Toplayici.XdataOku(cizgi);
             List<string> l;
-            if (!xd.TryGetValue(PromagisYazici.ParcaUygulamasi, out l)) return;
+            if (!xd.TryGetValue(NesneYazici.ParcaUygulamasi, out l)) return;
             foreach (var h in l)
             {
                 ObjectId tid;

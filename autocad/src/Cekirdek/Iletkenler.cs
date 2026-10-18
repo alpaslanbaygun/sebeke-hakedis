@@ -24,7 +24,7 @@ namespace SebekeHakedis.Cekirdek
     }
 
     /// <summary>
-    /// Bir hatta birden çok iletken (çoklu iletken, müşterek hat). PROMAGIS biçiminde her iletken hattın ayrı bir HAT
+    /// Bir hatta birden çok iletken (çoklu iletken, müşterek hat). çizim biçiminde her iletken hattın ayrı bir HAT
     /// satırıdır. Adet, telefondaki gibi satırın tam yazımına "3x(3X50/16+70 ALPEK)" biçiminde yazılır; miktar adet ×
     /// güzergâh metrajıdır (rapor da tel tel açılımı bu miktarla yapar). Hat etiketi ve ana kesit telefondaki gibi:
     /// OG iletkenler " + " ile, sonra " / ", sonra AG iletkenler " + " ile (ör. "3xSW / 3X25/16+35 ALPEK").
@@ -94,7 +94,7 @@ namespace SebekeHakedis.Cekirdek
         }
 
         /// <summary>
-        /// Seçilen iletkenlerin ana kesit yazısı: tek iletkende (adetli olsa da) tanımı — PROMAGIS'teki gibi ("3(1x150/25)"
+        /// Seçilen iletkenlerin ana kesit yazısı: tek iletkende (adetli olsa da) tanımı — AutoCAD'deki gibi ("3(1x150/25)"
         /// satırının ana kesiti "1x150/25"); çoklu iletkende telefondaki birleşik yazım (OG + … / AG + …).
         /// </summary>
         public static string AnaKesit(IList<HatIletkeni> iletkenler)

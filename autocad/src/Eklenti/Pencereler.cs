@@ -1097,7 +1097,7 @@ namespace SebekeHakedis.Eklenti
 
         // ================= Kanal =================
 
-        /// <summary>Kanal zeminleri: katalogdakiler (PROMAGIS sırası), sabit liste ve çizimde geçenler.</summary>
+        /// <summary>Kanal zeminleri: katalogdakiler (AutoCAD sırası), sabit liste ve çizimde geçenler.</summary>
         private static List<string> Zeminler(OrtamVerisi o, string secili)
         {
             var l = new List<string>();
@@ -1352,7 +1352,7 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>
-        /// Eksik malzeme sorgusu (PROMAGIS raporundaki DETAY): hangi elemanlarda hangi ara malzeme aranacak; süzgeç değiştikçe
+        /// Eksik malzeme sorgusu (AutoCAD raporundaki DETAY): hangi elemanlarda hangi ara malzeme aranacak; süzgeç değiştikçe
         /// sonuç listesi yenilenir. Çizimde seç / Excel'e yaz ile kapanır. Son seçimler çizimin ayarlarında saklanır.
         /// </summary>
         public static DetayIslemi Detay(OrtamVerisi o, DetayFiltresi f, out List<DetaySatiri> sonuc)
@@ -1560,7 +1560,7 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>
-        /// Hakediş onayı (PROMAGIS'in onay penceresi gibi): her hakediş için sırayla Kontrol → Hakediş → GIS. Sonraki aşama
+        /// Hakediş onayı (AutoCAD'in onay penceresi gibi): her hakediş için sırayla Kontrol → Hakediş → GIS. Sonraki aşama
         /// işaretlenince öncekiler de işaretlenir, önceki kaldırılınca sonrakiler de kalkar. onaylar yerinde güncellenir.
         /// </summary>
         public static bool Onaylar(OrtamVerisi o, SortedDictionary<int, int> onaylar)
@@ -1573,7 +1573,7 @@ namespace SebekeHakedis.Eklenti
             foreach (var h in p.Hatlar) ekle(h.Hakedis);
             foreach (var c in p.Kanallar) ekle(c.Hakedis);
             foreach (var s in p.Sondajlar) ekle(s.Hakedis);
-            int son = Math.Max(HakedisOnayi.PromagisSayisi, o.Hakedis);
+            int son = Math.Max(HakedisOnayi.SabitOnaySayisi, o.Hakedis);
             foreach (var n in onaylar.Keys) son = Math.Max(son, n);
             foreach (var n in say.Keys) son = Math.Max(son, n);
 
@@ -1913,17 +1913,13 @@ namespace SebekeHakedis.Eklenti
 
                 // Görünüm
                 var gorunum = sayfa();
-                var sembol = Koy(gorunum, new KoyuOnay("Telefonla aynı simgeler (SH_ blokları, 1 ölçek)") { Checked = a.TelefonSembolleri }, 0, 0);
-                Aciklama(gorunum, "Kapalıysa çizimde o tür için kullanılan eski simge bloğu ve ölçeği korunur.", 26, 26, 580, 20);
-                Etiket(gorunum, "Eski blok ölçeği", 0, 60);
-                var olcek = Koy(gorunum, new SayiKutusu(0, 1000, D(a.SembolOlcegi), 2, 0.5m), 0, 80, 120, 30);
-                Aciklama(gorunum, "0 = çizimdekilerle aynı (genellikle 4). Telefon simgeleri her zaman 1 ölçekle konur (1/1000 pafta).", 136, 82, 480, 30);
-                Etiket(gorunum, "Hat etiketi yüksekliği (m)", 0, 122);
-                var etiket = Koy(gorunum, new SayiKutusu(0.05m, 50, D(a.EtiketYuksekligi), 2, 0.1m), 0, 142, 120, 30);
-                Aciklama(gorunum, "Telefonun çizimiyle aynı: 1,8 m (parça metrajı 1,44 m).", 136, 150, 480, 20);
-                Etiket(gorunum, "Direğe yakalama (m)", 0, 184);
-                var yakala = Koy(gorunum, new SayiKutusu(0, 50, D(a.YakalamaMesafesi), 2, 0.5m), 0, 204, 120, 30);
-                Aciklama(gorunum, "Hat ve kanal çizerken elemanın simgesinin üstüne ya da en az bu mesafeye tıklanınca hat elemanın ortasına oturur ve orada parçalanır. 0: yakalama kapalı.", 136, 202, 480, 40);
+                Aciklama(gorunum, "Simgeler her zaman uygulamanın simgeleridir (telefonla aynı, 1 ölçek, 1/1000 pafta).", 0, 0, 600, 20);
+                Etiket(gorunum, "Hat etiketi yüksekliği (m)", 0, 36);
+                var etiket = Koy(gorunum, new SayiKutusu(0.05m, 50, D(a.EtiketYuksekligi), 2, 0.1m), 0, 56, 120, 30);
+                Aciklama(gorunum, "Telefonun çizimiyle aynı: 1,8 m (parça metrajı 1,44 m).", 136, 64, 480, 20);
+                Etiket(gorunum, "Direğe yakalama (m)", 0, 98);
+                var yakala = Koy(gorunum, new SayiKutusu(0, 50, D(a.YakalamaMesafesi), 2, 0.5m), 0, 118, 120, 30);
+                Aciklama(gorunum, "Hat ve kanal çizerken elemanın simgesinin üstüne ya da en az bu mesafeye tıklanınca hat elemanın ortasına oturur ve orada parçalanır. 0: yakalama kapalı.", 136, 116, 480, 40);
 
                 // Metraj
                 var metraj = sayfa();
@@ -1956,13 +1952,11 @@ namespace SebekeHakedis.Eklenti
 
                 a.Karakteristik = kar.SelectedIndex > 0 ? karKodlari[kar.SelectedIndex - 1] : "";
                 a.Koy = koy.Checked;
-                a.TelefonSembolleri = sembol.Checked;
                 a.KatmanOnEki = onEk.Text.Trim();
                 a.GisOnEki = gisOnEki.Text.Trim();
                 a.AktifHakedis = (int)hak.Value;
                 var dom = domlar.Find(r => r.Checked);
                 a.Dom = dom != null ? (int)dom.Tag : 0;
-                a.SembolOlcegi = (double)olcek.Value;
                 a.EtiketYuksekligi = (double)etiket.Value;
                 a.YakalamaMesafesi = (double)yakala.Value;
                 a.YukariYuvarla = yukari.Checked;

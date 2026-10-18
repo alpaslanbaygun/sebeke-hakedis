@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace SebekeHakedis.Cekirdek
 {
-    /// <summary>Durum Tespit raporunu Excel dosyası olarak yazar (PROMAGIS raporuyla aynı sayfa ve sütunlar).</summary>
+    /// <summary>Durum Tespit raporunu Excel dosyası olarak yazar (AutoCAD raporuyla aynı sayfa ve sütunlar).</summary>
     public static class RaporYazici
     {
         public static void Yaz(Proje p, string yol, string surum, Katsayilar k = null)

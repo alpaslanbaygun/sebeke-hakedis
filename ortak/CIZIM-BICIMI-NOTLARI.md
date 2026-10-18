@@ -1,19 +1,19 @@
-# PROMAGIS incelemesi — neyi nasıl yapıyor, bizde ne var, ne alınabilir
+# AutoCAD incelemesi — neyi nasıl yapıyor, bizde ne var, ne alınabilir
 
-17.10.2026'da PROMAGIS'in kurulum dosyaları (menü `PROMAGIS.cuix`, VBA projesi `Promagis2021.dvb`,
-veri dosyası `promagis2021.bin`, `PROMAGIS.mnr`) incelendi. Dosyaların kendisi depoya **konmaz** (üçüncü taraf
+17.10.2026'da AutoCAD'in kurulum dosyaları (menü `menü dosyası (.cuix)`, VBA projesi `menü projesi (.dvb)`,
+veri dosyası `katalog-veri.bin`, `menü kaynakları (.mnr)`) incelendi. Dosyaların kendisi depoya **konmaz** (üçüncü taraf
 yazılım); burada yalnız uyumluluk için gereken bilgi ve çıkarılan dersler tutulur. Kod kopyalanmadı.
 
-## 1. PROMAGIS nasıl kurulu çalışıyor
+## 1. AutoCAD nasıl kurulu çalışıyor
 
 - **AutoCAD VBA** (`.dvb`, 41 modül, ~19 bin satır) + bir `.cuix` menüsü. Komutlar AutoLISP `defun` ile tanımlanıp
   VBA'ya yönlendirilir (`HH` hat çiz, `DD` direk ekle, `TT` trafo ekle, `K` kanal, `SD` yatay sondaj, `BL` bölge,
   `BB` bilgi al, `R` rapor, `TAR` tarife/hakediş ayarları, `KT` katman oluştur, `EK` ek mufu, `BF` birim fiyat,
   `PP` proje araçları (ABONE, BOLGE_AYIRICI, KAPAK blokları), `YY`/`YS` etiket yerleştir, `KY`/`SY` kanal/sondaj
   etiketlerini yenile, `ON` onay, `TXS` yazı ölçeği, `BSC` blok ölçekle).
-- **Katalog = Excel.** `promagis2021.bin`, her baytı 1 ile XOR'lanmış bir `.xlsx`'tir. PROMAGIS bunu Excel'de
+- **Katalog = Excel.** `katalog-veri.bin`, her baytı 1 ile XOR'lanmış bir `.xlsx`'tir. AutoCAD bunu Excel'de
   (parola ile) açar ve adlandırılmış aralıklardan (ör. `AG_DEMİR_GLV`, `KABLO_KANALI`) listeleri çeker. Yani
-  PROMAGIS'in çalışması için bilgisayarda **Excel kurulu olmalı**; birim fiyatlar bu dosyaya girilir (`BF`).
+  AutoCAD'in çalışması için bilgisayarda **Excel kurulu olmalı**; birim fiyatlar bu dosyaya girilir (`BF`).
 - **Rapor da Excel'le** üretilir (COM). Bizde ise katalog JSON olarak gömülü, rapor `.xlsx` doğrudan yazılır;
   telefon için de bu şart.
 - Proje kodları (EK-3 projeleri) 2021 sürümünde şirketin **merkezi SQL Server**'ından çekiliyor
@@ -55,7 +55,7 @@ yüksekliği ×10), `KONTROL` (denetim kipi), `HAK_YETKİ` (hangi hakedişlere y
 
 ## 3. Durum kodları (açık soru kapandı)
 
-| Kod | Anlamı (PROMAGIS Sayfa1) | Fiyat sütunu |
+| Kod | Anlamı (AutoCAD Sayfa1) | Fiyat sütunu |
 | --- | --- | --- |
 | `M+M` | malzeme + montaj (yüklenici) | M+M |
 | `M` | yalnız montaj (malzeme kurumdan) | MON. |
@@ -115,9 +115,9 @@ Blok adına göre izin verilen durumlar: `YENİ_*` → M+M, M, KM, ENH, DM+M, ME
 - Hat cinsine göre katman türü: AG_İLETKEN, ALPEK, KİLOMETRİK_BAKIM → AG_HAV; AG kablolar ve TOP_İLETKEN → AG_YER;
   OG_İLETKEN → OG_HAV; OG kablolar → OG_YER; REKORTMAN → REKORTM; AYDINLATMA_KABLO → AYD_HAT; MÜŞTEREK → MÜŞTEREK_HAT.
 
-## 6. PROMAGIS'te miktarlar nasıl girilir (bizden farkı)
+## 6. AutoCAD'de miktarlar nasıl girilir (bizden farkı)
 
-- **Hat uzunluğu PROMAGIS'te elle girilir** (çizim uzunluğu yalnız bilgi olarak gösterilir); toplam = miktar ×
+- **Hat uzunluğu AutoCAD'de elle girilir** (çizim uzunluğu yalnız bilgi olarak gösterilir); toplam = miktar ×
   metrik ağırlık. Bizde uzunluk geometriden hesaplanır (tam metreye yukarı yuvarlanır) ve telefonda ölçüm vardır.
 - Kanal uzunluğu da elle girilir; hacim yukarıdaki formülle.
 - Direk/trafo/pano: nesnenin kendi pozu (NIT) miktar 1 × metrik ağırlık; bağlı malzemeler (MALZEME) tek tek eklenir.
@@ -129,7 +129,7 @@ Blok adına göre izin verilen durumlar: `YENİ_*` → M+M, M, KM, ENH, DM+M, ME
 - Rapor modülü **hesap yapmaz**: nesnelerin XDATA'sındaki hazır değerleri (miktar, metrik ağırlık, toplam, tutar,
   tarife) bölge / hakediş / durum süzgeciyle listeler ve boş bir `.xlsm`'e aktarır; gruplama, toplamlar, kanal
   paylaştırma, iletken tonajı ve pivot, AutoCAD `Support\pivot.bas` içindeki Excel makrolarıyla (KANAL_AYIR, OGTEL,
-  AGTEL, PivotOluştur, METRAJ) yapılır. Bu makro dosyası elimizde yok; bizim Durum Tespit raporu, PROMAGIS'in
+  AGTEL, PivotOluştur, METRAJ) yapılır. Bu makro dosyası elimizde yok; bizim Durum Tespit raporu, AutoCAD'in
   ürettiği rapor dosyasının KATSAYILAR sayfasından çıkarılan aynı tablolarla (`katsayilar.json`) hesaplar.
 - Raporda yapılan tek hesap: hat / kanal / sondaj için `GIS UZ.` (çizim uzunluğu, 2 ondalık) ve `FARK` (girilen
   miktar − çizim uzunluğu). Bu sütun, elle girilen uzunlukla çizimi karşılaştırmak için — bizde de yararlı olur.
@@ -156,10 +156,10 @@ değiştirilemez; hakediş yetkisi olmayan numaradaki kayıtlar da kilitlidir (`
 Hepsi yapıldı (`serit-ve-stil` dalı); ayrıntı KULLANIM.md › Bölüm 4 ve VERI-MODELI.md.
 
 1. ✓ **Tam katalog**: 2 934 tip `kalemler.json`'da (cins, tip, poz no, metrik ağırlık, birimler, karakteristik +
-   şehir / köy unsuru; fiyatsız). Telefon ve eklenti her PROMAGIS tipini seçebilir.
+   şehir / köy unsuru; fiyatsız). Telefon ve eklenti her AutoCAD tipini seçebilir.
 2. ✓ **Durum kodları**: `KM`, `ENH`, `ME` iki tarafta seçilir; hat etiketleri `/tip\` ve `{tip}`; DM'de KESİK / SÖKÜK.
 3. ✓ **Tarife kuralı**: karakteristik + unsur ayrı; çizim ayarında şehir / köy-bakım anahtarı.
-4. ✓ **Katman stilleri ve görünüm**: telefonun çizim stili (`cizim-stili.json`) iki tarafta aynı; PROMAGIS
+4. ✓ **Katman stilleri ve görünüm**: telefonun çizim stili (`cizim-stili.json`) iki tarafta aynı; AutoCAD
    katman adları korunur.
 5. ✓ **Sıra numarası**: yeni INDEX `AYARLAR/SAYAC`'tan devam eder, sayaç ilerletilir; aktif hakediş `HakNo_Rec`
    ile ortak. Telefon AutoCAD'den gelen kalemin INDEX'ini, hakedişini ve KONTROL'ünü korur.
@@ -168,13 +168,13 @@ Hepsi yapıldı (`serit-ve-stil` dalı); ayrıntı KULLANIM.md › Bölüm 4 ve 
 8. ✓ **Onay akışı**: `SH_ONAY` (`HAK_ONAY/ONAY_DURUM<n>`, Kontrol → Hakediş → GIS, parolasız). Hakediş onayı
    verilen hakediş eklentide kilitlidir (satır düzeyinde; kilitli nesneye açık hakedişte malzeme eklenebilir).
    Denetlenmiş (`KONTROL`) nesnede uyarı. Telefonda onaylanan dönem eklentiye onay olarak gelir.
-   Yapılmayan: PROMAGIS'in parolaları (`KEY`) ve `HAK_YETKİ` bayrakları (eklenti tek kullanıcılı; telefonda roller var).
+   Yapılmayan: AutoCAD'in parolaları (`KEY`) ve `HAK_YETKİ` bayrakları (eklenti tek kullanıcılı; telefonda roller var).
 9. ✓ Pano çıkış şeması (`ANA`/`CON`, öznitelik `C_1..C_8`) ve bina TR hücreleri (`FIDER`): okunur, telefonda ve
    dosyada taşınır, aynen geri yazılır. Düzenleme penceresi yok (ileride istenirse).
 
 ## 9. Bizde olan / olmayan — özet
 
-| Konu | PROMAGIS | Bizde |
+| Konu | AutoCAD | Bizde |
 | --- | --- | --- |
 | Çizimden okuma/yazma (XDATA, katman, blok) | — | var (aynı biçim) |
 | Katalog | 2 982 tip, Excel | 2 934 tip (JSON, gömülü) |

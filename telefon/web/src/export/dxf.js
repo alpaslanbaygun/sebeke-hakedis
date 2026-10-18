@@ -44,12 +44,12 @@ export function dmVaryanti(dmDurum) {
 }
 
 /**
- * Sembol varyantı: durumdan (ekipman ve hat durum kodları → YENI · MEVCUT · DMM · DM · KESIK · SOKUK). PROMAGIS durumu
+ * Sembol varyantı: durumdan (ekipman ve hat durum kodları → YENI · MEVCUT · DMM · DM · KESIK · SOKUK). çizim durumu
  * verilmişse eklentiyle aynı kural: M, M+M, KM, ENH, ME → YENI · DM → DM (KESİK → KESIK, SÖKÜK → SOKUK) · DM+M → DMM ·
  * MEVCUT → MEVCUT.
  */
-export function sembolVaryanti(state, promagisDurumu, dmDurum) {
-  const pd = String(promagisDurumu || '').toUpperCase();
+export function sembolVaryanti(state, cizimDurumu, dmDurum) {
+  const pd = String(cizimDurumu || '').toUpperCase();
   if (pd === 'M' || pd === 'M+M' || pd === 'KM' || pd === 'ENH' || pd === 'ME') return 'YENI';
   if (pd === 'DM') return dmVaryanti(dmDurum);
   if (pd === 'DM+M') return 'DMM';
@@ -81,7 +81,7 @@ export function sembolAilesi(e) {
 /** Ekipmanın blok adı: SH_<aile>_<varyant> (eklentiyle aynı); demontajda türü (KESİK / SÖKÜK) ayrı simgedir. */
 export function sembolBlogu(e) {
   const st = e.kind === 'transformer' || e.kind === 'kiosk' || e.kind === 'substation' ? { yeni: 'YENI', tasinan: 'DMM', demontaj: 'DEMONTAJ' }[e.state] || 'MEVCUT' : e.state;
-  return 'SH_' + sembolAilesi(e) + '_' + sembolVaryanti(st, e.promagisDurumu, (e.attrs || {}).dmDurum);
+  return 'SH_' + sembolAilesi(e) + '_' + sembolVaryanti(st, e.cizimDurumu, (e.attrs || {}).dmDurum);
 }
 
 function blocks(w) {

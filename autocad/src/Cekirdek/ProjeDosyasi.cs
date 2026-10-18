@@ -249,7 +249,7 @@ namespace SebekeHakedis.Cekirdek
                     foreach (var kv in ek)
                     {
                         var d = kv.Value as List<object>;
-                        if (d == null || Array.IndexOf(PromagisYazici.EkUygulamalar, kv.Key) < 0) continue;
+                        if (d == null || Array.IndexOf(NesneYazici.EkUygulamalar, kv.Key) < 0) continue;
                         var l = new List<string>();
                         foreach (var x in d) l.Add(Convert.ToString(x, CultureInfo.InvariantCulture) ?? "");
                         if (l.Count > 0) e.EkVeri[kv.Key] = l;

@@ -8,18 +8,18 @@ namespace SebekeHakedis.Cekirdek
     public sealed class KatmanStil
     {
         public string Anahtar = "", Telefon = "", Cizgi = "";
-        public List<string> Promagis = new List<string>();
+        public List<string> KatmanTurleri = new List<string>();
         public short Aci = 7, AciYeni = -1, AciDmm = -1;
     }
 
     /// <summary>
     /// Ortak çizim stili (ortak/katalog/cizim-stili.json): telefonun DXF çıktısıyla birebir aynı renkler, çizgi tipleri,
-    /// yazı yükseklikleri ve etiket konumları. Eklenti katman adlarında PROMAGIS düzenini korur, görünümü buradan alır.
+    /// yazı yükseklikleri ve etiket konumları. Eklenti katman adlarında AutoCAD düzenini korur, görünümü buradan alır.
     /// </summary>
     public static class CizimStili
     {
         private static Dictionary<string, KatmanStil> _katmanlar;
-        private static Dictionary<string, KatmanStil> _promagisTuru;
+        private static Dictionary<string, KatmanStil> _katmanTuru;
         private static Dictionary<string, string> _elemanKatmani, _digerAileleri, _direkGerilimi, _hatKatmani;
         private static Dictionary<string, short[]> _direkRenkleri;
         private static Dictionary<string, double[]> _cizgiTipleri;
@@ -39,7 +39,7 @@ namespace SebekeHakedis.Cekirdek
             var kok = Json.Oku(json) as JsonNesne;
             if (kok == null) throw new InvalidOperationException("cizim-stili.json okunamadı");
             var katmanlar = new Dictionary<string, KatmanStil>(StringComparer.Ordinal);
-            var promagis = new Dictionary<string, KatmanStil>(StringComparer.Ordinal);
+            var katmanTurleri = new Dictionary<string, KatmanStil>(StringComparer.Ordinal);
             var kn = kok.Nesne("katmanlar");
             if (kn == null) throw new InvalidOperationException("cizim-stili.json: 'katmanlar' yok");
             foreach (var kv in kn)
@@ -51,8 +51,8 @@ namespace SebekeHakedis.Cekirdek
                     Anahtar = kv.Key, Telefon = o.Metin("telefon"), Cizgi = o.Metin("cizgi"),
                     Aci = (short)o.Tam("aci", 7), AciYeni = (short)o.Tam("aciYeni", -1), AciDmm = (short)o.Tam("aciDmm", -1),
                 };
-                var pd = o.Dizi("promagis");
-                if (pd != null) foreach (var p in pd) { var s = Convert.ToString(p, CultureInfo.InvariantCulture); if (!string.IsNullOrEmpty(s)) { k.Promagis.Add(s); promagis[s] = k; } }
+                var pd = o.Dizi("katmanTurleri");
+                if (pd != null) foreach (var p in pd) { var s = Convert.ToString(p, CultureInfo.InvariantCulture); if (!string.IsNullOrEmpty(s)) { k.KatmanTurleri.Add(s); katmanTurleri[s] = k; } }
                 katmanlar[kv.Key] = k;
             }
             var olcek = kok.Nesne("olcek");
@@ -109,7 +109,7 @@ namespace SebekeHakedis.Cekirdek
             _ekran = kok.Nesne("ekran");
             _cizgiTipleri = ct;
             _direkRenkleri = dr;
-            _promagisTuru = promagis;
+            _katmanTuru = katmanTurleri;
             _katmanlar = katmanlar;
         }
 
@@ -158,25 +158,25 @@ namespace SebekeHakedis.Cekirdek
             return !string.IsNullOrEmpty(ad) && _cizgiTipleri.TryGetValue(ad, out d) ? d : null;
         }
 
-        /// <summary>PROMAGIS katman adından stil: "SC_2.HAK.AG_YER_HAT" → KABLO, "SC_DEMONTAJ" → DEMONTAJ, "GPS" → OLCU.</summary>
-        public static KatmanStil PromagisKatmani(string katman)
+        /// <summary>AutoCAD katman adından stil: "SC_2.HAK.AG_YER_HAT" → KABLO, "SC_DEMONTAJ" → DEMONTAJ, "GPS" → OLCU.</summary>
+        public static KatmanStil KatmanTuruStili(string katman)
         {
             Denetle();
             katman = katman ?? "";
             int i = katman.IndexOf(".HAK.", StringComparison.Ordinal);
             string tur = i >= 0 ? katman.Substring(i + 5) : "";
             KatmanStil k;
-            if (tur.Length > 0 && _promagisTuru.TryGetValue(tur, out k)) return k;
-            foreach (var kv in _promagisTuru)
+            if (tur.Length > 0 && _katmanTuru.TryGetValue(tur, out k)) return k;
+            foreach (var kv in _katmanTuru)
                 if (katman == kv.Key || katman.EndsWith("_" + kv.Key, StringComparison.Ordinal)) return kv.Value;
             return null;
         }
 
-        /// <summary>Yeni katmanın rengi ve çizgi tipi (PromagisYazici.KatmanStili bunu kullanır).</summary>
+        /// <summary>Yeni katmanın rengi ve çizgi tipi (NesneYazici.KatmanStili bunu kullanır).</summary>
         public static bool KatmanStili(string katman, out short renk, out string cizgiTipi)
         {
             renk = 7; cizgiTipi = "";
-            var k = Yuklu ? PromagisKatmani(katman) : null;
+            var k = Yuklu ? KatmanTuruStili(katman) : null;
             if (k == null) return false;
             renk = k.Aci;
             cizgiTipi = k.Cizgi == "CONTINUOUS" ? "" : (k.Cizgi ?? "");

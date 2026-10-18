@@ -5,7 +5,7 @@
 - **Telefon uygulaması VOLT-EDAŞ Saha** (sahada): direk, trafo, SDK, pano koyma; hat ve kanal çizme; malzeme,
   fotoğraf, not; metraj, Yeşil Defter, hakediş ve teslim paketi. Ayrıntılı kılavuz:
   [telefon/docs/KULLANIM-KILAVUZU.md](telefon/docs/KULLANIM-KILAVUZU.md).
-- **AutoCAD eklentisi** (büroda): PROMAGIS çizimlerini okuma, Durum Tespit raporu, telefona gönderme,
+- **AutoCAD eklentisi** (büroda): AutoCAD çizimlerini okuma, Durum Tespit raporu, telefona gönderme,
   telefondan alma ve çizim araçları (direk, hat, kanal, bölge, nokta alma, malzeme).
 
 Dosya telefon ile bilgisayar arasında **Google Drive** üzerinden taşınır. Böylece hangi bilgisayarda
@@ -41,13 +41,13 @@ Güncellemek için yeni zip ile aynı adımları tekrarlayın. Kaldırmak için 
 
 ## 2. Genel iş akışı
 
-### A. Elinizde bir PROMAGIS çizimi varsa
+### A. Elinizde bir AutoCAD çizimi varsa
 
 1. **AutoCAD**: çizimi açın › **ŞEBEKE HAKEDİŞ › Telefon › Telefona Gönder**.
    Dosyayı Google Drive klasörünüze kaydedin (ör. `Google Drive\Şebeke Hakediş\`).
    *Bilgisayarda Google Drive uygulaması yoksa dosyayı drive.google.com'a sürükleyip bırakın.*
 2. **Telefon**: uygulama › **Projeler › AutoCAD dosyasından proje al** › Drive › dosyayı seçin › **Al**.
-   Proje, PROMAGIS'teki direk, hat, kanal ve bölgeleriyle açılır. Direk tipleri telefonun kataloğundan bulunur;
+   Proje, AutoCAD'deki direk, hat, kanal ve bölgeleriyle açılır. Direk tipleri telefonun kataloğundan bulunur;
    bulunamayan malzemeler kataloğa "AutoCAD" kategorisiyle eklenir (Kontrol listesinde görünür, Poz Kataloğu'ndan düzeltilebilir).
 3. Sahada çalışın (Bölüm 3).
 4. İş bitince **Dışa Aktar › AutoCAD proje dosyası (.sebeke.json)** seçili olsun › **DIŞA AKTAR** ya da
@@ -68,9 +68,9 @@ Güncellemek için yeni zip ile aynı adımları tekrarlayın. Kaldırmak için 
 1. **Telefon**: **Projeler › Yeni proje**. Proje adını, kodunu ve **3° dilimi (DOM)** girin
    (Elazığ, Malatya, Erzincan: 39°).
 2. Sahada çalışın (Bölüm 3), sonra **Dışa Aktar › AutoCAD proje dosyası** ile Drive'a gönderin.
-3. **AutoCAD**: yeni boş bir çizim açın › **Telefondan Al**. Her şey PROMAGIS katman ve bilgi biçiminde
+3. **AutoCAD**: yeni boş bir çizim açın › **Telefondan Al**. Her şey AutoCAD katman ve bilgi biçiminde
    çizilir; direk, trafo ve SDK simgeleri lejanttaki gibidir (beton direk daire, demir direk kare, yeni dolu,
-   mevcut boş, sök-tak yarım, demontaj çapraz). Bu çizimi PROMAGIS çizimi gibi kullanabilirsiniz.
+   mevcut boş, sök-tak yarım, demontaj çapraz). Bu çizimi AutoCAD çizimi gibi kullanabilirsiniz.
 4. Rapor: **Rapor › Durum Tespit**. Telefonda tek bölge (projenin kendisi) vardır; alt projeler gerekiyorsa
    AutoCAD'de **Bölge** ile çizin, sonraki alışverişlerde korunur.
 
@@ -92,9 +92,9 @@ Ayrıntı için telefon kılavuzuna bakın; AutoCAD ile birlikte çalışırken 
 - **Konum kaynağı**: Ayarlar › GNSS. Bluetooth alıcı + NTRIP (TUSAGA-Aktif ya da kayıtlı sabit istasyon profili),
   ya da telefon GPS'i. Üst çubuk çözümü gösterir (RTK FIX bekleyin).
 - **Obje alma**: Harita › **DİREK / TRAFO / DİĞER** › tür, tip, durum (Yeni, Mevcut, DMM, Demontaj, İleride) ›
-  **ALIM**. Direk tipi adları AutoCAD'e PROMAGIS yazımıyla gider (ör. `GD-10 (3 AWG)` → `G-D-10 (sw)`, `9.3/8` → `9,3/8`).
+  **ALIM**. Direk tipi adları AutoCAD'e AutoCAD yazımıyla gider (ör. `GD-10 (3 AWG)` → `G-D-10 (sw)`, `9.3/8` → `9,3/8`).
 - **Durumlar**: Yeni → M (poz temini yüklenici ise M+M), Mevcut → MEVCUT, Demontaj → DM, DMM → DM+M.
-  Objenin ekranında PROMAGIS kodu ayrıca seçilebilir: **KM** (kurum malzemesi, yüklenici montajı), **ENH**
+  Objenin ekranında AutoCAD kodu ayrıca seçilebilir: **KM** (kurum malzemesi, yüklenici montajı), **ENH**
   (kilometrik bedelli iş), **ME** (mutabakat eksiği); demontajda **KESİK / SÖKÜK**. AutoCAD'den gelen kod korunur.
   **"İleride" durumundaki objeler AutoCAD dosyasına yazılmaz.**
 - **Hat**: başlangıç ve bitiş direğine dokunun; iletken / kablo tipini seçin. Yeraltında kaplama (toprak, tüvenan,
@@ -105,15 +105,15 @@ Ayrıntı için telefon kılavuzuna bakın; AutoCAD ile birlikte çalışırken 
   aynı nesneler güncellenir, yenileri eklenir.
 - **Hat parçaları**: AutoCAD'de hat her direkte / SDK'da biter (parça parça). Telefonda bunlar tek hat olarak görünür;
   geri gönderince parçalar ve numaraları aynen döner.
-- **AutoCAD (PROMAGIS) onayları**: Hakediş ekranında görünür (Kontrol / Hakediş / GIS). AutoCAD'de onaylı hakedişe
+- **AutoCAD (AutoCAD) onayları**: Hakediş ekranında görünür (Kontrol / Hakediş / GIS). AutoCAD'de onaylı hakedişe
   dokunan değişiklikler orada aktarılmaz.
 
 ---
 
 ## 4. AutoCAD'de çalışma
 
-Hepsi şeritteki **ŞEBEKE HAKEDİŞ** sekmesindedir. Çizilen her şey PROMAGIS biçimindedir (aynı katmanlar ve
-bilgiler); PROMAGIS çizimleriyle karışık kullanılabilir, raporda aynı okunur, PROMAGIS'te de açılır.
+Hepsi şeritteki **ŞEBEKE HAKEDİŞ** sekmesindedir. Çizilen her şey çizim biçimindedir (aynı katmanlar ve
+bilgiler); AutoCAD çizimleriyle karışık kullanılabilir, raporda aynı okunur, AutoCAD'de de açılır.
 
 ### Şerit (soldan sağa)
 
@@ -242,39 +242,39 @@ Beton / ağaç direk daire, demir direk kare. Her durumun simgesi ayrıdır:
 | Demontaj, SÖKÜK | boş + çarpı `X` |
 
 Demontaj simgeleri sarı çizilir. Simgeler metre cinsindendir, 1 ölçekle konur. Eski bir çizimi bu görünüme çevirmek
-için **Telefon Görünümü** (`SH_GORUNUM`); değişmeyen PROMAGIS bloklarına dokunulmaz. PROMAGIS simgeleri istenirse
+için **Telefon Görünümü** (`SH_GORUNUM`); değişmeyen AutoCAD bloklarına dokunulmaz. AutoCAD simgeleri istenirse
 **Çizim Ayarları › Görünüm**.
 
 ### Diğer düğmeler
 
 | Düğme | Komut | Ne yapar |
 | --- | --- | --- |
-| Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 934 kalemlik PROMAGIS kataloğu). Hatta iletken eklerseniz hattın ikinci iletkeni olur (metrajı hattın boyu). |
+| Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 934 kalemlik AutoCAD kataloğu). Hatta iletken eklerseniz hattın ikinci iletkeni olur (metrajı hattın boyu). |
 | Toplu Malzeme | `SH_TOPLUMALZEME` | Seçilen bütün direklere (trafo, SDK…) aynı malzemeleri birden ekler. |
 | Malzeme Hafızası | — | Açıkken son elemanın malzemeleri aynı tipteki yeni elemana kendiliğinden eklenir; tıklayınca kapanır / açılır. |
 | Metraj | `SH_METRAJ` | Seçilen hat / kanal / sondajın metrajını çizim uzunluğundan yeniden hesaplar (önce listeyi gösterip sorar). |
 | Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (simge, renk, etiket, parça metrajları). |
-| Aktif Hakediş | `SH_HAKEDIS` | Aktif hakediş: yeni çizilenler bu hakedişin katmanlarına (`SC_3.HAK.…`) konur. PROMAGIS'in aktif hakedişiyle ortaktır. |
-| Hakediş Onayı | `SH_ONAY` | Her hakediş için sırayla **Kontrol → Hakediş → GIS** onayı (PROMAGIS'teki onay kaydı; PROMAGIS aynı işaretleri görür). **Hakediş onayı verilen hakediş kilitlenir**: o hakedişe yeni nesne çizilemez, malzeme satırları gri görünür ve değiştirilemez / silinemez, metraj güncellemesi o nesneleri atlar, telefondan gelen değişiklik o hakedişe dokunuyorsa aktarılmaz. Kilitli direğe açık hakedişte yeni malzeme eklemek serbesttir. |
+| Aktif Hakediş | `SH_HAKEDIS` | Aktif hakediş: yeni çizilenler bu hakedişin katmanlarına (`SC_3.HAK.…`) konur. AutoCAD'in aktif hakedişiyle ortaktır. |
+| Hakediş Onayı | `SH_ONAY` | Her hakediş için sırayla **Kontrol → Hakediş → GIS** onayı (AutoCAD'deki onay kaydı; AutoCAD aynı işaretleri görür). **Hakediş onayı verilen hakediş kilitlenir**: o hakedişe yeni nesne çizilemez, malzeme satırları gri görünür ve değiştirilemez / silinemez, metraj güncellemesi o nesneleri atlar, telefondan gelen değişiklik o hakedişe dokunuyorsa aktarılmaz. Kilitli direğe açık hakedişte yeni malzeme eklemek serbesttir. |
 | Çizim Ayarları | `SH_AYARLAR` | Katman / GIS ön eki, koordinat dilimi, **tarife (şehir / köy-bakım ve karakteristik)**, sembol takımı, etiket yüksekliği, direğe yakalama mesafesi, metraj yuvarlama ve ek paylar, kanal varsayılanları. Çizimin içinde saklanır. |
-| Bölge | `SH_BOLGE` | Alt proje sınırı: köşeleri gösterin ya da **Nesne** deyip var olan kapalı çizgiyi seçin; ad, proje kodu ve **grup kodu**. PROMAGIS'in bölge listesine de kaydedilir. |
+| Bölge | `SH_BOLGE` | Alt proje sınırı: köşeleri gösterin ya da **Nesne** deyip var olan kapalı çizgiyi seçin; ad, proje kodu ve **grup kodu**. AutoCAD'in bölge listesine de kaydedilir. |
 | Nokta Al | `SH_NOKTAAL` | Ölçü noktalarını dosyadan alır (telefonun "Noktalar (CSV)" çıktısı ya da Ad, Y, X, Z, Kod dosyası). |
 | Telefondan Al | `SH_PROJEAL` | Bölüm 2. Üç dosya türü açılır: `.sebeke.json`, `.volt.json`, teslim paketi `.zip`. |
 | Telefona Gönder | `SH_ICEAL` | Bölüm 2. `.sebeke.json` (varsayılan) ya da `.volt.json` olarak kaydeder (onaylar da gider). |
-| Durum Tespit | `SH_RAPOR` | Bu çizimden Excel rapor (PROMAGIS'in sayfaları; ayrıca **DETAY** sayfası: her elemanın ara malzemeleri satır satır). |
+| Durum Tespit | `SH_RAPOR` | Bu çizimden Excel rapor (AutoCAD'in sayfaları; ayrıca **DETAY** sayfası: her elemanın ara malzemeleri satır satır). |
 | Dosyadan Rapor | `SH_PROJERAPOR` | Bir proje dosyasından Excel rapor (çizim açmadan; telefon dosyaları da olur). |
 | Proje Özeti | `SH_OZET` | Bölge, eleman, hat, kanal sayıları ve hakediş onayları. |
-| Eksik Malzeme | `SH_DETAY` | PROMAGIS'teki DETAY sorgusu: ör. "topraklaması **olmayan** AG direkleri". Hangi elemanlarda (ana cins, tip, durum, bölge) hangi ara malzemenin (cins, tip, durum, hakediş) aranacağını seçin; **olmayanlar / olanlar / hepsi**. Sonuç pencerede listelenir; **Çizimde seç** bulunan elemanları seçer, **Excel'e yaz** ayrıca DETAY dosyasını yazar. |
+| Eksik Malzeme | `SH_DETAY` | AutoCAD'deki DETAY sorgusu: ör. "topraklaması **olmayan** AG direkleri". Hangi elemanlarda (ana cins, tip, durum, bölge) hangi ara malzemenin (cins, tip, durum, hakediş) aranacağını seçin; **olmayanlar / olanlar / hepsi**. Sonuç pencerede listelenir; **Çizimde seç** bulunan elemanları seçer, **Excel'e yaz** ayrıca DETAY dosyasını yazar. |
 
-### PROMAGIS ile ortak kayıtlar
+### AutoCAD ile ortak kayıtlar
 
-Eklenti PROMAGIS'in çizimde tuttuğu kayıtları da okur ve yazar; böylece aynı çizimde iki program sırayla kullanılabilir:
+Eklenti AutoCAD'in çizimde tuttuğu kayıtları da okur ve yazar; böylece aynı çizimde iki program sırayla kullanılabilir:
 
-- **Kalem sırası (INDEX)**: yeni kalemlerin sıra numarası PROMAGIS'in sayacıyla (`AYARLAR/SAYAC`) devam eder,
+- **Kalem sırası (INDEX)**: yeni kalemlerin sıra numarası AutoCAD'in sayacıyla (`AYARLAR/SAYAC`) devam eder,
   sayaç ilerletilir. Telefondan dönen kalemler numaralarını korur.
-- **Aktif hakediş**: PROMAGIS'te seçilen hakediş eklentide de aktif olur; eklentide seçilen PROMAGIS'e yazılır.
-- **Bölgeler**: eklentinin çizdiği ve telefondan gelen bölgeler PROMAGIS'in bölge listesine eklenir (raporunda görünür).
-- **Pano çıkış şeması ve trafo hücreleri**: PROMAGIS'te girilen bilgiler eklentide ve telefonda korunur, aynen geri yazılır.
+- **Aktif hakediş**: AutoCAD'de seçilen hakediş eklentide de aktif olur; eklentide seçilen AutoCAD'e yazılır.
+- **Bölgeler**: eklentinin çizdiği ve telefondan gelen bölgeler AutoCAD'in bölge listesine eklenir (raporunda görünür).
+- **Pano çıkış şeması ve trafo hücreleri**: AutoCAD'de girilen bilgiler eklentide ve telefonda korunur, aynen geri yazılır.
 - **KONTROL (denetlendi) işareti**: korunur; denetlenmiş nesnenin malzemeleri açılırken sorulur.
 - **Hakediş onayları**: bkz. Hakediş Onayı.
 
