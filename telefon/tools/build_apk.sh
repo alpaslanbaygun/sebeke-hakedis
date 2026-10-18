@@ -1,5 +1,5 @@
 #!/bin/bash
-# VOLT-EDAŞ Saha APK üretimi (Gradle'sız): web paketi → aapt2 → ecj → d8 → hizalama → apksigner
+# Şebeke-M (eski adı VOLT-EDAŞ Saha) APK üretimi (Gradle'sız): web paketi → aapt2 → ecj → d8 → hizalama → apksigner
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 T="${TOOLS:-/home/claude/tools}"
@@ -25,7 +25,7 @@ python3 "$ROOT/tools/pack_apk.py" "$B/base.apk" "$B/dex" "$B/unsigned.apk" "asse
 if [ ! -f "$KS" ]; then keytool -genkeypair -keystore "$KS" -storepass "$KSPASS" -keypass "$KSPASS" -alias voltsaha -keyalg RSA -keysize 3072 -validity 12000 -dname "CN=VOLT-EDAS Saha, L=Elazig, C=TR" 2>&1 | grep -v JAVA_TOOL || true; fi
 echo "6/6 imzalama (v2+v3)"
 VER=$(grep -o 'versionName="[^"]*"' "$ROOT/android/AndroidManifest.xml" | cut -d'"' -f2)
-APK="$OUT/VOLT-EDAS-Saha-$VER.apk"
+APK="$OUT/Sebeke-M-$VER.apk"
 java -jar "$SIGNER" sign --ks "$KS" --ks-pass "pass:$KSPASS" --key-pass "pass:$KSPASS" --ks-key-alias voltsaha --min-sdk-version 26 --out "$APK" "$B/unsigned.apk" 2>&1 | grep -v JAVA_TOOL || true
 java -jar "$SIGNER" verify --print-certs "$APK" 2>&1 | grep -v JAVA_TOOL | head -4
 "$AAPT2" dump badging "$APK" | head -3

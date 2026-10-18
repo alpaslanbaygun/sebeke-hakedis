@@ -115,7 +115,7 @@ export function sebekeModel(ps, opts = {}) {
   const dom = +crs.cm || +(sb.dom) || 39;
   const datum = /turef|itrf/i.test(crs.datum || '') || !crs.datum ? 'ITRF96' : crs.datum;
   const sp = SH.yeniProje({ ad: project.name, dom, hakedis: aktifHakedis(data.periods), katmanOnEki: opts.katmanOnEki || sb.katmanOnEki || 'SC', gisOnEki: opts.gisOnEki || sb.gisOnEki || sb.katmanOnEki || 'SC' });
-  sp.olusturan = 'VOLT-EDAŞ Saha';
+  sp.olusturan = 'Şebeke-M (telefon)';
   sp.proje.kaynak = sb.kaynak || 'telefon';
   sp.proje.koordinat.datum = datum;
   sp.proje.kod = project.code || '';
@@ -282,7 +282,7 @@ export function sebekeModel(ps, opts = {}) {
 
 /** Açık projeyi .sebeke.json metnine çevirir. */
 export function sebekeYaz(ps, opts = {}) {
-  return SH.projeYaz(sebekeModel(ps, opts), 'VOLT-EDAŞ Saha', opts.girintili !== false);
+  return SH.projeYaz(sebekeModel(ps, opts), 'Şebeke-M (telefon)', opts.girintili !== false);
 }
 
 /** Hattı bağlantı düğümlerinden (ekipmanı olan noktalar) parçalara böler; ekipmansız köşeler parçanın içinde kalır. */
@@ -872,7 +872,7 @@ async function autocadPozu(ps, k) {
     id: ps.cat.stdId + ':' + kod, stdId: ps.cat.stdId, servis: kod, pozNo: null, name: k.tanim + ' (' + k.cins + ')', unit: birimVolt(k.birim),
     kgPerUnit: rapor === 'kg' && +k.katsayi > 0 ? +k.katsayi : null, supply: k.durum === 'M+M' ? 'Y' : 'Ş', montaj: true, demontaj: true, dmm: true, kgGroup: '',
     category: 'AutoCAD', bfPoz: null, priceMaterial: null, priceLabor: null, priceUnit: null, inGreenBook: false, validFrom: ps.cat.std.validFrom, validTo: ps.cat.std.validTo,
-    source: 'AutoCAD dosyasından (PROMAGIS kalemi)', verified: false, isKgGroup: false, userAdded: true,
+    source: 'AutoCAD dosyasından (eklenti kalemi)', verified: false, isKgGroup: false, userAdded: true,
     sebeke: { cins: k.cins, tanim: k.tanim, birim: k.birim, katsayi: k.katsayi, tarife: k.tarife }
   };
   const saved = await ps.ds.putStd('poz', row, 'AutoCAD kalemi kataloğa eklendi: ' + k.tanim);
@@ -892,7 +892,7 @@ function pozBul(cat, k) {
 
 /** Telefonun tam proje dosyası: ham veri + türetilmiş sonuçlar + AutoCAD için hazır 'sebeke' bölümü. */
 export function voltProjeYaz(ps, opts = {}) {
-  const full = { format: VOLT_BICIM, exportedAt: new Date().toISOString(), app: 'VOLT-EDAŞ Saha', standard: ps.cat.std, project: ps.p, data: {} };
+  const full = { format: VOLT_BICIM, exportedAt: new Date().toISOString(), app: 'Şebeke-M', standard: ps.cat.std, project: ps.p, data: {} };
   for (const s of ['points', 'equipment', 'lines', 'materials', 'photos', 'periods', 'workPrograms', 'stakeouts', 'revisions', 'surveySessions', 'gnssObservations', 'documents']) full.data[s] = ps.data[s] || [];
   full.derived = { spans: ps.result.spans, quantities: ps.result.quantities, issues: ps.result.issues, signature: ps.result.signature };
   full.sebeke = JSON.parse(sebekeYaz(ps, opts));

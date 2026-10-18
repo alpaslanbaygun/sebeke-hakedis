@@ -1,4 +1,4 @@
-// Web paketini üretir: dist/www (APK assets) — app.js + app.css + fonts + seed + index.html
+// Web paketini üretir: dist/www (APK assets) — app.js + app.css + fonts + seed + assets (logo) + index.html
 // --web ile: dist/web (tarayıcı / ofis sürümü). index.html tam sayfa (yerel deneme ve kendi sunucun için), page.html yayın parçası.
 import * as esbuild from 'esbuild';
 import fs from 'node:fs';
@@ -17,6 +17,9 @@ const r = await esbuild.build({
 });
 for (const f of fs.readdirSync(path.join(root, 'fonts'))) fs.copyFileSync(path.join(root, 'fonts', f), path.join(out, 'fonts', f));
 fs.copyFileSync(path.join(root, 'seed/standard-tedas-2026.json'), path.join(out, 'seed/standard-tedas-2026.json'));
+// Şebeke-M logosu ve simgeleri (açılış, üst çubuk, hakkında)
+fs.mkdirSync(path.join(out, 'assets'), { recursive: true });
+for (const f of fs.readdirSync(path.join(root, 'assets'))) fs.copyFileSync(path.join(root, 'assets', f), path.join(out, 'assets', f));
 if (WEB) {
   const ver = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version + '-web';
   const page = fs.readFileSync(path.join(root, 'web.html'), 'utf8').replace('__VERSION__', ver);

@@ -12,7 +12,7 @@ export function PromagisDurum({ d, set, setA, trafo }) {
   const setS = (v) => set({ sebeke: Object.assign({}, d.sebeke || {}, { durum: v || undefined }) });
   const dm = ['DEMONTAJ', 'DMM', 'demontaj', 'tasinan'].includes(d.state);
   return html`<div class="grid2">
-    <div class="fld"><label>PROMAGIS durumu (AutoCAD)</label><${Sel} value=${cur} options=${[['', 'Otomatik · ' + oto], ...sec]} onChange=${(v) => setS(v)} /></div>
+    <div class="fld"><label>Hakediş durum kodu (AutoCAD)</label><${Sel} value=${cur} options=${[['', 'Otomatik · ' + oto], ...sec]} onChange=${(v) => setS(v)} /></div>
     ${dm && setA ? html`<div class="fld"><label>Demontaj türü</label><${Seg} value=${(d.attrs || {}).dmDurum || ''} options=${ESLESME.dmDurumlari.map((k) => [k, k || '—'])} onChange=${(v) => setA({ dmDurum: v })} /></div>` : null}
   </div>`;
 }

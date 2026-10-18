@@ -28,7 +28,7 @@ MOCK = r"""
   M.phoneStop = (id) => reply(id, true);
   M.fileBegin = (id, a) => { const k='f'+Math.random(); files[k]={ name: a.name, n: 0, action: a.action }; reply(id, k); };
   M.fileChunk = (id, a) => { files[a.id].n += atob(a.b64).length; reply(id, 1); };
-  M.fileEnd = (id, a) => { window.__mock.saved.push(files[a.id]); reply(id, { uri: 'İndirilenler/VOLT-EDAS/' + files[a.id].name }); };
+  M.fileEnd = (id, a) => { window.__mock.saved.push(files[a.id]); reply(id, { uri: 'İndirilenler/Sebeke-M/' + files[a.id].name }); };
   M.printHtml = (id) => reply(id, true); M.keepScreenOn = (id) => reply(id, true); M.vibrate = (id) => reply(id, true);
   window.VoltNative = {}; for (const k of Object.keys(M)) window.VoltNative[k] = rec(k);
   window.__mockMove = (dN, dE) => { lat += dN/111320; lon += dE/(111320*Math.cos(lat*Math.PI/180)); };

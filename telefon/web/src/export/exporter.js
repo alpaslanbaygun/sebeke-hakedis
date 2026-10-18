@@ -13,7 +13,7 @@ import { HAK_STATUSES, HAK_ORDER } from '../core/schema.js';
 import { sebekeYaz, voltProjeYaz } from '../interop/sebeke.js';
 
 export const FORMATS = {
-  sebeke: { label: 'AutoCAD proje dosyası', ext: '.sebeke.json', desc: 'AutoCAD eklentisi "Telefondan Al" ile açar: direk, hat, kanal ve malzemeler PROMAGIS biçiminde (Durum Tespit raporu için)' },
+  sebeke: { label: 'AutoCAD proje dosyası', ext: '.sebeke.json', desc: 'AutoCAD eklentisi "Telefondan Al" ile açar: direk, hat, kanal ve malzemeler eklentinin biçiminde (Durum Tespit raporu için)' },
   voltjson: { label: 'Telefon proje dosyası', ext: '.volt.json', desc: 'Projenin tam yedeği (tüm kayıtlar) + AutoCAD bölümü; eklenti ve telefon bunu açar' },
   dxf: { label: 'AutoCAD DXF', ext: '.dxf', desc: 'Lejant katmanları, bloklar, ACI renkleri, çizgi tipleri, yazılar · 1/1000' },
   ncn: { label: 'Netcad NCN', ext: '.ncn', desc: 'Nokta adı · Y · X · Z · kod (NCZ kapalı formattır; Netcad DXF+NCN içe alır)' },
@@ -146,7 +146,7 @@ async function deliveryPackage(ps, model, base, opts) {
   const t = ps.data.periods.length ? ps.periodTable() : null;
   add('RAPORLAR/' + base + '_rapor.html', buildReportHTML(model, { period: t }));
   // Manifest (SHA-256)
-  const lines = ['VOLT-EDAŞ Saha · proje teslim paketi', 'Proje: ' + ps.p.name + ' (' + (ps.p.code || '-') + ')', 'Standart: ' + ps.cat.std.name, 'CRS: ' + model.crs.label + (model.crs.epsg ? ' · EPSG:' + model.crs.epsg : ''), 'Üretim: ' + new Date().toISOString(), 'Veri imzası: ' + ps.result.signature, 'Kontrol: ' + ps.result.issues.filter((i) => i.severity === 'error').length + ' hata, ' + ps.result.issues.filter((i) => i.severity === 'warn').length + ' uyarı', '', 'SHA-256  boyut  dosya'];
+  const lines = ['Şebeke-M · proje teslim paketi', 'Proje: ' + ps.p.name + ' (' + (ps.p.code || '-') + ')', 'Standart: ' + ps.cat.std.name, 'CRS: ' + model.crs.label + (model.crs.epsg ? ' · EPSG:' + model.crs.epsg : ''), 'Üretim: ' + new Date().toISOString(), 'Veri imzası: ' + ps.result.signature, 'Kontrol: ' + ps.result.issues.filter((i) => i.severity === 'error').length + ' hata, ' + ps.result.issues.filter((i) => i.severity === 'warn').length + ' uyarı', '', 'SHA-256  boyut  dosya'];
   for (const f of files) lines.push(((await sha256Hex(f.data)) || '-') + '  ' + f.data.length + '  ' + f.name);
   add('PROJECT_INFO/MANIFEST.txt', lines.join('\r\n') + '\r\n');
   const root = 'PROJECT_' + projectFolder(ps.p) + '/';

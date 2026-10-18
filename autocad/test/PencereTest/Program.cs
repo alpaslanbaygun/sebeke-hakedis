@@ -411,8 +411,19 @@ namespace SebekeHakedis.PencereTest
             Dene("22-ileti", () =>
             {
                 var r = KoyuMesaj.Goster("Bu nesne denetlenmiş (KONTROL işaretli). Değiştirirseniz denetim yeniden gerekir.\n\nYine de malzemeleri açılsın mı?",
-                    "Şebeke Hakediş", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2, Goster);
+                    "Şebeke-M", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2, Goster);
                 Esit(DialogResult.No, r, "ileti: varsayılan düğme Hayır");
+            });
+
+            // Hakkında: Şebeke-M logosu, sürüm, komut listesi
+            Esit(true, Marka.Logo != null && Marka.Simge(20) != null && Marka.SeritSimgesi(32) != null, "marka: logo ve simgeler gömülü");
+            bool yazildi = false;
+            Dene("24-hakkinda", () => Pencereler.Hakkinda("0.1.99", "AutoCAD R25.0 · .NET 8", () => yazildi = true), f =>
+            {
+                Bul<Button>(f, b => b.Text == "Komut satırına yaz").PerformClick();
+                Esit(true, yazildi, "hakkında: komut listesi yazılır");
+                var g = Bul<DataGridView>(f, x => true);
+                Esit(true, g != null && g.Rows.Count > KomutRehberi.Liste.Length, "hakkında: komutlar gruplu listelenir");
             });
 
             // Şerit menü önizlemesi (AutoCAD olmadan; aynı veri ve simgelerle)

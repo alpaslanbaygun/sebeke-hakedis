@@ -141,7 +141,10 @@ export function SettingsScreen() {
     <div class="sect">Test / eğitim</div>
     <div class="card stack"><div class="note">Simülatör gerçek alıcı yokken arayüzü denemek içindir; alınan noktalar SİM olarak işaretlenir ve teslim paketinde gerçek ölçü sayılmaz.</div>
       <div class="grid3">${['FIX', 'FLOAT', 'SINGLE'].map((p) => html`<button class="btn sm" onClick=${() => { if (g.state.source !== 'sim') { const p0 = ps.p && ps.data.points.find((x) => x.lat != null); g.startSimulator({ profile: p, base: p0 ? { lat: p0.lat, lon: p0.lon, alt: (p0.H || 1000) } : undefined }); } else g.setSimProfile(p); }}>Sim · ${p}</button>`)}</div></div>`}
-    <div class="note mono" style="margin-top:12px">VOLT-EDAŞ Saha ${ver ? ver.version || '' : ''} · ${native ? 'Android' : 'Web'} · standart ${ps.p ? ps.cat.std.name : '—'}</div>`;
+    <div class="sect">Hakkında</div>
+    <div class="card stack"><div class="aboutlogo"><img src="assets/sebeke-m-logo.png" alt="Şebeke-M" /></div>
+      <div class="note mono">Şebeke-M ${ver ? ver.version || '' : ''} · ${native ? 'Android' : 'Web'} · standart ${ps.p ? ps.cat.std.name : '—'}</div>
+      <div class="note">Saha ölçümü, proje, metraj ve hakediş; AutoCAD eklentisiyle aynı proje dosyası ve simgeler.</div></div>`;
 }
 
 export function UserScreen() {

@@ -31,7 +31,7 @@ namespace SebekeHakedis.Eklenti
         {
             try { Serit.Kur(); } catch (System.Exception ex) { Yaz("Şerit menü kurulamadı: " + ex.Message); }
             try { ArmaturTakibi.Baslat(); } catch (System.Exception ex) { Yaz("Armatür takibi başlatılamadı: " + ex.Message); }
-            Yaz("Şebeke Hakediş " + Surum + " yüklendi. Şeritte ŞEBEKE HAKEDİŞ sekmesi; komut listesi için SH_HAKKINDA.");
+            Yaz(Marka.Ad + " " + Surum + " yüklendi. Şeritte ŞEBEKE-M ve ŞEBEKE-M ARAÇLAR sekmeleri; komut listesi için SH_HAKKINDA.");
         }
 
         public void Terminate() { }
@@ -101,7 +101,7 @@ namespace SebekeHakedis.Eklenti
                     if (ad.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) ad = ad.Substring(0, ad.Length - 5);
                     yol = Path.Combine(Path.GetDirectoryName(yol) ?? "", ad + uzanti);
                 }
-                string olusturan = "Şebeke Hakediş AutoCAD eklentisi " + Uygulama.Surum;
+                string olusturan = Marka.Ad + " AutoCAD eklentisi " + Uygulama.Surum;
                 File.WriteAllText(yol, volt ? ProjeDosyasi.VoltYaz(p, olusturan) : ProjeDosyasi.Yaz(p, olusturan), new UTF8Encoding(false));
                 Uygulama.Yaz("Proje dosyası yazıldı: " + yol);
                 Uygulama.Yaz("Telefona aktarmak için dosyayı Google Drive'a koyun; telefonda Projeler › \"AutoCAD dosyasından proje al\" ile seçin.");
@@ -249,45 +249,35 @@ namespace SebekeHakedis.Eklenti
         [CommandMethod("SH_HAKKINDA", CommandFlags.Modal)]
         public void Hakkinda()
         {
+            Calistir("Hakkında", () => Pencereler.Hakkinda(Uygulama.Surum, OrtamBilgisi(), KomutlariYaz));
+        }
+
+        private static string OrtamBilgisi()
+        {
+            string acad = "";
+            try { var v = AcApp.Version; acad = "AutoCAD R" + v.Major + "." + v.Minor + " · "; } catch { }
+            return acad + ".NET " + System.Runtime.InteropServices.RuntimeEnvironment.GetSystemVersion();
+        }
+
+        /// <summary>Komut listesini komut satırına yazar (Hakkında penceresindeki listeyle aynı).</summary>
+        private static void KomutlariYaz()
+        {
             var ed = Ed;
             if (ed == null) return;
-            ed.WriteMessage("\nŞebeke Hakediş AutoCAD eklentisi " + Uygulama.Surum + " (" + System.Runtime.InteropServices.RuntimeEnvironment.GetSystemVersion() + ")");
-            ed.WriteMessage("\n  Telefon");
-            ed.WriteMessage("\n  SH_ICEAL       Telefona gönder: çizimi proje dosyasına yaz (.sebeke.json ya da .volt.json)");
-            ed.WriteMessage("\n  SH_PROJEAL     Telefondan al: telefondaki değişiklikleri çizime aktar");
-            ed.WriteMessage("\n  Hızlı çizim (şerit: Kategori → öğe)");
-            ed.WriteMessage("\n  SH_HIZLI       Şeritte seçili öğeyi seçili tip, durum ve hakedişle çiz (pencere açılmaz)");
-            ed.WriteMessage("\n  SH_HIZLIAYRINTI Şeritteki öğeyi süzgeçli, aramalı pencereyle çiz");
-            ed.WriteMessage("\n  Çizim");
-            ed.WriteMessage("\n  SH_ELEMAN      Direk, box, pano, trafo, mufu koy (GIS numarası kendiliğinden; malzeme hafızası açıksa son malzemeler eklenir)");
-            ed.WriteMessage("\n  SH_HAT         Hat çiz (her direkte / elemanda parçalı; her parçanın metrajı ve etiketi ayrı; iki iletken, adet)");
-            ed.WriteMessage("\n  SH_KANAL       Kablo kanalı çiz (box/direk aralarında parçalı; hacim ölçülerden)");
-            ed.WriteMessage("\n  SH_SONDAJ      Yatay sondaj çiz");
-            ed.WriteMessage("\n  SH_BOLGE       Bölge (alt proje) sınırı çiz ya da var olan çizgiyi bölge yap");
-            ed.WriteMessage("\n  SH_NOKTAAL     Ölçü noktalarını dosyadan al (CSV/TXT)");
-            ed.WriteMessage("\n  Düzenleme");
-            ed.WriteMessage("\n  SH_MALZEME     Seçilen nesnenin malzemelerini düzenle (direğe armatür: simgesi direğin yanında)");
-            ed.WriteMessage("\n  SH_TOPLUMALZEME Seçilen direklere / elemanlara aynı malzemeleri tek seferde ekle");
-            ed.WriteMessage("\n  SH_METRAJ      Hat/kanal metrajını çizim uzunluğundan yeniden hesapla");
-            ed.WriteMessage("\n  SH_HAKEDIS     Aktif hakedişi değiştir");
-            ed.WriteMessage("\n  SH_ONAY        Hakediş onayı (Kontrol → Hakediş → GIS); onaylanan hakediş kilitlenir");
-            ed.WriteMessage("\n  SH_GORUNUM     Çizimi telefon görünümüne çevir (simge, renk, etiket, parça metrajı)");
-            ed.WriteMessage("\n  SH_AYARLAR     Çizim ayarları (ön ek, ölçek, etiket, metraj payı)");
-            ed.WriteMessage("\n  Rapor");
-            ed.WriteMessage("\n  SH_RAPOR       Bu çizimden Durum Tespit raporu (Excel)");
-            ed.WriteMessage("\n  SH_PROJERAPOR  Proje dosyasından Durum Tespit raporu");
-            ed.WriteMessage("\n  SH_OZET        Çizimdeki proje özetini göster");
-            ed.WriteMessage("\n  SH_DETAY       Eksik malzeme bul (ör. topraklaması olmayan direkler); bulunanları seç, Excel'e yaz");
-            ed.WriteMessage("\n  Diğer");
-            ed.WriteMessage("\n  SH_SERIT       Şerit menü sekmesini yeniden kur");
-            ed.WriteMessage("\n  SH_DOKUM       Destek için teknik döküm dosyası");
+            ed.WriteMessage("\n" + Marka.Ad + " AutoCAD eklentisi " + Uygulama.Surum + " (" + OrtamBilgisi() + ")");
+            string grup = null;
+            foreach (var k in KomutRehberi.Liste)
+            {
+                if (k[0] != grup) { grup = k[0]; ed.WriteMessage("\n  " + grup); }
+                ed.WriteMessage("\n  " + k[1].PadRight(16) + k[2]);
+            }
         }
 
         [CommandMethod("SH_SERIT", CommandFlags.Modal)]
         public void SeritKur()
         {
             Serit.Olustur();
-            Uygulama.Yaz("ŞEBEKE HAKEDİŞ sekmesi kuruldu.");
+            Uygulama.Yaz("ŞEBEKE-M sekmeleri kuruldu.");
         }
 
         // ---------------- Yardımcılar ----------------
@@ -300,7 +290,7 @@ namespace SebekeHakedis.Eklenti
             List<CadVarlik> varliklar = Toplayici.Topla(belge.Database);
             if (!PromagisOkuyucu.PromagisCizimiMi(varliklar))
             {
-                ed.WriteMessage("\nBu çizimde PROMAGIS verisi bulunamadı (direk, hat ya da bölge bilgisi yok).");
+                ed.WriteMessage("\nBu çizimde şebeke verisi bulunamadı (direk, hat ya da bölge bilgisi yok).");
                 return null;
             }
             var p = PromagisOkuyucu.Oku(varliklar, belge.Name);
@@ -391,7 +381,7 @@ namespace SebekeHakedis.Eklenti
         {
             try
             {
-                var cevap = WinForms.MessageBox.Show("Rapor hazır:\n" + yol + "\n\nŞimdi açılsın mı?", "Şebeke Hakediş",
+                var cevap = WinForms.MessageBox.Show("Rapor hazır:\n" + yol + "\n\nŞimdi açılsın mı?", Marka.Ad,
                     WinForms.MessageBoxButtons.YesNo, WinForms.MessageBoxIcon.Information);
                 if (cevap == WinForms.DialogResult.Yes) Process.Start(new ProcessStartInfo(yol) { UseShellExecute = true });
             }

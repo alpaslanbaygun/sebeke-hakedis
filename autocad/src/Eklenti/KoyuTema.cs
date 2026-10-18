@@ -298,7 +298,23 @@ namespace SebekeHakedis.Eklenti
                 x += Olcu.S(13);
             }
             var k = KapatAlani;
-            Boya.Yazi(g, Text, KoyuYazi.Baslik, new Rectangle(x, 0, Math.Max(10, k.Left - x - Olcu.S(8)), BaslikBoyu), KoyuRenk.Yazi,
+            // Marka: başlığın sağında, kapatma düğmesinden önce küçük rozet + "Şebeke-M"
+            int sag = k.Left - Olcu.S(8);
+            var rozet = Marka.Simge(Olcu.S(20));
+            if (rozet != null && ClientSize.Width > Olcu.S(420))
+            {
+                int adEn = TextRenderer.MeasureText(g, Marka.Ad, KoyuYazi.Kucuk, new Size(int.MaxValue, BaslikBoyu), TextFormatFlags.SingleLine | TextFormatFlags.NoPadding).Width;
+                int bx = sag - adEn;
+                Boya.Yazi(g, Marka.Ad, KoyuYazi.Kucuk, new Rectangle(bx, 0, adEn + Olcu.S(2), BaslikBoyu), KoyuRenk.Ikincil,
+                    TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding);
+                bx -= rozet.Width + Olcu.S(7);
+                var eski = g.InterpolationMode;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.DrawImage(rozet, bx, (BaslikBoyu - rozet.Height) / 2, rozet.Width, rozet.Height);
+                g.InterpolationMode = eski;
+                sag = bx - Olcu.S(14);
+            }
+            Boya.Yazi(g, Text, KoyuYazi.Baslik, new Rectangle(x, 0, Math.Max(10, sag - x), BaslikBoyu), KoyuRenk.Yazi,
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine);
             if (_kapatUzerinde) using (var b = new SolidBrush(KoyuRenk.Kapat)) g.FillRectangle(b, k);
             using (var p = new Pen(_kapatUzerinde ? Color.White : KoyuRenk.Ikincil, Math.Max(1.2f, Olcu.K * 1.3f)))

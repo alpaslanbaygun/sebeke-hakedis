@@ -79,7 +79,8 @@ export function ProjectsScreen() {
       </div>
       <button class="btn pri huge blk" onClick=${create}>PROJE OLUŞTUR</button>`;
   }
-  return html`<div class="title"><div class="grow"><h1>Projeler</h1><div class="sub" style="font-family:Inter">${app.ps.p ? 'Açık: ' + app.ps.p.name : 'Proje seçin veya oluşturun'}</div></div>${app.ps.p ? html`<button class="btn sm" onClick=${() => app.nav.go('hub')}>Proje merkezi</button>` : null}</div>
+  return html`<div class="brandrow"><img src="assets/sebeke-m-simge.png" alt="" /><div><b>Şebeke-M</b><span>Elektrik Dağıtım Projesi</span></div></div>
+    <div class="title"><div class="grow"><h1>Projeler</h1><div class="sub" style="font-family:Inter">${app.ps.p ? 'Açık: ' + app.ps.p.name : 'Proje seçin veya oluşturun'}</div></div>${app.ps.p ? html`<button class="btn sm" onClick=${() => app.nav.go('hub')}>Proje merkezi</button>` : null}</div>
     <button class="btn pri blk" style="height:56px" onClick=${() => setForm({ name: '', code: '', location: '', client: '', contractor: '', stdId: (stds.find((s) => s.status === 'active') || stds[0] || {}).id, datum: 'TUREF', cm: 39, heightSystem: 'ortometrik', enhZone: 'II', mode: 'asbuilt' })}><${Icon} n="plus" s=${20} c="#0b1326" />Yeni proje</button>
     <label class="btn blk" style="height:56px"><${Icon} n="down" s=${20} />AutoCAD dosyasından proje al (.sebeke.json)<input type="file" accept=".json,application/json" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) autocadDosyasiAl(f, null).then((oz) => { if (oz) { app.nav.tab('map'); } load(); }); }} /></label>
     <div class="note">AutoCAD'de ŞEBEKE HAKEDİŞ › Telefona Gönder ile kaydedilen dosyayı (Drive'dan) seçin. Direkler, hatlar, kanallar ve malzemeler projeye gelir; sahada değiştirip Dışa Aktar › "AutoCAD proje dosyası" ile geri gönderirsiniz.</div>
@@ -184,7 +185,7 @@ export function SyncScreen() {
       <div class=${'alert ' + (app.cloud ? 'ok' : 'warn')}><${Icon} n=${app.cloud ? 'check' : 'warn'} s=${16} /><span>${app.cloud ? 'Bu sayfadaki veriler bulutta saklanır: hangi bilgisayardan açarsanız açın aynı proje gelir' + (st && st.at ? ' · son kayıt ' + new Date(st.at).toLocaleString('tr-TR') : '') + '.' : 'Bulut kaydı kullanılamıyor: veriler yalnız bu tarayıcıda. Oturum açıp sayfayı yeniden açın.'} Telefondaki uygulama ile veri alışverişi dosya ile yapılır.</span></div>
       <div class="card stack">
         <div class="row"><span class="badge b-mut">1</span><b class="grow">Telefondan al</b></div>
-        <div class="note">Telefonda: Ayarlar → Veri ve senkron → Senkron → "Değişiklikleri paylaş (.vsync)". Dosyayı bu bilgisayara gönderin ve aşağıdan seçin. Sahada alınan direkler, hatlar ve ölçümler buraya eklenir. Fotoğraflar dosyaya girmez; telefonda İndirilenler/VOLT-EDAS klasöründe kalır.</div>
+        <div class="note">Telefonda: Ayarlar → Veri ve senkron → Senkron → "Değişiklikleri paylaş (.vsync)". Dosyayı bu bilgisayara gönderin ve aşağıdan seçin. Sahada alınan direkler, hatlar ve ölçümler buraya eklenir. Fotoğraflar dosyaya girmez; telefonda İndirilenler/Sebeke-M klasöründe kalır.</div>
         <label class="btn pri blk" style="height:52px"><${Icon} n="down" s=${18} c="#0b1326" />Telefondan gelen dosyayı seç<input type="file" accept=".vsync,.json" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) importFile(f); }} /></label>
       </div>
       <div class="card stack">

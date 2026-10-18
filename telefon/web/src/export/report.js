@@ -65,6 +65,6 @@ export function buildReportHTML(model, extra = {}) {
   }
   h += '<h2>9. Kontrol bulguları</h2>' + (model.issues.length ? table(['Kod', 'Önem', 'Kayıt', 'Açıklama'], model.issues.map((i) => [i.code, i.severity === 'error' ? 'HATA' : 'UYARI', i.entityNo, i.message])) : '<p class="ok">Bulgu yok.</p>');
   h += '<h2>10. Fotoğraflar · ' + nPhoto + ' adet</h2>' + (nPhoto ? table(['Dosya', 'Obje', 'Tür', 'Tarih · saat', 'Enlem', 'Boylam', 'Doğruluk (m)', 'Fix', 'Operatör', 'Açıklama'], (model.photos || []).map((ph) => [ph.filepath || ph.filename || ph.id, ph.ownerNo || '', ph.ownerType || '', dt(ph.timestamp), ph.lat != null ? (+ph.lat).toFixed(7) : '', ph.lon != null ? (+ph.lon).toFixed(7) : '', acc(ph.accuracy), ph.fix || ph.gnssFix || '', ph.operator || ph.user || '', ph.note || ''])) : '<p class="muted">Fotoğraf yok.</p>');
-  h += '<p class="muted">Bu rapor VOLT-EDAŞ Saha tarafından proje veritabanından otomatik üretilmiştir. "Doğrulanmamış varsayılan" olarak işaretli standart tabloları (' + esc((model.cat.std.unverifiedTables || []).join(', ')) + ') proje öncesi kontrol edilmelidir.</p>';
+  h += '<p class="muted">Bu rapor Şebeke-M tarafından proje veritabanından otomatik üretilmiştir. "Doğrulanmamış varsayılan" olarak işaretli standart tabloları (' + esc((model.cat.std.unverifiedTables || []).join(', ')) + ') proje öncesi kontrol edilmelidir.</p>';
   return h + '</body></html>';
 }

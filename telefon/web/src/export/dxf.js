@@ -134,7 +134,7 @@ export function buildDXF(model, opts = {}) {
   const allPts = model.points.filter((p) => p.E != null);
   const ext = allPts.reduce((a, p) => ({ x0: Math.min(a.x0, p.E), y0: Math.min(a.y0, p.N), x1: Math.max(a.x1, p.E), y1: Math.max(a.y1, p.N) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
   if (!Number.isFinite(ext.x0)) Object.assign(ext, { x0: 0, y0: 0, x1: 100, y1: 100 });
-  w.g(999, 'VOLT-EDAS Saha · ' + (model.project.name || '') + ' · CRS ' + model.crs.label + (model.crs.epsg ? ' EPSG:' + model.crs.epsg : '') + ' · olcek 1/1000 · birim m');
+  w.g(999, 'Sebeke-M · ' + (model.project.name || '') + ' · CRS ' + model.crs.label + (model.crs.epsg ? ' EPSG:' + model.crs.epsg : '') + ' · olcek 1/1000 · birim m');
   w.g(0, 'SECTION').g(2, 'HEADER').g(9, '$ACADVER').g(1, 'AC1009').g(9, '$INSBASE').g(10, 0).g(20, 0).g(30, 0)
     .g(9, '$EXTMIN').g(10, f(ext.x0)).g(20, f(ext.y0)).g(30, 0).g(9, '$EXTMAX').g(10, f(ext.x1)).g(20, f(ext.y1)).g(30, 0)
     .g(9, '$DWGCODEPAGE').g(3, 'ANSI_1254').g(9, '$LTSCALE').g(40, 1.0).g(9, '$PDMODE').g(70, 3).g(9, '$PDSIZE').g(40, 0.5).g(0, 'ENDSEC');

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.Windows.Forms;
 using SebekeHakedis.Cekirdek;
@@ -120,7 +121,7 @@ namespace SebekeHakedis.Eklenti
     /// </summary>
     internal static class Pencereler
     {
-        private const string Baslik = "Şebeke Hakediş";
+        private const string Baslik = Marka.Ad;
         private static readonly CultureInfo Tr = CultureInfo.GetCultureInfo("tr-TR");
 
         /// <summary>Pencereyi gösterir: AutoCAD içinde AutoCAD'in modal penceresiyle. Denemede ekran görüntüsü için değiştirilir.</summary>
@@ -992,6 +993,107 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
+        // ================= Hakkında =================
+
+        /// <summary>Beyaz yuvarlak köşeli kart üstünde Şebeke-M logosu (logo beyaz zemin için çizilmiştir).</summary>
+        private sealed class LogoKarti : Control
+        {
+            public LogoKarti()
+            {
+                SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            }
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                var g = e.Graphics;
+                using (var b = new SolidBrush(Boya.Zemin(this))) g.FillRectangle(b, ClientRectangle);
+                Boya.Kutu(g, ClientRectangle, Color.White, Color.White, Olcu.S(12));
+                var logo = Marka.Logo;
+                if (logo == null) return;
+                int pay = Olcu.S(14);
+                var alan = new Rectangle(pay, pay, Math.Max(1, Width - 2 * pay), Math.Max(1, Height - 2 * pay));
+                double k = Math.Min(alan.Width / (double)logo.Width, alan.Height / (double)logo.Height);
+                int w = (int)(logo.Width * k), h = (int)(logo.Height * k);
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.DrawImage(logo, alan.Left + (alan.Width - w) / 2, alan.Top + (alan.Height - h) / 2, w, h);
+            }
+        }
+
+        /// <summary>
+        /// Hakkında: Şebeke-M logosu, sürüm, kısa açıklama ve komut listesi (gruplu). "Komut satırına yaz" listeyi AutoCAD'in
+        /// komut satırına da yazar (komutlariYaz null ise düğme yok).
+        /// </summary>
+        public static void Hakkinda(string surum, string ortam, Action komutlariYaz)
+        {
+            Hazirla();
+            using (var f = new KoyuPencere("Hakkında", 780, 660, Boya.Simge("bilgi", KoyuRenk.Yesil, 20)))
+            {
+                var alt = f.Alt;
+                int bh = S(34), by = (alt.Height - bh) / 2;
+                var kapat = new KoyuDugme("Kapat", DugmeTuru.Birincil) { DialogResult = DialogResult.OK };
+                kapat.SetBounds(alt.Width - S(16) - S(110), by, S(110), bh);
+                alt.Controls.Add(kapat);
+                f.AcceptButton = kapat;
+                f.CancelButton = kapat;
+                if (komutlariYaz != null)
+                {
+                    var yaz = new KoyuDugme("Komut satırına yaz", DugmeTuru.Ikincil, Boya.Simge("bilgi", KoyuRenk.Ikincil, 16));
+                    yaz.SetBounds(kapat.Left - S(10) - S(180), by, S(180), bh);
+                    yaz.Click += (s, e) => komutlariYaz();
+                    alt.Controls.Add(yaz);
+                }
+                int icSon = f.IcerikSonu - 16;
+
+                Koy(f, new LogoKarti(), 16, 58, 300, 256);
+                Etiket(f, Marka.Ad, 336, 62, 420, KoyuYazi.Iri, KoyuRenk.Yazi);
+                Etiket(f, "AutoCAD eklentisi · Sürüm " + surum, 336, 104, 420, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                if (!string.IsNullOrEmpty(ortam)) Etiket(f, ortam, 336, 128, 420, KoyuYazi.Kucuk, KoyuRenk.Ikincil);
+                Aciklama(f, Marka.Aciklama + ". Çizimler telefon uygulamasıyla aynı simgelerle çizilir; proje dosyası iki yönde " +
+                            "aktarılır (Telefona Gönder / Telefondan Al).", 336, 158, 420, 60);
+                Aciklama(f, "Desteklenen sürümler: AutoCAD 2016–2024 ve AutoCAD 2025 ve sonrası (AutoCAD tabanlı ürünler dahil; " +
+                            "AutoCAD LT desteklenmez).", 336, 222, 420, 44);
+                Aciklama(f, "Sorun olursa hata ayrıntısı %TEMP%\\SebekeHakedis_hata.txt dosyasına yazılır; SH_DOKUM destek için " +
+                            "teknik döküm kaydeder.", 336, 270, 420, 44);
+
+                Etiket(f, "Komutlar", 16, 330, 300, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var g = new DataGridView
+                {
+                    AllowUserToAddRows = false,
+                    AllowUserToDeleteRows = false,
+                    ReadOnly = true,
+                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                    MultiSelect = false,
+                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                    ColumnHeadersVisible = true,
+                };
+                KoyuTablo.Uygula(g);
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Komut", FillWeight = 30 });
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ne yapar", FillWeight = 100 });
+                foreach (DataGridViewColumn c in g.Columns) c.SortMode = DataGridViewColumnSortMode.NotSortable;
+                string grup = null;
+                foreach (var k in KomutRehberi.Liste)
+                {
+                    if (k[0] != grup)
+                    {
+                        grup = k[0];
+                        int gr = g.Rows.Add(grup, "");
+                        var row = g.Rows[gr];
+                        row.DefaultCellStyle.BackColor = KoyuRenk.Kart;
+                        row.DefaultCellStyle.SelectionBackColor = KoyuRenk.Kart;
+                        row.DefaultCellStyle.ForeColor = KoyuRenk.Yesil;
+                        row.DefaultCellStyle.SelectionForeColor = KoyuRenk.Yesil;
+                        row.DefaultCellStyle.Font = KoyuYazi.Kalin;
+                    }
+                    g.Rows.Add(k[1], k[2]);
+                }
+                g.Columns[0].DefaultCellStyle.Font = KoyuYazi.Kalin;
+                Koy(f, new Cerceve(g), 16, 354, 748, icSon - 354);
+                f.Shown += (s, e) => { if (g.Rows.Count > 0) g.ClearSelection(); };
+                Goster(f);
+            }
+        }
+
         // ================= Kanal =================
 
         /// <summary>Kanal zeminleri: katalogdakiler (PROMAGIS sırası), sabit liste ve çizimde geçenler.</summary>
@@ -1184,7 +1286,7 @@ namespace SebekeHakedis.Eklenti
                 var tKod = Koy(f, new MetinKutusu(kod ?? "", "raporun PROJE sütunu"), 130, 100, 394, 30);
                 Etiket(f, "Grup kodu", 16, 146);
                 var tGrup = Koy(f, new MetinKutusu(grup ?? "", "boş bırakılabilir"), 130, 140, 394, 30);
-                Aciklama(f, "Raporun PROJE sütununa proje kodu yazılır; grup kodu PROMAGIS'teki bölge grup kodudur. " +
+                Aciklama(f, "Raporun PROJE sütununa proje kodu yazılır; grup kodu raporda bölgeleri gruplar. " +
                             "Sınırın içindeki her nesne bu bölgeye sayılır.", 130, 182, 394, 70);
                 alt.Tamam.Click += (s, e) =>
                 {
@@ -1771,7 +1873,7 @@ namespace SebekeHakedis.Eklenti
                 var genel = sayfa();
                 Etiket(genel, "Katman ön eki", 0, 0);
                 var onEk = Koy(genel, new MetinKutusu(a.KatmanOnEki, "çizimden: " + o.OnEk), 0, 20, 200, 30);
-                Aciklama(genel, "Boş bırakılırsa çizimdeki PROMAGIS katmanlarından bulunur (şu an: " + o.OnEk + ").", 216, 24, 400, 30);
+                Aciklama(genel, "Boş bırakılırsa çizimdeki katman adlarından bulunur (şu an: " + o.OnEk + ").", 216, 24, 400, 30);
                 Etiket(genel, "GIS ön eki", 0, 62);
                 var gisOnEki = Koy(genel, new MetinKutusu(a.GisOnEki, "çizimden: " + o.GisOnEki), 0, 82, 200, 30);
                 Etiket(genel, "Aktif hakediş", 0, 124);
@@ -1811,8 +1913,8 @@ namespace SebekeHakedis.Eklenti
                 // Görünüm
                 var gorunum = sayfa();
                 var sembol = Koy(gorunum, new KoyuOnay("Telefonla aynı simgeler (SH_ blokları, 1 ölçek)") { Checked = a.TelefonSembolleri }, 0, 0);
-                Aciklama(gorunum, "Kapalıysa çizimde o tür için kullanılan PROMAGIS bloğu ve ölçeği korunur.", 26, 26, 580, 20);
-                Etiket(gorunum, "PROMAGIS blok ölçeği", 0, 60);
+                Aciklama(gorunum, "Kapalıysa çizimde o tür için kullanılan eski simge bloğu ve ölçeği korunur.", 26, 26, 580, 20);
+                Etiket(gorunum, "Eski blok ölçeği", 0, 60);
                 var olcek = Koy(gorunum, new SayiKutusu(0, 1000, D(a.SembolOlcegi), 2, 0.5m), 0, 80, 120, 30);
                 Aciklama(gorunum, "0 = çizimdekilerle aynı (genellikle 4). Telefon simgeleri her zaman 1 ölçekle konur (1/1000 pafta).", 136, 82, 480, 30);
                 Etiket(gorunum, "Hat etiketi yüksekliği (m)", 0, 122);

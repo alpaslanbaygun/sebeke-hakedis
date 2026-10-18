@@ -2,21 +2,21 @@
 <ApplicationPackage SchemaVersion="1.0"
                     AutodeskProduct="AutoCAD"
                     ProductType="Application"
-                    Name="Şebeke Hakediş"
-                    Description="Elektrik dağıtım şebekesi hakediş ve durum tespit eklentisi"
+                    Name="Şebeke-M"
+                    Description="Elektrik dağıtım şebekesi proje, hakediş ve durum tespit eklentisi"
                     AppVersion="SURUM"
                     FriendlyVersion="SURUM"
-                    Author="Şebeke Hakediş"
+                    Author="Şebeke-M"
                     ProductCode="{B6C47ACC-7886-45EC-A1D3-A71EC058BDF8}"
                     UpgradeCode="{15D2510A-0EBF-4A3E-BD88-2DB6B67E8FF6}">
-  <CompanyDetails Name="Şebeke Hakediş" />
+  <CompanyDetails Name="Şebeke-M" />
 
   <!-- AutoCAD 2016 – 2024 (.NET Framework) -->
   <Components Description="AutoCAD 2016-2024">
     <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R20.1" SeriesMax="R24.3" />
     <ComponentEntry AppName="SebekeHakedis"
                     ModuleName="./Contents/R20-R24/SebekeHakedis.dll"
-                    AppDescription="Şebeke Hakediş"
+                    AppDescription="Şebeke-M"
                     LoadOnAutoCADStartup="True" />
   </Components>
 
@@ -25,7 +25,7 @@
     <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R25.0" />
     <ComponentEntry AppName="SebekeHakedis"
                     ModuleName="./Contents/R25/SebekeHakedis.dll"
-                    AppDescription="Şebeke Hakediş"
+                    AppDescription="Şebeke-M"
                     LoadOnAutoCADStartup="True" />
   </Components>
 </ApplicationPackage>

@@ -57,12 +57,12 @@ namespace SebekeHakedis.Cekirdek
                 Yaz(zip, "docProps/core.xml",
                     "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
                     "<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
-                    "<dc:creator>Şebeke Hakediş</dc:creator>" +
+                    "<dc:creator>Şebeke-M</dc:creator>" +
                     "<dcterms:created xsi:type=\"dcterms:W3CDTF\">" + DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture) + "</dcterms:created>" +
                     "</cp:coreProperties>");
                 Yaz(zip, "docProps/app.xml",
                     "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
-                    "<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\"><Application>Şebeke Hakediş</Application></Properties>");
+                    "<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\"><Application>Şebeke-M</Application></Properties>");
                 Yaz(zip, "xl/workbook.xml", Kitap());
                 Yaz(zip, "xl/_rels/workbook.xml.rels", KitapIliskileri());
                 Yaz(zip, "xl/styles.xml", Bicimler());

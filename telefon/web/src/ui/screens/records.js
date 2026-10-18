@@ -165,7 +165,7 @@ export function LineScreen({ id }) {
 
 // Fotoğraf / kanıt: uygulama içi kamera, zaman-konum-yön damgası
 // Fotoğraf: bir objeye çoklu çekim. Dosya adı {ObjeNo}_{Sıra}.jpg; görüntü üstüne proje/obje/tarih/koordinat/doğruluk/fix yazılır,
-// EXIF'e GPS + tarih işlenir; APK'da ayrıca İndirilenler/VOLT-EDAS/<PROJE>/<TÜR>/<ObjeNo>/ klasörüne kopyalanır.
+// EXIF'e GPS + tarih işlenir; APK'da ayrıca İndirilenler/Sebeke-M/<PROJE>/<TÜR>/<ObjeNo>/ klasörüne kopyalanır.
 export function PhotoScreen({ ownerId, pointId, ownerNo, slot, ownerKind }) {
   const ps = app.ps;
   const vid = useRef(null), stream = useRef(null);
@@ -214,7 +214,7 @@ export function PhotoScreen({ ownerId, pointId, ownerNo, slot, ownerKind }) {
       const filepath = photoPath(kind, ownerNo || 'OBJE', nm.filename);
       await ps.addPhoto(bytes, 'image/jpeg', { ownerId, ownerNo, ownerType: kind, pointId, pointNo: p ? p.pointNo : null, slot: slot || null, filename: nm.filename, filepath, seq: nm.seq,
         lat: lat ?? null, lon: lon ?? null, elevation: p && p.H != null ? p.H : g.H ?? null, E: p ? p.E : g.E, N: p ? p.N : g.N, accuracy: acc ?? null, fix: p ? sourceInfo(p).tag : g.fix, heading, note, width: c.width, height: c.height, device: (g.receiver || {}).name || null, operator: ps.ds.user.name, exifKept: !!orig });
-      // Fiziksel klasör (yalnız APK): İndirilenler/VOLT-EDAS/<PROJE>/DIREKLER/D-001/D-001_01.jpg
+      // Fiziksel klasör (yalnız APK): İndirilenler/Sebeke-M/<PROJE>/DIREKLER/D-001/D-001_01.jpg
       if (app.bridge.isNative() && (await app.ds.setting('photoToDevice')) !== false) { try { await app.bridge.saveFile(nm.filename, 'image/jpeg', bytes, { dir: projectFolder(ps.p) + '/' + filepath.split('/').slice(0, -1).join('/') }); } catch (e) { app.toast('Telefona kopyalanamadı: ' + e.message, 'warn'); } }
       setTaken((t) => [...t, nm.filename]);
       app.toast(nm.filename + ' kaydedildi', 'ok', 1800);

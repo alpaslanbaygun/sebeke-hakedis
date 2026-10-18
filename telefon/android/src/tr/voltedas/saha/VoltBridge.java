@@ -244,13 +244,13 @@ public final class VoltBridge {
             ContentValues v = new ContentValues();
             v.put(MediaStore.MediaColumns.DISPLAY_NAME, s.name);
             v.put(MediaStore.MediaColumns.MIME_TYPE, s.mime);
-            v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/VOLT-EDAS" + (s.dir.isEmpty() ? "" : "/" + s.dir));
+            v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Sebeke-M" + (s.dir.isEmpty() ? "" : "/" + s.dir));
             Uri u = cr.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
             if (u == null) throw new Exception("İndirilenler klasörüne yazılamadı");
             try (OutputStream out = cr.openOutputStream(u); InputStream in = new FileInputStream(s.f)) { copy(in, out); }
-            return "İndirilenler/VOLT-EDAS/" + (s.dir.isEmpty() ? "" : s.dir + "/") + s.name;
+            return "İndirilenler/Sebeke-M/" + (s.dir.isEmpty() ? "" : s.dir + "/") + s.name;
         }
-        File dir = new File(act.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "VOLT-EDAS" + (s.dir.isEmpty() ? "" : "/" + s.dir)); dir.mkdirs();
+        File dir = new File(act.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "Sebeke-M" + (s.dir.isEmpty() ? "" : "/" + s.dir)); dir.mkdirs();
         File dst = new File(dir, s.name);
         try (OutputStream out = new FileOutputStream(dst); InputStream in = new FileInputStream(s.f)) { copy(in, out); }
         return dst.getAbsolutePath();

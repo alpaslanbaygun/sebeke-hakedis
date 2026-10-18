@@ -201,7 +201,7 @@ namespace SebekeHakedis.Cekirdek
                 k = sb;
             }
             if (k == null || k.Metin("bicim") != Bicim)
-                throw new FormatException("Bu bir Şebeke Hakediş proje dosyası değil.");
+                throw new FormatException("Bu bir Şebeke-M proje dosyası değil.");
             if (k.Tam("surum") > Surum)
                 throw new FormatException("Proje dosyası daha yeni bir sürümle hazırlanmış (" + k.Tam("surum") + "). Eklentiyi güncelleyin.");
 

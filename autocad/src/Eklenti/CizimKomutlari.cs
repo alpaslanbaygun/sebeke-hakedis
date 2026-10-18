@@ -702,7 +702,7 @@ namespace SebekeHakedis.Eklenti
         /// <summary>
         /// Çizimdeki şebeke nesnelerini ortak çizim stiline (telefonun görünümü) çevirir: simgeler, renkler, çizgi tipleri,
         /// hat etiketleri (1,8 m, orta parçada) ve her parçanın uzunluk yazısı. Veriye (XDATA, metraj) dokunmaz.
-        /// "Hepsi": PROMAGIS blokları da telefon simgesine çevrilir; "BloklarKalsin": PROMAGIS bloklarına dokunulmaz.
+        /// "Hepsi": çizimdeki eski simge blokları da telefon simgesine çevrilir; "BloklarKalsin": PROMAGIS bloklarına dokunulmaz.
         /// </summary>
         [CommandMethod("SH_GORUNUM", CommandFlags.Modal)]
         public void GorunumYenile()
@@ -716,7 +716,7 @@ namespace SebekeHakedis.Eklenti
                 var p = o.Proje;
                 int toplam = p.Elemanlar.Count + p.Hatlar.Count + p.Kanallar.Count + p.Sondajlar.Count + p.Bolgeler.Count;
                 if (toplam == 0) { ed.WriteMessage("\nÇizimde şebeke nesnesi yok."); return; }
-                var pko = new PromptKeywordOptions("\n" + toplam + " nesne telefon görünümüne çevrilecek. PROMAGIS blokları da telefon simgesine çevrilsin mi? [Hepsi/BloklarKalsin/Vazgec]", "Hepsi BloklarKalsin Vazgec")
+                var pko = new PromptKeywordOptions("\n" + toplam + " nesne telefon görünümüne çevrilecek. Eski simge blokları da telefon simgesine çevrilsin mi? [Hepsi/BloklarKalsin/Vazgec]", "Hepsi BloklarKalsin Vazgec")
                 {
                     AllowNone = true,
                 };
@@ -752,7 +752,7 @@ namespace SebekeHakedis.Eklenti
                     tr.Commit();
                     UyarilariYaz(ed, y);
                 }
-                ed.WriteMessage("\n" + yenilenen + " nesne telefon görünümüne çevrildi" + (hepsi ? " (PROMAGIS blokları dahil)." : " (PROMAGIS bloklarına dokunulmadı)."));
+                ed.WriteMessage("\n" + yenilenen + " nesne telefon görünümüne çevrildi" + (hepsi ? " (eski simge blokları dahil)." : " (eski simge bloklarına dokunulmadı)."));
                 ed.Regen();
             });
         }
@@ -977,7 +977,7 @@ namespace SebekeHakedis.Eklenti
                 var nesne = NesneBul(o.Proje, h);
                 if (nesne == null)
                 {
-                    ed.WriteMessage("\nBu nesnede şebeke bilgisi yok (PROMAGIS ya da Şebeke Hakediş nesnesi değil).");
+                    ed.WriteMessage("\nBu nesnede şebeke bilgisi yok (şebeke nesnesi değil).");
                     return;
                 }
                 string eskiDurum;

@@ -6,7 +6,7 @@ name: AutoCAD eklentisi
 
 on:
   push:
-    branches: [main, volt-birlesim, serit-ve-stil, koyu-tema, hat-malzeme-simge]
+    branches: [main, hat-malzeme-simge, sebeke-m]
     paths:
       - 'autocad/**'
       - 'ortak/**'
@@ -92,7 +92,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $s = "${{ steps.surum.outputs.surum }}"
-          gh release create "v$s" "cikti/SebekeHakedis-$s.zip" --title "AutoCAD eklentisi $s" --notes "Kurulum: zip'i indirin, bir klasöre çıkarın, KUR.bat'ı çalıştırın, AutoCAD'i yeniden başlatın. AutoCAD 2016–2024 ve 2025+ desteklenir."
+          gh release create "v$s" "cikti/SebekeHakedis-$s.zip" --title "Şebeke-M AutoCAD eklentisi $s" --notes "Kurulum: zip'i indirin, bir klasöre çıkarın, KUR.bat'ı çalıştırın, AutoCAD'i yeniden başlatın. AutoCAD 2016–2024 ve 2025+ desteklenir."
 
       - name: Sonuçları ci-sonuc dalına yaz
         # main: ci-sonuc · diğer dallar: ci-sonuc-dal

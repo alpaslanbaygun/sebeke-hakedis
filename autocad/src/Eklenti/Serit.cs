@@ -11,7 +11,7 @@ using AcApp = Autodesk.AutoCAD.ApplicationServices.Application;
 namespace SebekeHakedis.Eklenti
 {
     /// <summary>
-    /// AutoCAD şerit menüsüne "ŞEBEKE HAKEDİŞ" sekmesini ekler (Google Stitch tasarımı):
+    /// AutoCAD şerit menüsüne "ŞEBEKE-M" (çizim) ve "ŞEBEKE-M ARAÇLAR" sekmelerini ekler (Google Stitch tasarımı):
     ///   Kategori   — AG Havai, AG Yeraltı, OG Havai / ENH … düğmeleri (sütunlar: havai | yeraltı | diğer | proje); tek tıkla seçilir.
     ///   Elemanlar  — yalnız seçili kategorinin öğeleri (ör. AG Havai: AG Direk, AG Hat, Kofre, Abone Hattı); öğeye tıklayınca
     ///                pencere açılmadan çizime başlanır.
@@ -19,18 +19,23 @@ namespace SebekeHakedis.Eklenti
     ///                sırasıyla; "Ara" ile bütün tipler), durum (her durumun simgesiyle), hakediş, demontaj türü; hatlarda
     ///                adet ve ikinci iletken (müşterek hatta OG ile AG birlikte); "sıradaki tıklamada ne çizilecek" özeti.
     ///   Malzeme    — seçilen nesnenin malzemeleri, seçilen elemanlara toplu malzeme, malzeme hafızası (açık / kapalı).
-    ///   Düzenle, Hakediş, Telefon, Rapor, Yardım — diğer komutlar.
+    ///   Düzenle   — metraj, telefon görünümü, çizim ayarları.
+    /// ARAÇLAR sekmesi: Hakediş, Raporlar, Telefon (ve hesap araçları). İki sekmenin başında Şebeke-M paneli (Hakkında).
     /// Kategori ve öğeler ortak/katalog/kategoriler.json'dan, tipler kalemler.json'un cins gruplarından gelir.
     /// Şeridin zemin rengi AutoCAD'in temasından gelir; simgeler koyu ve açık temaya göre çizilir.
     /// </summary>
     internal static class Serit
     {
         private const string SekmeKimligi = "SEBEKE_HAKEDIS_SEKME";
+        private const string AracSekmesiKimligi = "SEBEKE_M_ARACLAR";
+        private const string AyrintiAciklamasi = "Etkin öğeyi süzgeçli, aramalı pencereyle çizer (bütün tipler, cins düğmeleri, GIS numarası, demontaj türü; hatlarda iki iletken ve adet).";
         private static bool _bekliyor, _yukleniyor, _olayBagli;
 
         private static RibbonCombo _cins, _tip, _durum, _dm, _hakedis, _adet, _ek;
         private static RibbonTextBox _ara;
-        private static RibbonLabel _ozet, _dmEtiket, _adetEtiket, _ekEtiket;
+        private static RibbonLabel _dmEtiket, _adetEtiket, _ekEtiket;
+        /// <summary>"Ayrıntılı…" düğmesi: ipucunda sıradaki tıklamada çizilecek olanın tam yazısı (şeritte uzun yazı yer kaplamasın).</summary>
+        private static RibbonButton _ayrinti;
         private static RibbonToggleButton _hafiza;
         private static RibbonPanelSource _elemanlar;
         private static readonly List<RibbonToggleButton> _kategoriDugmeleri = new List<RibbonToggleButton>();
@@ -76,7 +81,9 @@ namespace SebekeHakedis.Eklenti
             {
                 var serit = ComponentManager.Ribbon;
                 if (serit == null) return;
-                foreach (RibbonTab t in serit.Tabs) if (t.Id == SekmeKimligi) return;
+                bool ana = false, arac = false;
+                foreach (RibbonTab t in serit.Tabs) { if (t.Id == SekmeKimligi) ana = true; else if (t.Id == AracSekmesiKimligi) arac = true; }
+                if (ana && arac) return;
                 Olustur();
             }
             catch { }
@@ -107,14 +114,17 @@ namespace SebekeHakedis.Eklenti
         {
             RibbonControl serit = ComponentManager.Ribbon;
             if (serit == null) return;
-            bool etkindi = false;
+            bool etkindi = false, aracEtkindi = false;
+            var kaldirilacak = new List<RibbonTab>();
             foreach (RibbonTab t in serit.Tabs)
-                if (t.Id == SekmeKimligi)
-                {
-                    try { var p = t.GetType().GetProperty("IsActive"); etkindi = p != null && Equals(p.GetValue(t, null), true); } catch { }
-                    serit.Tabs.Remove(t);
-                    break;
-                }
+            {
+                if (t.Id != SekmeKimligi && t.Id != AracSekmesiKimligi) continue;
+                bool e = false;
+                try { var p = t.GetType().GetProperty("IsActive"); e = p != null && Equals(p.GetValue(t, null), true); } catch { }
+                if (t.Id == SekmeKimligi) etkindi = e; else aracEtkindi = e;
+                kaldirilacak.Add(t);
+            }
+            foreach (var t in kaldirilacak) serit.Tabs.Remove(t);
 
             KatalogKaynagi.SembolleriYukle();
             KatalogKaynagi.StiliYukle();
@@ -126,8 +136,10 @@ namespace SebekeHakedis.Eklenti
             _ogeDugmeleri.Clear();
             _aramaSonucu = null;
 
-            var sekme = new RibbonTab { Title = "ŞEBEKE HAKEDİŞ", Id = SekmeKimligi };
+            // Çizim sekmesi: Şebeke-M | Kategori | Elemanlar | Ayarlar | Malzeme | Düzenle
+            var sekme = new RibbonTab { Title = "ŞEBEKE-M", Id = SekmeKimligi };
             serit.Tabs.Add(sekme);
+            MarkaPaneli(sekme);
 
             // 1) Kategori: sütun sütun küçük düğmeler
             var kat = Panel(sekme, "Kategori");
@@ -225,11 +237,9 @@ namespace SebekeHakedis.Eklenti
             _ek = new RibbonCombo { Width = 170, ShowText = false, Size = RibbonItemSize.Standard, ToolTip = "Aynı hatta ikinci iletken / kablo (müşterek hatta OG ile AG birlikte gelir). Daha fazlası için Ayrıntılı…" };
             _ek.CurrentChanged += (s, e) => { if (!_yukleniyor) EkSecildi(_ek.Current as RibbonButton); };
             s3.Items.Add(_ek);
-            s3.Items.Add(new RibbonRowBreak());
-            _ozet = new RibbonLabel { Text = "", ShowText = true, ShowImage = true, ToolTip = "Sıradaki tıklamada çizilecek olan" };
-            s3.Items.Add(_ozet);
             ay.Items.Add(s3);
-            ay.Items.Add(Dugme("Ayrıntılı…", "Etkin öğeyi süzgeçli, aramalı pencereyle çizer (bütün tipler, cins düğmeleri, GIS numarası, demontaj türü; hatlarda iki iletken ve adet).", "_SH_HIZLIAYRINTI ", "bilgi", null));
+            _ayrinti = Dugme("Ayrıntılı…", AyrintiAciklamasi, "_SH_HIZLIAYRINTI ", "bilgi", null);
+            ay.Items.Add(_ayrinti);
 
             // 4) Malzeme
             var malzeme = Panel(sekme, "Malzeme");
@@ -257,32 +267,31 @@ namespace SebekeHakedis.Eklenti
             duzen.Items.Add(Dugme("Telefon\nGörünümü", "Çizimi telefonun görünümüne çevirir: simgeler (durumuna göre), renkler, hat etiketleri, her parçanın uzunluğu, direklerin yanındaki armatürler. Veriye dokunmaz.", "_SH_GORUNUM ", "gorunum", null));
             duzen.Items.Add(Dugme("Çizim\nAyarları", "Katman ön eki, tarife (şehir / köy), simge takımı, etiket yüksekliği, yakalama, metraj payları, kanal ölçüleri.", "_SH_AYARLAR ", "ayarlar", null));
 
-            // 6) Hakediş
-            var hakedis = Panel(sekme, "Hakediş");
+            // Araçlar sekmesi: Şebeke-M | Hakediş | Raporlar | Telefon
+            var araclar = new RibbonTab { Title = "ŞEBEKE-M ARAÇLAR", Id = AracSekmesiKimligi };
+            serit.Tabs.Add(araclar);
+            MarkaPaneli(araclar);
+
+            var hakedis = Panel(araclar, "Hakediş");
             hakedis.Items.Add(Dugme("Aktif\nHakediş", "Aktif hakedişi değiştirir; yeni nesneler bu hakedişin katmanlarına konur.", "_SH_HAKEDIS ", "aktif_hakedis", Color.FromRgb(0x23, 0xA4, 0x55)));
-            hakedis.Items.Add(Dugme("Hakediş\nOnayı", "Hakediş onayı (PROMAGIS'teki gibi Kontrol → Hakediş → GIS). Onaylanan hakediş kilitlenir: satırları değiştirilemez, o hakedişe yeni nesne çizilemez.", "_SH_ONAY ", "onay", null));
+            hakedis.Items.Add(Dugme("Hakediş\nOnayı", "Hakediş onayı (Kontrol → Hakediş → GIS). Onaylanan hakediş kilitlenir: satırları değiştirilemez, o hakedişe yeni nesne çizilemez.", "_SH_ONAY ", "onay", null));
 
-            // 7) Telefon
-            var telefon = Panel(sekme, "Telefon");
-            var telRengi = Color.FromRgb(0x3B, 0xA4, 0xF6);
-            telefon.Items.Add(Dugme("Telefondan\nAl", "Telefondan gelen proje dosyasındaki (.sebeke.json, .volt.json ya da teslim paketi .zip) yeni ve değişen nesneleri bu çizime aktarır.", "_SH_PROJEAL ", "telefon_al", telRengi));
-            telefon.Items.Add(Dugme("Telefona\nGönder", "Bu çizimi telefonda açılacak proje dosyasına yazar (.sebeke.json ya da telefon biçimi .volt.json).", "_SH_ICEAL ", "telefon_gonder", telRengi));
-
-            // 8) Rapor
-            var rapor = Panel(sekme, "Rapor");
+            var rapor = Panel(araclar, "Raporlar");
             rapor.Items.Add(Dugme("Durum\nTespit", "Bu çizimden Durum Tespit raporunu Excel olarak üretir.", "_SH_RAPOR ", "rapor", null));
             rapor.Items.Add(Dugme("Dosyadan\nRapor", "Bir proje dosyasından (.sebeke.json, .volt.json ya da teslim paketi) Durum Tespit raporu üretir.", "_SH_PROJERAPOR ", "dosya_rapor", null));
             rapor.Items.Add(Dugme("Proje\nÖzeti", "Çizimdeki bölge, direk, hat ve kanal sayılarını ve hakediş onaylarını gösterir.", "_SH_OZET ", "ozet", null));
-            rapor.Items.Add(Dugme("Eksik\nMalzeme", "Eksik malzeme bul (PROMAGIS DETAY sorgusu): ör. topraklaması olmayan direkler. Bulunanlar çizimde seçilir, istenirse Excel'e yazılır.", "_SH_DETAY ", "eksik", null));
+            rapor.Items.Add(Dugme("Eksik\nMalzeme", "Eksik malzeme bul (DETAY sorgusu): ör. topraklaması olmayan direkler. Bulunanlar çizimde seçilir, istenirse Excel'e yazılır.", "_SH_DETAY ", "eksik", null));
 
-            // 9) Yardım
-            var yardim = Panel(sekme, "Yardım");
-            yardim.Items.Add(Dugme("Hakkında", "Sürüm ve komut listesi.", "_SH_HAKKINDA ", "bilgi", null));
+            var telefon = Panel(araclar, "Telefon");
+            var telRengi = Color.FromRgb(0x3B, 0xA4, 0xF6);
+            telefon.Items.Add(Dugme("Telefondan\nAl", "Telefondan gelen proje dosyasındaki (.sebeke.json, .volt.json ya da teslim paketi .zip) yeni ve değişen nesneleri bu çizime aktarır.", "_SH_PROJEAL ", "telefon_al", telRengi));
+            telefon.Items.Add(Dugme("Telefona\nGönder", "Bu çizimi telefonda açılacak proje dosyasına yazar (.sebeke.json ya da telefon biçimi .volt.json).", "_SH_ICEAL ", "telefon_gonder", telRengi));
 
             KategorileriGoster();
             ElemanlariKur(HizliSecim.Kategori);
             SecimiGoster();
             if (etkindi) Ozellik(sekme, "IsActive", true);
+            else if (aracEtkindi) Ozellik(araclar, "IsActive", true);
         }
 
         // ---------------- Kategori ----------------
@@ -627,20 +636,12 @@ namespace SebekeHakedis.Eklenti
             return string.Join(" · ", parca);
         }
 
+        /// <summary>Sıradaki tıklamada çizilecek olanın tam yazısı "Ayrıntılı…" düğmesinin ipucunda (şeritte yer kaplamaz).</summary>
         private static void OzetiGoster()
         {
-            if (_ozet == null) return;
-            var oge = HizliSecim.Oge;
-            string ozet = HizliSecim.Ozet();
-            _ozet.Text = ozet.Length > 46 ? ozet.Substring(0, 45).TrimEnd() + "…" : ozet;
-            _ozet.ToolTip = "Sıradaki tıklamada çizilecek: " + ozet;
-            ImageSource simge = null;
-            if (oge != null && oge.ElemanMi)
-            {
-                var t = HizliSecim.SeciliTip(oge, HizliSecim.TemelKatalog);
-                if (t != null) simge = DurumSimgesi(oge.Tur, t.Cins, HizliSecim.Durum, HizliSecim.DmDurum);
-            }
-            _ozet.Image = simge ?? (oge != null ? SeritSimgeleri.OgeSimgesi(oge, 16) : null);
+            if (_ayrinti == null) return;
+            string ozet = HizliSecim.Oge != null ? HizliSecim.Ozet() : "";
+            _ayrinti.ToolTip = (string.IsNullOrEmpty(ozet) ? "" : "Sıradaki tıklamada çizilecek: " + ozet + "\n\n") + AyrintiAciklamasi;
         }
 
         private static void TipSecildi(RibbonButton b)
@@ -788,6 +789,25 @@ namespace SebekeHakedis.Eklenti
         }
 
         // ---------------- Yardımcılar ----------------
+
+        /// <summary>Sekmenin başındaki Şebeke-M paneli: logo düğmesi (Hakkında: sürüm ve komut listesi).</summary>
+        private static void MarkaPaneli(RibbonTab sekme)
+        {
+            var p = Panel(sekme, Marka.Ad);
+            p.Items.Add(new RibbonButton
+            {
+                Text = "Hakkında",
+                ShowText = true,
+                ShowImage = true,
+                Size = RibbonItemSize.Large,
+                Orientation = System.Windows.Controls.Orientation.Vertical,
+                LargeImage = Marka.SeritSimgesi(32),
+                Image = Marka.SeritSimgesi(16),
+                ToolTip = Marka.Ad + " — " + Marka.Aciklama + ". Sürüm ve komut listesi.",
+                CommandParameter = "_SH_HAKKINDA ",
+                CommandHandler = new KomutIsleyici(),
+            });
+        }
 
         private static RibbonPanelSource Panel(RibbonTab sekme, string baslik)
         {
