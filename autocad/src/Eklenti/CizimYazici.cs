@@ -35,6 +35,9 @@ namespace SebekeHakedis.Eklenti
         /// <summary>Yeni hat etiketlerinin ve eleman yazılarının yüksekliği (m).</summary>
         public double EtiketYuksekligi = 1.8;
 
+        /// <summary>Güncellemede var olan hat etiketleri de yüksekliği, yeri ve açısıyla telefon düzenine getirilsin (SH_GORUNUM).</summary>
+        public bool EtiketleriYenile;
+
         public readonly List<string> Uyarilar = new List<string>();
 
         public CizimYazici(Database db, Transaction tr)
@@ -163,13 +166,13 @@ namespace SebekeHakedis.Eklenti
         private static bool Tanimlayabilir(string ad) => ad == "GPS" || Semboller.EklentininBlogu(ad);
 
         /// <summary>
-        /// Yeni eleman için kullanılabilecek blok: telefon simgeleri açıksa her zaman SH_ simgesi; değilse istenen blok
-        /// çizimde varsa o, yoksa çizimde aynı tür ve durumdaki elemanların PROMAGIS bloğu, o da yoksa SH_ simgesi.
+        /// Yeni eleman için kullanılabilecek blok: istenen blok çizimde varsa (ya da SH_ simgesiyse) o; yoksa telefon
+        /// simgeleri açıkken SH_ simgesi, kapalıyken çizimde aynı tür ve durumdaki elemanların PROMAGIS bloğu, o da yoksa SH_ simgesi.
         /// </summary>
         public string KullanilabilirBlok(string istenen, string tur, string cins, string durum, IEnumerable<Eleman> cizimElemanlari)
         {
-            if (PromagisYazici.TelefonSembolleri) return PromagisYazici.VarsayilanBlok(tur, cins, durum);
             if (BlokKullanilabilir(istenen)) return istenen;
+            if (PromagisYazici.TelefonSembolleri) return PromagisYazici.VarsayilanBlok(tur, cins, durum);
             string oneri = PromagisYazici.BlokOner(cizimElemanlari, tur, cins, durum);
             if (BlokKullanilabilir(oneri)) return oneri;
             return PromagisYazici.VarsayilanBlok(tur, cins, durum);
@@ -480,9 +483,16 @@ namespace SebekeHakedis.Eklenti
         /// <summary>Tarifteki renk ve çizgi tipini nesneye yazar (telefonun DXF'indeki gibi nesne üstünde).</summary>
         private void StilUygula(Entity e, CadVarlik v)
         {
-            if (v.Renk >= 0)
+            short r = v.Renk;
+            // Telefon simgesi sonradan seçildiyse (tarif PROMAGIS bloğuyla kurulmuştu) rengi buradan
+            if (r < 0 && e is BlockReference && Semboller.EklentininBlogu(v.Blok) && CizimStili.Yuklu)
             {
-                var renk = Color.FromColorIndex(v.Renk == 256 ? ColorMethod.ByLayer : ColorMethod.ByAci, v.Renk);
+                string cins = v.OzDeger("CİNS") ?? "";
+                r = CizimStili.ElemanRengi(PromagisOkuyucu.ElemanTuru(cins), cins, v.OzDeger("DURUM") ?? "");
+            }
+            if (r >= 0)
+            {
+                var renk = Color.FromColorIndex(r == 256 ? ColorMethod.ByLayer : ColorMethod.ByAci, r);
                 if (!e.Color.Equals(renk)) e.Color = renk;
             }
             if (!string.IsNullOrEmpty(v.CizgiTipi))
@@ -565,9 +575,11 @@ namespace SebekeHakedis.Eklenti
                     var eski = _tr.GetObject(aid, OpenMode.ForWrite, false) as AttributeReference;
                     if (eski != null) eski.Erase();
                 }
+                bool eskiSh = Semboller.EklentininBlogu(EtkinAd(br));
                 var yeniBlok = Blok(v.Blok);
                 br.BlockTableRecord = yeniBlok;
                 if (Semboller.EklentininBlogu(v.Blok) && Math.Abs(br.ScaleFactors.X - 1) > 1e-9) br.ScaleFactors = new Scale3d(1);
+                else if (eskiSh && !Semboller.EklentininBlogu(v.Blok)) br.ColorIndex = 256; // PROMAGIS bloğuna dönüşte KATMANA GÖRE
                 OznitelikleriKur(br, yeniBlok, v.Oz);
                 return;
             }
@@ -856,16 +868,28 @@ namespace SebekeHakedis.Eklenti
                 yazi.UpgradeOpen();
                 if (yazi.TextString != metin) yazi.TextString = metin;
                 if (yazi.LayerId != katman) yazi.LayerId = katman;
-                // Hat başka yere taşındıysa etiket de hattın ortasına gelir
-                bool sol = yazi.HorizontalMode == TextHorizontalMode.TextLeft && yazi.VerticalMode == TextVerticalMode.TextBase;
-                var simdi = sol ? yazi.Position : yazi.AlignmentPoint;
-                if (konumVar && new Point2d(simdi.X, simdi.Y).GetDistanceTo(new Point2d(x, y)) > Math.Max(5.0, 10 * yazi.Height))
+                if (EtiketleriYenile && konumVar)
                 {
+                    // Telefon düzeni: sola dayalı, taban çizgisinde, orta parçanın 2,5 m altında, 1,8 m
+                    yazi.Height = EtiketYuksekligi;
+                    yazi.HorizontalMode = TextHorizontalMode.TextLeft;
+                    yazi.VerticalMode = TextVerticalMode.TextBase;
+                    yazi.Position = new Point3d(x, y, 0);
                     yazi.Rotation = aci;
-                    if (sol) yazi.Position = new Point3d(x, y, 0);
-                    else yazi.AlignmentPoint = new Point3d(x, y, 0);
                 }
-                try { yazi.AdjustAlignment(_db); } catch { }
+                else
+                {
+                    // Hat başka yere taşındıysa etiket de hattın ortasına gelir
+                    bool sol = yazi.HorizontalMode == TextHorizontalMode.TextLeft && yazi.VerticalMode == TextVerticalMode.TextBase;
+                    var simdi = sol ? yazi.Position : yazi.AlignmentPoint;
+                    if (konumVar && new Point2d(simdi.X, simdi.Y).GetDistanceTo(new Point2d(x, y)) > Math.Max(5.0, 10 * yazi.Height))
+                    {
+                        yazi.Rotation = aci;
+                        if (sol) yazi.Position = new Point3d(x, y, 0);
+                        else yazi.AlignmentPoint = new Point3d(x, y, 0);
+                    }
+                    try { yazi.AdjustAlignment(_db); } catch { }
+                }
             }
 
             using (var rb = new ResultBuffer(

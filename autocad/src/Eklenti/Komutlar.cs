@@ -173,10 +173,13 @@ namespace SebekeHakedis.Eklenti
             ed.WriteMessage("\n  Telefon");
             ed.WriteMessage("\n  SH_ICEAL       Telefona gönder: çizimi proje dosyasına yaz (.sebeke.json ya da .volt.json)");
             ed.WriteMessage("\n  SH_PROJEAL     Telefondan al: telefondaki değişiklikleri çizime aktar");
+            ed.WriteMessage("\n  Hızlı çizim (şerit: Kategori → öğe)");
+            ed.WriteMessage("\n  SH_HIZLI       Şeritte seçili öğeyi seçili tip, durum ve hakedişle çiz (pencere açılmaz)");
+            ed.WriteMessage("\n  SH_HIZLIAYRINTI Şeritteki öğeyi süzgeçli, aramalı pencereyle çiz");
             ed.WriteMessage("\n  Çizim");
             ed.WriteMessage("\n  SH_ELEMAN      Direk, box, pano, trafo, mufu koy (GIS numarası kendiliğinden)");
-            ed.WriteMessage("\n  SH_HAT         Hat çiz (direkten direğe; metraj ve etiket kendiliğinden)");
-            ed.WriteMessage("\n  SH_KANAL       Kablo kanalı çiz (hacim ölçülerden)");
+            ed.WriteMessage("\n  SH_HAT         Hat çiz (direkten direğe parçalı; her parçanın metrajı ve etiketi ayrı)");
+            ed.WriteMessage("\n  SH_KANAL       Kablo kanalı çiz (box/direk aralarında parçalı; hacim ölçülerden)");
             ed.WriteMessage("\n  SH_SONDAJ      Yatay sondaj çiz");
             ed.WriteMessage("\n  SH_BOLGE       Bölge (alt proje) sınırı çiz ya da var olan çizgiyi bölge yap");
             ed.WriteMessage("\n  SH_NOKTAAL     Ölçü noktalarını dosyadan al (CSV/TXT)");
@@ -184,6 +187,7 @@ namespace SebekeHakedis.Eklenti
             ed.WriteMessage("\n  SH_MALZEME     Seçilen nesnenin malzemelerini düzenle");
             ed.WriteMessage("\n  SH_METRAJ      Hat/kanal metrajını çizim uzunluğundan yeniden hesapla");
             ed.WriteMessage("\n  SH_HAKEDIS     Aktif hakedişi değiştir");
+            ed.WriteMessage("\n  SH_GORUNUM     Çizimi telefon görünümüne çevir (simge, renk, etiket, parça metrajı)");
             ed.WriteMessage("\n  SH_AYARLAR     Çizim ayarları (ön ek, ölçek, etiket, metraj payı)");
             ed.WriteMessage("\n  Rapor");
             ed.WriteMessage("\n  SH_RAPOR       Bu çizimden Durum Tespit raporu (Excel)");

@@ -409,7 +409,8 @@ namespace SebekeHakedis.Eklenti
                     var t = tur.SelectedItem as Tur;
                     if (t == null) return;
                     string secCins = SeciliCins(cins);
-                    var tipler = secCins.Length > 0 ? o.Katalog.AnaTipler(t.Kod, new[] { secCins }) : o.Katalog.AnaTipler(t.Kod, suzgec.Count > 0 ? suzgec : null);
+                    var gecerli = onceki != null && onceki.Tur == t.Kod ? suzgec : null;
+                    var tipler = secCins.Length > 0 ? o.Katalog.AnaTipler(t.Kod, new[] { secCins }) : o.Katalog.AnaTipler(t.Kod, gecerli != null && gecerli.Count > 0 ? gecerli : null);
                     if (tipler.Count == 0) tipler = o.Katalog.AnaTipler(t.Kod);
                     if (tipler.Count == 0) tipler = o.Katalog.Kalemler.FindAll(x => x.Rol == "ana");
                     string son = onceki != null && onceki.Tur == t.Kod && onceki.Tip != null ? onceki.Tip.Anahtar : o.Ayar.SonDeger("eleman.tip." + t.Kod, null);
@@ -421,9 +422,10 @@ namespace SebekeHakedis.Eklenti
                     var t = tur.SelectedItem as Tur;
                     if (t == null) return;
                     yukleniyor = true;
-                    var cinsler = suzgec.Count > 0 ? new List<string>(suzgec) : o.Katalog.ElemanCinsListesi(t.Kod);
+                    bool suzgecli = suzgec.Count > 0 && onceki != null && onceki.Tur == t.Kod;
+                    var cinsler = suzgecli ? new List<string>(suzgec) : o.Katalog.ElemanCinsListesi(t.Kod);
                     string sonCins = onceki != null && onceki.Tur == t.Kod && onceki.Tip != null ? onceki.Tip.Cins : "";
-                    CinsleriDoldur(cins, o, cinsler, suzgec.Count > 0 ? "" : o.Ayar.SonDeger("eleman.cins." + t.Kod, sonCins));
+                    CinsleriDoldur(cins, o, cinsler, suzgecli ? "" : o.Ayar.SonDeger("eleman.cins." + t.Kod, sonCins));
                     yukleniyor = false;
                     tipleriDoldur();
                 };
@@ -453,7 +455,7 @@ namespace SebekeHakedis.Eklenti
                     DmDurum = dm.Enabled ? DmKodu(dm) : "",
                     Hakedis = (int)hak.Value,
                     Gis = elle ? gis.Text.Trim() : "",
-                    Cinsler = suzgec,
+                    Cinsler = onceki != null && onceki.Tur == ((Tur)tur.SelectedItem).Kod ? suzgec : new List<string>(),
                 };
                 o.Ayar.Son["eleman.tur"] = sonuc.Tur;
                 o.Ayar.Son["eleman.tip." + sonuc.Tur] = sonuc.Tip.Anahtar;
@@ -488,7 +490,8 @@ namespace SebekeHakedis.Eklenti
                     var t = tur.SelectedItem as Tur;
                     if (t == null) return;
                     string secCins = SeciliCins(cins);
-                    var kesitler = secCins.Length > 0 ? o.Katalog.HatKesitleri(t.Kod, new[] { secCins }) : o.Katalog.HatKesitleri(t.Kod, suzgec.Count > 0 ? suzgec : null);
+                    var gecerli = onceki != null && onceki.Tur == t.Kod ? suzgec : null;
+                    var kesitler = secCins.Length > 0 ? o.Katalog.HatKesitleri(t.Kod, new[] { secCins }) : o.Katalog.HatKesitleri(t.Kod, gecerli != null && gecerli.Count > 0 ? gecerli : null);
                     if (kesitler.Count == 0) kesitler = o.Katalog.HatKesitleri(t.Kod);
                     string son = onceki != null && onceki.Tur == t.Kod && onceki.Kesit != null ? onceki.Kesit.Anahtar : o.Ayar.SonDeger("hat.kesit." + t.Kod, null);
                     liste.Doldur(kesitler, son);
@@ -498,9 +501,10 @@ namespace SebekeHakedis.Eklenti
                     var t = tur.SelectedItem as Tur;
                     if (t == null) return;
                     yukleniyor = true;
-                    var cinsler = suzgec.Count > 0 ? new List<string>(suzgec) : o.Katalog.HatCinsListesi(t.Kod);
+                    bool suzgecli = suzgec.Count > 0 && onceki != null && onceki.Tur == t.Kod;
+                    var cinsler = suzgecli ? new List<string>(suzgec) : o.Katalog.HatCinsListesi(t.Kod);
                     string sonCins = onceki != null && onceki.Tur == t.Kod && onceki.Kesit != null ? onceki.Kesit.Cins : "";
-                    CinsleriDoldur(cins, o, cinsler, suzgec.Count > 0 ? "" : o.Ayar.SonDeger("hat.cins." + t.Kod, sonCins));
+                    CinsleriDoldur(cins, o, cinsler, suzgecli ? "" : o.Ayar.SonDeger("hat.cins." + t.Kod, sonCins));
                     yukleniyor = false;
                     kesitleriDoldur();
                 };
@@ -515,7 +519,7 @@ namespace SebekeHakedis.Eklenti
                     return true;
                 };
                 if (!d.Goster()) return null;
-                var sonuc = new HatSecimi { Tur = ((Tur)tur.SelectedItem).Kod, Kesit = liste.Secili, Durum = DurumKodu(durum), Hakedis = (int)hak.Value, Cinsler = suzgec };
+                var sonuc = new HatSecimi { Tur = ((Tur)tur.SelectedItem).Kod, Kesit = liste.Secili, Durum = DurumKodu(durum), Hakedis = (int)hak.Value, Cinsler = onceki != null && onceki.Tur == ((Tur)tur.SelectedItem).Kod ? suzgec : new List<string>() };
                 o.Ayar.Son["hat.tur"] = sonuc.Tur;
                 o.Ayar.Son["hat.kesit." + sonuc.Tur] = sonuc.Kesit.Anahtar;
                 o.Ayar.Son["hat.cins." + sonuc.Tur] = SeciliCins(cins);
@@ -664,7 +668,7 @@ namespace SebekeHakedis.Eklenti
         public static bool Ayarlar(OrtamVerisi o)
         {
             var a = o.Ayar;
-            using (var d = new Duzen("Şebeke Hakediş — çizim ayarları", 600, 690, "Kaydet"))
+            using (var d = new Duzen("Şebeke Hakediş — çizim ayarları", 640, 900, "Kaydet"))
             {
                 var onEk = d.Satir("Katman ön eki", new TextBox { Text = a.KatmanOnEki });
                 d.Not("Boş bırakılırsa çizimdeki PROMAGIS katmanlarından bulunur (şu an: " + o.OnEk + ").");
