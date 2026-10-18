@@ -24,6 +24,7 @@ namespace SebekeHakedis.Cekirdek
         private static Dictionary<string, short[]> _direkRenkleri;
         private static Dictionary<string, double[]> _cizgiTipleri;
         private static short _demontajRengi = 2, _armaturRengi = 4;
+        private static JsonNesne _ekran;
 
         public static bool Yuklu => _katmanlar != null;
 
@@ -105,6 +106,7 @@ namespace SebekeHakedis.Cekirdek
             _direkGerilimi = Sozluk(nr != null ? nr.Nesne("direkGerilimi") : null);
             _hatKatmani = Sozluk(nr != null ? nr.Nesne("hatKatmani") : null);
             if (nr != null) _armaturRengi = (short)nr.Tam("armatur", 4);
+            _ekran = kok.Nesne("ekran");
             _cizgiTipleri = ct;
             _direkRenkleri = dr;
             _promagisTuru = promagis;
@@ -237,5 +239,38 @@ namespace SebekeHakedis.Cekirdek
         }
 
         public static short DemontajRengi => _demontajRengi;
+
+        // ---------------- Ekran renkleri (telefonun koyu ekranı; şerit simgeleri) ----------------
+
+        public static string EkranZemini => _ekran != null ? _ekran.Metin("zemin", "#0b1326") : "#0b1326";
+
+        public static string EkranRengi(string anahtar, string varsayilan = "#cbd5e1") => _ekran != null ? _ekran.Metin(anahtar, varsayilan) : varsayilan;
+
+        /// <summary>Elemanın telefondaki ekran rengi (yeni durum): direkler gerilime göre, trafo / box / pano mavi, armatür sarı.</summary>
+        public static string EkranElemanRengi(string tur, string cins, bool mevcut = false)
+        {
+            Denetle();
+            string gerilim;
+            if (_direkGerilimi.TryGetValue(tur ?? "", out gerilim))
+            {
+                var d = _ekran != null ? _ekran.Nesne(mevcut ? "direkMevcut" : "direk") : null;
+                return d != null ? d.Metin(gerilim, "#dae2fd") : "#dae2fd";
+            }
+            string aile = Semboller.Aile(tur, cins);
+            if (aile == "ARMATUR") return EkranRengi("armatur", "#fde047");
+            if (aile.StartsWith("TRAFO", StringComparison.Ordinal) || aile == "SDK" || aile == "PANO" || aile == "MENHOL") return EkranRengi("trafo", "#6b82ff");
+            if (aile == "DIREK_AYD") return EkranRengi("armatur", "#fde047");
+            return EkranRengi("diger");
+        }
+
+        /// <summary>Hattın telefondaki ekran rengi.</summary>
+        public static string EkranHatRengi(string tur)
+        {
+            Denetle();
+            string anahtar;
+            if (!_hatKatmani.TryGetValue(tur ?? "", out anahtar)) anahtar = "HAT_AG";
+            var h = _ekran != null ? _ekran.Nesne("hat") : null;
+            return h != null ? h.Metin(anahtar, "#7ee08a") : "#7ee08a";
+        }
     }
 }

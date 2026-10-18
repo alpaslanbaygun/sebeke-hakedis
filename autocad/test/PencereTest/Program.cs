@@ -224,6 +224,33 @@ namespace SebekeHakedis.PencereTest
                 var s = Pencereler.Eleman(t, null);
                 Esit(true, s != null, "eleman (telefon projesi): döner");
             }, null, true);
+
+            // Şeritteki hızlı çizim öğesinin süzgeçli penceresi: AG Yeraltı › AG Ek Mufu yalnız AG ek mufularını listeler
+            KatalogKaynagi.KategorileriYukle();
+            var mufuOgesi = Kategoriler.Oge("AG_YERALTI", "EK_MUFU_AG");
+            Dene("13b-eleman-suzgecli", () =>
+            {
+                var s = Pencereler.Eleman(o, new ElemanSecimi { Tur = mufuOgesi.Tur, Durum = "M", Hakedis = 1, Cinsler = new List<string>(mufuOgesi.Cinsler) });
+                Esit(true, s != null && s.Tip != null && s.Tip.Cins.StartsWith("EK_MUFU_AG", StringComparison.Ordinal), "süzgeçli pencere: yalnız AG ek mufu tipi");
+                Esit(2, s != null ? s.Cinsler.Count : 0, "süzgeçli pencere: süzgeç seçimde kalır");
+            }, f =>
+            {
+                var lb = Bul<ListBox>(f, x => true);
+                bool hepsiAg = true;
+                foreach (var it in lb.Items) if (!((KatalogKalemi)it).Cins.StartsWith("EK_MUFU_AG", StringComparison.Ordinal)) hepsiAg = false;
+                Esit(true, lb.Items.Count > 5 && hepsiAg, "süzgeçli pencere: listede yalnız AG ek mufuları");
+            });
+
+            // Şerit menü önizlemesi (AutoCAD olmadan; aynı veri ve simgelerle)
+            Console.WriteLine("14-serit");
+            SeritOnizleme.Hepsi(_klasor);
+            HizliSecim.Yukle();
+            var agHavai = Kategoriler.Bul("AG_HAVAI");
+            Esit(true, agHavai != null && agHavai.Ogeler.Count >= 2 && agHavai.Ogeler[0].Ad == "AG Direk" && agHavai.Ogeler[1].Ad == "AG Hat", "şerit: AG Havai → AG Direk, AG Hat");
+            var kisa = HizliSecim.KisaListe(agHavai.Ogeler[0]);
+            Esit(true, kisa.Count >= 8 && kisa.TrueForAll(x => x.Rol == "ana" && x.Cins.StartsWith("AG_", StringComparison.Ordinal)), "şerit: AG Direk kısa tip listesi yalnız AG direkleri");
+            var ogHat = Kategoriler.Oge("OG_HAVAI", "OG_HAT");
+            Esit(true, HizliSecim.KisaListe(ogHat).TrueForAll(x => x.Cins == "OG_İLETKEN"), "şerit: OG Hat tipleri yalnız OG iletken");
         }
 
         // ---------------- Yardımcılar ----------------

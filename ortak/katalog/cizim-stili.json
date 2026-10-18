@@ -61,6 +61,18 @@
   "YAZI": { "telefon": "ELEKTRIK-YAZI", "promagis": ["YAZI"], "aci": 7 },
   "OLCU": { "telefon": "OLCU-NOKTA", "promagis": ["GPS"], "aci": 7 }
  },
+ "ekran": {
+  "aciklama": "Telefon ekranındaki renkler (koyu zemin): AutoCAD şeridindeki simgeler bunlarla çizilir, telefondaki gibi görünür. Çizimin kendisi yukarıdaki ACI renklerini kullanır (kâğıt / beyaz zemine göre: yeni koyu, mevcut açık).",
+  "zemin": "#0b1326",
+  "direk": { "AG": "#23a455", "OG": "#ff0000", "AYD": "#2f7fd6", "ENH": "#ff00ff" },
+  "direkMevcut": { "AG": "#00ffbf", "OG": "#d94a4a", "AYD": "#9b5cff", "ENH": "#ff00ff" },
+  "hat": { "HAT_AG": "#7ee08a", "HAT_OG": "#ff6b6b", "HAT_AYD": "#7fffff", "HAT_ENH": "#ff79ff", "HAT_ABONE": "#fbbf24", "HAT_MUSTEREK": "#ff79ff", "KABLO": "#ff6b6b", "KANAL": "#ff6b6b", "SONDAJ": "#fbbf24" },
+  "trafo": "#6b82ff",
+  "armatur": "#fde047",
+  "diger": "#cbd5e1",
+  "bolge": "#fde047",
+  "nokta": "#e2e8f0"
+ },
  "nesneRenkleri": {
   "aciklama": "Nesneye yazılan renk (katmandan bağımsız, telefonun DXF'iyle aynı): direkler direkRenkleri'nden; diğer elemanlar ve hatlar kendi katman anahtarının rengi; demontaj 2.",
   "elemanKatmani": {

@@ -39,15 +39,18 @@ namespace SebekeHakedis.Eklenti
 
         // ---------------- Tipler ----------------
 
-        /// <summary>Öğenin bütün tipleri (verilen katalogdan, öğenin tür ve cins süzgeciyle).</summary>
-        public static List<KatalogKalemi> Tipler(MenuOgesi oge, Katalog k)
+        /// <summary>
+        /// Öğenin tipleri (verilen katalogdan, öğenin tür ve cins süzgeciyle). genis: hatlarda türün cinslerinden sonra diğer
+        /// iletken ve kablolar da (arama penceresi için); değilse yalnız türün cinsleri (şeritteki kısa liste).
+        /// </summary>
+        public static List<KatalogKalemi> Tipler(MenuOgesi oge, Katalog k, bool genis = false)
         {
             if (oge == null || k == null) return new List<KatalogKalemi>();
             IList<string> cinsler = oge.Cinsler.Count > 0 ? oge.Cinsler : null;
             switch (oge.Komut)
             {
-                case "SH_ELEMAN": return k.AnaTipler(oge.Tur, cinsler);
-                case "SH_HAT": return k.HatKesitleri(oge.Tur, cinsler);
+                case "SH_ELEMAN": return k.AnaTipler(oge.Tur, cinsler ?? (genis ? null : k.ElemanCinsListesi(oge.Tur)));
+                case "SH_HAT": return k.HatKesitleri(oge.Tur, cinsler ?? (genis ? null : k.HatCinsListesi(oge.Tur)));
                 case "SH_SONDAJ": return k.SondajTipleri();
                 case "SH_KANAL": return k.KanalZeminleri();
                 default: return new List<KatalogKalemi>();
@@ -162,7 +165,7 @@ namespace SebekeHakedis.Eklenti
             {
                 KatalogKaynagi.KategorileriYukle();
                 if (!File.Exists(Dosya)) { Varsayilan(); return; }
-                var kok = Json.Oku(File.ReadAllText(Dosya, Encoding.UTF8)) as JsonNesne;
+                var kok = Cekirdek.Json.Oku(File.ReadAllText(Dosya, Encoding.UTF8)) as JsonNesne;
                 if (kok == null) { Varsayilan(); return; }
                 Kategori = Kategoriler.Bul(kok.Metin("kategori"));
                 if (Kategori != null) Oge = Kategori.Ogeler.Find(x => x.Kod == kok.Metin("oge"));
@@ -214,7 +217,7 @@ namespace SebekeHakedis.Eklenti
                 foreach (var kv in _son) son[kv.Key] = new List<object>(kv.Value);
                 kok["son"] = son;
                 Directory.CreateDirectory(Path.GetDirectoryName(Dosya));
-                File.WriteAllText(Dosya, Json.Yaz(kok, true), new UTF8Encoding(false));
+                File.WriteAllText(Dosya, Cekirdek.Json.Yaz(kok, true), new UTF8Encoding(false));
             }
             catch { }
         }

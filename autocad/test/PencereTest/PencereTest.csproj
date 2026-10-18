@@ -9,6 +9,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <LangVersion>9.0</LangVersion>
     <Nullable>disable</Nullable>
@@ -21,8 +22,11 @@
     <Compile Include="..\..\src\Cekirdek\**\*.cs" Link="Cekirdek\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\..\src\Eklenti\Pencereler.cs" Link="Eklenti\Pencereler.cs" />
     <Compile Include="..\..\src\Eklenti\OrtamVerisi.cs" Link="Eklenti\OrtamVerisi.cs" />
+    <Compile Include="..\..\src\Eklenti\HizliSecim.cs" Link="Eklenti\HizliSecim.cs" />
+    <Compile Include="..\..\src\Eklenti\SeritSimgeleri.cs" Link="Eklenti\SeritSimgeleri.cs" />
     <EmbeddedResource Include="..\..\..\ortak\katalog\kalemler.json" Link="Katalog\kalemler.json" LogicalName="SebekeHakedis.kalemler.json" />
     <EmbeddedResource Include="..\..\..\ortak\katalog\cizim-stili.json" Link="Katalog\cizim-stili.json" LogicalName="SebekeHakedis.cizim-stili.json" />
+    <EmbeddedResource Include="..\..\..\ortak\katalog\semboller.json" Link="Katalog\semboller.json" LogicalName="SebekeHakedis.semboller.json" />
     <EmbeddedResource Include="..\..\..\ortak\katalog\kategoriler.json" Link="Katalog\kategoriler.json" LogicalName="SebekeHakedis.kategoriler.json" />
     <None Include="..\CekirdekTest\ornek-dokum.json" Link="ornek-dokum.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\CekirdekTest\telefon-proje.sebeke.json" Link="telefon-proje.sebeke.json" CopyToOutputDirectory="PreserveNewest" />
