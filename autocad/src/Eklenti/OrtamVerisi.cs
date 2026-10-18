@@ -34,6 +34,8 @@ namespace SebekeHakedis.Eklenti
             Hakedis = Ayar.AktifHakedis > 0 ? Ayar.AktifHakedis : Math.Max(1, Proje.AktifHakedis);
             Sira = Numara.EnBuyukSira(Proje);
             _katalog = null;
+            PromagisYazici.TelefonSembolleri = Ayar.TelefonSembolleri;
+            KatalogKaynagi.StiliYukle();
         }
 
         private static string Ilk(params string[] l)
@@ -45,8 +47,11 @@ namespace SebekeHakedis.Eklenti
         /// <summary>Yeni kalemin sıra numarası (INDEX).</summary>
         public string YeniSira() => (++Sira).ToString(CultureInfo.InvariantCulture);
 
-        /// <summary>Yeni elemanın blok ölçeği: ayarda verilmişse o, yoksa çizimdekilerle aynı (PROMAGIS: 4).</summary>
-        public double Olcek(string blok) => Ayar.SembolOlcegi > 0 ? Ayar.SembolOlcegi : PromagisYazici.OlcekOner(Varliklar, blok, 4);
+        /// <summary>
+        /// Yeni elemanın blok ölçeği: eklentinin SH_ simgeleri metre cinsindendir, her zaman 1 ölçekle konur (telefonla
+        /// aynı boyut); PROMAGIS bloklarında ayardaki ölçek, yoksa çizimdekilerle aynı (PROMAGIS: 4).
+        /// </summary>
+        public double Olcek(string blok) => Semboller.EklentininBlogu(blok) ? 1 : Ayar.SembolOlcegi > 0 ? Ayar.SembolOlcegi : PromagisYazici.OlcekOner(Varliklar, blok, 4);
 
         /// <summary>Noktaya en yakın eleman (mesafe içinde); yoksa null.</summary>
         public Eleman YakinEleman(double x, double y, double mesafe)
@@ -83,6 +88,17 @@ namespace SebekeHakedis.Eklenti
             string json = Kaynak("SebekeHakedis.semboller.json");
             if (!string.IsNullOrEmpty(json)) Semboller.Yukle(json);
             _sembollerYuklendi = true;
+        }
+
+        private static bool _stilYuklendi;
+
+        /// <summary>Ortak çizim stilini bir kez yükler (renkler, çizgi tipleri, yazı yükseklikleri).</summary>
+        public static void StiliYukle()
+        {
+            if (_stilYuklendi || CizimStili.Yuklu) { _stilYuklendi = true; return; }
+            string json = Kaynak("SebekeHakedis.cizim-stili.json");
+            if (!string.IsNullOrEmpty(json)) CizimStili.Yukle(json);
+            _stilYuklendi = true;
         }
 
         private static bool _kategorilerYuklendi;

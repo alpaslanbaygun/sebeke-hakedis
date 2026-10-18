@@ -28,13 +28,14 @@ namespace SebekeHakedis.Cekirdek
     /// <summary>
     /// Lejant simge takımı: eleman türü + malzeme (cins) + durumdan blok adı; ortak/katalog/semboller.json'dan
     /// geometri. Telefonun DXF çıktısı aynı tabloyu ve aynı blok adlarını kullanır.
-    /// Boyutlar metre (1/1000 pafta); eklenti blokları PROMAGIS gibi 4 ölçekle konduğundan blok birimi = metre / 4.
+    /// Boyutlar metre (1/1000 pafta); bloklar telefonun DXF'indeki gibi metre cinsinden tanımlanır ve 1 ölçekle konur
+    /// (eski eklenti 1/4 geometri + 4 ölçek kullanırdı; CizimYazici açılışta dönüştürür).
     /// </summary>
     public static class Semboller
     {
         public const string OnEk = "SH_";
-        /// <summary>Bloklar bu ölçekle konur; blok birimine çevirme böleni.</summary>
-        public const double BlokOlcegi = 4;
+        /// <summary>Bloklar bu ölçekle konur; blok birimine çevirme böleni (1: blok birimi = metre).</summary>
+        public const double BlokOlcegi = 1;
 
         private static Dictionary<string, Sembol> _tablo;
         private static Dictionary<string, string> _aileAdlari;

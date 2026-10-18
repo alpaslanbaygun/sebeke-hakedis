@@ -9,7 +9,7 @@ const kok = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const kaynak = path.join(kok, 'ortak/katalog');
 const hedef = path.join(kok, 'telefon/web/src/ortak');
 fs.mkdirSync(hedef, { recursive: true });
-const dosyalar = ['semboller', 'volt-eslesme', 'kalemler', 'katsayilar'];
+const dosyalar = ['semboller', 'volt-eslesme', 'kalemler', 'katsayilar', 'cizim-stili'];
 for (const ad of dosyalar) {
   const json = JSON.parse(fs.readFileSync(path.join(kaynak, ad + '.json'), 'utf8'));
   fs.writeFileSync(path.join(hedef, ad + '.js'),

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -10,8 +11,9 @@ namespace SebekeHakedis.Eklenti
 {
     /// <summary>
     /// Çekirdeğin ürettiği tarifleri (CadVarlik) çizime yazar: katman, blok, öznitelik, köşe,
-    /// genişletilmiş veri (XDATA) ve hat etiketi. Çağıranın açtığı tek bir işlem içinde çalışır;
-    /// işlemi onaylamak (Commit) çağıranın işidir.
+    /// genişletilmiş veri (XDATA), hat etiketi ve parça metrajları. Görünüm ortak çizim stilinden gelir
+    /// (ortak/katalog/cizim-stili.json — telefonun DXF çıktısıyla birebir). Çağıranın açtığı tek bir işlem
+    /// içinde çalışır; işlemi onaylamak (Commit) çağıranın işidir.
     /// </summary>
     internal sealed class CizimYazici
     {
@@ -20,14 +22,18 @@ namespace SebekeHakedis.Eklenti
 
         private static readonly Regex EtiketTaniticisi = new Regex(@"/\(([0-9A-Fa-f]+)\)\s*$", RegexOptions.CultureInvariant);
 
+        /// <summary>Blok tanımının sürümü (blok sözlüğünde saklanır). 2: metre cinsinden geometri, 1 ölçek, telefon yazı düzeni.</summary>
+        private const string BlokSurumu = "2";
+        private const string Sozluk = "SEBEKE_HAKEDIS", BlokKaydi = "BLOK";
+
         private readonly Database _db;
         private readonly Transaction _tr;
         private BlockTableRecord _ms;
         private readonly Dictionary<string, ObjectId> _katmanlar = new Dictionary<string, ObjectId>(StringComparer.OrdinalIgnoreCase);
-        private bool _uygulamalar;
+        private bool _uygulamalar, _bloklarDenetlendi;
 
-        /// <summary>Yeni hat etiketlerinin yazı yüksekliği (m).</summary>
-        public double EtiketYuksekligi = 0.5;
+        /// <summary>Yeni hat etiketlerinin ve eleman yazılarının yüksekliği (m).</summary>
+        public double EtiketYuksekligi = 1.8;
 
         public readonly List<string> Uyarilar = new List<string>();
 
@@ -36,6 +42,8 @@ namespace SebekeHakedis.Eklenti
             _db = db;
             _tr = tr;
             KatalogKaynagi.SembolleriYukle();
+            KatalogKaynagi.StiliYukle();
+            if (CizimStili.Yuklu) EtiketYuksekligi = CizimStili.YaziYuksekligi;
         }
 
         private BlockTableRecord Ms
@@ -65,7 +73,7 @@ namespace SebekeHakedis.Eklenti
             _uygulamalar = true;
         }
 
-        /// <summary>Katman; yoksa PROMAGIS çizimlerindeki renk ve çizgi tipiyle oluşturulur.</summary>
+        /// <summary>Katman; yoksa ortak çizim stilindeki renk ve çizgi tipiyle oluşturulur.</summary>
         public ObjectId Katman(string ad)
         {
             if (string.IsNullOrWhiteSpace(ad)) return _db.LayerZero;
@@ -98,11 +106,41 @@ namespace SebekeHakedis.Eklenti
             return id;
         }
 
+        /// <summary>Yazıların katmanı: nesnenin ön ekiyle &lt;önek&gt;_YAZI (telefondaki ELEKTRIK-YAZI karşılığı).</summary>
+        private ObjectId YaziKatmani(string nesneKatmani)
+        {
+            string onEk, tur; int hak;
+            PromagisOkuyucu.KatmanCoz(nesneKatmani, out onEk, out tur, out hak);
+            if (string.IsNullOrEmpty(onEk))
+            {
+                int i = (nesneKatmani ?? "").IndexOf('_');
+                onEk = i > 0 ? nesneKatmani.Substring(0, i) : "SC";
+            }
+            return Katman(onEk + "_YAZI");
+        }
+
+        /// <summary>
+        /// Çizgi tipi: çizimde varsa o; yoksa ortak stildeki desenle (metre; telefonun DXF'iyle aynı) tanımlanır;
+        /// desen bilinmiyorsa AutoCAD'in çizgi tipi dosyalarından yüklenir. "CONTINUOUS" → sürekli.
+        /// </summary>
         private ObjectId CizgiTipi(string ad)
         {
             if (string.IsNullOrEmpty(ad)) return ObjectId.Null;
+            if (string.Equals(ad, "CONTINUOUS", StringComparison.OrdinalIgnoreCase)) return _db.ContinuousLinetype;
             var ltt = (LinetypeTable)_tr.GetObject(_db.LinetypeTableId, OpenMode.ForRead);
             if (ltt.Has(ad)) return ltt[ad];
+            var desen = CizimStili.Yuklu ? CizimStili.CizgiDeseni(ad) : null;
+            if (desen != null && desen.Length > 0)
+            {
+                var ltr = new LinetypeTableRecord { Name = ad, AsciiDescription = ad, NumDashes = desen.Length };
+                double toplam = 0;
+                for (int i = 0; i < desen.Length; i++) { ltr.SetDashLengthAt(i, desen[i]); toplam += Math.Abs(desen[i]); }
+                ltr.PatternLength = toplam;
+                ltt.UpgradeOpen();
+                var id = ltt.Add(ltr);
+                _tr.AddNewlyCreatedDBObject(ltr, true);
+                return id;
+            }
             foreach (var dosya in new[] { "acadiso.lin", "acad.lin" })
             {
                 try { _db.LoadLineTypeFile(ad, dosya); }
@@ -125,40 +163,153 @@ namespace SebekeHakedis.Eklenti
         private static bool Tanimlayabilir(string ad) => ad == "GPS" || Semboller.EklentininBlogu(ad);
 
         /// <summary>
-        /// Yeni eleman için kullanılabilecek blok: istenen blok çizimde varsa o; yoksa çizimde aynı tür ve
-        /// durumdaki elemanların PROMAGIS bloğu; o da yoksa eklentinin lejant simgesi (tür + malzeme + durum).
+        /// Yeni eleman için kullanılabilecek blok: telefon simgeleri açıksa her zaman SH_ simgesi; değilse istenen blok
+        /// çizimde varsa o, yoksa çizimde aynı tür ve durumdaki elemanların PROMAGIS bloğu, o da yoksa SH_ simgesi.
         /// </summary>
         public string KullanilabilirBlok(string istenen, string tur, string cins, string durum, IEnumerable<Eleman> cizimElemanlari)
         {
+            if (PromagisYazici.TelefonSembolleri) return PromagisYazici.VarsayilanBlok(tur, cins, durum);
             if (BlokKullanilabilir(istenen)) return istenen;
             string oneri = PromagisYazici.BlokOner(cizimElemanlari, tur, cins, durum);
             if (BlokKullanilabilir(oneri)) return oneri;
             return PromagisYazici.VarsayilanBlok(tur, cins, durum);
         }
 
-        /// <summary>Blok tanımı; eklentinin kendi bloklarıysa ve çizimde yoksa oluşturulur.</summary>
+        /// <summary>Blok tanımı; eklentinin kendi bloklarıysa ve çizimde yoksa oluşturulur, eski sürümse yenilenir.</summary>
         public ObjectId Blok(string ad)
         {
             var bt = (BlockTable)_tr.GetObject(_db.BlockTableId, OpenMode.ForRead);
-            if (bt.Has(ad)) return bt[ad];
+            if (bt.Has(ad))
+            {
+                var id0 = bt[ad];
+                if (Semboller.EklentininBlogu(ad))
+                {
+                    var eski = (BlockTableRecord)_tr.GetObject(id0, OpenMode.ForRead);
+                    if (!BlokGuncel(eski)) BlokYenile(eski, ad);
+                }
+                return id0;
+            }
             if (!Tanimlayabilir(ad)) throw new InvalidOperationException("Blok bulunamadı: " + ad);
             bt.UpgradeOpen();
             var btr = new BlockTableRecord { Name = ad, Origin = Point3d.Origin };
             var id = bt.Add(btr);
             _tr.AddNewlyCreatedDBObject(btr, true);
             BlokCiz(btr, ad);
+            if (Semboller.EklentininBlogu(ad)) BlokSurumunuYaz(btr);
             return id;
         }
 
         /// <summary>
-        /// Eklentinin blokları: lejant simge takımından (ortak/katalog/semboller.json) çizilir. Tablo metre
-        /// cinsindendir; bloklar PROMAGIS gibi 4 ölçekle konduğundan blok birimi = metre / 4. Tabloda olmayan
-        /// eski bir SH_ adı için basit daire çizilir.
+        /// Çizimdeki eski sürüm SH_ bloklarını (1/4 geometri, 4 ölçek; PROMAGIS düzeni yazılar) yeni düzene çevirir:
+        /// geometri metre, ölçek 1, yazılar telefondaki gibi. Görünen boyut değişmez. Her yazma işleminin başında bir kez.
+        /// </summary>
+        public void EskiBloklariYenile()
+        {
+            if (_bloklarDenetlendi) return;
+            _bloklarDenetlendi = true;
+            var bt = (BlockTable)_tr.GetObject(_db.BlockTableId, OpenMode.ForRead);
+            var adaylar = new List<ObjectId>();
+            foreach (ObjectId id in bt)
+            {
+                var btr = _tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord;
+                if (btr == null || btr.IsLayout || btr.IsAnonymous || !Semboller.EklentininBlogu(btr.Name)) continue;
+                if (!BlokGuncel(btr)) adaylar.Add(id);
+            }
+            foreach (var id in adaylar)
+            {
+                var btr = (BlockTableRecord)_tr.GetObject(id, OpenMode.ForRead);
+                try { BlokYenile(btr, btr.Name); }
+                catch (Exception ex) { Uyarilar.Add("Blok yenilenemedi: " + btr.Name + " (" + ex.Message + ")"); }
+            }
+        }
+
+        private bool BlokGuncel(BlockTableRecord btr)
+        {
+            if (btr.ExtensionDictionary.IsNull) return false;
+            var d = _tr.GetObject(btr.ExtensionDictionary, OpenMode.ForRead) as DBDictionary;
+            if (d == null || !d.Contains(Sozluk)) return false;
+            var alt = _tr.GetObject(d.GetAt(Sozluk), OpenMode.ForRead) as DBDictionary;
+            if (alt == null || !alt.Contains(BlokKaydi)) return false;
+            var xr = _tr.GetObject(alt.GetAt(BlokKaydi), OpenMode.ForRead) as Xrecord;
+            if (xr == null) return false;
+            using (var rb = xr.Data)
+            {
+                if (rb == null) return false;
+                foreach (TypedValue tv in rb) return Convert.ToString(tv.Value, CultureInfo.InvariantCulture) == BlokSurumu;
+            }
+            return false;
+        }
+
+        private void BlokSurumunuYaz(BlockTableRecord btr)
+        {
+            if (!btr.IsWriteEnabled) btr.UpgradeOpen();
+            if (btr.ExtensionDictionary.IsNull) btr.CreateExtensionDictionary();
+            var d = (DBDictionary)_tr.GetObject(btr.ExtensionDictionary, OpenMode.ForWrite);
+            DBDictionary alt;
+            if (d.Contains(Sozluk)) alt = (DBDictionary)_tr.GetObject(d.GetAt(Sozluk), OpenMode.ForWrite);
+            else
+            {
+                alt = new DBDictionary();
+                d.SetAt(Sozluk, alt);
+                _tr.AddNewlyCreatedDBObject(alt, true);
+            }
+            Xrecord xr;
+            if (alt.Contains(BlokKaydi)) xr = (Xrecord)_tr.GetObject(alt.GetAt(BlokKaydi), OpenMode.ForWrite);
+            else
+            {
+                xr = new Xrecord();
+                alt.SetAt(BlokKaydi, xr);
+                _tr.AddNewlyCreatedDBObject(xr, true);
+            }
+            using (var rb = new ResultBuffer(new TypedValue((int)DxfCode.Text, BlokSurumu))) xr.Data = rb;
+        }
+
+        /// <summary>Eski blok tanımını yeniden çizer ve çizimdeki örneklerinin ölçeğini / yazılarını yeni düzene getirir.</summary>
+        private void BlokYenile(BlockTableRecord btr, string ad)
+        {
+            if (!btr.IsWriteEnabled) btr.UpgradeOpen();
+            var eskiler = new List<ObjectId>();
+            foreach (ObjectId eid in btr) eskiler.Add(eid);
+            foreach (var eid in eskiler)
+            {
+                var e = _tr.GetObject(eid, OpenMode.ForWrite, false) as Entity;
+                if (e != null) e.Erase();
+            }
+            BlokCiz(btr, ad);
+            BlokSurumunuYaz(btr);
+            var ornekler = btr.GetBlockReferenceIds(true, false);
+            foreach (ObjectId rid in ornekler)
+            {
+                var br = _tr.GetObject(rid, OpenMode.ForWrite, false) as BlockReference;
+                if (br == null) continue;
+                // Eski geometri metre/4 idi: ölçek 4 → 1 (görünen boyut aynı kalır)
+                double s = br.ScaleFactors.X;
+                double yeni = Math.Abs(s) < 1e-9 ? 1 : s / 4.0;
+                var degerler = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                var attler = new List<ObjectId>();
+                foreach (ObjectId aid in br.AttributeCollection) attler.Add(aid);
+                foreach (var aid in attler)
+                {
+                    var ar = _tr.GetObject(aid, OpenMode.ForWrite, false) as AttributeReference;
+                    if (ar == null) continue;
+                    degerler[ar.Tag] = ar.TextString;
+                    ar.Erase();
+                }
+                br.ScaleFactors = new Scale3d(yeni);
+                OznitelikleriKur(br, btr.ObjectId, degerler);
+                br.RecordGraphicsModified(true);
+            }
+        }
+
+        /// <summary>
+        /// Eklentinin blokları: lejant simge takımından (ortak/katalog/semboller.json) metre cinsinden çizilir; bloklar
+        /// 1 ölçekle konur (telefonun DXF'iyle aynı). Tabloda olmayan eski bir SH_ adı için basit daire çizilir.
         /// </summary>
         private void BlokCiz(BlockTableRecord btr, string ad)
         {
             var parcalar = new List<Entity>();
-            double yariGenislik = 0.5; // blok birimi
+            double yariGenislik = 2; // metre
+            double k = 1 / Semboller.BlokOlcegi;
             if (ad == "GPS")
             {
                 parcalar.Add(new Circle(Point3d.Origin, Vector3d.ZAxis, 0.15));
@@ -170,20 +321,20 @@ namespace SebekeHakedis.Eklenti
                 var sembol = Semboller.Bul(ad);
                 if (sembol != null)
                 {
-                    yariGenislik = sembol.YariGenislik / Semboller.BlokOlcegi;
-                    foreach (var i in sembol.Ilkeller) parcalar.AddRange(IlkelVarliklari(i, 1 / Semboller.BlokOlcegi));
+                    yariGenislik = sembol.YariGenislik * k;
+                    foreach (var i in sembol.Ilkeller) parcalar.AddRange(IlkelVarliklari(i, k));
                 }
                 else
                 {
-                    parcalar.Add(new Circle(Point3d.Origin, Vector3d.ZAxis, 0.5));
-                    parcalar.Add(new Circle(Point3d.Origin, Vector3d.ZAxis, 0.08));
+                    parcalar.Add(new Circle(Point3d.Origin, Vector3d.ZAxis, 2 * k));
+                    parcalar.Add(new Circle(Point3d.Origin, Vector3d.ZAxis, 0.3 * k));
                 }
             }
             foreach (var e in parcalar)
             {
                 e.SetDatabaseDefaults(_db);
                 e.LayerId = _db.LayerZero;
-                e.ColorIndex = 0; // BLOĞA GÖRE: elemanın katman rengini alır
+                e.ColorIndex = 0; // BLOĞA GÖRE: elemanın rengini alır
                 btr.AppendEntity(e);
                 _tr.AddNewlyCreatedDBObject(e, true);
             }
@@ -192,15 +343,19 @@ namespace SebekeHakedis.Eklenti
                 for (int i = 1; i <= 6; i++) OznitelikTanimi(btr, "METIN" + i, 0.27, 0.12 - 0.17 * (i - 1), 0.1, true);
                 return;
             }
-            // Öznitelikler PROMAGIS bloklarıyla aynı adlarda; yazılar simgenin sağına, simge boyutuna göre
-            double x = Math.Max(0.7, yariGenislik + 0.2);
-            OznitelikTanimi(btr, "SIRA_NO", -yariGenislik, yariGenislik + 0.15, 0.3, true);
-            OznitelikTanimi(btr, "GIS_ID", x, 0.1, 0.4, false);
-            OznitelikTanimi(btr, "TİP", x, -0.47, 0.4, false);
-            OznitelikTanimi(btr, "CİNS", x + 0.03, -0.73, 0.1, true);
-            OznitelikTanimi(btr, "DURUM", x + 0.03, -0.9, 0.1, true);
-            OznitelikTanimi(btr, "GÜÇ", x + 0.03, -1.05, 0.1, true);
-            OznitelikTanimi(btr, "GERİLİM", x + 0.03, -1.2, 0.1, true);
+            // Öznitelikler PROMAGIS bloklarıyla aynı adlarda; görünenler telefondaki yazı yerinde: sağ üstte
+            // GIS numarası, altında tip (telefon tek satırda "no tip" yazar). Diğerleri gizli, küçük.
+            double yh = CizimStili.Yuklu ? CizimStili.YaziYuksekligi : 1.8;
+            double x = CizimStili.Yuklu ? CizimStili.ElemanKaydirma[0] : 3.5, y = CizimStili.Yuklu ? CizimStili.ElemanKaydirma[1] : 3.0;
+            double satir = CizimStili.Yuklu ? CizimStili.SatirArasi : 2.2;
+            double kucuk = yh * 0.25;
+            OznitelikTanimi(btr, "SIRA_NO", -yariGenislik, yariGenislik + 0.5, kucuk, true);
+            OznitelikTanimi(btr, "GIS_ID", x, y, yh, false);
+            OznitelikTanimi(btr, "TİP", x, y - satir, yh, false);
+            OznitelikTanimi(btr, "CİNS", x, y - satir - kucuk * 1.6, kucuk, true);
+            OznitelikTanimi(btr, "DURUM", x, y - satir - kucuk * 3.2, kucuk, true);
+            OznitelikTanimi(btr, "GÜÇ", x, y - satir - kucuk * 4.8, kucuk, true);
+            OznitelikTanimi(btr, "GERİLİM", x, y - satir - kucuk * 6.4, kucuk, true);
         }
 
         /// <summary>Sembol ilkelini AutoCAD varlıklarına çevirir (k: metre → blok birimi çarpanı).</summary>
@@ -278,6 +433,7 @@ namespace SebekeHakedis.Eklenti
         public ObjectId Ekle(CadVarlik v, string etiket, double olcek)
         {
             UygulamalariKaydet();
+            EskiBloklariYenile();
             if (v.Tur == "INSERT") return BlokEkle(v, olcek);
             return CizgiEkle(v, etiket);
         }
@@ -290,6 +446,7 @@ namespace SebekeHakedis.Eklenti
             br.LayerId = Katman(v.Katman);
             br.Rotation = v.Aci;
             if (olcek > 0 && Math.Abs(olcek - 1) > 1e-9) br.ScaleFactors = new Scale3d(olcek);
+            StilUygula(br, v);
             ObjectId id = Ms.AppendEntity(br);
             _tr.AddNewlyCreatedDBObject(br, true);
             string h = br.Handle.ToString();
@@ -308,14 +465,31 @@ namespace SebekeHakedis.Eklenti
             pl.Closed = v.Kapali;
             pl.Plinegen = true; // kesikli çizgi tipi köşelerde bölünmesin
             pl.LayerId = Katman(v.Katman);
+            StilUygula(pl, v);
             ObjectId id = Ms.AppendEntity(pl);
             _tr.AddNewlyCreatedDBObject(pl, true);
             string h = pl.Handle.ToString();
             v.H = h;
             PromagisYazici.TaniticiYaz(v, h);
             XdataYaz(pl, v);
+            if (v.ParcaMetraji) ParcaMetrajlariYaz(pl, v.Kose);
             if (etiket != null) EtiketYaz(pl, etiket.Replace(PromagisYazici.Tanitici, h), v.Kose);
             return id;
+        }
+
+        /// <summary>Tarifteki renk ve çizgi tipini nesneye yazar (telefonun DXF'indeki gibi nesne üstünde).</summary>
+        private void StilUygula(Entity e, CadVarlik v)
+        {
+            if (v.Renk >= 0)
+            {
+                var renk = Color.FromColorIndex(v.Renk == 256 ? ColorMethod.ByLayer : ColorMethod.ByAci, v.Renk);
+                if (!e.Color.Equals(renk)) e.Color = renk;
+            }
+            if (!string.IsNullOrEmpty(v.CizgiTipi))
+            {
+                var id = CizgiTipi(v.CizgiTipi);
+                if (!id.IsNull && e.LinetypeId != id) e.LinetypeId = id;
+            }
         }
 
         private void OznitelikleriKur(BlockReference br, ObjectId btrId, Dictionary<string, string> oz)
@@ -343,10 +517,11 @@ namespace SebekeHakedis.Eklenti
 
         // ---------------- Var olan nesneyi güncelleme ----------------
 
-        /// <summary>Var olan nesneyi tarife göre günceller (yer, köşeler, katman, blok, öznitelik, XDATA, etiket).</summary>
+        /// <summary>Var olan nesneyi tarife göre günceller (yer, köşeler, katman, blok, öznitelik, XDATA, renk, etiket, parça metrajları).</summary>
         public void Guncelle(ObjectId id, CadVarlik v, string etiket)
         {
             UygulamalariKaydet();
+            EskiBloklariYenile();
             var ent = (Entity)_tr.GetObject(id, OpenMode.ForWrite);
             string h = ent.Handle.ToString();
             v.H = h;
@@ -356,7 +531,9 @@ namespace SebekeHakedis.Eklenti
             var br = ent as BlockReference;
             if (br != null) BlokGuncelle(br, v);
             else KoseleriGuncelle(ent, v);
+            StilUygula(ent, v);
             XdataYaz(ent, v);
+            if (br == null && v.ParcaMetraji) ParcaMetrajlariYaz(ent, v.Kose);
             if (etiket != null) EtiketYaz(ent, etiket.Replace(PromagisYazici.Tanitici, h), v.Kose);
         }
 
@@ -379,7 +556,7 @@ namespace SebekeHakedis.Eklenti
             double fark = Math.IEEERemainder(v.Aci - br.Rotation, 2 * Math.PI);
             if (Math.Abs(fark) > 1e-9) br.TransformBy(Matrix3d.Rotation(fark, br.Normal, br.Position));
 
-            // Durumu değişen elemanın bloğu (ör. montajdan demontaja)
+            // Durumu değişen elemanın bloğu (ör. montajdan demontaja) ya da PROMAGIS bloğundan telefon simgesine geçiş
             if (!string.IsNullOrEmpty(v.Blok) && !v.Blok.StartsWith("*", StringComparison.Ordinal)
                 && !string.Equals(EtkinAd(br), v.Blok, StringComparison.OrdinalIgnoreCase) && BlokKullanilabilir(v.Blok))
             {
@@ -390,6 +567,7 @@ namespace SebekeHakedis.Eklenti
                 }
                 var yeniBlok = Blok(v.Blok);
                 br.BlockTableRecord = yeniBlok;
+                if (Semboller.EklentininBlogu(v.Blok) && Math.Abs(br.ScaleFactors.X - 1) > 1e-9) br.ScaleFactors = new Scale3d(1);
                 OznitelikleriKur(br, yeniBlok, v.Oz);
                 return;
             }
@@ -502,7 +680,7 @@ namespace SebekeHakedis.Eklenti
 
         // ---------------- Silme ----------------
 
-        /// <summary>Nesneyi (ve yalnız ona ait hat etiketini) siler.</summary>
+        /// <summary>Nesneyi, yalnız ona ait hat etiketini ve parça metrajı yazılarını siler.</summary>
         public void Sil(ObjectId id)
         {
             if (id.IsNull || id.IsErased) return;
@@ -514,6 +692,7 @@ namespace SebekeHakedis.Eklenti
                 yazi.UpgradeOpen();
                 yazi.Erase();
             }
+            ParcaMetrajlariSil(ent);
             ent.Erase();
         }
 
@@ -545,6 +724,91 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
+        // ---------------- Yazı konumları (telefonun DXF'iyle aynı) ----------------
+
+        /// <summary>
+        /// Parçanın (a→b) ortası + kaydırma (dünya ekseninde) ve yazı açısı: parça doğrultusu, okunur olacak biçimde
+        /// (−90° … 90°] aralığına çevrilir — telefondaki DXF yazıcıyla aynı kural.
+        /// </summary>
+        private static void ParcaKonumu(double[] a, double[] b, double[] kaydirma, out double x, out double y, out double aci)
+        {
+            x = (a[0] + b[0]) / 2 + kaydirma[0];
+            y = (a[1] + b[1]) / 2 + kaydirma[1];
+            aci = Math.Atan2(b[1] - a[1], b[0] - a[0]);
+            if (aci > Math.PI / 2) aci -= Math.PI;
+            if (aci < -Math.PI / 2) aci += Math.PI;
+        }
+
+        private DBText YaziYap(string metin, double x, double y, double aci, double yukseklik, ObjectId katman)
+        {
+            var yazi = new DBText();
+            yazi.SetDatabaseDefaults(_db);
+            yazi.TextStyleId = _db.Textstyle;
+            yazi.Height = yukseklik;
+            yazi.TextString = metin;
+            yazi.LayerId = katman;
+            yazi.Rotation = aci;
+            yazi.HorizontalMode = TextHorizontalMode.TextLeft;
+            yazi.VerticalMode = TextVerticalMode.TextBase;
+            yazi.Position = new Point3d(x, y, 0);
+            Ms.AppendEntity(yazi);
+            _tr.AddNewlyCreatedDBObject(yazi, true);
+            return yazi;
+        }
+
+        // ---------------- Parça metrajları ----------------
+
+        /// <summary>
+        /// Her parçanın (iki köşe arası) uzunluğunu parçanın ortasına yazar ("12.34", telefondaki gibi); eski yazılar
+        /// silinir. Yazıların tanıtıcıları nesnenin SH_PARCA verisinde tutulur (güncelleme ve silme için).
+        /// </summary>
+        public void ParcaMetrajlariYaz(Entity cizgi, List<double[]> kose)
+        {
+            ParcaMetrajlariSil(cizgi);
+            if (kose == null || kose.Count < 2) return;
+            double yh = CizimStili.Yuklu ? CizimStili.ParcaMetraji : EtiketYuksekligi * 0.8;
+            double[] kaydirma = CizimStili.Yuklu ? CizimStili.ParcaKaydirma : new[] { 0.0, 0.8 };
+            string bicim = CizimStili.Yuklu ? CizimStili.ParcaBicimi : "0.00";
+            var katman = YaziKatmani(KatmanAdi(cizgi.LayerId));
+            var taniticilar = new List<string>();
+            for (int i = 0; i < kose.Count - 1; i++)
+            {
+                double d = Math.Sqrt(Math.Pow(kose[i + 1][0] - kose[i][0], 2) + Math.Pow(kose[i + 1][1] - kose[i][1], 2));
+                if (d < 1e-6) continue;
+                double x, y, aci;
+                ParcaKonumu(kose[i], kose[i + 1], kaydirma, out x, out y, out aci);
+                var yazi = YaziYap(d.ToString(bicim, CultureInfo.InvariantCulture), x, y, aci, yh, katman);
+                taniticilar.Add(yazi.Handle.ToString());
+            }
+            using (var rb = new ResultBuffer())
+            {
+                rb.Add(new TypedValue((int)DxfCode.ExtendedDataRegAppName, PromagisYazici.ParcaUygulamasi));
+                foreach (var h in taniticilar) rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, h));
+                if (!cizgi.IsWriteEnabled) cizgi.UpgradeOpen();
+                cizgi.XData = rb;
+            }
+        }
+
+        private void ParcaMetrajlariSil(Entity cizgi)
+        {
+            var xd = Toplayici.XdataOku(cizgi);
+            List<string> l;
+            if (!xd.TryGetValue(PromagisYazici.ParcaUygulamasi, out l)) return;
+            foreach (var h in l)
+            {
+                ObjectId tid;
+                if (string.IsNullOrEmpty(h) || !Toplayici.TaniticiylaBul(_db, h, out tid)) continue;
+                var yazi = _tr.GetObject(tid, OpenMode.ForWrite, false) as DBText;
+                if (yazi != null && !yazi.IsErased) yazi.Erase();
+            }
+        }
+
+        private string KatmanAdi(ObjectId katmanId)
+        {
+            try { return ((LayerTableRecord)_tr.GetObject(katmanId, OpenMode.ForRead)).Name; }
+            catch { return ""; }
+        }
+
         // ---------------- Hat etiketi ----------------
 
         private DBText Etiket(Entity hat)
@@ -564,12 +828,20 @@ namespace SebekeHakedis.Eklenti
             return m.Success && !string.Equals(m.Groups[1].Value, handle, StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Hat etiketini yazar ya da günceller: orta parçanın ortasında, parça doğrultusunda, 2,5 m aşağıda
+        /// (telefonun DXF'indeki hat yazısıyla aynı yer), yazı katmanında. Etiketin tanıtıcısı hattın ETK verisine yazılır.
+        /// </summary>
         private void EtiketYaz(Entity hat, string metin, List<double[]> kose)
         {
-            double x, y, aci;
-            bool konumVar = Geometri.EtiketKonumu(kose, out x, out y, out aci);
-            double pay = EtiketYuksekligi * 0.3;
-            var hedef = new Point3d(x - Math.Sin(aci) * pay, y + Math.Cos(aci) * pay, 0);
+            bool konumVar = kose != null && kose.Count >= 2;
+            double x = 0, y = 0, aci = 0;
+            if (konumVar)
+            {
+                int orta = (kose.Count - 1) / 2;
+                ParcaKonumu(kose[orta], kose[orta + 1], CizimStili.Yuklu ? CizimStili.HatKaydirma : new[] { 0.0, -2.5 }, out x, out y, out aci);
+            }
+            var katman = YaziKatmani(KatmanAdi(hat.LayerId));
 
             var yazi = Etiket(hat);
             if (yazi != null && BaskaHattin(yazi.TextString, hat.Handle.ToString())) yazi = null;
@@ -577,33 +849,21 @@ namespace SebekeHakedis.Eklenti
             if (yazi == null)
             {
                 if (!konumVar) return;
-                yazi = new DBText();
-                yazi.SetDatabaseDefaults(_db);
-                yazi.TextStyleId = _db.Textstyle;
-                yazi.Height = EtiketYuksekligi;
-                yazi.TextString = metin;
-                yazi.LayerId = hat.LayerId;
-                yazi.Rotation = aci;
-                yazi.HorizontalMode = TextHorizontalMode.TextCenter;
-                yazi.VerticalMode = TextVerticalMode.TextBottom;
-                yazi.AlignmentPoint = hedef;
-                Ms.AppendEntity(yazi);
-                _tr.AddNewlyCreatedDBObject(yazi, true);
-                try { yazi.AdjustAlignment(_db); } catch { }
+                yazi = YaziYap(metin, x, y, aci, EtiketYuksekligi, katman);
             }
             else
             {
                 yazi.UpgradeOpen();
                 if (yazi.TextString != metin) yazi.TextString = metin;
-                if (yazi.LayerId != hat.LayerId) yazi.LayerId = hat.LayerId;
+                if (yazi.LayerId != katman) yazi.LayerId = katman;
                 // Hat başka yere taşındıysa etiket de hattın ortasına gelir
                 bool sol = yazi.HorizontalMode == TextHorizontalMode.TextLeft && yazi.VerticalMode == TextVerticalMode.TextBase;
                 var simdi = sol ? yazi.Position : yazi.AlignmentPoint;
                 if (konumVar && new Point2d(simdi.X, simdi.Y).GetDistanceTo(new Point2d(x, y)) > Math.Max(5.0, 10 * yazi.Height))
                 {
                     yazi.Rotation = aci;
-                    if (sol) yazi.Position = hedef;
-                    else yazi.AlignmentPoint = hedef;
+                    if (sol) yazi.Position = new Point3d(x, y, 0);
+                    else yazi.AlignmentPoint = new Point3d(x, y, 0);
                 }
                 try { yazi.AdjustAlignment(_db); } catch { }
             }

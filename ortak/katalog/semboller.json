@@ -1,7 +1,7 @@
 {
  "bicim": "sebeke-hakedis.semboller",
  "surum": 1,
- "aciklama": "Lejant simge takımı. Boyutlar metre (1/1000 pafta). AutoCAD eklentisi blokları SH_<ad> adıyla tanımlar ve 4 ölçekle koyar (blok birimi = metre / 4); telefonun DXF çıktısı aynı blokları aynı adla yazar. Üretici: araclar/semboller-uret.mjs — bu dosya elle düzenlenmez.",
+ "aciklama": "Lejant simge takımı. Boyutlar metre (1/1000 pafta). AutoCAD eklentisi blokları SH_<ad> adıyla metre cinsinden tanımlar ve 1 ölçekle koyar; telefonun DXF çıktısı aynı blokları aynı adla yazar. Üretici: araclar/semboller-uret.mjs — bu dosya elle düzenlenmez.",
  "ilkeller": {
   "L": "doğru: x1 y1 x2 y2",
   "C": "daire: cx cy r",

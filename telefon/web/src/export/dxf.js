@@ -1,8 +1,10 @@
 // AutoCAD DXF (R12 / AC1009) üretici — Lejant.dxf katman, ACI, çizgi tipi ve sembol yapısıyla.
 // Koordinatlar proje CRS'inde: X = Sağa (E), Y = Yukarı (N), Z = kot (H). Ölçek 1/1000 (yazı 1.8 m = 1.8 mm).
-// Simgeler ortak tablodan gelir (ortak/katalog/semboller.json → semboller.js): AutoCAD eklentisi aynı blokları
-// aynı adla (SH_…) tanımlar; böylece telefonun DXF'i ile eklentinin çizimi aynı görünür.
+// Simgeler ve stil ortak tablolardan gelir (ortak/katalog/semboller.json → semboller.js, cizim-stili.json →
+// cizim-stili.js): AutoCAD eklentisi aynı blokları aynı adla (SH_…) tanımlar, aynı renk / çizgi tipi / yazı
+// düzenini kullanır; böylece telefonun DXF'i ile eklentinin çizimi birebir aynı görünür.
 import SEMBOLLER from '../ortak/semboller.js';
+import STIL from '../ortak/cizim-stili.js';
 const f = (v) => (Number.isFinite(v) ? (+v).toFixed(4) : '0.0');
 
 class W {
@@ -11,28 +13,38 @@ class W {
   text() { return this.o.join('\r\n') + '\r\n'; }
 }
 
-const LTYPES = [
-  ['CONTINUOUS', 'Solid line', []],
-  ['DASHED', '__ __ __', [6, -3]],
-  ['DASHDOT', '__ . __ .', [8, -2, 0, -2]],
-  ['DOT', '. . . .', [0, -2]],
-  ['HIDDEN', '_ _ _ _', [3, -1.5]]
-];
+const LT_ACIKLAMA = { CONTINUOUS: 'Solid line', DASHED: '__ __ __', DASHDOT: '__ . __ .', DOT: '. . . .', HIDDEN: '_ _ _ _' };
+const LTYPES = Object.entries(STIL.cizgiTipleri).map(([n, pat]) => [n, LT_ACIKLAMA[n] || n, pat]);
 
-function legendLayers(model) {
-  const L = (model.cat.table('legend') || { layers: [] }).layers;
-  const base = L.map((x) => ({ name: x.layer, aci: x.aci, lt: x.lt || 'CONTINUOUS' }));
-  base.push({ name: 'ELEKTRIK-DIREK-MUSTEREK', aci: 16, lt: 'CONTINUOUS' });
-  return base;
+/** Katman tablosu: ortak stildeki telefon katmanları (aynı ada ilk giren kazanır). */
+export function legendLayers() {
+  const out = [], seen = new Set();
+  for (const k of Object.values(STIL.katmanlar)) {
+    if (!k.telefon || seen.has(k.telefon)) continue;
+    seen.add(k.telefon);
+    out.push({ name: k.telefon, aci: k.aci, lt: k.cizgi || 'CONTINUOUS' });
+  }
+  return out;
 }
-const poleLayer = (e) => (e.kind === 'lighting' || e.group === 'ayd' ? 'ELEKTRIK-DIREK-AYD' : e.volt === 'OG' ? (e.group === 'mus' ? 'ELEKTRIK-DIREK-MUSTEREK' : 'ELEKTRIK-DIREK-OG') : 'ELEKTRIK-DIREK-AG');
-const lineLayer = (l) => (l.install === 'yeralti' ? 'ELEKTRIK-KABLO' : { AG: 'ELEKTRIK-HAT-AG', OG: 'ELEKTRIK-HAT-OG', AYD: 'ELEKTRIK-HAT-AYD', ENH: 'ELEKTRIK-HAT-ENH', ABONE: 'ELEKTRIK-HAT-ABONE' }[l.lineType] || 'ELEKTRIK-HAT-AG');
-// Lejant ACI: mevcut / yeni / DMM
-const POLE_ACI = { AG: [120, 108, 3], OG: [16, 10, 1], AYD: [190, 152, 4], ENH: [6, 6, 6] };
+const KAT = (anahtar) => STIL.katmanlar[anahtar].telefon;
+const poleLayer = (e) => (e.kind === 'lighting' || e.group === 'ayd' ? KAT('DIREK_AYD') : e.volt === 'OG' ? (e.group === 'mus' ? KAT('DIREK_MUSTEREK') : KAT('DIREK_OG')) : KAT('DIREK_AG'));
+const lineLayer = (l) => (l.install === 'yeralti' ? KAT('KABLO') : { AG: KAT('HAT_AG'), OG: KAT('HAT_OG'), AYD: KAT('HAT_AYD'), ENH: KAT('HAT_ENH'), ABONE: KAT('HAT_ABONE') }[l.lineType] || KAT('HAT_AG'));
+// Direk rengi: mevcut / yeni / DMM (ortak stil)
+const POLE_ACI = STIL.direkRenkleri;
+const DEMONTAJ_ACI = STIL.direkRenkleri.demontaj;
 const stIdx = (st) => (st === 'YENI' ? 1 : st === 'DMM' ? 2 : 0);
+const YAZI = () => KAT('YAZI'), OLCU = () => KAT('OLCU');
 
-/** Sembol varyantı: durumdan (ekipman ve hat durum kodları → YENI · MEVCUT · DMM · DM). */
-export function sembolVaryanti(state) {
+/**
+ * Sembol varyantı: durumdan (ekipman ve hat durum kodları → YENI · MEVCUT · DMM · DM). PROMAGIS durumu verilmişse
+ * eklentiyle aynı kural: M, M+M, KM, ENH, ME → YENI · DM → DM · DM+M → DMM · MEVCUT → MEVCUT.
+ */
+export function sembolVaryanti(state, promagisDurumu) {
+  const pd = String(promagisDurumu || '').toUpperCase();
+  if (pd === 'M' || pd === 'M+M' || pd === 'KM' || pd === 'ENH' || pd === 'ME') return 'YENI';
+  if (pd === 'DM') return 'DM';
+  if (pd === 'DM+M') return 'DMM';
+  if (pd === 'MEVCUT') return 'MEVCUT';
   const st = String(state || '').toUpperCase();
   if (st === 'YENI') return 'YENI';
   if (st === 'DMM' || st === 'TASINAN') return 'DMM';
@@ -60,7 +72,7 @@ export function sembolAilesi(e) {
 /** Ekipmanın blok adı: SH_<aile>_<varyant> (eklentiyle aynı). */
 export function sembolBlogu(e) {
   const st = e.kind === 'transformer' || e.kind === 'kiosk' || e.kind === 'substation' ? { yeni: 'YENI', tasinan: 'DMM', demontaj: 'DEMONTAJ' }[e.state] || 'MEVCUT' : e.state;
-  return 'SH_' + sembolAilesi(e) + '_' + sembolVaryanti(st);
+  return 'SH_' + sembolAilesi(e) + '_' + sembolVaryanti(st, e.promagisDurumu);
 }
 
 function blocks(w) {
@@ -107,7 +119,9 @@ function writeEnt(w, e) {
 export function buildDXF(model, opts = {}) {
   const w = new W();
   const cat = model.cat;
-  const th = opts.textH || 1.8;
+  const th = opts.textH || STIL.yazi.yukseklik;
+  const thParca = th * (STIL.yazi.parcaMetraji / STIL.yazi.yukseklik), thKucuk = th * (STIL.yazi.aciYazisi / STIL.yazi.yukseklik);
+  const [pdx, pdy] = STIL.etiketler.parcaMetraji.kaydirma, [hdx, hdy] = STIL.etiketler.hat.kaydirma, [edx, edy] = STIL.etiketler.eleman.kaydirma, [adx, ady] = STIL.etiketler.aci.kaydirma;
   const allPts = model.points.filter((p) => p.E != null);
   const ext = allPts.reduce((a, p) => ({ x0: Math.min(a.x0, p.E), y0: Math.min(a.y0, p.N), x1: Math.max(a.x1, p.E), y1: Math.max(a.y1, p.N) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
   if (!Number.isFinite(ext.x0)) Object.assign(ext, { x0: 0, y0: 0, x1: 100, y1: 100 });
@@ -116,7 +130,7 @@ export function buildDXF(model, opts = {}) {
     .g(9, '$EXTMIN').g(10, f(ext.x0)).g(20, f(ext.y0)).g(30, 0).g(9, '$EXTMAX').g(10, f(ext.x1)).g(20, f(ext.y1)).g(30, 0)
     .g(9, '$DWGCODEPAGE').g(3, 'ANSI_1254').g(9, '$LTSCALE').g(40, 1.0).g(9, '$PDMODE').g(70, 3).g(9, '$PDSIZE').g(40, 0.5).g(0, 'ENDSEC');
   // TABLES
-  const layers = legendLayers(model);
+  const layers = legendLayers();
   w.g(0, 'SECTION').g(2, 'TABLES');
   w.g(0, 'TABLE').g(2, 'LTYPE').g(70, LTYPES.length);
   for (const [n, d, pat] of LTYPES) {
@@ -135,25 +149,25 @@ export function buildDXF(model, opts = {}) {
   w.g(0, 'SECTION').g(2, 'ENTITIES');
   const text = (layer, x, y, z, s, h = th, rot = 0, color = null) => { w.g(0, 'TEXT').g(8, layer); if (color != null) w.g(62, color); w.g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(40, f(h)).g(1, s).g(50, f(rot)); };
   const insert = (layer, block, x, y, z, color = null, rot = 0) => { w.g(0, 'INSERT').g(8, layer); if (color != null) w.g(62, color); w.g(2, block).g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(41, 1).g(42, 1).g(43, 1).g(50, f(rot)); };
-  const kesitFmt = (cat.table('legend') || {}).kesit || { MEVCUT: '({t})', YENI: '{t}', ILERIDE: '<{t}>', DMM: '[{t}]' };
+  const kesitFmt = STIL.etiketler.kesit;
   let nLines = 0, nIns = 0, nTxt = 0;
   for (const l of model.lines) {
     if (l.coords.length < 2) continue;
     const layer = lineLayer(l), lt = l.state === 'ILERIDE' ? 'DASHED' : null;
     for (let i = 0; i < l.coords.length - 1; i++) {
       const a = l.coords[i], b = l.coords[i + 1];
-      w.g(0, 'LINE').g(8, layer); if (lt) w.g(6, lt); if (l.state === 'DEMONTAJ') w.g(62, 2);
+      w.g(0, 'LINE').g(8, layer); if (lt) w.g(6, lt); if (l.state === 'DEMONTAJ') w.g(62, DEMONTAJ_ACI);
       w.g(10, f(a.E)).g(20, f(a.N)).g(30, f(a.H || 0)).g(11, f(b.E)).g(21, f(b.N)).g(31, f(b.H || 0)); nLines++;
       if (opts.spanText !== false) {
         const mx = (a.E + b.E) / 2, my = (a.N + b.N) / 2; let ang = Math.atan2(b.N - a.N, b.E - a.E) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
         const d = Math.hypot(b.E - a.E, b.N - a.N);
-        text('ELEKTRIK-YAZI', mx, my + 0.8, 0, d.toFixed(2), th * 0.8, ang); nTxt++;
+        text(YAZI(), mx + pdx, my + pdy, 0, d.toFixed(2), thParca, ang); nTxt++;
       }
     }
     const mid = Math.floor((l.coords.length - 1) / 2), a = l.coords[mid], b = l.coords[mid + 1];
     let ang = Math.atan2(b.N - a.N, b.E - a.E) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
     const tag = (kesitFmt[l.state] || '{t}').replace('{t}', l.label);
-    text('ELEKTRIK-YAZI', (a.E + b.E) / 2, (a.N + b.N) / 2 - 2.5, 0, l.no + ' ' + tag, th, ang); nTxt++;
+    text(YAZI(), (a.E + b.E) / 2 + hdx, (a.N + b.N) / 2 + hdy, 0, l.no + ' ' + tag, th, ang); nTxt++;
   }
   for (const e of model.equipment) {
     if (e.E == null) continue;
@@ -163,20 +177,20 @@ export function buildDXF(model, opts = {}) {
       const volt = e.kind === 'lighting' || e.group === 'ayd' ? 'AYD' : e.volt === 'OG' ? 'OG' : 'AG';
       layer = poleLayer(e);
       color = POLE_ACI[volt][stIdx(e.state)];
-    } else if (e.kind === 'transformer' || e.kind === 'kiosk' || e.kind === 'substation') layer = 'ELEKTRIK-TRAFO';
-    else if (e.kind === 'sdk' || e.kind === 'panel') layer = 'ELEKTRIK-SDK';
-    else if (e.kind === 'manhole') layer = 'ELEKTRIK-KABLO';
-    else if (e.kind === 'luminaire') { layer = 'ELEKTRIK-DIREK-AYD'; color = 4; }
-    else layer = 'ELEKTRIK-YAZI';
-    if (e.state === 'DEMONTAJ' || e.state === 'demontaj') color = 2;
+    } else if (e.kind === 'transformer' || e.kind === 'kiosk' || e.kind === 'substation') layer = KAT('TRAFO');
+    else if (e.kind === 'sdk' || e.kind === 'panel') layer = KAT('SDK');
+    else if (e.kind === 'manhole') layer = KAT('KABLO');
+    else if (e.kind === 'luminaire') { layer = KAT('DIREK_AYD'); color = STIL.nesneRenkleri.armatur; }
+    else layer = YAZI();
+    if (e.state === 'DEMONTAJ' || e.state === 'demontaj') color = DEMONTAJ_ACI;
     insert(layer, block, e.E, e.N, e.H, color); nIns++;
-    text('ELEKTRIK-YAZI', e.E + 3.5, e.N + 3, e.H, e.no + (e.typeName ? ' ' + e.typeName : ''), th, 0); nTxt++;
-    if (e.role === 'Z' && e.angle) { text('ELEKTRIK-YAZI', e.E + 3.5, e.N + 0.6, e.H, 'α=' + e.angle.toFixed(2) + '°', th * 0.7); nTxt++; }
+    text(YAZI(), e.E + edx, e.N + edy, e.H, e.no + (e.typeName ? ' ' + e.typeName : ''), th, 0); nTxt++;
+    if (e.role === 'Z' && e.angle) { text(YAZI(), e.E + adx, e.N + ady, e.H, 'α=' + e.angle.toFixed(2) + '°', thKucuk); nTxt++; }
   }
   for (const p of model.points) {
     if (p.E == null) continue;
-    w.g(0, 'POINT').g(8, 'OLCU-NOKTA').g(10, f(p.E)).g(20, f(p.N)).g(30, f(p.H || 0));
-    if (opts.pointText !== false && !model.equipment.some((e) => e.pointId === p.id)) { text('OLCU-NOKTA', p.E + 1, p.N + 1, p.H, p.no + ' ' + (p.H != null ? (+p.H).toFixed(2) : ''), th * 0.7); nTxt++; }
+    w.g(0, 'POINT').g(8, OLCU()).g(10, f(p.E)).g(20, f(p.N)).g(30, f(p.H || 0));
+    if (opts.pointText !== false && !model.equipment.some((e) => e.pointId === p.id)) { text(OLCU(), p.E + 1, p.N + 1, p.H, p.no + ' ' + (p.H != null ? (+p.H).toFixed(2) : ''), th * (STIL.yazi.noktaYazisi / STIL.yazi.yukseklik)); nTxt++; }
   }
   w.g(0, 'ENDSEC').g(0, 'EOF');
   const txt = w.text();

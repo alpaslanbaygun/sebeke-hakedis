@@ -49,7 +49,8 @@ namespace SebekeHakedis.Cekirdek
         public int AktifHakedis;
         public int Dom;
         public double SembolOlcegi;
-        public double EtiketYuksekligi = 0.5;
+        /// <summary>Hat etiketi ve eleman yazısı yüksekliği (m); telefonun DXF'iyle aynı: 1.8.</summary>
+        public double EtiketYuksekligi = 1.8;
         public double YakalamaMesafesi = 1.0;
         public bool YukariYuvarla = true;
         public readonly Dictionary<string, double> EkPay = new Dictionary<string, double>(StringComparer.Ordinal);
@@ -90,7 +91,7 @@ namespace SebekeHakedis.Cekirdek
         {
             var l = new List<KeyValuePair<string, string>>
             {
-                new KeyValuePair<string, string>("surum", "1"),
+                new KeyValuePair<string, string>("surum", "2"),
                 new KeyValuePair<string, string>("katmanOnEki", KatmanOnEki ?? ""),
                 new KeyValuePair<string, string>("gisOnEki", GisOnEki ?? ""),
                 new KeyValuePair<string, string>("aktifHakedis", AktifHakedis.ToString(CultureInfo.InvariantCulture)),
@@ -116,9 +117,11 @@ namespace SebekeHakedis.Cekirdek
         {
             var a = new CizimAyarlari();
             if (ciftler == null) return a;
+            int surum = 2;
             foreach (var kv in ciftler)
             {
                 string k = kv.Key ?? "", v = kv.Value ?? "";
+                if (k == "surum") { surum = SayiCoz.Tam(v, 2); continue; }
                 if (k.StartsWith("ekPay.", StringComparison.Ordinal)) { a.EkPay[k.Substring(6)] = SayiCoz.Coz(v); continue; }
                 if (k.StartsWith("son.", StringComparison.Ordinal)) { a.Son[k.Substring(4)] = v; continue; }
                 switch (k)
@@ -128,7 +131,7 @@ namespace SebekeHakedis.Cekirdek
                     case "aktifHakedis": a.AktifHakedis = SayiCoz.Tam(v); break;
                     case "dom": a.Dom = SayiCoz.Tam(v); break;
                     case "sembolOlcegi": a.SembolOlcegi = SayiCoz.Coz(v); break;
-                    case "etiketYuksekligi": a.EtiketYuksekligi = SayiCoz.Coz(v, 0.5); break;
+                    case "etiketYuksekligi": a.EtiketYuksekligi = SayiCoz.Coz(v, 1.8); break;
                     case "yakalamaMesafesi": a.YakalamaMesafesi = SayiCoz.Coz(v, 1.0); break;
                     case "yukariYuvarla": a.YukariYuvarla = v != "0"; break;
                     case "kanalAlt": a.KanalAlt = SayiCoz.Coz(v, 40); break;
@@ -140,7 +143,8 @@ namespace SebekeHakedis.Cekirdek
                     case "telefonSembolleri": a.TelefonSembolleri = v != "0"; break;
                 }
             }
-            if (a.EtiketYuksekligi <= 0) a.EtiketYuksekligi = 0.5;
+            // Sürüm 1 ayarlarında varsayılan 0,5 m idi (PROMAGIS görünümü); telefon stiliyle 1,8 m
+            if (a.EtiketYuksekligi <= 0 || (surum < 2 && Math.Abs(a.EtiketYuksekligi - 0.5) < 1e-9)) a.EtiketYuksekligi = 1.8;
             if (a.YakalamaMesafesi < 0) a.YakalamaMesafesi = 1.0;
             return a;
         }

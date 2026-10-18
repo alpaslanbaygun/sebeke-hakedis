@@ -22,6 +22,12 @@ namespace SebekeHakedis.Cekirdek
         public double Olcek = 1;
         public string Metin = "";
         public bool Kapali;
+        /// <summary>Nesneye yazılacak renk (AutoCAD renk numarası; -1: dokunma). Çizimden okunurken doldurulmaz.</summary>
+        public short Renk = -1;
+        /// <summary>Nesneye yazılacak çizgi tipi ("" dokunma, "CONTINUOUS" sürekli). Çizimden okunurken doldurulmaz.</summary>
+        public string CizgiTipi = "";
+        /// <summary>Çizgi nesnesinin her parçasına (iki köşe arası) uzunluk yazısı yazılsın mı (hat, kanal, sondaj).</summary>
+        public bool ParcaMetraji;
         /// <summary>Blok öznitelikleri (etiket → değer).</summary>
         public Dictionary<string, string> Oz = new Dictionary<string, string>(StringComparer.Ordinal);
         /// <summary>Çoklu çizgi köşeleri: her biri [X, Y].</summary>

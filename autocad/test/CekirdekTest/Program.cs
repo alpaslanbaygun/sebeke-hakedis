@@ -331,10 +331,47 @@ namespace SebekeHakedis.Test
 
             short renk; string cizgi;
             PromagisYazici.KatmanStili("SC_2.HAK.AG_YER_HAT", out renk, out cizgi);
-            Esit((short)3, renk, "katman rengi AG yeraltı");
-            Esit("HIDDENX2", cizgi, "katman çizgi tipi AG yeraltı");
+            Esit((short)3, renk, "katman rengi AG yeraltı (stil yüklenmeden: PROMAGIS)");
+            Esit("HIDDENX2", cizgi, "katman çizgi tipi AG yeraltı (stil yüklenmeden)");
+
+            // Ortak çizim stili (telefonun DXF'iyle aynı)
+            CizimStili.Yukle(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "cizim-stili.json"), Encoding.UTF8));
+            Esit(1.0, CizimStili.BlokOlcegi, "stil: bloklar 1 ölçekle");
+            Esit(1.8, CizimStili.YaziYuksekligi, "stil: yazı 1,8 m");
+            Esit(1.44, CizimStili.ParcaMetraji, "stil: parça metrajı yazısı 1,44 m");
+            PromagisYazici.KatmanStili("SC_2.HAK.AG_YER_HAT", out renk, out cizgi);
+            Esit((short)1, renk, "stil: AG yeraltı kablo rengi (telefon: ELEKTRIK-KABLO 1)");
+            Esit("DASHDOT", cizgi, "stil: kablo çizgi tipi");
+            PromagisYazici.KatmanStili("SC_1.HAK.AG_HAV_HAT", out renk, out cizgi);
+            Esit((short)84, renk, "stil: AG havai hat 84");
+            Esit("", cizgi, "stil: AG havai sürekli");
             PromagisYazici.KatmanStili("SC_DEMONTAJ", out renk, out cizgi);
-            Esit((short)9, renk, "katman rengi demontaj");
+            Esit((short)2, renk, "stil: demontaj katmanı sarı");
+            PromagisYazici.KatmanStili("SC_KABLO_KANALI", out renk, out cizgi);
+            Esit((short)1, renk, "stil: kanal katmanı");
+            PromagisYazici.KatmanStili("GPS", out renk, out cizgi);
+            Esit((short)7, renk, "stil: GPS katmanı");
+            Esit((short)108, CizimStili.ElemanRengi("AG_DIREK", "AG_DEMİR_GLV", "M"), "stil: yeni AG direk 108");
+            Esit((short)120, CizimStili.ElemanRengi("AG_DIREK", "AG_BETON", "MEVCUT"), "stil: mevcut AG direk 120");
+            Esit((short)3, CizimStili.ElemanRengi("AG_DIREK", "AG_BETON", "DM+M"), "stil: sök-tak AG direk 3");
+            Esit((short)2, CizimStili.ElemanRengi("AG_DIREK", "AG_BETON", "DM"), "stil: demontaj 2");
+            Esit((short)10, CizimStili.ElemanRengi("ENH_DIREK", "ENH_GLV_CVT", "KM"), "stil: KM → yeni OG direk 10");
+            Esit((short)152, CizimStili.ElemanRengi("AYD_DIREK", "AYD_GLV_PLG", "M+M"), "stil: yeni aydınlatma direği 152");
+            Esit((short)5, CizimStili.ElemanRengi("TRAFO_DIREGI", "TR_DİREK_GLV", "M"), "stil: trafo direği katman rengi 5");
+            Esit((short)5, CizimStili.ElemanRengi("BOX", "BOX_PANO", "MEVCUT"), "stil: box 5");
+            Esit((short)4, CizimStili.ElemanRengi("DIGER", "ARMATÜR", "M"), "stil: armatür 4");
+            Esit((short)1, CizimStili.HatRengi("OG_HAVAI", "M"), "stil: OG hat 1");
+            Esit((short)84, CizimStili.HatRengi("REKORTMAN", "MEVCUT"), "stil: abone hattı 84");
+            Esit("DASHED", CizimStili.HatCizgiTipi("REKORTMAN"), "stil: abone hattı kesikli");
+            Esit((short)2, CizimStili.HatRengi("AG_HAVAI", "DM"), "stil: demontaj hat 2");
+            Esit("", CizimStili.HatCizgiTipi("AG_HAVAI"), "stil: AG havai sürekli");
+            Esit(2, CizimStili.CizgiDeseni("DASHED").Length, "stil: DASHED deseni");
+            var stilHat = PromagisYazici.Hat(new Hat { Tur = "OG_YERALTI", Durum = "M", Hakedis = 1, AnaKesit = "1x150/25 Xlpe Alm.", Kose = { new[] { 0.0, 0 }, new[] { 10.0, 0 } } }, "SC", null);
+            Esit((short)1, stilHat.Renk, "tarif: kablo rengi nesneye yazılır");
+            Esit("DASHDOT", stilHat.CizgiTipi, "tarif: kablo çizgi tipi nesneye yazılır");
+            Esit(true, stilHat.ParcaMetraji, "tarif: hatta parça metrajı yazılır");
+            var stilEl = PromagisYazici.Eleman(new Eleman { Tur = "AG_DIREK", Cins = "AG_BETON", Tip = "9,3/8", Durum = "M+M", Hakedis = 1 }, "SC", "SH_DIREK_AG_YENI", null);
+            Esit((short)108, stilEl.Renk, "tarif: direk rengi nesneye yazılır");
 
             double ex, ey, eaci;
             Geometri.EtiketKonumu(new List<double[]> { new[] { 10.0, 0 }, new[] { 0.0, 0 } }, out ex, out ey, out eaci);

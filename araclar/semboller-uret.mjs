@@ -3,7 +3,7 @@
 // araclar/ortak-tablolar.mjs → telefon/web/src/ortak/semboller.js).
 //
 // Boyutlar metre cinsinden, 1/1000 ölçekli pafta lejantına göredir (telefonun "Lejant.dxf" takımı).
-// AutoCAD eklentisi blokları PROMAGIS gibi 4 ölçekle koyar; bu yüzden blok birimi = metre / 4.
+// AutoCAD eklentisi de blokları metre cinsinden tanımlar ve 1 ölçekle koyar (telefonun DXF'iyle aynı boyut).
 //
 // İlkeller (sembol-yerel koordinat, metre):
 //   ["L", x1, y1, x2, y2]        doğru
@@ -126,7 +126,7 @@ for (const aile of Object.keys(AILELER)) {
 const cikti = {
   bicim: 'sebeke-hakedis.semboller',
   surum: 1,
-  aciklama: 'Lejant simge takımı. Boyutlar metre (1/1000 pafta). AutoCAD eklentisi blokları SH_<ad> adıyla tanımlar ve 4 ölçekle koyar (blok birimi = metre / 4); telefonun DXF çıktısı aynı blokları aynı adla yazar. Üretici: araclar/semboller-uret.mjs — bu dosya elle düzenlenmez.',
+  aciklama: 'Lejant simge takımı. Boyutlar metre (1/1000 pafta). AutoCAD eklentisi blokları SH_<ad> adıyla metre cinsinden tanımlar ve 1 ölçekle koyar; telefonun DXF çıktısı aynı blokları aynı adla yazar. Üretici: araclar/semboller-uret.mjs — bu dosya elle düzenlenmez.',
   ilkeller: {
     L: 'doğru: x1 y1 x2 y2', C: 'daire: cx cy r', P: 'çoklu doğru: [[x,y],...] kapali',
     S: 'dolu dörtgen: 4 köşe, AutoCAD SOLID sırası (1 2 4 3)', D: 'dolu daire: r', Y: 'yarım dolu daire (sol yarı): r'

@@ -40,6 +40,8 @@
     <EmbeddedResource Include="..\..\..\ortak\katalog\kalemler.json" Link="Katalog\kalemler.json" LogicalName="SebekeHakedis.kalemler.json" />
     <!-- Lejant simge takımı (telefonun DXF çıktısıyla aynı bloklar) -->
     <EmbeddedResource Include="..\..\..\ortak\katalog\semboller.json" Link="Katalog\semboller.json" LogicalName="SebekeHakedis.semboller.json" />
+    <!-- Ortak çizim stili (telefonun DXF'iyle aynı renk, çizgi tipi, yazı) -->
+    <EmbeddedResource Include="..\..\..\ortak\katalog\cizim-stili.json" Link="Katalog\cizim-stili.json" LogicalName="SebekeHakedis.cizim-stili.json" />
     <!-- Menü kategorileri (şerit: kategori → hızlı çizim öğeleri) -->
     <EmbeddedResource Include="..\..\..\ortak\katalog\kategoriler.json" Link="Katalog\kategoriler.json" LogicalName="SebekeHakedis.kategoriler.json" />
   </ItemGroup>
