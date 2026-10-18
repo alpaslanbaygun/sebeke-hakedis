@@ -264,12 +264,12 @@ namespace SebekeHakedis.Eklenti
 
         private static readonly Dictionary<string, Image> _semboller = new Dictionary<string, Image>(StringComparer.Ordinal);
 
-        /// <summary>Telefonun simge takımından elemanın simgesi (tip listesinde: beton daire, demir kare …; içi boş çizilir).</summary>
+        /// <summary>Telefonun simge takımından elemanın simgesi (tip listesinde: beton daire, kafes kare …; yeni montaj simgesi).</summary>
         private static Image SembolResmi(string tur, string cins)
         {
             if (string.IsNullOrEmpty(tur)) return null;
             string blok;
-            try { blok = Semboller.BlokAdi(tur, cins, "MEVCUT"); }
+            try { blok = Semboller.BlokAdi(tur, cins, "M"); }
             catch { return null; }
             Image r;
             if (_semboller.TryGetValue(blok, out r)) return r;
@@ -277,7 +277,7 @@ namespace SebekeHakedis.Eklenti
             try
             {
                 var s = Semboller.Bul(blok);
-                if (s != null) r = SeritSimgeleri.SembolResmi(s, CizimStili.EkranElemanRengi(tur, cins), S(22));
+                if (s != null) r = SeritSimgeleri.SembolResmi(s, CizimStili.EkranElemanRengi(tur, cins), S(20));
             }
             catch { r = null; }
             if (r == null) r = TurSimgesi(tur, false, false);

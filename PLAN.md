@@ -13,6 +13,10 @@
   dokunulmaz; `SH_GORUNUM` istenirse çevirir. Ayarlardan PROMAGIS simgelerine dönülebilir.
 - Şerit menü kategoriye göre değişir (kategori → yalnız o kategorinin öğeleri, pencere açmadan çizim); öğenin tip
   listesi yalnız o öğenin cinslerinden gelir (`ortak/katalog/kategoriler.json`).
+- Şerit ve pencerelerin tasarımı **Google Stitch** ile yapıldı (18.10.2026), kullanıcının isteğiyle **koyu tema**:
+  kategori düğmeleri, Elemanlar, Ayarlar (Tip / Ara / Durum / Hakediş / özet); pencerelerde kendi başlık çubuğu,
+  üç sütunlu çizim pencereleri, "Çizilecek: …" özet satırı. Simgeler `ArayuzSimgeleri.cs` (çizgi simgeleri),
+  denetimler `KoyuTema.cs`.
 - Hat, kanal ve sondaj **parçalı**: her bağlantı düğümünde (direk, SDK, pano, trafo) biter ve yeniden başlar; her
   parçanın metrajı ve etiketi ayrı. Telefonda tek hat olarak görünür, parça kimlikleri korunur.
 - PROMAGIS'in çizimdeki ortak kayıtları (sayaç, aktif hakediş, bölge listesi, onaylar) eklentide de okunur ve yazılır;
@@ -37,11 +41,14 @@
 | 5–6 | İlk telefon uygulaması | bırakıldı (yerine VOLT-EDAŞ Saha) |
 | 7 | Bulut eşitleme (Drive'daki dosyayı elle taşımadan) | sırada |
 | 8 | VOLT-EDAŞ Saha birleşmesi: depo + otomatik APK derlemesi, lejant simge takımı, telefon ↔ AutoCAD dosya uyumu (iki yön, iki biçim) | tamam (sahada ve AutoCAD'de deneme bekliyor) |
+| 10 | Arayüz: Google Stitch tasarımıyla şerit ve bütün pencereler, koyu tema | tamam (AutoCAD'de deneme bekliyor) |
 | 9 | PROMAGIS'ten alınanlar ve şerit: tam katalog, durum kodları, tarife, telefonla aynı görünüm, dinamik şerit, parçalı hat, sayaç / hakediş / bölge kayıtları, eksik malzeme (DETAY), hakediş onayı ve kilit, pano / hücre verisinin korunması | tamam (AutoCAD'de ve sahada deneme bekliyor) |
 
 ## Sahada / AutoCAD'de denenecekler
 
-- Şerit: kategori seçince öğelerin değişmesi, öğeye tıklayınca pencere açılmadan çizim, Tip / Durum / Hakediş kutuları.
+- Şerit: kategori düğmeleri, öğeye tıklayınca pencere açılmadan çizim, Tip / Ara / Durum / Hakediş kutuları, özet satırı;
+  dar ekranda bölümlerin küçülmesi; AutoCAD açık temasında simgelerin okunması.
+- Koyu pencereler: yüksek DPI'da (125 %, 150 %) yazı ve kutuların taşmaması, başlıktan sürükleme, Enter / Esc.
 - Telefonla aynı görünüm: yeni simgeler (1 ölçek), renkler, parça metrajı yazıları; `SH_GORUNUM` ile eski çizimin çevrilmesi.
 - PROMAGIS ile aynı çizimde sırayla çalışma: INDEX sırası, aktif hakediş, bölge listesi, onaylar iki programda aynı mı?
 - `SH_ONAY` ile onaylanan hakedişte kilit; `SH_DETAY` ile eksik malzeme; raporun DETAY sayfası.

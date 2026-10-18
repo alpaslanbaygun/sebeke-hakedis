@@ -28,7 +28,8 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, PROMAGIS-NOTLARI, DEVIR | Güncel |
 
 17.10 işleri `volt-birlesim`, 18.10 işleri (PROMAGIS öneri listesinin tamamı + şerit + görünüm + parçalı hat)
-`serit-ve-stil` dalında yapıldı ve `main`'e alındı. `main`'e her gönderim otomatik derler ve yeni sürüm çıkarır
+`serit-ve-stil` dalında yapıldı ve `main`'e alındı. 18.10 öğleden sonra: Google Stitch tasarımıyla şerit ve bütün
+pencereler koyu temada yeniden kuruldu (`koyu-tema` dalı; geri dönüş noktası: eklenti 0.1.32). `main`'e her gönderim otomatik derler ve yeni sürüm çıkarır
 (sürüm numarası derleme sırasından gelir: eklenti 0.1.N, telefon 2.5.N). Geri dönüş: `onceki-main-2026-10-18`
 dalı (önceki `main`; eklenti 0.1.16 ve telefon 2.5.8 Releases'te durur).
 
@@ -48,14 +49,18 @@ dalı (önceki `main`; eklenti 0.1.16 ve telefon 2.5.8 Releases'te durur).
 - `autocad/src/Eklenti/` — AutoCAD tarafı: `Komutlar` (rapor, içe alma, `SH_DETAY`, dosya seçme), `CizimKomutlari`
   (çizim araçları, `SH_HIZLI`, `SH_GORUNUM`, `SH_ONAY`, `SH_PROJEAL`), `CizimYazici` (çizime yazma; blokları
   `semboller.json`dan çizer, blok sürümü, parça metrajı yazıları), `Serit` + `SeritSimgeleri` + `HizliSecim` (dinamik
-  şerit; son seçimler `%APPDATA%\SebekeHakedis\serit.json`), `PromagisSozlugu` (PROMAGIS'in çizim sözlüğü: SAYAC,
+  şerit; son seçimler ve pencerelerin "son kullanılanlar" listesi `%APPDATA%\SebekeHakedis\serit.json`),
+  `ArayuzSimgeleri` (şerit ve pencerelerin çizgi simgeleri, WPF ile çizilir), `KoyuTema` (koyu pencere parçaları:
+  başlık çubuğu, düğme, onay / seçim kutusu, açılır liste, sayı kutusu, iki satırlı liste, sekme, bilgi çubuğu,
+  koyu tablo ve ileti kutusu; ölçü 96 DPI'a göre, `Olcu.S()` ile büyür), `PromagisSozlugu` (PROMAGIS'in çizim sözlüğü: SAYAC,
   HakNo, DicBölge, HAK_ONAY), `Toplayici`, `Ortam`/`OrtamVerisi` (gömülü kalemler / semboller / cizim-stili /
   kategoriler), `Pencereler`.
 - `araclar/promagis-katalog-aktar.py` — PROMAGIS veri dosyasından (kullanıcıdan alınır, depoya konmaz) `kalemler.json` üretir.
 - `autocad/test/CekirdekTest` — çekirdek denemeleri. Komutlar: `ornek` (CI), `dogrula`, `gidisdonus`, `aktarim`,
   `bosaaktar`, `katsayilar`, `semboller`.
 - `autocad/test/PencereTest` — pencereleri AutoCAD'siz açıp ekran görüntüsü alır; şeridin önizlemesini de çizer
-  (`ekran/14-serit-*.png`) (yalnız Windows/CI).
+  (`ekran/14-serit-*.png`, `15-serit-demontaj.png`, `16`/`17` tip listeleri) (yalnız Windows/CI). Önizleme
+  AutoCAD'in koyu temasına benzer zeminle çizilir; gerçek şeridin zemini AutoCAD temasından gelir.
 - `telefon/` — VOLT-EDAŞ Saha: `web/src` (Preact arayüz + hesap motoru), `web/seed/standard-tedas-2026.json`
   (TEDAŞ kataloğu), `web/src/interop/sebeke.js` (telefon ↔ .sebeke.json dönüşümü) ve `sh-core.cjs` (PROMAGIS
   kurallarının JS karşılığı: proje dosyası, etiket, kanal, rapor), `web/src/export/dxf.js` (DXF; simgeler ortak tablodan),
@@ -93,7 +98,8 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
-1. **AutoCAD'de ilk deneme** (kullanıcı yapacak): şerit (kategori → öğe → çizim), yeni görünüm, parçalı hat,
+1. **AutoCAD'de ilk deneme** (kullanıcı yapacak): koyu şerit ve pencereler (kategori → öğe → çizim, Ara kutusu,
+   yüksek DPI'da pencereler), yeni görünüm, parçalı hat,
    Telefona Gönder → telefonda aç → Telefondan Al, `SH_ONAY` / `SH_DETAY`; PROMAGIS'le aynı çizimde sırayla
    çalışma (INDEX, aktif hakediş, bölge listesi, onaylar). Hata ayrıntısı `%TEMP%\SebekeHakedis_hata.txt`'ye yazılır.
 2. **Telefonda deneme**: 2.5.x kurulumu, AutoCAD dosyasından proje alma, PROMAGIS durum kodları, dışa aktarma;

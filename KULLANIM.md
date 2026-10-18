@@ -115,9 +115,14 @@ Ayrıntı için telefon kılavuzuna bakın; AutoCAD ile birlikte çalışırken 
 Hepsi şeritteki **ŞEBEKE HAKEDİŞ** sekmesindedir. Çizilen her şey PROMAGIS biçimindedir (aynı katmanlar ve
 bilgiler); PROMAGIS çizimleriyle karışık kullanılabilir, raporda aynı okunur, PROMAGIS'te de açılır.
 
-### Hızlı çizim (şeridin solu)
+### Şerit (soldan sağa)
 
-1. **Çizilecek şebeke** kutusundan kategoriyi seçin. Yanında **yalnız o kategorinin öğeleri** çıkar:
+Şeridin zemin rengi AutoCAD'in temasından gelir; tasarım koyu temaya göredir (AutoCAD › Seçenekler › Görüntü ›
+Renk teması: **Koyu**). Simgeler açık temada da okunur.
+
+1. **Kategori**: AG Havai, AG Yeraltı, OG Havai / ENH, OG Yeraltı, Müşterek, Aydınlatma, Trafo, Abone, Kazı, Proje
+   düğmeleri (sütunlar: havai · yeraltı · diğer · proje). Birine tıklayın; seçili olan renkli görünür ve yanındaki
+   **Elemanlar** bölümünde **yalnız o kategorinin öğeleri** çıkar:
 
    | Kategori | Öğeler |
    | --- | --- |
@@ -132,17 +137,41 @@ bilgiler); PROMAGIS çizimleriyle karışık kullanılabilir, raporda aynı okun
    | Kazı | Kablo Kanalı, Yatay Sondaj |
    | Proje | Bölge, Nokta Al, Telefondan Al, Telefona Gönder |
 
-2. Öğeye tıklayın: **pencere açılmadan** çizim başlar (ör. AG Direk → her tıklamada bir direk; AG Hat → direkten
-   direğe tıklayın, Enter).
-3. **Seçim** bölümünde:
-   - **Tip**: yalnız o öğenin tipleri (son kullanılanlar ve çok kullanılanlar üstte). **Ara** tüm listeyi açar.
-   - **Durum**: M+M, M, KM, ENH, DM+M, DM, ME, MEVCUT; DM'de yanındaki kutudan KESİK / SÖKÜK.
-   - **Hakediş**: "Aktif hakediş" ya da bir numara.
+2. **Elemanlar**: öğeye tıklayın, **pencere açılmadan** çizim başlar (ör. AG Direk → her tıklamada bir direk;
+   AG Hat → direkten direğe tıklayın, Enter). Etkin öğe yeşil kare içinde görünür.
+3. **Ayarlar**:
+   - **Tip**: yalnız o öğenin tipleri (son kullanılanlar ve çok kullanılanlar üstte).
+   - **Ara**: yazıp Enter'a basın (ör. `k2`, `beton 9,3`, `alpek 50`); öğenin bütün tipleri arasında arar, bulunanlar
+     Tip listesine gelir, ilki seçilir. Boş Enter kısa listeye döner.
+   - Altındaki satır **sıradaki tıklamada ne çizileceğini** gösterir: `AG Direk · G-10I · M · 2. hakediş`.
+   - **Durum** (M, M+M, KM, DM, DM+M, MEVCUT), **Hakediş** ("Aktif hakediş" ya da bir numara); **DM türü**
+     (KESİK / SÖKÜK) yalnız DM ve DM+M seçiliyken görünür.
+   - **Ayrıntılı…**: aynı öğeyi pencereyle çizer (bütün tipler, GIS numarasını elle verme vb.).
    Seçimler hatırlanır (AutoCAD yeniden açılınca da).
-4. **Ayrıntılı…**: aynı öğeyi pencereyle çizer (aramalı liste, GIS numarasını elle verme vb.).
+4. Sağdaki bölümler: **Düzenle** (Malzeme, Metraj, Telefon Görünümü, Çizim Ayarları), **Hakediş** (Aktif Hakediş,
+   Hakediş Onayı), **Telefon**, **Rapor**, **Yardım**. Ekran darsa AutoCAD sağdaki bölümleri kendisi küçültür.
 
 Çizerken: **Geri** son nesneyi kaldırır, **Ayarlar** seçimleri değiştirir, **Enter** bitirir. GIS numarası
 kendiliğinden artar. Her komut AutoCAD'in **U** (Geri Al) komutuyla tek seferde geri alınır.
+
+### Pencereler
+
+Bütün pencereler koyu temadadır; **Enter** birincil düğmeye (Çiz, Kaydet), **Esc** Vazgeç'e basar. Pencere
+başlığından tutup taşınır.
+
+- **Eleman koy / Hat çiz**: solda tür, ortada arama kutusu + cins süzgeci + tip listesi (**Son kullanılanlar** ve
+  **Tüm tipler**; her satırda tanım, cins, ağırlık, poz no), sağda durum (her kodun anlamıyla), demontaj türü,
+  hakediş ve ilk GIS numarası (boş bırakılırsa kendiliğinden; kutuda önerilen numara görünür). Altta
+  "Çizilecek: …" satırı. **Onaylı (kilitli) bir hakediş** seçilirse sarı uyarı çıkar ve Çiz düğmesi kapanır.
+- **Kablo kanalı çiz**: kanaldaki kablolar, zemin listesi, ölçüler ve **hızlı seçim** düğmeleri (40×40×80 …).
+- **Yatay sondaj çiz**: tip listesi, durum, hakediş.
+- **Malzemeler**: nesnenin kendi pozu en üstte (kalın, simgeli); hücreye tıklayıp durum, miktar, hakediş, DM
+  durumu değişir; altta toplam ağırlık. Onaylı hakedişin satırları gri ve kilit simgelidir.
+- **Eksik malzeme bul**: süzgeç değiştikçe sonuç pencerede listelenir; **Çizimde seç** ya da **Excel'e yaz**.
+- **Hakediş onayı**: her hakediş için Kontrol → Hakediş → GIS işaretleri; aktif hakediş vurgulu, onaylı olan kilitli.
+- **Çizim ayarları**: Genel, Tarife, Görünüm, Metraj sekmeleri.
+- **Telefondan al**: Yeni eklenecek / Güncellenecek / Değişmeyen kutucukları (listeleriyle) ve uyarılar (kilitli
+  hakediş, telefonda silinmiş, onaylar). **Çizime aktar** ile başlar.
 
 ### Hat, kanal ve sondaj parça parça çizilir
 
@@ -155,7 +184,7 @@ yazılır. Kanal ve sondaj da aynıdır. Telefon bu parçaları tek hat olarak g
 Simgeler, renkler, çizgi tipleri ve yazılar telefondaki çizimle birebir aynıdır (`ortak/katalog/cizim-stili.json`).
 Beton / ağaç direk daire, demir direk kare; yeni dolu, mevcut boş, sök-tak yarım, demontaj çapraz. Simgeler
 metre cinsindendir, 1 ölçekle konur. Eski bir çizimi bu görünüme çevirmek için **Telefon Görünümü** (`SH_GORUNUM`);
-değişmeyen PROMAGIS bloklarına dokunulmaz. PROMAGIS simgeleri istenirse **Ayarlar › Sembol takımı**.
+değişmeyen PROMAGIS bloklarına dokunulmaz. PROMAGIS simgeleri istenirse **Çizim Ayarları › Görünüm**.
 
 ### Diğer düğmeler
 
@@ -164,9 +193,9 @@ değişmeyen PROMAGIS bloklarına dokunulmaz. PROMAGIS simgeleri istenirse **Aya
 | Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 934 kalemlik PROMAGIS kataloğu). |
 | Metraj | `SH_METRAJ` | Seçilen hat / kanal / sondajın metrajını çizim uzunluğundan yeniden hesaplar (önce listeyi gösterip sorar). |
 | Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (simge, renk, etiket, parça metrajları). |
-| Hakediş | `SH_HAKEDIS` | Aktif hakediş: yeni çizilenler bu hakedişin katmanlarına (`SC_3.HAK.…`) konur. PROMAGIS'in aktif hakedişiyle ortaktır. |
+| Aktif Hakediş | `SH_HAKEDIS` | Aktif hakediş: yeni çizilenler bu hakedişin katmanlarına (`SC_3.HAK.…`) konur. PROMAGIS'in aktif hakedişiyle ortaktır. |
 | Hakediş Onayı | `SH_ONAY` | Her hakediş için sırayla **Kontrol → Hakediş → GIS** onayı (PROMAGIS'teki onay kaydı; PROMAGIS aynı işaretleri görür). **Hakediş onayı verilen hakediş kilitlenir**: o hakedişe yeni nesne çizilemez, malzeme satırları gri görünür ve değiştirilemez / silinemez, metraj güncellemesi o nesneleri atlar, telefondan gelen değişiklik o hakedişe dokunuyorsa aktarılmaz. Kilitli direğe açık hakedişte yeni malzeme eklemek serbesttir. |
-| Ayarlar | `SH_AYARLAR` | Katman / GIS ön eki, koordinat dilimi, **tarife (şehir / köy-bakım ve karakteristik)**, sembol takımı, etiket yüksekliği, direğe yakalama mesafesi, metraj yuvarlama ve ek paylar, kanal varsayılanları. Çizimin içinde saklanır. |
+| Çizim Ayarları | `SH_AYARLAR` | Katman / GIS ön eki, koordinat dilimi, **tarife (şehir / köy-bakım ve karakteristik)**, sembol takımı, etiket yüksekliği, direğe yakalama mesafesi, metraj yuvarlama ve ek paylar, kanal varsayılanları. Çizimin içinde saklanır. |
 | Bölge | `SH_BOLGE` | Alt proje sınırı: köşeleri gösterin ya da **Nesne** deyip var olan kapalı çizgiyi seçin; ad, proje kodu ve **grup kodu**. PROMAGIS'in bölge listesine de kaydedilir. |
 | Nokta Al | `SH_NOKTAAL` | Ölçü noktalarını dosyadan alır (telefonun "Noktalar (CSV)" çıktısı ya da Ad, Y, X, Z, Kod dosyası). |
 | Telefondan Al | `SH_PROJEAL` | Bölüm 2. Üç dosya türü açılır: `.sebeke.json`, `.volt.json`, teslim paketi `.zip`. |
@@ -174,7 +203,7 @@ değişmeyen PROMAGIS bloklarına dokunulmaz. PROMAGIS simgeleri istenirse **Aya
 | Durum Tespit | `SH_RAPOR` | Bu çizimden Excel rapor (PROMAGIS'in sayfaları; ayrıca **DETAY** sayfası: her elemanın ara malzemeleri satır satır). |
 | Dosyadan Rapor | `SH_PROJERAPOR` | Bir proje dosyasından Excel rapor (çizim açmadan; telefon dosyaları da olur). |
 | Proje Özeti | `SH_OZET` | Bölge, eleman, hat, kanal sayıları ve hakediş onayları. |
-| Eksik Malzeme | `SH_DETAY` | PROMAGIS'teki DETAY sorgusu: ör. "topraklaması **olmayan** AG direkleri". Hangi elemanlarda (ana cins, tip, durum, bölge) hangi ara malzemenin (cins, tip, durum, hakediş) aranacağını seçin; **olmayanlar / olanlar / hepsi**. Bulunan elemanlar çizimde seçili kalır; istenirse Excel'e yazılır. |
+| Eksik Malzeme | `SH_DETAY` | PROMAGIS'teki DETAY sorgusu: ör. "topraklaması **olmayan** AG direkleri". Hangi elemanlarda (ana cins, tip, durum, bölge) hangi ara malzemenin (cins, tip, durum, hakediş) aranacağını seçin; **olmayanlar / olanlar / hepsi**. Sonuç pencerede listelenir; **Çizimde seç** bulunan elemanları seçer, **Excel'e yaz** ayrıca DETAY dosyasını yazar. |
 
 ### PROMAGIS ile ortak kayıtlar
 

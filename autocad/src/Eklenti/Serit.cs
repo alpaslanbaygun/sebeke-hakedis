@@ -468,7 +468,9 @@ namespace SebekeHakedis.Eklenti
         {
             if (_ozet == null) return;
             var oge = HizliSecim.Oge;
-            _ozet.Text = HizliSecim.Ozet();
+            string ozet = HizliSecim.Ozet();
+            _ozet.Text = ozet.Length > 46 ? ozet.Substring(0, 45).TrimEnd() + "…" : ozet;
+            _ozet.ToolTip = "Sıradaki tıklamada çizilecek: " + ozet;
             _ozet.Image = oge != null ? SeritSimgeleri.OgeSimgesi(oge, 16) : null;
         }
 

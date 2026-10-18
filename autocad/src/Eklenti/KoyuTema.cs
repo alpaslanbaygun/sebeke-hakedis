@@ -261,6 +261,23 @@ namespace SebekeHakedis.Eklenti
             Yerel.KoseYuvarla(this);
         }
 
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            // Yazılabilir açılır listelerde Windows'un bıraktığı seçili (mavi) yazıyı kaldır
+            Action<Control> gez = null;
+            gez = c =>
+            {
+                foreach (Control ic in c.Controls)
+                {
+                    var a = ic as KoyuAcilir;
+                    if (a != null) a.SecimiKaldir();
+                    gez(ic);
+                }
+            };
+            try { gez(this); } catch { }
+        }
+
         private Rectangle KapatAlani => new Rectangle(ClientSize.Width - Olcu.S(46) - 1, 1, Olcu.S(46), BaslikBoyu - 2);
 
         protected override void OnPaint(PaintEventArgs e)
@@ -919,7 +936,7 @@ namespace SebekeHakedis.Eklenti
         protected override void OnTextChanged(EventArgs e) { base.OnTextChanged(e); SecimiKaldir(); }
 
         /// <summary>Windows yazılabilir listede yazının tamamını seçili (mavi) bırakır; odak yokken kaldırılır.</summary>
-        private void SecimiKaldir()
+        internal void SecimiKaldir()
         {
             try { if (DropDownStyle == ComboBoxStyle.DropDown && IsHandleCreated && !Focused) SelectionLength = 0; } catch { }
         }
