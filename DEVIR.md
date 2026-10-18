@@ -30,7 +30,7 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 17.10 işleri `volt-birlesim`, 18.10 işleri (PROMAGIS öneri listesinin tamamı + şerit + görünüm + parçalı hat)
 `serit-ve-stil` dalında yapıldı ve `main`'e alındı. `main`'e her gönderim otomatik derler ve yeni sürüm çıkarır
 (sürüm numarası derleme sırasından gelir: eklenti 0.1.N, telefon 2.5.N). Geri dönüş: `onceki-main-2026-10-18`
-etiketi (eklenti 0.1.16, telefon 2.5.8 Releases'te durur).
+dalı (önceki `main`; eklenti 0.1.16 ve telefon 2.5.8 Releases'te durur).
 
 ## 3. Kod haritası
 
