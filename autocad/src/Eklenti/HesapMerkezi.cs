@@ -65,7 +65,7 @@ namespace SebekeHakedis.Eklenti
                 if (rb == null) return null;
                 var sb = new StringBuilder();
                 foreach (TypedValue tv in rb) if (tv.TypeCode == (int)DxfCode.Text) sb.Append(tv.Value as string);
-                try { return HesapKaydi.Oku(Json.Oku(sb.ToString()) as JsonNesne); }
+                try { return HesapKaydi.Oku(Cekirdek.Json.Oku(sb.ToString()) as JsonNesne); }
                 catch { return null; }
             }
         }
@@ -123,7 +123,7 @@ namespace SebekeHakedis.Eklenti
                 alt.SetAt(anahtar, xr);
                 tr.AddNewlyCreatedDBObject(xr, true);
             }
-            string metin = Json.Yaz(k.Json(), false);
+            string metin = Cekirdek.Json.Yaz(k.Json(), false);
             using (var rb = new ResultBuffer())
             {
                 for (int i = 0; i < metin.Length; i += ParcaBoyu)
@@ -314,7 +314,7 @@ namespace SebekeHakedis.Eklenti
                 try
                 {
                     var b = KaynakOku("moduller.json");
-                    var o = b == null ? null : Json.Oku(Encoding.UTF8.GetString(b)) as JsonNesne;
+                    var o = b == null ? null : Cekirdek.Json.Oku(Encoding.UTF8.GetString(b)) as JsonNesne;
                     var dizi = o?.Dizi("moduller");
                     if (dizi != null) foreach (var x in dizi) if (x is JsonNesne m && m.Metin("id").Length > 0) l.Add(m);
                 }
@@ -463,13 +463,13 @@ namespace SebekeHakedis.Eklenti
         {
             var o = new JsonNesne();
             o["hata"] = mesaj ?? "Hata";
-            return Json.Yaz(o, false);
+            return Cekirdek.Json.Yaz(o, false);
         }
 
         private static string Api(string ad, string govde)
         {
             JsonNesne istek;
-            try { istek = Json.Oku(govde) as JsonNesne ?? new JsonNesne(); }
+            try { istek = Cekirdek.Json.Oku(govde) as JsonNesne ?? new JsonNesne(); }
             catch (System.Exception e) { return HataJson("İstek okunamadı: " + e.Message); }
             Func<Oturum, string> is_;
             switch (ad)
@@ -572,7 +572,7 @@ namespace SebekeHakedis.Eklenti
                 y["hedef"] = o.Hedef.Json();
                 y["kayit"] = kayit?.Json();
                 y["guncel"] = baglam;
-                return Json.Yaz(y, false);
+                return Cekirdek.Json.Yaz(y, false);
             }
         }
 
@@ -618,13 +618,13 @@ namespace SebekeHakedis.Eklenti
                 };
                 k.HedefParcalar.AddRange(o.Hedef.Parcalar);
                 var md = istek["modulDurumu"];
-                k.ModulDurumu = md == null ? "" : md is string s ? s : Json.Yaz(md, false);
+                k.ModulDurumu = md == null ? "" : md is string s ? s : Cekirdek.Json.Yaz(md, false);
                 HesapDeposu.Yaz(db, k);
                 o.KayitId = k.Id;
                 var y = new JsonNesne();
                 y["id"] = k.Id;
                 y["mesaj"] = (eski != null ? "Güncellendi: " : "Kaydedildi: ") + (k.HedefTur == "proje" ? "proje geneli" : HedefAdi(k.HedefTur) + " " + k.HedefNo) + " · çizimi kaydetmeyi unutmayın";
-                return Json.Yaz(y, false);
+                return Cekirdek.Json.Yaz(y, false);
             }
         }
 
@@ -693,7 +693,7 @@ namespace SebekeHakedis.Eklenti
                 pj["ad"] = p.Ad; pj["cizim"] = Path.GetFileName(belge.Name ?? ""); pj["eleman"] = (double)p.Elemanlar.Count; pj["hat"] = (double)p.Hatlar.Count;
                 y["proje"] = pj;
                 y["surum"] = Uygulama.Surum;
-                return Json.Yaz(y, false);
+                return Cekirdek.Json.Yaz(y, false);
             }
         }
 
@@ -722,7 +722,7 @@ namespace SebekeHakedis.Eklenti
             }
             var y = new JsonNesne();
             y["url"] = Ac(belge, modul, hedef, kayitId);
-            return Json.Yaz(y, false);
+            return Cekirdek.Json.Yaz(y, false);
         }
 
         private static string Sil(Oturum o, JsonNesne istek)
@@ -735,7 +735,7 @@ namespace SebekeHakedis.Eklenti
                 var y = new JsonNesne();
                 y["silindi"] = ok;
                 y["mesaj"] = ok ? "Kayıt silindi · çizimi kaydetmeyi unutmayın (Geri Al ile geri gelir)" : "Kayıt bulunamadı";
-                return Json.Yaz(y, false);
+                return Cekirdek.Json.Yaz(y, false);
             }
         }
 
@@ -758,7 +758,7 @@ namespace SebekeHakedis.Eklenti
                 if (pr != null) foreach (var x in pr) if (x is string s) hedef.Parcalar.Add(s);
             }
             var y = new JsonNesne();
-            if (hedef == null || hedef.Tur == "proje" || string.IsNullOrEmpty(hedef.Tur)) { y["mesaj"] = "Proje geneli hesabının çizimde tek bir yeri yok."; return Json.Yaz(y, false); }
+            if (hedef == null || hedef.Tur == "proje" || string.IsNullOrEmpty(hedef.Tur)) { y["mesaj"] = "Proje geneli hesabının çizimde tek bir yeri yok."; return Cekirdek.Json.Yaz(y, false); }
             try { AcApp.DocumentManager.MdiActiveDocument = belge; } catch { }
             var idler = new List<ObjectId>();
             foreach (var h in new List<string>(hedef.Parcalar) { hedef.Id })
@@ -766,7 +766,7 @@ namespace SebekeHakedis.Eklenti
                 ObjectId oid;
                 if (!string.IsNullOrEmpty(h) && Toplayici.TaniticiylaBul(belge.Database, h, out oid) && !idler.Contains(oid)) idler.Add(oid);
             }
-            if (idler.Count == 0) { y["mesaj"] = "Hedef çizimde bulunamadı (silinmiş olabilir)."; return Json.Yaz(y, false); }
+            if (idler.Count == 0) { y["mesaj"] = "Hedef çizimde bulunamadı (silinmiş olabilir)."; return Cekirdek.Json.Yaz(y, false); }
             using (belge.LockDocument())
             {
                 var ext = new Extents3d();
@@ -800,7 +800,7 @@ namespace SebekeHakedis.Eklenti
             }
             catch { }
             y["mesaj"] = HedefAdi(hedef.Tur) + " " + hedef.No + " çizimde seçildi.";
-            return Json.Yaz(y, false);
+            return Cekirdek.Json.Yaz(y, false);
         }
     }
 
