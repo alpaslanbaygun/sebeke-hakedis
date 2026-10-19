@@ -1,0 +1,31 @@
+/* kanal: aracın koyu GitHub paleti Şebeke-M laciverdi + turuncu vurguya çevrilir (yalnız ekran; yazdırma ve DXF
+   aracın kendi beyaz / AutoCAD renklerinde kalır). Kayıt, aç ve temizle düğmeleri Şebeke-M içinde gizlenir: hesabın
+   durumu projeye kaydedilir. Yazdır ve DXF İndir kalır. */
+@media screen{
+  html.sm-var{--bg:#0b1326;--panel:#131b2e;--panel2:#1e293b;--line:#334155;--txt:#dae2fd;--dim:#94a3b8;
+    --cyan:#f59e0b;--amber:#fbbf24;--green:#10b981;--red:#ef4444;--mono:var(--sm-mono)}
+  html.sm-var body{font-family:var(--sm-font)}
+  html.sm-var header{background:var(--sm-panel);border-bottom-color:var(--sm-acc)}
+  html.sm-var header h1{color:var(--sm-warn2)}
+  html.sm-var button.primary,html.sm-var button.primary:hover{color:#0b1326}
+  html.sm-var #cmd,html.sm-var .hint code{background:#0e1730}
+  html.sm-var .tipcard.active{background:#1e293b}
+  html.sm-var .katbox{background:#0e1730}
+  html.sm-var #editform .katbox[style],html.sm-var #renkPanel{background:#0e1730!important}
+  html.sm-var #cwrap{background:#0b1326}
+  html.sm-var .rsw.sel{border-color:var(--sm-tx)}
+  html.sm-var #status{background:var(--sm-panel)}
+  html.sm-var #admodal > div,html.sm-var #kapmodal > div{background:var(--sm-panel)!important}
+
+  /* Şebeke-M içinde (telefon / AutoCAD): aracın kendi dosya kaydı, açma ve temizleme düğmeleri gizli */
+  html.sm-telefon .hbtns button[onclick="kaydet2()"],html.sm-telefon .hbtns button[onclick="farkliKaydet()"],
+  html.sm-telefon .hbtns button[onclick*="jsonfile"],html.sm-telefon .hbtns button[onclick="hepsiniSil()"],
+  html.sm-autocad .hbtns button[onclick="kaydet2()"],html.sm-autocad .hbtns button[onclick="farkliKaydet()"],
+  html.sm-autocad .hbtns button[onclick*="jsonfile"],html.sm-autocad .hbtns button[onclick="hepsiniSil()"]{display:none!important}
+
+  /* telefon: başlık düğmeleri tek satırda kayar, durum çubuğu sığar */
+  @media (max-width:820px){
+    html.sm-var .hbtns{flex-wrap:nowrap}
+    html.sm-var #status{gap:8px}
+  }
+}

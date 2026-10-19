@@ -1,5 +1,5 @@
 """
-AutoCAD olmadan bir PROMAGIS çizimini (DWG) eklentinin döküm biçimine çevirir.
+AutoCAD olmadan bir şebeke çizimini (DWG) eklentinin döküm biçimine çevirir.
 
 Kullanım:
   1) LibreDWG ile DWG'yi JSON'a çevirin:   dwgread -O JSON -o cizim.json cizim.dwg
@@ -8,7 +8,7 @@ Kullanım:
 
 Notlar (LibreDWG 0.13.3 JSON çıktısının iki kusuru burada düzeltilir):
   - U+0080..U+00FF karakterleri (Ö, Ü, Ç, ³) UTF-8 yerine tek bayt yazılıyor → Latin-1 olarak geri çevrilir.
-  - 3 baytlık tanıtıcılar (handle) 16 bite kırpılıyor → nesne sırası ve PROMAGIS'in GIS alanındaki
+  - 3 baytlık tanıtıcılar (handle) 16 bite kırpılıyor → nesne sırası ve çizimin GIS alanındaki
     kendi tanıtıcısı kullanılarak gerçek değerler yeniden kurulur.
 """
 import json
@@ -16,7 +16,7 @@ import math
 import re
 import sys
 
-PROMAGIS = {'GIS', 'NIT', 'MALZEME', 'HAT', 'KONTROL', 'REG', 'FULLREG', 'HAKNO', 'ZKOORD',
+XDATA_ALANLARI = {'GIS', 'NIT', 'MALZEME', 'HAT', 'KONTROL', 'REG', 'FULLREG', 'HAKNO', 'ZKOORD',
             'ANAKESIT', 'ETK', 'HANDLE', 'BOYUT', 'START', 'END', 'UZ'}
 
 
@@ -103,7 +103,7 @@ def main(girdi, cikti):
         t = o.get('entity')
         if t not in ('INSERT', 'POLYLINE_2D', 'LWPOLYLINE', 'TEXT', 'MTEXT'):
             continue
-        xd = {a: [str(v) for v in vs] for a, vs in eed(o).items() if a in PROMAGIS}
+        xd = {a: [str(v) for v in vs] for a, vs in eed(o).items() if a in XDATA_ALANLARI}
         if not xd:
             continue
         r = {'h': format(o['_h'], 'X'), 'tur': {'POLYLINE_2D': 'POLYLINE'}.get(t, t),

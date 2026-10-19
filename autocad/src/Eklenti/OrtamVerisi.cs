@@ -34,7 +34,6 @@ namespace SebekeHakedis.Eklenti
             Hakedis = Ayar.AktifHakedis > 0 ? Ayar.AktifHakedis : Math.Max(1, Proje.AktifHakedis);
             Sira = Numara.EnBuyukSira(Proje);
             _katalog = null;
-            PromagisYazici.TelefonSembolleri = Ayar.TelefonSembolleri;
             KatalogKaynagi.StiliYukle();
         }
 
@@ -55,14 +54,14 @@ namespace SebekeHakedis.Eklenti
             return Sira.ToString(CultureInfo.InvariantCulture);
         }
 
-        /// <summary>Yeni sıra numarası verilince (AutoCAD'de PROMAGIS'in sayacı da ilerletilir).</summary>
+        /// <summary>Yeni sıra numarası verilince (AutoCAD'de AutoCAD'in sayacı da ilerletilir).</summary>
         protected virtual void SiraVerildi(long sira) { }
 
         /// <summary>
         /// Yeni elemanın blok ölçeği: eklentinin SH_ simgeleri metre cinsindendir, her zaman 1 ölçekle konur (telefonla
-        /// aynı boyut); PROMAGIS bloklarında ayardaki ölçek, yoksa çizimdekilerle aynı (PROMAGIS: 4).
+        /// aynı boyut); AutoCAD bloklarında ayardaki ölçek, yoksa çizimdekilerle aynı (AutoCAD: 4).
         /// </summary>
-        public double Olcek(string blok) => Semboller.EklentininBlogu(blok) ? 1 : Ayar.SembolOlcegi > 0 ? Ayar.SembolOlcegi : PromagisYazici.OlcekOner(Varliklar, blok, 4);
+        public double Olcek(string blok) => Semboller.EklentininBlogu(blok) ? 1 : Ayar.SembolOlcegi > 0 ? Ayar.SembolOlcegi : NesneYazici.OlcekOner(Varliklar, blok, 4);
 
         /// <summary>
         /// Noktanın yapıştığı eleman: simgesinin üstüne ya da mesafe içine tıklanan elemanlardan merkezi en yakın olan; yoksa null.

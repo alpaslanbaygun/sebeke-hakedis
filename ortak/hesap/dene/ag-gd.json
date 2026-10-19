@@ -1,0 +1,339 @@
+{
+ "modul": "ag-gd",
+ "aciklama": "Beklenen değerler hesabın ÖZGÜN dosyasından (sahibinin özgün ag-gd.html, değiştirilmemiş) alındı: U alanına değer yazılıp change olayı verildi, aracın kendi düğme işlevleriyle hat sayısı ayarlandı (delKol / addKol), her hat için set(i,'tip'), set(i,'cable'), set(i,'devre'), set(i,'length') ve setYuk(i,0,W) çağrıldı (kullanıcının yaptığı gibi); toplamlar ekrandaki #eq_e, #eq_er, #eq_ex, #eq_p, #eq_dp, #eq_ok yazılarından, hat değerleri aracın calc() işlevinden okundu. Uyarlama akımı ve hat değerlerini yuvarlar (akım 2, %e/%P 4, ΔP 2 basamak); beklenen değerler özgün calc() çıktısının aynı yuvarlamasıdır (ör. 55,32940… A → 55,33). 1) 4 × 3x50/16+70 ALP. (38,5/41,2/36,8/40 m; 6000/9000/7500/12000 W): %e 1,5722 (er 1,4467 + ex 0,1254), %P 1,1225, ΔP 387 W, I 55,33 A. 2) 3x95/50 NAYY 45 m / 5000 W + 3x50/16+70 ALP. 52,5 m / 15000 W + 3x35/16+50 ALP. 47 m / 20000 W: %e 1,7832, %P 1,2910, ΔP 516 W, I 64,15 A. 4) 3 × 4P/R 45 m, 3 × 40000 W: %e 6,2310, %P 3,9228, ΔP 4707 W, I 192,45 A, HAT 1 KESİT AZ (165 A), UYGUN DEĞİLDİR. 5) aracın 8 boş hattından ilki: 3x150+70 NYY (yeraltı) 120 m, 30000 W: %e 0,3906, %P 0,3024, ΔP 91 W, I 48,11 A. Bağlamdaki adlar ve sayılar uydurmadır.",
+ "durumlar": [
+  {
+   "ad": "telefon: AG havai hat (3x50/16+70 AER), 4 açıklık, yükler elle",
+   "baglam": {
+    "surum": 1,
+    "kaynak": "telefon",
+    "proje": {
+     "ad": "Çamlık Sokak AG Şebekesi",
+     "yapan": "Ayşe Demir",
+     "unvan": "Elektrik Mühendisi",
+     "tarih": "2026-10-12"
+    },
+    "hedef": {
+     "tur": "hat",
+     "id": "a3",
+     "no": "AG-3"
+    },
+    "hat": {
+     "id": "a3",
+     "no": "AG-3",
+     "tur": "AG_HAVAI",
+     "havai": true,
+     "gerilimKV": 0.4,
+     "iletkenler": [
+      {
+       "ad": "3x50/16+70 AER",
+       "adet": 1,
+       "devre": "AG"
+      }
+     ],
+     "acikliklar": [
+      {
+       "bas": "T1",
+       "bit": "P1",
+       "uzunluk": 38.5
+      },
+      {
+       "bas": "P1",
+       "bit": "P2",
+       "uzunluk": 41.2
+      },
+      {
+       "bas": "P2",
+       "bit": "P3",
+       "uzunluk": 36.8
+      },
+      {
+       "bas": "P3",
+       "bit": "P4",
+       "uzunluk": 40
+      }
+     ],
+     "toplamUzunluk": 156.5
+    }
+   },
+   "adimlar": [
+    "var A = window.__SM.A, s = function (k) { return '#sheet tr:nth-child(9) > td:nth-child(' + (k + 2) + ') input'; }; A.yaz(s(0), 6000); A.yaz(s(1), 9000); A.yaz(s(2), 7500); A.yaz(s(3), 12000);"
+   ],
+   "beklenen": {
+    "dolan": [
+     "hat.acikliklar[0].bit",
+     "hat.acikliklar[0].uzunluk",
+     "hat.acikliklar[1].bit",
+     "hat.acikliklar[1].uzunluk",
+     "hat.acikliklar[2].bit",
+     "hat.acikliklar[2].uzunluk",
+     "hat.acikliklar[3].uzunluk",
+     "hat.gerilimKV",
+     "hat.iletkenler[0].ad",
+     "hat.iletkenler[0].adet",
+     "hat.no"
+    ],
+    "eksik": [
+     "Yükler (W)"
+    ],
+    "durum": "uygun",
+    "ozet": "^AG 400 V · 4 hat · %e = 1,572 .*→ UYGUN$",
+    "degerler": {
+     "Toplam gerilim düşümü": 1.5722,
+     "Gerilim düşümü (aktif, %er)": 1.4467,
+     "Gerilim düşümü (reaktif, %ex)": 0.1254,
+     "Toplam güç kaybı": 1.1225,
+     "Toplam kayıp güç": 387,
+     "Toplam yük": 34500,
+     "Hat başı akımı": 55.33,
+     "İşletme gerilimi": 400,
+     "tablo.satirlar[0][3]": "3x50/16+70 ALP.",
+     "tablo.satirlar[0][7]": 34500,
+     "tablo.satirlar[0][9]": 120,
+     "tablo.satirlar[3][12]": 0.204,
+     "tablo.satirlar[3][13]": 22.52,
+     "tablo.satirlar[2][1]": "P3"
+    }
+   }
+  },
+  {
+   "ad": "AutoCAD: trafo hedefi, zincir 3x95+50 Nyy Alm. + 3X50/16+70 ALPEK + 3X35/16+50 ALPEK",
+   "baglam": {
+    "surum": 1,
+    "kaynak": "autocad",
+    "proje": {
+     "ad": "Örnek Konutlar AG",
+     "yapan": "Mehmet Kaya",
+     "tarih": "2026-09-30"
+    },
+    "hedef": {
+     "tur": "trafo",
+     "id": "T5",
+     "no": "TR-5"
+    },
+    "trafo": {
+     "id": "T5",
+     "no": "TR-5",
+     "tip": "Direk tipi",
+     "gucKVA": 250,
+     "ogKV": 34.5,
+     "agKV": 0.4,
+     "adet": 1
+    },
+    "zincir": [
+     {
+      "bas": "TR-5",
+      "bit": "K-1",
+      "uzunluk": 45,
+      "iletken": {
+       "ad": "3x95+50 Nyy Alm.",
+       "adet": 1,
+       "devre": "AG"
+      },
+      "havai": false
+     },
+     {
+      "bas": "K-1",
+      "bit": "D-2",
+      "uzunluk": 52.5,
+      "iletken": {
+       "ad": "3X50/16+70 ALPEK",
+       "adet": 1,
+       "devre": "AG"
+      },
+      "havai": true
+     },
+     {
+      "bas": "D-2",
+      "bit": "D-3",
+      "uzunluk": 47,
+      "iletken": {
+       "ad": "3X35/16+50 ALPEK",
+       "adet": 1,
+       "devre": "AG"
+      },
+      "havai": true
+     }
+    ]
+   },
+   "adimlar": [
+    "var A = window.__SM.A, s = function (k) { return '#sheet tr:nth-child(9) > td:nth-child(' + (k + 2) + ') input'; }; A.yaz(s(0), 5000); A.yaz(s(1), 15000); A.yaz(s(2), 20000);"
+   ],
+   "beklenen": {
+    "dolan": 14,
+    "eksik": [
+     "Yükler (W)"
+    ],
+    "durum": "uygun",
+    "ozet": "^AG 400 V · 3 hat · ",
+    "degerler": {
+     "Toplam gerilim düşümü": 1.7832,
+     "Gerilim düşümü (aktif, %er)": 1.6435,
+     "Gerilim düşümü (reaktif, %ex)": 0.1397,
+     "Toplam güç kaybı": 1.291,
+     "Toplam kayıp güç": 516,
+     "Toplam yük": 40000,
+     "Hat başı akımı": 64.15,
+     "Trafo": "TR-5",
+     "Trafo gücü": "250 kVA",
+     "tablo.satirlar[0][2]": "Yeraltı",
+     "tablo.satirlar[0][3]": "3x95/50 NAYY",
+     "tablo.satirlar[0][9]": 215,
+     "tablo.satirlar[1][9]": 120,
+     "tablo.satirlar[2][3]": "3x35/16+50 ALP.",
+     "tablo.satirlar[2][9]": 95,
+     "tablo.satirlar[1][12]": 0.7808
+    }
+   }
+  },
+  {
+   "ad": "eksik bağlam: gerilim yok, listede olmayan kablo (N2XY)",
+   "baglam": {
+    "surum": 1,
+    "kaynak": "telefon",
+    "proje": {
+     "ad": "Deneme Mahallesi"
+    },
+    "hedef": {
+     "tur": "hat",
+     "id": "a9",
+     "no": "AG-9"
+    },
+    "hat": {
+     "id": "a9",
+     "no": "AG-9",
+     "tur": "AG_YERALTI",
+     "havai": false,
+     "iletkenler": [
+      {
+       "ad": "N2XY 3x95+50",
+       "adet": 1,
+       "devre": "AG"
+      }
+     ],
+     "acikliklar": [
+      {
+       "bas": "T2",
+       "bit": "KB-1",
+       "uzunluk": 60
+      },
+      {
+       "bas": "KB-1",
+       "bit": "KB-2",
+       "uzunluk": 75.5
+      }
+     ]
+    }
+   },
+   "beklenen": {
+    "dolan": 7,
+    "eksik": [
+     "HAT 1 kablosu",
+     "HAT 2 kablosu",
+     "Yükler (W)",
+     "İşletme gerilimi (V)"
+    ],
+    "durum": "bilgi",
+    "ozet": "→ eksik bilgi$"
+   }
+  },
+  {
+   "ad": "telefon: çıplak iletken 3P+R, aşırı yük (KESİT AZ, %e aşımı)",
+   "baglam": {
+    "surum": 1,
+    "kaynak": "telefon",
+    "proje": {
+     "ad": "Bağlar Köyü AG",
+     "yapan": "Ayşe Demir",
+     "tarih": "2026-10-14"
+    },
+    "hedef": {
+     "tur": "hat",
+     "id": "a5",
+     "no": "AG-5"
+    },
+    "hat": {
+     "id": "a5",
+     "no": "AG-5",
+     "tur": "AG_HAVAI",
+     "havai": true,
+     "gerilimKV": 0.4,
+     "iletkenler": [
+      {
+       "ad": "3P+R",
+       "adet": 1,
+       "devre": "AG"
+      }
+     ],
+     "acikliklar": [
+      {
+       "bas": "T7",
+       "bit": "D1",
+       "uzunluk": 45
+      },
+      {
+       "bas": "D1",
+       "bit": "D2",
+       "uzunluk": 45
+      },
+      {
+       "bas": "D2",
+       "bit": "D3",
+       "uzunluk": 45
+      }
+     ]
+    }
+   },
+   "adimlar": [
+    "var A = window.__SM.A, s = function (k) { return '#sheet tr:nth-child(9) > td:nth-child(' + (k + 2) + ') input'; }; A.yaz(s(0), 40000); A.yaz(s(1), 40000); A.yaz(s(2), 40000);"
+   ],
+   "beklenen": {
+    "dolan": 9,
+    "eksik": [
+     "Yükler (W)"
+    ],
+    "durum": "uygun-degil",
+    "ozet": "→ UYGUN DEĞİL$",
+    "degerler": {
+     "Toplam gerilim düşümü": 6.231,
+     "Gerilim düşümü (aktif, %er)": 5.0436,
+     "Gerilim düşümü (reaktif, %ex)": 1.1874,
+     "Toplam güç kaybı": 3.9228,
+     "Toplam kayıp güç": 4707,
+     "Toplam yük": 120000,
+     "Hat başı akımı": 192.45,
+     "tablo.satirlar[0][3]": "4P/R",
+     "tablo.satirlar[0][9]": 165,
+     "tablo.satirlar[0][15]": "⚠ KESİT AZ",
+     "uyarilar[0]": "Toplam gerilim düşümü %6,231 ≥ %5.",
+     "uyarilar[1]": "HAT 1: KESİT AZ — yük akımı 192,5 A, iletken taşıma akımı 165 A."
+    }
+   }
+  },
+  {
+   "ad": "bağlamsız açılış, ilk hat elle girilir",
+   "baglam": null,
+   "adimlar": [
+    "var A = window.__SM.A; A.yaz('#sheet tr:nth-child(5) > td:nth-child(2) select', '3x150+70 NYY'); A.yaz('#sheet tr:nth-child(7) > td:nth-child(2) input', 120); A.yaz('#sheet tr:nth-child(9) > td:nth-child(2) input', 30000);"
+   ],
+   "beklenen": {
+    "dolan": 0,
+    "eksik": 0,
+    "durum": "uygun",
+    "ozet": "^AG 400 V · 1 hat ",
+    "degerler": {
+     "Toplam gerilim düşümü": 0.3906,
+     "Gerilim düşümü (aktif, %er)": 0.3024,
+     "Gerilim düşümü (reaktif, %ex)": 0.0882,
+     "Toplam güç kaybı": 0.3024,
+     "Toplam kayıp güç": 91,
+     "Toplam yük": 30000,
+     "Hat başı akımı": 48.11,
+     "Hat sayısı": 1,
+     "tablo.satirlar[0][3]": "3x150+70 NYY",
+     "tablo.satirlar[0][9]": 359
+    }
+   }
+  }
+ ]
+}

@@ -6,13 +6,13 @@ using Autodesk.AutoCAD.DatabaseServices;
 namespace SebekeHakedis.Eklenti
 {
     /// <summary>
-    /// PROMAGIS'in çizim sözlüğündeki kayıtlar (Named Objects Dictionary → sözlük → Xrecord, metin değerler):
+    /// AutoCAD'in çizim sözlüğündeki kayıtlar (Named Objects Dictionary → sözlük → Xrecord, metin değerler):
     ///   AYARLAR / SAYAC        kalem sıra numarası sayacı (INDEX); eklenti yeni sıra verince günceller
     ///   HakNo_Dic / HakNo_Rec  aktif hakediş
-    ///   DicBölge / RecBölge    bölge (alt proje) çizgilerinin tanıtıcı listesi — PROMAGIS raporu bölgeleri buradan bulur
-    /// Böylece eklentiyle çizilen nesneler PROMAGIS'te de aynı sırayla, aynı hakedişte ve rapordaki bölge listesinde görünür.
+    ///   DicBölge / RecBölge    bölge (alt proje) çizgilerinin tanıtıcı listesi — AutoCAD raporu bölgeleri buradan bulur
+    /// Böylece eklentiyle çizilen nesneler AutoCAD'de de aynı sırayla, aynı hakedişte ve rapordaki bölge listesinde görünür.
     /// </summary>
-    internal static class PromagisSozlugu
+    internal static class CizimSozlugu
     {
         public const string Ayarlar = "AYARLAR", Sayac = "SAYAC";
         public const string HakNoSozlugu = "HakNo_Dic", HakNoKaydi = "HakNo_Rec";
@@ -80,7 +80,7 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
-        /// <summary>PROMAGIS sayacı (son verilen ya da sıradaki sıra numarası; okunamazsa 0).</summary>
+        /// <summary>AutoCAD sayacı (son verilen ya da sıradaki sıra numarası; okunamazsa 0).</summary>
         public static long SayacOku(Database db)
         {
             long n;
@@ -88,7 +88,7 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>
-        /// Sayaca sıradaki boş numarayı yazar (son kullanılan + 1): PROMAGIS sayacı ister doğrudan ister bir artırıp
+        /// Sayaca sıradaki boş numarayı yazar (son kullanılan + 1): AutoCAD sayacı ister doğrudan ister bir artırıp
         /// kullansın, eklentinin verdiği numarayla çakışmaz.
         /// </summary>
         public static void SayacYaz(Database db, long sonKullanilan)
@@ -105,7 +105,7 @@ namespace SebekeHakedis.Eklenti
             catch { }
         }
 
-        /// <summary>PROMAGIS'in aktif hakedişi (yoksa 0).</summary>
+        /// <summary>AutoCAD'in aktif hakedişi (yoksa 0).</summary>
         public static int HakNoOku(Database db)
         {
             int n;
@@ -157,11 +157,11 @@ namespace SebekeHakedis.Eklenti
             return r;
         }
 
-        /// <summary>Bir hakedişin onay bitlerini yazar (PROMAGIS da aynı kaydı okur).</summary>
+        /// <summary>Bir hakedişin onay bitlerini yazar (AutoCAD da aynı kaydı okur).</summary>
         public static void OnayYaz(Database db, Transaction tr, int hakedis, int bitler) =>
             Yaz(db, tr, OnaySozlugu, OnayKaydi + hakedis.ToString(CultureInfo.InvariantCulture), new[] { (bitler & 7).ToString(CultureInfo.InvariantCulture) });
 
-        /// <summary>Bölge çizgisini PROMAGIS'in bölge listesine ekler (zaten varsa dokunmaz).</summary>
+        /// <summary>Bölge çizgisini AutoCAD'in bölge listesine ekler (zaten varsa dokunmaz).</summary>
         public static void BolgeEkle(Database db, Transaction tr, string handle)
         {
             if (string.IsNullOrEmpty(handle)) return;
@@ -171,7 +171,7 @@ namespace SebekeHakedis.Eklenti
             Yaz(db, tr, BolgeSozlugu, BolgeKaydi, l);
         }
 
-        /// <summary>Bölge çizgisini PROMAGIS'in bölge listesinden çıkarır.</summary>
+        /// <summary>Bölge çizgisini AutoCAD'in bölge listesinden çıkarır.</summary>
         public static void BolgeCikar(Database db, Transaction tr, string handle)
         {
             if (string.IsNullOrEmpty(handle)) return;

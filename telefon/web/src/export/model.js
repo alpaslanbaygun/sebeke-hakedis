@@ -34,7 +34,7 @@ export function buildExportModel(ps, opts = {}) {
     return Object.assign({
       id: e.id, no: e.no, kind: e.kind, kindLabel: (EQUIPMENT_KINDS[e.kind] || {}).label, pointId: e.pointId, E: p.E, N: p.N, H: p.H, state: e.state, stateLabel: st, job: jobOf(e),
       group: e.group || null, groupLabel: g ? g.label : '', typeName: t ? t.name : (e.attrs && e.attrs.kva ? e.attrs.kva + ' kVA' : ''), servis: t ? t.servis : '', role: ri.role || null, angle: ri.angle ?? null,
-      heightM: t ? t.heightM : null, volt, symbol: g ? g.symbol : 's', attrs: e.attrs || {}, workDate: e.workDate || null, progress: e.progress, promagisDurumu: (e.sebeke && e.sebeke.durum) || null,
+      heightM: t ? t.heightM : null, volt, symbol: g ? g.symbol : 's', attrs: e.attrs || {}, workDate: e.workDate || null, progress: e.progress, cizimDurumu: (e.sebeke && e.sebeke.durum) || null,
       hak: hakOf(e), hakLabel: hakOf(e) ? HAK_STATUSES[hakOf(e)].label : '—', note: e.note || '', photos: (photosBy.get(e.id) || []).length, photoList: (photosBy.get(e.id) || []).map((x) => x.filename || x.id)
     }, p.E != null ? meas(p) : { source: null }, p.E != null ? ll(p) : {});
   });

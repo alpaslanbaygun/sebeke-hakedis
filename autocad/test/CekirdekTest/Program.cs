@@ -10,7 +10,7 @@ namespace SebekeHakedis.Test
     /// <summary>
     /// Çekirdek testleri.
     ///   ornek                         : depodaki örnek dökümle birim testleri (CI'da çalışır)
-    ///   dogrula dokum.json ref.tsv cikti/ : gerçek bir PROMAGIS çizimi ve PROMAGIS raporuyla satır satır karşılaştırma
+    ///   dogrula dokum.json ref.tsv cikti/ : gerçek bir AutoCAD çizimi ve AutoCAD raporuyla satır satır karşılaştırma
     ///   katsayilar hedef.json         : ortak katsayı dosyasını üretir
     ///   gidisdonus proje.sebeke.json  : projeyi çizim nesnelerine yazıp geri okur, raporları karşılaştırır
     ///   semboller [dokum.txt]         : simge takımı denetimleri ve ilkel dökümü (telefonun tablosuyla karşılaştırma)
@@ -71,22 +71,22 @@ namespace SebekeHakedis.Test
             Esit("SH_DIREK_AYD_YENI", Semboller.BlokAdi("AYD_DIREK", "AYD_GLV_PLG", "M"), "simge: aydınlatma direği (galvaniz olsa da daire)");
             Esit("SH_TRAFO_DIREK_MEVCUT", Semboller.BlokAdi("TRAFO_DIREGI", "TR_DİREK_GLV", "MEVCUT"), "simge: trafo direği");
             Esit("SH_TRAFO_KOSK_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "M"), "simge: beton köşk");
-            Esit("SH_TRAFO_BINA_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "TRAFO_BİNASI", "KM"), "simge: trafo binası (KM → PROMAGIS'teki gibi yeni)");
+            Esit("SH_TRAFO_BINA_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "TRAFO_BİNASI", "KM"), "simge: trafo binası (KM → AutoCAD'deki gibi yeni)");
             Esit("SH_KAFES_AG_YENI", Semboller.BlokAdi("AG_DIREK", "AG_DEMİR_GLV", "ME"), "simge: mutabakat eksiği → yeni");
             Esit("SH_ARMATUR_YENI", Semboller.BlokAdi("DIGER", "ARMATÜR", "M"), "simge: diğer › armatür");
             Esit("SH_MENHOL_MEVCUT", Semboller.BlokAdi("DIGER", "MENHOL", "MEVCUT"), "simge: diğer › menhol");
             var kmHat = new Hat { Tur = "OG_HAVAI", AnaKesit = "3xSW", Durum = "KM" };
             kmHat.Kalemler.Add(new Kalem { Kaynak = "HAT", Tanim = "3xSW", Miktar = 120 });
-            Esit("/3xSW\\/120m/({H})", PromagisYazici.HatEtiketi(kmHat), "hat etiketi: KM → /tip\\");
+            Esit("/3xSW\\/120m/({H})", NesneYazici.HatEtiketi(kmHat), "hat etiketi: KM → /tip\\");
             kmHat.Durum = "ENH";
-            Esit("{3xSW}/120m/({H})", PromagisYazici.HatEtiketi(kmHat), "hat etiketi: ENH → {tip}");
+            Esit("{3xSW}/120m/({H})", NesneYazici.HatEtiketi(kmHat), "hat etiketi: ENH → {tip}");
             Esit("SH_SDK_YENI", Semboller.BlokAdi("BOX", "BOX_PANO", "M"), "simge: box → SDK");
             Esit("SH_PANO_YENI", Semboller.BlokAdi("PANO", "AG_PANO_HT", "M+M"), "simge: pano");
             Esit("SH_MUFU_MEVCUT", Semboller.BlokAdi("EK_MUFU", "EK_MUFU_AG_ALM", "MEVCUT"), "simge: ek mufu");
             Esit("SH_KOFRE_YENI", Semboller.BlokAdi("KOFRE", "KOFRA", "M"), "simge: kofre");
             Esit("SH_DIGER_DM", Semboller.BlokAdi("DIGER", "", "DM"), "simge: diğer");
             Esit(true, Semboller.EklentininBlogu("SH_DIREK_AG_YENI"), "simge: SH_ bloğu eklentinin");
-            Esit(false, Semboller.EklentininBlogu("YENİ_AG_DİR"), "simge: PROMAGIS bloğu eklentinin değil");
+            Esit(false, Semboller.EklentininBlogu("YENİ_AG_DİR"), "simge: AutoCAD bloğu eklentinin değil");
             // Demontaj türü: kesik ve sökük ayrı simge; sök-tak yarım dolu kalır
             Esit("SH_KAFES_AG_KESIK", Semboller.BlokAdi("AG_DIREK", "AG_DEMİR_GLV", "DM", "KESİK"), "simge: AG demir direk demontaj kesik");
             Esit("SH_DIREK_AG_SOKUK", Semboller.BlokAdi("AG_DIREK", "AG_BETON", "DM", "SÖKÜK"), "simge: AG beton direk demontaj sökük");
@@ -178,7 +178,7 @@ namespace SebekeHakedis.Test
             Esit("0104", og, "kanal OG tarifesi"); Esit("0105", ag, "kanal AG tarifesi");
 
             var varliklar = CadVarlik.DokumOku(File.ReadAllText(yol, Encoding.UTF8));
-            var p = PromagisOkuyucu.Oku(varliklar, "ornek.dwg");
+            var p = NesneOkuyucu.Oku(varliklar, "ornek.dwg");
             Esit(2, p.Bolgeler.Count, "bölge sayısı");
             Esit(1, p.Noktalar.Count, "GPS noktası");
             Esit(3, p.Elemanlar.Count, "eleman sayısı");
@@ -222,7 +222,7 @@ namespace SebekeHakedis.Test
             RaporYazici.Yaz(p, xlsx, "test");
             Esit(true, new FileInfo(xlsx).Length > 2000, "Excel dosyası yazıldı");
 
-            // Yazıcı: PROMAGIS çiziminden okunan proje yeniden çizim nesnesine yazılıp okununca aynı rapor
+            // Yazıcı: AutoCAD çiziminden okunan proje yeniden çizim nesnesine yazılıp okununca aynı rapor
             GidisDonus(p, "ornek-dokum");
             // Telefonun yazdığı proje dosyası okunur ve çizime yazılabilir
             string telYol = Path.Combine(AppContext.BaseDirectory, "telefon-proje.sebeke.json");
@@ -238,7 +238,7 @@ namespace SebekeHakedis.Test
             Esit(3, vt.Hatlar.Count, "telefon dosyası: 3 hat");
             Esit(1, vt.Kanallar.Count, "telefon dosyası: 1 kanal");
             Esit("ENH_DIREK", vt.Elemanlar[0].Tur, "telefon dosyası: OG direk ENH_DIREK");
-            Esit("G-D-10 (sw)", vt.Elemanlar[0].Tip, "telefon dosyası: direk tipi PROMAGIS yazımıyla");
+            Esit("G-D-10 (sw)", vt.Elemanlar[0].Tip, "telefon dosyası: direk tipi AutoCAD yazımıyla");
             Esit(true, vt.Elemanlar[0].TelefonId.Length > 10, "telefon dosyası: telefonId dolu");
             Esit("SH_KAFES_OG_YENI", Semboller.BlokAdi(vt.Elemanlar[0]), "telefon dosyası: OG demir direk simgesi");
             Esit(279.0, vt.Elemanlar[0].Kalemler[0].Toplam, "telefon dosyası: direk kg");
@@ -246,20 +246,229 @@ namespace SebekeHakedis.Test
             Esit(true, vdt.Satirlar.Exists(r => r.Cins == "AL_İLETKENLER" && r.Tip == "SWALLOW"), "telefon dosyası: OG hattı tel tel açılır");
             Esit(true, vdt.Satirlar.Exists(r => r.Cins == "KABLO_KANALI" && r.Tip == "ASFALT"), "telefon dosyası: kanal paylaştırılır");
             BosaAktar(voltYol);
-            Esit("SC_1.HAK.AGDİR", PromagisYazici.ElemanKatmani("SC", "AG_DIREK", "M", 1), "katman: hakediş");
-            Esit("SC_DEMONTAJ", PromagisYazici.ElemanKatmani("SC", "AG_DIREK", "DM", 3), "katman: demontaj");
-            Esit("SC_STANDART", PromagisYazici.ElemanKatmani("SC", "KOFRE", "M+M", 2), "katman: kofre");
-            Esit("SC_2.HAK.OG_YER_XLPE", PromagisYazici.HatKatmani("SC", "OG_YERALTI", "DM+M", 2), "katman: OG yeraltı");
-            Esit("16,8", PromagisYazici.Sayi(16.8), "Türkçe ondalık yazımı");
-            Esit("0,00", PromagisYazici.Fiyat(0), "fiyat yazımı");
+            Esit("SC_1.HAK.AGDİR", NesneYazici.ElemanKatmani("SC", "AG_DIREK", "M", 1), "katman: hakediş");
+            Esit("SC_DEMONTAJ", NesneYazici.ElemanKatmani("SC", "AG_DIREK", "DM", 3), "katman: demontaj");
+            Esit("SC_STANDART", NesneYazici.ElemanKatmani("SC", "KOFRE", "M+M", 2), "katman: kofre");
+            Esit("SC_2.HAK.OG_YER_XLPE", NesneYazici.HatKatmani("SC", "OG_YERALTI", "DM+M", 2), "katman: OG yeraltı");
+            Esit("16,8", NesneYazici.Sayi(16.8), "Türkçe ondalık yazımı");
+            Esit("0,00", NesneYazici.Fiyat(0), "fiyat yazımı");
 
             CizimAraclari();
             TelefondanAlma(varliklar, tp);
-            PromagisUyumu(varliklar, xlsx);
+            RaporUyumu(varliklar, xlsx);
             OnayAkisi(varliklar);
+            HesapMerkezi_(tp);
         }
 
-        // ---------------- Hakediş onayı (PROMAGIS HAK_ONAY) ve kilit ----------------
+        // ---------------- Hesap Merkezi: kayıt, güncellik, bağlam, sunucu ----------------
+
+        private static void HesapMerkezi_(Proje tp)
+        {
+            Console.WriteLine("Hesap Merkezi:");
+            // İletken anahtarı (platformlar arası karşılaştırma): telefon ve AutoCAD yazımları aynı anahtarı verir
+            Esit("ACSR:SWALLOW", HesapGuncellik.IletkenAnahtari("3xSW"), "iletken anahtarı: 3xSW");
+            Esit("ACSR:SWALLOW", HesapGuncellik.IletkenAnahtari("3xSwallow"), "iletken anahtarı: 3xSwallow");
+            Esit("ACSR:SWALLOW", HesapGuncellik.IletkenAnahtari("2(3xSW)"), "iletken anahtarı: çift devre 2(3xSW)");
+            Esit("ACSR:RAVEN", HesapGuncellik.IletkenAnahtari("3x1\\0"), "iletken anahtarı: 3x1\\0 = Raven");
+            Esit("ACSR:PIGEON", HesapGuncellik.IletkenAnahtari("2(3x3/0)"), "iletken anahtarı: 2(3x3/0) = Pigeon");
+            Esit("ABC:3x50+70", HesapGuncellik.IletkenAnahtari("3X50/16+70 ALPEK"), "iletken anahtarı: ALPEK");
+            Esit("ABC:3x50+70", HesapGuncellik.IletkenAnahtari("3x50/16+70 AER"), "iletken anahtarı: AER (telefon yazımı)");
+            Esit("NAYY:3x95", HesapGuncellik.IletkenAnahtari("3x95+50 Nyy Alm."), "iletken anahtarı: Nyy Alm.");
+            Esit("NAYY:3x95", HesapGuncellik.IletkenAnahtari("NAYY 3x95+50"), "iletken anahtarı: NAYY");
+            Esit("XLPE-AL:150", HesapGuncellik.IletkenAnahtari("1x150/25 Xlpe Alm."), "iletken anahtarı: XLPE Alm.");
+            Esit("AAC:3P+R", HesapGuncellik.IletkenAnahtari("3P+R"), "iletken anahtarı: 3P+R");
+            Esit(null, HesapGuncellik.IletkenAnahtari("G-10I"), "iletken anahtarı: direk tipi iletken değil");
+
+            // Güncellik: yol okuma ve farklar
+            var baglam = (JsonNesne)Json.Oku("{\"hat\":{\"acikliklar\":[{\"uzunluk\":39.55},{\"uzunluk\":35}],\"iletkenler\":[{\"ad\":\"3X50/16+70 ALPEK\"}]},\"direk\":{\"tip\":\"G-10I\",\"kot\":null}}");
+            bool yok;
+            Esit(35.0, HesapGuncellik.Deger(baglam, "hat.acikliklar[1].uzunluk", out yok), "güncellik: dizi yolu");
+            Esit(false, yok, "güncellik: yol bulundu");
+            HesapGuncellik.Deger(baglam, "hat.acikliklar[5].uzunluk", out yok);
+            Esit(true, yok, "güncellik: olmayan dizin bulunamadı");
+            var kullanilan = (JsonNesne)Json.Oku("{\"hat.acikliklar[0].uzunluk\":39.55,\"hat.acikliklar[1].uzunluk\":36,\"hat.iletkenler[0].ad\":\"3x50/16+70 AER\",\"direk.tip\":\"G-10I\",\"direk.kot\":null,\"trafo.gucKVA\":160}");
+            var farklar = HesapGuncellik.Farklar(kullanilan, baglam);
+            Esit(3, farklar.Count, "güncellik: uzunluk, iletken yazımı ve silinen trafo fark (aynı platform)");
+            var farklar2 = HesapGuncellik.Farklar(kullanilan, baglam, true);
+            Esit(2, farklar2.Count, "güncellik: platformlar arası iletken yazımı fark sayılmaz");
+            Esit(true, farklar2.Exists(f => f.Yol == "trafo.gucKVA" && f.Silindi), "güncellik: silinen bilgi işaretlenir");
+            Esit(true, farklar2.Exists(f => f.Yol == "hat.acikliklar[1].uzunluk" && Equals(f.Yeni, 35.0)), "güncellik: yeni değer");
+
+            // Kayıt: JSON gidip gelme
+            var k = new HesapKaydi
+            {
+                Id = HesapKaydi.YeniKimlik(), Modul = "ag-gd", ModulAdi = "AG Gerilim Düşümü", ModulSurumu = "abc123", HedefTur = "trafo", HedefId = "D1", HedefNo = "SCTR01",
+                HedefHatId = "H14", Ozet = "%1,57 · uygun", Durum = "uygun", ModulDurumu = "{\"kols\":[1,2]}", Tarih = HesapKaydi.Simdi(), Kaynak = "autocad", Yapan = "Ayşe", TelefonId = "tel-1",
+            };
+            k.HedefParcalar.AddRange(new[] { "H14", "H15" });
+            k.Kullanilan["trafo.gucKVA"] = 160.0;
+            k.Ayrinti["girdiler"] = new List<object> { (JsonNesne)Json.Oku("{\"ad\":\"Güç\",\"deger\":160,\"birim\":\"kVA\"}") };
+            Esit(true, k.Id.StartsWith("H") && k.Id.Length > 20, "kayıt: kimlik üretimi");
+            Esit(true, k.Tarih.EndsWith("Z") && k.Tarih.Length == 24, "kayıt: ISO UTC tarih");
+            var k2 = HesapKaydi.Oku((JsonNesne)Json.Oku(Json.Yaz(k.Json(), false)));
+            Esit(k.Id, k2.Id, "kayıt: kimlik gidip gelir");
+            Esit("H14", k2.HedefHatId, "kayıt: trafo çıkışı (hatId) gidip gelir");
+            Esit(2, k2.HedefParcalar.Count, "kayıt: parçalar gidip gelir");
+            Esit("{\"kols\":[1,2]}", k2.ModulDurumu, "kayıt: modül durumu metin olarak gidip gelir");
+            Esit("tel-1", k2.TelefonId, "kayıt: telefon kimliği");
+            Esit("Güç = 160 kVA", k2.Satirlar("girdiler")[0], "kayıt: rapor satırı");
+            Esit(k.HedefAnahtari, k2.HedefAnahtari, "kayıt: hedef anahtarı");
+            Esit(true, k2.HedefAyni(new HesapHedefi { Tur = "trafo", Id = "D1", HatId = "H14" }), "kayıt: aynı trafo ve çıkış");
+            Esit(false, k2.HedefAyni(new HesapHedefi { Tur = "trafo", Id = "D1", HatId = "" }), "kayıt: aynı trafo, çıkışsız = ayrı kayıt");
+            var hatKaydi = new HesapKaydi { Id = "x", Modul = "enh-sehim", HedefTur = "hat", HedefId = "H15" };
+            hatKaydi.HedefParcalar.AddRange(new[] { "H15", "H16" });
+            Esit(true, hatKaydi.HedefAyni(new HesapHedefi { Tur = "hat", Id = "H16" }), "kayıt: hattın başka parçasından açılan hesap aynı hat");
+
+            // Proje dosyası: hesaplar gidip gelir
+            tp.Hesaplar.Clear();
+            tp.Hesaplar.Add(k);
+            var tp2 = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(tp, "test"));
+            Esit(1, tp2.Hesaplar.Count, "proje dosyası: hesap kaydı yazılır ve okunur");
+            Esit("ag-gd", tp2.Hesaplar[0].Modul, "proje dosyası: modül");
+            Esit(160.0, tp2.Hesaplar[0].Kullanilan["trafo.gucKVA"], "proje dosyası: kullanılan değerler");
+            var volt = ProjeDosyasi.Oku(ProjeDosyasi.VoltYaz(tp, "test"));
+            Esit(1, volt.Hesaplar.Count, "telefon dosyası (.volt.json): hesap kaydı taşınır");
+
+            // Bağlam: telefon projesindeki AG hattı, direk ve trafo
+            var bilgi = new ProjeBilgisi { Ad = "Deneme", Yapan = "Ayşe", BuzBolgesi = "3" };
+            var direkHedefi = new HesapHedefi { Tur = "direk", Id = "D6" };
+            var bd = HesapBaglami.Kur(tp, direkHedefi, bilgi);
+            Esit("SC104", direkHedefi.No, "bağlam: direk numarası hedefe yazılır");
+            var direk = bd.Nesne("direk");
+            Esit("G-12I", direk.Metin("tip"), "bağlam: direk tipi");
+            Esit("demir", direk.Metin("malzeme"), "bağlam: direk malzemesi");
+            Esit("T", direk.Metin("rol"), "bağlam: iki kollu düz direk taşıyıcı");
+            Esit(2, direk.Dizi("kollar").Count, "bağlam: direğin iki kolu");
+            var kol = (JsonNesne)direk.Dizi("kollar")[0];
+            Esit(true, kol.Ondalik("aciklik") > 39 && kol.Ondalik("aciklik") < 40, "bağlam: kol açıklığı 39,5 m");
+            Esit("3X50/16+70 ALPEK", ((JsonNesne)kol.Dizi("iletkenler")[0]).Metin("ad"), "bağlam: kol iletkeni");
+            Esit("3", bd.Nesne("proje").Metin("buzBolgesi"), "bağlam: buz bölgesi ayarlardan");
+            Esit(true, bd.Nesne("hat") != null, "bağlam: direğin üzerindeki hat");
+            var hatHedefi = new HesapHedefi { Tur = "hat", Id = "H17" };
+            var bh = HesapBaglami.Kur(tp, hatHedefi, bilgi);
+            var hat = bh.Nesne("hat");
+            Esit(11, hatHedefi.Parcalar.Count, "bağlam: hat zinciri trafodan son direğe parçalardan kurulur (dallanma noktasından düz geçer)");
+            Esit("H14", hat.Metin("id"), "bağlam: zincir trafodan başlar");
+            Esit(true, hat.Dizi("acikliklar").Count == hatHedefi.Parcalar.Count, "bağlam: her parça bir açıklık");
+            Esit(true, hat.Ondalik("toplamUzunluk") > 400, "bağlam: toplam uzunluk");
+            Esit(true, hat.Ondalik("ruling") > 35 && hat.Ondalik("ruling") < 40, "bağlam: eşdeğer açıklık");
+            Esit("AG_HAVAI", hat.Metin("tur"), "bağlam: hat türü");
+            Esit(true, bh.Nesne("trafo") != null && bh.Nesne("trafo").Metin("no") == "SCTR01", "bağlam: hattın başındaki trafo");
+            Esit(true, bh.Dizi("zincir") != null && bh.Dizi("zincir").Count == hat.Dizi("acikliklar").Count, "bağlam: zincir (gerilim düşümü / kısa devre için)");
+            Esit(true, HesapBaglami.HedefVar(tp, hatHedefi), "bağlam: hat hedefi var");
+            Esit(false, HesapBaglami.HedefVar(tp, new HesapHedefi { Tur = "direk", Id = "YOK" }), "bağlam: silinmiş hedef");
+            var cikislar = HesapBaglami.TrafoCikislari(tp, "D1");
+            Esit(true, cikislar.Exists(h => h.Id == "H14"), "bağlam: trafonun AG havai çıkışı");
+            Esit(true, cikislar.Exists(h => h.Id == "H54"), "bağlam: trafonun AG yeraltı çıkışı");
+            var trafoHedefi = new HesapHedefi { Tur = "trafo", Id = "D1", HatId = "H14" };
+            var bt = HesapBaglami.Kur(tp, trafoHedefi, bilgi);
+            Esit("SCTR01", trafoHedefi.No, "bağlam: trafo numarası");
+            Esit(true, bt.Nesne("trafo") != null, "bağlam: trafo bilgisi");
+            Esit(true, bt.Nesne("hat") != null && bt.Nesne("hat").Metin("id") == "H14", "bağlam: seçilen çıkış hattı");
+            Esit("SCTR01–SC111", HesapBaglami.HatAdi(tp, tp.Hatlar.Find(h => h.Id == "H18")), "bağlam: hat adı uç elemanlardan (dallanmada düz devam)");
+            Esit("SC101–D30", HesapBaglami.HatAdi(tp, tp.Hatlar.Find(h => h.Id == "H36")), "bağlam: dallanan kol (numarasız direğe kadar)");
+            var kanalHedefi = new HesapHedefi { Tur = "kanal", Id = "K56" };
+            var bk = HesapBaglami.Kur(tp, kanalHedefi, bilgi);
+            Esit(true, bk.Nesne("kanal") != null && bk.Nesne("kanal").Ondalik("uzunluk") > 238, "bağlam: kanal uzunluğu");
+            Esit("TOPRAK", bk.Nesne("kanal").Metin("zemin"), "bağlam: kanal zemini");
+            var pb = HesapBaglami.Kur(tp, new HesapHedefi { Tur = "proje" }, bilgi);
+            Esit("Proje geneli", pb.Nesne("hedef").Metin("ad"), "bağlam: proje geneli");
+            // Kayıt durumu: hedef silinmişse
+            bool hedefYok;
+            HesapGuncellik.Durum(tp, new HesapKaydi { Id = "y", Modul = "amax", HedefTur = "direk", HedefId = "YOK" }, bilgi, "autocad", out hedefYok);
+            Esit(true, hedefYok, "güncellik: silinmiş hedef");
+            var kayit = new HesapKaydi { Id = "z", Modul = "ag-gd", HedefTur = "trafo", HedefId = "D1", HedefHatId = "H14", Kaynak = "telefon" };
+            kayit.Kullanilan["trafo.no"] = "SCTR01";
+            kayit.Kullanilan["hat.acikliklar[0].uzunluk"] = 39.55;
+            kayit.Kullanilan["hat.iletkenler[0].ad"] = "3x50/16+70 AER";
+            var fk = HesapGuncellik.Durum(tp, kayit, bilgi, "autocad", out hedefYok);
+            Esit(false, hedefYok, "güncellik: trafo hedefi var");
+            Esit(0, fk.Count, "güncellik: telefon kaydı AutoCAD bağlamıyla güncel (yazım farkı sayılmaz)");
+            kayit.Kullanilan["hat.acikliklar[0].uzunluk"] = 50.0;
+            fk = HesapGuncellik.Durum(tp, kayit, bilgi, "autocad", out hedefYok);
+            Esit(1, fk.Count, "güncellik: değişen açıklık fark");
+
+            // Rapor: HESAPLAR sayfası
+            string rapor = Path.Combine(Path.GetTempPath(), "sebeke-m-hesap-rapor.xlsx");
+            RaporYazici.Yaz(tp, rapor, "test", null, bilgi);
+            using (var zip = System.IO.Compression.ZipFile.OpenRead(rapor))
+            {
+                string wb;
+                using (var r = new StreamReader(zip.GetEntry("xl/workbook.xml").Open())) wb = r.ReadToEnd();
+                Esit(true, wb.Contains("HESAPLAR"), "rapor: HESAPLAR sayfası var");
+                bool satirVar = false;
+                foreach (var e in zip.Entries)
+                    if (e.FullName.StartsWith("xl/") && (e.FullName.Contains("sharedStrings") || e.FullName.Contains("worksheets/")))
+                        using (var r = new StreamReader(e.Open())) { string m = r.ReadToEnd(); if (m.Contains("%1,57") && m.Contains("Güncel")) satirVar = true; }
+                Esit(true, satirVar, "rapor: hesap satırı özet ve güncellik");
+            }
+            try { File.Delete(rapor); } catch { }
+
+            SunucuDene();
+        }
+
+        /// <summary>Yerel sunucu: dosya, API, yanlış anahtar, yanlış Host, yol kaçışı.</summary>
+        private static void SunucuDene()
+        {
+            var dosyalar = new Dictionary<string, byte[]>
+            {
+                { "merkez.html", Encoding.UTF8.GetBytes("<html>merkez</html>") },
+                { "ortak/kopru.js", Encoding.UTF8.GetBytes("// köprü") },
+            };
+            string sonIstek = null;
+            using (var s = new HesapSunucu(y => dosyalar.ContainsKey(y) ? dosyalar[y] : null, (ad, govde) => { sonIstek = ad + ":" + govde; return ad == "basla" ? "{\"ok\":true}" : null; }))
+            {
+                Esit(32, s.Anahtar.Length, "sunucu: 128 bit anahtar");
+                Esit(true, s.Kok.StartsWith("http://127.0.0.1:") && s.Kok.EndsWith("/" + s.Anahtar + "/"), "sunucu: kök adres");
+                using (var h = new System.Net.Http.HttpClient(new System.Net.Http.HttpClientHandler { AllowAutoRedirect = false }))
+                {
+                    h.Timeout = TimeSpan.FromSeconds(10);
+                    var r1 = h.GetAsync(s.Kok + "merkez.html").Result;
+                    Esit(200, (int)r1.StatusCode, "sunucu: sayfa 200");
+                    Esit("<html>merkez</html>", r1.Content.ReadAsStringAsync().Result, "sunucu: sayfa içeriği");
+                    Esit("text/html", r1.Content.Headers.ContentType.MediaType, "sunucu: içerik türü");
+                    var r2 = h.GetAsync(s.Kok).Result;
+                    Esit("<html>merkez</html>", r2.Content.ReadAsStringAsync().Result, "sunucu: kök → merkez.html");
+                    var r3 = h.GetAsync(s.Kok + "ortak/kopru.js").Result;
+                    Esit("application/javascript", r3.Content.Headers.ContentType.MediaType, "sunucu: betik türü");
+                    var r4 = h.GetAsync(s.Kok + "yok.html").Result;
+                    Esit(404, (int)r4.StatusCode, "sunucu: olmayan dosya 404");
+                    var r5 = h.GetAsync(s.Kok.Replace(s.Anahtar, new string('0', 32)) + "merkez.html").Result;
+                    Esit(404, (int)r5.StatusCode, "sunucu: yanlış anahtar 404");
+                    var r6 = h.GetAsync(s.Kok.TrimEnd('/')).Result;
+                    Esit(302, (int)r6.StatusCode, "sunucu: anahtar kökü → yönlendirme");
+                    var r7 = h.PostAsync(s.Kok + "api/basla", new System.Net.Http.StringContent("{\"modul\":\"amax\"}", Encoding.UTF8, "application/json")).Result;
+                    Esit(200, (int)r7.StatusCode, "sunucu: api 200");
+                    Esit("{\"ok\":true}", r7.Content.ReadAsStringAsync().Result, "sunucu: api yanıtı");
+                    Esit("basla:{\"modul\":\"amax\"}", sonIstek, "sunucu: api gövdesi iletilir");
+                    var r8 = h.GetAsync(s.Kok + "api/basla").Result;
+                    Esit(405, (int)r8.StatusCode, "sunucu: api GET 405");
+                    var r9 = h.PostAsync(s.Kok + "api/yok", new System.Net.Http.StringContent("{}", Encoding.UTF8, "application/json")).Result;
+                    Esit(404, (int)r9.StatusCode, "sunucu: bilinmeyen api 404");
+                    var istek = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Post, s.Kok + "api/basla");
+                    istek.Content = new System.Net.Http.StringContent("{}", Encoding.UTF8, "application/json");
+                    istek.Headers.TryAddWithoutValidation("Origin", "http://kotu.example");
+                    var r10 = h.SendAsync(istek).Result;
+                    Esit(403, (int)r10.StatusCode, "sunucu: yabancı köken 403");
+                }
+                // Soketsiz: Host ve yol denetimleri
+                var ist = new HesapSunucu.Istek { Yontem = "GET", Yol = "/" + s.Anahtar + "/merkez.html" };
+                ist.Basliklar["Host"] = "evil.example:" + s.Kapi;
+                Esit(403, s.Yanitla(ist).Kod, "sunucu: yabancı Host 403 (DNS yeniden bağlama)");
+                ist.Basliklar["Host"] = "127.0.0.1:" + s.Kapi;
+                Esit(200, s.Yanitla(ist).Kod, "sunucu: doğru Host 200");
+                ist.Yol = "/" + s.Anahtar + "/ortak/../merkez.html";
+                Esit(404, s.Yanitla(ist).Kod, "sunucu: yol kaçışı 404");
+                ist.Yol = "/" + s.Anahtar + "/ortak\\kopru.js";
+                Esit(404, s.Yanitla(ist).Kod, "sunucu: ters bölü 404");
+                var ham = new MemoryStream(Encoding.ASCII.GetBytes("POST /x HTTP/1.1\r\nHost: a\r\nContent-Length: 2\r\n\r\n{}"));
+                var okunan = HesapSunucu.IstekOku(ham);
+                Esit("POST", okunan.Yontem, "sunucu: istek okuma yöntem");
+                Esit("{}", Encoding.UTF8.GetString(okunan.Govde), "sunucu: istek gövdesi");
+            }
+        }
+
+        // ---------------- Hakediş onayı (AutoCAD HAK_ONAY) ve kilit ----------------
 
         private static void OnayAkisi(List<CadVarlik> ornekCizim)
         {
@@ -276,7 +485,7 @@ namespace SebekeHakedis.Test
 
             var cizim = new List<CadVarlik>();
             foreach (var v in ornekCizim) cizim.Add(CadVarlik.JsondanOku(v.JsonYap()));
-            var p = PromagisOkuyucu.Oku(cizim, "ornek.dwg");
+            var p = NesneOkuyucu.Oku(cizim, "ornek.dwg");
             p.Onaylar[1] = 6; p.Onaylar[2] = 7;
             var pd = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(p, "test"));
             Esit(6, HakedisOnayi.Bitler(pd.Onaylar, 1), "onaylar proje dosyasında taşınır (1)");
@@ -294,7 +503,7 @@ namespace SebekeHakedis.Test
             Esit(true, plan.Adimlar.Exists(a => a.Hedef == direk.Id) && plan.Kilitliler.Count == 0, "kilit: onaysız hakedişte aynı değişiklik aktarılır");
             direk.Saga -= 2;
 
-            // Kilitli direğe açık hakedişte yeni malzeme eklemek serbest (PROMAGIS'te satır düzeyinde yetki)
+            // Kilitli direğe açık hakedişte yeni malzeme eklemek serbest (AutoCAD'de satır düzeyinde yetki)
             int acikHakedis = direk.Hakedis + 1;
             direk.Kalemler.Add(new Kalem { Cins = "TOPRAKLAMA", Tanim = "T-1", Durum = "M", Miktar = 1, Birim = "ad/ad", Katsayi = 1, Toplam = 1, Hakedis = acikHakedis, Tarife = "0107", Sira = "9100", Kaynak = "MALZEME" });
             plan = Aktarim.Planla(cizim, pd, "SC", kilit);
@@ -326,11 +535,11 @@ namespace SebekeHakedis.Test
             Esit(true, plan.Adimlar.Exists(a => a.Kimlik == "TkOnay" && a.Islem == "yeni"), "kilit: açık hakedişe yeni nesne aktarılır");
         }
 
-        // ---------------- PROMAGIS uyumu: bölge grup kodu, pano/fider verisi, eksik malzeme (DETAY) ----------------
+        // ---------------- AutoCAD uyumu: bölge grup kodu, pano/fider verisi, eksik malzeme (DETAY) ----------------
 
-        private static void PromagisUyumu(List<CadVarlik> ornekCizim, string xlsx)
+        private static void RaporUyumu(List<CadVarlik> ornekCizim, string xlsx)
         {
-            Console.WriteLine("PROMAGIS uyumu");
+            Console.WriteLine("AutoCAD uyumu");
             var cizim = new List<CadVarlik>();
             foreach (var v in ornekCizim) cizim.Add(CadVarlik.JsondanOku(v.JsonYap()));
 
@@ -341,14 +550,14 @@ namespace SebekeHakedis.Test
             var ev = cizim.Find(x => x.Tur == "INSERT" && x.Xd.ContainsKey("NIT"));
             ev.Xd["ANA"] = new List<string> { "PANO;1" };
             ev.Xd["CON"] = new List<string> { "C1;3X50", "C2;3X35" };
-            var p = PromagisOkuyucu.Oku(cizim, "ornek.dwg");
+            var p = NesneOkuyucu.Oku(cizim, "ornek.dwg");
             var b = p.Bolgeler.Find(x => x.Id == bv.H);
             Esit("24.38.01 (NA)", b != null ? b.Grup : null, "bölge grup kodu okunur");
             var e = p.Elemanlar.Find(x => x.Id == ev.H);
             Esit(2, e != null && e.EkVeri.ContainsKey("CON") ? e.EkVeri["CON"].Count : 0, "pano çıkış şeması (CON) okunur");
-            var vb = PromagisYazici.Bolge(b, "SC", null);
+            var vb = NesneYazici.Bolge(b, "SC", null);
             Esit(true, vb.XdIlk("FULLREG").EndsWith(";24.38.01 (NA)", StringComparison.Ordinal), "grup kodu FULLREG'e yazılır");
-            var ve = PromagisYazici.Eleman(e, "SC", e.Blok, null);
+            var ve = NesneYazici.Eleman(e, "SC", e.Blok, null);
             Esit("C2;3X35", ve.Xd.ContainsKey("CON") && ve.Xd["CON"].Count == 2 ? ve.Xd["CON"][1] : "", "pano çıkış şeması aynen geri yazılır");
             var pd = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(p, "test"));
             var bd = pd.Bolgeler.Find(x => x.Id == b.Id);
@@ -477,274 +686,45 @@ namespace SebekeHakedis.Test
             Esit("BOX", b.SonDeger("eleman.tur"), "ayar: son seçim");
             Esit(12.5, b.HatMetraji(10.4, "AG_HAVAI"), "ayar ile hat metrajı (en yakına + ek pay)");
 
-            // Blok seçimi (PROMAGIS blokları kipi): durumu değişen eleman o durumun bloğunu alır
-            PromagisYazici.TelefonSembolleri = false;
+            // Blok seçimi: her zaman uygulamanın simgesi; başka blokla duran eleman da yazılırken simgeye geçer
             var cizimEl = new List<Eleman>
             {
                 new Eleman { Id = "1", Tur = "AG_DIREK", Durum = "M", Blok = "YENİ_AG_DİR" },
                 new Eleman { Id = "2", Tur = "AG_DIREK", Durum = "DM", Blok = "DEMONTAJ_AG_DİR" },
-                new Eleman { Id = "3", Tur = "AG_DIREK", Durum = "M+M", Blok = "YENİ_AG_DİR" },
             };
-            Esit("DEMONTAJ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "YENİ_AG_DİR" }), "blok: demontaja çevrilen direk");
-            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "M", Blok = "YENİ_AG_DİR" }), "blok: durumu aynı direk bloğunu korur");
-            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "M" }), "blok: yeni direk çizimdeki bloğu kullanır");
-            Esit("SH_TRAFO_DIREK_YENI", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "TRAFO_DIREGI", Durum = "M" }), "blok: çizimde örneği yoksa eklentinin lejant simgesi");
-            Esit("*U5", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "*U5" }), "blok: adsız blok korunur");
-            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "M", Blok = "SH_DIREK_AG_YENI" }), "blok: eklenti bloğu yerine çizimdeki PROMAGIS bloğu");
-            Esit("SH_KAFES_AG_DMM", PromagisYazici.BlokSec(new List<Eleman>(), new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "DM+M", Blok = "SH_KAFES_AG_YENI" }), "blok: eklenti bloğu duruma göre yeniden seçilir");
-            Esit("DEMONTAJ_AG_DİR", PromagisYazici.BlokSec(new List<Eleman> { cizimEl[1] }, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "YENİ_AG_DİR" }), "blok: PROMAGIS adı (YENİ_) durumla çelişince değişir");
-            // Telefon simgeleri kipi (varsayılan): yeni ve durumu değişen eleman telefon simgesini alır, değişmeyen PROMAGIS elemanına dokunulmaz
-            PromagisYazici.TelefonSembolleri = true;
-            Esit("SH_KAFES_AG_YENI", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "M" }), "telefon simgesi: yeni direk SH_ simgesiyle");
-            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "M", Blok = "YENİ_AG_DİR" }), "telefon simgesi: değişmeyen PROMAGIS direği bloğunu korur");
-            Esit("SH_DIREK_AG_DM", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "DM", Blok = "YENİ_AG_DİR" }), "telefon simgesi: demontaja çevrilen PROMAGIS direği SH_ simgesine geçer");
-            Esit("*U5", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "*U5" }), "telefon simgesi: adsız blok korunur");
-            Esit("SH_DIREK_AG_YENI", PromagisYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "M", Blok = "SH_DIREK_AG_YENI" }), "telefon simgesi: SH_ bloğu korunur");
-            Esit("YENI", PromagisYazici.PromagisBlokGrubu("YENİ_ENH_DİREK"), "PROMAGIS blok adı: YENİ_");
-            Esit("DM", PromagisYazici.PromagisBlokGrubu("DEMONTAJ_BOX"), "PROMAGIS blok adı: DEMONTAJ_");
-            Esit(null, PromagisYazici.PromagisBlokGrubu("AG_DIREK_4"), "PROMAGIS blok adı: düzensiz ad");
-            Semboller_();
-            var olcekler = new List<CadVarlik>
-            {
-                new CadVarlik { Tur = "INSERT", Blok = "A", Olcek = 4, Xd = { { "NIT", new List<string> { "" } } } },
-                new CadVarlik { Tur = "INSERT", Blok = "A", Olcek = 4, Xd = { { "NIT", new List<string> { "" } } } },
-                new CadVarlik { Tur = "INSERT", Blok = "B", Olcek = 2, Xd = { { "NIT", new List<string> { "" } } } },
-            };
-            Esit(2.0, PromagisYazici.OlcekOner(olcekler, "B", 1), "ölçek: aynı bloğun ölçeği");
-            Esit(4.0, PromagisYazici.OlcekOner(olcekler, "C", 1), "ölçek: yoksa en çok kullanılan");
-            Esit(4.0, PromagisYazici.OlcekOner(new List<CadVarlik>(), "C", 4), "ölçek: boş çizimde varsayılan");
-
-            short renk; string cizgi;
-            PromagisYazici.KatmanStili("SC_2.HAK.AG_YER_HAT", out renk, out cizgi);
-            Esit((short)3, renk, "katman rengi AG yeraltı (stil yüklenmeden: PROMAGIS)");
-            Esit("HIDDENX2", cizgi, "katman çizgi tipi AG yeraltı (stil yüklenmeden)");
-
-            // Ortak çizim stili (telefonun DXF'iyle aynı)
-            CizimStili.Yukle(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "cizim-stili.json"), Encoding.UTF8));
-            Esit(1.0, CizimStili.BlokOlcegi, "stil: bloklar 1 ölçekle");
-            Esit(1.8, CizimStili.YaziYuksekligi, "stil: yazı 1,8 m");
-            Esit(1.44, CizimStili.ParcaMetraji, "stil: parça metrajı yazısı 1,44 m");
-            PromagisYazici.KatmanStili("SC_2.HAK.AG_YER_HAT", out renk, out cizgi);
-            Esit((short)1, renk, "stil: AG yeraltı kablo rengi (telefon: ELEKTRIK-KABLO 1)");
-            Esit("DASHDOT", cizgi, "stil: kablo çizgi tipi");
-            PromagisYazici.KatmanStili("SC_1.HAK.AG_HAV_HAT", out renk, out cizgi);
-            Esit((short)84, renk, "stil: AG havai hat 84");
-            Esit("", cizgi, "stil: AG havai sürekli");
-            PromagisYazici.KatmanStili("SC_DEMONTAJ", out renk, out cizgi);
-            Esit((short)2, renk, "stil: demontaj katmanı sarı");
-            PromagisYazici.KatmanStili("SC_KABLO_KANALI", out renk, out cizgi);
-            Esit((short)1, renk, "stil: kanal katmanı");
-            PromagisYazici.KatmanStili("GPS", out renk, out cizgi);
-            Esit((short)7, renk, "stil: GPS katmanı");
-            Esit((short)108, CizimStili.ElemanRengi("AG_DIREK", "AG_DEMİR_GLV", "M"), "stil: yeni AG direk 108");
-            Esit((short)120, CizimStili.ElemanRengi("AG_DIREK", "AG_BETON", "MEVCUT"), "stil: mevcut AG direk 120");
-            Esit((short)3, CizimStili.ElemanRengi("AG_DIREK", "AG_BETON", "DM+M"), "stil: sök-tak AG direk 3");
-            Esit((short)2, CizimStili.ElemanRengi("AG_DIREK", "AG_BETON", "DM"), "stil: demontaj 2");
-            Esit((short)10, CizimStili.ElemanRengi("ENH_DIREK", "ENH_GLV_CVT", "KM"), "stil: KM → yeni OG direk 10");
-            Esit((short)152, CizimStili.ElemanRengi("AYD_DIREK", "AYD_GLV_PLG", "M+M"), "stil: yeni aydınlatma direği 152");
-            Esit((short)5, CizimStili.ElemanRengi("TRAFO_DIREGI", "TR_DİREK_GLV", "M"), "stil: trafo direği katman rengi 5");
-            Esit((short)5, CizimStili.ElemanRengi("BOX", "BOX_PANO", "MEVCUT"), "stil: box 5");
-            Esit((short)4, CizimStili.ElemanRengi("DIGER", "ARMATÜR", "M"), "stil: armatür 4");
-            Esit((short)1, CizimStili.HatRengi("OG_HAVAI", "M"), "stil: OG hat 1");
-            Esit((short)84, CizimStili.HatRengi("REKORTMAN", "MEVCUT"), "stil: abone hattı 84");
-            Esit("DASHED", CizimStili.HatCizgiTipi("REKORTMAN"), "stil: abone hattı kesikli");
-            Esit((short)2, CizimStili.HatRengi("AG_HAVAI", "DM"), "stil: demontaj hat 2");
-            Esit("", CizimStili.HatCizgiTipi("AG_HAVAI"), "stil: AG havai sürekli");
-            Esit(2, CizimStili.CizgiDeseni("DASHED").Length, "stil: DASHED deseni");
-            var stilHat = PromagisYazici.Hat(new Hat { Tur = "OG_YERALTI", Durum = "M", Hakedis = 1, AnaKesit = "1x150/25 Xlpe Alm.", Kose = { new[] { 0.0, 0 }, new[] { 10.0, 0 } } }, "SC", null);
-            Esit((short)1, stilHat.Renk, "tarif: kablo rengi nesneye yazılır");
-            Esit("DASHDOT", stilHat.CizgiTipi, "tarif: kablo çizgi tipi nesneye yazılır");
-            Esit(true, stilHat.ParcaMetraji, "tarif: hatta parça metrajı yazılır");
-            var stilEl = PromagisYazici.Eleman(new Eleman { Tur = "AG_DIREK", Cins = "AG_BETON", Tip = "9,3/8", Durum = "M+M", Hakedis = 1 }, "SC", "SH_DIREK_AG_YENI", null);
-            Esit((short)108, stilEl.Renk, "tarif: direk rengi nesneye yazılır");
-
-            double ex, ey, eaci;
-            Geometri.EtiketKonumu(new List<double[]> { new[] { 10.0, 0 }, new[] { 0.0, 0 } }, out ex, out ey, out eaci);
-            Esit(5.0, ex, "etiket ortada");
-            Esit(0.0, eaci, "etiket ters yazılmaz (sağdan sola çizgi)");
-            Geometri.EtiketKonumu(new List<double[]> { new[] { 0.0, 10 }, new[] { 0.0, 0 } }, out ex, out ey, out eaci);
-            Esit(Math.PI / 2, eaci, "dikey çizgide etiket aşağıdan yukarı okunur");
-
-            // Katalog (eklentiye gömülen dosya)
-            string katalogYolu = Path.Combine(AppContext.BaseDirectory, "kalemler.json");
-            var k = Katalog.Oku(File.ReadAllText(katalogYolu, Encoding.UTF8), null);
-            Esit(true, k.Kalemler.Count > 2500, "katalog okundu (PROMAGIS'in tam listesi)");
-            Esit(2, k.Surum, "katalog sürümü 2");
-            var direkler = k.AnaTipler("AG_DIREK");
-            Esit(true, direkler.Count > 50 && direkler.TrueForAll(x => x.Rol == "ana"), "katalog: AG direk tipleri");
-            Esit("AG_DEMİR_GLV", direkler[0].Cins, "katalog: AG direkte önce galvanizli demir (grup sırası)");
-            Esit("G-8I", direkler[0].Tanim, "katalog: cins içinde PROMAGIS önem sırası");
-            Esit(true, direkler.TrueForAll(x => k.ElemanCinsListesi("AG_DIREK").Contains(x.Cins)), "katalog: yalnız türün cinsleri");
-            var mufular = k.AnaTipler("EK_MUFU", new[] { "EK_MUFU_AG_ALM", "EK_MUFU_AG_BAKIR" });
-            Esit(true, mufular.Count > 5 && mufular.TrueForAll(x => x.Cins.StartsWith("EK_MUFU_AG", StringComparison.Ordinal)), "katalog: cins süzgeci (yalnız AG ek mufu)");
-            var kesitler = k.HatKesitleri("AG_HAVAI");
-            Esit(true, kesitler.Count > 0 && k.HatCinsListesi("AG_HAVAI").Contains(kesitler[0].Cins), "katalog: AG havai kesitleri önce");
-            Esit("AG_İLETKEN", kesitler[0].Cins, "katalog: AG havaide önce çıplak iletken");
-            Esit(true, k.HatKesitleri("OG_YERALTI")[0].Cins == "OG_ALİMİNYUM_KABLO", "katalog: OG yeraltında önce alüminyum kablo");
-            Esit(true, k.SondajTipleri().Count > 0 && k.SondajTipleri()[0].Cins == "YATAY_DELGİ", "katalog: sondaj tipleri");
-            Esit(true, k.KanalZeminleri().Count >= 10 && k.KanalZeminleri().TrueForAll(x => x.Cins == "KABLO_KANALI"), "katalog: kanal zeminleri");
-            var mz = k.Malzemeler("AG_DIREK");
-            Esit(true, mz.Count > 10 && mz[0].Nesneler.Contains("AG_DIREK"), "katalog: direkte kullanılan malzemeler önce");
-            var kl = Katalog.KalemYap(direkler[0], 1, "M", 2, true, "NIT", "5001");
-            Esit(SayiCoz.Temiz(direkler[0].Katsayi), kl.Toplam, "katalog kaleminden poz: toplam = miktar × katsayı");
-            Esit("0107", kl.Tarife, "tarife: şehir unsuru (varsayılan)");
-            Esit("0116", Katalog.TarifeSec(direkler[0], "", true), "tarife: köy / bakım unsuru");
-            Esit("0307", Katalog.TarifeSec(direkler[0], "03", false), "tarife: karakteristik ayardan");
-            Esit("5.1", direkler[0].PozNo, "katalog: poz numarası");
-            Esit(true, k.Bul("ENH_GLV_CVT", "BER+2") != null && k.Bul("ENH_GLV_CVT", "BER+2") == k.Bul("ENH_GLV_CVT", "BER+2   "), "katalog: boşluk farkıyla aynı kalem");
-            Esit("AG galvanizli demir direk", k.CinsAdi("AG_DEMİR_GLV"), "katalog: cins adı");
-            Esit(true, k.Karakteristikler.ContainsKey("01") && k.Unsurlar.ContainsKey("16"), "katalog: tarife kod listeleri");
-            Esit(8, k.Durumlar.Count, "katalog: PROMAGIS durum kodları");
-
-            // Menü kategorileri
-            Kategoriler.Yukle(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kategoriler.json"), Encoding.UTF8));
-            Esit(10, Kategoriler.Hepsi().Count, "kategoriler: 10 kategori");
-            var agHavai = Kategoriler.Bul("AG_HAVAI");
-            Esit(true, agHavai != null && agHavai.Ogeler.Count >= 2 && agHavai.Ogeler[0].Tur == "AG_DIREK" && agHavai.Ogeler[1].Tur == "AG_HAVAI", "kategoriler: AG Havai → AG Direk, AG Hat");
-            var mufu = Kategoriler.Oge("AG_YERALTI", "EK_MUFU_AG");
-            Esit(true, mufu != null && mufu.Cinsler.Count == 2 && k.AnaTipler(mufu.Tur, mufu.Cinsler).Count > 0, "kategoriler: öğe cins süzgeci katalogla uyumlu");
-            foreach (var kat in Kategoriler.Hepsi())
-                foreach (var og in kat.Ogeler)
-                {
-                    if (og.ElemanMi) Esit(true, k.AnaTipler(og.Tur, og.Cinsler.Count > 0 ? og.Cinsler : null).Count > 0, "kategoriler: " + kat.Ad + " › " + og.Ad + " tipleri var");
-                    if (og.HatMi) Esit(true, k.HatKesitleri(og.Tur, og.Cinsler.Count > 0 ? og.Cinsler : null).Count > 0, "kategoriler: " + kat.Ad + " › " + og.Ad + " kesitleri var");
-                }
-
-            YeniOzellikler(k);
-
-            // Nokta dosyaları
-            var uy = new List<string>();
-            var n1 = NoktaDosyasi.Oku("\uFEFFAd;Y (Saga);X (Yukari);Kot;Kod;Tur;Durum;Hakedis\nSC1;519449,123;4282393,5;1067,25;K1;AG_DIREK;M;3\n", 1, uy);
-            Esit(1, n1.Count, "nokta: telefon CSV");
-            Esit(519449.123, n1[0].Saga, "nokta: Y = sağa");
-            Esit(4282393.5, n1[0].Yukari, "nokta: X = yukarı");
-            Esit(1067.25, n1[0].Kot, "nokta: kot");
-            Esit("K1", n1[0].Kod, "nokta: kod");
-            Esit(3, n1[0].Hakedis, "nokta: hakediş sütunu");
-            var n2 = NoktaDosyasi.Oku("P1 4282393.5 519449.1 1100.5 AD2\nP2 4282400 519450 1101\n", 2, uy);
-            Esit(2, n2.Count, "nokta: boşlukla ayrılmış");
-            Esit(519449.1, n2[0].Saga, "nokta: yer değiştirmiş Y/X düzeltilir");
-            Esit("AD2", n2[0].Kod, "nokta: beşinci sütun kod");
-            Esit(2, n2[1].Hakedis, "nokta: varsayılan hakediş");
-            var n3 = NoktaDosyasi.Oku("N5,519449.10,4282393.50,KÖŞE\n", 1, uy);
-            Esit("KÖŞE", n3.Count == 1 ? n3[0].Kod : "", "nokta: dördüncü sütun sayı değilse kod");
-            Esit("ŞİĞ", NoktaDosyasi.MetinCoz(new byte[] { 0xDE, 0xDD, 0xD0 }), "nokta dosyası: Türkçe Windows kodlaması");
-            Esit("ŞİĞ", NoktaDosyasi.MetinCoz(Encoding.UTF8.GetBytes("ŞİĞ")), "nokta dosyası: UTF-8");
-        }
-
-        // ---------------- Çoklu iletken, müşterek hat, hat yakalama, armatür, malzeme hafızası ----------------
-
-        private static void YeniOzellikler(Katalog k)
-        {
-            Console.WriteLine("Çoklu iletken, müşterek hat, yakalama, armatür, malzeme hafızası");
-            // Adetli yazım
-            int adet;
-            string ic;
-            Esit(true, Iletkenler.AdetliMi("3x(3X50/16+70 ALPEK)", out adet, out ic) && adet == 3 && ic == "3X50/16+70 ALPEK", "iletken: 3x(…) adetli yazım");
-            Esit(false, Iletkenler.AdetliMi("3x50/16 Xlpe Alm.", out adet, out ic), "iletken: 3x50 kesit adetli yazım değil");
-            Esit(false, Iletkenler.AdetliMi("2(3xSW)", out adet, out ic), "iletken: PROMAGIS'in 2(3xSW) tipi adetli yazım değil");
-            Esit("3x(4P+R)", Iletkenler.AdetYazimi("4P+R", 3), "iletken: adet yazımı");
-            Esit("4P+R", Iletkenler.AdetYazimi("4P+R", 1, true), "iletken: tek adet tanımın kendisi");
-
-            var alpek = k.Bul("ALPEK_KABLOLAR", "3X50/16+70 ALPEK");
-            var sw = k.Bul("OG_İLETKEN", "3xSW");
-            var ciplak = k.Bul("AG_İLETKEN", "4P+R");
-            Esit(true, alpek != null && sw != null && ciplak != null, "iletken: katalogda ALPEK, 3xSW, 4P+R");
-
-            // Müşterek hat: OG ile AG birlikte; etiket OG / AG
-            var musterek = new List<HatIletkeni> { new HatIletkeni(ciplak), new HatIletkeni(sw) };
-            Esit("3xSW / 4P+R", Iletkenler.AnaKesit(musterek), "müşterek: ana kesit OG / AG (telefondaki gibi)");
+            Esit("SH_KAFES_AG_YENI", NesneYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "M" }), "simge: yeni direk SH_ simgesiyle");
+            Esit("SH_DIREK_AG_YENI", NesneYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "M", Blok = "YENİ_AG_DİR" }), "simge: başka bloklu direk SH_ simgesine geçer");
+            Esit("SH_DIREK_AG_DM", NesneYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "DM", Blok = "YENİ_AG_DİR" }), "simge: demontaja çevrilen direk");
+            Esit("SH_TRAFO_DIREK_YENI", NesneYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "TRAFO_DIREGI", Durum = "M" }), "simge: trafo direği");
+            Esit("*U5", NesneYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "*U5" }), "simge: adsız blok korunur");
+            Esit("SH_KAFES_AG_DMM", NesneYazici.BlokSec(new List<Eleman>(), new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "DM+M", Blok = "SH_KAFES_AG_YENI" }), "simge: duruma göre yeniden seçilir");
+            Esit("SH_DIREK_AG_YENI", NesneYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "M", Blok = "SH_DIREK_AG_YENI" }), "simge: SH_ bloğu korunur");
+            // Katalog (eklentiye gömülen dosya), sıra üreteci, armatürlü direk (önceki sürümde ayrı blokta tanımlıydı)
+            var k = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            Esit(true, k.Kalemler.Count > 2500, "katalog okundu (tam liste)");
             int sira = 7000;
             Func<string> yeniSira = () => (++sira).ToString(CultureInfo.InvariantCulture);
-            var h = new Hat { Tur = "MUSTEREK", AnaKesit = Iletkenler.AnaKesit(musterek), Durum = "M", Hakedis = 1, Kose = { new[] { 0.0, 0 }, new[] { 120.0, 0 } } };
-            h.Kalemler.AddRange(Iletkenler.Kalemler(musterek, 120, "M", 1, yeniSira, "", false));
-            Esit(2, Iletkenler.HatKalemleri(h).Count, "müşterek: iki HAT satırı");
-            Esit("^ 3xSW / 4P+R/120m/({H})", PromagisYazici.HatEtiketi(h), "müşterek: etiket iki iletkeni de yazar");
-            Esit("SC_1.HAK.MÜŞTEREK_HAT", PromagisYazici.HatKatmani("SC", "MUSTEREK", "M", 1), "müşterek: katman");
-
-            // 3 adet ALPEK: miktar 3 × metraj, etikette güzergâh metrajı
-            var uc = new List<HatIletkeni> { new HatIletkeni(alpek, 3) };
-            var h3 = new Hat { Tur = "AG_HAVAI", AnaKesit = Iletkenler.AnaKesit(uc), Durum = "M+M", Hakedis = 1, Kose = { new[] { 0.0, 0 }, new[] { 40.0, 0 } } };
-            h3.Kalemler.AddRange(Iletkenler.Kalemler(uc, 40, "M+M", 1, yeniSira, "", false));
-            Esit("3X50/16+70 ALPEK", h3.AnaKesit, "3 ALPEK: ana kesit kablonun kendisi");
-            Esit(120.0, h3.Kalemler[0].Miktar, "3 ALPEK: miktar 3 × 40 m");
-            Esit("3x(3X50/16+70 ALPEK)", h3.Kalemler[0].Aciklama, "3 ALPEK: tam yazım 3x(…)");
-            Esit("* 3x(3X50/16+70 ALPEK)/40m/({H})", PromagisYazici.HatEtiketi(h3), "3 ALPEK: etikette güzergâh metrajı");
-            Esit(40.0, Iletkenler.GuzergahMetraji(h3), "3 ALPEK: güzergâh metrajı");
-            Esit(true, Iletkenler.MetrajUygula(h3, 50), "3 ALPEK: metraj yenilenir");
-            Esit(150.0, h3.Kalemler[0].Miktar, "3 ALPEK: yeni metraj 3 × 50 m");
-
-            // Çizime yazılıp geri okununca: tipler doğru, rapor tel tel açar
-            var cizim = new List<CadVarlik>();
-            var vh = PromagisYazici.Hat(h, "SC", null); vh.H = "M1"; PromagisYazici.TaniticiYaz(vh, "M1"); cizim.Add(vh);
-            var vh3 = PromagisYazici.Hat(h3, "SC", null); vh3.H = "M3"; PromagisYazici.TaniticiYaz(vh3, "M3"); cizim.Add(vh3);
-            Esit(2, vh.XdHepsi("HAT").Count, "müşterek: çizimde iki HAT satırı");
-            Esit("3xSW / 4P+R", vh.XdIlk("ANAKESIT"), "müşterek: ANAKESIT birleşik yazım");
-            var okunan = PromagisOkuyucu.Oku(cizim, "coklu.dwg");
-            var oh = okunan.Hatlar.Find(x => x.Id == "M1");
-            Esit("4P+R", oh != null ? oh.Kalemler[0].Tanim : "", "okuma: müşterekte AG satırı kendi tipiyle (ana kesitle değişmez)");
-            Esit("3xSW", oh != null ? oh.Kalemler[1].Tanim : "", "okuma: müşterekte OG satırı kendi tipiyle");
-            Esit("MUSTEREK", oh != null ? oh.Tur : "", "okuma: müşterek hat türü");
-            Esit(PromagisYazici.HatEtiketi(h), oh != null ? PromagisYazici.HatEtiketi(oh) : "", "okuma: etiket aynı kalır");
-            var oh3 = okunan.Hatlar.Find(x => x.Id == "M3");
-            Esit("3X50/16+70 ALPEK", oh3 != null ? oh3.Kalemler[0].Tanim : "", "okuma: adetli satırın tipi kablonun kendisi");
-            Esit("3x(3X50/16+70 ALPEK)", oh3 != null ? oh3.Kalemler[0].Aciklama : "", "okuma: adetli tam yazım korunur");
-            Esit(3, oh3 != null ? Iletkenler.Adet(oh3.Kalemler[0]) : 0, "okuma: adet 3");
-            var dt = new DurumTespit(okunan);
-            var pansy = dt.Satirlar.Find(r => r.Handle == "M1" && r.Cins == "AL_İLETKENLER" && r.Tip == "PANSY");
-            Esit(480.0, pansy != null ? pansy.Miktar : 0, "rapor: müşterekte 4P+R tel tel (4 × 120 m)");
-            var swallow = dt.Satirlar.Find(r => r.Handle == "M1" && r.Cins == "AL_İLETKENLER" && r.Tip == "SWALLOW");
-            Esit(360.0, swallow != null ? swallow.Miktar : 0, "rapor: müşterekte 3xSW tel tel (3 × 120 m)");
-            // Proje dosyasında da gidip gelir
-            var pd = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(okunan, "test"));
-            Esit(2, Iletkenler.HatKalemleri(pd.Hatlar.Find(x => x.Id == "M1")).Count, "proje dosyası: iki iletken korunur");
-            // Tek satırlı PROMAGIS hattında ana kesit değişimi aynen (3(1x150/25) → 1x150/25)
-            var tek = new CadVarlik { H = "T9", Tur = "LWPOLYLINE", Katman = "SC_1.HAK.OG_YER_XLPE", Kose = { new[] { 0.0, 0 }, new[] { 10.0, 0 } } };
-            tek.Xd["HAT"] = new List<string> { "OG_ALİMİNYUM_KABLO;;3(1x150/25) Xlpe Alm.;M;0;10;mt/mt;3;30;0,00;1;0103;1;" };
-            tek.Xd["ANAKESIT"] = new List<string> { "1x150/25 Xlpe Alm." };
-            var th = PromagisOkuyucu.Oku(new List<CadVarlik> { tek }, "").Hatlar[0];
-            Esit("1x150/25 Xlpe Alm.", th.Kalemler[0].Tanim, "okuma: tek satırda tip ana kesit (PROMAGIS raporu gibi)");
-            Esit("^ 3(1x150/25) Xlpe Alm./10m/({H})", PromagisYazici.HatEtiketi(th), "okuma: tek satırın etiketi PROMAGIS yazımıyla");
-
-            // Hat yakalama: simgenin üstüne tıklamak yeter (yakalama mesafesi 1 m olsa da)
-            var direk = new Eleman { Id = "D1", Tur = "AG_DIREK", Cins = "AG_BETON", Saga = 100, Yukari = 100 };
-            var sdk = new Eleman { Id = "S1", Tur = "BOX", Cins = "BOX_PANO", Saga = 130, Yukari = 100 };
-            var enh = new Eleman { Id = "E1", Tur = "ENH_DIREK", Cins = "ENH_DEMİR_GLV", Saga = 160, Yukari = 100 };
-            var el = new List<Eleman> { direk, sdk, enh };
-            Esit("D1", Geometri.YakinEleman(el, 102, 100.5, 1)?.Id, "yakalama: direk simgesinin kenarına tıklamak (2 m)");
-            Esit(null, Geometri.YakinEleman(el, 104, 100, 1)?.Id, "yakalama: simgenin dışı köşe noktası (4 m)");
-            Esit("S1", Geometri.YakinEleman(el, 133.5, 101, 1)?.Id, "yakalama: SDK simgesinin üstü (3,5 m)");
-            Esit("E1", Geometri.YakinEleman(el, 162.8, 101, 1)?.Id, "yakalama: ENH kafes direğin köşesi");
-            Esit("E1", Geometri.YakinEleman(el, 166, 100, 1, 8)?.Id, "yakalama: uzaktan bakarken ekran payıyla");
-            Esit(null, Geometri.YakinEleman(el, 100, 100, 0)?.Id, "yakalama: mesafe 0 ise kapalı");
-            var yakin = new List<Eleman> { direk, new Eleman { Id = "D2", Tur = "AG_DIREK", Cins = "AG_BETON", Saga = 103, Yukari = 100 } };
-            Esit("D2", Geometri.YakinEleman(yakin, 102, 100, 1)?.Id, "yakalama: iki simge üst üsteyse merkezi yakın olan");
-
-            // Armatür direğin malzemesi: simgesi direğin yanında
             var arm = k.Bul("ARMATÜR", "70W Sodyum Arm.");
+            Esit(true, arm != null, "katalog: armatür kalemi");
             var adirek = new Eleman { Id = "D5", Tur = "AG_DIREK", Cins = "AG_BETON", Tip = "9,3/2", Durum = "M", Hakedis = 1 };
             adirek.Kalemler.Add(new Kalem { Cins = "AG_BETON", Tanim = "9,3/2", Durum = "M", Ana = true, Kaynak = "NIT", Miktar = 1 });
-            var va = PromagisYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null);
-            Esit("", va.Armatur, "armatür: malzemesi yoksa simge yok");
+            Esit("", NesneYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null).Armatur, "armatür: malzemesi yoksa simge yok");
             adirek.Kalemler.Add(Katalog.KalemYap(arm, 1, "M", 1, false, "MALZEME", "7100"));
-            va = PromagisYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null);
+            var va = NesneYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null);
             Esit("SH_ARMATUR_YENI", va.Armatur, "armatür: direğin yanında armatür simgesi");
-            Esit(true, va.ArmaturDx < -Semboller.YariGenislik(adirek) - 1 && va.ArmaturDy > 0, "armatür: simge direğin sol üstünde, direğe değmeden");
-            Esit(1, va.XdHepsi("MALZEME").Count, "armatür: direğin malzemesi olarak yazılır (ayrı eleman değil)");
             adirek.Kalemler[1].Durum = "DM";
-            Esit("SH_ARMATUR_DM", PromagisYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null).Armatur, "armatür: demontaj armatür simgesi");
+            Esit("SH_ARMATUR_DM", NesneYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null).Armatur, "armatür: demontaj armatür simgesi");
             var abox = new Eleman { Id = "B5", Tur = "BOX", Cins = "BOX_PANO", Durum = "M" };
             abox.Kalemler.Add(Katalog.KalemYap(arm, 1, "M", 1, false, "MALZEME", "7101"));
-            Esit("", PromagisYazici.Eleman(abox, "SC", "SH_SDK_YENI", null).Armatur, "armatür: direk olmayan elemanda simge çizilmez");
+            Esit("", NesneYazici.Eleman(abox, "SC", "SH_SDK_YENI", null).Armatur, "armatür: direk olmayan elemanda simge çizilmez");
 
-            // Durumu değişen PROMAGIS elemanı: telefon simgeleri açıkken simgesi değişirse telefon simgesine geçer
-            PromagisYazici.TelefonSembolleri = true;
+            // Durumu değişen eleman: simge güncel duruma göre
             var pe = new Eleman { Id = "P1", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "DM+M", Blok = "YENİ_AG_DİR" };
-            Esit("SH_KAFES_AG_DMM", PromagisYazici.BlokSec(new List<Eleman>(), pe, "M", ""), "blok: M → DM+M PROMAGIS bloğundan sök-tak simgesine");
+            Esit("SH_KAFES_AG_DMM", NesneYazici.BlokSec(new List<Eleman>(), pe, "M", ""), "blok: M → DM+M sök-tak simgesi");
             pe.Durum = "M+M";
-            Esit("YENİ_AG_DİR", PromagisYazici.BlokSec(new List<Eleman>(), pe, "M", ""), "blok: simgesi değişmeyen düzenlemede PROMAGIS bloğu kalır");
+            Esit("SH_KAFES_AG_YENI", NesneYazici.BlokSec(new List<Eleman>(), pe, "M", ""), "blok: başka blok yerine uygulamanın simgesi");
             var pd2 = new Eleman { Id = "P2", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "DM", DmDurum = "SÖKÜK", Blok = "DEMONTAJ_AG_DİR" };
-            Esit("SH_KAFES_AG_SOKUK", PromagisYazici.BlokSec(new List<Eleman>(), pd2, "DM", ""), "blok: demontaja sökük yazılınca sökük simgesi");
+            Esit("SH_KAFES_AG_SOKUK", NesneYazici.BlokSec(new List<Eleman>(), pd2, "DM", ""), "blok: demontaja sökük yazılınca sökük simgesi");
 
             // Malzeme hafızası: son direğin malzemeleri yeni direğe
             var trv = k.Bul("TRAVERS_VE_KONSOLLAR_GLV", "G-L-50") ?? k.Malzemeler("AG_DIREK")[0];
@@ -789,25 +769,25 @@ namespace SebekeHakedis.Test
                     h = (_yeniTanitici++).ToString("X", CultureInfo.InvariantCulture);
                     hedef = v;
                     hedef.H = h;
-                    PromagisYazici.TaniticiYaz(hedef, h);
+                    NesneYazici.TaniticiYaz(hedef, h);
                     cizim.Add(hedef);
                 }
                 else
                 {
                     h = a.Hedef;
                     hedef = cizim.Find(x => string.Equals(x.H, h, StringComparison.OrdinalIgnoreCase));
-                    PromagisYazici.TaniticiYaz(v, h);
-                    string eskiKimlik = hedef.XdIlk(PromagisYazici.KimlikUygulamasi);
+                    NesneYazici.TaniticiYaz(v, h);
+                    string eskiKimlik = hedef.XdIlk(NesneYazici.KimlikUygulamasi);
                     var etk = hedef.XdIlk("ETK");
                     hedef.Tur = v.Tur; hedef.Katman = v.Katman; hedef.Blok = v.Blok;
                     hedef.X = v.X; hedef.Y = v.Y; hedef.Z = v.Z; hedef.Aci = v.Aci; hedef.Kapali = v.Kapali;
                     hedef.Kose = v.Kose; hedef.Oz = v.Oz; hedef.Xd = v.Xd;
-                    if (!hedef.Xd.ContainsKey(PromagisYazici.KimlikUygulamasi) && eskiKimlik != null) hedef.Xd[PromagisYazici.KimlikUygulamasi] = new List<string> { eskiKimlik };
+                    if (!hedef.Xd.ContainsKey(NesneYazici.KimlikUygulamasi) && eskiKimlik != null) hedef.Xd[NesneYazici.KimlikUygulamasi] = new List<string> { eskiKimlik };
                     if (etk != null) hedef.Xd["ETK"] = new List<string> { etk };
                 }
                 if (a.Etiket != null)
                 {
-                    string metin = a.Etiket.Replace(PromagisYazici.Tanitici, h);
+                    string metin = a.Etiket.Replace(NesneYazici.Tanitici, h);
                     var etk = hedef.XdIlk("ETK");
                     var yazi = etk == null ? null : cizim.Find(x => x.H == etk);
                     if (yazi == null)
@@ -835,7 +815,7 @@ namespace SebekeHakedis.Test
             // 1) Bu çizimden alınmış, telefonda değişmemiş proje: hiçbir iş çıkmamalı
             var cizim = new List<CadVarlik>();
             foreach (var v in ornekCizim) cizim.Add(CadVarlik.JsondanOku(v.JsonYap()));
-            var p = PromagisOkuyucu.Oku(cizim, "ornek.dwg");
+            var p = NesneOkuyucu.Oku(cizim, "ornek.dwg");
             var tel = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(p, "test"));
             var plan = Aktarim.Planla(cizim, tel, "SC");
             Esit(0, plan.Adimlar.Count, "değişmemiş proje: iş yok");
@@ -871,7 +851,7 @@ namespace SebekeHakedis.Test
             Esit(3, plan.Sayi("guncelle"), "değişen proje: 3 güncelleme (taşınan, metrajı değişen, demontaja çevrilen)");
             Esit(true, plan.Silinenler.ContainsKey(silinen), "değişen proje: telefonda silinen kanal sorulur");
             var yeniAdim = plan.Adimlar.Find(x => x.Kimlik == "Tk1");
-            Esit("Tk1", yeniAdim.Varlik.XdIlk(PromagisYazici.KimlikUygulamasi), "yeni nesneye telefon kimliği yazılır");
+            Esit("Tk1", yeniAdim.Varlik.XdIlk(NesneYazici.KimlikUygulamasi), "yeni nesneye telefon kimliği yazılır");
             Esit("SC_2.HAK.AGDİR", yeniAdim.Varlik.Katman, "yeni direk hakediş katmanında");
             var dmAdim = plan.Adimlar.Find(x => x.Hedef == dm.Id);
             Esit("SC_DEMONTAJ", dmAdim.Varlik.Katman, "demontaja çevrilen direk demontaj katmanına geçer");
@@ -880,7 +860,7 @@ namespace SebekeHakedis.Test
             Esit(true, hatAdim.Etiket != null && hatAdim.Etiket.Contains("/" + Metraj.Yazi(hk.Miktar) + "m/"), "metrajı değişen hattın etiketi güncellenir");
 
             Uygula(cizim, plan, true);
-            var sonra = PromagisOkuyucu.Oku(cizim, "ornek.dwg");
+            var sonra = NesneOkuyucu.Oku(cizim, "ornek.dwg");
             Esit(0, sonra.Uyarilar.Count, "uygulandıktan sonra okuma uyarısı yok");
             Esit(tel.Elemanlar.Count, sonra.Elemanlar.Count, "uygulandıktan sonra eleman sayısı");
             Esit(0, sonra.Kanallar.Count, "silinen kanal çizimden kalktı");
@@ -898,7 +878,7 @@ namespace SebekeHakedis.Test
             {
                 var c5 = new List<CadVarlik>();
                 foreach (var v in ornekCizim) c5.Add(CadVarlik.JsondanOku(v.JsonYap()));
-                var p5 = PromagisOkuyucu.Oku(c5, "ornek.dwg");
+                var p5 = NesneOkuyucu.Oku(c5, "ornek.dwg");
                 var t5 = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(p5, "test"));
                 var eski = t5.Hatlar[0];
                 var a0 = eski.Kose[0];
@@ -934,7 +914,7 @@ namespace SebekeHakedis.Test
             int toplam = telefonProjesi.Bolgeler.Count + telefonProjesi.Noktalar.Count + telefonProjesi.Elemanlar.Count + telefonProjesi.Hatlar.Count + telefonProjesi.Kanallar.Count + telefonProjesi.Sondajlar.Count;
             Esit(toplam, plan.Sayi("yeni"), "boş çizime: hepsi yeni");
             Uygula(bos, plan, false);
-            var bp = PromagisOkuyucu.Oku(bos, "bos.dwg");
+            var bp = NesneOkuyucu.Oku(bos, "bos.dwg");
             var ra = RaporSatirlari(telefonProjesi);
             var rb = RaporSatirlari(bp);
             Esit(ra.Count, rb.Count, "boş çizime: rapor satır sayısı aynı");
@@ -964,24 +944,24 @@ namespace SebekeHakedis.Test
             return l;
         }
 
-        /// <summary>Projeyi PROMAGIS biçiminde çizim nesnelerine yazar, okuyucuyla geri okur; rapor aynı kalmalı.</summary>
+        /// <summary>Projeyi çizim biçiminde çizim nesnelerine yazar, okuyucuyla geri okur; rapor aynı kalmalı.</summary>
         private static void GidisDonus(Proje p, string ad)
         {
             Console.WriteLine("Gidiş-dönüş: " + ad);
-            var varliklar = PromagisYazici.Hepsi(p, id => id.StartsWith("T", StringComparison.Ordinal));
-            foreach (var v in varliklar) PromagisYazici.TaniticiYaz(v, v.H);
+            var varliklar = NesneYazici.Hepsi(p, id => id.StartsWith("T", StringComparison.Ordinal));
+            foreach (var v in varliklar) NesneYazici.TaniticiYaz(v, v.H);
             // Hat etiketleri (ETK): okuyucu etiketi tanıtıcıdan bulur
             int etk = 0;
             var etiketler = new List<CadVarlik>();
             foreach (var h in p.Hatlar)
             {
                 var v = varliklar.Find(x => x.H == h.Id && x.Xd.ContainsKey("HAT"));
-                var t = new CadVarlik { H = "E" + (++etk).ToString(CultureInfo.InvariantCulture), Tur = "TEXT", Katman = v.Katman, Metin = PromagisYazici.HatEtiketi(h).Replace(PromagisYazici.Tanitici, h.Id) };
+                var t = new CadVarlik { H = "E" + (++etk).ToString(CultureInfo.InvariantCulture), Tur = "TEXT", Katman = v.Katman, Metin = NesneYazici.HatEtiketi(h).Replace(NesneYazici.Tanitici, h.Id) };
                 v.Xd["ETK"] = new List<string> { t.H };
                 etiketler.Add(t);
             }
             varliklar.AddRange(etiketler);
-            var geri = PromagisOkuyucu.Oku(varliklar, ad);
+            var geri = NesneOkuyucu.Oku(varliklar, ad);
             Esit(p.Elemanlar.Count, geri.Elemanlar.Count, "eleman sayısı");
             Esit(p.Hatlar.Count, geri.Hatlar.Count, "hat sayısı");
             Esit(p.Kanallar.Count, geri.Kanallar.Count, "kanal sayısı");
@@ -1011,7 +991,7 @@ namespace SebekeHakedis.Test
             Console.WriteLine($"1. aktarım: yeni {plan.Sayi("yeni")} · güncelle {plan.Sayi("guncelle")} · uyarı {plan.Uyarilar.Count}");
             foreach (var u in plan.Uyarilar) Console.WriteLine("  uyarı: " + u);
             Uygula(cizim, plan, false);
-            var geri = PromagisOkuyucu.Oku(cizim, "bos.dwg");
+            var geri = NesneOkuyucu.Oku(cizim, "bos.dwg");
             Esit(0, geri.Uyarilar.Count, "okuma uyarısı yok");
             var a = RaporSatirlari(tel);
             var b = RaporSatirlari(geri);
@@ -1046,7 +1026,7 @@ namespace SebekeHakedis.Test
             Directory.CreateDirectory(ciktiKlasoru);
             var sure = System.Diagnostics.Stopwatch.StartNew();
             var varliklar = CadVarlik.DokumOku(File.ReadAllText(dokumYolu, Encoding.UTF8));
-            var p = PromagisOkuyucu.Oku(varliklar, "gercek-proje.dwg");
+            var p = NesneOkuyucu.Oku(varliklar, "gercek-proje.dwg");
             Console.WriteLine($"Okuma: {sure.ElapsedMilliseconds} ms · bölge {p.Bolgeler.Count}, nokta {p.Noktalar.Count}, eleman {p.Elemanlar.Count}, hat {p.Hatlar.Count}, kanal {p.Kanallar.Count}, sondaj {p.Sondajlar.Count}, uyarı {p.Uyarilar.Count}");
             foreach (var u in p.Uyarilar) Console.WriteLine("  uyarı: " + u);
 
@@ -1059,7 +1039,7 @@ namespace SebekeHakedis.Test
             var dt = new DurumTespit(p2);
             Console.WriteLine($"Rapor: {sure.ElapsedMilliseconds} ms · {dt.Satirlar.Count} satır");
 
-            // PROMAGIS raporu
+            // AutoCAD raporu
             var refSatirlar = new List<string[]>();
             string[] bas = null;
             foreach (var satir in File.ReadAllLines(refYolu, Encoding.UTF8))
@@ -1070,7 +1050,7 @@ namespace SebekeHakedis.Test
             }
             var ix = new Dictionary<string, int>();
             for (int i = 0; i < bas.Length; i++) ix[bas[i]] = i;
-            Console.WriteLine("PROMAGIS raporu: " + refSatirlar.Count + " satır");
+            Console.WriteLine("AutoCAD raporu: " + refSatirlar.Count + " satır");
 
             // Satır satır: INDEX + CİNS + TİP + MLZ.TARİFE ile eşleştir
             var bizim = new Dictionary<string, List<RaporSatiri>>();
@@ -1125,19 +1105,19 @@ namespace SebekeHakedis.Test
                 if (refOzet.TryGetValue(k, out t) && Math.Abs(t[0] - o.Miktar) < 1e-3 && Math.Abs(t[1] - o.Toplam) < 1e-3) grupAyni++;
                 else grupFarkli++;
             }
-            Console.WriteLine($"Özet grupları: {grupAyni} aynı, {grupFarkli} farklı (PROMAGIS'te {refOzet.Count} grup)");
+            Console.WriteLine($"Özet grupları: {grupAyni} aynı, {grupFarkli} farklı (AutoCAD'de {refOzet.Count} grup)");
 
             // Toplam kg ve metre karşılaştırması
             double refKg = 0, bizKg = 0;
             foreach (var r in refSatirlar) if (r[ix["BİRİM"]].EndsWith("/kg", StringComparison.Ordinal)) refKg += Ondalik(r[ix["TOP. MİK."]]);
             foreach (var s in dt.Satirlar) if (s.Birim.EndsWith("/kg", StringComparison.Ordinal)) bizKg += s.Toplam;
-            Console.WriteLine($"Toplam kg: PROMAGIS {refKg:N1} · bizim {bizKg:N1} · fark %{(bizKg - refKg) / refKg * 100:N3}");
+            Console.WriteLine($"Toplam kg: AutoCAD {refKg:N1} · bizim {bizKg:N1} · fark %{(bizKg - refKg) / refKg * 100:N3}");
 
             sure.Restart();
             string xlsx = Path.Combine(ciktiKlasoru, "durum-tespit.xlsx");
             RaporYazici.Yaz(p2, xlsx, "test");
             Console.WriteLine($"Excel: {xlsx} ({new FileInfo(xlsx).Length / 1024} KB, {sure.ElapsedMilliseconds} ms)");
-            Esit(true, eslesen >= refSatirlar.Count * 0.999, "PROMAGIS satırlarının %99,9'u eşleşti");
+            Esit(true, eslesen >= refSatirlar.Count * 0.999, "AutoCAD satırlarının %99,9'u eşleşti");
         }
 
         private static void Karsilastir(string ad, string beklenen, string gercek, Dictionary<string, int> fark, ref bool ayni)

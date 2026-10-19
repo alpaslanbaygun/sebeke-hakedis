@@ -1,0 +1,59 @@
+/* ag-kd: aracın koyu turkuaz paleti Şebeke-M laciverdi + turuncu vurguya çevrilir (yalnız ekran; A4 rapor ve
+   yazdırma aracın kendi beyaz düzeninde kalır). Tek hat şeması da ekranda laciverde çevrilir (çizgi ve yazılar açık
+   renk, kısa devre işaretleri kırmızı); rapordaki şema beyaz kâğıtta kalır. */
+@media screen{
+  html.sm-var{
+    --bg:var(--sm-bg);--bg2:var(--sm-bg2);--panel:var(--sm-panel);--panel2:var(--sm-panel2);--line:var(--sm-line);
+    --teal:var(--sm-warn2);--teal2:var(--sm-acc);--amber:var(--sm-ok);--txt:var(--sm-tx);--dim:var(--sm-mut);
+    --red:var(--sm-err2);--green:var(--sm-ok2);--mono:var(--sm-mono)
+  }
+  html.sm-var body{font-family:var(--sm-font)}
+  html.sm-var header:not(#sm-ust){background:var(--sm-bg2);border-bottom:1px solid var(--sm-line)}
+  html.sm-var header:not(#sm-ust) h1{color:var(--sm-tx)}
+  html.sm-var header:not(#sm-ust) h1 small{color:var(--sm-mut)}
+  html.sm-var .toolbar button,html.sm-var main button,html.sm-var .modal button{background:var(--sm-panel2);border-color:var(--sm-line);color:var(--sm-tx)}
+  html.sm-var .toolbar button:hover,html.sm-var main button:hover,html.sm-var .modal button:hover{background:#26334a;border-color:var(--sm-acc)}
+  html.sm-var .toolbar button.primary,html.sm-var .toolbar .mode-switch button.on{background:var(--sm-acc);border-color:var(--sm-acc);color:#0b1326}
+  html.sm-var .toolbar button.danger,html.sm-var main button.danger{border-color:rgba(239,68,68,.5);color:var(--sm-err2)}
+  html.sm-var .mode-switch{border-color:var(--sm-line)}
+  html.sm-var .card{background:var(--sm-panel);border-color:var(--sm-line)}
+  html.sm-var .card>h2{background:var(--sm-bg2);border-bottom-color:var(--sm-line);color:var(--sm-warn2)}
+  html.sm-var .card>h2 .tag,html.sm-var label.f,html.sm-var .muted{color:var(--sm-mut)}
+  html.sm-var .formula{background:var(--sm-bg2);border-color:var(--sm-line);color:var(--sm-ok)}
+  html.sm-var #tBus{color:var(--sm-warn2)!important}
+  html.sm-var .seg{background:var(--sm-bg2);border-color:var(--sm-line)}
+  html.sm-var .seg-head{border-bottom-color:var(--sm-line)}
+  html.sm-var .seg-head .num{background:var(--sm-acc);color:#0b1326}
+  html.sm-var .seg-head .ttl{color:var(--sm-warn2)}
+  html.sm-var .node{background:var(--sm-panel3);border-color:rgba(245,158,11,.55)}
+  html.sm-var .node .nname{color:var(--sm-warn2)}
+  html.sm-var .node .kv b{color:var(--sm-ok)}
+  html.sm-var .badge.ok{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.45);color:var(--sm-ok2)}
+  html.sm-var .badge.no{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.5);color:var(--sm-err2)}
+  html.sm-var .chk{border-top-color:var(--sm-line)}
+  html.sm-var table.ref th,html.sm-var table.ref td{border-color:var(--sm-line)}
+  html.sm-var table.ref th{background:var(--sm-bg2);color:var(--sm-warn2)}
+  html.sm-var .modal{background:var(--sm-panel);border-color:var(--sm-line);max-height:calc(100vh - var(--sm-ust) - 32px)}
+  html.sm-var .modal-bg{top:var(--sm-ust);background:rgba(3,7,18,.62)}
+  html.sm-var .statusbar{background:var(--sm-bg2);border-top-color:var(--sm-line);color:var(--sm-mut)}
+  /* <sub> içeren etiketler sütun düzeninde üç satıra bölünüyordu ("U / n / (V)") */
+  html.sm-var .grid>label.f{display:block}
+  html.sm-var .grid>label.f>input,html.sm-var .grid>label.f>select{display:block;margin-top:4px}
+  /* Tek hat şeması: ekranda laciverde çevrilir; araç genişliği 1100 piksele sığdırıyordu (uzun zincirde yazılar
+     küçülüyordu) — doğal boyutunda gösterilir, kutu içinde yatay kaydırılır */
+  html.sm-var #sldBox{background:var(--sm-bg2)!important}
+  html.sm-var #sldBox svg{background:transparent!important;width:auto!important;height:190px!important;max-width:none!important}
+  html.sm-var #sldBox svg [stroke="#000"]{stroke:var(--sm-tx)}
+  html.sm-var #sldBox svg [fill="#000"]{fill:var(--sm-tx)}
+  html.sm-var #sldBox svg [stroke="#333"]{stroke:var(--sm-mut)}
+  html.sm-var #sldBox svg [fill="#333"]{fill:var(--sm-mut)}
+  html.sm-var #sldBox svg rect[fill="#fff"]{fill:var(--sm-bg2)}
+  html.sm-var #sldBox svg [fill="#d90429"]{fill:var(--sm-err2)}
+  html.sm-var #sldBox svg [stroke="#d90429"]{stroke:var(--sm-err2)}
+  /* Şebeke-M durumu tutar: aracın kendi kaydet / farklı kaydet / sıfırla düğmeleri ve "localStorage" yazısı gizlenir
+     (A4 yazdırma kalır) */
+  html.sm-var.sm-telefon .toolbar button[onclick="kaydet()"],html.sm-var.sm-autocad .toolbar button[onclick="kaydet()"],
+  html.sm-var.sm-telefon .toolbar button[onclick="farkliKaydet()"],html.sm-var.sm-autocad .toolbar button[onclick="farkliKaydet()"],
+  html.sm-var.sm-telefon .toolbar button[onclick="resetAll()"],html.sm-var.sm-autocad .toolbar button[onclick="resetAll()"],
+  html.sm-var.sm-telefon .statusbar span:last-child,html.sm-var.sm-autocad .statusbar span:last-child{display:none!important}
+}

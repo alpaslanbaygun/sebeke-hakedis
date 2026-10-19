@@ -26,10 +26,17 @@
     <Compile Include="..\..\src\Eklenti\SeritSimgeleri.cs" Link="Eklenti\SeritSimgeleri.cs" />
     <Compile Include="..\..\src\Eklenti\ArayuzSimgeleri.cs" Link="Eklenti\ArayuzSimgeleri.cs" />
     <Compile Include="..\..\src\Eklenti\KoyuTema.cs" Link="Eklenti\KoyuTema.cs" />
+    <Compile Include="..\..\src\Eklenti\Marka.cs" Link="Eklenti\Marka.cs" />
     <EmbeddedResource Include="..\..\..\ortak\katalog\kalemler.json" Link="Katalog\kalemler.json" LogicalName="SebekeHakedis.kalemler.json" />
     <EmbeddedResource Include="..\..\..\ortak\katalog\cizim-stili.json" Link="Katalog\cizim-stili.json" LogicalName="SebekeHakedis.cizim-stili.json" />
     <EmbeddedResource Include="..\..\..\ortak\katalog\semboller.json" Link="Katalog\semboller.json" LogicalName="SebekeHakedis.semboller.json" />
     <EmbeddedResource Include="..\..\..\ortak\katalog\kategoriler.json" Link="Katalog\kategoriler.json" LogicalName="SebekeHakedis.kategoriler.json" />
+    <!-- Şebeke-M markası: logo ve simgeler (üretici araclar/marka-uret.py) -->
+    <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-logo.png" Link="Marka\logo.png" LogicalName="SebekeHakedis.marka.logo.png" />
+    <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-16.png" Link="Marka\simge-16.png" LogicalName="SebekeHakedis.marka.simge-16.png" />
+    <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-24.png" Link="Marka\simge-24.png" LogicalName="SebekeHakedis.marka.simge-24.png" />
+    <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-32.png" Link="Marka\simge-32.png" LogicalName="SebekeHakedis.marka.simge-32.png" />
+    <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-64.png" Link="Marka\simge-64.png" LogicalName="SebekeHakedis.marka.simge-64.png" />
     <None Include="..\CekirdekTest\ornek-dokum.json" Link="ornek-dokum.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\CekirdekTest\telefon-proje.sebeke.json" Link="telefon-proje.sebeke.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

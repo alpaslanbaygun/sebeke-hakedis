@@ -4,17 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1326">
-<title>VOLT-EDAŞ Saha</title>
+<title>Şebeke-M</title>
 <link rel="stylesheet" href="app.css">
 <style>
 html,body{margin:0;height:100%;background:#0b1326;color:#dae2fd;font-family:Inter,system-ui,sans-serif}
 #splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
-#splash b{font:800 22px/1 'JetBrains Mono',monospace;letter-spacing:.06em;color:#10b981}
+#splash .logo{width:min(240px,62vw);background:#fff;border-radius:20px;padding:14px 18px;box-shadow:0 10px 40px rgba(0,0,0,.45)}
+#splash .logo img{display:block;width:100%;height:auto}
 #splash span{font-size:13px;color:#94a3b8}
 </style>
 </head>
 <body>
-<div id="splash"><b>VOLT-EDAŞ SAHA</b><span id="splash-msg">Başlatılıyor…</span></div>
+<div id="splash"><div class="logo"><img src="assets/sebeke-m-logo.png" alt="Şebeke-M"></div><span id="splash-msg">Başlatılıyor…</span></div>
 <script src="app.js"></script>
 </body>
 </html>

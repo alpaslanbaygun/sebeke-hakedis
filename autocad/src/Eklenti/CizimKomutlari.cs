@@ -18,7 +18,7 @@ namespace SebekeHakedis.Eklenti
 {
     /// <summary>
     /// Çizim araçları: eleman, hat, kanal, sondaj, bölge, nokta alma, malzeme düzenleme, metraj,
-    /// ayarlar ve telefondan proje alma. Hepsi PROMAGIS biçiminde yazar; PROMAGIS çizimleriyle karışık kullanılabilir.
+    /// ayarlar ve telefondan proje alma. Hepsi çizim biçiminde yazar; AutoCAD çizimleriyle karışık kullanılabilir.
     /// </summary>
     public sealed class CizimKomutlari
     {
@@ -195,7 +195,7 @@ namespace SebekeHakedis.Eklenti
 
         /// <summary>Tıklanan noktadaki direk (armatürü malzeme olarak eklemek için); yoksa null.</summary>
         private static Eleman DirekBul(Ortam o, Point3d p) =>
-            Geometri.YakinEleman(o.Proje.Elemanlar.FindAll(x => PromagisYazici.DirekMi(x.Tur)), p.X, p.Y, Math.Max(0.01, o.Ayar.YakalamaMesafesi), o.EkranToleransi());
+            Geometri.YakinEleman(o.Proje.Elemanlar.FindAll(x => NesneYazici.DirekMi(x.Tur)), p.X, p.Y, Math.Max(0.01, o.Ayar.YakalamaMesafesi), o.EkranToleransi());
 
         /// <summary>Elemana eklenen malzemenin varsayılan durumu: elemanınki (mevcut elemana yeni malzeme M).</summary>
         internal static string MalzemeDurumu(string elemanDurumu) => string.IsNullOrEmpty(elemanDurumu) || elemanDurumu == "MEVCUT" ? "M" : elemanDurumu;
@@ -304,8 +304,8 @@ namespace SebekeHakedis.Eklenti
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
                     var y = Yazici(o, tr);
-                    string blok = y.KullanilabilirBlok(PromagisYazici.BlokSec(o.Proje.Elemanlar, e), e.Tur, e.Cins, e.Durum, e.DmDurum, o.Proje.Elemanlar);
-                    var v = PromagisYazici.Eleman(e, o.OnEk, blok, null);
+                    string blok = y.KullanilabilirBlok(NesneYazici.BlokSec(o.Proje.Elemanlar, e), e.Tur, e.Cins, e.Durum, e.DmDurum, o.Proje.Elemanlar);
+                    var v = NesneYazici.Eleman(e, o.OnEk, blok, null);
                     sonId = y.Ekle(v, null, o.Olcek(blok));
                     e.Id = v.H;
                     e.Blok = blok;
@@ -378,7 +378,7 @@ namespace SebekeHakedis.Eklenti
                             "yeni parça başlar; her parçaya hat bilgisi ve uzunluğu yazılır. Boş yere tıklamak yalnız köşe noktasıdır.");
             while (true)
             {
-                string katman = PromagisYazici.HatKatmani(o.OnEk, secim.Tur, secim.Durum, secim.Hakedis);
+                string katman = NesneYazici.HatKatmani(o.OnEk, secim.Tur, secim.Durum, secim.Hakedis);
                 var uclar = new List<Eleman>();
                 string sonuc;
                 var noktalar = KoseleriIste(o, katman, false, 2, null, "\nHattın başlangıcı — direğe ya da elemana tıklayın [Ayarlar/Bitir] <Bitir>: ", "Ayarlar Bitir", uclar, out sonuc);
@@ -411,15 +411,15 @@ namespace SebekeHakedis.Eklenti
                         h.CizimUzunlugu = L;
                         // Her iletken hattın ayrı satırı (müşterek: OG ve AG; adetli: miktar = adet × metraj)
                         h.Kalemler.AddRange(Iletkenler.Kalemler(secim.Iletkenleri, m, secim.Durum, secim.Hakedis, o.YeniSira, o.Ayar.Karakteristik, o.Ayar.Koy));
-                        var v = PromagisYazici.Hat(h, o.OnEk, null);
-                        string etiket = PromagisYazici.HatEtiketi(h);
+                        var v = NesneYazici.Hat(h, o.OnEk, null);
+                        string etiket = NesneYazici.HatEtiketi(h);
                         y.Ekle(v, etiket, 1);
                         h.Id = v.H;
                         h.Katman = v.Katman;
                         o.Proje.Hatlar.Add(h);
                         sayi++;
                         ed.WriteMessage("\nParça " + parcaNo + "/" + parcalar.Count + (pc.Bas != null ? "  " + Ad(pc.Bas) : "") + (pc.Bit != null ? " → " + Ad(pc.Bit) : "") +
-                            ":  çizim " + L.ToString("0.00", Tr) + " m, metraj " + Metraj.Yazi(m) + " m  (" + etiket.Replace(PromagisYazici.Tanitici, v.H) + ")");
+                            ":  çizim " + L.ToString("0.00", Tr) + " m, metraj " + Metraj.Yazi(m) + " m  (" + etiket.Replace(NesneYazici.Tanitici, v.H) + ")");
                     }
                     tr.Commit();
                     UyarilariYaz(ed, y);
@@ -500,7 +500,7 @@ namespace SebekeHakedis.Eklenti
                         };
                         Metraj.Toplam(kl, c);
                         c.Kalemler.Add(kl);
-                        var v = PromagisYazici.Kanal(c, o.OnEk, null);
+                        var v = NesneYazici.Kanal(c, o.OnEk, null);
                         y.Ekle(v, null, 1);
                         c.Id = v.H;
                         o.Proje.Kanallar.Add(c);
@@ -576,7 +576,7 @@ namespace SebekeHakedis.Eklenti
                         foreach (var q in pc.Noktalar) s.Kose.Add(new[] { q.X, q.Y });
                         s.CizimUzunlugu = L;
                         s.Kalemler.Add(Katalog.KalemYap(secim.Tip, m, secim.Durum, secim.Hakedis, true, "NIT", o.YeniSira(), "", o.Ayar.Karakteristik, o.Ayar.Koy));
-                        var v = PromagisYazici.Sondaj(s, o.OnEk, null);
+                        var v = NesneYazici.Sondaj(s, o.OnEk, null);
                         y.Ekle(v, null, 1);
                         s.Id = v.H;
                         o.Proje.Sondajlar.Add(s);
@@ -702,7 +702,7 @@ namespace SebekeHakedis.Eklenti
         /// <summary>
         /// Çizimdeki şebeke nesnelerini ortak çizim stiline (telefonun görünümü) çevirir: simgeler, renkler, çizgi tipleri,
         /// hat etiketleri (1,8 m, orta parçada) ve her parçanın uzunluk yazısı. Veriye (XDATA, metraj) dokunmaz.
-        /// "Hepsi": PROMAGIS blokları da telefon simgesine çevrilir; "BloklarKalsin": PROMAGIS bloklarına dokunulmaz.
+        /// Bütün elemanlar uygulamanın simgesine çevrilir (adsız bloklar hariç).
         /// </summary>
         [CommandMethod("SH_GORUNUM", CommandFlags.Modal)]
         public void GorunumYenile()
@@ -716,16 +716,14 @@ namespace SebekeHakedis.Eklenti
                 var p = o.Proje;
                 int toplam = p.Elemanlar.Count + p.Hatlar.Count + p.Kanallar.Count + p.Sondajlar.Count + p.Bolgeler.Count;
                 if (toplam == 0) { ed.WriteMessage("\nÇizimde şebeke nesnesi yok."); return; }
-                var pko = new PromptKeywordOptions("\n" + toplam + " nesne telefon görünümüne çevrilecek. PROMAGIS blokları da telefon simgesine çevrilsin mi? [Hepsi/BloklarKalsin/Vazgec]", "Hepsi BloklarKalsin Vazgec")
+                var pko = new PromptKeywordOptions("\n" + toplam + " nesne uygulamanın görünümüne çevrilecek. Devam edilsin mi? [Evet/Vazgec]", "Evet Vazgec")
                 {
                     AllowNone = true,
                 };
-                pko.Keywords.Default = "BloklarKalsin";
+                pko.Keywords.Default = "Evet";
                 var r = ed.GetKeywords(pko);
                 if (r.Status != PromptStatus.OK && r.Status != PromptStatus.None) return;
-                string secim = r.Status == PromptStatus.None ? "BloklarKalsin" : r.StringResult;
-                if (secim == "Vazgec") return;
-                bool hepsi = secim == "Hepsi";
+                if (r.Status == PromptStatus.OK && r.StringResult == "Vazgec") return;
                 int yenilenen = 0;
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
@@ -741,18 +739,18 @@ namespace SebekeHakedis.Eklenti
                     };
                     foreach (var e in p.Elemanlar)
                     {
-                        string blok = hepsi && !(e.Blok ?? "").StartsWith("*", StringComparison.Ordinal) ? Semboller.BlokAdi(e) : PromagisYazici.BlokSec(p.Elemanlar, e);
+                        string blok = NesneYazici.BlokSec(p.Elemanlar, e);
                         if (!y.BlokKullanilabilir(blok)) blok = e.Blok;
-                        yaz(e.Id, PromagisYazici.Eleman(e, o.OnEk, blok, string.IsNullOrEmpty(e.TelefonId) ? null : e.TelefonId), null);
+                        yaz(e.Id, NesneYazici.Eleman(e, o.OnEk, blok, string.IsNullOrEmpty(e.TelefonId) ? null : e.TelefonId), null);
                     }
-                    foreach (var h in p.Hatlar) yaz(h.Id, PromagisYazici.Hat(h, o.OnEk, string.IsNullOrEmpty(h.TelefonId) ? null : h.TelefonId), PromagisYazici.HatEtiketi(h));
-                    foreach (var c in p.Kanallar) yaz(c.Id, PromagisYazici.Kanal(c, o.OnEk, string.IsNullOrEmpty(c.TelefonId) ? null : c.TelefonId), null);
-                    foreach (var s in p.Sondajlar) yaz(s.Id, PromagisYazici.Sondaj(s, o.OnEk, string.IsNullOrEmpty(s.TelefonId) ? null : s.TelefonId), null);
-                    foreach (var b in p.Bolgeler) yaz(b.Id, PromagisYazici.Bolge(b, o.OnEk, null), null);
+                    foreach (var h in p.Hatlar) yaz(h.Id, NesneYazici.Hat(h, o.OnEk, string.IsNullOrEmpty(h.TelefonId) ? null : h.TelefonId), NesneYazici.HatEtiketi(h));
+                    foreach (var c in p.Kanallar) yaz(c.Id, NesneYazici.Kanal(c, o.OnEk, string.IsNullOrEmpty(c.TelefonId) ? null : c.TelefonId), null);
+                    foreach (var s in p.Sondajlar) yaz(s.Id, NesneYazici.Sondaj(s, o.OnEk, string.IsNullOrEmpty(s.TelefonId) ? null : s.TelefonId), null);
+                    foreach (var b in p.Bolgeler) yaz(b.Id, NesneYazici.Bolge(b, o.OnEk, null), null);
                     tr.Commit();
                     UyarilariYaz(ed, y);
                 }
-                ed.WriteMessage("\n" + yenilenen + " nesne telefon görünümüne çevrildi" + (hepsi ? " (PROMAGIS blokları dahil)." : " (PROMAGIS bloklarına dokunulmadı)."));
+                ed.WriteMessage("\n" + yenilenen + " nesne uygulamanın görünümüne çevrildi.");
                 ed.Regen();
             });
         }
@@ -816,15 +814,15 @@ namespace SebekeHakedis.Eklenti
                 }
                 if (!Pencereler.Bolge(ref ad, ref kod, ref grup)) return;
                 var b = new Bolge { Ad = ad, Kod = kod, Grup = grup, Sinir = sinir };
-                var vb = PromagisYazici.Bolge(b, o.OnEk, null);
+                var vb = NesneYazici.Bolge(b, o.OnEk, null);
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
                     var y = Yazici(o, tr);
                     var id = mevcut;
                     if (mevcut.IsNull) id = y.Ekle(vb, null, 1);
                     else y.Guncelle(mevcut, vb, null);
-                    // PROMAGIS raporu bölgeleri bu listeden bulur
-                    if (!id.IsNull) PromagisSozlugu.BolgeEkle(o.Db, tr, id.Handle.ToString());
+                    // AutoCAD raporu bölgeleri bu listeden bulur
+                    if (!id.IsNull) CizimSozlugu.BolgeEkle(o.Db, tr, id.Handle.ToString());
                     tr.Commit();
                     UyarilariYaz(ed, y);
                 }
@@ -882,7 +880,7 @@ namespace SebekeHakedis.Eklenti
                     var y = Yazici(o, tr);
                     foreach (var n in yeni)
                     {
-                        y.Ekle(PromagisYazici.Nokta(n, null), null, 1);
+                        y.Ekle(NesneYazici.Nokta(n, null), null, 1);
                         var q = new Point3d(n.Saga, n.Yukari, 0);
                         if (!kapsamVar) { kapsam = new Extents3d(q, q); kapsamVar = true; }
                         else kapsam.AddPoint(q);
@@ -908,7 +906,7 @@ namespace SebekeHakedis.Eklenti
             return p.Sondajlar.Find(x => string.Equals(x.Id, h, StringComparison.OrdinalIgnoreCase));
         }
 
-        /// <summary>Nesne denetlenmiş mi (PROMAGIS KONTROL işareti).</summary>
+        /// <summary>Nesne denetlenmiş mi (AutoCAD KONTROL işareti).</summary>
         private static bool Denetlenmis(object n)
         {
             if (n is Eleman e) return e.Kontrol == true || (e.Kontrol == null && e.Kalemler.Exists(k => k.Ana && k.Kontrol == true));
@@ -931,18 +929,18 @@ namespace SebekeHakedis.Eklenti
             if (nesne is Eleman e)
             {
                 if (e.Hakedis != eskiHakedis || DurumGrubu(e.Durum) != DurumGrubu(eskiDurum)) e.Katman = "";
-                string blok = eskiDm == null ? PromagisYazici.BlokSec(o.Proje.Elemanlar, e) : PromagisYazici.BlokSec(o.Proje.Elemanlar, e, eskiDurum, eskiDm);
+                string blok = eskiDm == null ? NesneYazici.BlokSec(o.Proje.Elemanlar, e) : NesneYazici.BlokSec(o.Proje.Elemanlar, e, eskiDurum, eskiDm);
                 if (!y.BlokKullanilabilir(blok)) blok = e.Blok;
-                v = PromagisYazici.Eleman(e, o.OnEk, blok, null);
+                v = NesneYazici.Eleman(e, o.OnEk, blok, null);
             }
             else if (nesne is Hat h)
             {
                 if (h.Hakedis != eskiHakedis || DurumGrubu(h.Durum) != DurumGrubu(eskiDurum)) h.Katman = "";
-                v = PromagisYazici.Hat(h, o.OnEk, null);
-                etiket = PromagisYazici.HatEtiketi(h);
+                v = NesneYazici.Hat(h, o.OnEk, null);
+                etiket = NesneYazici.HatEtiketi(h);
             }
-            else if (nesne is Kanal c) v = PromagisYazici.Kanal(c, o.OnEk, null);
-            else if (nesne is Sondaj s) v = PromagisYazici.Sondaj(s, o.OnEk, null);
+            else if (nesne is Kanal c) v = NesneYazici.Kanal(c, o.OnEk, null);
+            else if (nesne is Sondaj s) v = NesneYazici.Sondaj(s, o.OnEk, null);
             else return;
             y.Guncelle(id, v, etiket);
         }
@@ -977,7 +975,7 @@ namespace SebekeHakedis.Eklenti
                 var nesne = NesneBul(o.Proje, h);
                 if (nesne == null)
                 {
-                    ed.WriteMessage("\nBu nesnede şebeke bilgisi yok (PROMAGIS ya da Şebeke Hakediş nesnesi değil).");
+                    ed.WriteMessage("\nBu nesnede şebeke bilgisi yok (şebeke nesnesi değil).");
                     return;
                 }
                 string eskiDurum;
@@ -1026,7 +1024,7 @@ namespace SebekeHakedis.Eklenti
         // ================= SH_TOPLUMALZEME: seçilen elemanlara hızlı malzeme =================
 
         /// <summary>
-        /// Seçilen direklere / elemanlara aynı malzemeleri tek seferde ekler (PROMAGIS'teki toplu malzeme ekleme gibi).
+        /// Seçilen direklere / elemanlara aynı malzemeleri tek seferde ekler .
         /// Önceden seçilmiş nesneler varsa onlar kullanılır. Eklenenler malzeme hafızasına da yazılır.
         /// </summary>
         [CommandMethod("SH_TOPLUMALZEME", CommandFlags.Modal | CommandFlags.UsePickSet)]
@@ -1216,7 +1214,7 @@ namespace SebekeHakedis.Eklenti
             });
         }
 
-        // ================= SH_ONAY: hakediş onayı (PROMAGIS HAK_ONAY) =================
+        // ================= SH_ONAY: hakediş onayı (AutoCAD HAK_ONAY) =================
 
         [CommandMethod("SH_ONAY", CommandFlags.Modal)]
         public void HakedisOnayla()
@@ -1237,9 +1235,9 @@ namespace SebekeHakedis.Eklenti
                 if (degisen.Count == 0) { ed.WriteMessage("\nOnaylar değişmedi."); return; }
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
-                    // PROMAGIS'in penceresindeki 12 hakediş her zaman yazılır (PROMAGIS hepsini okur)
-                    for (int n = 1; n <= HakedisOnayi.PromagisSayisi; n++) PromagisSozlugu.OnayYaz(o.Db, tr, n, HakedisOnayi.Bitler(yeni, n));
-                    foreach (var n in hepsi) if (n > HakedisOnayi.PromagisSayisi) PromagisSozlugu.OnayYaz(o.Db, tr, n, HakedisOnayi.Bitler(yeni, n));
+                    // AutoCAD'in penceresindeki 12 hakediş her zaman yazılır (AutoCAD hepsini okur)
+                    for (int n = 1; n <= HakedisOnayi.SabitOnaySayisi; n++) CizimSozlugu.OnayYaz(o.Db, tr, n, HakedisOnayi.Bitler(yeni, n));
+                    foreach (var n in hepsi) if (n > HakedisOnayi.SabitOnaySayisi) CizimSozlugu.OnayYaz(o.Db, tr, n, HakedisOnayi.Bitler(yeni, n));
                     tr.Commit();
                 }
                 foreach (var n in degisen)
@@ -1316,7 +1314,20 @@ namespace SebekeHakedis.Eklenti
                 foreach (var a in plan.Adimlar) if (a.CizimdeSilinmis) cizimdeSilinmis++;
                 if (plan.Adimlar.Count == 0 && plan.Silinenler.Count == 0 && yeniOnaylar.Count == 0)
                 {
-                    Pencereler.Bilgi("Telefondaki proje bu çizimle aynı; aktarılacak değişiklik yok.\n(" + plan.Ayni + " nesne karşılaştırıldı.)" +
+                    // Nesneler aynı olsa da telefonda yapılmış yeni hesap kayıtları alınır
+                    string hesapNotu = "";
+                    if (tel.Hesaplar.Count > 0)
+                    {
+                        try
+                        {
+                            var hesapUyarilari = new List<string>();
+                            var sayi = HesapDeposu.Birlestir(o.Db, o.Proje, tel.Hesaplar, hesapUyarilari);
+                            foreach (var u in hesapUyarilari) ed.WriteMessage("\n" + u);
+                            if (sayi[0] + sayi[1] > 0) hesapNotu = "\n\nTeknik hesap kaydı alındı: " + sayi[0] + " yeni, " + sayi[1] + " güncellendi (çizimi kaydedin).";
+                        }
+                        catch (System.Exception ex) { ed.WriteMessage("\nHesap kayıtları alınamadı: " + ex.Message); }
+                    }
+                    Pencereler.Bilgi("Telefondaki proje bu çizimle aynı; aktarılacak değişiklik yok.\n(" + plan.Ayni + " nesne karşılaştırıldı.)" + hesapNotu +
                                      (plan.Kilitliler.Count + plan.KilitliSilinenler.Count > 0
                                          ? "\n\nOnaylı (kilitli) hakedişe dokunduğu için aktarılmayan: " + (plan.Kilitliler.Count + plan.KilitliSilinenler.Count) + " değişiklik."
                                          : ""));
@@ -1382,7 +1393,7 @@ namespace SebekeHakedis.Eklenti
                                     olcek = o.Olcek(v.Blok);
                                 }
                                 var yeniId = y.Ekle(v, a.Etiket, olcek);
-                                if (a.Nesne == "bolge" && !yeniId.IsNull) PromagisSozlugu.BolgeEkle(o.Db, tr, yeniId.Handle.ToString());
+                                if (a.Nesne == "bolge" && !yeniId.IsNull) CizimSozlugu.BolgeEkle(o.Db, tr, yeniId.Handle.ToString());
                                 eklenen++;
                                 Kapsa(ref kapsam, ref kapsamVar, v);
                             }
@@ -1392,7 +1403,7 @@ namespace SebekeHakedis.Eklenti
                                 if (!Toplayici.TaniticiylaBul(o.Db, a.Hedef, out id)) { y.Uyarilar.Add("Nesne bulunamadı: " + a.Hedef + " " + a.Ad); continue; }
                                 if (a.Nesne == "eleman" && !y.BlokKullanilabilir(v.Blok)) v.Blok = "";
                                 y.Guncelle(id, v, a.Etiket);
-                                if (a.Nesne == "bolge") PromagisSozlugu.BolgeEkle(o.Db, tr, id.Handle.ToString());
+                                if (a.Nesne == "bolge") CizimSozlugu.BolgeEkle(o.Db, tr, id.Handle.ToString());
                                 guncellenen++;
                             }
                         }
@@ -1409,7 +1420,7 @@ namespace SebekeHakedis.Eklenti
                             try
                             {
                                 y.Sil(id);
-                                PromagisSozlugu.BolgeCikar(o.Db, tr, h);
+                                CizimSozlugu.BolgeCikar(o.Db, tr, h);
                                 silinen++;
                             }
                             catch (System.Exception ex)
@@ -1420,22 +1431,38 @@ namespace SebekeHakedis.Eklenti
                     tr.Commit();
                     UyarilariYaz(ed, y);
                 }
-                // Telefonda verilen sıra numaraları PROMAGIS sayacında da ilerlesin
-                PromagisSozlugu.SayacYaz(o.Db, Math.Max(o.Sira, Numara.EnBuyukSira(tel)));
-                // Telefonda onaylanan hakedişler çizimin onay kaydına (PROMAGIS HAK_ONAY) eklenir
+                // Telefonda verilen sıra numaraları AutoCAD sayacında da ilerlesin
+                CizimSozlugu.SayacYaz(o.Db, Math.Max(o.Sira, Numara.EnBuyukSira(tel)));
+                // Telefonda onaylanan hakedişler çizimin onay kaydına (AutoCAD HAK_ONAY) eklenir
                 if (yeniOnaylar.Count > 0)
                 {
                     using (var tr = o.Db.TransactionManager.StartTransaction())
                     {
-                        foreach (var n in yeniOnaylar) PromagisSozlugu.OnayYaz(o.Db, tr, n, birlesikOnay[n]);
+                        foreach (var n in yeniOnaylar) CizimSozlugu.OnayYaz(o.Db, tr, n, birlesikOnay[n]);
                         tr.Commit();
                     }
                     foreach (var n in yeniOnaylar) ed.WriteMessage("\nOnay (telefondan): " + n + ". hakediş · " + HakedisOnayi.Metin(birlesikOnay[n]));
                 }
                 if (o.Ayar.Dom == 0 && tel.Dom > 0) { o.Ayar.Dom = tel.Dom; o.AyarKaydet(); }
-                ed.WriteMessage("\nTelefondan alındı: " + eklenen + " yeni, " + guncellenen + " güncellendi" + (sil ? ", " + silinen + " silindi" : "") + ".");
+                // Telefondaki teknik hesap kayıtları: hedefleri çizim nesnelerine bağlanır, daha yenisi çizimdekini günceller
+                int hesapYeni = 0, hesapGuncel = 0;
+                if (tel.Hesaplar.Count > 0)
+                {
+                    try
+                    {
+                        var sonra = NesneOkuyucu.Oku(Toplayici.Topla(o.Db), belge.Name);
+                        var hesapUyarilari = new List<string>();
+                        var sayi = HesapDeposu.Birlestir(o.Db, sonra, tel.Hesaplar, hesapUyarilari);
+                        hesapYeni = sayi[0]; hesapGuncel = sayi[1];
+                        foreach (var u in hesapUyarilari) ed.WriteMessage("\n" + u);
+                    }
+                    catch (System.Exception ex) { ed.WriteMessage("\nHesap kayıtları alınamadı: " + ex.Message); }
+                }
+                ed.WriteMessage("\nTelefondan alındı: " + eklenen + " yeni, " + guncellenen + " güncellendi" + (sil ? ", " + silinen + " silindi" : "") +
+                                (hesapYeni + hesapGuncel > 0 ? "; teknik hesap: " + hesapYeni + " yeni, " + hesapGuncel + " güncellendi" : "") + ".");
                 if (!cizimdeNesneVar && kapsamVar) Yakinlas(ed, kapsam);
                 Pencereler.Bilgi("Aktarım tamamlandı.\n\nEklenen: " + eklenen + "\nGüncellenen: " + guncellenen + (sil ? "\nSilinen: " + silinen : "") +
+                                 (hesapYeni + hesapGuncel > 0 ? "\nTeknik hesap kaydı: " + hesapYeni + " yeni, " + hesapGuncel + " güncellendi" : "") +
                                  "\n\nBeğenmezseniz AutoCAD'in Geri Al (U) komutu aktarımın tamamını geri alır.");
             });
         }

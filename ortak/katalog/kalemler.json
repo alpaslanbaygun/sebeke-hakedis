@@ -1,8 +1,8 @@
 {
  "bicim": "sebeke-hakedis.kalem-katalogu",
  "surum": 2,
- "kaynak": "PROMAGIS 2021 malzeme listesi (tam) + gerçek bir çizimdeki kullanım sayıları",
- "aciklama": "cins+tanim+birim başına bir kalem. katsayi: giriş biriminden rapor birimine çarpan (ör. kg/m, kg/ad). rol: ana (nesnenin kendi pozu), malzeme, hat, kanal, sondaj. tarife: karakteristik (2 hane) + şehir/yatırım unsuru (2 hane); unsurKoy: köy/bakım unsuru (çizim ayarı 'köy' ise tarife = karakteristik + unsurKoy). pozNo: TEDAŞ poz numarası. onem: PROMAGIS rapor sırası. kesit/guc: kablo kesiti, trafo gücü (kVA). temini: PROMAGIS temin işareti (T). nesneler/kullanim/durumlar: gerçek bir çizimde hangi nesnelerde kaç kez görüldü. Üretici: araclar/promagis-katalog-aktar.py — elle düzenlenmez.",
+ "kaynak": "Ortak malzeme listesi (2021, tam) + gerçek bir çizimdeki kullanım sayıları",
+ "aciklama": "cins+tanim+birim başına bir kalem. katsayi: giriş biriminden rapor birimine çarpan (ör. kg/m, kg/ad). rol: ana (nesnenin kendi pozu), malzeme, hat, kanal, sondaj. tarife: karakteristik (2 hane) + şehir/yatırım unsuru (2 hane); unsurKoy: köy/bakım unsuru (çizim ayarı 'köy' ise tarife = karakteristik + unsurKoy). pozNo: TEDAŞ poz numarası. onem: AutoCAD rapor sırası. kesit/guc: kablo kesiti, trafo gücü (kVA). temini: AutoCAD temin işareti (T). nesneler/kullanim/durumlar: gerçek bir çizimde hangi nesnelerde kaç kez görüldü. Üretici: araclar/katalog-aktar.py — elle düzenlenmez.",
  "durumlar": {
   "M+M": "",
   "M": "",
@@ -14207,7 +14207,7 @@
   },
   {
    "cins": "TRAFO_BİNASI",
-   "tanim": "KCETAŞ TİPİ İNDİRİCİ MERKEZİ",
+   "tanim": "ÖZEL TİP İNDİRİCİ MERKEZİ",
    "birim": "ad/ad",
    "katsayi": 1.0,
    "tarife": "0102",

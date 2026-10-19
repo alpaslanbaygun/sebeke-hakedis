@@ -1,0 +1,68 @@
+/* kosk: aracın kurşuni / turkuaz koyu paleti Şebeke-M laciverdi + turuncu vurguya çevrilir; yalnız ekranda.
+   Baskı (#printPage) aracın beyaz kâğıt düzeninde kalır. Ekrandaki teknik çizimler aracın kendi koyu çizim
+   renkleriyle kalır (açık çizgiler), yalnız zemini lacivert panele alınır. */
+@media screen{
+  /* ---- aracın renk değişkenleri ---- */
+  html.sm-var{
+    --bg:var(--sm-bg);--panel:var(--sm-panel);--panel2:var(--sm-panel3);--line:var(--sm-line);
+    --ink:var(--sm-tx);--mut:var(--sm-mut);--teal:var(--sm-acc);--amber:var(--sm-warn2);
+    --red:var(--sm-err2);--green:var(--sm-ok);--blue:var(--sm-cy);--acc:var(--sm-acc)
+  }
+  html.sm-var body{font-family:var(--sm-font)}
+
+  /* ---- yerleşim: Şebeke-M üst çubuğunun altında tam yükseklik ---- */
+  html.sm-var #app{height:calc(100vh - var(--sm-ust));height:calc(100dvh - var(--sm-ust))}
+  html.sm-var #uyari{top:calc(var(--sm-ust) + 10px)}
+  html.sm-var .dxfPop{top:calc(50% + var(--sm-ust) / 2)!important;width:min(400px,calc(100vw - 20px))!important;
+    max-height:calc(100vh - var(--sm-ust) - 20px);max-height:calc(100dvh - var(--sm-ust) - 20px);overflow:auto;box-sizing:border-box}
+  html.sm-var #hucreMenu3d{max-width:calc(100vw - 16px)}
+
+  /* ---- kenar paneli ---- */
+  html.sm-var #brand{background:var(--sm-panel);border-bottom-color:var(--sm-line)}
+  html.sm-var #brand h1{color:var(--sm-tx)}
+  html.sm-var .sec{border-color:var(--sm-line2)}
+  html.sm-var .kbtn,html.sm-var .hitem,html.sm-var .chk{background:var(--sm-bg2)}
+  html.sm-var #panoSel{background:var(--sm-bg2)!important}
+  html.sm-var .kbtn.on{background:var(--sm-acc);border-color:var(--sm-acc);color:#0b1326}
+  html.sm-var button.act{color:#0b1326}
+  html.sm-var #btnOrto{color:#0b1326!important}
+  html.sm-var button.act.sec2{background:var(--sm-panel2);color:var(--sm-tx)}
+  html.sm-var .hitem .ops span{background:var(--sm-panel2)}
+  html.sm-var .hitem .ops span:hover{background:var(--sm-line);color:var(--sm-tx)}
+  html.sm-var .chk.bad{border-color:rgba(239,68,68,.55);background:rgba(239,68,68,.10)}
+  html.sm-var .chk.warn{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.09)}
+  html.sm-var table.sum td{border-bottom-color:var(--sm-line2)}
+
+  /* ---- üst araç çubuğu ve görünümler ---- */
+  html.sm-var #topbar{background:var(--sm-panel)}
+  html.sm-var .tb{background:var(--sm-panel2);color:var(--sm-tx)}
+  html.sm-var .tb:hover{border-color:var(--sm-acc);color:var(--sm-warn2)}
+  html.sm-var .tb.pri,html.sm-var .vt.on{background:var(--sm-acc);border-color:var(--sm-acc);color:#0b1326}
+  html.sm-var .tb.pri:hover{background:var(--sm-warn2);color:#0b1326}
+  html.sm-var #mtoggle{color:#0b1326}
+  html.sm-var .tb[disabled]{opacity:.45;cursor:default}
+  html.sm-var .vt{background:var(--sm-panel)}
+  html.sm-var #c3d{background:radial-gradient(1200px 600px at 55% 25%,#1c2a4a 0%,#111a33 55%,#0b1326 100%)}
+  html.sm-var #hud{color:var(--sm-mut);background:rgba(11,19,38,.82)}
+  html.sm-var #view2d{background:var(--sm-bg)}
+  html.sm-var #svg2d svg>rect.odaDxfYok:not([x]){fill:var(--sm-panel)}
+  html.sm-var #uyari{background:#2a1215;border-color:rgba(239,68,68,.6);color:#fecaca}
+  html.sm-var #uyari span{color:var(--sm-err2)}
+
+  /* ---- aracın açılır pencereleri (renkleri satır içinde verilir) ---- */
+  html.sm-var .dxfPop,html.sm-var .odaKenarPop,html.sm-var .odaTasiPop,html.sm-var #hucreMenu3d{
+    background:var(--sm-panel)!important;border-color:var(--sm-line)!important;color:var(--sm-tx)!important}
+  html.sm-var #dxfOK,html.sm-var #odaKenarOK,html.sm-var #odaTasiOK,html.sm-var #odaBolKalOK{background:var(--sm-acc)!important;color:#0b1326!important}
+
+  /* ---- Şebeke-M durumu saklar: aracın kendi "HTML Kaydet" ve "Sıfırla" düğmeleri telefonda ve AutoCAD'de gizli
+     (Yazdır ve DXF kalır) ---- */
+  html.sm-var.sm-telefon [onclick="saveHTML()"],html.sm-var.sm-autocad [onclick="saveHTML()"],
+  html.sm-var.sm-telefon [onclick="sifirlaTumu()"],html.sm-var.sm-autocad [onclick="sifirlaTumu()"]{display:none!important}
+
+  /* ---- telefon genişliği ---- */
+  @media (max-width:820px){
+    html.sm-var #side{top:var(--sm-ust)}
+    html.sm-var #barBtns{flex-wrap:wrap}
+    html.sm-var #barBtns .tb{min-width:0}
+  }
+}

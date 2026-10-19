@@ -15,7 +15,7 @@ namespace SebekeHakedis.Eklenti
     /// </summary>
     internal static class ArmaturBagi
     {
-        public const string Uygulama = PromagisYazici.ArmaturUygulamasi;
+        public const string Uygulama = NesneYazici.ArmaturUygulamasi;
 
         /// <summary>Direğin bağ verisi: simgenin tanıtıcısı ve yeri (konumlu: yer yazılı mı). Simgede ya da verisizde false.</summary>
         public static bool DirekVerisi(DBObject o, out string simge, out double dx, out double dy, out bool konumlu)

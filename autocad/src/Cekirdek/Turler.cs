@@ -46,7 +46,7 @@ namespace SebekeHakedis.Cekirdek
             new Tur("MUSTEREK", "Müşterek"),
         };
 
-        /// <summary>PROMAGIS durum kodları (Sayfa1 sırasıyla; sık kullanılanlar önde).</summary>
+        /// <summary>çizim durum kodları (Sayfa1 sırasıyla; sık kullanılanlar önde).</summary>
         public static readonly string[] Durumlar = { "M", "M+M", "KM", "DM", "DM+M", "MEVCUT", "ENH", "ME" };
 
         /// <summary>Çizimde yeni nesne için seçilebilen durumlar (ENH ve ME yalnız kalem düzenlemede).</summary>

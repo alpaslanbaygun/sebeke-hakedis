@@ -37,7 +37,7 @@ import java.util.function.Consumer;
 import org.json.JSONObject;
 
 /**
- * VOLT-EDAŞ Saha: WebView kabuğu. Uygulama dosyaları https://appassets.androidplatform.net/ altında (güvenli köken)
+ * Şebeke-M (eski adı VOLT-EDAŞ Saha): WebView kabuğu. Uygulama dosyaları https://appassets.androidplatform.net/ altında (güvenli köken)
  * APK içinden sunulur → IndexedDB, kamera, konum ve fetch tam çalışır; internet gerekmez.
  */
 public final class MainActivity extends Activity {
@@ -138,13 +138,24 @@ public final class MainActivity extends Activity {
         if (l.endsWith(".svg")) return "image/svg+xml";
         return "application/octet-stream";
     }
-    // Altlık karo vekili: CORS yok, OSM kimlik başlığı eklenir
+    // Altlık karo vekili: CORS yok, uygulama kimliği başlığı eklenir (OSM karo kullanım kuralı: uygulamaya özgü,
+    // sürümlü User-Agent; yalnız ASCII). Sürüm her yayında değişir, ad sabit kalır.
+    private String tileUa;
+    private String tileUserAgent() {
+        if (tileUa == null) {
+            String v = "0";
+            try { v = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { }
+            tileUa = "SebekeM/" + v + " (Android; " + getPackageName() + "; saha olcum uygulamasi)";
+        }
+        return tileUa;
+    }
+
     private WebResourceResponse tile(String url) {
         if (url == null || !(url.startsWith("https://"))) return null;
         try {
             HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
             c.setConnectTimeout(8000); c.setReadTimeout(12000);
-            c.setRequestProperty("User-Agent", "VoltEdasSaha/2.0 (Android; saha GNSS uygulaması)");
+            c.setRequestProperty("User-Agent", tileUserAgent());
             int code = c.getResponseCode();
             if (code != 200) return new WebResourceResponse("text/plain", "utf-8", code == 0 ? 502 : code, "Tile", null, new ByteArrayInputStream(new byte[0]));
             String ct = c.getContentType() == null ? "image/png" : c.getContentType();
@@ -212,7 +223,7 @@ public final class MainActivity extends Activity {
     @Override public void onBackPressed() {
         web.evaluateJavascript("(window.__voltBack?window.__voltBack():false)", (v) -> {
             if (!"true".equals(v)) {
-                new AlertDialog.Builder(this).setTitle("VOLT-EDAŞ Saha").setMessage(GnssHub.get().linkActive() ? "GNSS bağlantısı arka planda açık kalsın mı?" : "Uygulamadan çıkılsın mı?")
+                new AlertDialog.Builder(this).setTitle("Şebeke-M").setMessage(GnssHub.get().linkActive() ? "GNSS bağlantısı arka planda açık kalsın mı?" : "Uygulamadan çıkılsın mı?")
                     .setPositiveButton(GnssHub.get().linkActive() ? "Arka plana al" : "Çık", (d, i) -> moveTaskToBack(true))
                     .setNegativeButton("Vazgeç", null).show();
             }

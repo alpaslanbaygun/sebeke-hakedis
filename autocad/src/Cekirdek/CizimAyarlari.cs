@@ -56,12 +56,14 @@ namespace SebekeHakedis.Cekirdek
         public readonly Dictionary<string, double> EkPay = new Dictionary<string, double>(StringComparer.Ordinal);
         public double KanalAlt = 40, KanalUst = 40, KanalDerinlik = 100;
         public string KanalZemin = "TOPRAK";
-        /// <summary>Tarife karakteristiği (2 hane, ör. 01); boş: katalogdaki standart karakteristik (PROMAGIS KRTNALINACAK).</summary>
+        /// <summary>Tarife karakteristiği (2 hane, ör. 01); boş: katalogdaki standart karakteristik (AutoCAD KRTNALINACAK).</summary>
         public string Karakteristik = "";
-        /// <summary>Unsur sütunu: false şehir (yatırım), true köy / bakım (PROMAGIS SMIKMU 1/2).</summary>
+        /// <summary>Unsur sütunu: false şehir (yatırım), true köy / bakım (AutoCAD SMIKMU 1/2).</summary>
         public bool Koy;
-        /// <summary>Sembol takımı: true telefonla aynı SH_ simgeler (varsayılan), false çizimdeki PROMAGIS blokları.</summary>
-        public bool TelefonSembolleri = true;
+        /// <summary>Teknik hesaplar için proje bilgisi: proje adı ve kodu (boş: çizim adı), hesabı yapan, unvanı, firma.</summary>
+        public string ProjeAdi = "", ProjeKodu = "", Hazirlayan = "", Unvan = "", Firma = "";
+        /// <summary>Buz yükü bölgesi "1".."5" (ENH mekanik hesapları); boş: bilinmiyor, hesap sayfası sorar.</summary>
+        public string BuzBolgesi = "";
 
         /// <summary>Son seçimler (tür, tip, kesit, durum...): bir sonraki komutta hazır gelir.</summary>
         public readonly Dictionary<string, string> Son = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -106,7 +108,12 @@ namespace SebekeHakedis.Cekirdek
                 new KeyValuePair<string, string>("kanalZemin", KanalZemin ?? ""),
                 new KeyValuePair<string, string>("karakteristik", Karakteristik ?? ""),
                 new KeyValuePair<string, string>("koy", Koy ? "1" : "0"),
-                new KeyValuePair<string, string>("telefonSembolleri", TelefonSembolleri ? "1" : "0"),
+                new KeyValuePair<string, string>("projeAdi", ProjeAdi ?? ""),
+                new KeyValuePair<string, string>("projeKodu", ProjeKodu ?? ""),
+                new KeyValuePair<string, string>("hazirlayan", Hazirlayan ?? ""),
+                new KeyValuePair<string, string>("unvan", Unvan ?? ""),
+                new KeyValuePair<string, string>("firma", Firma ?? ""),
+                new KeyValuePair<string, string>("buzBolgesi", BuzBolgesi ?? ""),
             };
             foreach (var kv in EkPay) l.Add(new KeyValuePair<string, string>("ekPay." + kv.Key, S(kv.Value)));
             foreach (var kv in Son) l.Add(new KeyValuePair<string, string>("son." + kv.Key, kv.Value ?? ""));
@@ -140,10 +147,15 @@ namespace SebekeHakedis.Cekirdek
                     case "kanalZemin": a.KanalZemin = string.IsNullOrEmpty(v) ? "TOPRAK" : v; break;
                     case "karakteristik": a.Karakteristik = v.Trim(); break;
                     case "koy": a.Koy = v == "1"; break;
-                    case "telefonSembolleri": a.TelefonSembolleri = v != "0"; break;
+                    case "projeAdi": a.ProjeAdi = v.Trim(); break;
+                    case "projeKodu": a.ProjeKodu = v.Trim(); break;
+                    case "hazirlayan": a.Hazirlayan = v.Trim(); break;
+                    case "unvan": a.Unvan = v.Trim(); break;
+                    case "firma": a.Firma = v.Trim(); break;
+                    case "buzBolgesi": a.BuzBolgesi = v.Trim(); break;
                 }
             }
-            // Sürüm 1 ayarlarında varsayılan 0,5 m idi (PROMAGIS görünümü); telefon stiliyle 1,8 m
+            // Sürüm 1 ayarlarında varsayılan 0,5 m idi (AutoCAD görünümü); telefon stiliyle 1,8 m
             if (a.EtiketYuksekligi <= 0 || (surum < 2 && Math.Abs(a.EtiketYuksekligi - 0.5) < 1e-9)) a.EtiketYuksekligi = 1.8;
             if (a.YakalamaMesafesi < 0) a.YakalamaMesafesi = 1.0;
             return a;

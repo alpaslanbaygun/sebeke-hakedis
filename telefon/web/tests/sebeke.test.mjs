@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { setup, newProject, buildPoleLine, rtkObs, route } from './helpers.mjs';
-import { sebekeYaz, sebekeModel, sebekeIceAl, voltProjeYaz, voltProjeOku, promagisTip, voltTip, promagisKesit, hatTipiEsle, direkEsle, SH } from '../src/interop/sebeke.js';
+import { sebekeYaz, sebekeModel, sebekeIceAl, voltProjeYaz, voltProjeOku, cizimTip, voltTip, cizimKesit, hatTipiEsle, direkEsle, SH } from '../src/interop/sebeke.js';
 import KATSAYILAR from '../src/ortak/katsayilar.js';
 import { exportFormat } from '../src/export/exporter.js';
 
@@ -16,20 +16,20 @@ const OG_ROUTE = route({ E: 519300, N: 4282100, H: 1050 }, [[60, 80, 2], [60, 80
 const OG_TYPES = ['GD-10 (3 AWG)', 'GT-10 (3 AWG)', 'GT-10 (3 AWG)', 'GN-10 (3 AWG)'];
 
 test('A1 · ad ve tip yazımları iki yönde çevrilir', () => {
-  assert.equal(promagisTip('beton', '9.3/8'), '9,3/8');
+  assert.equal(cizimTip('beton', '9.3/8'), '9,3/8');
   assert.equal(voltTip('beton', '9,3/8'), '9.3/8');
-  assert.equal(promagisTip('bahh', 'GD-10 (3 AWG)'), 'G-D-10 (sw)');
+  assert.equal(cizimTip('bahh', 'GD-10 (3 AWG)'), 'G-D-10 (sw)');
   assert.equal(voltTip('bahh', 'G-D-10 (sw)'), 'GD-10 (3 AWG)');
-  assert.equal(promagisTip('bahh', 'GT-12 (1/0)'), 'G-T-12 (1/0)');
-  assert.equal(promagisTip('sehir', 'G-K2'), 'G-K2');
-  assert.equal(promagisTip('trafo', 'G-T25'), 'G-T-25');
+  assert.equal(cizimTip('bahh', 'GT-12 (1/0)'), 'G-T-12 (1/0)');
+  assert.equal(cizimTip('sehir', 'G-K2'), 'G-K2');
+  assert.equal(cizimTip('trafo', 'G-T25'), 'G-T-25');
   assert.equal(voltTip('trafo', 'G-T-25'), 'G-T25');
-  assert.deepEqual(promagisKesit('3xSwallow', 'OG', 'havai'), { tanim: '3xSW', aciklama: '' });
-  assert.deepEqual(promagisKesit('3xRaven', 'OG', 'havai'), { tanim: '3x1\\0', aciklama: '' });
-  assert.deepEqual(promagisKesit('3P+R', 'AG', 'havai'), { tanim: '3P+R', aciklama: '' });
-  assert.deepEqual(promagisKesit('3x70/16+95 AER', 'AG', 'havai'), { tanim: '3X70/16+95 ALPEK', aciklama: '' });
-  assert.deepEqual(promagisKesit('3x(1x150/25) NA2XSY', 'OG', 'yeralti'), { tanim: '1x150/25 Xlpe Alm.', aciklama: '3(1x150/25) Xlpe Alm.' });
-  assert.deepEqual(promagisKesit('NAYY 3x95+50', 'AG', 'yeralti'), { tanim: '3x95+50 Nyy Alm.', aciklama: '' });
+  assert.deepEqual(cizimKesit('3xSwallow', 'OG', 'havai'), { tanim: '3xSW', aciklama: '' });
+  assert.deepEqual(cizimKesit('3xRaven', 'OG', 'havai'), { tanim: '3x1\\0', aciklama: '' });
+  assert.deepEqual(cizimKesit('3P+R', 'AG', 'havai'), { tanim: '3P+R', aciklama: '' });
+  assert.deepEqual(cizimKesit('3x70/16+95 AER', 'AG', 'havai'), { tanim: '3X70/16+95 ALPEK', aciklama: '' });
+  assert.deepEqual(cizimKesit('3x(1x150/25) NA2XSY', 'OG', 'yeralti'), { tanim: '1x150/25 Xlpe Alm.', aciklama: '3(1x150/25) Xlpe Alm.' });
+  assert.deepEqual(cizimKesit('NAYY 3x95+50', 'AG', 'yeralti'), { tanim: '3x95+50 Nyy Alm.', aciklama: '' });
 });
 
 /** Deneme projesi: 4 OG direk + OG hat, mevcut beton direk, direk tipi trafo, SDK, 3 AG direk + AER hat, yeraltı kablo (asfalt, borulu). */
@@ -132,7 +132,7 @@ test('A3 · "ileride" objeler yazılmaz, demontaj / sök-tak durumları çevrili
   assert.equal(k.durum, 'DM', 'demontaj objesinde malzeme de DM');
 });
 
-test('A3b · PROMAGIS durum kodu korunur: KM / ME / M+M seçimi ve demontaj türü (KESİK) dışa aktarımda döner, durum değişince düşer', async () => {
+test('A3b · çizim durum kodu korunur: KM / ME / M+M seçimi ve demontaj türü (KESİK) dışa aktarımda döner, durum değişince düşer', async () => {
   const { ps } = await setup(); await newProject(ps, { autoRecipe: false });
   const t = ps.cat.poleTypeByName('sehir', 'G-K2');
   const km = await ps.addEquipment('pole', { group: 'sehir', typeId: t.id, state: 'YENI', sebeke: { durum: 'KM' } }, { obs: rtkObs(519500, 4282400, 1055) });
@@ -265,7 +265,7 @@ test('A4 · AutoCAD örnek dosyası telefona alınır: direk tipleri katalogdan 
   assert.equal(ps.data.equipment.filter((e) => e.status !== 'deleted').length, 3);
 });
 
-test('A4b · PROMAGIS\'in telefonda düzenlenmeyen verileri gidip gelir: bölge grup kodu, pano çıkış şeması (ekVeri)', async () => {
+test('A4b · AutoCAD\'in telefonda düzenlenmeyen verileri gidip gelir: bölge grup kodu, pano çıkış şeması (ekVeri)', async () => {
   const { ps } = await setup();
   const { proje } = voltProjeOku(fs.readFileSync(ORNEK, 'utf8'));
   proje.bolgeler[0].grup = '24.38.01 (NA)';
@@ -301,7 +301,7 @@ test('A4c · AutoCAD kalemlerinin INDEX sırası, hakedişi ve KONTROL işareti 
       o.kalemler.forEach((k, i) => { if (k.miktar === g.kalemler[i].miktar) assert.equal(metin(g.kalemler[i].kontrol), metin(k.kontrol), tur + ' ' + o.id + ': KONTROL korunur'); });
     }
   }
-  assert.equal(geri.kanallar[0].durum, proje.kanallar[0].durum, 'kanalın PROMAGIS durumu (M+M) korunur');
+  assert.equal(geri.kanallar[0].durum, proje.kanallar[0].durum, 'kanalın çizim durumu (M+M) korunur');
   assert.deepEqual(geri.proje.onaylar, [{ no: 2, kontrol: true, hakedis: false, gis: false }], 'onaylar dosyaya geri yazılır');
   // Telefonda onaylanan dönem AutoCAD'e kontrol + hakediş onayı olarak gider
   await ps.createWorkProgram();
@@ -417,4 +417,65 @@ test('A8 · çok iletkenli hat: müşterekte OG + AG iki kalem ve birleşik ana 
   const h3 = sebekeModel(ps3).hatlar.find((h) => h.tur === 'MUSTEREK');
   assert.equal(h3.anaKesit, '3xSW / 4P+R');
   assert.deepEqual(h3.kalemler.filter((k) => k.kaynak === 'HAT').map((k) => k.cins + ' ' + k.tanim), ['OG_İLETKEN 3xSW', 'AG_İLETKEN 4P+R']);
+});
+
+test('A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef kimlikleri, trafo çıkışı, daha yeni kayıt kazanır', async () => {
+  const { hesapKaydet, hesapKayitlari, kayitBul, guncellik } = await import('../src/hesap/kayitlar.js');
+  const { baglamKur } = await import('../src/hesap/baglam.js');
+  const { ps, tr, agPts } = await ornekProje();
+  const agHat = ps.data.lines.find((l) => l.install === 'havai' && l.lineType === 'AG');
+  // Bağlam: direk hedefi (kollar, iletken) ve hat hedefi (açıklıklar)
+  const bd = baglamKur(ps, { tur: 'direk', id: agPts[1].id });
+  assert.equal(bd.hedef.tur, 'direk'); assert.equal(bd.hedef.no, agPts[1].no);
+  assert.equal(bd.direk.kollar.length, 2, 'orta direğin iki kolu');
+  assert.ok(bd.direk.kollar.every((k) => k.aciklik > 39 && k.aciklik < 41), 'kol açıklıkları 40 m');
+  assert.equal(bd.direk.kollar[0].iletkenler[0].ad, '3x70/16+95 AER');
+  const bh = baglamKur(ps, { tur: 'hat', id: agHat.id });
+  assert.equal(bh.hat.acikliklar.length, 2); assert.equal(Math.round(bh.hat.toplamUzunluk), 80);
+  // Kayıt: trafo hedefi + çıkış (hatId); aynı hedefte yeniden kaydetmek üzerine yazar
+  const hedef = { tur: 'trafo', id: tr.id, no: tr.no, hatId: agHat.id };
+  const id1 = await hesapKaydet(ps, { modul: 'ag-gd', modulAdi: 'AG Gerilim Düşümü', hedef, ozet: '%1,5', durum: 'uygun', ayrinti: { girdiler: [{ ad: 'Güç', deger: 160, birim: 'kVA' }], degerler: [], uyarilar: [] }, modulDurumu: { a: 1 }, kullanilan: { 'trafo.gucKVA': 160, 'hat.acikliklar[0].uzunluk': bh.hat.acikliklar[0].uzunluk } }, 'Ayşe');
+  const id2 = await hesapKaydet(ps, { modul: 'ag-gd', hedef, ozet: '%1,6', durum: 'uygun', kayitId: '', kullanilan: { 'trafo.gucKVA': 160 } }, 'Ayşe');
+  assert.equal(id1, id2, 'aynı trafo ve çıkış: tek kayıt');
+  await hesapKaydet(ps, { modul: 'ag-gd', hedef: { tur: 'trafo', id: tr.id, no: tr.no }, ozet: 'çıkışsız', durum: 'bilgi', kullanilan: {} }, 'Ayşe');
+  await hesapKaydet(ps, { modul: 'amax', hedef: { tur: 'direk', id: agPts[1].id, no: agPts[1].no }, ozet: 'amax 120 m', durum: 'bilgi', kullanilan: { 'direk.kollar[0].aciklik': 40 } }, 'Ayşe');
+  assert.equal(hesapKayitlari(ps).length, 3, 'trafo (çıkışlı), trafo (çıkışsız), direk');
+  assert.ok(kayitBul(ps, 'ag-gd', hedef) && kayitBul(ps, 'ag-gd', hedef).ozet === '%1,6');
+  assert.ok(kayitBul(ps, 'ag-gd', { tur: 'trafo', id: tr.id, no: tr.no }).ozet === 'çıkışsız', 'çıkışsız kayıt ayrı');
+  const g = guncellik(ps, kayitBul(ps, 'ag-gd', hedef), 'Ayşe');
+  assert.equal(g.farklar.length, 0, 'kayıt güncel');
+  // Dosyaya: hedef kimlikleri dosyadaki kimliklere, çıkış ilk parçaya; telefonId taşınır
+  const sp = sebekeModel(ps);
+  assert.equal(sp.hesaplar.length, 3);
+  const hk = sp.hesaplar.find((h) => h.hedef.hatId);
+  const trEl = sp.elemanlar.find((e) => e.telefonId === tr.id);
+  assert.equal(hk.hedef.id, trEl.id, 'trafo hedefi dosyadaki eleman kimliğiyle');
+  assert.ok(sp.hatlar.some((h) => h.id === hk.hedef.hatId && h.telefonId === agHat.id), 'çıkış hattı dosyadaki parça kimliğiyle');
+  assert.equal(hk.telefonId, id1); assert.equal(hk.kaynak, 'telefon'); assert.equal(hk.yapan, 'Ayşe');
+  const dk = sp.hesaplar.find((h) => h.modul === 'amax');
+  assert.equal(dk.hedef.id, sp.elemanlar.find((e) => e.telefonId === agPts[1].id).id);
+  const metin = SH.projeYaz(sp);
+  assert.equal(SH.projeOku(metin).hesaplar.length, 3, 'proje dosyası hesapları okur');
+  // Başka telefona: kayıtlar hedefleriyle gelir; aynı dosya ikinci kez alınınca çoğalmaz; daha yeni tarih günceller
+  const { ps: ps2 } = await setup();
+  const oz = await sebekeIceAl(ps2, SH.projeOku(metin));
+  assert.deepEqual(oz.hesap, { yeni: 3, guncel: 0 });
+  const k2 = hesapKayitlari(ps2).find((k) => k.hedef.hatId);
+  const tr2 = ps2.data.equipment.find((e) => e.kind === 'transformer');
+  assert.equal(k2.hedef.id, tr2.id, 'trafo hedefi ikinci telefondaki kayda bağlandı');
+  assert.equal(k2.hedef.hatId, ps2.data.lines.find((l) => l.install === 'havai' && l.lineType === 'AG').id, 'çıkış hattı bağlandı');
+  assert.equal(k2.sebekeId, id1, 'dosyadaki kimlik saklanır');
+  const oz2 = await sebekeIceAl(ps2, SH.projeOku(metin), { projectId: ps2.p.id });
+  assert.deepEqual(oz2.hesap, { yeni: 0, guncel: 0 }, 'ikinci alışta değişiklik yok');
+  const sp3 = SH.projeOku(metin);
+  const amax3 = sp3.hesaplar.find((h) => h.modul === 'amax');
+  amax3.tarih = '2099-01-01T00:00:00.000Z'; amax3.ozet = 'güncellenmiş';
+  const oz3 = await sebekeIceAl(ps2, sp3, { projectId: ps2.p.id });
+  assert.deepEqual(oz3.hesap, { yeni: 0, guncel: 1 });
+  assert.ok(hesapKayitlari(ps2).some((k) => k.modul === 'amax' && k.ozet === 'güncellenmiş'));
+  // Geri yazınca ikinci telefonun kayıtları ilk telefonun kimlikleriyle (sebekeId) döner
+  const geri = sebekeModel(ps2);
+  assert.equal(geri.hesaplar.length, 3, 'bütün kayıtlar geri yazılır: ' + JSON.stringify(geri.uyarilar || []));
+  assert.deepEqual(geri.hesaplar.map((h) => h.id).sort(), sp.hesaplar.map((h) => h.id).sort(), 'kimlikler korunur');
+  assert.equal(geri.hesaplar.find((h) => h.modul === 'amax').ozet, 'güncellenmiş', 'özet güncel');
 });

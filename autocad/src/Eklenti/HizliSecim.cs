@@ -85,7 +85,7 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>
-        /// Şeritteki tip listesi: seçili cinsin tipleri katalog (PROMAGIS) sırasıyla — ALPEK'ler alt alta, çıplak iletkenler
+        /// Şeritteki tip listesi: seçili cinsin tipleri katalog (AutoCAD) sırasıyla — ALPEK'ler alt alta, çıplak iletkenler
         /// alt alta. Cinsin tipi çoksa (ör. 500 ENH beton direk) seçili tip, son kullanılanlar ve gerçek çizimlerde
         /// kullanılanlar kalır; sıra yine katalog sırasıdır. Bütün tipler için "Ara".
         /// </summary>

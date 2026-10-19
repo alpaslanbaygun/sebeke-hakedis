@@ -18,7 +18,7 @@ function WebBar() {
     : st.state === 'readonly' ? ['SALT OKUNUR', '#f59e0b', 'Bu görünümde değişiklikler buluta yazılamıyor (yalnız görüntüleme yetkisi)']
     : ['KAYIT HATASI', '#ef4444', (st.error || 'Buluta yazılamadı') + ' · yeniden denenecek'];
   return html`<header class="webbar">
-    <button class="wb-brand" onClick=${() => app.nav.tab(p ? 'hub' : 'projects')} aria-label="Proje merkezi"><b>VOLT-EDAŞ SAHA</b><span>WEB</span></button>
+    <button class="wb-brand" onClick=${() => app.nav.tab(p ? 'hub' : 'projects')} aria-label="Proje merkezi"><img src="assets/sebeke-m-simge.png" alt="" /><b>ŞEBEKE-M</b><span>WEB</span></button>
     <button class="wb-proj" onClick=${() => app.nav.go('projects')} title="Projeler"><${Icon} n="folder" s=${16} c="#94a3b8" /><span>${p ? p.name : 'Proje açık değil'}</span>${p && p.code ? html`<small class="mono">${p.code}</small>` : null}</button>
     <span class="grow"></span>
     <span class="wb-cloud" style=${'--c:' + col} title=${tip} role="status"><i></i>${lab}</span>

@@ -99,6 +99,7 @@ namespace SebekeHakedis.PencereTest
                 HizliSecim.OgeSec(mus, musHat);
                 Kaydet(SeritCiz(mus, musHat), Path.Combine(klasor, "18-serit-musterek-hat.png"));
             }
+            Kaydet(AraclarCiz(), Path.Combine(klasor, "14-serit-araclar.png"));
             // Varsayılana dön (sonraki denemeler etkilenmesin)
             if (agHavai != null) HizliSecim.OgeSec(agHavai, agHavai.Ogeler[0]);
         }
@@ -124,37 +125,85 @@ namespace SebekeHakedis.PencereTest
             {
                 var paneller = new List<Func<double, double>>
                 {
+                    x0 => MarkaPaneli(dc, x0),
                     x0 => KategoriPaneli(dc, x0, k),
                     x0 => ElemanlarPaneli(dc, x0, k, etkin),
                     x0 => AyarlarPaneli(dc, x0, etkin),
                     x0 => MalzemePaneli(dc, x0),
                     x0 => BuyukPanel(dc, x0, "Düzenle", new (string, string, Color?)[] { ("Metraj", "metraj", null), ("Telefon\nGörünümü", "gorunum", null), ("Çizim\nAyarları", "ayarlar", null) }),
-                    x0 => BuyukPanel(dc, x0, "Hakediş", new (string, string, Color?)[] { ("Aktif\nHakediş", "aktif_hakedis", Color.FromRgb(0x23, 0xA4, 0x55)), ("Hakediş\nOnayı", "onay", null) }),
-                    x0 => BuyukPanel(dc, x0, "Telefon", new (string, string, Color?)[] { ("Telefondan\nAl", "telefon_al", Color.FromRgb(0x3B, 0xA4, 0xF6)), ("Telefona\nGönder", "telefon_gonder", Color.FromRgb(0x3B, 0xA4, 0xF6)) }),
-                    x0 => BuyukPanel(dc, x0, "Rapor", new (string, string, Color?)[] { ("Durum\nTespit", "rapor", null), ("Dosyadan\nRapor", "dosya_rapor", null), ("Proje\nÖzeti", "ozet", null), ("Eksik\nMalzeme", "eksik", null) }),
-                    x0 => BuyukPanel(dc, x0, "Yardım", new (string, string, Color?)[] { ("Hakkında", "bilgi", null) }),
                 };
-                double x = 0;
-                foreach (var p in paneller)
-                {
-                    x += p(x);
-                    dc.DrawRectangle(new SolidColorBrush(Ayrac), null, new Rect(x, SekmeYuk, 1, Yuk));
-                    x += 1;
-                }
-                // Sekme şeridi (yalnız görüntü için; AutoCAD'in kendi sekmeleri)
-                dc.DrawRectangle(new SolidColorBrush(Bant), null, new Rect(0, 0, x, SekmeYuk));
-                var sekmeler = new[] { "Giriş", "Ekle", "Açıklama", "Parametrik", "Görünüş", "Yönet", "Çıktı", "ŞEBEKE HAKEDİŞ" };
-                double sx = 8;
-                foreach (var s in sekmeler)
-                {
-                    bool bu = s == "ŞEBEKE HAKEDİŞ";
-                    var t = Metin(s, 12, bu ? Yazi : Soluk, bu);
-                    if (bu) dc.DrawRectangle(new SolidColorBrush(Arka), null, new Rect(sx - 8, 3, t.Width + 16, SekmeYuk - 3));
-                    dc.DrawText(t, new Point(sx, (SekmeYuk - t.Height) / 2 + 1));
-                    sx += t.Width + 20;
-                }
+                PanelleriCiz(dc, paneller, "ŞEBEKE-M");
             }
             return dv;
+        }
+
+        /// <summary>ŞEBEKE-M ARAÇLAR sekmesi: Şebeke-M, Hakediş, Raporlar, Telefon (ve hesap araçları).</summary>
+        public static DrawingVisual AraclarCiz()
+        {
+            var dv = new DrawingVisual();
+            using (var dc = dv.RenderOpen())
+            {
+                var paneller = new List<Func<double, double>>
+                {
+                    x0 => MarkaPaneli(dc, x0),
+                    x0 => BuyukPanel(dc, x0, "Hakediş", new (string, string, Color?)[] { ("Aktif\nHakediş", "aktif_hakedis", Color.FromRgb(0x23, 0xA4, 0x55)), ("Hakediş\nOnayı", "onay", null) }),
+                    x0 => BuyukPanel(dc, x0, "Raporlar", new (string, string, Color?)[] { ("Durum\nTespit", "rapor", null), ("Dosyadan\nRapor", "dosya_rapor", null), ("Proje\nÖzeti", "ozet", null), ("Eksik\nMalzeme", "eksik", null) }),
+                    x0 => BuyukPanel(dc, x0, "Telefon", new (string, string, Color?)[] { ("Telefondan\nAl", "telefon_al", Color.FromRgb(0x3B, 0xA4, 0xF6)), ("Telefona\nGönder", "telefon_gonder", Color.FromRgb(0x3B, 0xA4, 0xF6)) }),
+                    // Teknik hesaplar (eklentide Serit.HesapPanelleri): merkez, kayıtlar, iki açılır liste; yerleşim araçları
+                    x0 => BuyukPanel(dc, x0, "Teknik Hesaplamalar", new (string, string, Color?)[] { ("Hesap\nMerkezi", "hesap_merkezi", Color.FromRgb(0xF5, 0x9E, 0x0B)), ("Kayıtlı\nHesaplar", "hesap_kayit", null), ("Hat ve\nDirek ▾", "hesap_direk", null), ("Elektrik ▾", "hesap_elektrik", null) }),
+                    x0 => BuyukPanel(dc, x0, "Proje ve Yerleşim", new (string, string, Color?)[] { ("Beton\nKöşk", "kosk", null), ("Kanal\nPlanı", "kanal", null), ("AG Tek\nHat", "tekhat", null) }),
+                };
+                foreach (var ek in AracPanelleri) { var e = ek; paneller.Add(x0 => e(dc, x0)); }
+                PanelleriCiz(dc, paneller, "ŞEBEKE-M ARAÇLAR");
+            }
+            return dv;
+        }
+
+        /// <summary>Araçlar sekmesine eklenecek paneller (hesap araçları; Program'da doldurulur).</summary>
+        public static readonly List<Func<DrawingContext, double, double>> AracPanelleri = new List<Func<DrawingContext, double, double>>();
+
+        private static void PanelleriCiz(DrawingContext dc, List<Func<double, double>> paneller, string etkinSekme)
+        {
+            double x = 0;
+            foreach (var p in paneller)
+            {
+                x += p(x);
+                dc.DrawRectangle(new SolidColorBrush(Ayrac), null, new Rect(x, SekmeYuk, 1, Yuk));
+                x += 1;
+            }
+            // Sekme şeridi (yalnız görüntü için; AutoCAD'in kendi sekmeleri)
+            dc.DrawRectangle(new SolidColorBrush(Bant), null, new Rect(0, 0, Math.Max(x, 1000), SekmeYuk));
+            var sekmeler = new[] { "Giriş", "Ekle", "Açıklama", "Parametrik", "Görünüş", "Yönet", "Çıktı", "ŞEBEKE-M", "ŞEBEKE-M ARAÇLAR" };
+            double sx = 8;
+            foreach (var s in sekmeler)
+            {
+                bool bu = s == etkinSekme;
+                var t = Metin(s, 12, bu ? Yazi : Soluk, bu);
+                if (bu) dc.DrawRectangle(new SolidColorBrush(Arka), null, new Rect(sx - 8, 3, t.Width + 16, SekmeYuk - 3));
+                dc.DrawText(t, new Point(sx, (SekmeYuk - t.Height) / 2 + 1));
+                sx += t.Width + 20;
+            }
+        }
+
+        /// <summary>Şebeke-M paneli: logo düğmesi (Hakkında).</summary>
+        private static double MarkaPaneli(DrawingContext dc, double x)
+        {
+            double w = Math.Max(Math.Max(54, MetinGenisligi("Hakkında", 11.5) + 14) + 14, Metin(Marka.Ad, 11.5, Yazi).Width + 20);
+            PanelZemini(dc, x, w, Marka.Ad);
+            BuyukDugme(dc, x + (w - Math.Max(54, MetinGenisligi("Hakkında", 11.5) + 14)) / 2, "Hakkında", Marka.SeritSimgesi(32), false);
+            return w;
+        }
+
+        /// <summary>Büyük düğmeli panel (hesap araçları gibi Program'dan eklenen paneller için).</summary>
+        public static double DugmePaneli(DrawingContext dc, double x, string baslik, (string yazi, ImageSource simge)[] dugmeler)
+        {
+            double w = 8;
+            foreach (var d in dugmeler) w += Math.Max(54, MetinGenisligi(d.yazi, 11.5) + 14) + 2;
+            w = Math.Max(w + 6, Metin(baslik, 11.5, Yazi).Width + 20);
+            PanelZemini(dc, x, w, baslik);
+            double bx = x + 6;
+            foreach (var d in dugmeler) bx += BuyukDugme(dc, bx, d.yazi, d.simge, false) + 2;
+            return w;
         }
 
         /// <summary>Panel zemini ve başlık bandı.</summary>
@@ -300,7 +349,8 @@ namespace SebekeHakedis.PencereTest
             bool eleman = tipli && oge.ElemanMi, hat = tipli && oge.HatMi;
             bool dm = eleman && Turler.DemontajMi(HizliSecim.Durum);
             const double etiket = 52, kutu1 = 190, kutu2 = 116, etiket3 = 66, kutu3 = 170;
-            double w = 8 + etiket + kutu1 + 14 + 1 + 10 + etiket + kutu2 + 14 + 1 + 10 + etiket3 + kutu3 + 12 + 66 + 6;
+            // Üçüncü sütun (adet, 2. iletken) yalnız hatlarda; özet yazısı şeritte yok (Ayrıntılı… ipucunda)
+            double w = 8 + etiket + kutu1 + 14 + 1 + 10 + etiket + kutu2 + 14 + (hat ? 1 + 10 + etiket3 + kutu3 + 12 : 0) + 66 + 6;
             PanelZemini(dc, x, w, "Ayarlar");
             double lx = x + 8, kx = lx + etiket, y0 = SekmeYuk + 7;
             dc.DrawText(Metin("Cins", 11.5, Yazi), new Point(lx, y0 + 3));
@@ -329,23 +379,19 @@ namespace SebekeHakedis.PencereTest
             }
 
             double sx3 = kx2 + kutu2 + 14;
-            dc.DrawRectangle(new SolidColorBrush(Ayrac), null, new Rect(sx3, SekmeYuk + 8, 1, Yuk - 36));
-            double lx3 = sx3 + 10, kx3 = lx3 + etiket3;
+            double ayx = sx3;
             if (hat)
             {
+                dc.DrawRectangle(new SolidColorBrush(Ayrac), null, new Rect(sx3, SekmeYuk + 8, 1, Yuk - 36));
+                double lx3 = sx3 + 10, kx3 = lx3 + etiket3;
                 dc.DrawText(Metin("Adet", 11.5, Yazi), new Point(lx3, y0 + 3));
                 KutuCiz(dc, kx3, y0, 64, HizliSecim.Adet(oge) + " ×");
                 var ek = HizliSecim.EkIletken(oge, k);
                 dc.DrawText(Metin("2. iletken", 11.5, Yazi), new Point(lx3, y0 + Satir + 3));
                 KutuCiz(dc, kx3, y0 + Satir, kutu3, ek != null ? ek.Tanim.Trim() : "Yok");
+                ayx = kx3 + kutu3 + 12;
             }
-            var ozet = HizliSecim.Ozet();
-            ImageSource ozetSimge = null;
-            if (eleman && secili != null) ozetSimge = DurumSimgesi(oge.Tur, secili.Cins, HizliSecim.Durum, HizliSecim.DmDurum);
-            if (ozetSimge == null && oge != null) ozetSimge = SeritSimgeleri.OgeSimgesi(oge, 16);
-            if (ozetSimge != null) dc.DrawImage(ozetSimge, new Rect(lx3, y0 + 2 * Satir + 3, 16, 16));
-            dc.DrawText(Metin(Kisalt(ozet, etiket3 + kutu3 - 22, 11.5), 11.5, Yazi, true), new Point(lx3 + 22, y0 + 2 * Satir + 3));
-            BuyukDugme(dc, kx3 + kutu3 + 10, "Ayrıntılı…", SeritSimgeleri.KomutSimgesi("bilgi", 32), false);
+            BuyukDugme(dc, ayx, "Ayrıntılı…", SeritSimgeleri.KomutSimgesi("bilgi", 32), false);
             return w;
         }
 

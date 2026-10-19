@@ -1,0 +1,48 @@
+{
+  "modul": "kanal",
+  "aciklama": "Beklenen değerler hesabın ÖZGÜN (değiştirilmemiş) dosyasından: aynı kanal tipi (kaplama, metraj, şev, kablolar; kablo çapı aracın capBul kataloğundan) aracın veri modeline yazılıp goc() + guncelle() çalıştırıldı; t.genislik, derinlik(t), tipGerekliGenislik(t), stdGenislik(), çizim etiketindeki kazı yazısı (tipPrimleri) ve durum çubuğu (#stMetraj, #stKazi) okundu (is-E/altin.py). 1. durum: asfalt, 1 devre OG-Al 1x150/25 (Ø 4,05 cm) + 2 × NAYY 3x150+70 (Ø 4,71): gereken dip 71 → 80 cm, derinlik 80; kullanıcı 'şevli' seçince ağız 100, kesit 0,720 m³/m, 120,5 m → 86,76 m³ (çizim), durum çubuğu 77,12 m³ (dip × derinlik); proje 90 × 100 ≥ 80 × 80 → uygun. 2. durum: parke, 2 devre OG-Al 1x240/25 (Ø 4,5) + NAYY 3x95+50 (Ø 3,93): gereken 101 → 110 cm, derinlik 80, 0,880 m³/m, 64,25 m → 56,54 m³; proje 50 cm < 110 → uygun-degil. 3. durum: NYY 4x16 (Ø 2,04), kaplama yok: gereken 17 → 40 cm, 80 cm, 0,320 m³/m, 38,6 m → 12,35 m³. 4. durum: zemin eşlenmedi, NAYY 4x16 katalogda yok, OG-Al 1x95/16 (Ø 3,75), metraj yok → 40 × 80, 0,320 m³/m; durum bilgi.",
+  "durumlar": [
+    {
+      "ad": "telefon kanalı: asfalt, OG + 2 AG kablo, proje ölçüleri yeterli (kullanıcı şevli seçer)",
+      "baglam": { "surum": 1, "kaynak": "telefon", "proje": { "ad": "Deneme Projesi", "yapan": "Deneme Mühendis" },
+        "hedef": { "tur": "kanal", "id": "k3", "no": "K-3" },
+        "kanal": { "id": "k3", "no": "K-3", "uzunluk": 120.5, "zemin": "asfalt", "genislik": 90, "derinlik": 100,
+          "kablolar": [ { "ad": "3x(1x150/25) NA2XSY", "adet": 1, "devre": "OG" }, { "ad": "NAYY 3x150+70", "adet": 2, "devre": "AG" } ] } },
+      "adimlar": [ "stAyar('sevli', true);" ],
+      "beklenen": { "dolan": 9, "eksik": ["Kanal kesiti (şevli / düz)"], "durum": "uygun", "ozet": "^K-3: dip 80 / ağız 100 × derinlik 80 cm · 120,50 m · kazı 86,76 m³ · proje kanalı yeterli$",
+        "degerler": { "Kanal dip genişliği": 80, "Kanal ağız genişliği": 100, "Kanal derinliği": 80, "Gereken dip genişliği (şartname)": 71, "Standart dip genişliği (10 cm dilim)": 80,
+          "Kesit alanı (metre başına kazı)": 0.72, "Kazı hacmi (çizim)": 86.76, "Toplam metraj": 120.5, "Toplam kazı (araç durum çubuğu)": 77.12,
+          "Kaplama": "Asfalt 10 cm", "Kablolar": "1×3(1x150/25) OG-Al + 2×3x150+70 NAYY", "Metraj": 120.5, "Projedeki kanal genişliği": 90, "Projedeki kanal derinliği": 100,
+          "tablo.satirlar[0][0]": "K-3", "tablo.satirlar[0][3]": 80, "tablo.satirlar[0][4]": 100, "tablo.satirlar[0][5]": 80, "tablo.satirlar[0][6]": 71 } }
+    },
+    {
+      "ad": "AutoCAD kanalı: parke, 2 devre XLPE + NYY Alm., proje kanalı dar",
+      "baglam": { "surum": 1, "kaynak": "autocad", "proje": { "ad": "Deneme" },
+        "hedef": { "tur": "kanal", "id": "5E1", "no": "KN-5" },
+        "kanal": { "id": "5E1", "no": "KN-5", "uzunluk": 64.25, "zemin": "PARKE TUVENAN", "genislik": 50, "derinlik": 80,
+          "kablolar": [ { "ad": "1x240/25 Xlpe Alm.", "adet": 2, "devre": "OG" }, { "ad": "3x95+50 Nyy Alm.", "adet": 1, "devre": "AG" } ] } },
+      "beklenen": { "dolan": 9, "eksik": 1, "durum": "uygun-degil", "ozet": "^KN-5: dip 110 × derinlik 80 cm · 64,25 m · kazı 56,54 m³ · proje kanalı yetersiz$",
+        "degerler": { "Kanal dip genişliği": 110, "Kanal ağız genişliği": 110, "Kanal derinliği": 80, "Gereken dip genişliği (şartname)": 101, "Standart dip genişliği (10 cm dilim)": 110,
+          "Kesit alanı (metre başına kazı)": 0.88, "Kazı hacmi (çizim)": 56.54, "Toplam kazı (araç durum çubuğu)": 56.54, "Kaplama": "Parke 8 cm",
+          "Kablolar": "2×3(1x240/25) OG-Al + 1×3x95+50 NAYY", "uyarilar[0]": "Projedeki kanal yetersiz: genişlik 50 cm < 110 cm." } }
+    },
+    {
+      "ad": "yeraltı AG hattı (zemin yok, kanal ölçüsü yok)",
+      "baglam": { "surum": 1, "kaynak": "telefon", "proje": { "ad": "Deneme" },
+        "hedef": { "tur": "hat", "id": "h8", "no": "AG-8" },
+        "hat": { "id": "h8", "no": "AG-8", "tur": "AG_YERALTI", "havai": false, "gerilimKV": 0.4,
+          "iletkenler": [ { "ad": "NYY 4x16", "adet": 1, "devre": "AG" } ], "toplamUzunluk": 38.6 } },
+      "beklenen": { "dolan": ["hat.iletkenler[0].ad", "hat.iletkenler[0].adet", "hat.no", "hat.toplamUzunluk"], "eksik": ["Kanal kesiti (şevli / düz)", "Kaplama"], "durum": "bilgi",
+        "degerler": { "Kanal dip genişliği": 40, "Kanal derinliği": 80, "Gereken dip genişliği (şartname)": 17, "Kesit alanı (metre başına kazı)": 0.32, "Kazı hacmi (çizim)": 12.35,
+          "Toplam metraj": 38.6, "Kablolar": "1×4x16 NYY", "Kaplama": "kaplamasız" } }
+    },
+    {
+      "ad": "eksik bilgili kanal (bilinmeyen zemin, katalogda olmayan kablo, uzunluk yok)",
+      "baglam": { "surum": 1, "kaynak": "telefon", "proje": { "ad": "Deneme" },
+        "hedef": { "tur": "kanal", "id": "k9", "no": "K-9" },
+        "kanal": { "id": "k9", "no": "K-9", "zemin": "çim", "kablolar": [ { "ad": "NAYY 4x16", "adet": 1, "devre": "AG" }, { "ad": "3x(1x95/16) NA2XSY", "adet": 1, "devre": "OG" } ] } },
+      "beklenen": { "eksik": ["Kablo 1 (NAYY 4x16)", "Kanal kesiti (şevli / düz)", "Kaplama", "Metraj"], "durum": "bilgi",
+        "degerler": { "Kanal dip genişliği": 40, "Kanal derinliği": 80, "Gereken dip genişliği (şartname)": 40, "Kesit alanı (metre başına kazı)": 0.32, "Kazı hacmi (çizim)": 0, "Kablolar": "1×3(1x95/16) OG-Al" } }
+    }
+  ]
+}

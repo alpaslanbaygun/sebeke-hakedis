@@ -1,13 +1,14 @@
-<title>VOLT-EDAŞ Saha Web</title>
+<title>Şebeke-M Web</title>
 <link rel="stylesheet" href="app.css">
 <style>
 /* Tek görünüm (koyu saha teması): uygulamadaki ekranlarla aynı. Düzen: solda menü, üstte proje + bulut durumu, ortada harita / ekran. */
 :root{color-scheme:dark;--splash-bg:#0b1326;--splash-fg:#dae2fd;--splash-accent:#10b981;--splash-mut:#94a3b8}
 html,body{margin:0;height:100%;background:var(--splash-bg);color:var(--splash-fg);font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif}
 #splash{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding-inline:16px;text-align:center}
-#splash b{font:800 22px/1 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.06em;color:var(--splash-accent)}
+#splash .logo{width:min(240px,62vw);background:#fff;border-radius:20px;padding:14px 18px;box-shadow:0 10px 40px rgba(0,0,0,.45)}
+#splash .logo img{display:block;width:100%;height:auto}
 #splash span{font-size:13px;color:var(--splash-mut)}
 </style>
-<div id="splash"><b>VOLT-EDAŞ SAHA</b><span id="splash-msg">Başlatılıyor…</span></div>
+<div id="splash"><div class="logo"><img src="assets/sebeke-m-logo.png" alt="Şebeke-M"></div><span id="splash-msg">Başlatılıyor…</span></div>
 <script>window.__VOLT_WEB__ = true; window.__VOLT_VERSION__ = '__VERSION__';</script>
 <script src="app.js"></script>

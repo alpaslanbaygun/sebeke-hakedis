@@ -13,10 +13,13 @@ import { checkPole, checkTransformer, roleLabel } from '../../grid/checks.js';
 import { jobOf } from '../../grid/recipe.js';
 import { dms } from '../../geo/geom.js';
 import { eqSummary } from './map.js';
-import { PromagisDurum } from '../promagis.js';
+import { CizimDurum } from '../durum-kodu.js';
 
 const KIND_TITLE = { pole: 'Direk Kaydı', lighting: 'Aydınlatma Direği', transformer: 'Trafo Kaydı', sdk: 'SDK / Box Kaydı', subscriber: 'Abone Kaydı', manhole: 'Menhol Kaydı', kiosk: 'Köşk Kaydı', substation: 'Dağıtım Merkezi', panel: 'Pano Kaydı', luminaire: 'Armatür Kaydı', other: 'Obje Kaydı' };
 const SLOTS = { panel: ['Ön', 'İç', 'Etiket', 'Çevre'], luminaire: ['Genel', 'Etiket'], pole: ['Taban', 'Gövde', 'Tepe', 'Çevre'], transformer: ['Plaka', 'Genel', 'Pano', 'Topraklama'], sdk: ['Ön', 'İç', 'Sigorta', 'Çevre'] };
+
+// Teknik hesapların açılabildiği ekipman türleri → hesap hedefi
+const HESAP_TURU = { pole: 'direk', lighting: 'direk', transformer: 'trafo', kiosk: 'trafo', substation: 'trafo' };
 
 export function EquipmentScreen({ id }) {
   useBus(['project:computed']);
@@ -94,7 +97,7 @@ export function EquipmentScreen({ id }) {
   const free = ['panel', 'luminaire', 'other', 'manhole'].includes(d.kind);
   const freePoz = free ? (d.kind === 'luminaire' ? luminairePoz(cat) : d.kind === 'panel' ? (cat.t.panels || []).map((x) => ({ servis: x.servis, name: (x.kind === 'harici' ? 'Harici' : 'Dahili') + ' pano · ' + x.kva + ' kVA' })) : []) : [];
   return html`
-    <${Title} title=${KIND_TITLE[d.kind] || 'Ekipman'} sub=${d.no + ' · ' + new Date(e0.createdAt).toLocaleString('tr-TR')} />
+    <${Title} title=${KIND_TITLE[d.kind] || 'Ekipman'} sub=${d.no + ' · ' + new Date(e0.createdAt).toLocaleString('tr-TR')} right=${HESAP_TURU[d.kind] ? html`<button class="btn sm" title="Bu ${HESAP_TURU[d.kind] === 'direk' ? 'direk' : 'trafo'} için teknik hesaplar" onClick=${() => app.nav.go('hesapMerkezi', { hedef: { tur: HESAP_TURU[d.kind], id } })}><${Icon} n="calc" s=${16} />Hesaplar</button>` : null} />
     <div class="card">
       <div class="row"><${Icon} n="lock" s=${14} c="#94a3b8" /><span class="lbl grow">Konum · ${p.pointNo || '—'}</span><button class="btn sm" onClick=${() => app.nav.go('point', { id: e0.pointId })}>Nokta kaydı</button></div>
       <div class="grid3" style="margin:8px 0"><div><div class="lbl">Y (sağa)</div><div class="num">${fmt(p.E)}</div></div><div><div class="lbl">X (yukarı)</div><div class="num">${fmt(p.N)}</div></div><div><div class="lbl">Z (kot)</div><div class="num">${p.H != null ? fmt(p.H) : 'bilinmiyor'}</div></div></div>
@@ -111,7 +114,7 @@ export function EquipmentScreen({ id }) {
     <div class="card stack">
       <div class="grid2"><div class="fld"><label>No</label><input class="inp mono" value=${d.no} onChange=${(e) => set({ no: e.target.value })} /></div>
       <div class="fld"><label>Durum</label><${Sel} value=${d.state} options=${Object.entries(d.kind === 'transformer' ? TRAFO_STATUSES : STATUSES).map(([k, v]) => [k, v.label])} onChange=${(v) => set({ state: v })} /></div></div>
-      <${PromagisDurum} d=${d} set=${set} setA=${setA} trafo=${d.kind === 'transformer'} />
+      <${CizimDurum} d=${d} set=${set} setA=${setA} trafo=${d.kind === 'transformer'} />
       ${isPole ? html`<div class="fld"><label>Direk grubu</label><${Sel} value=${d.group} options=${cat.poleGroups().map((x) => [x.id, x.label])} onChange=${(v) => set({ group: v, typeId: (cat.poleTypes(v)[0] || {}).id })} /></div>
         <div class="fld"><label>Direk tipi</label><${Sel} mono value=${d.typeId} options=${cat.poleTypes(d.group).map((x) => [x.id, x.name + (x.kg ? ' · ' + x.kg + ' kg' : '') + (x.heightM ? ' · ' + x.heightM + ' m' : '')])} onChange=${(v) => set({ typeId: v })} /></div>
         <div class="fld"><label>Rol</label><div class="seg">${[['', 'Otomatik'], ['T', 'Taşıyıcı'], ['D', 'Durdurucu'], ['N', 'Nihayet'], ['Z', 'Köşe']].map(([k, l]) => html`<${Chip} on=${(d.roleManual || '') === k} onClick=${() => set({ roleManual: k || null })}>${l}</${Chip}>`)}</div></div>

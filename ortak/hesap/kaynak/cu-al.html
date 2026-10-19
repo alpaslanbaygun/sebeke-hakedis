@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bakır Kablo Kesitine Eşdeğer Alüminyum Kablo Kesiti</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: #111116;
+        color: #fff;
+        margin: 0;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    h3 { margin: 5px 0; color: #2980b9; text-align: center; font-size: 18px; }
+    .subtitle { color: #aaa; font-size: 12px; margin-top: 0; margin-bottom: 15px; text-align: center; line-height: 1.4; }
+    .container {
+        display: flex; flex-direction: column; gap: 14px;
+        background: #1e1e24; padding: 12px; border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        width: 100%; max-width: 560px;
+    }
+    .tabs { display: flex; gap: 6px; }
+    .tab-btn {
+        flex: 1; background: #15151a; color: #999; border: 1px solid #2a2a35;
+        border-radius: 8px; padding: 10px 6px; font-size: 12.5px; font-weight: bold;
+        cursor: pointer; text-align: center;
+    }
+    .tab-btn.active { background: #2980b9; color: #fff; border-color: #2980b9; }
+    .panel { display: none; flex-direction: column; gap: 12px; }
+    .panel.active { display: flex; }
+
+    .control-group { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 13px; color: #bdc3c7; font-weight: bold; }
+    input[type="text"], input[type="number"] {
+        background: #111116; border: 1px solid #333; color: #fff;
+        border-radius: 8px; padding: 11px 12px; font-size: 15px; width: 100%;
+    }
+    input[type="text"]:focus, input[type="number"]:focus { outline: none; border-color: #2980b9; }
+
+    .result-list {
+        max-height: 300px; overflow-y: auto;
+        background: #111116; border-radius: 8px; border: 1px solid #333;
+    }
+    .result-row {
+        padding: 9px 12px; border-bottom: 1px solid #232330;
+        cursor: pointer; font-size: 13px; display: flex; justify-content: space-between;
+    }
+    .result-row:last-child { border-bottom: none; }
+    .result-row:hover, .result-row.sel { background: #1a2733; }
+    .result-row .code { font-weight: bold; color: #f1c40f; }
+    .result-row .cu { color: #7fb3ff; font-size: 12px; }
+    .no-match { padding: 14px; text-align: center; color: #777; font-size: 13px; }
+
+    .metrics {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+        background: #111116; padding: 10px; border-radius: 8px; border: 1px solid #333;
+    }
+    .metric-box { display: flex; flex-direction: column; gap: 2px; }
+    .metric-label { font-size: 10px; color: #888; text-transform: uppercase; }
+    .metric-value { font-size: 14px; font-weight: bold; color: #2ecc71; word-break: break-word; }
+    .metric-value.al { color: #f1c40f; }
+
+    .info-panel {
+        background: #15151a; padding: 10px; border-radius: 8px;
+        border-left: 4px solid #2980b9; font-size: 12px; line-height: 1.5; color: #ccc;
+    }
+    .info-panel b { color: #7fb3ff; }
+
+    table.std-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    table.std-table th, table.std-table td {
+        padding: 7px 8px; text-align: center; border-bottom: 1px solid #232330;
+    }
+    table.std-table th { color: #888; font-weight: 600; font-size: 11px; text-transform: uppercase; }
+    table.std-table td.cu { color: #7fb3ff; }
+    table.std-table td.al { color: #f1c40f; font-weight: bold; }
+
+    .formula-box {
+        background: #111116; border-radius: 8px; border: 1px solid #333;
+        padding: 12px; text-align: center; font-size: 15px; color: #2ecc71; font-weight: bold;
+    }
+    .formula-box span { color: #888; font-weight: normal; font-size: 11px; display: block; margin-top: 4px; }
+</style>
+</head>
+<body>
+<h3>🔗 Bakır ⇄ Alüminyum Kablo Kesiti</h3>
+<p class="subtitle">İmar kat sayısına göre kablo kesiti sorgulama & genel eşdeğer kesit hesaplayıcı</p>
+
+<div class="container">
+    <div class="tabs">
+        <div class="tab-btn active" data-tab="lookup">İmar Kat Sayısı Sorgula</div>
+        <div class="tab-btn" data-tab="calc">Genel Kesit Hesapla</div>
+        <div class="tab-btn" data-tab="yg">36kV YG Kablo</div>
+    </div>
+
+    <!-- TAB 1: LOOKUP -->
+    <div class="panel active" id="panel-lookup">
+        <div class="control-group">
+            <label>İmar Kat Sayısı Kodu (ör: A-05-Y, B-03-D, SAN2)</label>
+            <input type="text" id="searchBox" placeholder="Kod yazın veya listeden seçin..." autocomplete="off">
+        </div>
+        <div class="result-list" id="resultList"></div>
+
+        <div id="selectedDetail" style="display:none;">
+            <div class="metrics" style="grid-template-columns: 1fr 1fr;">
+                <div class="metric-box">
+                    <div class="metric-label">Güç Yoğunluğu</div>
+                    <div class="metric-value" id="dGucYog">-</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">Daire Sayısı</div>
+                    <div class="metric-value" id="dSayisi">-</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">Daire Başı Güç</div>
+                    <div class="metric-value" id="dBasiGuc">-</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">İmar Kodu</div>
+                    <div class="metric-value" id="dKod">-</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">Abone Kablosu (Bakır)</div>
+                    <div class="metric-value" id="dCu">-</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">Abone Kablosu (Alüminyum)</div>
+                    <div class="metric-value al" id="dAl">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: CALC -->
+    <div class="panel" id="panel-calc">
+        <div class="control-group">
+            <label>Bakır Kablo Kesiti (mm²)</label>
+            <input type="number" id="cuInput" placeholder="Örn: 50" min="0" step="0.5">
+        </div>
+        <div class="formula-box" id="calcResult">
+            Kesit girin
+            <span>Sa = 1,6 × Sb (Sa: Alüminyum kesit, Sb: Bakır kesit)</span>
+        </div>
+        <div class="metrics" style="grid-template-columns: 1fr 1fr;">
+            <div class="metric-box">
+                <div class="metric-label">Teorik Eşdeğer Kesit</div>
+                <div class="metric-value" id="calcTeorik">-</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">En Yakın Standart AL Kesit</div>
+                <div class="metric-value al" id="calcStandart">-</div>
+            </div>
+        </div>
+        <div class="info-panel">
+            <b>Formül Esası:</b> Bakır iletkenlerin özİletkenlik katsayısı 56 m/Ω·mm², alüminyum iletkenlerin özİletkenlik katsayısı 35 m/Ω·mm²'dir. Eşdeğer kesit için Sa×35 = Sb×56 eşitliği kullanılır; buradan Sa = (56/35) × Sb = 1,6 × Sb elde edilir. Sonuç, bir üst standart alüminyum kesite yuvarlanır.
+        </div>
+        <table class="std-table" id="stdTable"></table>
+    </div>
+
+    <!-- TAB 3: YG -->
+    <div class="panel" id="panel-yg">
+        <div class="info-panel">
+            <b>36 kV Yeraltı Gerilim Kablosu</b> — XLPE izoleli bakır kablo kesitine göre standart alüminyum eşdeğerleri.
+        </div>
+        <table class="std-table" id="ygTable">
+            <thead><tr><th>Tip</th><th>Bakır Kesiti</th><th>Alüminyum Kesiti</th></tr></thead>
+            <tbody id="ygTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const MAIN_DATA = [["A-02-D", "50", "4", 3000, "4x10mm2", "4x16mm2AL"], ["A-02-D/2", "25", "4", 3000, "4x10mm2", "4x16mm2AL"], ["A-02-O", "80", "4", 3000, "4x10mm2", "4x16mm2AL"], ["A-02-O/2", "40", "4", 3000, "4x10mm2", "4x16mm2AL"], ["A-02-Y", "80", "4", 4000, "4x10mm2", "4x16mm2AL"], ["A-02-Y/2", "40", "4", 4000, "4x10mm2", "4x16mm2AL"], ["A-03-D", "100", "12", 3000, "4x16mm2", "3x25+16mm2AL"], ["A-03-D/2", "50", "12", 3000, "4x16mm2", "3x25+16mm2AL"], ["A-03-O", "150", "12", 3000, "4x16mm2", "3x25+16mm2AL"], ["A-03-O/2", "75", "12", 3000, "4x16mm2", "3x25+16mm2AL"], ["A-03-Y", "200", "12", 4000, "3x25+16mm2", "3x50+25mm2AL"], ["A-03-Y/2", "100", "12", 4000, "3x25+16mm2", "3x50+25mm2AL"], ["A-04-D", "150", "16", 3000, "3x25+16mm2", "3x50+25mm2AL"], ["A-04-D/2", "75", "16", 3000, "3x25+16mm2", "3x50+25mm2AL"], ["A-04-O", "200", "16", 3000, "3x25+16mm2", "3x50+25mm2AL"], ["A-04-O/2", "100", "16", 3000, "3x25+16mm2", "3x50+25mm2AL"], ["A-04-Y", "250", "16", 4000, "3x35+16mm2", "3x70+35mm2AL"], ["A-04-Y/2", "125", "16", 4000, "3x35+16mm2", "3x70+35mm2AL"], ["A-05-D", "200", "20", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["A-05-D/2", "100", "20", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["A-05-O", "300", "20", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["A-05-O/2", "150", "20", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["A-05-Y", "400", "20", 4000, "3x50+25mm2", "3x95+50mm2AL"], ["A-05-Y/2", "200", "20", 4000, "3x50+25mm2", "3x95+50mm2AL"], ["A-06-D", "300", "24", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["A-06-D/2", "150", "24", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["A-06-O", "400", "24", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["A-06-O/2", "200", "24", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["A-06-Y", "500", "24", 4000, "3x50+25mm2", "3x95+50mm2AL"], ["A-06-Y/2", "250", "24", 4000, "3x50+25mm2", "3x95+50mm2AL"], ["A-07-D", "400", "28", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["A-07-D/2", "200", "28", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["A-07-O", "500", "28", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["A-07-O/2", "250", "28", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["A-07-Y", "600", "28", 4000, "3x70+35mm2", "3x120+70mm2AL"], ["A-07-Y/2", "300", "28", 4000, "3x70+35mm2", "3x120+70mm2AL"], ["A-08-D", "500", "32", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["A-08-D/2", "250", "32", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["A-08-O", "600", "32", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["A-08-O/2", "300", "32", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["A-08-Y", "700", "32", 4000, "3x70+35mm2", "3x120+70mm2AL"], ["A-08-Y/2", "350", "32", 4000, "3x70+35mm2", "3x120+70mm2AL"], ["A-09-D", "600", "36", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["A-09-D/2", "300", "36", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["A-09-O", "700", "36", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["A-09-O/2", "350", "36", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["A-09-Y", "800", "36", 4000, "3x95+50mm2", "3x150+70mm2AL"], ["A-09-Y/2", "400", "36", 4000, "3x95+50mm2", "3x150+70mm2AL"], ["A-10-D", "700", "40", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["A-10-D/2", "350", "40", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["A-10-O", "800", "40", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["A-10-O/2", "400", "40", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["A-10-Y", "900", "40", 4000, "3x95+50mm2", "3x150+70mm2AL"], ["A-10-Y/2", "450", "40", 4000, "3x95+50mm2", "3x150+70mm2AL"], ["AYD", "0", "0", "0", "4x10mm2", "4x16mm2AL"], ["B-01-D", "25", "2", 3000, "4x10mm2", "4x16mm2AL"], ["B-01-O", "50", "2", 3000, "4x10mm2", "4x16mm2AL"], ["B-01-Y", "75", "2", 4000, "4x10mm2", "4x16mm2AL"], ["B-02-D", "100", "4", 3000, "4x10mm2", "4x16mm2AL"], ["B-02-D/2", "100", "4", 3000, "4x10mm2", "4x16mm2AL"], ["B-02-O", "150", "4", 3000, "4x10mm2", "4x16mm2AL"], ["B-02-O/2", "75", "4", 3000, "4x10mm2", "4x16mm2AL"], ["B-02-Y", "200", "4", 4000, "4x10mm2", "4x16mm2AL"], ["B-02-Y/2", "100", "4", 4000, "4x10mm2", "4x16mm2AL"], ["B-03-D", "150", "12", 3000, "4x16mm2", "3x25+16mm2AL"], ["B-03-D/2", "100", "12", 3000, "4x16mm2", "3x25+16mm2AL"], ["B-03-O", "200", "12", 3000, "4x16mm2", "3x25+16mm2AL"], ["B-03-O/2", "100", "12", 3000, "4x16mm2", "3x25+16mm2AL"], ["B-03-Y", "300", "12", 4000, "4x16mm2", "3x25+16mm2AL"], ["B-03-Y/2", "150", "12", 4000, "4x16mm2", "3x25+16mm2AL"], ["B-04-D", "200", "16", 3000, "3x25+16mm2", "3x50+25mm2AL"], ["B-04-D/2", "100", "16", 3000, "3x25+16mm2", "3x50+25mm2AL"], ["B-04-O", "300", "16", 3000, "3x25+16mm2", "3x50+25mm2AL"], ["B-04-O/2", "150", "16", 3000, "3x25+16mm2", "3x50+25mm2AL"], ["B-04-Y", "400", "16", 4000, "3x35+16mm2", "3x70+35mm2AL"], ["B-04-Y/2", "200", "16", 4000, "3x35+16mm2", "3x70+35mm2AL"], ["B-05-D", "300", "20", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["B-05-D/2", "150", "20", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["B-05-O", "400", "20", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["B-05-O/2", "200", "20", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["B-05-Y", "500", "20", 4000, "3x50+25mm2", "3x95+50mm2AL"], ["B-05-Y/2", "250", "20", 4000, "3x50+25mm2", "3x95+50mm2AL"], ["B-06-D", "600", "24", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["B-06-D/2", "300", "24", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["B-06-O", "700", "24", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["B-06-O/2", "350", "24", 3000, "3x50+25mm2", "3x95+50mm2AL"], ["B-06-Y", "800", "24", 4000, "3x50+25mm2", "3x95+50mm2AL"], ["B-06-Y/2", "400", "24", 4000, "3x50+25mm2", "3x95+50mm2AL"], ["B-07-D", "800", "28", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["B-07-D/2", "400", "28", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["B-07-O", "900", "28", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["B-07-O/2", "450", "28", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["B-07-Y", "1000", "28", 4000, "3x70+35mm2", "3x120+70mm2AL"], ["B-07-Y/2", "500", "28", 4000, "3x70+35mm2", "3x120+70mm2AL"], ["B-08-D", "1000", "32", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["B-08-D/2", "500", "32", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["B-08-O", "1100", "32", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["B-08-O/2", "550", "32", 3000, "3x70+35mm2", "3x120+70mm2AL"], ["B-08-Y", "1200", "32", 4000, "3x70+35mm2", "3x120+70mm2AL"], ["B-08-Y/2", "600", "32", 4000, "3x70+35mm2", "3x120+70mm2AL"], ["B-09-D", "1100", "36", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["B-09-D/2", "550", "36", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["B-09-O", "1200", "36", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["B-09-O/2", "600", "36", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["B-09-Y", "1300", "36", 4000, "3x95+50mm2", "3x150+70mm2AL"], ["B-09-Y/2", "650", "36", 4000, "3x95+50mm2", "3x150+70mm2AL"], ["B-10-D", "1200", "40", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["B-10-D/2", "600", "40", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["B-10-O", "1300", "40", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["B-10-O/2", "650", "40", 3000, "3x95+50mm2", "3x150+70mm2AL"], ["B-10-Y", "1400", "40", 4000, "3x95+50mm2", "3x150+70mm2AL"], ["B-10-Y/2", "700", "40", 4000, "3x95+50mm2", "3x150+70mm2AL"], ["KÖY-S-D", "10", "1", "3000", "2x10mm2", "2x16mm2AL"], ["KÖY-S-O", "15", "1", "3000", "2x10mm2", "2x16mm2AL"], ["KÖY-S-Y", "30", "1", "3000", "2x10mm2", "2x16mm2AL"], ["SAN1", "300", "10", "4000", "4x16mm2", "3x25+16mm2AL"], ["SAN1/2", "150", "10", "4000", "4x16mm2", "3x25+16mm2AL"], ["SAN2", "500", "10", "5000", "3x25+16mm2", "3x50+25mm2AL"], ["SAN2/2", "250", "10", "5000", "3x25+16mm2", "3x50+25mm2AL"], ["SAN3", "600", "10", "6000", "3x50+25mm2", "3x95+50mm2AL"], ["SAN4", "1000", "10", "10000", "3x50+25mm2", "3x95+50mm2AL"], ["SAN4/2", "500", "10", "10000", "3x50+25mm2", "3x95+50mm2AL"], ["SAN5", "1200", "10", "10000", "3x95+50mm2", "3x150+70mm2AL"], ["SAN5/2", "600", "10", "10000", "3x95+50mm2", "3x150+70mm2AL"], ["SE-D", "25", "1", 3000, "2x10mm2", "2x16mm2AL"], ["SE-O", "25", "1", 3000, "2x10mm2", "2x16mm2AL"], ["SE-Y", "50", "1", 3000, "2x10mm2", "2x16mm2AL"]];
+const YG_DATA = [["36 kv YG Kablo", "1x35/16mm2 xlpe", "1x70/16mm2AL"], ["36 kv YG Kablo", "1x50/16mm2 xlpe", "1x95/16mm2AL"], ["36 kv YG Kablo", "1x70/16mm2 xlpe", "1x120/16mm2AL"], ["36 kv YG Kablo", "1x95/16mm2 xlpe", "1x150/25mm2AL"], ["36 kv YG Kablo", "1x120/16mm2 xlpe", "1x185/25mm2AL"], ["36 kv YG Kablo", "1x150/25mm2 xlpe", "1x240/25mm2AL"], ["36 kv YG Kablo", "1x240/25mm2 xlpe", "1x400/35mm2AL"]];
+
+// Standart alçak/orta gerilim iletken kesitleri (mm2)
+const STD_SIZES = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240, 300, 400, 500, 630];
+
+// ---- Tabs ----
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.getAttribute('data-tab')).classList.add('active');
+    });
+});
+
+// ---- Tab 1: Lookup ----
+const searchBox = document.getElementById('searchBox');
+const resultList = document.getElementById('resultList');
+
+function renderResults(filter) {
+    const f = (filter || '').trim().toUpperCase();
+    const matches = MAIN_DATA.filter(row => row[0].toUpperCase().includes(f));
+    resultList.innerHTML = '';
+    if (matches.length === 0) {
+        resultList.innerHTML = '<div class="no-match">Eşleşen kod bulunamadı</div>';
+        return;
+    }
+    matches.slice(0, 60).forEach(row => {
+        const div = document.createElement('div');
+        div.className = 'result-row';
+        div.innerHTML = '<span class="code">' + row[0] + '</span><span class="cu">' + row[4] + ' → ' + row[5] + '</span>';
+        div.addEventListener('click', () => selectRow(row));
+        resultList.appendChild(div);
+    });
+}
+
+function selectRow(row) {
+    document.getElementById('selectedDetail').style.display = 'block';
+    document.getElementById('dKod').textContent = row[0];
+    document.getElementById('dGucYog').textContent = row[1];
+    document.getElementById('dSayisi').textContent = row[2];
+    document.getElementById('dBasiGuc').textContent = row[3] + ' W';
+    document.getElementById('dCu').textContent = row[4];
+    document.getElementById('dAl').textContent = row[5];
+    searchBox.value = row[0];
+    renderResults(row[0]);
+}
+
+searchBox.addEventListener('input', () => renderResults(searchBox.value));
+renderResults('');
+
+// ---- Tab 2: General calculator ----
+const cuInput = document.getElementById('cuInput');
+const calcResult = document.getElementById('calcResult');
+
+function nearestStandard(value) {
+    for (const s of STD_SIZES) {
+        if (s >= value) return s;
+    }
+    return STD_SIZES[STD_SIZES.length - 1];
+}
+
+function updateCalc() {
+    const sb = parseFloat(cuInput.value);
+    if (!sb || sb <= 0) {
+        calcResult.innerHTML = 'Kesit girin<span>Sa = 1,6 × Sb (Sa: Alüminyum kesit, Sb: Bakır kesit)</span>';
+        document.getElementById('calcTeorik').textContent = '-';
+        document.getElementById('calcStandart').textContent = '-';
+        return;
+    }
+    const sa = sb * 1.6;
+    const std = nearestStandard(sa);
+    calcResult.innerHTML = sb + ' mm² (Cu) → ' + sa.toFixed(2) + ' mm² (Al, teorik)<span>Sa = 1,6 × Sb</span>';
+    document.getElementById('calcTeorik').textContent = sa.toFixed(2) + ' mm²';
+    document.getElementById('calcStandart').textContent = std + ' mm²';
+}
+cuInput.addEventListener('input', updateCalc);
+
+// Standard table (common commercial sizes)
+const stdTable = document.getElementById('stdTable');
+const commonPairs = [[10,16],[16,25],[25,50],[35,70],[50,95],[70,120],[95,150],[120,185],[150,240]];
+let stdHtml = '<thead><tr><th>Bakır (mm²)</th><th>Alüminyum (mm²)</th></tr></thead><tbody>';
+commonPairs.forEach(p => {
+    stdHtml += '<tr><td class="cu">' + p[0] + '</td><td class="al">' + p[1] + '</td></tr>';
+});
+stdHtml += '</tbody>';
+stdTable.innerHTML = stdHtml;
+
+// ---- Tab 3: YG table ----
+const ygBody = document.getElementById('ygTableBody');
+YG_DATA.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + row[0] + '</td><td class="cu">' + row[1] + '</td><td class="al">' + row[2] + '</td>';
+    ygBody.appendChild(tr);
+});
+</script>
+</body>
+</html>

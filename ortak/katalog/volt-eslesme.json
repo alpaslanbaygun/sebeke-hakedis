@@ -1,7 +1,7 @@
 {
  "bicim": "sebeke-hakedis.volt-eslesme",
  "surum": 1,
- "aciklama": "Telefon uygulamasının (TEDAŞ poz kataloğu) verisi ile AutoCAD eklentisinin PROMAGIS biçimi (cins / tanım / tarife) arasındaki eşleme. Telefon (telefon/web/src/interop/sebeke.js) ve eklenti aynı tabloyu kullanır. Bilinmeyen kalemler eşleme dışı kalmaz: cins poz kategorisinden, tanım poz adından, katsayı kg değerinden üretilir.",
+ "aciklama": "Telefon uygulamasının (TEDAŞ poz kataloğu) verisi ile AutoCAD eklentisinin çizim biçimi (cins / tanım / tarife) arasındaki eşleme. Telefon (telefon/web/src/interop/sebeke.js) ve eklenti aynı tabloyu kullanır. Bilinmeyen kalemler eşleme dışı kalmaz: cins poz kategorisinden, tanım poz adından, katsayı kg değerinden üretilir.",
  "direkGruplari": {
   "sehir": { "tur": "AG_DIREK", "cins": "AG_DEMİR_GLV", "tarife": "0107", "aciklama": "Şehir içi AG galvaniz kaynaklı demir direk" },
   "mus": { "tur": "MUSTEREK_DIREK", "cins": "MÜŞ_DEMİR_GLV", "tarife": "0106", "aciklama": "Müşterek AG+OG galvaniz kaynaklı demir direk" },
@@ -38,17 +38,17 @@
   "PANO": { "kind": "panel" }, "BOX": { "kind": "sdk" }, "EK_MUFU": { "kind": "other" }, "KOFRE": { "kind": "other" }, "DIGER": { "kind": "other" }
  },
  "durumlar": {
-  "aciklama": "Telefon durumu → PROMAGIS durumu. YENI'de tedarik pozdan: Y (yüklenici) → M+M, Ş (şirket) → M. null: dosyaya yazılmaz (ileride).",
+  "aciklama": "Telefon durumu → çizim durumu. YENI'de tedarik pozdan: Y (yüklenici) → M+M, Ş (şirket) → M. null: dosyaya yazılmaz (ileride).",
   "YENI": "M", "MEVCUT": "MEVCUT", "DEMONTAJ": "DM", "DMM": "DM+M", "ILERIDE": null,
   "yeni": "M", "mevcut": "MEVCUT", "guc": "M", "ger": "M", "gucger": "M", "tasinan": "DM+M", "tadil": "M", "modul": "M", "demontaj": "DM", "ileride": null
  },
  "durumlarTers": {
-  "aciklama": "PROMAGIS durumu → telefon durumu (direk, hat) ve trafo durumu. Telefon kaydı sebeke.durum alanında özgün kodu saklar; durum değişmediyse dışa aktarımda aynen döner (KM, ENH, ME ve M / M+M ayrımı kaybolmaz).",
+  "aciklama": "çizim durumu → telefon durumu (direk, hat) ve trafo durumu. Telefon kaydı sebeke.durum alanında özgün kodu saklar; durum değişmediyse dışa aktarımda aynen döner (KM, ENH, ME ve M / M+M ayrımı kaybolmaz).",
   "M": { "state": "YENI", "trafo": "yeni" }, "M+M": { "state": "YENI", "trafo": "yeni" }, "DM": { "state": "DEMONTAJ", "trafo": "demontaj" },
   "DM+M": { "state": "DMM", "trafo": "tasinan" }, "MEVCUT": { "state": "MEVCUT", "trafo": "mevcut" }, "KM": { "state": "YENI", "trafo": "yeni" }, "ENH": { "state": "MEVCUT", "trafo": "mevcut" }, "ME": { "state": "MEVCUT", "trafo": "mevcut" }
  },
  "durumAdlari": {
-  "aciklama": "PROMAGIS durum kodlarının okunur adları (telefon ve eklenti aynı yazıyı gösterir)",
+  "aciklama": "çizim durum kodlarının okunur adları (telefon ve eklenti aynı yazıyı gösterir)",
   "M": "Montaj (malzeme kurumdan)", "M+M": "Malzeme + montaj (yüklenici)", "KM": "Kurum montajı, malzeme yükleniciden",
   "DM": "Demontaj", "DM+M": "Sök-tak", "MEVCUT": "Mevcut", "ENH": "Kilometrik bedelli iş", "ME": "Mutabakat eksiği"
  },
@@ -56,7 +56,7 @@
  "tedarik": { "Y": "M+M", "Ş": "M" },
  "isler": { "montaj": "M", "demontaj": "DM", "dmm": "DM+M" },
  "kategoriler": {
-  "aciklama": "Poz kategorisi → PROMAGIS cins (direk, hat ve nesnenin kendi pozu ayrıca eşlenir). Anahtar 'kategori' ya da 'kategori|OG'.",
+  "aciklama": "Poz kategorisi → AutoCAD cins (direk, hat ve nesnenin kendi pozu ayrıca eşlenir). Anahtar 'kategori' ya da 'kategori|OG'.",
   "Travers": "TRAVERS_VE_KONSOLLAR_GLV", "Travers|OG": "BAHH_DEMİR_TRAVERS_GLV",
   "İzolatör": "AG_İZOLATÖR", "İzolatör|OG": "OG_İZOLATÖR",
   "Topraklama": "TOPRAKLAMA", "Koruma": "PARAFUDR", "Trafo": "TRAFO_GENLEŞME_TANKLI", "Trafo platformu": "TRAVERS_VE_KONSOLLAR_GLV",
@@ -91,7 +91,7 @@
   "MUSTEREK": { "lineType": "AG", "install": "havai", "musterek": true }
  },
  "iletkenler": {
-  "aciklama": "Çıplak OG iletkeni: telefon adı → PROMAGIS kısaltması (3xSwallow → 3xSW); AG çıplak kısa adlar (R, P, A, O) iki tarafta aynıdır",
+  "aciklama": "Çıplak OG iletkeni: telefon adı → AutoCAD kısaltması (3xSwallow → 3xSW); AG çıplak kısa adlar (R, P, A, O) iki tarafta aynıdır",
   "Swallow": "SW", "Raven": "1\\0", "Pigeon": "3\\0", "Partridge": "266", "Hawk": "477",
   "Swan": "SWAN", "Sparrow": "SPARROW", "Robin": "ROBIN", "Ostrich": "OSTRICH"
  },
@@ -103,6 +103,6 @@
  },
  "kanalKodu": { "OG": 8, "ENH": 8, "AG": 4, "AYD": 2, "ABONE": 1 },
  "kalemler": {
-  "aciklama": "İsteğe bağlı birebir eşleme: telefon servis kodu → PROMAGIS cins / tanım. Boşsa genel kurallar uygulanır."
+  "aciklama": "İsteğe bağlı birebir eşleme: telefon servis kodu → AutoCAD cins / tanım. Boşsa genel kurallar uygulanır."
  }
 }

@@ -6,9 +6,10 @@ import { roleLabel } from '../../grid/checks.js';
 import { lineLabel } from '../../grid/lines.js';
 import { greenBookPage } from '../../qty/metraj.js';
 import { JOB_LABEL, SOURCE_LABEL } from '../../core/schema.js';
+import { hesapKayitlari } from '../../hesap/kayitlar.js';
 
 export function CalcScreen() {
-  useBus(['project:computed']);
+  useBus(['project:computed', 'hesap:kayit']);
   const ps = app.ps, r = ps.result, cat = ps.cat;
   const lines = ps.data.lines.filter((l) => l.install === 'havai');
   const [lid, setLid] = useState(app.state.calcLine || (lines[0] || {}).id);
@@ -23,7 +24,14 @@ export function CalcScreen() {
   const page = greenBookPage(r.quantities, job);
   const cnt = (j) => r.quantities.filter((q) => q.job === j).length;
   const errs = r.issues.filter((i) => i.severity === 'error').length, warns = r.issues.filter((i) => i.severity === 'warn').length;
+  const hesapSayisi = hesapKayitlari(ps).length;
   return html`<div class="title"><div class="grow"><h1>Hesaplar</h1><div class="sub">${l ? l.lineNo + ' hattı · ' + (l.voltageKV || (l.lineType === 'OG' ? 34.5 : 0.4)) + ' kV · ' + (poles[0] ? poles[0].no : '') + ' → ' + (poles[poles.length - 1] ? poles[poles.length - 1].no : '') : 'Havai hat yok'}</div></div></div>
+    <button class="card hesapgiris" onClick=${() => app.nav.go('hesapMerkezi', {})}>
+      <${Icon} n="calc" s=${26} c="#f59e0b" />
+      <span class="grow"><b>Teknik hesaplar</b><span class="note">Sehim, uplift, ag–aw, Amax, kopma, tepe kuvveti · gerilim düşümü, kısa devre · köşk, kanal, AG tek hat</span></span>
+      ${hesapSayisi ? html`<span class="badge b-m">${hesapSayisi} kayıt</span>` : html`<${Icon} n="next" s=${18} c="#64748b" />`}
+    </button>
+    ${l ? html`<button class="btn blk" style="margin:-2px 0 8px" onClick=${() => app.nav.go('hesapMerkezi', { hedef: { tur: 'hat', id: l.id } })}><${Icon} n="calc" s=${16} />${l.lineNo} hattı için uygun hesaplar</button>` : null}
     <div class="grid4">
       <button class="stat" style="text-align:left;color:inherit" onClick=${() => app.nav.go('checks')}><b>Kontrol</b><span style=${'font-size:16px;color:' + (errs ? '#ff8a8a' : '#6ffbbe')}>${errs}/${warns}</span></button>
       <button class="stat" style="text-align:left;color:inherit" onClick=${() => app.nav.go('metraj')}><b>Metraj</b><span style="font-size:16px">${r.quantities.length}</span></button>
@@ -110,7 +118,7 @@ export function HakedisScreen() {
   return html`<${Title} title="Hakediş" sub=${'Proje → İş programı → Dönem → Poz'} right=${html`<button class="btn sm" onClick=${() => app.nav.go('team')}>Kullanıcılar ve onay</button>`} />
     <div class="card row"><div class="grow"><div class="lbl">İş programı</div><div style="font-size:13px">${wp ? wp.basis + ' · ' + wp.items.length + ' kalem · ' + new Date(wp.createdAt).toLocaleDateString('tr-TR') : 'Oluşturulmadı'}</div></div><button class="btn sm" onClick=${newProgram}>${wp ? 'Yenile' : 'Oluştur'}</button></div>
     <div class="row"><div class="grow"><${Sel} value=${cur && cur.id} options=${periods.map((p) => [p.id, p.no + '. dönem · ' + p.start + ' – ' + p.end + ' · ' + (p.status === 'onayli' ? 'ONAYLI' : 'taslak')])} onChange=${setPid} /></div><button class="btn sm" onClick=${newPeriod}>+ Dönem</button></div>
-    ${cadOnay.length ? html`<div class="card"><div class="lbl">AutoCAD (PROMAGIS) hakediş onayları</div>${cadOnay.map((o) => html`<div class="row" style="gap:4px;font-size:13px;margin-top:5px"><b class="grow">${o.no}. hakediş${o.hakedis ? ' · kilitli' : ''}</b><${Badge} k=${o.kontrol ? 'ok' : 'mut'}>Kontrol</${Badge}><${Badge} k=${o.hakedis ? 'ok' : 'mut'}>Hakediş</${Badge}><${Badge} k=${o.gis ? 'ok' : 'mut'}>GIS</${Badge}></div>`)}<div class="note">AutoCAD'de onaylanan hakediş orada kilitlidir: o hakedişe dokunan değişiklikler AutoCAD'e aktarılmaz. Telefonda onaylanan dönem, AutoCAD'e kontrol + hakediş onayı olarak gider.</div></div>` : null}
+    ${cadOnay.length ? html`<div class="card"><div class="lbl">AutoCAD hakediş onayları</div>${cadOnay.map((o) => html`<div class="row" style="gap:4px;font-size:13px;margin-top:5px"><b class="grow">${o.no}. hakediş${o.hakedis ? ' · kilitli' : ''}</b><${Badge} k=${o.kontrol ? 'ok' : 'mut'}>Kontrol</${Badge}><${Badge} k=${o.hakedis ? 'ok' : 'mut'}>Hakediş</${Badge}><${Badge} k=${o.gis ? 'ok' : 'mut'}>GIS</${Badge}></div>`)}<div class="note">AutoCAD'de onaylanan hakediş orada kilitlidir: o hakedişe dokunan değişiklikler AutoCAD'e aktarılmaz. Telefonda onaylanan dönem, AutoCAD'e kontrol + hakediş onayı olarak gider.</div></div>` : null}
     ${t && t.period ? html`<div class="grid3"><${Stat} label="Kalem" value=${t.totals.lines} /><${Stat} label="Aşım" value=${t.totals.overrun} color=${t.totals.overrun ? '#ff8a8a' : null} /><${Stat} label="Program dışı" value=${t.totals.outOfProgram} color=${t.totals.outOfProgram ? '#fcd34d' : null} /></div>
       ${t.totals.amount ? html`<div class="card row"><span class="lbl grow">Bu dönem tutar (fiyatı bilinen kalemler)</span><b class="mono">${trn(t.totals.amount, 2)} TL</b></div>` : null}
       <div class="grid3">${['montaj', 'demontaj', 'dmm'].map((j) => html`<${Chip} on=${job === j} onClick=${() => setJob(j)}>${JOB_LABEL[j]}</${Chip}>`)}</div>

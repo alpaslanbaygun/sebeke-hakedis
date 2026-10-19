@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace SebekeHakedis.Cekirdek
 {
     /// <summary>
-    /// Raporun hesap katsayıları. Değerler PROMAGIS Durum Tespit dosyasının KATSAYILAR sayfasından alınmıştır.
+    /// Raporun hesap katsayıları. Değerler Durum Tespit dosyasının KATSAYILAR sayfasından alınmıştır.
     /// Ortak klasördeki katsayilar.json bu sınıftan üretilir; telefon uygulaması da aynı tabloları kullanır.
     /// </summary>
     public sealed class Katsayilar
@@ -95,7 +95,7 @@ namespace SebekeHakedis.Cekirdek
             var o = new JsonNesne();
             o["bicim"] = "sebeke-hakedis.katsayilar";
             o["surum"] = 1;
-            o["kaynak"] = "PROMAGIS Durum Tespit dosyası, KATSAYILAR sayfası";
+            o["kaynak"] = "Durum Tespit dosyası, KATSAYILAR sayfası";
             var t = new JsonNesne();
             t["OG"] = TarifeOG; t["AG"] = TarifeAG; t["AYD"] = TarifeAYD; t["REK"] = TarifeREK;
             o["hatTarifeleri"] = t;

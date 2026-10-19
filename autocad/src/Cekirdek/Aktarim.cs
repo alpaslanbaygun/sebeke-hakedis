@@ -73,13 +73,13 @@ namespace SebekeHakedis.Cekirdek
         {
             var plan = new AktarimPlani();
             if (string.IsNullOrEmpty(onEk)) onEk = "SC";
-            var cp = PromagisOkuyucu.Oku(cizim, "");
+            var cp = NesneOkuyucu.Oku(cizim, "");
 
             var kimlikten = new Dictionary<string, string>(StringComparer.Ordinal);
             var kimligi = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var v in cizim)
             {
-                string k = v.XdIlk(PromagisYazici.KimlikUygulamasi);
+                string k = v.XdIlk(NesneYazici.KimlikUygulamasi);
                 if (string.IsNullOrEmpty(k) || string.IsNullOrEmpty(v.H)) continue;
                 kimlikten[k] = v.H;
                 kimligi[v.H] = k;
@@ -153,14 +153,24 @@ namespace SebekeHakedis.Cekirdek
                 if (parcaya && kimlikle) kimlik = id; // telefondan alınmış eski nesne artık ilk parça: kimliği parçanın kimliği
                 var istenen = telYaz(hedef, kimlik);
                 var simdiki = cizimYaz(mevcut[hedef].Model, kimlik);
-                PromagisYazici.TaniticiYaz(istenen, hedef);
-                PromagisYazici.TaniticiYaz(simdiki, hedef);
-                // Telefonun düzenlemediği PROMAGIS verileri (pano çıkış şeması, hücreler): telefonda yoksa çizimdeki korunur
-                foreach (var u in PromagisYazici.EkUygulamalar)
+                NesneYazici.TaniticiYaz(istenen, hedef);
+                NesneYazici.TaniticiYaz(simdiki, hedef);
+                // Telefonun düzenlemediği AutoCAD verileri (pano çıkış şeması, hücreler): telefonda yoksa çizimdeki korunur
+                foreach (var u in NesneYazici.EkUygulamalar)
                     if (!istenen.Xd.ContainsKey(u) && simdiki.Xd.ContainsKey(u)) istenen.Xd[u] = new List<string>(simdiki.Xd[u]);
                 // Değişmeyen nesneye dokunulmaz (etiketi eski kalmış olsa bile); değişen hattın etiketi yeniden yazılır.
+                // Simge farkı tek başına değişiklik sayılmaz: eski bloklu eleman, başka bir şeyi değişmediyse olduğu gibi
+                // kalır (SH_GORUNUM istenirse çevirir); değişince uygulamanın simgesiyle yazılır.
                 string fark;
-                if (CadVarlik.Ayni(simdiki, istenen, out fark)) { plan.Ayni++; return; }
+                string istenenBlok = istenen.Blok;
+                if (!string.IsNullOrEmpty(simdiki.Blok) && !string.Equals(simdiki.Blok, istenen.Blok, StringComparison.OrdinalIgnoreCase))
+                {
+                    istenen.Blok = simdiki.Blok;
+                    bool ayni = CadVarlik.Ayni(simdiki, istenen, out fark);
+                    istenen.Blok = istenenBlok;
+                    if (ayni) { plan.Ayni++; return; }
+                }
+                else if (CadVarlik.Ayni(simdiki, istenen, out fark)) { plan.Ayni++; return; }
                 var guncelle = new AktarimAdimi
                 {
                     Islem = "guncelle", Nesne = nesne, Hedef = hedef, Kimlik = id ?? "", Varlik = istenen,
@@ -173,13 +183,13 @@ namespace SebekeHakedis.Cekirdek
             foreach (var b in tel.Bolgeler)
             {
                 var t = b;
-                isle("bolge", t.Id, (h, k) => PromagisYazici.Bolge(t, onEk, k), (o, k) => PromagisYazici.Bolge((Bolge)o, onEk, k), null,
+                isle("bolge", t.Id, (h, k) => NesneYazici.Bolge(t, onEk, k), (o, k) => NesneYazici.Bolge((Bolge)o, onEk, k), null,
                     "Bölge " + (string.IsNullOrEmpty(t.Kod) ? t.Ad : t.Kod), null, t);
             }
             foreach (var n in tel.Noktalar)
             {
                 var t = n;
-                isle("nokta", t.Id, (h, k) => PromagisYazici.Nokta(t, k), (o, k) => PromagisYazici.Nokta((Nokta)o, k), null,
+                isle("nokta", t.Id, (h, k) => NesneYazici.Nokta(t, k), (o, k) => NesneYazici.Nokta((Nokta)o, k), null,
                     "GPS " + t.Ad, null, t);
             }
             foreach (var e in tel.Elemanlar)
@@ -187,28 +197,28 @@ namespace SebekeHakedis.Cekirdek
                 var t = e;
                 string ad = (string.IsNullOrEmpty(t.GisId) ? "" : t.GisId + " ") + Turler.ElemanAdi(t.Tur);
                 isle("eleman", t.Id,
-                    (h, k) => PromagisYazici.Eleman(t, onEk, PromagisYazici.BlokSec(cp.Elemanlar, t), k),
-                    (o, k) => { var d = (Eleman)o; return PromagisYazici.Eleman(d, onEk, string.IsNullOrEmpty(d.Blok) ? PromagisYazici.BlokOner(cp.Elemanlar, d.Tur, d.Cins, d.Durum, d.DmDurum) : d.Blok, k); },
+                    (h, k) => NesneYazici.Eleman(t, onEk, NesneYazici.BlokSec(cp.Elemanlar, t), k),
+                    (o, k) => { var d = (Eleman)o; return NesneYazici.Eleman(d, onEk, string.IsNullOrEmpty(d.Blok) ? NesneYazici.BlokOner(cp.Elemanlar, d.Tur, d.Cins, d.Durum, d.DmDurum) : d.Blok, k); },
                     null, ad, t.Tur, t);
             }
             foreach (var hat in tel.Hatlar)
             {
                 var t = hat;
                 string ad = "Hat " + t.AnaKesit + " (" + Turler.HatAdi(t.Tur) + ")";
-                isle("hat", t.Id, (h, k) => PromagisYazici.Hat(t, onEk, k), (o, k) => PromagisYazici.Hat((Hat)o, onEk, k),
-                    h => { var e = PromagisYazici.HatEtiketi(t); return h == null ? e : e.Replace(PromagisYazici.Tanitici, h); },
+                isle("hat", t.Id, (h, k) => NesneYazici.Hat(t, onEk, k), (o, k) => NesneYazici.Hat((Hat)o, onEk, k),
+                    h => { var e = NesneYazici.HatEtiketi(t); return h == null ? e : e.Replace(NesneYazici.Tanitici, h); },
                     ad, null, t);
             }
             foreach (var c in tel.Kanallar)
             {
                 var t = c;
-                isle("kanal", t.Id, (h, k) => PromagisYazici.Kanal(t, onEk, k), (o, k) => PromagisYazici.Kanal((Kanal)o, onEk, k), null,
+                isle("kanal", t.Id, (h, k) => NesneYazici.Kanal(t, onEk, k), (o, k) => NesneYazici.Kanal((Kanal)o, onEk, k), null,
                     "Kanal " + t.Kablolar + " " + t.Zemin, null, t);
             }
             foreach (var s in tel.Sondajlar)
             {
                 var t = s;
-                isle("sondaj", t.Id, (h, k) => PromagisYazici.Sondaj(t, onEk, k), (o, k) => PromagisYazici.Sondaj((Sondaj)o, onEk, k), null,
+                isle("sondaj", t.Id, (h, k) => NesneYazici.Sondaj(t, onEk, k), (o, k) => NesneYazici.Sondaj((Sondaj)o, onEk, k), null,
                     "Sondaj " + t.Tip, null, t);
             }
 

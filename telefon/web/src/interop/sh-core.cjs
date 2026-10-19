@@ -1,10 +1,10 @@
 /*
- * Şebeke Hakediş — telefonun hesap çekirdeği.
+ * Şebeke-M — telefonun hesap çekirdeği.
  *
  * AutoCAD eklentisindeki C# çekirdeğinin (autocad/src/Cekirdek) karşılığıdır; kurallar aynıdır:
  *  - proje dosyası (.sebeke.json) okuma / yazma (ortak/VERI-MODELI.md)
  *  - bölge seçimi, hat metrajı ve etiketi, kanal kodu ve hacmi, GIS numarası
- *  - Durum Tespit raporu ve özeti (PROMAGIS raporuyla aynı satırlar)
+ *  - Durum Tespit raporu ve özeti (AutoCAD raporuyla aynı satırlar)
  *  - TM projeksiyonu (ITRF96 / GRS80, 3° dilim)
  *  - değişiklik günlüğü (telefonda kayıt: "koy / sil" işlemleri)
  *
@@ -26,7 +26,7 @@
     M: 'Montaj', 'M+M': 'Malzeme + Montaj', DM: 'Demontaj', 'DM+M': 'Sök-Tak', MEVCUT: 'Mevcut', KM: 'KM', ME: 'ME'
   };
 
-  /** Eleman türleri. katman: PROMAGIS katman adındaki tür; gis: GIS numarası biçimi. */
+  /** Eleman türleri. katman: AutoCAD katman adındaki tür; gis: GIS numarası biçimi. */
   const ELEMAN_TURLERI = [
     { kod: 'AG_DIREK', ad: 'AG Direk', kisa: 'AG', katman: 'AGDİR', sekil: 'daire', gis: 'direk' },
     { kod: 'MUSTEREK_DIREK', ad: 'Müşterek Direk', kisa: 'Müşterek', katman: 'MÜŞDİR', sekil: 'daire', gis: 'direk' },
@@ -64,7 +64,7 @@
   function elemanTuru(kod) { return ELEMAN_TURLERI.find(t => t.kod === kod) || ELEMAN_TURLERI[ELEMAN_TURLERI.length - 1]; }
   function hatTuru(kod) { return HAT_TURLERI.find(t => t.kod === kod) || { kod, ad: kod || 'Hat', katman: '' }; }
 
-  /** Malzeme cinsinden eleman türü (PromagisOkuyucu.ElemanTuru ile aynı). */
+  /** Malzeme cinsinden eleman türü (NesneOkuyucu.ElemanTuru ile aynı). */
   function cinstenElemanTuru(cins) {
     const c = cins || '';
     const b = p => c.startsWith(p);
@@ -401,7 +401,7 @@
     return (og ? KANAL.OG : 0) | (ag ? KANAL.AG : 0) | (ayd ? KANAL.AYD : 0) | (rek ? KANAL.REK : 0);
   }
 
-  /** PROMAGIS yazımı: "OG", "/AG/AYD", "OG/AG/AYD/REK"... */
+  /** AutoCAD yazımı: "OG", "/AG/AYD", "OG/AG/AYD/REK"... */
   function kanalKablolari(kod) {
     let s = '';
     if (kod & KANAL.OG) s += 'OG';
@@ -433,7 +433,7 @@
   }
 
   /**
-   * Hat etiketi (PROMAGIS yazımı, tanıtıcı olmadan): M "^ kesit/341m", M+M "* kesit/15m",
+   * Hat etiketi (AutoCAD yazımı, tanıtıcı olmadan): M "^ kesit/341m", M+M "* kesit/15m",
    * DM ">kesit</42m", DM+M "[kesit]/7m", MEVCUT "(kesit)/40m".
    */
   function hatEtiketi(durum, kesit, metraj) {
@@ -447,7 +447,7 @@
       case 'KM': return '/' + k + '\\/' + m;
       case 'ENH': return '{' + k + '}/' + m;
       case 'MEVCUT': return '(' + k + ')/' + m;
-      default: return k + '/' + m; // ME ve bilinmeyenler düz yazılır (PROMAGIS "TANIMSIZ" yazar)
+      default: return k + '/' + m; // ME ve bilinmeyenler düz yazılır (AutoCAD "TANIMSIZ" yazar)
     }
   }
 
@@ -585,7 +585,7 @@
   function yeniProje(o) {
     const a = o || {};
     return {
-      bicim: BICIM, surum: SURUM, olusturan: 'Şebeke Hakediş (telefon)', olusturma: zaman(),
+      bicim: BICIM, surum: SURUM, olusturan: 'Şebeke-M (telefon)', olusturma: zaman(),
       proje: {
         ad: a.ad || 'Yeni Proje', kaynak: 'telefon',
         koordinat: { sistem: 'TM', datum: 'ITRF96', dom: Number(a.dom) || 0, eksenler: 'saga = doğu (CAD X), yukari = kuzey (CAD Y)' },
@@ -634,7 +634,7 @@
    */
   function projeOku(girdi) {
     const k = typeof girdi === 'string' ? JSON.parse(girdi.replace(/^﻿/, '')) : girdi;
-    if (!k || k.bicim !== BICIM) throw new Error('Bu bir Şebeke Hakediş proje dosyası değil.');
+    if (!k || k.bicim !== BICIM) throw new Error('Bu bir Şebeke-M proje dosyası değil.');
     if (num(k.surum) > SURUM) throw new Error('Proje dosyası daha yeni bir sürümle hazırlanmış (' + k.surum + '). Uygulamayı güncelleyin.');
     const pj = k.proje || {};
     const kor = pj.koordinat || {};
@@ -702,8 +702,35 @@
         kalemler: (o.kalemler || []).map(kalemOku)
       }));
     }
+    // Teknik hesap sonuçları (Hesap Merkezi; ortak/hesap/BAGLAM.md › Kayıt)
+    p.hesaplar = hesaplariOku(dizi('hesaplar'));
     if (Array.isArray(k.uyarilar) && k.uyarilar.length) p.uyarilar = k.uyarilar.map(str);
     return p;
+  }
+
+  function hesaplariOku(liste) {
+    const out = [], s = new Set();
+    for (const o of liste) {
+      const id = str(o.id), modul = str(o.modul);
+      if (!id || !modul || s.has(id)) continue;
+      s.add(id);
+      const h = o.hedef && typeof o.hedef === 'object' ? o.hedef : {};
+      const md = o.modulDurumu;
+      out.push(Object.assign({}, o, {
+        id, modul, modulAdi: str(o.modulAdi), ozet: str(o.ozet), durum: str(o.durum) || 'bilgi', tarih: str(o.tarih), kaynak: str(o.kaynak),
+        hedef: Object.assign({}, h, { tur: str(h.tur) || 'proje', id: str(h.id), no: str(h.no) }, Array.isArray(h.parcalar) ? { parcalar: h.parcalar.map(str).filter(Boolean) } : {}),
+        ayrinti: o.ayrinti && typeof o.ayrinti === 'object' ? o.ayrinti : {},
+        modulDurumu: md == null ? '' : typeof md === 'string' ? md : JSON.stringify(md),
+        kullanilan: o.kullanilan && typeof o.kullanilan === 'object' ? o.kullanilan : {}
+      }));
+    }
+    return out;
+  }
+
+  function hesapYaz(h) {
+    return sirala(h, [['id', h.id], ['modul', h.modul], ['modulAdi', h.modulAdi], ['modulSurumu', h.modulSurumu || undefined],
+      ['hedef', h.hedef], ['ozet', h.ozet], ['durum', h.durum], ['ayrinti', h.ayrinti || {}], ['modulDurumu', h.modulDurumu || ''],
+      ['kullanilan', h.kullanilan || {}], ['tarih', h.tarih], ['kaynak', h.kaynak], ['yapan', h.yapan || undefined], ['telefonId', h.telefonId || undefined]]);
   }
 
   const r4 = v => temiz(Number(v) || 0, 4);
@@ -740,7 +767,7 @@
   function projeYaz(p, olusturan, girintili) {
     const pj = p.proje;
     const k = {
-      bicim: BICIM, surum: SURUM, olusturan: olusturan || p.olusturan || 'Şebeke Hakediş (telefon)', olusturma: zaman(),
+      bicim: BICIM, surum: SURUM, olusturan: olusturan || p.olusturan || 'Şebeke-M (telefon)', olusturma: zaman(),
       proje: sirala(pj, [['ad', pj.ad], ['kaynak', pj.kaynak],
         ['koordinat', Object.assign({ sistem: 'TM', datum: 'ITRF96', dom: 0 }, pj.koordinat, { eksenler: 'saga = doğu (CAD X), yukari = kuzey (CAD Y)' })],
         ['aktifHakedis', pj.aktifHakedis], ['katmanOnEki', pj.katmanOnEki], ['gisOnEki', pj.gisOnEki]]),
@@ -765,6 +792,7 @@
         ['bolge', s.bolge], ['basNo', s.basNo || ''], ['bitNo', s.bitNo || ''], ['cizimUzunlugu', temiz(uzunluk(s.kose), 3)],
         ['kontrol', s.kontrol === undefined ? null : s.kontrol], ['kose', kYaz(s.kose)], ['kalemler', (s.kalemler || []).map(kalemYaz)]]))
     };
+    if (p.hesaplar && p.hesaplar.length) k.hesaplar = p.hesaplar.map(hesapYaz);
     if (p.uyarilar && p.uyarilar.length) k.uyarilar = p.uyarilar.slice();
     return girintili ? JSON.stringify(k, null, 1) : JSON.stringify(k);
   }

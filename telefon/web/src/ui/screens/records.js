@@ -11,7 +11,7 @@ import { MaterialPicker } from './matpick.js';
 import { offsetPolyline, dms } from '../../geo/geom.js';
 import { unproject } from '../../geo/crs.js';
 import { sourceInfo, sourceText } from '../../core/source.js';
-import { PromagisDurum } from '../promagis.js';
+import { CizimDurum } from '../durum-kodu.js';
 import { overlayLines, buildExif, extractExif, resetOrientation, withExif, nextPhotoName, photoPath, projectFolder, kindLabel } from '../../services/photo-service.js';
 
 const toDMS = (v, pos, neg) => { if (v == null) return '—'; const a = Math.abs(v), d = Math.floor(a), m = Math.floor((a - d) * 60), s = ((a - d) * 60 - m) * 60; return d + '° ' + String(m).padStart(2, '0') + '′ ' + s.toFixed(4).padStart(7, '0') + '″ ' + (v >= 0 ? pos : neg); };
@@ -103,7 +103,7 @@ export function LineScreen({ id }) {
     app.toast(nl.lineNo + ' ofset hat oluşturuldu (İLERİDE)');
   };
   const cb = Object.assign({}, CABLE_DEFAULTS, d.cable || {});
-  return html`<${Title} title=${d.lineNo + ' · ' + d.lineType} sub=${lineLabel(l0, cat) + ' · ' + trn(li.length3D, 2) + ' m'} />
+  return html`<${Title} title=${d.lineNo + ' · ' + d.lineType} sub=${lineLabel(l0, cat) + ' · ' + trn(li.length3D, 2) + ' m'} right=${html`<button class="btn sm" title="Bu hat için teknik hesaplar" onClick=${() => app.nav.go('hesapMerkezi', { hedef: { tur: 'hat', id } })}><${Icon} n="calc" s=${16} />Hesaplar</button>`} />
     ${iss.map((i) => html`<div class=${'alert ' + (i.severity === 'error' ? 'err' : 'warn')}><${Badge} k=${CODE_KIND[i.code]}>${i.code}</${Badge}> ${i.message}</div>`)}
     <div class="grid3"><div class="stat"><b>2B</b><span>${trn(li.length2D, 2)}</span><small>m</small></div><div class="stat"><b>3B</b><span>${trn(li.length3D, 2)}</span><small>m</small></div><div class="stat"><b>Kaynak</b><span style="font-size:15px">${li.lenSource || '—'}</span></div></div>
     <div class="card stack">
@@ -111,7 +111,7 @@ export function LineScreen({ id }) {
       <div class="fld"><label>Hat tipi</label><${Seg} value=${d.lineType} options=${['AG', 'OG', 'AYD', 'ENH', 'ABONE']} onChange=${(v) => set({ lineType: v })} /></div>
       <div class="grid2"><div class="fld"><label>Tesis</label><${Seg} value=${d.install} options=${[['havai', 'Havai'], ['yeralti', 'Yeraltı']]} onChange=${(v) => set({ install: v })} /></div><div class="fld"><label>Gerilim (kV)</label><input class="inp mono" type="number" step="0.1" value=${d.voltageKV ?? (d.lineType === 'OG' || d.lineType === 'ENH' ? 34.5 : 0.4)} onChange=${(e) => set({ voltageKV: +e.target.value })} /></div></div>
       <div class="fld"><label>Durum</label><div class="chips">${Object.entries(STATUSES).map(([k, v]) => html`<${Chip} on=${d.state === k} onClick=${() => set({ state: k })}>${v.label.split(' ·')[0]}</${Chip}>`)}</div></div>
-      <${PromagisDurum} d=${d} set=${set} />
+      <${CizimDurum} d=${d} set=${set} />
       <div class="row"><span class="grow">${d.install === 'yeralti' ? 'Aynı kanalda AG ve OG kablosu' : 'Müşterek (AG+OG aynı direk)'}</span><${Toggle} on=${!!d.musterek} onChange=${(v) => set({ musterek: v })} label="Müşterek" /></div>
       <div class="row"><span class="grow">Ana ring</span><${Toggle} on=${!!d.ring} onChange=${(v) => set({ ring: v })} label="Ring" /></div>
       ${d.lineType === 'ABONE' ? html`<div class="grid2"><div class="fld"><label>Faz</label><${Seg} value=${d.abonePhase || 'uc'} options=${[['tek', 'Tek'], ['uc', 'Üç']]} onChange=${(v) => set({ abonePhase: v })} /></div><div class="fld"><label>Bağlantı sayısı</label><input class="inp mono" type="number" value=${d.aboneCount || 1} onChange=${(e) => set({ aboneCount: +e.target.value })} /></div></div>` : null}
@@ -165,7 +165,7 @@ export function LineScreen({ id }) {
 
 // Fotoğraf / kanıt: uygulama içi kamera, zaman-konum-yön damgası
 // Fotoğraf: bir objeye çoklu çekim. Dosya adı {ObjeNo}_{Sıra}.jpg; görüntü üstüne proje/obje/tarih/koordinat/doğruluk/fix yazılır,
-// EXIF'e GPS + tarih işlenir; APK'da ayrıca İndirilenler/VOLT-EDAS/<PROJE>/<TÜR>/<ObjeNo>/ klasörüne kopyalanır.
+// EXIF'e GPS + tarih işlenir; APK'da ayrıca İndirilenler/Sebeke-M/<PROJE>/<TÜR>/<ObjeNo>/ klasörüne kopyalanır.
 export function PhotoScreen({ ownerId, pointId, ownerNo, slot, ownerKind }) {
   const ps = app.ps;
   const vid = useRef(null), stream = useRef(null);
@@ -214,7 +214,7 @@ export function PhotoScreen({ ownerId, pointId, ownerNo, slot, ownerKind }) {
       const filepath = photoPath(kind, ownerNo || 'OBJE', nm.filename);
       await ps.addPhoto(bytes, 'image/jpeg', { ownerId, ownerNo, ownerType: kind, pointId, pointNo: p ? p.pointNo : null, slot: slot || null, filename: nm.filename, filepath, seq: nm.seq,
         lat: lat ?? null, lon: lon ?? null, elevation: p && p.H != null ? p.H : g.H ?? null, E: p ? p.E : g.E, N: p ? p.N : g.N, accuracy: acc ?? null, fix: p ? sourceInfo(p).tag : g.fix, heading, note, width: c.width, height: c.height, device: (g.receiver || {}).name || null, operator: ps.ds.user.name, exifKept: !!orig });
-      // Fiziksel klasör (yalnız APK): İndirilenler/VOLT-EDAS/<PROJE>/DIREKLER/D-001/D-001_01.jpg
+      // Fiziksel klasör (yalnız APK): İndirilenler/Sebeke-M/<PROJE>/DIREKLER/D-001/D-001_01.jpg
       if (app.bridge.isNative() && (await app.ds.setting('photoToDevice')) !== false) { try { await app.bridge.saveFile(nm.filename, 'image/jpeg', bytes, { dir: projectFolder(ps.p) + '/' + filepath.split('/').slice(0, -1).join('/') }); } catch (e) { app.toast('Telefona kopyalanamadı: ' + e.message, 'warn'); } }
       setTaken((t) => [...t, nm.filename]);
       app.toast(nm.filename + ' kaydedildi', 'ok', 1800);

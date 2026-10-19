@@ -12,12 +12,12 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Köy / bakım unsuru (2 hane); boşsa kalemin tek tarifesi vardır.</summary>
         public string UnsurKoy = "";
         public string PozNo = "", Kesit = "", Temini = "", Guc = "";
-        /// <summary>PROMAGIS rapor sırası (katalog sırası); bilinmiyorsa int.MaxValue.</summary>
+        /// <summary>AutoCAD rapor sırası (katalog sırası); bilinmiyorsa int.MaxValue.</summary>
         public int Onem = int.MaxValue;
         /// <summary>Gerçek çizimlerde bu kalemin kullanıldığı nesne türleri (AG_DIREK, HAT_AG_HAVAI, KANAL…).</summary>
         public HashSet<string> Nesneler = new HashSet<string>(StringComparer.Ordinal);
         public int Kullanim;
-        /// <summary>"katalog" (PROMAGIS listesi) ya da "cizim" (yalnız bir çizimde görüldü).</summary>
+        /// <summary>"katalog" (AutoCAD listesi) ya da "cizim" (yalnız bir çizimde görüldü).</summary>
         public string Kaynak = "katalog";
 
         public string Anahtar => Cins + "|" + Tanim;
@@ -50,7 +50,7 @@ namespace SebekeHakedis.Cekirdek
     }
 
     /// <summary>
-    /// Malzeme kataloğu: ortak/katalog/kalemler.json (sürüm 2: PROMAGIS'in tam listesi; eklentiye gömülü) + çizimde
+    /// Malzeme kataloğu: ortak/katalog/kalemler.json (sürüm 2: AutoCAD'in tam listesi; eklentiye gömülü) + çizimde
     /// kullanılan kalemler. Nesne türü → cins listeleri (gruplar) pencere süzgeçlerini ve menüyü belirler.
     /// Telefon uygulamasındaki katalogla aynı dosya (sh-core.js katalogHazirla).
     /// </summary>
@@ -67,7 +67,7 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Tarife kod listeleri (ayarlar penceresi için): kod → ad.</summary>
         public readonly Dictionary<string, string> Karakteristikler = new Dictionary<string, string>(StringComparer.Ordinal);
         public readonly Dictionary<string, string> Unsurlar = new Dictionary<string, string>(StringComparer.Ordinal);
-        /// <summary>Durum kodu → açıklama (PROMAGIS listesi).</summary>
+        /// <summary>Durum kodu → açıklama (AutoCAD listesi).</summary>
         public readonly Dictionary<string, string> Durumlar = new Dictionary<string, string>(StringComparer.Ordinal);
         public int Surum = 1;
 
@@ -171,13 +171,13 @@ namespace SebekeHakedis.Cekirdek
             }
         }
 
-        /// <summary>Eski (sürüm 1) katalogda grup tablosu yoktur: PROMAGIS cins ön eklerinden kurulur.</summary>
+        /// <summary>Eski (sürüm 1) katalogda grup tablosu yoktur: AutoCAD cins ön eklerinden kurulur.</summary>
         private void VarsayilanGruplar()
         {
             foreach (var it in Kalemler)
             {
-                if (it.Rol == "ana") GrupEkle(ElemanCinsleri, PromagisOkuyucu.ElemanTuru(it.Cins), it.Cins);
-                else if (it.Rol == "hat") GrupEkle(HatCinsleri, PromagisOkuyucu.HatTuru("", it.Cins), it.Cins);
+                if (it.Rol == "ana") GrupEkle(ElemanCinsleri, NesneOkuyucu.ElemanTuru(it.Cins), it.Cins);
+                else if (it.Rol == "hat") GrupEkle(HatCinsleri, NesneOkuyucu.HatTuru("", it.Cins), it.Cins);
                 else if (it.Rol == "kanal" && !KanalCinsleri.Contains(it.Cins)) KanalCinsleri.Add(it.Cins);
                 else if (it.Rol == "sondaj" && !SondajCinsleri.Contains(it.Cins)) SondajCinsleri.Add(it.Cins);
             }
@@ -277,7 +277,7 @@ namespace SebekeHakedis.Cekirdek
             return _cinsSirasi.TryGetValue(cins ?? "", out i) ? i : int.MaxValue;
         }
 
-        /// <summary>Katalog sırası: verilen cins listesindeki sıra, sonra PROMAGIS önem sırası, sonra ad.</summary>
+        /// <summary>Katalog sırası: verilen cins listesindeki sıra, sonra AutoCAD önem sırası, sonra ad.</summary>
         private Comparison<KatalogKalemi> Siralayici(IList<string> cinsler)
         {
             return (a, b) =>
@@ -299,7 +299,7 @@ namespace SebekeHakedis.Cekirdek
             List<string> l;
             if (ElemanCinsleri.TryGetValue(tur ?? "", out l) && l.Count > 0) return new List<string>(l);
             var s = new List<string>();
-            foreach (var it in Kalemler) if (it.Rol == "ana" && (it.Nesneler.Contains(tur) || PromagisOkuyucu.ElemanTuru(it.Cins) == tur) && !s.Contains(it.Cins)) s.Add(it.Cins);
+            foreach (var it in Kalemler) if (it.Rol == "ana" && (it.Nesneler.Contains(tur) || NesneOkuyucu.ElemanTuru(it.Cins) == tur) && !s.Contains(it.Cins)) s.Add(it.Cins);
             return s;
         }
 
@@ -308,7 +308,7 @@ namespace SebekeHakedis.Cekirdek
             List<string> l;
             if (HatCinsleri.TryGetValue(tur ?? "", out l) && l.Count > 0) return new List<string>(l);
             var s = new List<string>();
-            foreach (var it in Kalemler) if (it.Rol == "hat" && (it.Nesneler.Contains("HAT_" + tur) || PromagisOkuyucu.HatTuru("", it.Cins) == tur) && !s.Contains(it.Cins)) s.Add(it.Cins);
+            foreach (var it in Kalemler) if (it.Rol == "hat" && (it.Nesneler.Contains("HAT_" + tur) || NesneOkuyucu.HatTuru("", it.Cins) == tur) && !s.Contains(it.Cins)) s.Add(it.Cins);
             return s;
         }
 
@@ -321,7 +321,7 @@ namespace SebekeHakedis.Cekirdek
             var grup = cinsler != null && cinsler.Count > 0 ? new List<string>(cinsler) : ElemanCinsListesi(tur);
             // Grubun cinsleri rolüne bakılmaksızın (ör. DİĞER › ARMATÜR malzeme rolündedir); grup dışından yalnız çizimde o türle görülen ana pozlar
             var l = Kalemler.FindAll(it => grup.Contains(it.Cins) ? (it.Rol == "ana" || it.Rol == "malzeme") : (cinsler == null && it.Rol == "ana" && it.Nesneler.Contains(tur)));
-            if (l.Count == 0 && cinsler == null) l = Kalemler.FindAll(it => it.Rol == "ana" && PromagisOkuyucu.ElemanTuru(it.Cins) == tur);
+            if (l.Count == 0 && cinsler == null) l = Kalemler.FindAll(it => it.Rol == "ana" && NesneOkuyucu.ElemanTuru(it.Cins) == tur);
             l.Sort(Siralayici(grup));
             return l;
         }
@@ -374,7 +374,7 @@ namespace SebekeHakedis.Cekirdek
 
         /// <summary>
         /// Kalemin tarifesi: karakteristik (çizim ayarı; boşsa katalogdaki) + unsur (çizim ayarı köy/bakım ise
-        /// kalemin köy unsuru, yoksa şehir unsuru). PROMAGIS: SMIKMU 1 şehir / 2 köy, KRTNALINACAK karakteristik.
+        /// kalemin köy unsuru, yoksa şehir unsuru). AutoCAD: SMIKMU 1 şehir / 2 köy, KRTNALINACAK karakteristik.
         /// </summary>
         public static string TarifeSec(KatalogKalemi it, string karakteristik, bool koy)
         {

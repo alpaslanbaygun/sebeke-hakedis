@@ -36,7 +36,7 @@ export function ExportScreen() {
     await ps.ds.create('exportJobs', { projectId: ps.p.id, formats: keys, crs: crsAlt[crsKey].label, files: saved, signature: ps.result.signature, stale: false, issues: errs }, { reason: 'Dışa aktarım: ' + keys.join(', '), silent: true });
     await ps.reload('exportJobs');
     setBusy(null);
-    app.toast(saved.length + ' dosya ' + (app.web ? 'indirildi' + (saved.length > 1 ? ' (tek zip)' : '') : share ? 'paylaşıldı' : 'kaydedildi (İndirilenler/VOLT-EDAS)'), 'ok', 5000);
+    app.toast(saved.length + ' dosya ' + (app.web ? 'indirildi' + (saved.length > 1 ? ' (tek zip)' : '') : share ? 'paylaşıldı' : 'kaydedildi (İndirilenler/Sebeke-M)'), 'ok', 5000);
   };
   const toggle = (k) => { const s = Object.assign({}, sel, { [k]: !sel[k] }); setSel(s); app.state.expSel = s; };
   return html`<div class="title"><div class="grow"><h1>Dışa Aktarım</h1><div class="sub" style="font-family:Inter">CAD, CBS ve TEDAŞ teslim dosyaları</div></div></div>

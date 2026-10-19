@@ -42,7 +42,7 @@ namespace SebekeHakedis.Cekirdek
     }
 
     /// <summary>
-    /// PROMAGIS raporundaki DETAY sorgusu ("eksik malzeme bul"): elemanların ara malzemelerinde aranan malzemeyi arar.
+    /// AutoCAD raporundaki DETAY sorgusu ("eksik malzeme bul"): elemanların ara malzemelerinde aranan malzemeyi arar.
     /// Olanlar: aranan malzemenin her satırı elemanıyla; olmayanlar: aranan malzemesi hiç olmayan elemanlar.
     /// Süzgeçler büyük/küçük harf, Türkçe I/İ ve boşluk farkını yok sayar.
     /// </summary>

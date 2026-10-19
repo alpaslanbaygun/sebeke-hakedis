@@ -4,10 +4,10 @@ using System.Globalization;
 
 namespace SebekeHakedis.Cekirdek
 {
-    /// <summary>Durum Tespit raporunu Excel dosyası olarak yazar (PROMAGIS raporuyla aynı sayfa ve sütunlar).</summary>
+    /// <summary>Durum Tespit raporunu Excel dosyası olarak yazar (AutoCAD raporuyla aynı sayfa ve sütunlar).</summary>
     public static class RaporYazici
     {
-        public static void Yaz(Proje p, string yol, string surum, Katsayilar k = null)
+        public static void Yaz(Proje p, string yol, string surum, Katsayilar k = null, ProjeBilgisi bilgi = null)
         {
             k = k ?? Katsayilar.Varsayilan;
             var dt = new DurumTespit(p, k);
@@ -16,7 +16,7 @@ namespace SebekeHakedis.Cekirdek
             // 1) ÖZET
             var oz = x.SayfaEkle("ÖZET");
             oz.UstBilgi.Add("DURUM TESPİT ÖZETİ — " + p.Ad);
-            oz.UstBilgi.Add("Kaynak: " + p.Kaynak + "   ·   Oluşturma: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) + "   ·   Şebeke Hakediş " + surum);
+            oz.UstBilgi.Add("Kaynak: " + p.Kaynak + "   ·   Oluşturma: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) + "   ·   Şebeke-M " + surum);
             var onaylar = HakedisOnayi.Ozet(p.Onaylar);
             if (onaylar.Count > 0) oz.UstBilgi.Add("Hakediş onayları: " + string.Join("   ·   ", onaylar.ToArray()));
             oz.Basliklar.AddRange(new[] { "PROJE", "PROJE KODU", "HAK. NO", "DURUM", "CİNS", "TİP", "BİRİM", "MİKTAR", "TOP. MİK.", "TOP. TL.", "SATIR" });
@@ -99,7 +99,10 @@ namespace SebekeHakedis.Cekirdek
             // 9) DETAY: her elemanın ara malzemeleri satır satır (ara malzemesi olmayan eleman tek satır)
             DetaySayfasi(x.SayfaEkle("DETAY"), DetaySorgu.Sorgula(p, new DetayFiltresi(), dt));
 
-            // 10) UYARILAR
+            // 10) HESAPLAR: teknik hesap sonuçları (Hesap Merkezi), güncellik bugünkü çizime göre
+            if (p.Hesaplar.Count > 0) HesapSayfasi(x.SayfaEkle("HESAPLAR"), p, bilgi);
+
+            // 11) UYARILAR
             if (p.Uyarilar.Count > 0)
             {
                 var u = x.SayfaEkle("UYARILAR");
@@ -111,13 +114,51 @@ namespace SebekeHakedis.Cekirdek
             x.Kaydet(yol);
         }
 
+        /// <summary>
+        /// Teknik hesaplar sayfası: hesap, hedef, sonuç özeti, durum, güncellik (hesaptan sonra değişen bilgiler),
+        /// kullanılan girdiler, sonuç değerleri ve uyarılar.
+        /// </summary>
+        public static void HesapSayfasi(XlsxYazici.Sayfa s, Proje p, ProjeBilgisi bilgi)
+        {
+            s.UstBilgi.Add("TEKNİK HESAPLAR — " + p.Ad);
+            s.UstBilgi.Add("Hesap araçları: Elektrik-Elektronik Mühendisi Baki SONAY (formüller değiştirilmeden Şebeke-M'e eklenmiştir). Güncellik: hesap kaydedildikten sonra hesabın kullandığı bir proje bilgisi değiştiyse \"GÜNCEL DEĞİL\".");
+            s.Basliklar.AddRange(new[] { "HESAP", "HEDEF", "HEDEF NO", "SONUÇ", "DURUM", "GÜNCELLİK", "GİRDİLER", "DEĞERLER", "UYARILAR", "TARİH", "KAYNAK", "YAPAN", "KİMLİK" });
+            var sirali = new List<HesapKaydi>(p.Hesaplar);
+            sirali.Sort((a, b) => string.CompareOrdinal(b.Tarih, a.Tarih));
+            foreach (var h in sirali)
+            {
+                string guncellik;
+                bool hedefYok;
+                var fark = HesapGuncellik.Durum(p, h, bilgi, "autocad", out hedefYok);
+                if (hedefYok) guncellik = "HEDEF SİLİNMİŞ";
+                else
+                {
+                    if (fark.Count == 0) guncellik = "Güncel";
+                    else
+                    {
+                        var l = new List<string>();
+                        foreach (var f in fark) { if (l.Count >= 6) { l.Add("…"); break; } l.Add(f.ToString()); }
+                        guncellik = "GÜNCEL DEĞİL: " + string.Join("; ", l.ToArray());
+                    }
+                }
+                string tarih = h.Tarih;
+                DateTime t;
+                if (DateTime.TryParse(h.Tarih, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out t)) tarih = t.ToLocalTime().ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture);
+                string hedefAdi = h.HedefTur == "direk" ? "Direk" : h.HedefTur == "hat" ? "Hat" : h.HedefTur == "trafo" ? "Trafo" : h.HedefTur == "kanal" ? "Kanal" : "Proje";
+                s.Satirlar.Add(new object[] { string.IsNullOrEmpty(h.ModulAdi) ? h.Modul : h.ModulAdi, hedefAdi, h.HedefNo, h.Ozet, HesapKaydi.DurumAdi(h.Durum), guncellik,
+                    string.Join("; ", h.Satirlar("girdiler").ToArray()), string.Join("; ", h.Satirlar("degerler").ToArray()), string.Join("; ", h.Satirlar("uyarilar").ToArray()),
+                    tarih, h.Kaynak == "telefon" ? "Telefon" : "AutoCAD", h.Yapan, h.Id });
+            }
+            s.Genislikler[0] = 30; s.Genislikler[2] = 18; s.Genislikler[3] = 70; s.Genislikler[5] = 40; s.Genislikler[6] = 60; s.Genislikler[7] = 70; s.Genislikler[8] = 50;
+        }
+
         /// <summary>Yalnız eksik malzeme sorgusunun sonucunu yazar (SH_DETAY).</summary>
         public static void DetayYaz(Proje p, List<DetaySatiri> satirlar, string yol, string surum, string aciklama)
         {
             var x = new XlsxYazici();
             var s = x.SayfaEkle("DETAY");
             s.UstBilgi.Add("EKSİK MALZEME SORGUSU — " + p.Ad);
-            s.UstBilgi.Add((aciklama ?? "") + "   ·   Oluşturma: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) + "   ·   Şebeke Hakediş " + surum);
+            s.UstBilgi.Add((aciklama ?? "") + "   ·   Oluşturma: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) + "   ·   Şebeke-M " + surum);
             DetaySayfasi(s, satirlar);
             x.Kaydet(yol);
         }

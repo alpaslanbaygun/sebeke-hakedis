@@ -1,0 +1,462 @@
+{
+  "modul": "kopma",
+  "aciklama": "Beklenen değerler özgün kopma.html dosyasından (sahibinin değiştirilmemiş kopyası), aynı girdilerle calc() çalıştırılıp aracın last nesnesinden okundu (is-A/altin.py). Durum 1 (telefon direk 21, 3xPigeon=3/0, bölge 3, a 342,15/118,4): p_b 1,0712, a_ort 230,275 (2 basamak: 230,27), pn 2,4853, Tn2b 1737,28, 0,7·Tkop 2121, h_b 154,39; kullanıcı h_proje=58 girince kurtarıyor (uygun). Durum 2 (AutoCAD direk D-45, 3xSW, bölge 4 k=0,5, a 280,4/319,6): Tn2b 653,37 (Durum No.2), h_b 22,56; h_proje 25 → kurtarmıyor (uygun-degil). Durum 3: iletken, bölge, a₂ yok → araç varsayılanları (3/0, bölge 3, a₂ 98,92): Tn2b 1623,92, h_b 200,00; h_proje girilmediği için bilgi. Durum 4 (3xHawk=477, bölge 2, a 250/210): Tn2b 3032,64, h_b 1105,13; h_proje 40 → uygun. h_proje projede olmadığından her zaman eksiktir; girilmeden sonuç 'bilgi'.",
+  "durumlar": [
+    {
+      "ad": "telefon direk Pigeon bölge 3, h_proje girilmemiş → bilgi",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme Dağ ENH",
+          "kod": "DNM-04",
+          "yapan": "Ayşe Nur Yılmaz",
+          "unvan": "Elektrik Mühendisi",
+          "buzBolgesi": "3"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "k21",
+          "no": "21"
+        },
+        "direk": {
+          "id": "k21",
+          "no": "21",
+          "tur": "OG",
+          "malzeme": "demir",
+          "tip": "GT-14 (3/0)",
+          "rol": "T",
+          "rolKaynagi": "tip",
+          "aci": 0,
+          "kot": 1204.6,
+          "yukseklik": 14,
+          "baglanti": null,
+          "durum": "M",
+          "kollar": [
+            {
+              "yon": 271.2,
+              "aciklik": 342.15,
+              "aciklik3B": 346.9,
+              "dH": -57.2,
+              "karsi": {
+                "id": "k20",
+                "no": "20",
+                "tip": "GD-14 (3/0)",
+                "rol": "D",
+                "kot": 1147.4
+              },
+              "hatId": "h21",
+              "hatNo": "H-21",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xPigeon",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            },
+            {
+              "yon": 92.4,
+              "aciklik": 118.4,
+              "aciklik3B": 118.62,
+              "dH": 7.1,
+              "karsi": {
+                "id": "k22",
+                "no": "22",
+                "tip": "GT-14 (3/0)",
+                "rol": "T",
+                "kot": 1211.7
+              },
+              "hatId": "h21",
+              "hatNo": "H-21",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xPigeon",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "beklenen": {
+        "dolan": 5,
+        "eksik": [
+          "h_proje"
+        ],
+        "durum": "bilgi",
+        "ozet": "^Direk 21 · 3/0 · 3\\. bölge · h_b = 154,39 m · h_proje girilmedi$",
+        "degerler": {
+          "a₁": 342.15,
+          "a₂": 118.4,
+          "Buz katsayısı k": 0.3,
+          "Buz yükü p_b": 1.0712,
+          "Ortalama açıklık a_ort": 230.27,
+          "p₁ = p₀ + p_b": 1.4141,
+          "2·p_b (iki misli buz)": 2.1424,
+          "pₙ = 2·p_b + p₀": 2.4853,
+          "İki misli buz çekmesi Tₙ₂b": 1737.28,
+          "0,7·T_kop (emniyet sınırı)": 2121,
+          "Hesaplanan h_b": 154.39,
+          "Kopma kuvveti T_kop": 3030,
+          "Direk No": 21,
+          "uyarilar[0]": "h_proje girilmedi: araçtaki 63,6 m örnek değerdir; karar verilmedi."
+        }
+      }
+    },
+    {
+      "ad": "telefon direk Pigeon, kullanıcı h_proje = 58 girer → kurtarıyor",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme Dağ ENH",
+          "kod": "DNM-04",
+          "yapan": "Ayşe Nur Yılmaz",
+          "unvan": "Elektrik Mühendisi",
+          "buzBolgesi": "3"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "k21",
+          "no": "21"
+        },
+        "direk": {
+          "id": "k21",
+          "no": "21",
+          "tur": "OG",
+          "malzeme": "demir",
+          "tip": "GT-14 (3/0)",
+          "rol": "T",
+          "rolKaynagi": "tip",
+          "aci": 0,
+          "kot": 1204.6,
+          "yukseklik": 14,
+          "baglanti": null,
+          "durum": "M",
+          "kollar": [
+            {
+              "yon": 271.2,
+              "aciklik": 342.15,
+              "aciklik3B": 346.9,
+              "dH": -57.2,
+              "karsi": {
+                "id": "k20",
+                "no": "20",
+                "tip": "GD-14 (3/0)",
+                "rol": "D",
+                "kot": 1147.4
+              },
+              "hatId": "h21",
+              "hatNo": "H-21",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xPigeon",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            },
+            {
+              "yon": 92.4,
+              "aciklik": 118.4,
+              "aciklik3B": 118.62,
+              "dH": 7.1,
+              "karsi": {
+                "id": "k22",
+                "no": "22",
+                "tip": "GT-14 (3/0)",
+                "rol": "T",
+                "kot": 1211.7
+              },
+              "hatId": "h21",
+              "hatNo": "H-21",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xPigeon",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "adimlar": [
+        "window.__SM.A.yaz('#hproje', 58);"
+      ],
+      "beklenen": {
+        "durum": "uygun",
+        "ozet": "^Direk 21 · 3/0 · 3\\. bölge · h_b = 154,39 m ≥ h_proje = 58,0 m → iki misli buz yükü hesabını kurtarıyor$",
+        "degerler": {
+          "h_proje": 58,
+          "İki misli buz çekmesi Tₙ₂b": 1737.28,
+          "Hesaplanan h_b": 154.39,
+          "uyarilar": []
+        }
+      }
+    },
+    {
+      "ad": "AutoCAD direk D-45 Swallow bölge 4, h_proje = 25 → kurtarmıyor",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "autocad",
+        "proje": {
+          "ad": "Deneme Yamaç ENH",
+          "kod": "DNM-06",
+          "yapan": "Mehmet Ali Kaya",
+          "buzBolgesi": "4"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "d45",
+          "no": "D-45"
+        },
+        "direk": {
+          "id": "d45",
+          "no": "D-45",
+          "tur": "OG",
+          "malzeme": "demir",
+          "tip": "G-T-12 (sw)",
+          "rol": "T",
+          "rolKaynagi": "tip",
+          "aci": 0,
+          "kot": 1388.2,
+          "yukseklik": 12,
+          "baglanti": null,
+          "kollar": [
+            {
+              "yon": 250.0,
+              "aciklik": 280.4,
+              "aciklik3B": 284.1,
+              "dH": -45.6,
+              "karsi": {
+                "id": "d44",
+                "no": "D-44",
+                "rol": "T",
+                "kot": 1342.6
+              },
+              "hatId": "9E01",
+              "hatNo": "9E01",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xSW",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            },
+            {
+              "yon": 70.0,
+              "aciklik": 319.6,
+              "aciklik3B": 320.4,
+              "dH": 22.7,
+              "karsi": {
+                "id": "d46",
+                "no": "D-46",
+                "rol": "D",
+                "kot": 1410.9
+              },
+              "hatId": "9E01",
+              "hatNo": "9E01",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xSW",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "adimlar": [
+        "window.__SM.A.yaz('#hproje', 25);"
+      ],
+      "beklenen": {
+        "dolan": 5,
+        "durum": "uygun-degil",
+        "ozet": "^Direk 45 · SW · 4\\. bölge · h_b = 22,56 m < h_proje = 25,0 m → iki misli buz yükü hesabını kurtarmıyor$",
+        "degerler": {
+          "a₁": 280.4,
+          "a₂": 319.6,
+          "Buz katsayısı k": 0.5,
+          "Buz yükü p_b": 1.336,
+          "Ortalama açıklık a_ort": 300,
+          "pₙ = 2·p_b + p₀": 2.7801,
+          "İki misli buz çekmesi Tₙ₂b": 653.37,
+          "0,7·T_kop (emniyet sınırı)": 716.1,
+          "Hesaplanan h_b": 22.56,
+          "Direk No": 45
+        }
+      }
+    },
+    {
+      "ad": "eksik bağlam: iletken, bölge ve ikinci açıklık yok",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme Eksik Direk"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "x9",
+          "no": "9"
+        },
+        "direk": {
+          "id": "x9",
+          "no": "9",
+          "tur": "OG",
+          "rol": null,
+          "kot": null,
+          "yukseklik": null,
+          "baglanti": null,
+          "kollar": [
+            {
+              "aciklik": 212.5,
+              "karsi": {
+                "id": "x8",
+                "no": "8",
+                "rol": null,
+                "kot": null
+              },
+              "hatId": "h9",
+              "hatNo": "H-9",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": []
+            },
+            {
+              "aciklik": null,
+              "karsi": {
+                "id": "x10",
+                "no": "10",
+                "rol": null,
+                "kot": null
+              },
+              "hatId": "h9",
+              "hatNo": "H-9",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": []
+            }
+          ]
+        }
+      },
+      "beklenen": {
+        "dolan": 2,
+        "eksik": [
+          "Açıklıklar a₂",
+          "Buz yükü bölgesi",
+          "h_proje",
+          "İletken tertibi"
+        ],
+        "durum": "bilgi",
+        "degerler": {
+          "a₁": 212.5,
+          "a₂": 98.92,
+          "İki misli buz çekmesi Tₙ₂b": 1623.92,
+          "Hesaplanan h_b": 200.0
+        }
+      }
+    },
+    {
+      "ad": "Hawk bölge 2, h_proje = 40 → kurtarıyor",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme Geçit ENH",
+          "buzBolgesi": "2"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "g3",
+          "no": "3"
+        },
+        "direk": {
+          "id": "g3",
+          "no": "3",
+          "tur": "OG",
+          "malzeme": "demir",
+          "tip": "GT-16 (477)",
+          "rol": "T",
+          "aci": 0,
+          "kot": 905.0,
+          "yukseklik": 16,
+          "baglanti": null,
+          "kollar": [
+            {
+              "aciklik": 250,
+              "karsi": {
+                "id": "g2",
+                "no": "2",
+                "rol": "D",
+                "kot": 921.4
+              },
+              "hatId": "h2",
+              "hatNo": "H-2",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xHawk",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            },
+            {
+              "aciklik": 210,
+              "karsi": {
+                "id": "g4",
+                "no": "4",
+                "rol": "T",
+                "kot": 899.3
+              },
+              "hatId": "h2",
+              "hatNo": "H-2",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xHawk",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "adimlar": [
+        "window.__SM.A.yaz('#hproje', 40);"
+      ],
+      "beklenen": {
+        "durum": "uygun",
+        "degerler": {
+          "Buz yükü p_b": 0.9338,
+          "pₙ = 2·p_b + p₀": 2.8425,
+          "İki misli buz çekmesi Tₙ₂b": 3032.64,
+          "0,7·T_kop (emniyet sınırı)": 6174,
+          "Hesaplanan h_b": 1105.13,
+          "h_proje": 40
+        }
+      }
+    }
+  ]
+}

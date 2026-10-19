@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Şebeke Hakediş AutoCAD eklentisi.
+    Şebeke-M AutoCAD eklentisi.
     İki derleme çıkar:
       net46           → AutoCAD 2016–2024 (.NET Framework)
       net8.0-windows  → AutoCAD 2025 ve sonrası (.NET 8)
@@ -17,9 +17,9 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Version>0.1.0</Version>
-    <Product>Şebeke Hakediş</Product>
-    <Company>Şebeke Hakediş</Company>
-    <Description>Elektrik dağıtım şebekesi hakediş ve durum tespit eklentisi</Description>
+    <Product>Şebeke-M</Product>
+    <Company>Şebeke-M</Company>
+    <Description>Şebeke-M: elektrik dağıtım şebekesi proje, hakediş, durum tespit ve teknik hesap eklentisi</Description>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -44,6 +44,14 @@
     <EmbeddedResource Include="..\..\..\ortak\katalog\cizim-stili.json" Link="Katalog\cizim-stili.json" LogicalName="SebekeHakedis.cizim-stili.json" />
     <!-- Menü kategorileri (şerit: kategori → hızlı çizim öğeleri) -->
     <EmbeddedResource Include="..\..\..\ortak\katalog\kategoriler.json" Link="Katalog\kategoriler.json" LogicalName="SebekeHakedis.kategoriler.json" />
+    <!-- Şebeke-M markası: logo ve simgeler (üretici araclar/marka-uret.py) -->
+    <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-logo.png" Link="Marka\logo.png" LogicalName="SebekeHakedis.marka.logo.png" />
+    <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-16.png" Link="Marka\simge-16.png" LogicalName="SebekeHakedis.marka.simge-16.png" />
+    <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-24.png" Link="Marka\simge-24.png" LogicalName="SebekeHakedis.marka.simge-24.png" />
+    <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-32.png" Link="Marka\simge-32.png" LogicalName="SebekeHakedis.marka.simge-32.png" />
+    <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-64.png" Link="Marka\simge-64.png" LogicalName="SebekeHakedis.marka.simge-64.png" />
+    <!-- Hesap Merkezi sayfaları: derlemeden önce "node araclar/hesap-paketle.mjs" ile ortak/hesap/paket üretilir (CI yapar) -->
+    <EmbeddedResource Include="..\..\..\ortak\hesap\paket\**\*" Link="Hesap\%(RecursiveDir)%(Filename)%(Extension)" LogicalName="SebekeHakedis.hesap.%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net46'">

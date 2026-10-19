@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace SebekeHakedis.Cekirdek
 {
     /// <summary>
-    /// Hakediş onayı — PROMAGIS'in onay kaydıyla aynı (çizim sözlüğü HAK_ONAY / ONAY_DURUM&lt;n&gt;): her hakediş için üç
+    /// Hakediş onayı — AutoCAD'in onay kaydıyla aynı (çizim sözlüğü HAK_ONAY / ONAY_DURUM&lt;n&gt;): her hakediş için üç
     /// aşama, sırayla KONTROL → HAKEDİŞ → GIS (bitler 4 / 2 / 1). HAKEDİŞ onayı verilen hakediş kilitlidir: eklenti o
     /// hakedişteki satırları ve nesneleri değiştirmez, silmez; o hakedişe yeni nesne çizilmez; telefondan gelen
     /// değişiklikler o hakedişe dokunuyorsa aktarılmaz.
@@ -12,8 +12,8 @@ namespace SebekeHakedis.Cekirdek
     public static class HakedisOnayi
     {
         public const int Kontrol = 4, Hakedis = 2, Gis = 1;
-        /// <summary>PROMAGIS'in onay penceresindeki hakediş sayısı (ONAY_DURUM1…12).</summary>
-        public const int PromagisSayisi = 12;
+        /// <summary>AutoCAD'in onay penceresindeki hakediş sayısı (ONAY_DURUM1…12).</summary>
+        public const int SabitOnaySayisi = 12;
 
         public static int Bitler(IDictionary<int, int> onaylar, int hakedis)
         {
@@ -31,7 +31,7 @@ namespace SebekeHakedis.Cekirdek
             return false;
         }
 
-        /// <summary>Sıra kuralı (PROMAGIS'teki gibi): sonraki aşama işaretliyse öncekiler de işaretli sayılır.</summary>
+        /// <summary>Sıra kuralı (AutoCAD'deki gibi): sonraki aşama işaretliyse öncekiler de işaretli sayılır.</summary>
         public static int Duzelt(int b)
         {
             b &= 7;
@@ -93,7 +93,7 @@ namespace SebekeHakedis.Cekirdek
             return false;
         }
 
-        /// <summary>Kilitli hakedişteki satırların karşılaştırma anahtarı (PROMAGIS yazımıyla, sıralı).</summary>
+        /// <summary>Kilitli hakedişteki satırların karşılaştırma anahtarı (AutoCAD yazımıyla, sıralı).</summary>
         public static string KilitliSatirlar(IDictionary<int, int> onaylar, object x)
         {
             var ks = Kalemleri(x);
@@ -101,7 +101,7 @@ namespace SebekeHakedis.Cekirdek
             var l = new List<string>();
             foreach (var k in ks)
                 if (Kilitli(onaylar, k.Hakedis))
-                    l.Add(k.Ana ? "N" + PromagisYazici.NitSatiri(k) : k.Kaynak == "HAT" ? "H" + PromagisYazici.HatSatiri(k) : "M" + PromagisYazici.MalzemeSatiri(k));
+                    l.Add(k.Ana ? "N" + NesneYazici.NitSatiri(k) : k.Kaynak == "HAT" ? "H" + NesneYazici.HatSatiri(k) : "M" + NesneYazici.MalzemeSatiri(k));
             l.Sort(StringComparer.Ordinal);
             return string.Join("\n", l.ToArray());
         }

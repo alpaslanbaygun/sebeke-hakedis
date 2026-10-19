@@ -1,0 +1,78 @@
+/* enh-sehim: aracın açık renk düzeni Şebeke-M laciverdi + turuncu vurguya çevrilir (yalnız ekran; yazdırılan
+   sehim tablosu #printArea aracın kendi beyaz düzeninde kalır). Sehim–sıcaklık eğrisi de koyu zemine uyarlanır. */
+@media screen{
+  html.sm-var{
+    --ink:var(--sm-tx);--ink2:#c3cde6;--muted:var(--sm-mut);--paper:var(--sm-bg);--card:var(--sm-panel);--line:var(--sm-line);
+    --blue:#60a5fa;--blue-bg:var(--sm-bg2);--teal:var(--sm-acc);--ok:var(--sm-ok);--danger:var(--sm-err2);--warn:var(--sm-warn2)
+  }
+  html.sm-var body{font-family:var(--sm-font)}
+
+  /* Başlık */
+  html.sm-var header.top{background:linear-gradient(180deg,#16213a,#101a30);border:1px solid var(--sm-line)}
+  html.sm-var header.top .sub{color:var(--sm-mut)}
+  html.sm-var header.top .badge{background:var(--sm-bg2);border-color:var(--sm-line);color:var(--sm-mut)}
+  html.sm-var header.top .badge span{color:var(--sm-mut)}
+
+  /* Kartlar ve alanlar */
+  html.sm-var .card{background:var(--sm-panel);border-color:var(--sm-line)}
+  html.sm-var .card h2{color:var(--sm-acc);border-bottom-color:var(--sm-line)}
+  html.sm-var .card h2 .n{background:var(--sm-acc);color:#0b1326}
+  html.sm-var label{color:#c3cde6}
+  html.sm-var input.in{border-color:#475569;color:#fff;font-weight:600}
+  html.sm-var input[readonly]{border-color:var(--sm-line2)}
+  html.sm-var input:focus,html.sm-var select:focus{border-color:var(--sm-acc)}
+  html.sm-var .hint{color:var(--sm-mut)}
+  html.sm-var #katInfo b{color:var(--sm-warn2)}
+
+  /* Katalog / Elle anahtarı (araçta biçimsiz) */
+  html.sm-var #segMod{display:flex;border:1px solid var(--sm-line);border-radius:6px;overflow:hidden;margin-top:3px}
+  html.sm-var #segMod button{flex:1;border:0;background:var(--sm-bg2);color:var(--sm-mut);padding:7px 4px;font:600 12px/1.2 var(--sm-font);cursor:pointer}
+  html.sm-var #segMod button.on{background:var(--sm-acc);color:#0b1326;font-weight:800}
+
+  /* Düğmeler */
+  html.sm-var button.act{background:var(--sm-acc);color:#0b1326;box-shadow:none}
+  html.sm-var button.act.blue{background:#2563eb;color:#fff}
+  html.sm-var button.act.dark{background:var(--sm-panel2);color:var(--sm-tx);border:1px solid var(--sm-line)}
+  html.sm-var button.act.ghost{background:transparent;color:var(--sm-tx);border:1px solid var(--sm-line)}
+  html.sm-var button.act.red{background:transparent;color:var(--sm-err2);border:1px solid rgba(239,68,68,.5)}
+
+  /* Tablolar */
+  html.sm-var th,html.sm-var td{border-color:var(--sm-line)}
+  html.sm-var th{background:var(--sm-panel2);color:var(--sm-mut);border-color:#3b4a63}
+  html.sm-var td.tn{background:rgba(76,215,246,.08);color:var(--sm-cy);border-left-color:#4b5d79;border-right-color:var(--sm-line)}
+  html.sm-var tr.ger td{background:rgba(245,158,11,.10)}
+  html.sm-var tr.son td{background:var(--sm-bg2);color:var(--sm-mut)}
+  html.sm-var tr.bs td,html.sm-var tr.son td{border-top-color:#7c8aa5}
+  html.sm-var .tscroll{border-color:var(--sm-line)}
+  html.sm-var #tbD td[style*="f5f8fa"]{background:var(--sm-bg2)!important;color:var(--sm-mut)!important}
+  html.sm-var .kpi{background:var(--sm-bg2);border-color:var(--sm-line)}
+  html.sm-var .kpi .v{color:var(--sm-warn2)}
+
+  /* Sehim – sıcaklık eğrisi (aracın çizdiği SVG renkleri) */
+  html.sm-var svg#gr{background:var(--sm-bg2);border-color:var(--sm-line)}
+  html.sm-var #gr > rect{fill:var(--sm-bg2)}
+  html.sm-var #gr line[stroke="#e3ebf1"],html.sm-var #gr line[stroke="#eef3f7"]{stroke:#24324d}
+  html.sm-var #gr line[stroke="#33465a"]{stroke:#7c8aa5}
+  html.sm-var #gr text[fill="#33465a"]{fill:#c3cde6}
+  html.sm-var #gr text[fill="#6b7f92"]{fill:var(--sm-mut)}
+  html.sm-var #gr [stroke="#0e7c86"]{stroke:#2dd4bf} html.sm-var #gr [fill="#0e7c86"]{fill:#2dd4bf}
+  html.sm-var #gr [stroke="#b91c1c"]{stroke:#f87171} html.sm-var #gr [fill="#b91c1c"]{fill:#f87171}
+  html.sm-var #gr [stroke="#1d4ed8"]{stroke:#60a5fa} html.sm-var #gr [fill="#1d4ed8"]{fill:#60a5fa}
+  html.sm-var #gr [stroke="#b45309"]{stroke:#fbbf24} html.sm-var #gr [fill="#b45309"]{fill:#fbbf24}
+  html.sm-var #gr [stroke="#15803d"]{stroke:#4ade80} html.sm-var #gr [fill="#15803d"]{fill:#4ade80}
+  html.sm-var #gr [stroke="#7c3aed"]{stroke:#a78bfa} html.sm-var #gr [fill="#7c3aed"]{fill:#a78bfa}
+
+  html.sm-var .toast{background:var(--sm-panel2);border:1px solid var(--sm-line);color:var(--sm-tx)}
+  html.sm-var footer.sig{color:var(--sm-mut)}
+
+  /* Şebeke-M projeyi kendisi saklar: aracın kendi kaydet / farklı kaydet / sıfırla düğmeleri gizlenir */
+  html.sm-telefon #btnSave,html.sm-telefon #btnSaveAs,html.sm-telefon #btnReset,
+  html.sm-autocad #btnSave,html.sm-autocad #btnSaveAs,html.sm-autocad #btnReset{display:none!important}
+
+  /* Telefon genişliği */
+  @media (max-width:640px){
+    html.sm-var .wrap{padding:10px}
+    html.sm-var header.top .badge{margin-left:0}
+    html.sm-var .card h2 .r{margin-left:0;flex-basis:100%}
+  }
+}

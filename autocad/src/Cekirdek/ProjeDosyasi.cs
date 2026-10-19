@@ -175,6 +175,12 @@ namespace SebekeHakedis.Cekirdek
             }
             k["sondajlar"] = sondajlar;
 
+            if (p.Hesaplar.Count > 0)
+            {
+                var hesaplar = new List<object>();
+                foreach (var h in p.Hesaplar) hesaplar.Add(h.Json());
+                k["hesaplar"] = hesaplar;
+            }
             if (p.Uyarilar.Count > 0) k["uyarilar"] = new List<object>(p.Uyarilar);
             return k;
         }
@@ -201,7 +207,7 @@ namespace SebekeHakedis.Cekirdek
                 k = sb;
             }
             if (k == null || k.Metin("bicim") != Bicim)
-                throw new FormatException("Bu bir Şebeke Hakediş proje dosyası değil.");
+                throw new FormatException("Bu bir Şebeke-M proje dosyası değil.");
             if (k.Tam("surum") > Surum)
                 throw new FormatException("Proje dosyası daha yeni bir sürümle hazırlanmış (" + k.Tam("surum") + "). Eklentiyi güncelleyin.");
 
@@ -249,7 +255,7 @@ namespace SebekeHakedis.Cekirdek
                     foreach (var kv in ek)
                     {
                         var d = kv.Value as List<object>;
-                        if (d == null || Array.IndexOf(PromagisYazici.EkUygulamalar, kv.Key) < 0) continue;
+                        if (d == null || Array.IndexOf(NesneYazici.EkUygulamalar, kv.Key) < 0) continue;
                         var l = new List<string>();
                         foreach (var x in d) l.Add(Convert.ToString(x, CultureInfo.InvariantCulture) ?? "");
                         if (l.Count > 0) e.EkVeri[kv.Key] = l;
@@ -289,6 +295,13 @@ namespace SebekeHakedis.Cekirdek
                 };
                 s.CizimUzunlugu = Geometri.Uzunluk(s.Kose);
                 p.Sondajlar.Add(s);
+            }
+            // Teknik hesap sonuçları (Hesap Merkezi)
+            var hesapKimlikleri = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var o in Nesneler(k, "hesaplar"))
+            {
+                var h = HesapKaydi.Oku(o);
+                if (h != null && hesapKimlikleri.Add(h.Id)) p.Hesaplar.Add(h);
             }
             return p;
         }

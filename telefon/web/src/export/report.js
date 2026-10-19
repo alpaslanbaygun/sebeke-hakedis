@@ -65,6 +65,15 @@ export function buildReportHTML(model, extra = {}) {
   }
   h += '<h2>9. Kontrol bulguları</h2>' + (model.issues.length ? table(['Kod', 'Önem', 'Kayıt', 'Açıklama'], model.issues.map((i) => [i.code, i.severity === 'error' ? 'HATA' : 'UYARI', i.entityNo, i.message])) : '<p class="ok">Bulgu yok.</p>');
   h += '<h2>10. Fotoğraflar · ' + nPhoto + ' adet</h2>' + (nPhoto ? table(['Dosya', 'Obje', 'Tür', 'Tarih · saat', 'Enlem', 'Boylam', 'Doğruluk (m)', 'Fix', 'Operatör', 'Açıklama'], (model.photos || []).map((ph) => [ph.filepath || ph.filename || ph.id, ph.ownerNo || '', ph.ownerType || '', dt(ph.timestamp), ph.lat != null ? (+ph.lat).toFixed(7) : '', ph.lon != null ? (+ph.lon).toFixed(7) : '', acc(ph.accuracy), ph.fix || ph.gnssFix || '', ph.operator || ph.user || '', ph.note || ''])) : '<p class="muted">Fotoğraf yok.</p>');
-  h += '<p class="muted">Bu rapor VOLT-EDAŞ Saha tarafından proje veritabanından otomatik üretilmiştir. "Doğrulanmamış varsayılan" olarak işaretli standart tabloları (' + esc((model.cat.std.unverifiedTables || []).join(', ')) + ') proje öncesi kontrol edilmelidir.</p>';
+  // 11. Teknik hesaplar (Hesap Merkezi): kayıtlı sonuçlar, kullanılan girdiler ve güncellik
+  const hs = extra.hesaplar || [];
+  if (hs.length) {
+    h += '<h2>11. Teknik hesaplar · ' + hs.length + ' kayıt</h2>' + table(['Hesap', 'Hedef', 'Sonuç', 'Durum', 'Güncellik', 'Girdiler', 'Değerler', 'Uyarılar', 'Tarih · kaynak'],
+      hs.map((x) => [x.hesap, x.hedef, x.ozet, { html: '<span class="' + (x.kayit.durum === 'uygun' ? 'ok' : x.kayit.durum === 'uygun-degil' ? 'err' : '') + '">' + esc(x.durum) + '</span>' },
+        { html: '<span class="' + (x.guncel === 'Güncel' ? 'ok' : 'warn') + '">' + esc(x.guncel) + '</span>' }, x.girdiler.join('; '), x.degerler.join('; '), x.uyarilar.join('; '),
+        (x.tarih ? new Date(x.tarih).toLocaleString('tr-TR') : '') + ' · ' + x.kaynak]));
+    h += '<p class="muted">Hesap araçları: Elektrik-Elektronik Mühendisi Baki SONAY. Formüller değiştirilmeden Şebeke-M\'e eklenmiştir. "Güncel değil": hesap kaydedildikten sonra projede hesabın kullandığı bir bilgi (açıklık, iletken, kot…) değişti.</p>';
+  }
+  h += '<p class="muted">Bu rapor Şebeke-M tarafından proje veritabanından otomatik üretilmiştir. "Doğrulanmamış varsayılan" olarak işaretli standart tabloları (' + esc((model.cat.std.unverifiedTables || []).join(', ')) + ') proje öncesi kontrol edilmelidir.</p>';
   return h + '</body></html>';
 }

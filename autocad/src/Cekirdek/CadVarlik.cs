@@ -18,7 +18,7 @@ namespace SebekeHakedis.Cekirdek
         public string Blok = "";
         public double X, Y, Z;
         public double Aci;
-        /// <summary>Blok ölçeği (X yönü). PROMAGIS elemanları genellikle 4 ölçekle konur.</summary>
+        /// <summary>Blok ölçeği (X yönü). AutoCAD elemanları genellikle 4 ölçekle konur.</summary>
         public double Olcek = 1;
         public string Metin = "";
         public bool Kapali;

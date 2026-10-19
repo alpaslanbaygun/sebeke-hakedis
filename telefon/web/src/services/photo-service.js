@@ -86,10 +86,10 @@ export function buildExif(m = {}) {
   const exif = [ent(0x9003, T.ASCII, ascii(local)), ent(0x9004, T.ASCII, ascii(local))];
   const ifd0 = [
     ent(0x010e, T.ASCII, ascii(m.description || '')),
-    ent(0x010f, T.ASCII, ascii(m.make || 'VOLT-EDAS Saha')),
+    ent(0x010f, T.ASCII, ascii(m.make || 'Sebeke-M')),
     ent(0x0110, T.ASCII, ascii(m.model || 'GNSS')),
     ent(0x0112, T.SHORT, u16(1)),
-    ent(0x0131, T.ASCII, ascii(m.software || 'VOLT-EDAS Saha')),
+    ent(0x0131, T.ASCII, ascii(m.software || 'Sebeke-M')),
     ent(0x0132, T.ASCII, ascii(local)),
     ent(0x013b, T.ASCII, ascii(m.artist || '')),
     { tag: 0x8769, type: T.LONG, count: 1, pointer: true }

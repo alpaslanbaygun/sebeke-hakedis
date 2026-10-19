@@ -1,0 +1,697 @@
+{
+  "modul": "uplift",
+  "aciklama": "Beklenen değerler özgün uplift.html dosyasından (sahibinin değiştirilmemiş kopyası), aynı girdilerle aracın kendi arayüzü ve compute()/solve() ile alındı (is-A/altin.py). Durum 1 (telefon hattı, 3xRaven, bölge 2): direk 2 Ar=180 (bölüm 1–4 eşdeğer açıklığı 191,97 → bir alttaki 180), a 190/200, h 6/−20 → fmin 16,435 xp −6,667 R 59,18 uygun; direk 3 a 200/185, h 20/19,5 → fmin 16,002 xp 19,740 pay −3,738 R −9,71 DURDURUCU; direk 5 Ar=250 (265,14 → 250) a 260/270 h 1,5/−1 → fmin 36,733 R 56,79. Mesnet kotları = kot + bağlantı yüksekliği. Durum 2 (AutoCAD direk D-12, 3xSW, bölge 3, Ar 150; h₁ = (640,2+9,8)−(645+9,8) = −4,8, h₂ = (652,8+10,2)−654,8 = 8,2) → fmin 35,013 xp 1,379 pay 33,634 R 18,05. Durum 3: bağlantı yükseklikleri ve bölge yok → h boş, durum bilgi (araç 0 sayıp 'uygun' yazar: fmin 27,549). Durum 4: AutoCAD direk, komşu bağlantı yüksekliği yok; kullanıcı h 6/5 girince Pigeon bölge 1 Ar 150: fmin 4,712 xp 5,515 → uplift var.",
+  "durumlar": [
+    {
+      "ad": "telefon hattı Raven: 3 taşıyıcı, biri upliftte",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme Yayla ENH",
+          "kod": "DNM-02",
+          "yapan": "Ayşe Nur Yılmaz",
+          "unvan": "Elektrik Mühendisi",
+          "tarih": "2026-10-18",
+          "buzBolgesi": "2"
+        },
+        "hedef": {
+          "tur": "hat",
+          "id": "h9",
+          "no": "H-9"
+        },
+        "hat": {
+          "id": "h9",
+          "no": "H-9",
+          "tur": "OG_HAVAI",
+          "havai": true,
+          "gerilimKV": 34.5,
+          "iletkenler": [
+            {
+              "ad": "3xRaven",
+              "adet": 1,
+              "devre": "OG"
+            }
+          ],
+          "direkler": [
+            {
+              "id": "u1",
+              "no": "1",
+              "tip": "GD-12 (1/0)",
+              "malzeme": "demir",
+              "rol": "N",
+              "aci": 0,
+              "kot": 812.0,
+              "yukseklik": 12,
+              "baglanti": 10.5
+            },
+            {
+              "id": "u2",
+              "no": "2",
+              "tip": "GT-12 (1/0)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 806.0,
+              "yukseklik": 12,
+              "baglanti": 10.5
+            },
+            {
+              "id": "u3",
+              "no": "3",
+              "tip": "GT-12 (1/0)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 786.0,
+              "yukseklik": 12,
+              "baglanti": 10.5
+            },
+            {
+              "id": "u4",
+              "no": "4",
+              "tip": "GD-14 (1/0)",
+              "malzeme": "demir",
+              "rol": "D",
+              "aci": 0,
+              "kot": 805.0,
+              "yukseklik": 14,
+              "baglanti": 11.0
+            },
+            {
+              "id": "u5",
+              "no": "5",
+              "tip": "GT-12 (1/0)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 804.0,
+              "yukseklik": 12,
+              "baglanti": 10.5
+            },
+            {
+              "id": "u6",
+              "no": "6",
+              "tip": "GD-12 (1/0)",
+              "malzeme": "demir",
+              "rol": "N",
+              "aci": 0,
+              "kot": 803.0,
+              "yukseklik": 12,
+              "baglanti": 10.5
+            }
+          ],
+          "acikliklar": [
+            {
+              "bas": "1",
+              "bit": "2",
+              "uzunluk": 190,
+              "uzunluk3B": 190.09,
+              "dH": -6.0
+            },
+            {
+              "bas": "2",
+              "bit": "3",
+              "uzunluk": 200,
+              "uzunluk3B": 201.0,
+              "dH": -20.0
+            },
+            {
+              "bas": "3",
+              "bit": "4",
+              "uzunluk": 185,
+              "uzunluk3B": 185.97,
+              "dH": 19.0
+            },
+            {
+              "bas": "4",
+              "bit": "5",
+              "uzunluk": 260,
+              "uzunluk3B": 260.0,
+              "dH": -1.0
+            },
+            {
+              "bas": "5",
+              "bit": "6",
+              "uzunluk": 270,
+              "uzunluk3B": 270.0,
+              "dH": -1.0
+            }
+          ],
+          "toplamUzunluk": 1105,
+          "ruling": 230.0
+        }
+      },
+      "beklenen": {
+        "dolan": 24,
+        "eksik": 0,
+        "durum": "uygun-degil",
+        "ozet": "^3 taşıyıcı direk: 2 uygun, 1 durdurucu gerekli \\(Direk 3\\)$",
+        "degerler": {
+          "Kontrol edilen direk": 3,
+          "Uplift yok (uygun)": 2,
+          "Durdurucu gerekli": 1,
+          "Girdisi eksik": 0,
+          "En küçük emniyet payı f_min − x_proje": -3.738,
+          "En küçük emniyet payının direği": "Direk 3",
+          "En küçük düşey mesnet kuvveti R": -9.71,
+          "tablo.satirlar[0][2]": 190,
+          "tablo.satirlar[0][4]": 6,
+          "tablo.satirlar[0][5]": -20,
+          "tablo.satirlar[0][6]": 249.6,
+          "tablo.satirlar[0][8]": 16.435,
+          "tablo.satirlar[0][9]": -6.667,
+          "tablo.satirlar[0][11]": 59.18,
+          "tablo.satirlar[0][12]": "UYGUN",
+          "tablo.satirlar[1][8]": 16.002,
+          "tablo.satirlar[1][9]": 19.74,
+          "tablo.satirlar[1][10]": -3.738,
+          "tablo.satirlar[1][12]": "DURDURUCU",
+          "tablo.satirlar[2][1]": "2.bölge raven (Ar=250m)",
+          "tablo.satirlar[2][6]": 206.3,
+          "tablo.satirlar[2][8]": 36.733,
+          "tablo.satirlar[2][11]": 56.79,
+          "tablo.satirlar[2][12]": "UYGUN"
+        }
+      }
+    },
+    {
+      "ad": "AutoCAD direk D-12 (3xSW), bağlantı yükseklikleri hattan",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "autocad",
+        "proje": {
+          "ad": "Deneme Vadi ENH",
+          "kod": "DNM-03",
+          "yapan": "Mehmet Ali Kaya",
+          "unvan": "Elektrik Mühendisi",
+          "buzBolgesi": "3"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "p12",
+          "no": "D-12"
+        },
+        "direk": {
+          "id": "p12",
+          "no": "D-12",
+          "tur": "OG",
+          "malzeme": "demir",
+          "tip": "G-T-12 (sw)",
+          "rol": "T",
+          "rolKaynagi": "tip",
+          "aci": 0,
+          "kot": 645.0,
+          "yukseklik": 12,
+          "baglanti": 9.8,
+          "durum": "M",
+          "kollar": [
+            {
+              "yon": 268.5,
+              "aciklik": 165.4,
+              "aciklik3B": 165.47,
+              "dH": -4.8,
+              "karsi": {
+                "id": "p11",
+                "no": "D-11",
+                "tip": "G-T-12 (sw)",
+                "rol": "T",
+                "kot": 640.2
+              },
+              "hatId": "2F3A",
+              "hatNo": "2F3A",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xSW",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            },
+            {
+              "yon": 88.0,
+              "aciklik": 182.6,
+              "aciklik3B": 182.81,
+              "dH": 7.8,
+              "karsi": {
+                "id": "p13",
+                "no": "D-13",
+                "tip": "G-T-12 (sw)",
+                "rol": "T",
+                "kot": 652.8
+              },
+              "hatId": "2F3A",
+              "hatNo": "2F3A",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xSW",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            }
+          ]
+        },
+        "hat": {
+          "id": "2F3A",
+          "no": "2F3A",
+          "tur": "OG_HAVAI",
+          "havai": true,
+          "gerilimKV": 34.5,
+          "iletkenler": [
+            {
+              "ad": "3xSW",
+              "adet": 1,
+              "devre": "OG"
+            }
+          ],
+          "direkler": [
+            {
+              "id": "p10",
+              "no": "D-10",
+              "tip": "G-D-12 (sw)",
+              "malzeme": "demir",
+              "rol": "D",
+              "aci": 0,
+              "kot": 636.4,
+              "yukseklik": 12,
+              "baglanti": 10.0
+            },
+            {
+              "id": "p11",
+              "no": "D-11",
+              "tip": "G-T-12 (sw)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 640.2,
+              "yukseklik": 12,
+              "baglanti": 9.8
+            },
+            {
+              "id": "p12",
+              "no": "D-12",
+              "tip": "G-T-12 (sw)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 645.0,
+              "yukseklik": 12,
+              "baglanti": 9.8
+            },
+            {
+              "id": "p13",
+              "no": "D-13",
+              "tip": "G-T-12 (sw)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 652.8,
+              "yukseklik": 12.5,
+              "baglanti": 10.2
+            },
+            {
+              "id": "p14",
+              "no": "D-14",
+              "tip": "G-N-12 (sw)",
+              "malzeme": "demir",
+              "rol": "N",
+              "aci": 0,
+              "kot": 655.1,
+              "yukseklik": 12,
+              "baglanti": 10.0
+            }
+          ],
+          "acikliklar": [
+            {
+              "bas": "D-10",
+              "bit": "D-11",
+              "uzunluk": 150.2,
+              "uzunluk3B": 150.25,
+              "dH": 3.8
+            },
+            {
+              "bas": "D-11",
+              "bit": "D-12",
+              "uzunluk": 165.4,
+              "uzunluk3B": 165.47,
+              "dH": 4.8
+            },
+            {
+              "bas": "D-12",
+              "bit": "D-13",
+              "uzunluk": 182.6,
+              "uzunluk3B": 182.81,
+              "dH": 7.8
+            },
+            {
+              "bas": "D-13",
+              "bit": "D-14",
+              "uzunluk": 171.0,
+              "uzunluk3B": 171.02,
+              "dH": 2.3
+            }
+          ],
+          "toplamUzunluk": 669.2,
+          "ruling": 169.3
+        }
+      },
+      "beklenen": {
+        "dolan": 12,
+        "eksik": 0,
+        "durum": "uygun",
+        "ozet": "^Direk D-12: f_min 35,01 m > x_proje 1,38 m → uplift yok \\(R = 18,05 kg\\)$",
+        "degerler": {
+          "T_min": 46.58,
+          "p₀": 0.108,
+          "a₁": 165.4,
+          "a₂": 182.6,
+          "h₁": -4.8,
+          "h₂": 8.2,
+          "f_min (sanal sehim)": 35.013,
+          "x_proje": 1.379,
+          "Emniyet payı f_min − x_proje": 33.634,
+          "Düşey mesnet kuvveti R": 18.05,
+          "İletken / bölge": "3.bölge swallow (Ar=150m)"
+        }
+      }
+    },
+    {
+      "ad": "eksik bağlam: bağlantı yüksekliği ve bölge yok, görevi bilinmeyen direk",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme Sırt ENH",
+          "buzBolgesi": null
+        },
+        "hedef": {
+          "tur": "hat",
+          "id": "h5",
+          "no": "H-5"
+        },
+        "hat": {
+          "id": "h5",
+          "no": "H-5",
+          "tur": "OG_HAVAI",
+          "havai": true,
+          "gerilimKV": 34.5,
+          "iletkenler": [
+            {
+              "ad": "3xPigeon",
+              "adet": 1,
+              "devre": "OG"
+            }
+          ],
+          "direkler": [
+            {
+              "id": "v1",
+              "no": "1",
+              "malzeme": "demir",
+              "rol": "D",
+              "aci": 0,
+              "kot": 520.0,
+              "yukseklik": 14,
+              "baglanti": null
+            },
+            {
+              "id": "v2",
+              "no": "2",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 515.5,
+              "yukseklik": 14,
+              "baglanti": null
+            },
+            {
+              "id": "v3",
+              "no": "3",
+              "malzeme": "demir",
+              "rol": null,
+              "aci": null,
+              "kot": 509.2,
+              "yukseklik": 14,
+              "baglanti": null
+            },
+            {
+              "id": "v4",
+              "no": "4",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 512.8,
+              "yukseklik": 14,
+              "baglanti": null
+            },
+            {
+              "id": "v5",
+              "no": "5",
+              "malzeme": "demir",
+              "rol": "N",
+              "aci": 0,
+              "kot": 518.0,
+              "yukseklik": 14,
+              "baglanti": null
+            }
+          ],
+          "acikliklar": [
+            {
+              "bas": "1",
+              "bit": "2",
+              "uzunluk": 175
+            },
+            {
+              "bas": "2",
+              "bit": "3",
+              "uzunluk": 182
+            },
+            {
+              "bas": "3",
+              "bit": "4",
+              "uzunluk": 168
+            },
+            {
+              "bas": "4",
+              "bit": "5",
+              "uzunluk": 190
+            }
+          ],
+          "toplamUzunluk": 715,
+          "ruling": 179.6
+        }
+      },
+      "beklenen": {
+        "dolan": 9,
+        "eksik": [
+          "Buz bölgesi",
+          "Mesnet yükseklik farkları h₁ / h₂"
+        ],
+        "durum": "bilgi",
+        "ozet": "^3 taşıyıcı direk: 0 uygun, 0 durdurucu gerekli, 3 girdisi eksik$",
+        "degerler": {
+          "Girdisi eksik": 3,
+          "tablo.satirlar[0][0]": "Direk 2",
+          "tablo.satirlar[1][0]": "Direk 3",
+          "tablo.satirlar[0][8]": 27.549,
+          "tablo.satirlar[0][12]": "eksik",
+          "tablo.satirlar[0][6]": 198.22,
+          "uyarilar[0]": "Direk 2: girdi eksik (h₁, h₂, buz bölgesi); araçtaki sonuç bu eksiklerle hesaplandı, kesin değil."
+        }
+      }
+    },
+    {
+      "ad": "AutoCAD direk, komşu bağlantı yüksekliği yok → kullanıcı h girer → uplift var",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "autocad",
+        "proje": {
+          "ad": "Deneme Dere ENH",
+          "buzBolgesi": "1"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "q7",
+          "no": "P-7"
+        },
+        "direk": {
+          "id": "q7",
+          "no": "P-7",
+          "tur": "OG",
+          "malzeme": "demir",
+          "tip": "G-T-12 (3/0)",
+          "rol": "T",
+          "rolKaynagi": "tip",
+          "aci": 0,
+          "kot": 402.3,
+          "yukseklik": 12,
+          "baglanti": 10.0,
+          "kollar": [
+            {
+              "yon": 180.0,
+              "aciklik": 160,
+              "aciklik3B": 160.11,
+              "dH": 5.8,
+              "karsi": {
+                "id": "q6",
+                "no": "P-6",
+                "tip": "G-T-12 (3/0)",
+                "rol": "T",
+                "kot": 408.1
+              },
+              "hatId": "7A2B",
+              "hatNo": "7A2B",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3x3/0",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            },
+            {
+              "yon": 2.0,
+              "aciklik": 170,
+              "aciklik3B": 170.07,
+              "dH": 4.7,
+              "karsi": {
+                "id": "q8",
+                "no": "P-8",
+                "tip": "G-T-12 (3/0)",
+                "rol": "T",
+                "kot": 407.0
+              },
+              "hatId": "7A2B",
+              "hatNo": "7A2B",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3x3/0",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            }
+          ]
+        },
+        "hat": {
+          "id": "7A2B",
+          "no": "7A2B",
+          "tur": "OG_HAVAI",
+          "havai": true,
+          "gerilimKV": 34.5,
+          "iletkenler": [
+            {
+              "ad": "3x3/0",
+              "adet": 1,
+              "devre": "OG"
+            }
+          ],
+          "direkler": [
+            {
+              "id": "q5",
+              "no": "P-5",
+              "malzeme": "demir",
+              "rol": "D",
+              "aci": 0,
+              "kot": 410.0,
+              "yukseklik": 12,
+              "baglanti": null
+            },
+            {
+              "id": "q6",
+              "no": "P-6",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 408.1,
+              "yukseklik": 12,
+              "baglanti": null
+            },
+            {
+              "id": "q7",
+              "no": "P-7",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 402.3,
+              "yukseklik": 12,
+              "baglanti": 10.0
+            },
+            {
+              "id": "q8",
+              "no": "P-8",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 407.0,
+              "yukseklik": 12,
+              "baglanti": null
+            },
+            {
+              "id": "q9",
+              "no": "P-9",
+              "malzeme": "demir",
+              "rol": "N",
+              "aci": 0,
+              "kot": 409.5,
+              "yukseklik": 12,
+              "baglanti": null
+            }
+          ],
+          "acikliklar": [
+            {
+              "bas": "P-5",
+              "bit": "P-6",
+              "uzunluk": 150
+            },
+            {
+              "bas": "P-6",
+              "bit": "P-7",
+              "uzunluk": 160
+            },
+            {
+              "bas": "P-7",
+              "bit": "P-8",
+              "uzunluk": 170
+            },
+            {
+              "bas": "P-8",
+              "bit": "P-9",
+              "uzunluk": 165
+            }
+          ],
+          "toplamUzunluk": 645,
+          "ruling": 161.9
+        }
+      },
+      "beklenen": {
+        "eksik": [
+          "Mesnet yükseklik farkları h₁ / h₂"
+        ],
+        "durum": "uygun-degil",
+        "ozet": "^Direk P-7: f_min 4,71 m ≤ x_proje 5,52 m → uplift var, durdurucu gerekir \\(R = -9,65 kg\\)$",
+        "degerler": {
+          "T_min": 989.72,
+          "h₁": 6,
+          "h₂": 5,
+          "f_min (sanal sehim)": 4.712,
+          "x_proje": 5.515,
+          "Emniyet payı f_min − x_proje": -0.803,
+          "Düşey mesnet kuvveti R": -9.65,
+          "Durdurucu gerekli": 1
+        }
+      },
+      "adimlar": [
+        "window.__SM.A.yaz('#h1', 6); window.__SM.A.yaz('#h2', 5);"
+      ]
+    }
+  ]
+}
