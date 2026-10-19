@@ -366,7 +366,7 @@ namespace SebekeHakedis.Test
             Esit(true, bt.Nesne("trafo") != null, "bağlam: trafo bilgisi");
             Esit(true, bt.Nesne("hat") != null && bt.Nesne("hat").Metin("id") == "H14", "bağlam: seçilen çıkış hattı");
             Esit("SCTR01–SC111", HesapBaglami.HatAdi(tp, tp.Hatlar.Find(h => h.Id == "H18")), "bağlam: hat adı uç elemanlardan (dallanmada düz devam)");
-            Esit("SC101–?", HesapBaglami.HatAdi(tp, tp.Hatlar.Find(h => h.Id == "H36")), "bağlam: ucu boşta kalan kol");
+            Esit("SC101–D30", HesapBaglami.HatAdi(tp, tp.Hatlar.Find(h => h.Id == "H36")), "bağlam: dallanan kol (numarasız direğe kadar)");
             var kanalHedefi = new HesapHedefi { Tur = "kanal", Id = "K56" };
             var bk = HesapBaglami.Kur(tp, kanalHedefi, bilgi);
             Esit(true, bk.Nesne("kanal") != null && bk.Nesne("kanal").Ondalik("uzunluk") > 238, "bağlam: kanal uzunluğu");

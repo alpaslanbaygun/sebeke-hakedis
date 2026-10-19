@@ -159,8 +159,18 @@ namespace SebekeHakedis.Cekirdek
                 foreach (var u in NesneYazici.EkUygulamalar)
                     if (!istenen.Xd.ContainsKey(u) && simdiki.Xd.ContainsKey(u)) istenen.Xd[u] = new List<string>(simdiki.Xd[u]);
                 // Değişmeyen nesneye dokunulmaz (etiketi eski kalmış olsa bile); değişen hattın etiketi yeniden yazılır.
+                // Simge farkı tek başına değişiklik sayılmaz: eski bloklu eleman, başka bir şeyi değişmediyse olduğu gibi
+                // kalır (SH_GORUNUM istenirse çevirir); değişince uygulamanın simgesiyle yazılır.
                 string fark;
-                if (CadVarlik.Ayni(simdiki, istenen, out fark)) { plan.Ayni++; return; }
+                string istenenBlok = istenen.Blok;
+                if (!string.IsNullOrEmpty(simdiki.Blok) && !string.Equals(simdiki.Blok, istenen.Blok, StringComparison.OrdinalIgnoreCase))
+                {
+                    istenen.Blok = simdiki.Blok;
+                    bool ayni = CadVarlik.Ayni(simdiki, istenen, out fark);
+                    istenen.Blok = istenenBlok;
+                    if (ayni) { plan.Ayni++; return; }
+                }
+                else if (CadVarlik.Ayni(simdiki, istenen, out fark)) { plan.Ayni++; return; }
                 var guncelle = new AktarimAdimi
                 {
                     Islem = "guncelle", Nesne = nesne, Hedef = hedef, Kimlik = id ?? "", Varlik = istenen,
