@@ -699,6 +699,20 @@ namespace SebekeHakedis.Test
             Esit("*U5", NesneYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Durum = "DM", Blok = "*U5" }), "simge: adsız blok korunur");
             Esit("SH_KAFES_AG_DMM", NesneYazici.BlokSec(new List<Eleman>(), new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "DM+M", Blok = "SH_KAFES_AG_YENI" }), "simge: duruma göre yeniden seçilir");
             Esit("SH_DIREK_AG_YENI", NesneYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "M", Blok = "SH_DIREK_AG_YENI" }), "simge: SH_ bloğu korunur");
+            // Katalog (eklentiye gömülen dosya), sıra üreteci, armatürlü direk (önceki sürümde ayrı blokta tanımlıydı)
+            var k = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            Esit(true, k.Kalemler.Count > 2500, "katalog okundu (tam liste)");
+            int sira = 7000;
+            Func<string> yeniSira = () => (++sira).ToString(CultureInfo.InvariantCulture);
+            var arm = k.Bul("ARMATÜR", "70W Sodyum Arm.");
+            Esit(true, arm != null, "katalog: armatür kalemi");
+            var adirek = new Eleman { Id = "D5", Tur = "AG_DIREK", Cins = "AG_BETON", Tip = "9,3/2", Durum = "M", Hakedis = 1 };
+            adirek.Kalemler.Add(new Kalem { Cins = "AG_BETON", Tanim = "9,3/2", Durum = "M", Ana = true, Kaynak = "NIT", Miktar = 1 });
+            Esit("", NesneYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null).Armatur, "armatür: malzemesi yoksa simge yok");
+            adirek.Kalemler.Add(Katalog.KalemYap(arm, 1, "M", 1, false, "MALZEME", "7100"));
+            var va = NesneYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null);
+            Esit("SH_ARMATUR_YENI", va.Armatur, "armatür: direğin yanında armatür simgesi");
+            adirek.Kalemler[1].Durum = "DM";
             Esit("SH_ARMATUR_DM", NesneYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null).Armatur, "armatür: demontaj armatür simgesi");
             var abox = new Eleman { Id = "B5", Tur = "BOX", Cins = "BOX_PANO", Durum = "M" };
             abox.Kalemler.Add(Katalog.KalemYap(arm, 1, "M", 1, false, "MALZEME", "7101"));

@@ -468,11 +468,14 @@ test('A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef
   const oz2 = await sebekeIceAl(ps2, SH.projeOku(metin), { projectId: ps2.p.id });
   assert.deepEqual(oz2.hesap, { yeni: 0, guncel: 0 }, 'ikinci alışta değişiklik yok');
   const sp3 = SH.projeOku(metin);
-  sp3.hesaplar[0].tarih = '2099-01-01T00:00:00.000Z'; sp3.hesaplar[0].ozet = 'güncellenmiş';
+  const amax3 = sp3.hesaplar.find((h) => h.modul === 'amax');
+  amax3.tarih = '2099-01-01T00:00:00.000Z'; amax3.ozet = 'güncellenmiş';
   const oz3 = await sebekeIceAl(ps2, sp3, { projectId: ps2.p.id });
   assert.deepEqual(oz3.hesap, { yeni: 0, guncel: 1 });
-  assert.ok(hesapKayitlari(ps2).some((k) => k.ozet === 'güncellenmiş'));
-  // Geri yazınca ikinci telefonun kaydı ilk telefonun kimliğiyle (sebekeId) döner
+  assert.ok(hesapKayitlari(ps2).some((k) => k.modul === 'amax' && k.ozet === 'güncellenmiş'));
+  // Geri yazınca ikinci telefonun kayıtları ilk telefonun kimlikleriyle (sebekeId) döner
   const geri = sebekeModel(ps2);
-  assert.ok(geri.hesaplar.some((h) => h.id === id1 && h.ozet === 'güncellenmiş'), 'kimlik korunur, özet güncel');
+  assert.equal(geri.hesaplar.length, 3, 'bütün kayıtlar geri yazılır: ' + JSON.stringify(geri.uyarilar || []));
+  assert.deepEqual(geri.hesaplar.map((h) => h.id).sort(), sp.hesaplar.map((h) => h.id).sort(), 'kimlikler korunur');
+  assert.equal(geri.hesaplar.find((h) => h.modul === 'amax').ozet, 'güncellenmiş', 'özet güncel');
 });
