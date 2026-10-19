@@ -112,7 +112,7 @@ namespace SebekeHakedis.Eklenti
 
         private static void Yaz(Transaction tr, Database db, HesapKaydi k)
         {
-            if (k == null || string.IsNullOrEmpty(k.Id)) throw new ArgumentException("Kayıt kimliği boş");
+            if (k == null || string.IsNullOrEmpty(k.Id)) throw new System.ArgumentException("Kayıt kimliği boş");
             var alt = AltSozlukAc(tr, db, true);
             string anahtar = Anahtar(k.Id);
             Xrecord xr;
@@ -372,7 +372,7 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
-        private static void Gunluk(string yer, Exception e)
+        private static void Gunluk(string yer, System.Exception e)
         {
             try
             {
@@ -385,14 +385,14 @@ namespace SebekeHakedis.Eklenti
         /// <summary>Hesap (ya da "merkez") için oturum açar ve sayfanın adresini döner.</summary>
         public static string Ac(Document belge, string modulId, HesapHedefi hedef, string kayitId)
         {
-            if (belge == null) throw new ArgumentNullException(nameof(belge));
+            if (belge == null) throw new System.ArgumentNullException(nameof(belge));
             if (_kanal == null) Baslat();
-            if (!SayfalarVar) throw new InvalidOperationException("Hesap sayfaları bu derlemede yok (ortak/hesap/paket eklentiye gömülmemiş).");
+            if (!SayfalarVar) throw new System.InvalidOperationException("Hesap sayfaları bu derlemede yok (ortak/hesap/paket eklentiye gömülmemiş).");
             JsonNesne m = null;
             if (modulId != "merkez")
             {
                 m = ModulBul(modulId);
-                if (m == null) throw new ArgumentException("Bilinmeyen hesap: " + modulId);
+                if (m == null) throw new System.ArgumentException("Bilinmeyen hesap: " + modulId);
             }
             var o = new Oturum
             {
@@ -431,7 +431,7 @@ namespace SebekeHakedis.Eklenti
                     Process.Start(new ProcessStartInfo(edge, "--app=\"" + url + "\" --no-first-run --window-size=1240,900") { UseShellExecute = false });
                     return;
                 }
-                catch (Exception e) { Gunluk("edge", e); }
+                catch (System.Exception e) { Gunluk("edge", e); }
             }
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
@@ -470,7 +470,7 @@ namespace SebekeHakedis.Eklenti
         {
             JsonNesne istek;
             try { istek = Json.Oku(govde) as JsonNesne ?? new JsonNesne(); }
-            catch (Exception e) { return HataJson("İstek okunamadı: " + e.Message); }
+            catch (System.Exception e) { return HataJson("İstek okunamadı: " + e.Message); }
             Func<Oturum, string> is_;
             switch (ad)
             {
@@ -496,10 +496,10 @@ namespace SebekeHakedis.Eklenti
             if (!kanal.InvokeRequired)
             {
                 try { return is_(); }
-                catch (Exception e) { return HataJson(e.Message); }
+                catch (System.Exception e) { return HataJson(e.Message); }
             }
             string sonuc = null;
-            Exception hata = null;
+            System.Exception hata = null;
             using (var bitti = new ManualResetEvent(false))
             {
                 try
@@ -507,11 +507,11 @@ namespace SebekeHakedis.Eklenti
                     kanal.BeginInvoke(new Action(() =>
                     {
                         try { sonuc = is_(); }
-                        catch (Exception e) { hata = e; }
+                        catch (System.Exception e) { hata = e; }
                         finally { try { bitti.Set(); } catch { } }
                     }));
                 }
-                catch (Exception e) { return HataJson("AutoCAD'e ulaşılamadı: " + e.Message); }
+                catch (System.Exception e) { return HataJson("AutoCAD'e ulaşılamadı: " + e.Message); }
                 if (!bitti.WaitOne(25000))
                     return HataJson("AutoCAD yanıt vermiyor: açık bir pencere ya da çalışan bir komut olabilir. Onu bitirip yeniden deneyin.");
             }
@@ -522,7 +522,7 @@ namespace SebekeHakedis.Eklenti
         private static Document BelgeKontrol(Oturum o)
         {
             foreach (Document d in AcApp.DocumentManager) if (d == o.Belge) return d;
-            throw new InvalidOperationException("Hesabın açıldığı çizim AutoCAD'de kapatılmış. Çizimi açıp hesabı yeniden başlatın.");
+            throw new System.InvalidOperationException("Hesabın açıldığı çizim AutoCAD'de kapatılmış. Çizimi açıp hesabı yeniden başlatın.");
         }
 
         private static void KomutKontrol(Document belge)
@@ -530,7 +530,7 @@ namespace SebekeHakedis.Eklenti
             string k = null;
             try { k = belge.CommandInProgress; } catch { }
             if (!string.IsNullOrEmpty(k))
-                throw new InvalidOperationException("AutoCAD'de \"" + k + "\" komutu çalışıyor. Komutu bitirip (Esc) yeniden deneyin.");
+                throw new System.InvalidOperationException("AutoCAD'de \"" + k + "\" komutu çalışıyor. Komutu bitirip (Esc) yeniden deneyin.");
         }
 
         /// <summary>Çizimden proje (hesap kayıtlarıyla).</summary>
@@ -587,7 +587,7 @@ namespace SebekeHakedis.Eklenti
         {
             var belge = BelgeKontrol(o);
             KomutKontrol(belge);
-            if (o.Modul == "merkez") throw new InvalidOperationException("Hesap merkezi sayfasından kayıt yapılmaz.");
+            if (o.Modul == "merkez") throw new System.InvalidOperationException("Hesap merkezi sayfasından kayıt yapılmaz.");
             using (belge.LockDocument())
             {
                 var db = belge.Database;
@@ -702,14 +702,14 @@ namespace SebekeHakedis.Eklenti
             var belge = BelgeKontrol(o);
             string modul = istek.Metin("modul");
             var m = ModulBul(modul);
-            if (m == null) throw new ArgumentException("Bilinmeyen hesap: " + modul);
+            if (m == null) throw new System.ArgumentException("Bilinmeyen hesap: " + modul);
             HesapHedefi hedef;
             string kayitId = "";
             string istenenKayit = istek.Metin("kayit");
             if (istenenKayit.Length > 0)
             {
                 var k = HesapDeposu.Oku(belge.Database).Find(x => x.Id == istenenKayit);
-                if (k == null) throw new InvalidOperationException("Kayıt bulunamadı (silinmiş olabilir).");
+                if (k == null) throw new System.InvalidOperationException("Kayıt bulunamadı (silinmiş olabilir).");
                 hedef = k.Hedef();
                 kayitId = k.Id;
                 modul = k.Modul;
