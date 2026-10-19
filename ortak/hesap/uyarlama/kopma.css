@@ -1,0 +1,69 @@
+/* kopma: aracın açık "buz" paleti Şebeke-M laciverdi + turuncu vurguya çevrilir (yalnız ekran; araç sayfanın kendisini
+   yazdırır ve yazdırmada kendi beyaz düzeninde kalır). Sağdaki şematik çizim (#viz) koyu zemine uyarlanır. */
+@media screen{
+  html.sm-var{
+    --ink:var(--sm-tx);--frost:var(--sm-bg);--paper:var(--sm-panel);--ice:var(--sm-acc);--ice-dk:var(--sm-acc);
+    --ice-lt:rgba(245,158,11,.16);--warn:var(--sm-err2);--ok:var(--sm-ok2);--line:var(--sm-line);--num:var(--sm-tx);--shadow:none
+  }
+  html.sm-var body{font-family:var(--sm-font)}
+  html.sm-var .wrap{padding-top:18px}
+  html.sm-var header.top{border-bottom-color:var(--sm-line)}
+  html.sm-var .title .sub{color:var(--sm-mut)}
+  html.sm-var .eyebrow .dot{box-shadow:0 0 0 4px rgba(245,158,11,.18)}
+  html.sm-var .brand{color:var(--sm-mut)}
+  html.sm-var .brand b{color:var(--sm-tx)}
+
+  /* Kartlar ve alanlar */
+  html.sm-var .card{background:var(--sm-panel);border-color:var(--sm-line);box-shadow:none}
+  html.sm-var .card h2{background:var(--sm-panel2);color:var(--sm-tx);border-bottom-color:var(--sm-line)}
+  html.sm-var .field{border-bottom-color:var(--sm-line2)}
+  html.sm-var .field label small{color:var(--sm-mut)}
+  html.sm-var .field input{font-weight:600}
+  html.sm-var .field input:focus,html.sm-var .field select:focus{outline-color:var(--sm-acc);border-color:var(--sm-acc)}
+  html.sm-var .field .auto{background:var(--sm-bg2);border-color:var(--sm-line);color:#c3cde6}
+  html.sm-var #pole{color:var(--sm-tx)!important}
+
+  /* Sonuç */
+  html.sm-var .resultbar.ok{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.45);color:var(--sm-ok2)}
+  html.sm-var .resultbar.no{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.5);color:var(--sm-err2)}
+  html.sm-var table.out td{border-bottom-color:var(--sm-line2)}
+  html.sm-var table.out td:first-child{color:#c3cde6}
+  html.sm-var table.out tr.key td:last-child{color:var(--sm-warn2)}
+  html.sm-var .stepbox{color:#c3cde6}
+  html.sm-var .stepbox table td{border-bottom-color:var(--sm-line2)}
+  html.sm-var .casechip{color:var(--sm-warn2)}
+
+  /* Düğmeler */
+  html.sm-var .toolbar button{background:var(--sm-acc);border-color:var(--sm-acc);color:#0b1326}
+  html.sm-var .toolbar button.ghost{background:transparent;border-color:var(--sm-line);color:var(--sm-tx)}
+  html.sm-var .toolbar button.ghost:hover{background:var(--sm-panel2);filter:none}
+  html.sm-var .note,html.sm-var .foot{color:var(--sm-mut)}
+  html.sm-var .foot{border-top-color:var(--sm-line)}
+
+  /* Şematik çizim (aracın çizdiği SVG renkleri) */
+  html.sm-var #viz{background:var(--sm-bg2);border-color:var(--sm-line)}
+  html.sm-var #viz [stroke="#1a1a1a"]{stroke:#cbd5e1}
+  html.sm-var #viz [stroke="#b9b9b9"]{stroke:#52627c}
+  html.sm-var #viz rect[fill="#fafafa"]{fill:#334155;stroke:#64748b}
+  html.sm-var #viz [stroke="#1f3fd6"]{stroke:#60a5fa}
+  html.sm-var #viz [stroke="#0f8a4f"]{stroke:#34d399} html.sm-var #viz [fill="#0f8a4f"]{fill:#34d399}
+  html.sm-var #viz [stroke="#54635f"]{stroke:#94a3b8}
+  html.sm-var #viz text[fill="#54635f"]{fill:#c3cde6}
+  html.sm-var #viz text[fill="#6a7773"]{fill:var(--sm-mut)}
+  html.sm-var #viz text[fill="#1c7a1c"]{fill:#4ade80}
+  html.sm-var #viz text[fill="#8a6310"]{fill:#fbbf24}
+  html.sm-var #viz [stroke="#1f7a52"]{stroke:#4ade80} html.sm-var #viz text[fill="#1f7a52"]{fill:#4ade80}
+  html.sm-var #viz [stroke="#b5432b"]{stroke:#f87171} html.sm-var #viz text[fill="#b5432b"]{fill:#f87171}
+  html.sm-var #viz rect[fill="#e7f6ee"]{fill:rgba(16,185,129,.16)}
+  html.sm-var #viz rect[fill="#fbeae6"]{fill:rgba(239,68,68,.16)}
+
+  /* Şebeke-M projeyi kendisi saklar: aracın kendi kaydet / yükle / sıfırla düğmeleri gizlenir (Hesapla, Yazdır kalır) */
+  html.sm-telefon .toolbar button[onclick="saveHTML()"],html.sm-telefon .toolbar button[onclick="loadState()"],html.sm-telefon .toolbar button[onclick="resetAll()"],
+  html.sm-autocad .toolbar button[onclick="saveHTML()"],html.sm-autocad .toolbar button[onclick="loadState()"],html.sm-autocad .toolbar button[onclick="resetAll()"]{display:none!important}
+
+  /* Telefon genişliği */
+  @media (max-width:640px){
+    html.sm-var .wrap{padding:14px 12px 40px}
+    html.sm-var .brand{text-align:left}
+  }
+}

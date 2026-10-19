@@ -1,7 +1,7 @@
-# VOLT-EDAŞ Saha (telefon uygulaması)
+# Şebeke-M (telefon uygulaması)
 
 EDAŞ şebeke işleri için Android saha uygulaması (GNSS ile direk, trafo, hat alımı; malzeme, keşif, metraj, hakediş)
-ve ofis için web sürümü. 17.10.2026'dan beri **Şebeke Hakediş** deposunun telefon tarafıdır: AutoCAD eklentisiyle
+ve ofis için web sürümü. 17.10.2026'dan beri **Şebeke-M** deposunun telefon tarafıdır: AutoCAD eklentisiyle
 aynı proje dosyasını (`.sebeke.json`) alır ve verir.
 
 - Güncel sürüm: **2.5.x** (GitHub › Releases, `main` dalındaki her gönderimde derlenir). Önceki: 2.4.0 (6 Ekim 2026). Web sürümü 2.3.0.
@@ -20,5 +20,5 @@ Bu depo özeldir; içinde APK imza anahtarı bulunur (`keystore/`). Herkese aç�
 - **Dışa Aktar › AutoCAD proje dosyası (.sebeke.json)** ve **Telefon proje dosyası (.volt.json)**; teslim
   paketindeki `PROJECT_INFO/project.json` artık AutoCAD bölümünü de taşır.
 - DXF çıktısındaki simgeler eklentiyle aynı ortak tablodan gelir (`SH_…` blokları, `../ortak/katalog/semboller.json`).
-- Dönüşüm kuralları: `../ortak/VERI-MODELI.md` ("Telefon ↔ AutoCAD eşlemesi"), kod: `web/src/interop/sebeke.js`,
+- Dönüşüm kuralları: `../ortak/VERI-MODELI.md` ("Telefon ↔ eski program eşlemesi"), kod: `web/src/interop/sebeke.js`,
   testler: `web/tests/sebeke.test.mjs`.

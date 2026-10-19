@@ -103,7 +103,7 @@ export function LineScreen({ id }) {
     app.toast(nl.lineNo + ' ofset hat oluşturuldu (İLERİDE)');
   };
   const cb = Object.assign({}, CABLE_DEFAULTS, d.cable || {});
-  return html`<${Title} title=${d.lineNo + ' · ' + d.lineType} sub=${lineLabel(l0, cat) + ' · ' + trn(li.length3D, 2) + ' m'} />
+  return html`<${Title} title=${d.lineNo + ' · ' + d.lineType} sub=${lineLabel(l0, cat) + ' · ' + trn(li.length3D, 2) + ' m'} right=${html`<button class="btn sm" title="Bu hat için teknik hesaplar" onClick=${() => app.nav.go('hesapMerkezi', { hedef: { tur: 'hat', id } })}><${Icon} n="calc" s=${16} />Hesaplar</button>`} />
     ${iss.map((i) => html`<div class=${'alert ' + (i.severity === 'error' ? 'err' : 'warn')}><${Badge} k=${CODE_KIND[i.code]}>${i.code}</${Badge}> ${i.message}</div>`)}
     <div class="grid3"><div class="stat"><b>2B</b><span>${trn(li.length2D, 2)}</span><small>m</small></div><div class="stat"><b>3B</b><span>${trn(li.length3D, 2)}</span><small>m</small></div><div class="stat"><b>Kaynak</b><span style="font-size:15px">${li.lenSource || '—'}</span></div></div>
     <div class="card stack">

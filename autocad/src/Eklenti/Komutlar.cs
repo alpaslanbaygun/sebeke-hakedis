@@ -31,10 +31,14 @@ namespace SebekeHakedis.Eklenti
         {
             try { Serit.Kur(); } catch (System.Exception ex) { Yaz("Şerit menü kurulamadı: " + ex.Message); }
             try { ArmaturTakibi.Baslat(); } catch (System.Exception ex) { Yaz("Armatür takibi başlatılamadı: " + ex.Message); }
+            try { HesapMerkezi.Baslat(); } catch (System.Exception ex) { Yaz("Hesap merkezi başlatılamadı: " + ex.Message); }
             Yaz(Marka.Ad + " " + Surum + " yüklendi. Şeritte ŞEBEKE-M ve ŞEBEKE-M ARAÇLAR sekmeleri; komut listesi için SH_HAKKINDA.");
         }
 
-        public void Terminate() { }
+        public void Terminate()
+        {
+            try { HesapMerkezi.Durdur(); } catch { }
+        }
 
         internal static void Yaz(string mesaj)
         {
@@ -65,7 +69,8 @@ namespace SebekeHakedis.Eklenti
                 string varsayilan = Ad(belge) + "_DURUMTESPIT_" + DateTime.Now.ToString("dd.MM.yyyy_HH_mm") + ".xlsx";
                 string yol = KayitYeriSor("Durum Tespit raporunu kaydet", "Excel dosyası (*.xlsx)|*.xlsx", varsayilan, Klasor(belge));
                 if (yol == null) return;
-                RaporYazici.Yaz(p, yol, Uygulama.Surum);
+                RaporYazici.Yaz(p, yol, Uygulama.Surum, null, HesapMerkezi.Bilgi(belge));
+                if (p.Hesaplar.Count > 0) Uygulama.Yaz(p.Hesaplar.Count + " teknik hesap kaydı HESAPLAR sayfasına yazıldı.");
                 Uygulama.Yaz("Rapor hazır: " + yol);
                 Ac(yol);
             });
@@ -295,7 +300,9 @@ namespace SebekeHakedis.Eklenti
             }
             var p = NesneOkuyucu.Oku(varliklar, belge.Name);
             p.Onaylar = CizimSozlugu.OnaylariOku(belge.Database);
-            ed.WriteMessage("\n" + p.Bolgeler.Count + " bölge, " + p.Elemanlar.Count + " eleman, " + p.Hatlar.Count + " hat, " + p.Kanallar.Count + " kanal okundu (" + sure.ElapsedMilliseconds + " ms).");
+            try { p.Hesaplar = HesapDeposu.Oku(belge.Database); } catch (System.Exception ex) { ed.WriteMessage("\nHesap kayıtları okunamadı: " + ex.Message); }
+            ed.WriteMessage("\n" + p.Bolgeler.Count + " bölge, " + p.Elemanlar.Count + " eleman, " + p.Hatlar.Count + " hat, " + p.Kanallar.Count + " kanal" +
+                            (p.Hesaplar.Count > 0 ? ", " + p.Hesaplar.Count + " hesap kaydı" : "") + " okundu (" + sure.ElapsedMilliseconds + " ms).");
             if (p.Bolgeler.Count == 0) ed.WriteMessage("\nUyarı: çizimde bölge sınırı yok; PROJE sütunları boş kalacak.");
             return p;
         }

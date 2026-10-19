@@ -158,6 +158,8 @@ namespace SebekeHakedis.Cekirdek
         public List<Kanal> Kanallar = new List<Kanal>();
         public List<Sondaj> Sondajlar = new List<Sondaj>();
         public List<string> Uyarilar = new List<string>();
+        /// <summary>Teknik hesap sonuçları (Hesap Merkezi; proje dosyasında "hesaplar"). Çizimde sözlükte saklanır.</summary>
+        public List<HesapKaydi> Hesaplar = new List<HesapKaydi>();
         /// <summary>Hakediş onayları (AutoCAD HAK_ONAY): hakediş no → bitler (Kontrol 4, Hakediş 2, GIS 1). Bkz. HakedisOnayi.</summary>
         public SortedDictionary<int, int> Onaylar = new SortedDictionary<int, int>();
 

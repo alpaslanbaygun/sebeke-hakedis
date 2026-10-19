@@ -1,0 +1,53 @@
+/* tepe-vektor: aracın koyu paleti Şebeke-M laciverdi + turuncu vurguya çevrilir (yalnız ekran; yazdırma aracın
+   kendi beyaz A4 yatay düzeninde kalır). Yöntem renkleri (vektörel: mor, skaler: sarı) aracın çizimiyle aynı kalır. */
+@media screen{
+  html.sm-var{
+    --bg:#0b1326;--bg2:#131b2e;--bg3:#0e1730;--border:#2d3449;--border2:#334155;
+    --text:#dae2fd;--text2:#94a3b8;--text3:#475569;
+    --accent:#f59e0b;--accent2:#4cd7f6;--warn:#ff8a8a;--warn2:#fbbf24;
+    --mono:var(--sm-mono);--sans:var(--sm-font)
+  }
+  html.sm-var body{font-family:var(--sm-font)}
+  html.sm-var .header{background:var(--sm-panel);border-bottom-color:var(--sm-line)}
+  html.sm-var .header-badge{color:#0b1326}
+  html.sm-var .panel-left{background:var(--sm-panel);border-right-color:var(--sm-line)}
+  html.sm-var .section{border-bottom-color:var(--sm-line2)}
+  html.sm-var .bar-btn{background:var(--sm-bg2);border-color:var(--sm-line)}
+  html.sm-var .bar-btn.ak-bolge{background:rgba(245,158,11,.14);border-color:var(--sm-acc);color:var(--sm-warn2)}
+  html.sm-var .bar-btn.ak-direk{background:rgba(76,215,246,.12);border-color:var(--sm-cy);color:var(--sm-cy)}
+  html.sm-var select:focus,html.sm-var input[type=number]:focus,html.sm-var .direk-input:focus{border-color:var(--sm-acc);box-shadow:0 0 0 2px rgba(245,158,11,.2)}
+  html.sm-var .info-bolge{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.35);color:var(--sm-warn2)}
+  html.sm-var .info-skaler{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.3);color:var(--sm-warn2)}
+  html.sm-var .hat-block{background:var(--sm-bg2);border-color:var(--sm-line2)}
+  html.sm-var .hat-block.active{border-color:rgba(245,158,11,.45)}
+  html.sm-var .bv{background:rgba(148,163,184,.05);border-color:var(--sm-line2)}
+  html.sm-var .bv.ak{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.45)}
+  html.sm-var .hat-action-btn,html.sm-var .print-btn{border-color:var(--sm-line);color:var(--sm-tx)}
+  html.sm-var .hat-action-btn:hover,html.sm-var .print-btn:hover{border-color:var(--sm-acc);color:var(--sm-warn2)}
+  html.sm-var .metrics{background:var(--sm-line2);border-color:var(--sm-line)}
+  html.sm-var .metric,html.sm-var .direk-sec{background:var(--sm-bg2)}
+  html.sm-var .direk-sec{border-color:var(--sm-line)}
+  html.sm-var .canvas-wrap{background:#0e1730;border-color:var(--sm-line)}
+  html.sm-var .vec-tbl .sum-row td{border-top-color:var(--sm-line)}
+  html.sm-var select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E")}
+
+  /* geniş ekranda diyagram sütunu ekranda kalsın (çizim alanı sütun yüksekliğini aldığı için aşağıda kayboluyordu) */
+  @media (min-width:861px){
+    html.sm-var .layout{min-height:0}
+    html.sm-var .panel-right{position:sticky;top:var(--sm-ust);align-self:start;height:calc(100vh - var(--sm-ust))}
+  }
+
+  /* telefon genişliği: dört sütunlu tesis satırı ikiye, tablo kendi içinde kayar */
+  @media (max-width:640px){
+    html.sm-var .header{padding:.6rem .9rem;gap:.5rem}
+    html.sm-var .header-title{font-size:13px}
+    html.sm-var .print-btn{margin-left:0}
+    html.sm-var .section{padding:.75rem .9rem}
+    html.sm-var .section > div[style*="grid-template-columns"]{grid-template-columns:1fr 1fr!important}
+    html.sm-var .direk-no-input{width:100%!important}
+    html.sm-var .vec-tbl{display:block;overflow-x:auto}
+    html.sm-var .canvas-area{padding:.75rem .6rem}
+    html.sm-var .canvas-wrap{min-height:340px}
+    html.sm-var .legend{margin-left:0}
+  }
+}

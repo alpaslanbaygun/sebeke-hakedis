@@ -1,0 +1,407 @@
+{
+  "modul": "tepe-tedas",
+  "aciklama": "Beklenen değerler hesabın ÖZGÜN (değiştirilmemiş) dosyasından: aynı bölge / hat tipi / potans düğmeleri ve aynı 7 satır (ad, açı, fonksiyon) girilip aracın 'Tepe Kuvvetini Hesapla' düğmesine basıldı; sonuç kutuları (#resB30, #resDirek, #resTrafo, #resAgac, #resPotans) ve senaryo tablosu okundu (is-E/altin.py). Uyarlamanın yazdığı satırlar: 1. durum 2. bölge AG: 4R @0° TAŞIYICI, 4R @180,8° TAŞIYICI (Kol 1 referans, Kol 2 = 245,1−64,3), 3R @86,7° NİHAYET (branşman hattı bu direkte bitiyor) → B30 311,2 kg, 10I; projedeki G-10U ≥ 10I → uygun. 2. durum 3. bölge MÜŞTEREK, potans T-AG-5 (+98 kg): 3x3AWG+3R @0° D, 3x3AWG+3R @190° D (Kol 2 referans: uzun açıklık 45 m; Kol 1 = 30−200+360), 3*35/16+50-AER @270° N → 923,1 kg (Tertibat 1 kopması), K2'' = projedeki G-K2'' → uygun. 3. durum: bölge / görev / tip yok, 3P+R araçta yok → araç yalnız 3R satırıyla 1. bölgede 210 kg, 10U; durum bilgi. 4. durum 3. bölge AG: 3*50/16+70-AER @0° ve @120° DURDURUCU → 652,8 kg, K1; projedeki G-10I < K1 → uygun-degil. 5. durum: AER 2. bölge yer tutucu değeri (1 kg) → araç 9-H önerir; uyarlama uyarıyla 'bilgi' verir.",
+  "durumlar": [
+    {
+      "ad": "telefon AG taşıyıcı direk, branşman (G-10U)",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme Projesi",
+          "yapan": "Deneme Mühendis",
+          "buzBolgesi": "2"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "p21",
+          "no": "21"
+        },
+        "direk": {
+          "id": "p21",
+          "no": "21",
+          "tur": "AG",
+          "malzeme": "demir",
+          "tip": "G-10U",
+          "rol": "T",
+          "rolKaynagi": "tip",
+          "kollar": [
+            {
+              "yon": 64.3,
+              "aciklik": 38.4,
+              "hatId": "a1",
+              "hatNo": "AG-2",
+              "hatTur": "AG_HAVAI",
+              "gerilimKV": 0.4,
+              "iletkenler": [
+                {
+                  "ad": "3R+R",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 245.1,
+              "aciklik": 36.2,
+              "hatId": "a1",
+              "hatNo": "AG-2",
+              "hatTur": "AG_HAVAI",
+              "gerilimKV": 0.4,
+              "iletkenler": [
+                {
+                  "ad": "3R+R",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 151.0,
+              "aciklik": 29.5,
+              "hatId": "a7",
+              "hatNo": "AG-7",
+              "hatTur": "AG_HAVAI",
+              "gerilimKV": 0.4,
+              "iletkenler": [
+                {
+                  "ad": "3xR",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "adimlar": [
+        "window.__SM.A.tikla('#potansGroup .opt-btn[data-val=\"YOK\"]');"
+      ],
+      "beklenen": {
+        "dolan": 24,
+        "eksik": [
+          "Potans (konsol ilave yükü)"
+        ],
+        "durum": "uygun",
+        "ozet": "^Tepe kuvveti 311,2 kg \\(Sağlam \\(Rx\\+Ry\\)\\) → önerilen 10I · trafo direği T-15$",
+        "degerler": {
+          "Maksimum tepe kuvveti": 311.2,
+          "Önerilen direk tipi": "10I",
+          "Trafo direği (varsa)": "T-15",
+          "Ağaç direk önerisi": "Demir Direk Seçiniz",
+          "Potans ilave yükü": 0,
+          "En büyük |Rx| (referans yön boyunca)": 17.3,
+          "En büyük |Ry| (potans dahil)": 293.9,
+          "Kritik senaryo": "Sağlam (Rx+Ry)",
+          "Tertibat 1": "4R · 0° · TAŞIYICI",
+          "Tertibat 2": "4R · 180.8° · TAŞIYICI",
+          "Tertibat 3": "3R · 86.7° · NİHAYET",
+          "tablo.satirlar[0][1]": 17.3,
+          "tablo.satirlar[0][2]": 293.9,
+          "tablo.satirlar[0][4]": 311.2,
+          "tablo.satirlar[3][0]": "Tertibat 3 kopması (3R)",
+          "tablo.satirlar[3][4]": 73.6
+        }
+      }
+    },
+    {
+      "ad": "AutoCAD müşterek durdurucu (3xSW + 3xR, ALPEK aydınlatma), potans T-AG-5",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "autocad",
+        "proje": {
+          "ad": "Deneme",
+          "buzBolgesi": "3"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "2C4D",
+          "no": "M-12"
+        },
+        "direk": {
+          "id": "2C4D",
+          "no": "M-12",
+          "tur": "MUSTEREK",
+          "malzeme": "demir",
+          "tip": "G-K2''",
+          "rol": "D",
+          "kollar": [
+            {
+              "yon": 30.0,
+              "aciklik": 40.0,
+              "hatId": "M1",
+              "hatNo": "M1",
+              "hatTur": "MUSTEREK",
+              "iletkenler": [
+                {
+                  "ad": "3xSW",
+                  "adet": 1,
+                  "devre": "OG"
+                },
+                {
+                  "ad": "3xR",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 200.0,
+              "aciklik": 45.0,
+              "hatId": "M1",
+              "hatNo": "M1",
+              "hatTur": "MUSTEREK",
+              "iletkenler": [
+                {
+                  "ad": "3xSW",
+                  "adet": 1,
+                  "devre": "OG"
+                },
+                {
+                  "ad": "3xR",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 110.0,
+              "aciklik": 32.0,
+              "hatId": "Y1",
+              "hatNo": "Y1",
+              "hatTur": "AYDINLATMA",
+              "iletkenler": [
+                {
+                  "ad": "3X35/16+50 ALPEK",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "adimlar": [
+        "window.__SM.A.tikla('#potansGroup .opt-btn[data-val=\"VAR\"]'); window.__SM.A.sec('#potansSelect', '3');"
+      ],
+      "beklenen": {
+        "eksik": 1,
+        "durum": "uygun",
+        "ozet": "923,1 kg \\(Tertibat 1 kopması \\(3x3AWG\\+3R\\)\\) → önerilen K2'' · potans \\+98 kg",
+        "degerler": {
+          "Maksimum tepe kuvveti": 923.1,
+          "Önerilen direk tipi": "K2''",
+          "Trafo direği (varsa)": "-",
+          "Potans ilave yükü": 98,
+          "Kritik senaryo": "Tertibat 1 kopması (3x3AWG+3R)",
+          "En büyük |Rx| (referans yön boyunca)": 360.8,
+          "En büyük |Ry| (potans dahil)": 583.7,
+          "Hat tipi": "MÜŞTEREK",
+          "Potans": "T-AG-5",
+          "Tertibat 1": "3x3AWG+3R · 0° · DURDURUCU",
+          "Tertibat 2": "3x3AWG+3R · 190° · DURDURUCU",
+          "Tertibat 3": "3*35/16+50-AER · 270° · NİHAYET",
+          "tablo.satirlar[0][3]": 499.1,
+          "tablo.satirlar[1][1]": -339.4,
+          "tablo.satirlar[1][2]": -485.7,
+          "tablo.satirlar[1][4]": 923.1,
+          "tablo.satirlar[1][5]": "evet",
+          "tablo.satirlar[2][4]": 785.3,
+          "tablo.satirlar[3][4]": 166.6
+        }
+      }
+    },
+    {
+      "ad": "eksik bilgili AG direği (bölge, görev, malzeme yok; 3P+R araçta yok)",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "p4",
+          "no": "4"
+        },
+        "direk": {
+          "id": "p4",
+          "no": "4",
+          "tur": "AG",
+          "malzeme": null,
+          "tip": null,
+          "rol": null,
+          "kollar": [
+            {
+              "yon": 10.0,
+              "aciklik": 33.0,
+              "hatId": "b1",
+              "hatTur": "AG_HAVAI",
+              "iletkenler": [
+                {
+                  "ad": "3P+R",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 188.0,
+              "aciklik": 35.5,
+              "hatId": "b1",
+              "hatTur": "AG_HAVAI",
+              "iletkenler": [
+                {
+                  "ad": "3xR",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "beklenen": {
+        "eksik": [
+          "Bölge",
+          "Potans (konsol ilave yükü)",
+          "Tertibat 1 fonksiyonu",
+          "Tertibat 2 adı (3P+R)",
+          "Tertibat 2 fonksiyonu"
+        ],
+        "durum": "bilgi",
+        "degerler": {
+          "Maksimum tepe kuvveti": 210,
+          "Önerilen direk tipi": "10U",
+          "Ağaç direk önerisi": "9A",
+          "Bölge": "1. bölge",
+          "Tertibat 1": "3R · 0° · fonksiyon yok",
+          "tablo.satirlar[1][0]": "Tertibat 1 kopması (3R)",
+          "tablo.satirlar[1][1]": 52.5
+        }
+      }
+    },
+    {
+      "ad": "AG köşe durdurucu, AER 3. bölge: projedeki 10I yetmez (K1)",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme",
+          "buzBolgesi": "3"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "p9",
+          "no": "9"
+        },
+        "direk": {
+          "id": "p9",
+          "no": "9",
+          "tur": "AG",
+          "malzeme": "demir",
+          "tip": "G-10I",
+          "rol": "D",
+          "kollar": [
+            {
+              "yon": 0.0,
+              "aciklik": 40.0,
+              "hatId": "c1",
+              "hatTur": "AG_HAVAI",
+              "iletkenler": [
+                {
+                  "ad": "3x50/16+70 AER",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 120.0,
+              "aciklik": 35.0,
+              "hatId": "c1",
+              "hatTur": "AG_HAVAI",
+              "iletkenler": [
+                {
+                  "ad": "3x50/16+70 AER",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "adimlar": [
+        "window.__SM.A.tikla('#potansGroup .opt-btn[data-val=\"YOK\"]');"
+      ],
+      "beklenen": {
+        "durum": "uygun-degil",
+        "ozet": "^Tepe kuvveti 652,8 kg",
+        "degerler": {
+          "Maksimum tepe kuvveti": 652.8,
+          "Önerilen direk tipi": "K1",
+          "En büyük |Rx| (referans yön boyunca)": 477.9,
+          "En büyük |Ry| (potans dahil)": 413.9,
+          "tablo.satirlar[0][1]": 238.9,
+          "tablo.satirlar[0][2]": 413.8,
+          "tablo.satirlar[2][1]": 477.9,
+          "tablo.satirlar[2][2]": 0
+        }
+      }
+    },
+    {
+      "ad": "AER 2. bölge yer tutucu değer (1 kg): araç 9-H önerir, durum bilgi",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme",
+          "buzBolgesi": "2"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "p12",
+          "no": "12"
+        },
+        "direk": {
+          "id": "p12",
+          "no": "12",
+          "tur": "AG",
+          "malzeme": "demir",
+          "tip": "G-10I",
+          "rol": "N",
+          "kollar": [
+            {
+              "yon": 45.0,
+              "aciklik": 30.0,
+              "hatId": "d1",
+              "hatTur": "AG_HAVAI",
+              "iletkenler": [
+                {
+                  "ad": "3x35/16+50 AER",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "adimlar": [
+        "window.__SM.A.tikla('#potansGroup .opt-btn[data-val=\"YOK\"]');"
+      ],
+      "beklenen": {
+        "eksik": 1,
+        "durum": "bilgi",
+        "degerler": {
+          "Maksimum tepe kuvveti": 1,
+          "Önerilen direk tipi": "9-H",
+          "Ağaç direk önerisi": "9O",
+          "Tertibat 1": "3*35/16+50-AER · 0° · NİHAYET",
+          "uyarilar[0]": "Tertibat 1 (3*35/16+50-AER): araç tablosunda 2. bölge değeri 1 kg (yer tutucu); yalnız 3. bölge değeri gerçektir. Sonuç güvenilir değil."
+        }
+      }
+    }
+  ]
+}

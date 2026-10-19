@@ -287,11 +287,82 @@ namespace SebekeHakedis.Eklenti
             telefon.Items.Add(Dugme("Telefondan\nAl", "Telefondan gelen proje dosyasındaki (.sebeke.json, .volt.json ya da teslim paketi .zip) yeni ve değişen nesneleri bu çizime aktarır.", "_SH_PROJEAL ", "telefon_al", telRengi));
             telefon.Items.Add(Dugme("Telefona\nGönder", "Bu çizimi telefonda açılacak proje dosyasına yazar (.sebeke.json ya da telefon biçimi .volt.json).", "_SH_ICEAL ", "telefon_gonder", telRengi));
 
+            HesapPanelleri(araclar);
+
             KategorileriGoster();
             ElemanlariKur(HizliSecim.Kategori);
             SecimiGoster();
             if (etkindi) Ozellik(sekme, "IsActive", true);
             else if (aracEtkindi) Ozellik(araclar, "IsActive", true);
+        }
+
+        // ---------------- Teknik hesaplar ----------------
+
+        /// <summary>Panel adlarına göre hesap grupları (ortak/hesap/moduller.json › grup).</summary>
+        private static readonly string[][] HesapPanelGruplari =
+        {
+            new[] { "Teknik Hesaplamalar", "mekanik", "Hat ve\nDirek", "hesap_direk", "Hat ve direk hesapları: sehim, uplift, ag–aw, Amax, iletken kopma, tepe kuvveti." },
+            new[] { "Teknik Hesaplamalar", "elektrik", "Elektrik", "hesap_elektrik", "Elektrik hesapları: gerilim düşümü, kısa devre, bakır–alüminyum kesit." },
+        };
+
+        /// <summary>
+        /// Araçlar sekmesi › Teknik Hesaplamalar (Hesap Merkezi, Kayıtlı Hesaplar, hat ve direk / elektrik açılır listeleri)
+        /// ve Proje ve Yerleşim (köşk, kanal, AG tek hat). Hesap listesi eklentiye gömülü moduller.json'dan gelir;
+        /// her düğme "_SH_HESAP <kimlik>" komutunu gönderir (seçili nesne hedef olur, Enter = proje geneli).
+        /// </summary>
+        private static void HesapPanelleri(RibbonTab araclar)
+        {
+            var moduller = HesapMerkezi.Moduller;
+            var hesapRengi = Color.FromRgb(0xF5, 0x9E, 0x0B);
+            var hesap = Panel(araclar, "Teknik Hesaplamalar");
+            hesap.Items.Add(Dugme("Hesap\nMerkezi", "Seçili direk, hat, trafo ya da kanal için uygun hesapların listesi ve o hedefin kayıtlı sonuçları (tarayıcıda açılır). Nesne seçmeden Enter: çizimin tamamı.", "_SH_HESAP merkez ", "hesap_merkezi", hesapRengi));
+            hesap.Items.Add(Dugme("Kayıtlı\nHesaplar", "Çizimdeki bütün hesap kayıtları: sonuç, uygunluk, hesaptan sonra değişen bilgiler (güncel değil uyarısı), çizimde gösterme.", "_SH_HESAPLAR ", "hesap_kayit", null));
+            foreach (var g in HesapPanelGruplari)
+            {
+                var liste = moduller.FindAll(m => m.Metin("grup") == g[1]);
+                if (liste.Count == 0) continue;
+                var acilir = new RibbonSplitButton
+                {
+                    Text = g[2],
+                    ShowText = true,
+                    ShowImage = true,
+                    Size = RibbonItemSize.Large,
+                    Orientation = System.Windows.Controls.Orientation.Vertical,
+                    LargeImage = SeritSimgeleri.KomutSimgesi(g[3], 32, null),
+                    Image = SeritSimgeleri.KomutSimgesi(g[3], 16, null),
+                    ToolTip = g[4] + " Tıklayınca Hesap Merkezi açılır; ok ile hesabı doğrudan seçin.",
+                    IsSplit = true,
+                    IsSynchronizedWithCurrentItem = false,
+                    ListStyle = RibbonSplitButtonListStyle.List,
+                    CommandParameter = "_SH_HESAP merkez ",
+                    CommandHandler = new KomutIsleyici(),
+                };
+                Ozellik(acilir, "ListImageSize", RibbonImageSize.Standard);
+                foreach (var m in liste)
+                {
+                    acilir.Items.Add(new RibbonButton
+                    {
+                        Text = m.Metin("ad"),
+                        ShowText = true,
+                        ShowImage = true,
+                        Image = SeritSimgeleri.KomutSimgesi(g[3], 16, null),
+                        ToolTip = m.Metin("aciklama"),
+                        CommandParameter = "_SH_HESAP " + m.Metin("id") + " ",
+                        CommandHandler = new KomutIsleyici(),
+                    });
+                }
+                hesap.Items.Add(acilir);
+            }
+
+            var yerlesimListesi = moduller.FindAll(x => x.Metin("grup") == "yerlesim");
+            if (yerlesimListesi.Count == 0) return;
+            var yerlesim = Panel(araclar, "Proje ve Yerleşim");
+            foreach (var m in yerlesimListesi)
+            {
+                string id = m.Metin("id");
+                string simge = id == "kosk" ? "kosk" : id == "kanal" ? "kanal" : id == "ag-tekhat" ? "tekhat" : "yerlesim";
+                yerlesim.Items.Add(Dugme(Satirla(m.Metin("kisa")), m.Metin("aciklama"), "_SH_HESAP " + id + " ", simge, null));
+            }
         }
 
         // ---------------- Kategori ----------------

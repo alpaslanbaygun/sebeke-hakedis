@@ -149,6 +149,9 @@ namespace SebekeHakedis.PencereTest
                     x0 => BuyukPanel(dc, x0, "Hakediş", new (string, string, Color?)[] { ("Aktif\nHakediş", "aktif_hakedis", Color.FromRgb(0x23, 0xA4, 0x55)), ("Hakediş\nOnayı", "onay", null) }),
                     x0 => BuyukPanel(dc, x0, "Raporlar", new (string, string, Color?)[] { ("Durum\nTespit", "rapor", null), ("Dosyadan\nRapor", "dosya_rapor", null), ("Proje\nÖzeti", "ozet", null), ("Eksik\nMalzeme", "eksik", null) }),
                     x0 => BuyukPanel(dc, x0, "Telefon", new (string, string, Color?)[] { ("Telefondan\nAl", "telefon_al", Color.FromRgb(0x3B, 0xA4, 0xF6)), ("Telefona\nGönder", "telefon_gonder", Color.FromRgb(0x3B, 0xA4, 0xF6)) }),
+                    // Teknik hesaplar (eklentide Serit.HesapPanelleri): merkez, kayıtlar, iki açılır liste; yerleşim araçları
+                    x0 => BuyukPanel(dc, x0, "Teknik Hesaplamalar", new (string, string, Color?)[] { ("Hesap\nMerkezi", "hesap_merkezi", Color.FromRgb(0xF5, 0x9E, 0x0B)), ("Kayıtlı\nHesaplar", "hesap_kayit", null), ("Hat ve\nDirek ▾", "hesap_direk", null), ("Elektrik ▾", "hesap_elektrik", null) }),
+                    x0 => BuyukPanel(dc, x0, "Proje ve Yerleşim", new (string, string, Color?)[] { ("Beton\nKöşk", "kosk", null), ("Kanal\nPlanı", "kanal", null), ("AG Tek\nHat", "tekhat", null) }),
                 };
                 foreach (var ek in AracPanelleri) { var e = ek; paneller.Add(x0 => e(dc, x0)); }
                 PanelleriCiz(dc, paneller, "ŞEBEKE-M ARAÇLAR");

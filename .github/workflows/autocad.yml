@@ -39,6 +39,17 @@ jobs:
           New-Item -ItemType Directory -Force cikti | Out-Null
           "Sürüm: $s`nİşlem: $env:GITHUB_SHA`nTarih: $(Get-Date -Format s)" | Out-File -Encoding utf8 cikti/ozet.txt
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Hesap Merkezi sayfalarını paketle
+        shell: pwsh
+        run: |
+          node araclar/hesap-paketle.mjs 2>&1 | Tee-Object -FilePath cikti/hesap-paket.log
+          if ($LASTEXITCODE -ne 0) { "HESAP PAKETİ: BAŞARISIZ" | Out-File -Append -Encoding utf8 cikti/ozet.txt; exit 1 }
+          (Get-ChildItem ortak/hesap/paket -Recurse -File | Measure-Object).Count.ToString() + " dosya paketlendi" | Out-File -Append -Encoding utf8 cikti/hesap-paket.log
+
       - name: Çekirdek testleri
         shell: pwsh
         run: |

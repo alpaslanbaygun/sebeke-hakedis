@@ -12,6 +12,7 @@ import { ExcelScreen, ObjectsScreen, BaseRoverScreen } from './field.js';
 import { CabinScreen } from './cabin.js';
 import { TepeScreen } from './tepe.js';
 import { TeamScreen } from './team.js';
+import { HesapMerkeziScreen, HesapScreen } from './hesap.js';
 
 export const SCREENS = {
   map: MapScreen, stake: StakeoutScreen, calc: CalcScreen, export: ExportScreen, settings: SettingsScreen,
@@ -19,5 +20,6 @@ export const SCREENS = {
   enh: EnhScreen, metraj: MetrajScreen, hakedis: HakedisScreen, checks: ChecksScreen,
   poz: PozScreen, layers: LayersScreen, definitions: DefinitionsScreen,
   projects: ProjectsScreen, hub: HubScreen, projectEdit: ProjectEditScreen, audit: AuditScreen, sync: SyncScreen, user: UserScreen,
-  excel: ExcelScreen, objects: ObjectsScreen, baseRover: BaseRoverScreen, cabin: CabinScreen, tepe: TepeScreen, team: TeamScreen
+  excel: ExcelScreen, objects: ObjectsScreen, baseRover: BaseRoverScreen, cabin: CabinScreen, tepe: TepeScreen, team: TeamScreen,
+  hesapMerkezi: HesapMerkeziScreen, hesap: HesapScreen
 };

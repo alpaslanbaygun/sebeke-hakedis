@@ -159,6 +159,26 @@ namespace SebekeHakedis.Eklenti
                     return new[] { "M6,15 L12,9 L18,15" };
                 case "sag":
                     return new[] { "M9,6 L15,12 L9,18" };
+
+                // ---- Teknik hesaplar ----
+                case "hesap_merkezi":
+                    // hesap makinesi: ekran + tuşlar
+                    return new[] { "M6,3 H18 V21 H6 Z", "M8.5,5.5 H15.5 V9 H8.5 Z", "!" + D(9.3, 12.3, 1.1), "!" + D(12, 12.3, 1.1), "!" + D(14.7, 12.3, 1.1), "!" + D(9.3, 15.5, 1.1), "!" + D(12, 15.5, 1.1), "!" + D(14.7, 15.5, 1.1), "!" + D(9.3, 18.6, 1.1), "M11.3,18.6 H15.4" };
+                case "hesap_kayit":
+                    // belge + onay (kayıtlı hesap sonuçları)
+                    return new[] { Belge, BelgeKosesi, "M9,12 H14", "M9,15 H12", "M12.3,18.6 L14.3,20.6 L18.3,16.3" };
+                case "hesap_direk":
+                    // direk + yatay kuvvet oku (tepe kuvveti, sehim)
+                    return new[] { "M9,4 V21", "M4,7 H14", "M5.5,10.5 H12.5", "M6,21 H12", "M14,13 H21", "M18.5,10.5 L21,13 L18.5,15.5", "M14,16.5 Q17,19.5 20,16.5" };
+                case "hesap_elektrik":
+                    // şimşek (gerilim düşümü, kısa devre)
+                    return new[] { "!M13.6,3 L6,13.4 H11.4 L10.2,21 L18,10.6 H12.6 Z" };
+                case "tekhat":
+                    // tek hat şeması: bara, üç çıkış, kesici kutuları
+                    return new[] { "M3.5,7 H20.5", "M7,7 V20.5", "M12,7 V20.5", "M17,7 V20.5", "M5.5,11.5 H8.5 V14.5 H5.5 Z", "M10.5,13.5 H13.5 V16.5 H10.5 Z", "M15.5,11.5 H18.5 V14.5 H15.5 Z", "M12,3.5 V7" };
+                case "yerlesim":
+                    // yerleşim planı: çerçeve içinde kutular
+                    return new[] { "M3.5,4.5 H20.5 V19.5 H3.5 Z", "M6.5,7.5 H11 V12 H6.5 Z", "M13,7.5 H17.5 V12 H13 Z", "M6.5,14.5 H17.5 V16.8 H6.5 Z" };
                 default:
                     return new[] { D(12, 12, 8) };
             }

@@ -19,7 +19,7 @@
     <Version>0.1.0</Version>
     <Product>Şebeke-M</Product>
     <Company>Şebeke-M</Company>
-    <Description>Elektrik dağıtım şebekesi hakediş ve durum tespit eklentisi</Description>
+    <Description>Şebeke-M: elektrik dağıtım şebekesi proje, hakediş, durum tespit ve teknik hesap eklentisi</Description>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -50,6 +50,8 @@
     <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-24.png" Link="Marka\simge-24.png" LogicalName="SebekeHakedis.marka.simge-24.png" />
     <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-32.png" Link="Marka\simge-32.png" LogicalName="SebekeHakedis.marka.simge-32.png" />
     <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-64.png" Link="Marka\simge-64.png" LogicalName="SebekeHakedis.marka.simge-64.png" />
+    <!-- Hesap Merkezi sayfaları: derlemeden önce "node araclar/hesap-paketle.mjs" ile ortak/hesap/paket üretilir (CI yapar) -->
+    <EmbeddedResource Include="..\..\..\ortak\hesap\paket\**\*" Link="Hesap\%(RecursiveDir)%(Filename)%(Extension)" LogicalName="SebekeHakedis.hesap.%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net46'">

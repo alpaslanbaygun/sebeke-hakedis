@@ -1,0 +1,384 @@
+{
+  "modul": "tepe-vektor",
+  "aciklama": "Beklenen değerler hesabın ÖZGÜN (değiştirilmemiş) dosyasından: aynı hat satırları (iletken adı + açı), bölge ve direk tipi düğmesiyle aracın kendi hesapla() işlevi çalıştırıldı; lastR, lastRx, lastRy, lastAci ve lastVecs okundu (is-E/altin.py). Açılar: uyarlama ana hattı 0° alır; 1. durumda Kol 2 (196,7°, en uzun açıklık) → kollar 0 / 204,5 / 281,7°; 2. durumda Kol 2 (187,5°, doğrusal çift) → 0 / 184,5°. Müşterekte OG 'Müşt.' ve AG '(x0,81)' ayrı satır. 1. durum: 2B kafes, 525+310,96 @0°, 525+310,96 @204,5°, 243 @281,7° → Rx −584,62, Ry 124,55, R = |Rx|+|Ry| = 709,16 kg. 2. durum: 3B kafes, 1027,62 @0° ve @184,5° → R 83,79. 3. durum: bağlam eksik; kullanıcı 1B + beton + 3P+R/P, 3R, 2R satırlarını tamamlar → R = √(141,83² + 280,01²) = 313,88 kg, yön 333,14°. 4. durum: beton 1B; ana hat Kol 2 (170°, doğrusal çiftin uzunu) 0° alınır: 4R @0° ve @180°, 1x16/16+25 AER (a≤36m) @270° (80° − 170°), yeraltı kol hesaba girmez → Rx −100,9, R 100,9 kg, yön 270° (kuzeyden 80°).",
+  "durumlar": [
+    {
+      "ad": "telefon müşterek köşe direği (Raven + AER, AG branşman, kafes)",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme Projesi",
+          "kod": "DN-01",
+          "yapan": "Deneme Mühendis",
+          "buzBolgesi": "2"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "p17",
+          "no": "17"
+        },
+        "direk": {
+          "id": "p17",
+          "no": "17",
+          "tur": "MUSTEREK",
+          "malzeme": "demir",
+          "tip": "G-K2''",
+          "rol": "K",
+          "aci": 24.5,
+          "kollar": [
+            {
+              "yon": 41.2,
+              "aciklik": 38.5,
+              "hatId": "h1",
+              "hatNo": "M-1",
+              "hatTur": "MUSTEREK",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xRaven",
+                  "adet": 1,
+                  "devre": "OG"
+                },
+                {
+                  "ad": "3x50/16+70 AER",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 196.7,
+              "aciklik": 42.3,
+              "hatId": "h1",
+              "hatNo": "M-1",
+              "hatTur": "MUSTEREK",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xRaven",
+                  "adet": 1,
+                  "devre": "OG"
+                },
+                {
+                  "ad": "3x50/16+70 AER",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 118.4,
+              "aciklik": 31.0,
+              "hatId": "h2",
+              "hatNo": "A-4",
+              "hatTur": "AG_HAVAI",
+              "gerilimKV": 0.4,
+              "iletkenler": [
+                {
+                  "ad": "3xR",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "beklenen": {
+        "dolan": 24,
+        "eksik": 0,
+        "durum": "bilgi",
+        "ozet": "^Tepe kuvveti R = 709,2 kg \\(skaler",
+        "degerler": {
+          "Tepe kuvveti R": 709.16,
+          "Rx": -584.62,
+          "Ry": 124.55,
+          "Bileşke açısı (ana hatta göre)": 282.03,
+          "Bileşke yönü (kuzeyden)": 118.73,
+          "Etkin hat sayısı": 5,
+          "Ana hat yönü (kuzeyden)": 196.7,
+          "Direk tipi (hesap yöntemi)": "Kafes demir direk",
+          "Buz yükü bölgesi": "2B",
+          "tablo.satirlar[0][1]": "3x1/0 AWG Müşt.",
+          "tablo.satirlar[0][3]": 525,
+          "tablo.satirlar[1][1]": "3x50/16+70 AER(x0,81)",
+          "tablo.satirlar[1][3]": 310.96,
+          "tablo.satirlar[2][2]": 204.5,
+          "tablo.satirlar[2][4]": -217.71,
+          "tablo.satirlar[2][5]": -477.73,
+          "tablo.satirlar[4][1]": "3R (x0,81)",
+          "tablo.satirlar[4][2]": 281.7,
+          "tablo.satirlar[4][3]": 243
+        }
+      }
+    },
+    {
+      "ad": "AutoCAD ENH durdurucu (3xSW, doğrusal hat, kafes)",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "autocad",
+        "proje": {
+          "ad": "Deneme",
+          "buzBolgesi": "3"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "1A2B",
+          "no": "D-8"
+        },
+        "direk": {
+          "id": "1A2B",
+          "no": "D-8",
+          "tur": "OG",
+          "malzeme": "demir",
+          "tip": "G-D-12 (sw)",
+          "rol": "D",
+          "kollar": [
+            {
+              "yon": 12.0,
+              "aciklik": 145.0,
+              "hatId": "7F",
+              "hatNo": "7F",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xSW",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            },
+            {
+              "yon": 187.5,
+              "aciklik": 168.2,
+              "hatId": "7F",
+              "hatNo": "7F",
+              "hatTur": "OG_HAVAI",
+              "gerilimKV": 34.5,
+              "iletkenler": [
+                {
+                  "ad": "3xSW",
+                  "adet": 1,
+                  "devre": "OG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "beklenen": {
+        "dolan": 15,
+        "eksik": 0,
+        "durum": "bilgi",
+        "degerler": {
+          "Tepe kuvveti R": 83.79,
+          "Rx": -80.63,
+          "Ry": 3.17,
+          "Bileşke açısı (ana hatta göre)": 272.25,
+          "Etkin hat sayısı": 2,
+          "Buz yükü bölgesi": "3B",
+          "tablo.satirlar[0][1]": "3x3AWG ENH",
+          "tablo.satirlar[0][3]": 1027.62,
+          "tablo.satirlar[1][2]": 184.5,
+          "tablo.satirlar[1][4]": -80.63,
+          "tablo.satirlar[1][5]": -1024.45
+        }
+      }
+    },
+    {
+      "ad": "eksik bilgili AG direği (bölge, malzeme yok; 3P+R ve abone AER araçta yok) — kullanıcı tamamlar",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "p3",
+          "no": "3"
+        },
+        "direk": {
+          "id": "p3",
+          "no": "3",
+          "tur": "AG",
+          "malzeme": null,
+          "tip": null,
+          "rol": "T",
+          "kollar": [
+            {
+              "yon": 90.0,
+              "aciklik": 35.0,
+              "hatId": "a1",
+              "hatTur": "AG_HAVAI",
+              "iletkenler": [
+                {
+                  "ad": "3P+R",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 270.5,
+              "aciklik": 33.0,
+              "hatId": "a1",
+              "hatTur": "AG_HAVAI",
+              "iletkenler": [
+                {
+                  "ad": "3xR",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 0.0,
+              "aciklik": 20.0,
+              "hatId": "r1",
+              "hatTur": "REKORTMAN",
+              "iletkenler": [
+                {
+                  "ad": "2x16+25 AER",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "adimlar": [
+        "window.__SM.A.tikla('.bolge-bar .bar-btn');",
+        "window.__SM.A.tikla('.direk-bar .bar-btn:nth-child(2)');",
+        "window.__SM.A.yaz('#hs0', '3P+R/P'); window.__SM.A.yaz('#hs2', '2R');"
+      ],
+      "beklenen": {
+        "eksik": [
+          "Buz yükü bölgesi",
+          "Direk tipi (hesap yöntemi)",
+          "Hat 1 iletkeni (3P+R)",
+          "Hat 3 iletkeni (2x16+25 AER)"
+        ],
+        "durum": "bilgi",
+        "degerler": {
+          "Tepe kuvveti R": 313.88,
+          "Rx": -141.83,
+          "Ry": 280.01,
+          "Bileşke açısı (ana hatta göre)": 333.14,
+          "Bileşke yönü (kuzeyden)": 63.14,
+          "Etkin hat sayısı": 3,
+          "Direk tipi (hesap yöntemi)": "Beton direk",
+          "Buz yükü bölgesi": "1B",
+          "tablo.satirlar[0][3]": 490,
+          "tablo.satirlar[1][2]": 180.5,
+          "tablo.satirlar[1][3]": 210,
+          "tablo.satirlar[2][2]": 270,
+          "tablo.satirlar[2][3]": 140
+        }
+      }
+    },
+    {
+      "ad": "beton AG direği: aydınlatma AER (a≤36 m), yeraltı çıkışı hesaba girmez",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme",
+          "buzBolgesi": "1"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "p30",
+          "no": "30"
+        },
+        "direk": {
+          "id": "p30",
+          "no": "30",
+          "tur": "AG",
+          "malzeme": "beton",
+          "tip": "9.3/5",
+          "rol": "T",
+          "kollar": [
+            {
+              "yon": 350.0,
+              "aciklik": 34.0,
+              "hatId": "a2",
+              "hatTur": "AG_HAVAI",
+              "iletkenler": [
+                {
+                  "ad": "3R+R",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 170.0,
+              "aciklik": 36.0,
+              "hatId": "a2",
+              "hatTur": "AG_HAVAI",
+              "iletkenler": [
+                {
+                  "ad": "3R+R",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 80.0,
+              "aciklik": 30.0,
+              "hatId": "y1",
+              "hatTur": "AYDINLATMA",
+              "iletkenler": [
+                {
+                  "ad": "1x16/16+25 AER",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            },
+            {
+              "yon": 260.0,
+              "aciklik": 12.0,
+              "hatId": "k1",
+              "hatTur": "AG_YERALTI",
+              "iletkenler": [
+                {
+                  "ad": "NAYY 3x95+50",
+                  "adet": 1,
+                  "devre": "AG"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "beklenen": {
+        "eksik": 0,
+        "durum": "bilgi",
+        "ozet": "vektörel",
+        "degerler": {
+          "Tepe kuvveti R": 100.9,
+          "Rx": -100.9,
+          "Ry": 0,
+          "Bileşke açısı (ana hatta göre)": 270,
+          "Bileşke yönü (kuzeyden)": 80,
+          "Etkin hat sayısı": 3,
+          "Direk tipi (hesap yöntemi)": "Beton direk",
+          "Ana hat yönü (kuzeyden)": 170,
+          "tablo.satirlar[0][1]": "4R",
+          "tablo.satirlar[0][3]": 280,
+          "tablo.satirlar[1][2]": 180,
+          "tablo.satirlar[2][1]": "1x16/16+25 AER (a<=36m)",
+          "tablo.satirlar[2][2]": 270,
+          "tablo.satirlar[2][3]": 100.9,
+          "tablo.satirlar[2][4]": -100.9
+        }
+      }
+    }
+  ]
+}

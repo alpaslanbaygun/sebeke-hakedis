@@ -60,6 +60,10 @@ namespace SebekeHakedis.Cekirdek
         public string Karakteristik = "";
         /// <summary>Unsur sütunu: false şehir (yatırım), true köy / bakım (AutoCAD SMIKMU 1/2).</summary>
         public bool Koy;
+        /// <summary>Teknik hesaplar için proje bilgisi: proje adı ve kodu (boş: çizim adı), hesabı yapan, unvanı, firma.</summary>
+        public string ProjeAdi = "", ProjeKodu = "", Hazirlayan = "", Unvan = "", Firma = "";
+        /// <summary>Buz yükü bölgesi "1".."5" (ENH mekanik hesapları); boş: bilinmiyor, hesap sayfası sorar.</summary>
+        public string BuzBolgesi = "";
 
         /// <summary>Son seçimler (tür, tip, kesit, durum...): bir sonraki komutta hazır gelir.</summary>
         public readonly Dictionary<string, string> Son = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -104,6 +108,12 @@ namespace SebekeHakedis.Cekirdek
                 new KeyValuePair<string, string>("kanalZemin", KanalZemin ?? ""),
                 new KeyValuePair<string, string>("karakteristik", Karakteristik ?? ""),
                 new KeyValuePair<string, string>("koy", Koy ? "1" : "0"),
+                new KeyValuePair<string, string>("projeAdi", ProjeAdi ?? ""),
+                new KeyValuePair<string, string>("projeKodu", ProjeKodu ?? ""),
+                new KeyValuePair<string, string>("hazirlayan", Hazirlayan ?? ""),
+                new KeyValuePair<string, string>("unvan", Unvan ?? ""),
+                new KeyValuePair<string, string>("firma", Firma ?? ""),
+                new KeyValuePair<string, string>("buzBolgesi", BuzBolgesi ?? ""),
             };
             foreach (var kv in EkPay) l.Add(new KeyValuePair<string, string>("ekPay." + kv.Key, S(kv.Value)));
             foreach (var kv in Son) l.Add(new KeyValuePair<string, string>("son." + kv.Key, kv.Value ?? ""));
@@ -137,6 +147,12 @@ namespace SebekeHakedis.Cekirdek
                     case "kanalZemin": a.KanalZemin = string.IsNullOrEmpty(v) ? "TOPRAK" : v; break;
                     case "karakteristik": a.Karakteristik = v.Trim(); break;
                     case "koy": a.Koy = v == "1"; break;
+                    case "projeAdi": a.ProjeAdi = v.Trim(); break;
+                    case "projeKodu": a.ProjeKodu = v.Trim(); break;
+                    case "hazirlayan": a.Hazirlayan = v.Trim(); break;
+                    case "unvan": a.Unvan = v.Trim(); break;
+                    case "firma": a.Firma = v.Trim(); break;
+                    case "buzBolgesi": a.BuzBolgesi = v.Trim(); break;
                 }
             }
             // Sürüm 1 ayarlarında varsayılan 0,5 m idi (AutoCAD görünümü); telefon stiliyle 1,8 m

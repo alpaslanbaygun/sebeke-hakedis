@@ -702,8 +702,35 @@
         kalemler: (o.kalemler || []).map(kalemOku)
       }));
     }
+    // Teknik hesap sonuçları (Hesap Merkezi; ortak/hesap/BAGLAM.md › Kayıt)
+    p.hesaplar = hesaplariOku(dizi('hesaplar'));
     if (Array.isArray(k.uyarilar) && k.uyarilar.length) p.uyarilar = k.uyarilar.map(str);
     return p;
+  }
+
+  function hesaplariOku(liste) {
+    const out = [], s = new Set();
+    for (const o of liste) {
+      const id = str(o.id), modul = str(o.modul);
+      if (!id || !modul || s.has(id)) continue;
+      s.add(id);
+      const h = o.hedef && typeof o.hedef === 'object' ? o.hedef : {};
+      const md = o.modulDurumu;
+      out.push(Object.assign({}, o, {
+        id, modul, modulAdi: str(o.modulAdi), ozet: str(o.ozet), durum: str(o.durum) || 'bilgi', tarih: str(o.tarih), kaynak: str(o.kaynak),
+        hedef: Object.assign({}, h, { tur: str(h.tur) || 'proje', id: str(h.id), no: str(h.no) }, Array.isArray(h.parcalar) ? { parcalar: h.parcalar.map(str).filter(Boolean) } : {}),
+        ayrinti: o.ayrinti && typeof o.ayrinti === 'object' ? o.ayrinti : {},
+        modulDurumu: md == null ? '' : typeof md === 'string' ? md : JSON.stringify(md),
+        kullanilan: o.kullanilan && typeof o.kullanilan === 'object' ? o.kullanilan : {}
+      }));
+    }
+    return out;
+  }
+
+  function hesapYaz(h) {
+    return sirala(h, [['id', h.id], ['modul', h.modul], ['modulAdi', h.modulAdi], ['modulSurumu', h.modulSurumu || undefined],
+      ['hedef', h.hedef], ['ozet', h.ozet], ['durum', h.durum], ['ayrinti', h.ayrinti || {}], ['modulDurumu', h.modulDurumu || ''],
+      ['kullanilan', h.kullanilan || {}], ['tarih', h.tarih], ['kaynak', h.kaynak], ['yapan', h.yapan || undefined], ['telefonId', h.telefonId || undefined]]);
   }
 
   const r4 = v => temiz(Number(v) || 0, 4);
@@ -765,6 +792,7 @@
         ['bolge', s.bolge], ['basNo', s.basNo || ''], ['bitNo', s.bitNo || ''], ['cizimUzunlugu', temiz(uzunluk(s.kose), 3)],
         ['kontrol', s.kontrol === undefined ? null : s.kontrol], ['kose', kYaz(s.kose)], ['kalemler', (s.kalemler || []).map(kalemYaz)]]))
     };
+    if (p.hesaplar && p.hesaplar.length) k.hesaplar = p.hesaplar.map(hesapYaz);
     if (p.uyarilar && p.uyarilar.length) k.uyarilar = p.uyarilar.slice();
     return girintili ? JSON.stringify(k, null, 1) : JSON.stringify(k);
   }

@@ -1943,7 +1943,33 @@ namespace SebekeHakedis.Eklenti
                 Etiket(metraj, "Kanal zemini", 0, 300);
                 var zemin = Koy(metraj, ZeminKutusu(o, a.KanalZemin), 0, 320, 422);
 
+                // Proje (teknik hesaplar ve raporlar için)
+                var proje = sayfa();
+                Etiket(proje, "Proje adı", 0, 0);
+                var pAdi = Koy(proje, new MetinKutusu(a.ProjeAdi, "boş: çizim adı"), 0, 20, 300, 30);
+                Etiket(proje, "Proje kodu", 316, 0);
+                var pKod = Koy(proje, new MetinKutusu(a.ProjeKodu, ""), 316, 20, 300, 30);
+                Etiket(proje, "Hesabı yapan (ad soyad)", 0, 62);
+                var pYapan = Koy(proje, new MetinKutusu(a.Hazirlayan, ""), 0, 82, 300, 30);
+                Etiket(proje, "Unvan", 316, 62);
+                var pUnvan = Koy(proje, new MetinKutusu(a.Unvan, "ör. Elektrik Mühendisi"), 316, 82, 300, 30);
+                Etiket(proje, "Firma", 0, 124);
+                var pFirma = Koy(proje, new MetinKutusu(a.Firma, ""), 0, 144, 616, 30);
+                Etiket(proje, "Buz yükü bölgesi (ENH mekanik hesapları)", 0, 188);
+                var buzKap = Koy(proje, new Panel { BackColor = Color.Transparent }, 0, 210, 628, 34);
+                var buzlar = new List<KoyuSecim>();
+                string[] buzSecenek = { "", "1", "2", "3", "4", "5" };
+                for (int i = 0; i < buzSecenek.Length; i++)
+                {
+                    var r = Koy(buzKap, new KoyuSecim(buzSecenek[i].Length == 0 ? "Bilinmiyor" : buzSecenek[i] + ". bölge") { Tag = buzSecenek[i] }, i * 104, 0);
+                    r.Checked = (a.BuzBolgesi ?? "") == buzSecenek[i];
+                    buzlar.Add(r);
+                }
+                if (!buzlar.Exists(r => r.Checked)) buzlar[0].Checked = true;
+                Aciklama(proje, "Teknik hesaplar (ŞEBEKE-M ARAÇLAR sekmesi) bu bilgileri hesap sayfasına kendiliğinden yazar; boş olanlar hesap sayfasında sorulur.", 0, 252, 616, 40);
+
                 sekme.Ekle("Genel", genel);
+                sekme.Ekle("Proje", proje);
                 sekme.Ekle("Tarife", tarife);
                 sekme.Ekle("Görünüm", gorunum);
                 sekme.Ekle("Metraj", metraj);
@@ -1970,6 +1996,13 @@ namespace SebekeHakedis.Eklenti
                 a.KanalUst = (double)kUst.Value;
                 a.KanalDerinlik = (double)kDer.Value;
                 a.KanalZemin = zemin.Text.Trim().Length > 0 ? zemin.Text.Trim() : "TOPRAK";
+                a.ProjeAdi = pAdi.Text.Trim();
+                a.ProjeKodu = pKod.Text.Trim();
+                a.Hazirlayan = pYapan.Text.Trim();
+                a.Unvan = pUnvan.Text.Trim();
+                a.Firma = pFirma.Text.Trim();
+                var buz = buzlar.Find(r => r.Checked);
+                a.BuzBolgesi = buz != null ? (string)buz.Tag : "";
                 return true;
             }
         }

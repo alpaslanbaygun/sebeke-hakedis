@@ -1314,7 +1314,20 @@ namespace SebekeHakedis.Eklenti
                 foreach (var a in plan.Adimlar) if (a.CizimdeSilinmis) cizimdeSilinmis++;
                 if (plan.Adimlar.Count == 0 && plan.Silinenler.Count == 0 && yeniOnaylar.Count == 0)
                 {
-                    Pencereler.Bilgi("Telefondaki proje bu çizimle aynı; aktarılacak değişiklik yok.\n(" + plan.Ayni + " nesne karşılaştırıldı.)" +
+                    // Nesneler aynı olsa da telefonda yapılmış yeni hesap kayıtları alınır
+                    string hesapNotu = "";
+                    if (tel.Hesaplar.Count > 0)
+                    {
+                        try
+                        {
+                            var hesapUyarilari = new List<string>();
+                            var sayi = HesapDeposu.Birlestir(o.Db, o.Proje, tel.Hesaplar, hesapUyarilari);
+                            foreach (var u in hesapUyarilari) ed.WriteMessage("\n" + u);
+                            if (sayi[0] + sayi[1] > 0) hesapNotu = "\n\nTeknik hesap kaydı alındı: " + sayi[0] + " yeni, " + sayi[1] + " güncellendi (çizimi kaydedin).";
+                        }
+                        catch (System.Exception ex) { ed.WriteMessage("\nHesap kayıtları alınamadı: " + ex.Message); }
+                    }
+                    Pencereler.Bilgi("Telefondaki proje bu çizimle aynı; aktarılacak değişiklik yok.\n(" + plan.Ayni + " nesne karşılaştırıldı.)" + hesapNotu +
                                      (plan.Kilitliler.Count + plan.KilitliSilinenler.Count > 0
                                          ? "\n\nOnaylı (kilitli) hakedişe dokunduğu için aktarılmayan: " + (plan.Kilitliler.Count + plan.KilitliSilinenler.Count) + " değişiklik."
                                          : ""));
@@ -1431,9 +1444,25 @@ namespace SebekeHakedis.Eklenti
                     foreach (var n in yeniOnaylar) ed.WriteMessage("\nOnay (telefondan): " + n + ". hakediş · " + HakedisOnayi.Metin(birlesikOnay[n]));
                 }
                 if (o.Ayar.Dom == 0 && tel.Dom > 0) { o.Ayar.Dom = tel.Dom; o.AyarKaydet(); }
-                ed.WriteMessage("\nTelefondan alındı: " + eklenen + " yeni, " + guncellenen + " güncellendi" + (sil ? ", " + silinen + " silindi" : "") + ".");
+                // Telefondaki teknik hesap kayıtları: hedefleri çizim nesnelerine bağlanır, daha yenisi çizimdekini günceller
+                int hesapYeni = 0, hesapGuncel = 0;
+                if (tel.Hesaplar.Count > 0)
+                {
+                    try
+                    {
+                        var sonra = NesneOkuyucu.Oku(Toplayici.Topla(o.Db), belge.Name);
+                        var hesapUyarilari = new List<string>();
+                        var sayi = HesapDeposu.Birlestir(o.Db, sonra, tel.Hesaplar, hesapUyarilari);
+                        hesapYeni = sayi[0]; hesapGuncel = sayi[1];
+                        foreach (var u in hesapUyarilari) ed.WriteMessage("\n" + u);
+                    }
+                    catch (System.Exception ex) { ed.WriteMessage("\nHesap kayıtları alınamadı: " + ex.Message); }
+                }
+                ed.WriteMessage("\nTelefondan alındı: " + eklenen + " yeni, " + guncellenen + " güncellendi" + (sil ? ", " + silinen + " silindi" : "") +
+                                (hesapYeni + hesapGuncel > 0 ? "; teknik hesap: " + hesapYeni + " yeni, " + hesapGuncel + " güncellendi" : "") + ".");
                 if (!cizimdeNesneVar && kapsamVar) Yakinlas(ed, kapsam);
                 Pencereler.Bilgi("Aktarım tamamlandı.\n\nEklenen: " + eklenen + "\nGüncellenen: " + guncellenen + (sil ? "\nSilinen: " + silinen : "") +
+                                 (hesapYeni + hesapGuncel > 0 ? "\nTeknik hesap kaydı: " + hesapYeni + " yeni, " + hesapGuncel + " güncellendi" : "") +
                                  "\n\nBeğenmezseniz AutoCAD'in Geri Al (U) komutu aktarımın tamamını geri alır.");
             });
         }

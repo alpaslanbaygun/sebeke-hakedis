@@ -3,6 +3,7 @@
 import * as esbuild from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
+import { paketle } from '../../araclar/hesap-paketle.mjs';
 
 const root = path.dirname(new URL(import.meta.url).pathname);
 const WEB = process.argv.includes('--web');
@@ -20,6 +21,8 @@ fs.copyFileSync(path.join(root, 'seed/standard-tedas-2026.json'), path.join(out,
 // Şebeke-M logosu ve simgeleri (açılış, üst çubuk, hakkında)
 fs.mkdirSync(path.join(out, 'assets'), { recursive: true });
 for (const f of fs.readdirSync(path.join(root, 'assets'))) fs.copyFileSync(path.join(root, 'assets', f), path.join(out, 'assets', f));
+// Teknik hesaplar (Hesap Merkezi): hesap sayfaları, köprü ve tema → www/hesap/
+paketle(path.join(out, 'hesap'), { sessiz: true });
 if (WEB) {
   const ver = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version + '-web';
   const page = fs.readFileSync(path.join(root, 'web.html'), 'utf8').replace('__VERSION__', ver);
@@ -27,4 +30,4 @@ if (WEB) {
   fs.writeFileSync(path.join(out, 'index.html'), '<!doctype html>\n<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>\n' + page + '</body></html>\n');
 } else fs.copyFileSync(path.join(root, 'index.html'), path.join(out, 'index.html'));
 const sz = (f) => (fs.statSync(path.join(out, f)).size / 1024).toFixed(0) + ' KB';
-console.log(WEB ? 'web:' : 'www:', 'app.js', sz('app.js'), '· app.css', sz('app.css'), '· seed', sz('seed/standard-tedas-2026.json'));
+console.log(WEB ? 'web:' : 'www:', 'app.js', sz('app.js'), '· app.css', sz('app.css'), '· seed', sz('seed/standard-tedas-2026.json'), '· hesap', fs.readdirSync(path.join(out, 'hesap')).filter((f) => f.endsWith('.html')).length + ' sayfa');

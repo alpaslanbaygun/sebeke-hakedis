@@ -6,9 +6,10 @@ import { roleLabel } from '../../grid/checks.js';
 import { lineLabel } from '../../grid/lines.js';
 import { greenBookPage } from '../../qty/metraj.js';
 import { JOB_LABEL, SOURCE_LABEL } from '../../core/schema.js';
+import { hesapKayitlari } from '../../hesap/kayitlar.js';
 
 export function CalcScreen() {
-  useBus(['project:computed']);
+  useBus(['project:computed', 'hesap:kayit']);
   const ps = app.ps, r = ps.result, cat = ps.cat;
   const lines = ps.data.lines.filter((l) => l.install === 'havai');
   const [lid, setLid] = useState(app.state.calcLine || (lines[0] || {}).id);
@@ -23,7 +24,14 @@ export function CalcScreen() {
   const page = greenBookPage(r.quantities, job);
   const cnt = (j) => r.quantities.filter((q) => q.job === j).length;
   const errs = r.issues.filter((i) => i.severity === 'error').length, warns = r.issues.filter((i) => i.severity === 'warn').length;
+  const hesapSayisi = hesapKayitlari(ps).length;
   return html`<div class="title"><div class="grow"><h1>Hesaplar</h1><div class="sub">${l ? l.lineNo + ' hattı · ' + (l.voltageKV || (l.lineType === 'OG' ? 34.5 : 0.4)) + ' kV · ' + (poles[0] ? poles[0].no : '') + ' → ' + (poles[poles.length - 1] ? poles[poles.length - 1].no : '') : 'Havai hat yok'}</div></div></div>
+    <button class="card hesapgiris" onClick=${() => app.nav.go('hesapMerkezi', {})}>
+      <${Icon} n="calc" s=${26} c="#f59e0b" />
+      <span class="grow"><b>Teknik hesaplar</b><span class="note">Sehim, uplift, ag–aw, Amax, kopma, tepe kuvveti · gerilim düşümü, kısa devre · köşk, kanal, AG tek hat</span></span>
+      ${hesapSayisi ? html`<span class="badge b-m">${hesapSayisi} kayıt</span>` : html`<${Icon} n="next" s=${18} c="#64748b" />`}
+    </button>
+    ${l ? html`<button class="btn blk" style="margin:-2px 0 8px" onClick=${() => app.nav.go('hesapMerkezi', { hedef: { tur: 'hat', id: l.id } })}><${Icon} n="calc" s=${16} />${l.lineNo} hattı için uygun hesaplar</button>` : null}
     <div class="grid4">
       <button class="stat" style="text-align:left;color:inherit" onClick=${() => app.nav.go('checks')}><b>Kontrol</b><span style=${'font-size:16px;color:' + (errs ? '#ff8a8a' : '#6ffbbe')}>${errs}/${warns}</span></button>
       <button class="stat" style="text-align:left;color:inherit" onClick=${() => app.nav.go('metraj')}><b>Metraj</b><span style="font-size:16px">${r.quantities.length}</span></button>

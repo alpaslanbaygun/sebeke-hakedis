@@ -1,8 +1,8 @@
-# VOLT-EDAŞ Saha Kullanım Kılavuzu
+# Şebeke-M Kullanım Kılavuzu
 
 6 Ekim 2026 · Alpaslan
 
-Bu kılavuz, VOLT-EDAŞ Saha telefon uygulamasının 2.4.0 ve sonraki (2.5.x) sürümlerini sahada kullanacak kişiler içindir. Uygulama Android telefonda çalışır; internet olmadan da kayıt alır.
+Bu kılavuz, Şebeke-M telefon uygulamasının (eski adıyla VOLT-EDAŞ Saha) 2.4.0 ve sonraki (2.5.x) sürümlerini sahada kullanacak kişiler içindir. Uygulama Android telefonda çalışır; internet olmadan da kayıt alır.
 
 ## Uygulama ne işe yarar
 
@@ -24,7 +24,7 @@ Ofiste bilgisayardan çalışmak için aynı uygulamanın web sürümü vardır.
 
 Uygulama bir kurulum dosyasıyla (APK) kurulur; mağazadan indirilmez. Android 8.0 ve üstü telefonlarda çalışır.
 
-1. `VOLT-EDAS-Saha-2.5.x.apk` dosyasını telefona alın (GitHub › Releases; e-posta, Drive ya da kablo ile).
+1. `Sebeke-M-2.5.x.apk` dosyasını telefona alın (GitHub › Releases; e-posta, Drive ya da kablo ile).
 2. Dosyaya dokunun. Telefon "bu kaynaktan uygulama yüklemeye izin ver" diye sorarsa izin verin.
 3. Kurulum bitince uygulamayı açın.
 4. İlk açılışta sorulan izinleri verin: konum, yakındaki cihazlar (Bluetooth), kamera ve bildirim.
@@ -38,7 +38,7 @@ Eski sürüm kuruluysa silmeyin; yeni dosyayı üzerine kurun. Projeleriniz yeri
 | 2.0.0 | Hayır; imzası farklıdır. Kaldırıp kurmak telefondaki projeleri siler |
 | 2.1.0-geri-donus | Hayır. Kaldırmayın; bu telefon için ayrı bir kurulum dosyası hazırlanmalıdır |
 
-Uygulamanın kaydettiği dosyalar telefonda `İndirilenler/VOLT-EDAS` klasörüne iner.
+Uygulamanın kaydettiği dosyalar telefonda `İndirilenler/Sebeke-M` klasörüne iner.
 
 ## Ekranlar bir bakışta
 
@@ -299,7 +299,7 @@ Haritada bir objeye dokununca alt çubuğun yerine o objenin kartı gelir.
 3. Yuvarlak düğmeyle çekin ya da `Galeri` ile telefondaki fotoğraflardan seçin. Art arda çekebilirsiniz.
 4. `Bitti` düğmesine basın.
 
-Fotoğraflar `D-017_01.jpg`, `D-017_02.jpg` diye adlandırılır ve `İndirilenler/VOLT-EDAS/<PROJE>/<TÜR>/<ObjeNo>/` klasörüne kopyalanır. Her fotoğrafın altına proje adı, obje no, tarih, koordinat ve doğruluk yazılır. Çekilmiş fotoğrafı silen düğme yoktur.
+Fotoğraflar `D-017_01.jpg`, `D-017_02.jpg` diye adlandırılır ve `İndirilenler/Sebeke-M/<PROJE>/<TÜR>/<ObjeNo>/` klasörüne kopyalanır. Her fotoğrafın altına proje adı, obje no, tarih, koordinat ve doğruluk yazılır. Çekilmiş fotoğrafı silen düğme yoktur.
 
 ## Hat çizme
 
@@ -422,12 +422,18 @@ Haritanın görünümü sağ üstteki Katmanlar düğmesinden ayarlanır; proje 
 
 ### Altlık harita
 
-Katmanlar penceresinin altındaki `Altlık` listesinden seçilir: `Altlık yok`, `OpenStreetMap`, `Esri uydu görüntüsü`, `Google Harita`, `Google Uydu`, `Google Uydu + yol adları`, `Yandex Harita`, `Yandex Uydu`.
+Katmanlar penceresinin altındaki `Altlık` listesinden seçilir. Üç grup vardır:
 
-- Altlık için internet gerekir.
-- İnternetsiz sahaya gidecekseniz önceden Ayarlar › "Offline harita" › `Görünen alanı offline indir` deyin. Ekrandaki alan dört yakınlaştırma seviyesiyle telefona kaydedilir; sınır 1500 parçadır, aşarsa alanı daraltın.
-- Google ve Yandex için resmî anahtarınız varsa Ayarlar › "Harita altlığı · Google ve Yandex" bölümüne yazın. Boş bırakılırsa anahtarsız genel adres denenir; bu adres sağlayıcı koşullarına uymayabilir ve bir gün kesilebilir.
-- Google ve Yandex altlığı gerçek telefonda henüz denenmedi.
+- **Ücretsiz (anahtarsız)**: `OpenStreetMap`, `OpenTopoMap (topoğrafik)`, `Esri uydu görüntüsü`. Her zaman kullanılabilir.
+- **Anahtarlı (ücretsiz katmanı olan)**: `MapTiler sokak`, `MapTiler uydu`, `Google harita`, `Google uydu`, `Google uydu + yol adları`, `Yandex harita`. Kendi anahtarınızı Ayarlar › "Harita altlığı" bölümüne yazın; anahtar girilmemişse o altlık listede kapalı görünür ve denenmez (anahtarsız genel adresler kaldırıldı; sağlayıcı koşullarına uymuyordu).
+- **Özel**: kendi karo sunucunuz (XYZ adresi).
+
+Notlar:
+
+- Altlık için internet gerekir. Haritanın altında altlığın atıf yazısı görünür; altlık yüklenemezse uygulama sebebini söyler (anahtar, erişim, kota ya da ağ) ve `Altlık değiştir` önerir.
+- Toplu / offline indirme yalnız koşulları buna izin veren altlıkta (özel sunucu) vardır; bakılan alanların karoları yine telefonda saklanır.
+- Her altlığın kullanım koşulu ve ücretsiz kotası Ayarlar'daki açıklamasında yazar (ör. MapTiler ücretsiz plan, Google Map Tiles API aylık ücretsiz pay, Yandex Tiles API).
+- Anahtarlı altlıklar gerçek telefonda henüz denenmedi.
 
 ### Katmanlar
 
@@ -498,6 +504,40 @@ Ekrandaki pusula hedefin yönünü, altındaki yazı ne yapacağınızı söyler
 Düğme yalnız iki koşul birlikte sağlanınca açılır: toleransın içinde olmak ve `RTK FIX`. `TOLERANS DIŞI` yazıyorsa hedefe yaklaşın; `FIX BEKLE` yazıyorsa yerinizde bekleyin.
 
 Tolerans varsayılan olarak 0,02 metredir; Ayarlar › "Hassasiyet eşikleri · proje" › `Aplikasyon toleransı` satırından değiştirilir.
+
+## Teknik hesaplar (Hesap Merkezi)
+
+Elektrik-Elektronik Mühendisi **Baki SONAY**'ın hesap sayfaları uygulamaya formülleri değiştirilmeden eklenmiştir;
+AutoCAD eklentisinde de aynı sayfalar açılır. Hesaplar üç gruptur:
+
+| Grup | Hesaplar |
+| --- | --- |
+| Hat ve direk | ENH Sehim, Uplift (kaldırma) kontrolü, ag–aw bağıntısı, Amax, İletken kopma (iki misli buz yükü), Direk tepe kuvveti (TEDAŞ), Direk tepe kuvveti (cer vektörü) |
+| Elektrik | OG gerilim düşümü ve güç kaybı, AG gerilim düşümü ve güç kaybı, OG kısa devre, AG kısa devre, Bakır ⇄ alüminyum kablo kesiti |
+| Proje ve yerleşim | Beton köşk yerleşim planı, Kanal planı, AG tek hat şeması |
+
+**Nereden açılır:** bir direğin, trafonun ya da hattın kendi ekranındaki `Hesaplar` düğmesi; haritada objenin
+balonundaki `Teknik hesaplar`; hat listesindeki `Hesaplar`; ya da `Hesaplar › Teknik hesaplar` (proje geneli).
+Objeden açılınca liste o objeye **uygun** hesapları üstte, uygun olmayanları nedeniyle birlikte altta katlanmış
+gösterir. Trafodan açılan gerilim düşümü / kısa devre hesapları hangi **çıkış hattı** için yapılacağını sorar.
+
+**Sayfada:** üstte hesabın adı, hedef (`Direk D-17`), durum (`19 bilgi projeden · 2 eksik`), `Kaydet` ve `ⓘ`.
+Objenin bilgileri (tip, açıklıklar, iletken, kot, trafo gücü, kablolar…) hesaba kendiliğinden yazılır. Projede
+olmayan bilgiler **turuncu çerçeveyle** gösterilir ve elle girilir; uygulama tahmin etmez. `ⓘ` paneli hangi bilgi
+nereden geldi, neler eksik (`Alana git`), uyarılar ve "Hesap hakkında" (aracın bilinen sınırları, doğrulanması
+gereken tablo değerleri, kaynak) bölümlerini gösterir.
+
+**Kaydet:** sonuç (özet, UYGUN / UYGUN DEĞİL / BİLGİ, girdiler, değerler, uyarılar) ve hesabın tam durumu projeye
+yazılır. Kayıtlı sonuç listeden yeniden açılır; proje o arada değiştiyse `GÜNCEL DEĞİL` rozeti çıkar, `ⓘ` panelinde
+değişen bilgiler listelenir ve `Güncel bilgileri hesaba aktar` ile yeni değerler yazılır. Hedef obje silinmişse
+`HEDEF YOK`. Kayıtlar AutoCAD proje dosyasıyla iki yöne de taşınır ve raporun "11. Teknik hesaplar" bölümünde çıkar.
+
+**Yazdırma ve dosya:** aracın kendi `Yazdır` düğmesi uygulamanın yazdırma ekranını açar; DXF / CSV gibi dosyalar
+`İndirilenler/Sebeke-M/<proje>/HESAPLAR` klasörüne iner.
+
+Hesaplar kullanıcının sorumluluğundadır: araç kararı ancak bütün girdiler tamamsa verir; eksik bilgiyle sonuç
+BİLGİ olarak kaydedilir. Eski "Tepe kuvveti hesabı" ekranı (aşağıda) ayrıca durur: beton direk de seçebilen,
+rüzgâr ve açıklığı hesaba katan daha kapsamlı yöntemdir; yeni araçlar TEDAŞ biçiminde hızlı kontrol ve rapor içindir.
 
 ## Tepe kuvveti hesabı
 
@@ -731,7 +771,7 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 
 ## Dışa aktarım ve ofisle veri alışverişi
 
-Çizim, Excel, rapor ve teslim paketi tek ekrandan üretilir; dosyalar telefonda `İndirilenler/VOLT-EDAS` klasörüne iner.
+Çizim, Excel, rapor ve teslim paketi tek ekrandan üretilir; dosyalar telefonda `İndirilenler/Sebeke-M` klasörüne iner.
 
 1. Alt menüden `Dışa Aktar` ekranını açın.
 2. `Koordinat sistemi` seçin: projenin kendi sistemi, `ED50 3°` ya da `WGS84 UTM`.
@@ -742,7 +782,7 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 
 | Çıktı | Dosya | İçeriği |
 | --- | --- | --- |
-| AutoCAD proje dosyası | .sebeke.json | Şebeke Hakediş AutoCAD eklentisi "Telefondan Al" ile açar: direk, hat, kanal ve malzemeler çizim biçiminde (Durum Tespit raporu için). Varsayılan seçilidir |
+| AutoCAD proje dosyası | .sebeke.json | Şebeke-M AutoCAD eklentisi "Telefondan Al" ile açar: direk, hat, kanal ve malzemeler eski program biçiminde (Durum Tespit raporu için). Varsayılan seçilidir |
 | Telefon proje dosyası | .volt.json | Projenin tam yedeği (tüm kayıtlar) + AutoCAD bölümü; eklenti ve telefon bunu da açar |
 | AutoCAD DXF | .dxf | Katmanlar, semboller (eklentiyle aynı bloklar), yazılar; 1/1000 |
 | Netcad NCN | .ncn | Nokta adı, Y, X, Z, kod. Netcad'e DXF ile birlikte alınır |
@@ -756,9 +796,9 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 - Kontrol listesinde hata varken de çıktı alınabilir; uygulama önce sorar ve hatayı teslim paketine yazar.
 - Veri değişince önceki çıktılar "Son üretilenler" listesinde `ESKİDİ` olarak işaretlenir; yeniden üretin.
 
-### AutoCAD eklentisiyle çalışma (Şebeke Hakediş)
+### AutoCAD eklentisiyle çalışma (Şebeke-M)
 
-Büroda AutoCAD çizimleriyle çalışan Şebeke Hakediş AutoCAD eklentisi aynı proje dosyasını kullanır:
+Büroda eski program çizimleriyle çalışan Şebeke-M AutoCAD eklentisi aynı proje dosyasını kullanır:
 
 1. AutoCAD'de **ŞEBEKE HAKEDİŞ › Telefona Gönder** ile yazılan dosyayı Drive'a koyun.
 2. Telefonda **Projeler › AutoCAD dosyasından proje al** (ya da açık projede **Proje merkezi › AutoCAD dosyasını bu
@@ -768,14 +808,14 @@ Büroda AutoCAD çizimleriyle çalışan Şebeke Hakediş AutoCAD eklentisi ayn�
    değişen ve eklenen nesneleri çizime işler.
 
 Durumlar şöyle çevrilir: Yeni → M (pozun temini yükleniciyse M+M), Mevcut → MEVCUT, Demontaj → DM, DMM → DM+M.
-Objenin ekranında AutoCAD kodu ayrıca seçilebilir (KM, ENH, ME; demontajda KESİK / SÖKÜK); AutoCAD'den gelen kod korunur.
+Objenin ekranında eski program kodu ayrıca seçilebilir (KM, ENH, ME; demontajda KESİK / SÖKÜK); AutoCAD'den gelen kod korunur.
 **"İleride" durumundaki objeler AutoCAD dosyasına yazılmaz.**
 
 AutoCAD'den gelen ve telefonda değişmeyen bilgiler aynen geri gider: kalemlerin sıra numarası (INDEX), hakedişi ve
 kontrol işareti, bölgenin grup kodu, panonun çıkış şeması, hat parçalarının numaraları. Böylece değişmeyen nesne
 AutoCAD'de "değişmiş" görünmez.
 
-**Hakediş onayları**: AutoCAD'deki (AutoCAD) onaylar **Hakediş** ekranında görünür (Kontrol / Hakediş / GIS). AutoCAD'de
+**Hakediş onayları**: AutoCAD'deki (eski program) onaylar **Hakediş** ekranında görünür (Kontrol / Hakediş / GIS). AutoCAD'de
 onaylı hakediş kilitlidir; o hakedişe dokunan değişiklikler orada aktarılmaz. Telefonda onaylanan dönem AutoCAD'e
 kontrol + hakediş onayı olarak gider. Ayrıntı ve komutlar: depo kökündeki `KULLANIM.md`.
 
@@ -846,7 +886,7 @@ Yeni sürümün kurulum dosyasını eski sürümün üzerine kurun; uygulamayı 
 | `Numaraları ver` düğmesi açılmıyor | Yeni numaralar başka objelerde kullanılıyor | Ön eki ya da başlangıç numarasını değiştirin |
 | Excel'de "Eksik zorunlu sütun" | Şablonun sütun başlığı değişmiş | Şablonu yeniden indirin, başlıklara dokunmayın |
 | "Kamera açılamadı" | Kamera izni yok | Telefon ayarlarından izin verin ya da `Galeri` ile seçin |
-| Kaydedilen dosyayı bulamıyorum |  | Telefonda `İndirilenler/VOLT-EDAS` klasörüne bakın |
+| Kaydedilen dosyayı bulamıyorum |  | Telefonda `İndirilenler/Sebeke-M` klasörüne bakın |
 
 ### Bilinen sınırlar
 

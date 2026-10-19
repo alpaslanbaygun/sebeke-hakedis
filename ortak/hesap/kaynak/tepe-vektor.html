@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cer Vektör Çizimi — Tepe Kuvveti Hesabı</title>
+<style>
+:root {
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2330;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);
+  --text:#e6edf3;--text2:#8b949e;--text3:#3d444d;
+  --accent:#00d4aa;--accent2:#0099ff;--warn:#f78166;--warn2:#ffa657;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;line-height:1.6;}
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.header-badge{font-family:var(--mono);font-size:10px;background:var(--accent);color:#000;padding:3px 8px;border-radius:3px;font-weight:600;letter-spacing:.05em;}
+.header-title{font-family:var(--mono);font-size:14px;font-weight:500;}
+.header-author{font-family:var(--mono);font-size:11px;color:var(--text2);}
+.print-btn{margin-left:auto;font-family:var(--mono);font-size:11px;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 14px;border-radius:4px;cursor:pointer;transition:all .15s;}
+.print-btn:hover{border-color:var(--accent);color:var(--accent);}
+.layout{display:grid;grid-template-columns:420px 1fr;min-height:calc(100vh - 49px);}
+.panel-left{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;}
+.panel-right{background:var(--bg);display:flex;flex-direction:column;}
+.section{padding:.875rem 1.25rem;border-bottom:1px solid var(--border);}
+.sec-hdr{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.65rem;display:flex;align-items:center;gap:8px;}
+.sec-hdr::before{content:'';display:block;width:3px;height:3px;background:var(--accent);border-radius:50%;}
+label{display:block;font-size:11px;color:var(--text2);margin-bottom:3px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;}
+select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 10px;border-radius:4px;outline:none;transition:border-color .15s;appearance:none;-webkit-appearance:none;}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b949e' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:28px;}
+select:focus,input[type=number]:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,212,170,.15);}
+input[type=number]{-moz-appearance:textfield;}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+.bolge-bar,.direk-bar{display:grid;gap:6px;margin-bottom:.65rem;}
+.bolge-bar{grid-template-columns:repeat(4,1fr);}
+.direk-bar{grid-template-columns:repeat(3,1fr);}
+.bar-btn{font-family:var(--mono);font-size:11px;text-align:center;padding:6px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .15s;line-height:1.3;}
+.bar-btn.ak-bolge{background:rgba(0,212,170,.15);border-color:var(--accent);color:var(--accent);font-weight:600;}
+.bar-btn.ak-direk{background:rgba(0,153,255,.15);border-color:var(--accent2);color:var(--accent2);font-weight:600;}
+.info-box{border-radius:5px;padding:6px 12px;font-family:var(--mono);font-size:11px;margin-bottom:.5rem;}
+.info-bolge{background:rgba(255,166,87,.07);border:1px solid rgba(255,166,87,.2);color:var(--warn2);}
+.info-formul{margin-bottom:0;}
+.info-atip{background:rgba(191,138,255,.07);border:1px solid rgba(191,138,255,.25);color:#bf8aff;}
+.info-skaler{background:rgba(0,153,255,.07);border:1px solid rgba(0,153,255,.25);color:var(--accent2);}
+.hat-block{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.55rem .875rem;margin-bottom:6px;transition:border-color .15s;}
+.hat-block.active{border-color:rgba(0,212,170,.25);}
+.hat-actions{display:flex;gap:6px;margin-top:.5rem;}
+.hat-action-btn{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;flex:1;text-align:center;}
+.hat-action-btn:hover{border-color:var(--accent);color:var(--accent);}
+.hat-action-btn.del:hover{border-color:var(--warn);color:var(--warn);}
+.hat-del-btn{margin-left:auto;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all .15s;}
+.hat-del-btn:hover{border-color:var(--warn);color:var(--warn);}
+.hat-hdr{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.hat-num{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--bg);background:var(--text3);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;}
+.hat-inp{display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:6px;}
+.bv-row{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;}
+.bv{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:3px;padding:3px 5px;text-align:center;transition:all .2s;}
+.bv.ak{background:rgba(0,212,170,.1);border-color:rgba(0,212,170,.35);}
+.bv-lbl{font-family:var(--mono);font-size:9px;color:var(--text2);}
+.bv.ak .bv-lbl{color:var(--accent);}
+.bv-val{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text2);}
+.bv.ak .bv-val{color:var(--accent);}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:.65rem;}
+.metric{background:var(--bg3);padding:.7rem 1rem;}
+.metric-lbl{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+.metric-val{font-family:var(--mono);font-size:18px;font-weight:600;line-height:1;}
+.metric-unit{font-size:10px;color:var(--text2);margin-top:2px;}
+.rtbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;}
+.rtbl tr{border-bottom:1px solid var(--border);}
+.rtbl tr:last-child{border-bottom:none;}
+.rtbl td{padding:5px 0;}
+.rtbl td:first-child{color:var(--text2);}
+.rtbl td:last-child{text-align:right;font-weight:500;}
+.hat-px-py{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:5px;}
+.px-py-cell{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:3px;padding:3px 7px;display:flex;justify-content:space-between;align-items:center;}
+.px-py-lbl{font-family:var(--mono);font-size:9px;color:var(--text2);}
+.px-py-val{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text);}
+.vec-tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;margin-top:.5rem;}
+.vec-tbl th{padding:5px 6px;text-align:center;color:var(--text2);font-weight:500;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.05em;}
+.vec-tbl td{padding:4px 6px;text-align:right;border-bottom:1px solid var(--border);}
+.vec-tbl td:first-child{text-align:left;color:var(--text2);}
+.vec-tbl tr:last-child td{border-bottom:none;}
+.vec-tbl .sum-row td{border-top:1px solid var(--border2);font-weight:600;color:var(--text);}
+.vec-tbl .sum-row td:first-child{color:var(--text2);}
+.sonuc{border-radius:6px;border:1px solid;padding:.75rem 1rem;margin-top:.65rem;}
+.direk-sec{margin-top:.65rem;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);padding:.75rem 1rem;}
+.direk-sec-lbl{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;}
+.direk-input{width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:15px;font-weight:600;padding:8px 12px;border-radius:5px;outline:none;transition:border-color .15s;}
+.direk-no-wrap{display:flex;align-items:center;gap:8px;}
+.direk-no-input{width:100px!important;flex-shrink:0;}
+.direk-no-suffix{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;}
+.direk-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,212,170,.15);}
+.direk-input::placeholder{font-weight:400;font-size:12px;color:var(--text3);}
+.direk-input-hint{font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:5px;}
+.sonuc.atip{border-color:rgba(191,138,255,.3);background:rgba(191,138,255,.06);}
+.sonuc.skaler{border-color:rgba(255,166,87,.3);background:rgba(255,166,87,.06);}
+.sonuc-lbl{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;}
+.sonuc-r{font-family:var(--mono);font-size:22px;font-weight:600;}
+.sonuc-fml{font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;}
+.canvas-area{flex:1;display:flex;flex-direction:column;padding:1.25rem;gap:.875rem;}
+.canvas-hdr{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.canvas-title{font-family:var(--mono);font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;}
+.legend{display:flex;gap:14px;margin-left:auto;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;color:var(--text2);}
+.leg-dot{width:10px;height:3px;border-radius:2px;}
+.canvas-wrap{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;position:relative;overflow:hidden;min-height:400px;}
+#vecCanvas{position:absolute;top:0;left:0;width:100%;height:100%;}
+
+/* ── YAZDIR ── */
+@media print{
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box;}
+  @page{size:A4 landscape;margin:6mm 8mm 4mm 8mm;}
+  html,body{width:277mm;height:190mm;overflow:hidden;background:#fff;color:#000;font-size:9px;margin:0;padding:0;}
+  a[href]::after{display:none!important;}
+
+  /* Header — tek satır, ince */
+  .header{background:#f0f0f0;border-bottom:1.5px solid #888;padding:2px 8px;display:flex;align-items:center;gap:8px;height:20px;}
+  .header-badge{background:#006650;color:#fff;font-size:8px;padding:1px 5px;border-radius:2px;font-family:var(--mono);}
+  .header-title{color:#000;font-size:10px;font-weight:700;font-family:var(--mono);}
+  .header-author{display:none;}
+  .print-btn,.hat-action-btn,.hat-del-btn,.bolge-bar,.direk-bar,.info-formul,.hat-block .bv-row,.canvas-hdr{display:none!important;}
+
+  /* İki sütun — sol dar, sağ diyagram */
+  .layout{display:grid;grid-template-columns:195mm 1fr;height:calc(190mm - 24px);gap:6px;padding:4px 0 0 0;overflow:hidden;}
+  .panel-left{overflow:hidden;background:#fff;display:flex;flex-direction:column;gap:3px;}
+  .panel-right{background:#fff;overflow:hidden;}
+
+  /* Tesis bilgileri satırı — yatay */
+  .section{border:none;padding:2px 0;border-bottom:1px solid #e0e0e0;}
+  .section:last-child{border-bottom:none;}
+  .sec-hdr{color:#006650;font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;}
+  label{font-size:8px;color:#555;margin-bottom:1px;text-transform:uppercase;letter-spacing:.04em;}
+  .info-box{padding:2px 6px;font-size:8px;border-radius:2px;}
+  .info-bolge{background:#e8f5f0;border:1px solid #00a080;color:#005540;}
+
+  /* Bölge/direk seçim metin */
+  .bar-btn{display:none;}
+  .bar-btn.ak-bolge,.bar-btn.ak-direk{display:inline-block;border:1px solid #006650;background:#e0f5ef;color:#006650;font-weight:700;padding:1px 7px;border-radius:2px;font-size:8px;}
+
+  /* Hat blokları */
+  .hat-block{background:#fafafa;border:1px solid #ddd;padding:2px 5px;margin-bottom:2px;border-radius:2px;}
+  .hat-block:not(.active){display:none;}
+  .hat-num{width:14px;height:14px;font-size:8px;}
+  .hat-hdr{margin-bottom:0;}
+  .hat-inp{display:none;}
+
+  /* Metrikler */
+  .metrics{gap:0;border:1px solid #ccc;border-radius:2px;margin-bottom:3px;}
+  .metric{background:#f5f5f5;padding:2px 6px;}
+  .metric-lbl{font-size:8px;color:#555;margin-bottom:1px;}
+  .metric-val{font-size:13px;color:#000;line-height:1.1;}
+  .metric-unit{font-size:8px;color:#555;}
+
+  /* Vektör tablosu */
+  .vec-tbl{font-size:8.5px;border:1px solid #ccc;border-radius:2px;overflow:hidden;width:100%;}
+  .vec-tbl th{background:#f0f0f0;color:#333;padding:2px 4px;border-bottom:1px solid #ccc;font-size:8px;}
+  .vec-tbl td{padding:2px 4px;border-bottom:1px solid #eee;color:#000;}
+  .vec-tbl td:first-child{color:#333;}
+  .vec-tbl .sum-row td{background:#e8f5f0;color:#000;font-weight:700;border-top:1px solid #aaa;}
+
+  /* Sonuç */
+  .sonuc{padding:3px 7px;margin-top:3px;}
+  .sonuc.skaler{background:#fff8ee;border:1.5px solid #c07800;border-radius:3px;}
+  .sonuc.atip{background:#f5f0ff;border:1.5px solid #7c5cbf;border-radius:3px;}
+  .sonuc-lbl{font-size:8px;color:#555;}
+  .sonuc-r{font-size:16px;color:#c07000;line-height:1.1;}
+  .sonuc.atip .sonuc-r{color:#6040aa;}
+  .sonuc-fml{font-size:8px;color:#666;}
+
+  /* Direk giriş alanları */
+  .direk-sec{background:#e8f5f0;border:1px solid #006650;border-radius:3px;padding:3px 6px;margin-top:3px;}
+  .direk-sec-lbl{font-size:8px;color:#444;font-weight:700;margin-bottom:2px;}
+  .direk-input{border:1px solid #aaa;background:#fff;color:#000;font-size:12px;font-weight:700;padding:3px 7px;border-radius:3px;width:100%;}
+  .direk-input::placeholder{color:transparent;}
+  .direk-input-hint{display:none;}
+  .direk-sec[style]{margin-top:3px!important;}
+  .direk-no-wrap{display:flex;align-items:center;gap:6px;}
+  .direk-no-input{width:70px!important;font-size:13px;}
+  .direk-no-suffix{color:#000;font-size:13px;font-weight:700;white-space:nowrap;}
+  .direk-input-hint{display:none;}
+
+  /* Tesis bilgileri input */
+  #trafo-adi,#trafo-kolu{font-size:11px;padding:2px 6px;border:1px solid #aaa;background:#fff;color:#000;font-weight:600;border-radius:2px;width:100%;}
+  #trafo-adi::placeholder,#trafo-kolu::placeholder,#direk-no::placeholder,#direk-input::placeholder,#direk-input-tesis::placeholder{color:transparent;}
+  .tesis-grid{grid-template-columns:1fr 1fr 1fr!important;}
+  .direk-no-wrap{display:flex;align-items:center;gap:4px;}
+  #direk-no{font-size:11px;padding:2px 6px;border:1px solid #aaa;background:#fff;color:#000;font-weight:600;border-radius:2px;width:60px!important;}
+  .direk-no-suffix{font-size:11px;color:#000;font-weight:600;white-space:nowrap;}
+
+  /* Sağ panel — diyagram */
+  .canvas-area{padding:0;height:100%;}
+  .canvas-wrap{height:100%;width:100%;border:1.5px solid #888;border-radius:3px;background:#fff;position:relative;overflow:hidden;}
+  #vecCanvas{display:none!important;}
+  #printImg{display:block!important;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;}
+  .legend{display:none;}
+}
+@media(max-width:860px){.layout{grid-template-columns:1fr;}.canvas-wrap{min-height:320px;}}
+</style>
+</head>
+<body>
+<header class="header">
+  <span class="header-badge">TEDAŞ</span>
+  <span class="header-title">Cer Vektör Çizimi — Tepe Kuvveti Hesabı</span>
+  <span class="header-author">Haz.: Elektrik-Elektronik Mühendisi Baki SONAY</span>
+  <button class="print-btn" onclick="yazdir()">Yazdır / PDF</button>
+</header>
+
+<div class="layout">
+<div class="panel-left">
+
+  <div class="section">
+    <div class="sec-hdr">Tesis Bilgileri</div>
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:2px;align-items:end;">
+      <div>
+        <label>Trafo Adı</label>
+        <input class="direk-input" id="trafo-adi" type="text" placeholder="örn. Merkez TR" autocomplete="off" style="font-size:12px;padding:5px 8px;">
+      </div>
+      <div>
+        <label>Trafo Kolu</label>
+        <input class="direk-input" id="trafo-kolu" type="text" placeholder="örn. A Kolu" autocomplete="off" style="font-size:12px;padding:5px 8px;">
+      </div>
+      <div>
+        <label>Direk Numarası</label>
+        <input class="direk-input direk-no-input" id="direk-no" type="text" placeholder="örn. 15" autocomplete="off" style="font-size:12px;padding:5px 8px;width:100%;">
+      </div>
+      <div>
+        <label>Seçilen Direk</label>
+        <input class="direk-input" id="direk-input-tesis" type="text" placeholder="örn. 9,30/5" autocomplete="off" style="font-size:12px;padding:5px 8px;">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-hdr">Buz Yükü Bölgesi</div>
+    <div class="bolge-bar">
+      <div class="bar-btn ak-bolge" onclick="setBolge('1B',this)">1B</div>
+      <div class="bar-btn" onclick="setBolge('2B',this)">2B</div>
+      <div class="bar-btn" onclick="setBolge('3B',this)">3B</div>
+      <div class="bar-btn" onclick="setBolge('4B',this)">4B</div>
+    </div>
+    <div class="info-box info-bolge" id="bolge-acik">1B: Hafif buz bölgesi</div>
+  </div>
+
+  <div class="section">
+    <div class="sec-hdr">Direk Tipi</div>
+    <div class="direk-bar">
+      <div class="bar-btn" onclick="setDirek('atip',this)">A tipi<br>demir direk</div>
+      <div class="bar-btn ak-direk" onclick="setDirek('beton',this)">Beton<br>direk</div>
+      <div class="bar-btn" onclick="setDirek('kafes',this)">Kafes<br>demir direk</div>
+    </div>
+    <div class="info-box info-atip info-formul" id="formul-box">
+      Beton direk: R = √(Rx² + Ry²) — vektörel bileşke
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-hdr">Hat Girişleri (<span id="hat-sayi">6</span> Hat)</div>
+    <div id="hat-rows"></div>
+    <div class="hat-actions">
+      <button class="hat-action-btn" onclick="hatEkle()">+ Hat Ekle</button>
+      <button class="hat-action-btn del" onclick="hatSil()">− Son Hattı Sil</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-hdr">Bileşke Bileşenler</div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-lbl">Bileşke Açısı</div>
+        <div class="metric-val" style="color:var(--accent)" id="m-aci">—</div>
+        <div class="metric-unit">derece</div>
+      </div>
+      <div class="metric">
+        <div class="metric-lbl">Etkin Hat</div>
+        <div class="metric-val" style="color:var(--text2)" id="m-etkin">—</div>
+        <div class="metric-unit">adet</div>
+      </div>
+    </div>
+    <table class="vec-tbl">
+      <thead>
+        <tr>
+          <th>Hat</th>
+          <th>P (kg)</th>
+          <th>Açı (°)</th>
+          <th>Px = P·sin</th>
+          <th>Py = P·cos</th>
+        </tr>
+      </thead>
+      <tbody id="vec-tbl-body"></tbody>
+      <tfoot>
+        <tr class="sum-row">
+          <td colspan="3">∑ Toplam</td>
+          <td id="rx">—</td>
+          <td id="ry">—</td>
+        </tr>
+      </tfoot>
+    </table>
+    <div class="sonuc atip" id="sonuc-kart">
+      <div class="sonuc-lbl" id="sonuc-lbl">Beton direk</div>
+      <div class="sonuc-r" id="m-r" style="color:#bf8aff">—</div>
+      <div class="sonuc-fml" id="sonuc-fml">R = √(Rx² + Ry²)</div>
+    </div>
+    <div class="direk-sec" style="margin-top:.65rem;">
+      <div class="direk-sec-lbl">Seçilen Direk</div>
+      <input class="direk-input" id="direk-input" type="text" placeholder="örn. 9,30/5  veya  K₁  veya  10U" autocomplete="off">
+      <div class="direk-input-hint">Direk tipini manuel girin — çıktıda görünür</div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="panel-right">
+  <div class="canvas-area">
+    <div class="canvas-hdr">
+      <span class="canvas-title">Vektör Diyagramı</span>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="vecCanvas"></canvas>
+      <img id="printImg" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;" alt="Vektör Diyagramı">
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const ILETKENLER = {
+  "Boş Hat": [0,0,0,0],
+  "2R": [140.0,200.0,294.0,296.0],
+  "3R": [210.0,300.0,441.0,444.0],
+  "4R": [280.0,400.0,588.0,592.0],
+  "5R": [350.0,500.0,735.0,740.0],
+  "3P+R/P": [490.0,654.0,899.0,908.0],
+  "3Po+R/P": [535.0,695.0,968.0,956.0],
+  "3A+R/P": [586.0,748.0,1025.0,1010.0],
+  "3O+R/A": [713.0,923.0,1223.0,1167.0],
+  "2R (x0,81)": [113.4,162.0,238.14,239.76],
+  "3R (x0,81)": [170.1,243.0,357.21,359.64],
+  "4R (x0,81)": [226.8,324.0,476.28,479.52],
+  "5R (x0,81)": [283.5,405.0,595.35,599.4],
+  "3P+R/P (x0,81)": [396.9,529.74,728.19,735.48],
+  "3Po+R/P (x0,81)": [433.35,562.95,784.08,774.36],
+  "3A+R/P (x0,81)": [474.66,605.88,830.25,818.1],
+  "3O+R/A (x0,81)": [577.53,747.63,990.63,945.27],
+  "1x16/16+25 AER (a<=36m)": [100.9,112.8,149.3,151.1],
+  "3x16/16+25 AER": [201.8,236.84,306.0,302.2],
+  "3x25/16+35 AER": [250.0,272.9,345.8,335.7],
+  "3x35/16+50 AER": [310.3,327.1,410.6,388.9],
+  "3x50/16+70 AER": [371.24,383.9,477.86,440.7],
+  "3x70/16+95 AER": [460.8,469.4,573.9,512.4],
+  "3x95/16+95 AER": [460.8,469.4,573.9,512.4],
+  "3x120/16+95 AER": [460.8,469.4,573.9,512.4],
+  "2x16 AER(x0,81)": [81.73,91.37,120.93,122.39],
+  "3x16/16+25 AER(x0,81)": [163.46,191.84,247.86,244.78],
+  "3x25/16+35 AER(x0,81)": [202.5,221.05,280.1,271.92],
+  "3x35/16+50 AER(x0,81)": [251.34,264.95,332.59,315.01],
+  "3x50/16+70 AER(x0,81)": [300.7,310.96,387.07,356.97],
+  "3x70/16+95 AER(x0,81)": [373.25,380.21,464.86,415.04],
+  "3x95/16+95 AER(x0,81)": [373.25,380.21,464.86,415.04],
+  "3x120/16+95 AER(x0,81)": [373.25,380.21,464.86,415.04],
+  "3x3AWG ENH": [1027.62,1027.62,1027.62,1027.62],
+  "3X1/0 AWG ENH": [2058.54,2058.54,2058.54,2058.54],
+  "3X3/0 AWG ENH": [2741.72,3274.59,3274.59,3274.59],
+  "3x266 MCM ENH": [3772.8,3772.8,3772.8,3772.8],
+  "3x477 MCM ENH": [6746.4,6746.4,6746.4,6746.4],
+  "3x3AWG Müşt.": [273.0,321.0,525.0,525.0],
+  "3x3AWG+2R": [386.4,483.0,763.14,764.76],
+  "3x3AWG+3R": [443.1,564.0,882.21,884.64],
+  "3x3AWG+4R": [499.8,645.0,1001.28,1004.52],
+  "3x3AWG+5R": [556.5,726.0,1120.35,1124.4],
+  "3x3AWG+3P+R/P": [669.9,850.74,1253.19,1260.48],
+  "3x3AWG+3Po+R/P": [706.35,883.95,1309.08,1299.36],
+  "3x3AWG+3A+R/P": [747.66,926.88,1355.25,1343.1],
+  "3x3AWG+3O+R/A": [850.53,1068.63,1515.63,1470.27],
+  "3x3AWG+2x16 AER": [354.73,412.37,645.93,647.39],
+  "3x3AWG+3x16/16+25 AER": [436.46,512.84,772.86,769.78],
+  "3x3AWG+3x25/16+35 AER": [475.5,542.05,805.1,796.92],
+  "3x3AWG+3x35/16+50 AER": [524.34,585.95,857.59,840.01],
+  "3x3AWG+3x50/16+70 AER": [573.7,631.96,912.07,881.97],
+  "3x3AWG+3x70/16+95 AER": [646.25,701.21,989.86,940.04],
+  "3x3AWG+3x95/16+95 AER": [646.25,701.21,989.86,940.04],
+  "3x3AWG+3x120/16+95 AER": [646.25,701.21,989.86,940.04],
+  "3x1/0 AWG Müşt.": [411.0,525.0,705.0,678.0],
+  "3x1/0 AWG+2R": [524.4,687.0,943.14,917.76],
+  "3x1/0 AWG+3R": [581.1,768.0,1062.21,1037.64],
+  "3x1/0 AWG+4R": [637.8,849.0,1181.28,1157.52],
+  "3x1/0 AWG+5R": [694.5,930.0,1300.35,1277.4],
+  "3x1/0 AWG+3P+R/P": [807.9,1054.74,1433.19,1413.48],
+  "3x1/0 AWG+3Po+R/P": [844.35,1087.95,1489.08,1452.36],
+  "3x1/0 AWG+3A+R/P": [885.66,1130.88,1535.25,1496.1],
+  "3x1/0 AWG+3O+R/A": [988.53,1272.63,1695.63,1623.27],
+  "3x1/0 AWG+2x16 AER": [411.0,525.0,705.0,678.0],
+  "3x1/0 AWG+3x16/16+25 AER": [492.73,616.37,825.93,800.39],
+  "3x1/0 AWG+3x25/16+35 AER": [574.46,716.84,952.86,922.78],
+  "3x1/0 AWG+3x35/16+50 AER": [613.5,746.05,985.1,949.92],
+  "3x1/0 AWG+3x50/16+70 AER": [662.34,789.95,1037.59,993.01],
+  "3x1/0 AWG+3x70/16+95 AER": [711.7,835.96,1092.07,1034.97],
+  "3x1/0 AWG+3x95/16+95 AER": [784.25,905.21,1169.86,1093.04],
+  "3x1/0 AWG+3x120/16+95 AER": [784.25,905.21,1169.86,1093.04],
+  "3x3/0 AWG Müş.": [513.0,662.0,870.0,810.0],
+  "3x3/0 AWG+2R": [626.4,824.0,1108.14,1049.76],
+  "3x3/0 AWG+3R": [683.1,905.0,1227.21,1169.64],
+  "3x3/0 AWG+4R": [739.8,986.0,1346.28,1289.52],
+  "3x3/0 AWG+5R": [796.5,1067.0,1465.35,1409.4],
+  "3x3/0 AWG+3P+R/P": [909.9,1191.74,1598.19,1545.48],
+  "3x3/0 AWG+3Po+R/P": [946.35,1224.95,1654.08,1584.36],
+  "3x3/0 AWG+3A+R/P": [987.66,1267.88,1700.25,1628.1],
+  "3x3/0 AWG+3O+R/A": [1090.53,1409.63,1860.63,1755.27],
+  "3x3/0 AWG+2x16 AER": [513.0,662.0,870.0,810.0],
+  "3x3/0 AWG+3x16/16+25 AER": [594.73,753.37,990.93,932.39],
+  "3x3/0 AWG+3x25/16+35 AER": [676.46,853.84,1117.86,1054.78],
+  "3x3/0 AWG+3x35/16+50 AER": [715.5,883.05,1150.1,1081.92],
+  "3x3/0 AWG+3x50/16+70 AER": [764.34,926.95,1202.59,1125.01],
+  "3x3/0 AWG+3x70/16+95 AER": [813.7,972.96,1257.07,1166.97],
+  "3x3/0 AWG+3x95/16+95 AER": [886.25,1042.21,1334.86,1225.04],
+  "3x3/0 AWG+3x120/16+95 AER": [886.25,1042.21,1334.86,1225.04],
+  "3x266 MCM Müş.": [660.0,854.0,1092.0,984.0],
+  "3x266 MCM+2R": [773.4,1016.0,1330.14,1223.76],
+  "3x266 MCM+3R": [830.1,1097.0,1449.21,1343.64],
+  "3x266 MCM+4R": [886.8,1178.0,1568.28,1463.52],
+  "3x266 MCM+5R": [943.5,1259.0,1687.35,1583.4],
+  "3x266 MCM+3P+R/P": [1056.9,1383.74,1820.19,1719.48],
+  "3x266 MCM+3Po+R/P": [1093.35,1416.95,1876.08,1758.36],
+  "3x266 MCM+3A+R/P": [1134.66,1459.88,1922.25,1802.1],
+  "3x266 MCM+3O+R/A": [1237.53,1601.63,2082.63,1929.27],
+  "3x266 MCM+2x16 AER": [660.0,854.0,1092.0,984.0],
+  "3x266 MCM+3x16/16+25 AER": [741.73,945.37,1212.93,1106.39],
+  "3x266 MCM+3x25/16+35 AER": [823.46,1045.84,1339.86,1228.78],
+  "3x266 MCM+3x35/16+50 AER": [862.5,1075.05,1372.1,1255.92],
+  "3x266 MCM+3x50/16+70 AER": [911.34,1118.95,1424.59,1299.01],
+  "3x266 MCM+3x70/16+95 AER": [960.7,1164.96,1479.07,1340.97],
+  "3x266 MCM+3x95/16+95 AER": [1033.25,1234.21,1556.86,1399.04],
+  "3x266 MCM+3x120/16+95 AER": [1033.25,1234.21,1556.86,1399.04],
+  "3x477 MCM Müş.": [1014.0,1218.0,1500.0,1281.0],
+  "3x477 MCM+2R": [1127.4,1380.0,1738.14,1520.76],
+  "3x477 MCM+3R": [1184.1,1461.0,1857.21,1640.64],
+  "3x477 MCM+4R": [1240.8,1542.0,1976.28,1760.52],
+  "3x477 MCM+5R": [1297.5,1623.0,2095.35,1880.4],
+  "3x477 MCM+3P+R/P": [1410.9,1747.74,2228.19,2016.48],
+  "3x477 MCM+3Po+R/P": [1447.35,1780.95,2284.08,2055.36],
+  "3x477 MCM+3A+R/P": [1488.66,1823.88,2330.25,2099.1],
+  "3x477 MCM+3O+R/A": [1591.53,1965.63,2490.63,2226.27],
+  "3x477 MCM+2x16 AER": [1014.0,1218.0,1500.0,1281.0],
+  "3x477 MCM+3x16/16+25 AER": [1095.73,1309.37,1620.93,1403.39],
+  "3x477 MCM+3x25/16+35 AER": [1177.46,1409.84,1747.86,1525.78],
+  "3x477 MCM+3x35/16+50 AER": [1216.5,1439.05,1780.1,1552.92],
+  "3x477 MCM+3x50/16+70 AER": [1265.34,1482.95,1832.59,1596.01],
+  "3x477 MCM+3x70/16+95 AER": [1314.7,1528.96,1887.07,1637.97],
+  "3x477 MCM+3x95/16+95 AER": [1387.25,1598.21,1964.86,1696.04],
+  "3x477 MCM+3x120/16+95 AER": [1387.25,1598.21,1964.86,1696.04],
+};
+
+const BIdx={"1B":0,"2B":1,"3B":2,"4B":3};
+const BAcik={"1B":"1B: Hafif buz bölgesi","2B":"2B: Orta buz bölgesi","3B":"3B: Ağır buz bölgesi","4B":"4B: Çok ağır buz bölgesi"};
+const HC_ARR=["#00d4aa","#0099ff","#ffa657","#f78166","#bf8aff","#58a6ff","#e24b4a","#1d9e75","#ba7517","#534ab7"];
+function HC(i){return HC_ARR[i%HC_ARR.length];}
+let aBolge="1B", aDirek="beton", isPrintMode=false;
+let lastVecs=[],lastRx=0,lastRy=0,lastR=0,lastAci=0;
+const hatlar=[
+  {iletken:"3x3AWG ENH",derece:13},
+  {iletken:"3x3AWG ENH",derece:167},
+  {iletken:"Boş Hat",derece:167},
+  {iletken:"Boş Hat",derece:167},
+  {iletken:"Boş Hat",derece:167},
+  {iletken:"Boş Hat",derece:167},
+];
+
+function getGuc(il){return(ILETKENLER[il]||[0,0,0,0])[BIdx[aBolge]];}
+
+function setBolge(b,el){
+  aBolge=b;
+  document.querySelectorAll(".bolge-bar .bar-btn").forEach(x=>x.classList.remove("ak-bolge"));
+  el.classList.add("ak-bolge");
+  document.getElementById("bolge-acik").textContent=BAcik[b];
+  hesapla();
+}
+
+function setDirek(tip,el){
+  aDirek=tip;
+  document.querySelectorAll(".direk-bar .bar-btn").forEach(x=>x.classList.remove("ak-direk"));
+  el.classList.add("ak-direk");
+  const fb=document.getElementById("formul-box");
+  const sk=document.getElementById("sonuc-kart");
+  const sl=document.getElementById("sonuc-lbl");
+  const sf=document.getElementById("sonuc-fml");
+  const mr=document.getElementById("m-r");
+  /* Beton direk artık A tipi gibi vektörel bileşke ile hesaplanır.
+     Skaler toplam (|Rx|+|Ry|) yalnızca kafes demir direkte kullanılır. */
+  if(tip==="atip"||tip==="beton"){
+    const lbl=tip==="atip"?"A tipi demir direk":"Beton direk";
+    fb.className="info-box info-atip info-formul";
+    fb.textContent=lbl+": R = √(Rx² + Ry²) — vektörel bileşke";
+    sk.className="sonuc atip";
+    sl.textContent=lbl;
+    sf.textContent="R = √(Rx² + Ry²)";
+    mr.style.color="#bf8aff";
+  } else {
+    fb.className="info-box info-skaler info-formul";
+    fb.textContent="Kafes demir direk: R = |Rx| + |Ry| — skaler toplam";
+    sk.className="sonuc skaler";
+    sl.textContent="Kafes demir direk";
+    sf.textContent="R = |Rx| + |Ry|";
+    mr.style.color="var(--warn2)";
+  }
+  hesapla();
+}
+
+function buildRows(){
+  const c=document.getElementById("hat-rows");
+  c.innerHTML="";
+  const opts=Object.keys(ILETKENLER).map(k=>`<option value="${k}">${k}</option>`).join("");
+  hatlar.forEach((hat,i)=>{
+    const vals=ILETKENLER[hat.iletken]||[0,0,0,0];
+    const bvH=["1B","2B","3B","4B"].map((b,j)=>
+      `<div class="bv ${b===aBolge?'ak':''}" id="bv${i}_${j}">
+        <div class="bv-lbl">${b}</div>
+        <div class="bv-val">${vals[j]>0?vals[j].toFixed(0):'—'}</div>
+      </div>`).join("");
+    const d=document.createElement("div");
+    d.className="hat-block"; d.id="hatblock"+i;
+    d.innerHTML=`
+      <div class="hat-hdr">
+        <div class="hat-num" id="hatnum${i}">${i+1}</div>
+        <span style="font-family:var(--mono);font-size:12px;color:var(--text2)">HAT ${i+1}</span>
+        <span style="margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--accent)" id="hatguc${i}">0 kg</span>
+        <button class="hat-del-btn" onclick="hatSilIndex(${i})" title="Bu hattı sil">✕</button>
+      </div>
+      <div class="hat-inp">
+        <div><label>İletken</label>
+          <select id="hs${i}" onchange="updateHat(${i},'iletken',this.value)">${opts.replace(`value="${hat.iletken}"`,`value="${hat.iletken}" selected`)}</select>
+        </div>
+        <div><label>Açı (°)</label>
+          <input type="number" id="hd${i}" value="${hat.derece}" min="0" max="360" onchange="updateHat(${i},'derece',+this.value)">
+        </div>
+      </div>
+      <div class="bv-row">${bvH}</div>`;
+    c.appendChild(d);
+  });
+  const sayiEl=document.getElementById("hat-sayi");
+  if(sayiEl) sayiEl.textContent=hatlar.length;
+}
+
+function hatEkle(){
+  hatlar.push({iletken:"Boş Hat",derece:0});
+  buildRows();
+  hesapla();
+}
+
+function hatSil(){
+  if(hatlar.length<=1) return;
+  hatlar.pop();
+  buildRows();
+  hesapla();
+}
+
+function hatSilIndex(i){
+  if(hatlar.length<=1) return;
+  hatlar.splice(i,1);
+  buildRows();
+  hesapla();
+}
+
+function updateHat(i,key,val){
+  hatlar[i][key]=val;
+  if(key==="iletken"){
+    const v=ILETKENLER[val]||[0,0,0,0];
+    ["1B","2B","3B","4B"].forEach((b,j)=>{
+      const el=document.getElementById(`bv${i}_${j}`);
+      if(el) el.querySelector(".bv-val").textContent=v[j]>0?v[j].toFixed(0):"—";
+    });
+  }
+  hesapla();
+}
+
+
+
+
+
+
+function hesapla(){
+  let Rx=0,Ry=0,etkin=0;
+  const vecs=[];
+  for(let i=0;i<hatlar.length;i++){
+    const guc=getGuc(hatlar[i]?.iletken||"Boş Hat");
+    const rad=((hatlar[i]?.derece||0)*Math.PI)/180;
+    const x=guc*Math.sin(rad), y=guc*Math.cos(rad);
+    Rx+=x; Ry+=y;
+    if(guc>0) etkin++;
+    vecs.push({guc,derece:hatlar[i]?.derece||0,x,y});
+    const ge=document.getElementById("hatguc"+i);
+    if(ge) ge.textContent=guc.toFixed(0)+" kg";
+    const bl=document.getElementById("hatblock"+i);
+    const nu=document.getElementById("hatnum"+i);
+    if(bl&&nu){
+      if(guc>0){bl.classList.add("active");nu.style.background=HC(i);nu.style.color="#000";}
+      else{bl.classList.remove("active");nu.style.background="var(--text3)";nu.style.color="var(--bg)";}
+    }
+    ["1B","2B","3B","4B"].forEach((b,j)=>{
+      const el=document.getElementById(`bv${i}_${j}`);
+      if(el) el.classList.toggle("ak",b===aBolge);
+    });
+  }
+  const R=(aDirek==="atip"||aDirek==="beton")?Math.sqrt(Rx*Rx+Ry*Ry):Math.abs(Rx)+Math.abs(Ry);
+  const aci=R>0?(Math.atan2(Rx,Ry)*180/Math.PI+360)%360:0;
+  document.getElementById("m-aci").textContent=aci.toFixed(1);
+  document.getElementById("m-etkin").textContent=etkin;
+  document.getElementById("rx").textContent=Rx.toFixed(2)+" kg";
+  document.getElementById("ry").textContent=Ry.toFixed(2)+" kg";
+  document.getElementById("m-r").textContent=R.toFixed(1)+" kg";
+  const tbody=document.getElementById("vec-tbl-body");
+  if(tbody){
+    tbody.innerHTML="";
+    vecs.forEach((v,i)=>{
+      if(v.guc<0.01) return;
+      const tr=document.createElement("tr");
+      const pxC=v.x>=0?"#00d4aa":"#f78166";
+      const pyC=v.y>=0?"#0099ff":"#f78166";
+      const pxStr=(v.x>=0?"+":"")+v.x.toFixed(2);
+      const pyStr=(v.y>=0?"+":"")+v.y.toFixed(2);
+      tr.innerHTML=
+        "<td><span style='display:inline-block;width:8px;height:8px;border-radius:50%;background:"+HC(i)+";margin-right:5px;vertical-align:middle'></span>H"+(i+1)+"</td>"+
+        "<td>"+v.guc.toFixed(1)+"</td>"+
+        "<td>"+v.derece+"°</td>"+
+        "<td style='color:"+pxC+"'>"+pxStr+"</td>"+
+        "<td style='color:"+pyC+"'>"+pyStr+"</td>";
+      tbody.appendChild(tr);
+    });
+  }
+  lastVecs=vecs; lastRx=Rx; lastRy=Ry; lastR=R; lastAci=aci;
+  buildLegend(vecs);
+  cizVektor(vecs,Rx,Ry,R,aci);
+}
+
+function buildLegend(vecs){
+  const leg=document.getElementById("legend");
+  leg.innerHTML="";
+  vecs.forEach((v,i)=>{
+    if(v.guc<.1) return;
+    const d=document.createElement("div");
+    d.className="leg-item";
+    d.innerHTML=`<span class="leg-dot" style="background:${HC(i)}"></span>Hat ${i+1}`;
+    leg.appendChild(d);
+  });
+  const r=document.createElement("div");
+  r.className="leg-item";
+  r.innerHTML=`<span class="leg-dot" style="background:#f78166;width:16px"></span>R bileşke`;
+  leg.appendChild(r);
+}
+
+function cizVektor(vecs,Rx,Ry,R,aci){
+  const cv=document.getElementById("vecCanvas");
+  const ctx=cv.getContext("2d");
+  const isPrint=isPrintMode;
+  let W,H;
+  if(isPrint){
+    // yazdir() zaten canvas boyutunu ayarladı, sadece scale uygula
+    const sc=2; // retina çarpanı
+    W=cv.width/sc; H=cv.height/sc;
+    ctx.setTransform(sc,0,0,sc,0,0);
+  } else {
+    const wp=cv.parentElement;
+    const dpr=window.devicePixelRatio||1;
+    W=wp.clientWidth||600; H=wp.clientHeight||400;
+    cv.width=W*dpr; cv.height=H*dpr;
+    cv.style.width=W+"px"; cv.style.height=H+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  ctx.fillStyle=isPrint?"#ffffff":"#161b22";
+  ctx.fillRect(0,0,W,H);
+  const fSz=isPrint?13:10;
+  const lwBase=isPrint?1.5:0.5;
+  const arrowSz=isPrint?16:12;
+  const cx=W/2, cy=H/2;
+  const maxG=Math.max(...vecs.map(v=>v.guc),R,1);
+  const sc=Math.min(W,H)*.38/maxG;
+  for(let r=1;r<=4;r++){
+    const rad=(maxG/4)*r*sc;
+    ctx.strokeStyle=isPrint?(r===4?"rgba(0,0,0,.3)":"rgba(0,0,0,.12)"):(r===4?"rgba(255,255,255,.1)":"rgba(255,255,255,.04)");
+    ctx.lineWidth=isPrint?(r===4?1:.5):.5;
+    ctx.beginPath(); ctx.arc(cx,cy,rad,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle=isPrint?"rgba(0,0,0,.4)":"rgba(255,255,255,.2)";
+    ctx.font=fSz+"px 'IBM Plex Mono'"; ctx.textAlign="left";
+    ctx.fillText(((maxG/4)*r).toFixed(0)+" kg",cx+rad+4,cy-3);
+  }
+  ctx.strokeStyle=isPrint?"rgba(0,0,0,.2)":"rgba(255,255,255,.08)";
+  ctx.lineWidth=isPrint?1.5:1; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(cx,16); ctx.lineTo(cx,H-16); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(16,cy); ctx.lineTo(W-16,cy); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font="10px 'IBM Plex Mono'";
+  ctx.fillStyle=isPrint?"rgba(0,0,0,.4)":"rgba(139,148,158,.5)";
+  ctx.textAlign="center"; ctx.fillText("0°",cx,14); ctx.fillText("180°",cx,H-4);
+  ctx.textAlign="right"; ctx.fillText("270°",28,cy+4);
+  ctx.textAlign="left"; ctx.fillText("90°",W-28,cy+4);
+  const dRenk=aDirek==="atip"?"#bf8aff":aDirek==="beton"?"#0099ff":"#ffa657";
+  const dAd=aDirek==="atip"?"A tipi · √(Rx²+Ry²)":aDirek==="beton"?"Beton · √(Rx²+Ry²)":"Kafes · |Rx|+|Ry|";
+  ctx.font=(isPrint?13:11)+"px 'IBM Plex Mono'"; ctx.fillStyle=isPrint?"rgba(0,80,150,.85)":dRenk;
+  ctx.textAlign="left"; ctx.fillText(dAd,16,H-14);
+  ctx.fillStyle=isPrint?"rgba(0,100,80,.7)":"rgba(0,212,170,.4)";
+  ctx.fillText("Bölge: "+aBolge,16,H-28);
+  // Aktif hatlar listesi (açı yayları için)
+  const aktifVecs = vecs.filter(v=>v.guc>=.1);
+
+  // Hatlar arası açı yayları — her komşu çift arasında
+  if(aktifVecs.length>=2){
+    for(let k=0;k<aktifVecs.length-1;k++){
+      const v1=aktifVecs[k], v2=aktifVecs[k+1];
+      const a1=Math.atan2(-v1.y, v1.x); // canvas koordinatı (y ters)
+      const a2=Math.atan2(-v2.y, v2.x);
+      const arcR=isPrint?60:40;
+      // Açı farkı
+      let dA = v2.derece - v1.derece;
+      if(dA<0) dA+=360;
+      // Yay çiz
+      ctx.beginPath();
+      ctx.arc(cx,cy,arcR,a1,a2,false);
+      ctx.strokeStyle=isPrint?"rgba(0,0,0,0.25)":"rgba(255,255,255,0.2)";
+      ctx.lineWidth=isPrint?1:0.8;
+      ctx.setLineDash([3,3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Açı değeri ortaya yaz
+      const midA=(a1+a2)/2;
+      const tx=cx+(arcR+14)*Math.cos(midA);
+      const ty=cy+(arcR+14)*Math.sin(midA);
+      ctx.font=(isPrint?10:9)+"px 'IBM Plex Mono'";
+      ctx.fillStyle=isPrint?"rgba(0,0,0,0.5)":"rgba(255,255,255,0.5)";
+      ctx.textAlign="center";
+      ctx.fillText(dA.toFixed(0)+"°",tx,ty);
+    }
+  }
+
+  // Hat okları + iletken cinsi etiketi
+  vecs.forEach((v,i)=>{
+    if(v.guc<.1) return;
+    const ex=cx+v.x*sc, ey=cy-v.y*sc;
+    drawArr(ctx,cx,cy,ex,ey,HC(i),isPrint?3:2);
+    const side=v.x>=0?1:-1;
+    ctx.textAlign=side>0?"left":"right";
+    const lx=ex+side*8;
+    // Satır 1: Hat no, açı, güç
+    ctx.font="600 "+(isPrint?13:11)+"px 'IBM Plex Mono'";
+    ctx.fillStyle=isPrint?"#222":HC(i);
+    ctx.fillText(`H${i+1} · ${v.derece}° · ${v.guc.toFixed(0)} kg`,lx,ey-5);
+    // Satır 2: İletken cinsi (kısa)
+    const iltk=hatlar[i]?.iletken||"";
+    if(iltk && iltk!=="Boş Hat"){
+      ctx.font=(isPrint?10:9)+"px 'IBM Plex Mono'";
+      ctx.fillStyle=isPrint?"rgba(0,0,0,0.55)":HC(i)+"99";
+      ctx.fillText(iltk,lx,ey+9);
+    }
+  });
+  if(R>.1){
+    const ex=cx+Rx*sc, ey=cy-Ry*sc;
+    const rRenk=(aDirek==="atip"||aDirek==="beton")?"#bf8aff":"#f78166";
+    drawArr(ctx,cx,cy,ex,ey,isPrint?"#c00000":rRenk,isPrint?5:3.5);
+    ctx.font="600 "+(isPrint?15:12)+"px 'IBM Plex Mono'"; ctx.fillStyle=isPrint?"#c00000":rRenk;
+    const side=Rx>=0?1:-1;
+    ctx.textAlign=side>0?"left":"right";
+    ctx.fillText(`R = ${R.toFixed(1)} kg`,ex+side*10,ey-8);
+    ctx.font=(isPrint?12:10)+"px 'IBM Plex Mono'"; ctx.fillStyle=isPrint?"rgba(180,0,0,.8)":rRenk+"bb";
+    ctx.fillText(`${aci.toFixed(1)}°`,ex+side*10,ey+6);
+  }
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2);
+  ctx.fillStyle=isPrint?"#006650":"#00d4aa"; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,2,0,Math.PI*2);
+  ctx.fillStyle=isPrint?"#ffffff":"#161b22"; ctx.fill();
+}
+
+function drawArr(ctx,x1,y1,x2,y2,color,lw){
+  const ang=Math.atan2(y2-y1,x2-x1),len=12;
+  ctx.save(); ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=lw; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2-len*.6*Math.cos(ang),y2-len*.6*Math.sin(ang)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-len*Math.cos(ang-.45),y2-len*Math.sin(ang-.45));
+  ctx.lineTo(x2-len*Math.cos(ang+.45),y2-len*Math.sin(ang+.45));
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+
+// Seçilen direk iki input senkron
+document.addEventListener("DOMContentLoaded",()=>{
+  const src = document.getElementById("direk-input");
+  const dst = document.getElementById("direk-input-tesis");
+  if(src && dst){
+    src.addEventListener("input",()=>{ dst.value = src.value; });
+    dst.addEventListener("input",()=>{ src.value = dst.value; });
+  }
+});
+window.addEventListener("resize",hesapla);
+function yazdir(){
+  // Seçili direk yoksa uyar
+  const cv=document.getElementById("vecCanvas");
+  const img=document.getElementById("printImg");
+  // 1. Önce canvas'ı büyük boyutta beyaz zemine çiz
+  const W=1400, H=900;
+  cv.width=W*2; cv.height=H*2;  // 2x retina kalitesi
+  cv.style.width=W+"px"; cv.style.height=H+"px";
+  isPrintMode=true;
+  cizVektor(lastVecs,lastRx,lastRy,lastR,lastAci);
+  // 2. Canvas hazır olduğunda PNG al ve print
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      img.src=cv.toDataURL("image/png",1.0);
+      img.onload=()=>{ window.print(); };
+    });
+  });
+}
+window.addEventListener("afterprint",()=>{
+  isPrintMode=false;
+  const img=document.getElementById("printImg");
+  if(img) img.src="";
+  hesapla();
+});
+buildRows(); hesapla();
+</script>
+</body>
+</html>

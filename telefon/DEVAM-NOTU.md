@@ -1,9 +1,9 @@
-> **Not (17.10.2026):** Bu dosya VOLT-EDAŞ Saha'nın eski deposundan geldi; tarihçe, kararlar ve açık işler için
+> **Not (17.10.2026):** Bu dosya Şebeke-M telefon uygulamasının eski deposundan geldi; tarihçe, kararlar ve açık işler için
 > saklanır. Uygulama artık **Şebeke Hakediş** deposunun `telefon/` klasöründedir; güncel durum ve kurallar depo
 > kökündeki `DEVIR.md`'de, AutoCAD ile birlikte kullanım `KULLANIM.md`'de. Aşağıdaki "yeni hesapta başlarken"
 > adımları ve `alpaslanbaygun/volt-edas-saha` deposu artık geçerli değil.
 
-# VOLT-EDAŞ Saha — Devam notu (yeni Claude hesabı için)
+# Şebeke-M — Devam notu (yeni Claude hesabı için)
 
 Bu dosya projeyi başka bir Claude hesabında kaldığı yerden sürdürmek içindir. Yeni hesapta ilk iş bu dosyayı Claude'a okutun.
 
@@ -13,8 +13,8 @@ Son durum: **sürüm 2.4.0** (6 Ekim 2026). Telefon uygulaması (APK) 2.4.0; ofi
 
 1. Yeni Claude hesabında bir proje açın (ör. "EDŞ-GNSS") ve bu dosyayı projeye belge olarak ekleyin.
 2. GitHub bağlantısını açın ve `alpaslanbaygun/volt-edas-saha` deposunu oturuma tanıtın. Kod, sürüm geçmişi ve bu not oradadır.
-3. Google Drive bağlantısını açın. Kurulum dosyaları ve kılavuz: Drive › Claude Çalışmaları › 07 VOLT-EDAŞ Saha Uygulaması.
-4. Claude'a şunu yazmanız yeterli: "DEVAM-NOTU.md dosyasını oku, VOLT-EDAŞ Saha projesine kaldığımız yerden devam edelim."
+3. Google Drive bağlantısını açın. Kurulum dosyaları ve kılavuz: Drive › Claude Çalışmaları › 07 Şebeke-M Uygulaması.
+4. Claude'a şunu yazmanız yeterli: "DEVAM-NOTU.md dosyasını oku, Şebeke-M projesine kaldığımız yerden devam edelim."
 
 Eski hesapta kalanlar (yeni hesaptan erişilemez, kopyaları buraya alındı):
 

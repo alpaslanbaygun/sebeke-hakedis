@@ -257,6 +257,215 @@ namespace SebekeHakedis.Test
             TelefondanAlma(varliklar, tp);
             RaporUyumu(varliklar, xlsx);
             OnayAkisi(varliklar);
+            HesapMerkezi_(tp);
+        }
+
+        // ---------------- Hesap Merkezi: kayıt, güncellik, bağlam, sunucu ----------------
+
+        private static void HesapMerkezi_(Proje tp)
+        {
+            Console.WriteLine("Hesap Merkezi:");
+            // İletken anahtarı (platformlar arası karşılaştırma): telefon ve AutoCAD yazımları aynı anahtarı verir
+            Esit("ACSR:SWALLOW", HesapGuncellik.IletkenAnahtari("3xSW"), "iletken anahtarı: 3xSW");
+            Esit("ACSR:SWALLOW", HesapGuncellik.IletkenAnahtari("3xSwallow"), "iletken anahtarı: 3xSwallow");
+            Esit("ACSR:SWALLOW", HesapGuncellik.IletkenAnahtari("2(3xSW)"), "iletken anahtarı: çift devre 2(3xSW)");
+            Esit("ACSR:RAVEN", HesapGuncellik.IletkenAnahtari("3x1\\0"), "iletken anahtarı: 3x1\\0 = Raven");
+            Esit("ACSR:PIGEON", HesapGuncellik.IletkenAnahtari("2(3x3/0)"), "iletken anahtarı: 2(3x3/0) = Pigeon");
+            Esit("ABC:3x50+70", HesapGuncellik.IletkenAnahtari("3X50/16+70 ALPEK"), "iletken anahtarı: ALPEK");
+            Esit("ABC:3x50+70", HesapGuncellik.IletkenAnahtari("3x50/16+70 AER"), "iletken anahtarı: AER (telefon yazımı)");
+            Esit("NAYY:3x95", HesapGuncellik.IletkenAnahtari("3x95+50 Nyy Alm."), "iletken anahtarı: Nyy Alm.");
+            Esit("NAYY:3x95", HesapGuncellik.IletkenAnahtari("NAYY 3x95+50"), "iletken anahtarı: NAYY");
+            Esit("XLPE-AL:150", HesapGuncellik.IletkenAnahtari("1x150/25 Xlpe Alm."), "iletken anahtarı: XLPE Alm.");
+            Esit("AAC:3P+R", HesapGuncellik.IletkenAnahtari("3P+R"), "iletken anahtarı: 3P+R");
+            Esit(null, HesapGuncellik.IletkenAnahtari("G-10I"), "iletken anahtarı: direk tipi iletken değil");
+
+            // Güncellik: yol okuma ve farklar
+            var baglam = (JsonNesne)Json.Oku("{\"hat\":{\"acikliklar\":[{\"uzunluk\":39.55},{\"uzunluk\":35}],\"iletkenler\":[{\"ad\":\"3X50/16+70 ALPEK\"}]},\"direk\":{\"tip\":\"G-10I\",\"kot\":null}}");
+            bool yok;
+            Esit(35.0, HesapGuncellik.Deger(baglam, "hat.acikliklar[1].uzunluk", out yok), "güncellik: dizi yolu");
+            Esit(false, yok, "güncellik: yol bulundu");
+            HesapGuncellik.Deger(baglam, "hat.acikliklar[5].uzunluk", out yok);
+            Esit(true, yok, "güncellik: olmayan dizin bulunamadı");
+            var kullanilan = (JsonNesne)Json.Oku("{\"hat.acikliklar[0].uzunluk\":39.55,\"hat.acikliklar[1].uzunluk\":36,\"hat.iletkenler[0].ad\":\"3x50/16+70 AER\",\"direk.tip\":\"G-10I\",\"direk.kot\":null,\"trafo.gucKVA\":160}");
+            var farklar = HesapGuncellik.Farklar(kullanilan, baglam);
+            Esit(3, farklar.Count, "güncellik: uzunluk, iletken yazımı ve silinen trafo fark (aynı platform)");
+            var farklar2 = HesapGuncellik.Farklar(kullanilan, baglam, true);
+            Esit(2, farklar2.Count, "güncellik: platformlar arası iletken yazımı fark sayılmaz");
+            Esit(true, farklar2.Exists(f => f.Yol == "trafo.gucKVA" && f.Silindi), "güncellik: silinen bilgi işaretlenir");
+            Esit(true, farklar2.Exists(f => f.Yol == "hat.acikliklar[1].uzunluk" && Equals(f.Yeni, 35.0)), "güncellik: yeni değer");
+
+            // Kayıt: JSON gidip gelme
+            var k = new HesapKaydi
+            {
+                Id = HesapKaydi.YeniKimlik(), Modul = "ag-gd", ModulAdi = "AG Gerilim Düşümü", ModulSurumu = "abc123", HedefTur = "trafo", HedefId = "D1", HedefNo = "SCTR01",
+                HedefHatId = "H14", Ozet = "%1,57 · uygun", Durum = "uygun", ModulDurumu = "{\"kols\":[1,2]}", Tarih = HesapKaydi.Simdi(), Kaynak = "autocad", Yapan = "Ayşe", TelefonId = "tel-1",
+            };
+            k.HedefParcalar.AddRange(new[] { "H14", "H15" });
+            k.Kullanilan["trafo.gucKVA"] = 160.0;
+            k.Ayrinti["girdiler"] = new List<object> { (JsonNesne)Json.Oku("{\"ad\":\"Güç\",\"deger\":160,\"birim\":\"kVA\"}") };
+            Esit(true, k.Id.StartsWith("H") && k.Id.Length > 20, "kayıt: kimlik üretimi");
+            Esit(true, k.Tarih.EndsWith("Z") && k.Tarih.Length == 24, "kayıt: ISO UTC tarih");
+            var k2 = HesapKaydi.Oku((JsonNesne)Json.Oku(Json.Yaz(k.Json(), false)));
+            Esit(k.Id, k2.Id, "kayıt: kimlik gidip gelir");
+            Esit("H14", k2.HedefHatId, "kayıt: trafo çıkışı (hatId) gidip gelir");
+            Esit(2, k2.HedefParcalar.Count, "kayıt: parçalar gidip gelir");
+            Esit("{\"kols\":[1,2]}", k2.ModulDurumu, "kayıt: modül durumu metin olarak gidip gelir");
+            Esit("tel-1", k2.TelefonId, "kayıt: telefon kimliği");
+            Esit("Güç = 160 kVA", k2.Satirlar("girdiler")[0], "kayıt: rapor satırı");
+            Esit(k.HedefAnahtari, k2.HedefAnahtari, "kayıt: hedef anahtarı");
+            Esit(true, k2.HedefAyni(new HesapHedefi { Tur = "trafo", Id = "D1", HatId = "H14" }), "kayıt: aynı trafo ve çıkış");
+            Esit(false, k2.HedefAyni(new HesapHedefi { Tur = "trafo", Id = "D1", HatId = "" }), "kayıt: aynı trafo, çıkışsız = ayrı kayıt");
+            var hatKaydi = new HesapKaydi { Id = "x", Modul = "enh-sehim", HedefTur = "hat", HedefId = "H15" };
+            hatKaydi.HedefParcalar.AddRange(new[] { "H15", "H16" });
+            Esit(true, hatKaydi.HedefAyni(new HesapHedefi { Tur = "hat", Id = "H16" }), "kayıt: hattın başka parçasından açılan hesap aynı hat");
+
+            // Proje dosyası: hesaplar gidip gelir
+            tp.Hesaplar.Clear();
+            tp.Hesaplar.Add(k);
+            var tp2 = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(tp, "test"));
+            Esit(1, tp2.Hesaplar.Count, "proje dosyası: hesap kaydı yazılır ve okunur");
+            Esit("ag-gd", tp2.Hesaplar[0].Modul, "proje dosyası: modül");
+            Esit(160.0, tp2.Hesaplar[0].Kullanilan["trafo.gucKVA"], "proje dosyası: kullanılan değerler");
+            var volt = ProjeDosyasi.Oku(ProjeDosyasi.VoltYaz(tp, "test"));
+            Esit(1, volt.Hesaplar.Count, "telefon dosyası (.volt.json): hesap kaydı taşınır");
+
+            // Bağlam: telefon projesindeki AG hattı, direk ve trafo
+            var bilgi = new ProjeBilgisi { Ad = "Deneme", Yapan = "Ayşe", BuzBolgesi = "3" };
+            var direkHedefi = new HesapHedefi { Tur = "direk", Id = "D6" };
+            var bd = HesapBaglami.Kur(tp, direkHedefi, bilgi);
+            Esit("SC104", direkHedefi.No, "bağlam: direk numarası hedefe yazılır");
+            var direk = bd.Nesne("direk");
+            Esit("G-12I", direk.Metin("tip"), "bağlam: direk tipi");
+            Esit("demir", direk.Metin("malzeme"), "bağlam: direk malzemesi");
+            Esit("T", direk.Metin("rol"), "bağlam: iki kollu düz direk taşıyıcı");
+            Esit(2, direk.Dizi("kollar").Count, "bağlam: direğin iki kolu");
+            var kol = (JsonNesne)direk.Dizi("kollar")[0];
+            Esit(true, kol.Ondalik("aciklik") > 39 && kol.Ondalik("aciklik") < 40, "bağlam: kol açıklığı 39,5 m");
+            Esit("3X50/16+70 ALPEK", ((JsonNesne)kol.Dizi("iletkenler")[0]).Metin("ad"), "bağlam: kol iletkeni");
+            Esit("3", bd.Nesne("proje").Metin("buzBolgesi"), "bağlam: buz bölgesi ayarlardan");
+            Esit(true, bd.Nesne("hat") != null, "bağlam: direğin üzerindeki hat");
+            var hatHedefi = new HesapHedefi { Tur = "hat", Id = "H17" };
+            var bh = HesapBaglami.Kur(tp, hatHedefi, bilgi);
+            var hat = bh.Nesne("hat");
+            Esit(11, hatHedefi.Parcalar.Count, "bağlam: hat zinciri trafodan son direğe parçalardan kurulur (dallanma noktasından düz geçer)");
+            Esit("H14", hat.Metin("id"), "bağlam: zincir trafodan başlar");
+            Esit(true, hat.Dizi("acikliklar").Count == hatHedefi.Parcalar.Count, "bağlam: her parça bir açıklık");
+            Esit(true, hat.Ondalik("toplamUzunluk") > 400, "bağlam: toplam uzunluk");
+            Esit(true, hat.Ondalik("ruling") > 35 && hat.Ondalik("ruling") < 40, "bağlam: eşdeğer açıklık");
+            Esit("AG_HAVAI", hat.Metin("tur"), "bağlam: hat türü");
+            Esit(true, bh.Nesne("trafo") != null && bh.Nesne("trafo").Metin("no") == "SCTR01", "bağlam: hattın başındaki trafo");
+            Esit(true, bh.Dizi("zincir") != null && bh.Dizi("zincir").Count == hat.Dizi("acikliklar").Count, "bağlam: zincir (gerilim düşümü / kısa devre için)");
+            Esit(true, HesapBaglami.HedefVar(tp, hatHedefi), "bağlam: hat hedefi var");
+            Esit(false, HesapBaglami.HedefVar(tp, new HesapHedefi { Tur = "direk", Id = "YOK" }), "bağlam: silinmiş hedef");
+            var cikislar = HesapBaglami.TrafoCikislari(tp, "D1");
+            Esit(true, cikislar.Exists(h => h.Id == "H14"), "bağlam: trafonun AG havai çıkışı");
+            Esit(true, cikislar.Exists(h => h.Id == "H54"), "bağlam: trafonun AG yeraltı çıkışı");
+            var trafoHedefi = new HesapHedefi { Tur = "trafo", Id = "D1", HatId = "H14" };
+            var bt = HesapBaglami.Kur(tp, trafoHedefi, bilgi);
+            Esit("SCTR01", trafoHedefi.No, "bağlam: trafo numarası");
+            Esit(true, bt.Nesne("trafo") != null, "bağlam: trafo bilgisi");
+            Esit(true, bt.Nesne("hat") != null && bt.Nesne("hat").Metin("id") == "H14", "bağlam: seçilen çıkış hattı");
+            Esit("SCTR01–SC111", HesapBaglami.HatAdi(tp, tp.Hatlar.Find(h => h.Id == "H18")), "bağlam: hat adı uç elemanlardan (dallanmada düz devam)");
+            Esit("SC101–?", HesapBaglami.HatAdi(tp, tp.Hatlar.Find(h => h.Id == "H36")), "bağlam: ucu boşta kalan kol");
+            var kanalHedefi = new HesapHedefi { Tur = "kanal", Id = "K56" };
+            var bk = HesapBaglami.Kur(tp, kanalHedefi, bilgi);
+            Esit(true, bk.Nesne("kanal") != null && bk.Nesne("kanal").Ondalik("uzunluk") > 238, "bağlam: kanal uzunluğu");
+            Esit("TOPRAK", bk.Nesne("kanal").Metin("zemin"), "bağlam: kanal zemini");
+            var pb = HesapBaglami.Kur(tp, new HesapHedefi { Tur = "proje" }, bilgi);
+            Esit("Proje geneli", pb.Nesne("hedef").Metin("ad"), "bağlam: proje geneli");
+            // Kayıt durumu: hedef silinmişse
+            bool hedefYok;
+            HesapGuncellik.Durum(tp, new HesapKaydi { Id = "y", Modul = "amax", HedefTur = "direk", HedefId = "YOK" }, bilgi, "autocad", out hedefYok);
+            Esit(true, hedefYok, "güncellik: silinmiş hedef");
+            var kayit = new HesapKaydi { Id = "z", Modul = "ag-gd", HedefTur = "trafo", HedefId = "D1", HedefHatId = "H14", Kaynak = "telefon" };
+            kayit.Kullanilan["trafo.no"] = "SCTR01";
+            kayit.Kullanilan["hat.acikliklar[0].uzunluk"] = 39.55;
+            kayit.Kullanilan["hat.iletkenler[0].ad"] = "3x50/16+70 AER";
+            var fk = HesapGuncellik.Durum(tp, kayit, bilgi, "autocad", out hedefYok);
+            Esit(false, hedefYok, "güncellik: trafo hedefi var");
+            Esit(0, fk.Count, "güncellik: telefon kaydı AutoCAD bağlamıyla güncel (yazım farkı sayılmaz)");
+            kayit.Kullanilan["hat.acikliklar[0].uzunluk"] = 50.0;
+            fk = HesapGuncellik.Durum(tp, kayit, bilgi, "autocad", out hedefYok);
+            Esit(1, fk.Count, "güncellik: değişen açıklık fark");
+
+            // Rapor: HESAPLAR sayfası
+            string rapor = Path.Combine(Path.GetTempPath(), "sebeke-m-hesap-rapor.xlsx");
+            RaporYazici.Yaz(tp, rapor, "test", null, bilgi);
+            using (var zip = System.IO.Compression.ZipFile.OpenRead(rapor))
+            {
+                string wb;
+                using (var r = new StreamReader(zip.GetEntry("xl/workbook.xml").Open())) wb = r.ReadToEnd();
+                Esit(true, wb.Contains("HESAPLAR"), "rapor: HESAPLAR sayfası var");
+                bool satirVar = false;
+                foreach (var e in zip.Entries)
+                    if (e.FullName.StartsWith("xl/") && (e.FullName.Contains("sharedStrings") || e.FullName.Contains("worksheets/")))
+                        using (var r = new StreamReader(e.Open())) { string m = r.ReadToEnd(); if (m.Contains("%1,57") && m.Contains("Güncel")) satirVar = true; }
+                Esit(true, satirVar, "rapor: hesap satırı özet ve güncellik");
+            }
+            try { File.Delete(rapor); } catch { }
+
+            SunucuDene();
+        }
+
+        /// <summary>Yerel sunucu: dosya, API, yanlış anahtar, yanlış Host, yol kaçışı.</summary>
+        private static void SunucuDene()
+        {
+            var dosyalar = new Dictionary<string, byte[]>
+            {
+                { "merkez.html", Encoding.UTF8.GetBytes("<html>merkez</html>") },
+                { "ortak/kopru.js", Encoding.UTF8.GetBytes("// köprü") },
+            };
+            string sonIstek = null;
+            using (var s = new HesapSunucu(y => dosyalar.ContainsKey(y) ? dosyalar[y] : null, (ad, govde) => { sonIstek = ad + ":" + govde; return ad == "basla" ? "{\"ok\":true}" : null; }))
+            {
+                Esit(32, s.Anahtar.Length, "sunucu: 128 bit anahtar");
+                Esit(true, s.Kok.StartsWith("http://127.0.0.1:") && s.Kok.EndsWith("/" + s.Anahtar + "/"), "sunucu: kök adres");
+                using (var h = new System.Net.Http.HttpClient(new System.Net.Http.HttpClientHandler { AllowAutoRedirect = false }))
+                {
+                    h.Timeout = TimeSpan.FromSeconds(10);
+                    var r1 = h.GetAsync(s.Kok + "merkez.html").Result;
+                    Esit(200, (int)r1.StatusCode, "sunucu: sayfa 200");
+                    Esit("<html>merkez</html>", r1.Content.ReadAsStringAsync().Result, "sunucu: sayfa içeriği");
+                    Esit("text/html", r1.Content.Headers.ContentType.MediaType, "sunucu: içerik türü");
+                    var r2 = h.GetAsync(s.Kok).Result;
+                    Esit("<html>merkez</html>", r2.Content.ReadAsStringAsync().Result, "sunucu: kök → merkez.html");
+                    var r3 = h.GetAsync(s.Kok + "ortak/kopru.js").Result;
+                    Esit("application/javascript", r3.Content.Headers.ContentType.MediaType, "sunucu: betik türü");
+                    var r4 = h.GetAsync(s.Kok + "yok.html").Result;
+                    Esit(404, (int)r4.StatusCode, "sunucu: olmayan dosya 404");
+                    var r5 = h.GetAsync(s.Kok.Replace(s.Anahtar, new string('0', 32)) + "merkez.html").Result;
+                    Esit(404, (int)r5.StatusCode, "sunucu: yanlış anahtar 404");
+                    var r6 = h.GetAsync(s.Kok.TrimEnd('/')).Result;
+                    Esit(302, (int)r6.StatusCode, "sunucu: anahtar kökü → yönlendirme");
+                    var r7 = h.PostAsync(s.Kok + "api/basla", new System.Net.Http.StringContent("{\"modul\":\"amax\"}", Encoding.UTF8, "application/json")).Result;
+                    Esit(200, (int)r7.StatusCode, "sunucu: api 200");
+                    Esit("{\"ok\":true}", r7.Content.ReadAsStringAsync().Result, "sunucu: api yanıtı");
+                    Esit("basla:{\"modul\":\"amax\"}", sonIstek, "sunucu: api gövdesi iletilir");
+                    var r8 = h.GetAsync(s.Kok + "api/basla").Result;
+                    Esit(405, (int)r8.StatusCode, "sunucu: api GET 405");
+                    var r9 = h.PostAsync(s.Kok + "api/yok", new System.Net.Http.StringContent("{}", Encoding.UTF8, "application/json")).Result;
+                    Esit(404, (int)r9.StatusCode, "sunucu: bilinmeyen api 404");
+                    var istek = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Post, s.Kok + "api/basla");
+                    istek.Content = new System.Net.Http.StringContent("{}", Encoding.UTF8, "application/json");
+                    istek.Headers.TryAddWithoutValidation("Origin", "http://kotu.example");
+                    var r10 = h.SendAsync(istek).Result;
+                    Esit(403, (int)r10.StatusCode, "sunucu: yabancı köken 403");
+                }
+                // Soketsiz: Host ve yol denetimleri
+                var ist = new HesapSunucu.Istek { Yontem = "GET", Yol = "/" + s.Anahtar + "/merkez.html" };
+                ist.Basliklar["Host"] = "evil.example:" + s.Kapi;
+                Esit(403, s.Yanitla(ist).Kod, "sunucu: yabancı Host 403 (DNS yeniden bağlama)");
+                ist.Basliklar["Host"] = "127.0.0.1:" + s.Kapi;
+                Esit(200, s.Yanitla(ist).Kod, "sunucu: doğru Host 200");
+                ist.Yol = "/" + s.Anahtar + "/ortak/../merkez.html";
+                Esit(404, s.Yanitla(ist).Kod, "sunucu: yol kaçışı 404");
+                ist.Yol = "/" + s.Anahtar + "/ortak\\kopru.js";
+                Esit(404, s.Yanitla(ist).Kod, "sunucu: ters bölü 404");
+                var ham = new MemoryStream(Encoding.ASCII.GetBytes("POST /x HTTP/1.1\r\nHost: a\r\nContent-Length: 2\r\n\r\n{}"));
+                var okunan = HesapSunucu.IstekOku(ham);
+                Esit("POST", okunan.Yontem, "sunucu: istek okuma yöntem");
+                Esit("{}", Encoding.UTF8.GetString(okunan.Govde), "sunucu: istek gövdesi");
+            }
         }
 
         // ---------------- Hakediş onayı (AutoCAD HAK_ONAY) ve kilit ----------------

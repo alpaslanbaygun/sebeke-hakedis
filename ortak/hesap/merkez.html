@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hesap Merkezi · Şebeke-M</title>
+<link rel="icon" href="ortak/amblem.png">
+<link rel="stylesheet" href="ortak/tema.css">
+<style>
+/* Hesap Merkezi (AutoCAD): hesap listesi ve çizimdeki kayıtlı hesaplar. Telefondaki "Teknik hesaplar" ekranıyla aynı düzen. */
+html,body{margin:0;padding:0;background:var(--sm-bg);color:var(--sm-tx);font:14px/1.45 var(--sm-font);min-height:100%}
+*{box-sizing:border-box}
+button{font-family:inherit}
+#mk-ust{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:8px 16px;background:#0b1326;border-bottom:1px solid var(--sm-line);box-shadow:0 2px 10px rgba(0,0,0,.35)}
+#mk-ust .logo{width:34px;height:34px;border-radius:8px}
+#mk-ust .baslik{display:flex;flex-direction:column;min-width:0}
+#mk-ust .baslik b{font-size:15px;font-weight:800;letter-spacing:-.01em}
+#mk-ust .baslik small{font-size:11px;color:var(--sm-mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cip{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:14px;border:1px solid var(--sm-line);background:var(--sm-panel);font-size:12px;font-weight:600;white-space:nowrap}
+.cip.hedef{color:#ff8a8a;font-family:var(--sm-mono);font-weight:700}
+.cip.hedef.bos{color:var(--sm-mut);font-family:var(--sm-font)}
+.bosluk{flex:1}
+@media (max-width:640px){#mk-ust{flex-wrap:wrap;row-gap:6px}#mk-ust .baslik{flex:1 1 0;min-width:140px}#mk-ust .bosluk{display:none}#mk-ust .cip.hedef{order:5}#mk-ust .dgm{order:6}}
+.dgm{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;background:var(--sm-panel2);border:1px solid var(--sm-line);color:var(--sm-tx);font-weight:700;font-size:12.5px;white-space:nowrap}
+.dgm:hover{background:#273449}
+.dgm.birincil{background:var(--sm-ok);border-color:var(--sm-ok);color:#04121d}
+.dgm.birincil:hover{background:#34d399}
+.dgm.tehlike{color:var(--sm-err2);border-color:rgba(239,68,68,.5)}
+.dgm[disabled]{opacity:.5;cursor:not-allowed}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;padding:16px;max-width:1500px;margin:0 auto}
+@media (max-width:900px){main{grid-template-columns:1fr}}
+h2{margin:14px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--sm-mut);font-weight:700}
+h2:first-child{margin-top:0}
+.kart{background:var(--sm-panel);border:1px solid var(--sm-line);border-radius:12px;overflow:hidden}
+.liste{display:flex;flex-direction:column}
+.satir{all:unset;cursor:pointer;display:flex;align-items:flex-start;gap:12px;padding:11px 14px;border-bottom:1px solid var(--sm-line2);color:var(--sm-tx)}
+.satir:last-child{border-bottom:0}
+.satir:hover{background:var(--sm-panel2)}
+.satir.pasif{cursor:default;opacity:.75}
+.satir .ikon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(245,158,11,.14);color:var(--sm-warn2);font-weight:800;font-size:12px;font-family:var(--sm-mono)}
+.satir.pasif .ikon{background:rgba(100,116,139,.18);color:var(--sm-mut)}
+.satir .govde{flex:1;min-width:0}
+.satir .govde b{display:block;font-size:14px}
+.satir .not{display:block;color:var(--sm-mut);font-size:12px;margin-top:2px}
+.satir .not.uyar{color:var(--sm-warn2)}
+.satir .mono{font-family:var(--sm-mono);font-size:12px;color:#ff8a8a}
+.rozetler{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0;max-width:40%}
+.rozet{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:11px;font-size:10.5px;font-weight:800;letter-spacing:.04em;border:1px solid var(--sm-line);background:var(--sm-panel2);color:var(--sm-tx)}
+.rozet.ok{border-color:rgba(16,185,129,.55);color:var(--sm-ok2);background:rgba(16,185,129,.12)}
+.rozet.err{border-color:rgba(239,68,68,.6);color:var(--sm-err2);background:rgba(239,68,68,.14)}
+.rozet.warn{border-color:rgba(245,158,11,.6);color:var(--sm-warn2);background:rgba(245,158,11,.12)}
+.rozet.cy{border-color:rgba(76,215,246,.5);color:var(--sm-cy);background:rgba(76,215,246,.1)}
+.kayit{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-bottom:1px solid var(--sm-line2)}
+.kayit:last-child{border-bottom:0}
+.kayit .ust{display:flex;align-items:flex-start;gap:10px}
+.kayit .ust .govde{flex:1;min-width:0}
+.kayit .ust b{display:block;font-size:14px}
+.kayit .ozet{color:var(--sm-tx);font-size:13px}
+.kayit .meta{color:var(--sm-mut);font-size:12px}
+.kayit .dugmeler{display:flex;gap:6px;flex-wrap:wrap}
+.kayit .dugmeler .dgm{height:28px;padding:0 10px;font-size:12px}
+.bilgi{padding:14px;color:var(--sm-mut);font-size:13px}
+.uyari{margin:0 0 12px;padding:10px 12px;border-radius:10px;border:1px solid rgba(76,215,246,.4);background:rgba(76,215,246,.08);color:var(--sm-tx);font-size:13px}
+.uyari.hata{border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.1);color:var(--sm-err2)}
+.hedefkart{padding:12px 14px;font-size:13px}
+.hedefkart dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:6px 0 0}
+.hedefkart dt{color:var(--sm-mut)}
+.hedefkart dd{margin:0;font-family:var(--sm-mono);font-size:12.5px}
+.acilir{all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;margin:14px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--sm-mut);font-weight:700}
+.farklar{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+.farklar th{text-align:left;color:var(--sm-mut);font-size:10.5px;border-bottom:1px solid var(--sm-line);padding:3px 6px}
+.farklar td{border-bottom:1px solid var(--sm-line2);padding:4px 6px;font-family:var(--sm-mono);vertical-align:top;word-break:break-word}
+footer{padding:10px 16px 24px;color:var(--sm-mut);font-size:12px;max-width:1500px;margin:0 auto}
+#mk-pencere{position:fixed;inset:0;z-index:50;background:rgba(3,7,18,.62);display:flex;align-items:center;justify-content:center;padding:16px}
+#mk-pencere[hidden]{display:none}
+#mk-pencere .kutu{width:min(520px,100%);background:var(--sm-panel);border:1px solid var(--sm-line);border-radius:12px;padding:16px 18px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+#mk-pencere h3{margin:0 0 8px;font-size:16px}
+#mk-pencere p{margin:0 0 12px;color:var(--sm-mut);font-size:13px}
+#mk-pencere .dugmeler{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.mesaj{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;padding:10px 16px;border-radius:10px;background:#1e293b;border:1px solid var(--sm-line);font:600 13px/1.4 var(--sm-font);box-shadow:0 10px 30px rgba(0,0,0,.45);transition:opacity .35s;max-width:90vw}
+.mesaj.ok{border-color:rgba(16,185,129,.6);color:var(--sm-ok2)}
+.mesaj.hata{border-color:rgba(239,68,68,.6);color:var(--sm-err2)}
+.mesaj.cik{opacity:0}
+</style>
+</head>
+<body>
+<header id="mk-ust">
+  <img class="logo" src="ortak/amblem.png" alt="">
+  <div class="baslik"><b>Hesap Merkezi</b><small id="mk-alt">Şebeke-M · Teknik hesaplar</small></div>
+  <span id="mk-hedef" class="cip hedef bos">—</span>
+  <span class="bosluk"></span>
+  <button id="mk-goster" class="dgm" hidden title="Hedefi çizimde seçer ve yaklaşır">Çizimde göster</button>
+  <button id="mk-yenile" class="dgm" title="Çizimdeki kayıtları yeniden okur">Yenile</button>
+</header>
+<main>
+  <section>
+    <div id="mk-uyari"></div>
+    <div id="mk-hedefkart"></div>
+    <div id="mk-moduller"></div>
+  </section>
+  <section>
+    <h2 id="mk-kayit-baslik">Kayıtlı sonuçlar</h2>
+    <div id="mk-kayitlar" class="kart"><div class="bilgi">Yükleniyor…</div></div>
+  </section>
+</main>
+<footer>Hesap araçları: Elektrik-Elektronik Mühendisi Baki SONAY. Formüller ve tablolar değiştirilmeden Şebeke-M'e eklenmiştir; her hesabın içindeki ⓘ düğmesi kaynak ve bilinen sınırları gösterir. Kayıtlar çizimin içinde durur; AutoCAD'de çizimi kaydetmeyi unutmayın.</footer>
+<div id="mk-pencere" hidden></div>
+<script src="ortak/kurallar.js"></script>
+<script>
+(function () {
+  'use strict';
+  var KAYIT = /*__MODULLER__*/null;
+  var MODULLER = (KAYIT && KAYIT.moduller) || [];
+  var GRUPLAR = (KAYIT && KAYIT.gruplar) || [];
+  var KOL_ISTER = { 'og-gd': 1, 'ag-gd': 1, 'og-kd': 1, 'ag-kd': 1, 'ag-tekhat': 1 };
+  var HEDEF_ADI = { direk: 'Direk', hat: 'Hat', trafo: 'Trafo', kanal: 'Kanal', proje: 'Proje' };
+  var DURUM_ADI = { uygun: 'UYGUN', 'uygun-degil': 'UYGUN DEĞİL', bilgi: 'BİLGİ' };
+  var DURUM_SINIF = { uygun: 'ok', 'uygun-degil': 'err', bilgi: 'cy' };
+  var K = window.SMKural || {};
+  var d = document;
+  var q = new URLSearchParams(location.search);
+  var oturum = q.get('oturum') || '';
+  var V = { hedef: null, baglam: null, kayitlar: [], cikislar: [], proje: null, acik: false };
+
+  function h(etiket, oz, cocuklar) {
+    var e = d.createElement(etiket);
+    if (oz) Object.keys(oz).forEach(function (k) {
+      if (k === 'text') e.textContent = oz[k];
+      else if (k === 'html') e.innerHTML = oz[k];
+      else if (k === 'onclick') e.addEventListener('click', oz[k]);
+      else if (k === 'hidden') { if (oz[k]) e.hidden = true; }
+      else e.setAttribute(k, oz[k]);
+    });
+    (cocuklar || []).forEach(function (c) { if (c == null) return; e.appendChild(typeof c === 'string' ? d.createTextNode(c) : c); });
+    return e;
+  }
+  function mesaj(metin, tur, ms) {
+    var m = h('div', { class: 'mesaj ' + (tur || ''), role: 'status', text: metin });
+    d.body.appendChild(m);
+    setTimeout(function () { m.classList.add('cik'); setTimeout(function () { if (m.parentNode) m.parentNode.removeChild(m); }, 400); }, ms || 3500);
+  }
+  function sor(baslik, metin, govde, tamam, vazgec) {
+    return new Promise(function (r) {
+      var p = d.getElementById('mk-pencere');
+      var kapat = function (v) { p.hidden = true; p.innerHTML = ''; r(v); };
+      p.innerHTML = '';
+      p.appendChild(h('div', { class: 'kutu' }, [
+        h('h3', { text: baslik }), metin ? h('p', { text: metin }) : null, govde,
+        h('div', { class: 'dugmeler' }, [
+          vazgec === null ? null : h('button', { class: 'dgm', text: vazgec || 'Vazgeç', onclick: function () { kapat(false); } }),
+          tamam ? h('button', { class: 'dgm birincil', text: tamam, onclick: function () { kapat(true); } }) : null
+        ])
+      ]));
+      p.hidden = false;
+      p.__kapat = kapat;
+    });
+  }
+  function api(tip, veri) {
+    var g = {}; Object.keys(veri || {}).forEach(function (k) { g[k] = veri[k]; });
+    g.oturum = oturum;
+    return fetch('api/' + tip, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(g) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || j.hata) throw new Error(j.hata || ('AutoCAD yanıtı ' + r.status)); return j; }); })
+      .catch(function (e) { if (/Failed to fetch|NetworkError/i.test(e.message)) throw new Error('AutoCAD ile bağlantı yok (AutoCAD kapatılmış olabilir).'); throw e; });
+  }
+  function tarihYazi(t) {
+    try { var x = new Date(t); if (isNaN(x)) return t || ''; return x.toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return t || ''; }
+  }
+  function sayiYazi(v) {
+    if (v == null) return '—';
+    if (typeof v === 'number') return v.toLocaleString('tr-TR', { maximumFractionDigits: 3 });
+    if (typeof v === 'object') return JSON.stringify(v);
+    return String(v);
+  }
+  function hedefYazisi(hd, uzun) {
+    if (!hd || !hd.tur || hd.tur === 'proje') return 'Proje geneli';
+    return (HEDEF_ADI[hd.tur] || hd.tur) + (hd.no ? ' ' + hd.no : '') + (uzun && hd.ad ? ' · ' + hd.ad : '');
+  }
+  function hedefli() { return !!(V.hedef && V.hedef.tur && V.hedef.tur !== 'proje'); }
+  function modulBul(id) { for (var i = 0; i < MODULLER.length; i++) if (MODULLER[i].id === id) return MODULLER[i]; return null; }
+
+  // ---------------------------------------------------------------- görünüm
+  function hedefKarti() {
+    var k = d.getElementById('mk-hedefkart');
+    k.innerHTML = '';
+    var b = V.baglam || {};
+    var hd = V.hedef || {};
+    d.getElementById('mk-hedef').textContent = hedefYazisi(hd);
+    d.getElementById('mk-hedef').classList.toggle('bos', !hedefli());
+    d.getElementById('mk-hedef').title = hedefYazisi(hd, true);
+    d.getElementById('mk-goster').hidden = !hedefli();
+    if (V.proje) d.getElementById('mk-alt').textContent = 'Şebeke-M · ' + (V.proje.cizim || V.proje.ad || 'çizim') + (V.proje.ad && V.proje.ad !== V.proje.cizim ? ' · ' + V.proje.ad : '');
+    if (!hedefli()) {
+      k.appendChild(h('div', { class: 'uyari', text: 'Çizimin tamamı için hesap listesi. Bir direk, hat ya da trafo için hesap açmak isterseniz AutoCAD\'de nesneyi seçip SH_HESAP yazın (ya da şeritteki hesap düğmesine basın): o nesnenin bilgileri hesaba kendiliğinden yazılır.' }));
+      return;
+    }
+    var satirlar = [];
+    if (b.direk) {
+      var dk = b.direk;
+      satirlar.push(['Tip', (dk.tip || '—') + (dk.malzeme ? ' · ' + dk.malzeme : '') + (dk.rol ? ' · rol ' + dk.rol : '')]);
+      satirlar.push(['Kollar', (dk.kollar || []).length + ' kol' + ((dk.kollar || []).length ? ': ' + dk.kollar.map(function (x) { return (x.aciklik != null ? sayiYazi(x.aciklik) + ' m' : '?') + (x.iletkenler && x.iletkenler.length ? ' ' + x.iletkenler.map(function (i) { return i.ad; }).join('+') : ''); }).join(' · ') : '')]);
+      if (dk.kot != null) satirlar.push(['Kot', sayiYazi(dk.kot) + ' m']);
+    }
+    if (b.hat) {
+      var ht = b.hat;
+      satirlar.push(['Hat', (ht.no || '') + (ht.tur ? ' · ' + ht.tur : '') + (ht.gerilimKV != null ? ' · ' + sayiYazi(ht.gerilimKV) + ' kV' : '')]);
+      satirlar.push(['İletken', (ht.iletkenler || []).map(function (i) { return i.ad + (i.adet > 1 ? ' ×' + i.adet : ''); }).join(' + ') || '—']);
+      satirlar.push(['Açıklık', (ht.acikliklar || []).length + ' açıklık · ' + sayiYazi(ht.toplamUzunluk) + ' m' + (ht.ruling != null ? ' · eşdeğer ' + sayiYazi(ht.ruling) + ' m' : '')]);
+    }
+    if (b.trafo) {
+      var tr = b.trafo;
+      satirlar.push(['Trafo', (tr.tip || '—') + (tr.gucKVA != null ? ' · ' + sayiYazi(tr.gucKVA) + ' kVA' : '') + (tr.adet > 1 ? ' ×' + tr.adet : '') + (tr.ogKV != null ? ' · ' + sayiYazi(tr.ogKV) + '/' + sayiYazi(tr.agKV) + ' kV' : '')]);
+    }
+    if (b.kanal) {
+      var kn = b.kanal;
+      satirlar.push(['Kanal', (kn.zemin || '—') + (kn.uzunluk != null ? ' · ' + sayiYazi(kn.uzunluk) + ' m' : '') + (kn.genislik != null ? ' · ' + sayiYazi(kn.genislik) + '×' + sayiYazi(kn.derinlik) + ' cm' : '')]);
+      satirlar.push(['Kablolar', (kn.kablolar || []).map(function (i) { return i.ad; }).join(' + ') || '—']);
+    }
+    k.appendChild(h('div', { class: 'kart hedefkart' }, [
+      h('b', { text: hedefYazisi(hd, true) }),
+      h('dl', null, [].concat.apply([], satirlar.map(function (s) { return [h('dt', { text: s[0] }), h('dd', { text: s[1] })]; }))),
+      h('div', { class: 'not', text: 'Açılan hesaba bu bilgiler kendiliğinden yazılır; projede olmayanlar turuncu çerçeveyle istenir.', style: 'color:var(--sm-mut);font-size:12px;margin-top:8px' })
+    ]));
+  }
+
+  function kayitRozetleri(k) {
+    var r = [h('span', { class: 'rozet ' + (DURUM_SINIF[k.durum] || ''), text: DURUM_ADI[k.durum] || 'BİLGİ' })];
+    var g = k.guncel || {};
+    if (g.hedefYok) r.push(h('span', { class: 'rozet err', text: 'HEDEF YOK' }));
+    else if (g.farklar && g.farklar.length) r.push(h('span', { class: 'rozet warn', text: 'GÜNCEL DEĞİL', title: g.farklar.length + ' bilgi değişti' }));
+    return h('span', { class: 'rozetler' }, r);
+  }
+
+  function kayitBulModul(modulId) {
+    if (!hedefli()) return null;
+    for (var i = 0; i < V.kayitlar.length; i++) if (V.kayitlar[i].modul === modulId) return V.kayitlar[i];
+    return null;
+  }
+
+  function modulSatiri(m, u, k) {
+    var ikon = m.grup === 'yerlesim' ? 'PL' : m.grup === 'elektrik' ? 'kV' : 'kg';
+    var s = h('button', { class: 'satir' + (u.uygun ? '' : ' pasif'), onclick: function () { if (u.uygun) hesapAc(m); } }, [
+      h('span', { class: 'ikon', text: ikon }),
+      h('span', { class: 'govde' }, [
+        h('b', { text: m.ad }),
+        h('span', { class: 'not', text: u.uygun ? m.aciklama || '' : u.neden || 'Bu hedefe uygun değil' }),
+        u.not ? h('span', { class: 'not uyar', text: u.not }) : null
+      ]),
+      k ? kayitRozetleri(k) : h('span', { class: 'rozetler' }, [h('span', { class: 'rozet', text: u.uygun ? 'AÇ' : '—' })])
+    ]);
+    return s;
+  }
+
+  function modulleriCiz() {
+    var kok = d.getElementById('mk-moduller');
+    kok.innerHTML = '';
+    var hd = hedefli();
+    var deg = MODULLER.map(function (m) {
+      var u = hd && K.uygunluk ? K.uygunluk(m, V.baglam) : { uygun: true };
+      return { m: m, u: u, k: kayitBulModul(m.id) };
+    });
+    var uygun = deg.filter(function (x) { return x.u.uygun; }), uygunsuz = deg.filter(function (x) { return !x.u.uygun; });
+    GRUPLAR.forEach(function (g) {
+      var l = uygun.filter(function (x) { return x.m.grup === g.id; });
+      if (!l.length) return;
+      kok.appendChild(h('h2', { text: g.ad }));
+      kok.appendChild(h('div', { class: 'kart' }, [h('div', { class: 'liste' }, l.map(function (x) { return modulSatiri(x.m, x.u, x.k); }))]));
+    });
+    if (uygunsuz.length) {
+      var kutu = h('div', { class: 'kart', hidden: !V.acik }, [h('div', { class: 'liste' }, uygunsuz.map(function (x) { return modulSatiri(x.m, x.u, x.k); }))]);
+      kok.appendChild(h('button', { class: 'acilir', onclick: function () { V.acik = !V.acik; kutu.hidden = !V.acik; }, text: (V.acik ? '▾ ' : '▸ ') + 'Bu hedefe uygun olmayanlar (' + uygunsuz.length + ')' }));
+      kok.appendChild(kutu);
+    }
+  }
+
+  function farkTablosu(farklar) {
+    return h('table', { class: 'farklar' }, [
+      h('tr', null, [h('th', { text: 'Bilgi' }), h('th', { text: 'Hesaptaki' }), h('th', { text: 'Bugünkü' })])
+    ].concat(farklar.map(function (f) { return h('tr', null, [h('td', { text: f.yol }), h('td', { text: sayiYazi(f.eski) }), h('td', { text: f.silindi ? '(yok)' : sayiYazi(f.yeni) })]); })));
+  }
+
+  function kayitlariCiz() {
+    var kok = d.getElementById('mk-kayitlar');
+    kok.innerHTML = '';
+    d.getElementById('mk-kayit-baslik').textContent = 'Kayıtlı sonuçlar' + (hedefli() ? ' (bu hedef)' : ' (çizimdeki hepsi)') + (V.kayitlar.length ? ' · ' + V.kayitlar.length : '');
+    if (!V.kayitlar.length) {
+      kok.appendChild(h('div', { class: 'bilgi', text: 'Henüz kayıtlı hesap yok. Bir hesabı açıp üstteki Kaydet ile çizime kaydedin; kayıt telefona gönderilen proje dosyasıyla taşınır ve Durum Tespit raporunun HESAPLAR sayfasına yazılır.' }));
+      return;
+    }
+    V.kayitlar.forEach(function (k) {
+      var m = modulBul(k.modul) || { ad: k.modulAdi || k.modul };
+      var g = k.guncel || {};
+      var hedefSatiri = (HEDEF_ADI[(k.hedef || {}).tur] || 'Proje') + ((k.hedef || {}).no ? ' ' + k.hedef.no : '') + (k.kolAdi ? ' · çıkış ' + k.kolAdi : '');
+      var satir = h('div', { class: 'kayit' }, [
+        h('div', { class: 'ust' }, [
+          h('div', { class: 'govde' }, [
+            h('b', { text: m.ad || k.modulAdi }),
+            h('span', { class: 'mono', text: hedefSatiri }),
+            h('div', { class: 'ozet', text: k.ozet || '' }),
+            h('div', { class: 'meta', text: tarihYazi(k.tarih) + ' · ' + (k.kaynak === 'telefon' ? 'telefon' : 'AutoCAD') + (k.yapan ? ' · ' + k.yapan : '') })
+          ]),
+          kayitRozetleri(k)
+        ]),
+        g.farklar && g.farklar.length ? h('div', null, [h('div', { class: 'meta', text: 'Hesaptan sonra değişen bilgiler (' + g.farklar.length + '):' }), farkTablosu(g.farklar.slice(0, 8)), g.farklar.length > 8 ? h('div', { class: 'meta', text: '… ve ' + (g.farklar.length - 8) + ' bilgi daha' }) : null]) : null,
+        g.hedefYok ? h('div', { class: 'meta', style: 'color:var(--sm-err2)', text: 'Hesabın hedefi çizimde artık yok (silinmiş olabilir). Kayıt bilgi için durur; dilerseniz silin.' }) : null,
+        h('div', { class: 'dugmeler' }, [
+          h('button', { class: 'dgm birincil', text: g.farklar && g.farklar.length ? 'Aç ve güncelle' : 'Aç', onclick: function () { kayitAc(k); } }),
+          (k.hedef && k.hedef.tur !== 'proje') ? h('button', { class: 'dgm', text: 'Çizimde göster', onclick: function () { goster({ id: k.id }); } }) : null,
+          h('button', { class: 'dgm tehlike', text: 'Sil', onclick: function () { kayitSil(k); } })
+        ])
+      ]);
+      kok.appendChild(satir);
+    });
+  }
+
+  // ---------------------------------------------------------------- işler
+  function git(url) { location.href = url; }
+
+  function hesapAc(m) {
+    var hd = V.hedef || {};
+    var veri = { modul: m.id };
+    if (hd.tur === 'trafo' && KOL_ISTER[m.id]) {
+      var og = /^og-/.test(m.sayfa || m.id);
+      var cikislar = (V.cikislar || []).filter(function (c) { return og ? c.devre === 'OG' : c.devre !== 'OG'; });
+      if (cikislar.length === 1) veri.hatId = cikislar[0].id;
+      else if (cikislar.length > 1) {
+        var kapat = function (v) { d.getElementById('mk-pencere').__kapat(v); };
+        var satirlar = cikislar.map(function (c) {
+          return h('button', { class: 'satir', onclick: function () { kapat({ hatId: c.id }); } }, [
+            h('span', { class: 'govde' }, [h('b', { class: 'mono', text: c.no }), h('span', { class: 'not', text: (c.iletken || '—') + ' · ' + c.tur })])
+          ]);
+        });
+        satirlar.push(h('button', { class: 'satir', onclick: function () { kapat({ hatId: '' }); } }, [
+          h('span', { class: 'govde' }, [h('b', { text: 'Çıkış seçmeden aç' }), h('span', { class: 'not', text: 'Yalnız trafo bilgisiyle; hat bilgileri hesapta elle girilir.' })])
+        ]));
+        sor('Hangi çıkış?', (hd.no || 'Trafo') + ' trafosundan çıkan ' + (og ? 'OG' : 'AG') + ' hatlar. Hesap seçtiğiniz hat boyunca yapılır.',
+          h('div', { class: 'kart' }, [h('div', { class: 'liste' }, satirlar)]), null, 'Vazgeç')
+          .then(function (v) { if (v && typeof v === 'object') { if (v.hatId) veri.hatId = v.hatId; ac(veri); } });
+        return;
+      }
+    }
+    ac(veri);
+  }
+  function ac(veri) {
+    api('ac', veri).then(function (r) { if (r && r.url) git(r.url); else throw new Error('Adres alınamadı'); })
+      .catch(function (e) { mesaj('Hesap açılamadı: ' + e.message, 'hata', 6000); });
+  }
+  function kayitAc(k) {
+    api('ac', { modul: k.modul, kayit: k.id }).then(function (r) { if (r && r.url) git(r.url); else throw new Error('Adres alınamadı'); })
+      .catch(function (e) { mesaj('Kayıt açılamadı: ' + e.message, 'hata', 6000); });
+  }
+  function goster(veri) {
+    api('goster', veri).then(function (r) { mesaj((r && r.mesaj) || 'Çizimde gösterildi', 'ok'); })
+      .catch(function (e) { mesaj(e.message, 'hata', 6000); });
+  }
+  function kayitSil(k) {
+    var m = modulBul(k.modul) || { ad: k.modulAdi || k.modul };
+    sor('Kayıt silinsin mi?', m.ad + ' · ' + hedefYazisi(k.hedef) + ' · ' + tarihYazi(k.tarih) + '. Silme AutoCAD\'de Geri Al ile geri alınabilir; çizimi kaydedince kalıcı olur.', null, 'Sil').then(function (ok) {
+      if (!ok) return;
+      api('sil', { id: k.id }).then(function (r) { mesaj((r && r.mesaj) || 'Silindi', 'ok'); yukle(); })
+        .catch(function (e) { mesaj('Silinemedi: ' + e.message, 'hata', 6000); });
+    });
+  }
+
+  function yukle() {
+    var u = d.getElementById('mk-uyari');
+    u.innerHTML = '';
+    if (!oturum) {
+      u.appendChild(h('div', { class: 'uyari hata', text: 'Bu sayfa AutoCAD\'den açılmalı: AutoCAD\'de SH_HESAPLAR yazın ya da şeritteki Hesap Merkezi düğmesine basın.' }));
+      d.getElementById('mk-kayitlar').innerHTML = '';
+      modulleriCiz();
+      return;
+    }
+    api('merkez', {}).then(function (r) {
+      V.hedef = r.hedef || null; V.baglam = r.baglam || null; V.kayitlar = r.kayitlar || []; V.cikislar = r.cikislar || []; V.proje = r.proje || null;
+      if (hedefli() && r.hedefVar === false) u.appendChild(h('div', { class: 'uyari hata', text: 'Hedef nesne çizimde artık yok (silinmiş olabilir).' }));
+      hedefKarti();
+      modulleriCiz();
+      kayitlariCiz();
+    }).catch(function (e) {
+      u.appendChild(h('div', { class: 'uyari hata', text: 'AutoCAD\'den bilgi alınamadı: ' + e.message }));
+      d.getElementById('mk-kayitlar').innerHTML = '';
+      modulleriCiz();
+    });
+  }
+
+  d.getElementById('mk-yenile').addEventListener('click', yukle);
+  d.getElementById('mk-goster').addEventListener('click', function () { goster({ hedef: V.hedef }); });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) yukle(); });
+  yukle();
+})();
+</script>
+</body>
+</html>

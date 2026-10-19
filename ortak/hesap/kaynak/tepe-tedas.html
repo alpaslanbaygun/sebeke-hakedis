@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tepe Kuvveti Hesabı (TEDAŞ)</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: #111116; color: #fff; margin: 0; padding: 10px;
+    }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    h3 { margin: 5px 0; color: #9b59b6; text-align: center; font-size: 18px; }
+    .subtitle { color: #aaa; font-size: 11.5px; margin: 0 0 12px; text-align: center; line-height: 1.4; }
+
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .tab-btn {
+        flex: 1; background: #1a1a22; color: #999; border: 1px solid #2a2a35;
+        border-radius: 8px; padding: 10px 6px; font-size: 12.5px; font-weight: bold;
+        cursor: pointer; text-align: center;
+    }
+    .tab-btn.active { background: #9b59b6; color: #fff; border-color: #9b59b6; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card {
+        background: #1e1e24; border-radius: 12px; padding: 12px;
+        border: 1px solid #2a2a35; margin-bottom: 12px;
+    }
+    .card h4 { margin: 0 0 10px; color: #f1c40f; font-size: 13px; }
+
+    .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .opt-btn {
+        flex: 1; min-width: 60px; background: #111116; color: #999; border: 1px solid #333;
+        border-radius: 7px; padding: 9px 6px; font-size: 12px; font-weight: bold; text-align: center;
+        cursor: pointer;
+    }
+    .opt-btn.active { background: #9b59b6; color: #fff; border-color: #9b59b6; }
+
+    label { font-size: 11.5px; color: #bdc3c7; font-weight: bold; display: block; margin: 8px 0 4px; }
+    input[type="text"], input[type="number"], select {
+        width: 100%; background: #111116; border: 1px solid #333; color: #fff;
+        border-radius: 7px; padding: 9px 10px; font-size: 14px;
+    }
+    input:focus, select:focus { outline: none; border-color: #9b59b6; }
+
+    .tertibat-row {
+        display: grid; grid-template-columns: 2fr 1fr; gap: 6px;
+        background: #16161c; border-radius: 8px; padding: 8px; margin-bottom: 6px;
+        border-left: 3px solid #444;
+    }
+    .tertibat-row.filled { border-left-color: #9b59b6; }
+    .tertibat-row .row-num { font-size: 10px; color: #666; grid-column: 1 / -1; margin-bottom: 2px; }
+    .tertibat-row select.func { grid-column: 1 / -1; margin-top: 4px; }
+
+    .calc-btn {
+        width: 100%; background: linear-gradient(90deg,#9b59b6,#8e44ad); color: #fff; border: none;
+        padding: 14px; font-size: 15px; font-weight: bold; border-radius: 10px; cursor: pointer;
+        margin-top: 4px;
+    }
+    .calc-btn:active { transform: scale(0.98); }
+
+    .result-box { display: none; }
+    .result-box.show { display: block; }
+    .result-main {
+        background: linear-gradient(135deg,#2c1e35,#1e1e24); border: 1px solid #9b59b6;
+        border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 12px;
+    }
+    .result-main .big { font-size: 26px; font-weight: bold; color: #f1c40f; }
+    .result-main .lbl { font-size: 11px; color: #aaa; margin-top: 2px; }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .rbox { background: #111116; border: 1px solid #333; border-radius: 8px; padding: 10px; }
+    .rbox .rl { font-size: 10px; color: #888; text-transform: uppercase; }
+    .rbox .rv { font-size: 15px; font-weight: bold; color: #2ecc71; margin-top: 2px; word-break: break-word; }
+
+    .scenario-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .scenario-table th, .scenario-table td { padding: 6px 7px; border-bottom: 1px solid #232330; text-align: center; }
+    .scenario-table th { color: #888; font-weight: 600; }
+    .scenario-table tr.winner td { color: #f1c40f; font-weight: bold; background: #241c0a; }
+
+    .warn { color: #e74c3c; font-size: 11.5px; margin-top: 6px; }
+    .note-box { background: #15151a; border-left: 4px solid #9b59b6; border-radius: 8px; padding: 10px; font-size: 11px; color: #aaa; line-height: 1.5; margin-top: 10px; }
+
+    /* reference tab */
+    .search-bar input {
+        width: 100%; background: #1e1e24; border: 1px solid #333; color: #fff;
+        border-radius: 8px; padding: 10px 12px; font-size: 14px; margin-bottom: 10px;
+    }
+    .block-title {
+        color: #f1c40f; font-size: 12.5px; font-weight: bold; margin: 14px 0 6px; padding: 7px 9px;
+        background: #1e1e24; border-left: 4px solid #9b59b6; border-radius: 6px;
+    }
+    .block-title:first-child { margin-top: 0; }
+    .note-ref { color: #888; font-size: 10.5px; font-style: italic; margin: 2px 0 8px; }
+    .table-scroll { overflow-x: auto; margin-bottom: 6px; border-radius: 8px; border: 1px solid #2a2a35; }
+    table.ref-table { border-collapse: collapse; width: 100%; font-size: 11px; white-space: nowrap; }
+    table.ref-table td { padding: 5px 8px; border-bottom: 1px solid #232330; border-right: 1px solid #1c1c24; color: #ddd; }
+    table.ref-table tr:first-child td { background: #20202a; color: #7fb3ff; font-weight: bold; }
+    table.ref-table td:first-child { color: #f1c40f; font-weight: bold; position: sticky; left: 0; background: #17171d; }
+    table.ref-table tr.hidden { display: none; }
+
+    footer { text-align: center; color: #444; font-size: 10px; margin-top: 18px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <h3>📐 Tepe Kuvveti Hesabı (TEDAŞ)</h3>
+    <p class="subtitle">Tertibat/cer vektör toplamı ile direk tepe kuvveti ve direk tipi önerisi</p>
+
+    <div class="tabs">
+        <div class="tab-btn active" data-tab="calc">Hesaplama</div>
+        <div class="tab-btn" data-tab="ref">Referans Tablolar</div>
+    </div>
+
+    <!-- ============ CALC TAB ============ -->
+    <div class="panel active" id="panel-calc">
+        <div class="card">
+            <h4>Genel Ayarlar</h4>
+            <label>Bölge</label>
+            <div class="btn-group" id="bolgeGroup">
+                <div class="opt-btn active" data-val="1">1. Bölge</div>
+                <div class="opt-btn" data-val="2">2. Bölge</div>
+                <div class="opt-btn" data-val="3">3. Bölge</div>
+                <div class="opt-btn" data-val="4">4. Bölge</div>
+            </div>
+            <label>Hat Tipi</label>
+            <div class="btn-group" id="hatGroup">
+                <div class="opt-btn active" data-val="AG">AG (Alçak Gerilim)</div>
+                <div class="opt-btn" data-val="MÜŞTEREK">MÜŞTEREK (ENH Ortak)</div>
+            </div>
+            <label>Potans (Konsol İlave Yükü)</label>
+            <div class="btn-group" id="potansGroup">
+                <div class="opt-btn" data-val="VAR">VAR</div>
+                <div class="opt-btn active" data-val="YOK">YOK</div>
+            </div>
+            <div id="potansSelectWrap" style="display:none;">
+                <label>Potans Tipi</label>
+                <select id="potansSelect"></select>
+            </div>
+        </div>
+
+        <div class="card">
+            <h4>Tertibat / Cer Girişleri (en fazla 7 devre)</h4>
+            <div id="tertibatRows"></div>
+        </div>
+
+        <button class="calc-btn" id="calcBtn">Tepe Kuvvetini Hesapla</button>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-main">
+                <div class="big" id="resB30">-</div>
+                <div class="lbl">Maksimum Tepe Kuvveti (kg) — Kritik Senaryo: <span id="resScenario">-</span></div>
+            </div>
+            <div class="result-grid">
+                <div class="rbox"><div class="rl">Önerilen Direk Tipi</div><div class="rv" id="resDirek">-</div></div>
+                <div class="rbox"><div class="rl">Trafo Direği (varsa)</div><div class="rv" id="resTrafo">-</div></div>
+                <div class="rbox"><div class="rl">Ağaç Direk Önerisi</div><div class="rv" id="resAgac">-</div></div>
+                <div class="rbox"><div class="rl">Potans İlave Yükü</div><div class="rv" id="resPotans">-</div></div>
+            </div>
+            <div class="card">
+                <h4>Senaryo Detayları (Rx, Ry, |Rx|+|Ry|)</h4>
+                <div class="table-scroll">
+                    <table class="scenario-table" id="scenarioTable"></table>
+                </div>
+            </div>
+            <div class="note-box" id="warnBox"></div>
+        </div>
+
+        <div class="note-box">
+            Bu hesaplama TEDAŞ standardına göre tertibat/cer vektör toplamı esasına dayanır. Kullanmadan önce en az bir hesap elle yapılarak karşılaştırılmalı; sonuçlar sahadaki dikilme şekli ve direğin fonksiyonuna göre mühendis kontrolünden geçirilmelidir.
+        </div>
+    </div>
+
+    <!-- ============ REF TAB ============ -->
+    <div class="panel" id="panel-ref">
+        <div class="search-bar">
+            <input type="text" id="refSearch" placeholder="Ara: direk tipi, travers, trafo..." autocomplete="off">
+        </div>
+        <div class="tabs" id="refTabs"></div>
+        <div id="refPanels"></div>
+    </div>
+
+    <footer>
+        Kaynak: TEPE_KUVVETI_HESABI_TEDAŞ.xlsx (TERTİBAT VE CER, POTANS, Direk, Travers, Trafo Direkleri sayfaları)<br>
+        Sorumluluk kullanıcıya aittir — kritik projelerde sonuçları elle doğrulayınız.
+    </footer>
+</div>
+
+<script>
+const TERTIBAT_DATA = [["2R", 140, 200, 294, 196, 0], ["3R", 210, 300, 441, 444, 0.25], ["2P+R", 280, 378, 523, 528, 0.25], ["5R", 350, 500, 735, 740, 0.5], ["4R", 280, 400, 588, 392, 0.4], ["4P", 420, 556, 752, 760, 0.4], ["4P+R", 490, 656, 899, 908, 0.5], ["3Po+R/P", 535, 695, 968, 956, 0.5], ["3A+R/P", 586, 748, 1025, 1010, 0.5], ["3A+R/A", 618, 780, 1067, 1044, 0.5], ["3Ph+R/Po", 661, 834, 1135, 1086, 0.5], ["3O+R/A", 713, 923, 1223, 1167, 0.5], ["1*16+25-AER", 1, 1, 153, 4, 0], ["2*16+25-AER", 1, 1, 153, 4, 0], ["3*16+25-AER", 1, 1, 306, 4, 0], ["3*25+35-AER", 1, 1, 345.8, 4, 0], ["3*35+50-AER", 1, 1, 410.6, 4, 0], ["3*50+70-AER", 1, 1, 477.86, 4, 0], ["3*70+95-AER", 1, 1, 573.9, 4, 0], ["3*16/16+25-AER", 1, 1, 306, 4, 0], ["3*25/16+35-AER", 1, 1, 345.8, 4, 0], ["3*35/16+50-AER", 1, 1, 410.6, 4, 0], ["3*50/16+70-AER", 1, 1, 477.86, 4, 0], ["3*70/16+95-AER", 1, 1, 573.9, 4, 0], ["3*16/25+25-AER", 1, 1, 321.3, 4, 0], ["3*25/25+35-AER", 1, 1, 363.1, 4, 0], ["3*35/25+50-AER", 1, 1, 431.1, 4, 0], ["3*50/25+70-AER", 1, 1, 501.7, 4, 0], ["3*70/25+95-AER", 1, 1, 602.5, 4, 0], ["3x3AWG+3R", 443, 624, 882, 885, 0.6], ["3x3AWG+2P+R", 500, 688, 949, 953, 0.6], ["3x3AWG+5R", 557, 786, 1120, 1125, 0.6], ["3x3AWG+4P+R", 670, 913, 1254, 1261, 0.6], ["3x3AWG+3Po+R/Po", 719, 948, 1328, 1312, 0.6], ["3x3AWG+3A+R/P", 748, 927, 1355, 1343, 0.6], ["3x3AWG+3A+R/A", 774, 1013, 1389, 1371, 0.6], ["3x3AWG+3Ph+R/Ph", 838, 1091, 1483, 1435, 0.6], ["3x3AWG+3O+R/O", 877, 1168, 1558, 1504, 0.6], ["3AWG+1*16+25-AER", null, null, 648.9300000000001, null, 0.4], ["3AWG+2*16+25-AER", null, null, 648.9300000000001, null, 0.4], ["3AWG+3*16+25-AER", null, null, 772.86, null, 0.4], ["3AWG+3*25+35-AER", null, null, 805.098, null, 0.4], ["3AWG+3*35+50-AER", null, null, 857.586, null, 0.4], ["3AWG+3*50+70-AER", null, null, 912.0666000000001, null, 0.4], ["3AWG+3*70+95-AER", null, null, 989.859, null, 0.4], ["3AWG+3*16/16+25-AER", null, null, 772.86, null, 0.4], ["3AWG+3*25/16+35-AER", null, null, 805.098, null, 0.4], ["3AWG+3*35/16+50-AER", null, null, 857.586, null, 0.4], ["3AWG+3*50/16+70-AER", null, null, 912.0666000000001, null, 0.4], ["3AWG+3*70/16+95-AER", null, null, 989.859, null, 0.4], ["3AWG+3*16/25+25-AER", null, null, 785.253, null, 0.4], ["3AWG+3*25/25+35-AER", null, null, 819.1110000000001, null, 0.4], ["3AWG+3*35/25+50-AER", null, null, 874.191, null, 0.4], ["3AWG+3*50/25+70-AER", null, null, 931.377, null, 0.4], ["3AWG+3*70/25+95-AER", null, null, 1013.0250000000001, null, 0.4], ["3x1/0AWG+3R", 581, 768, 1062, 1038, 0.6], ["3x1/0AWG+2P+R", 638, 832, 1129, 1106, 0.6], ["3x1/0AWG+5R", 695, 930, 1300, 1278, 0.6], ["3x1/0AWG+4P+R", 808, 1057, 1434, 1414, 0.6], ["3x1/0AWG+3Po+R/Po", 857, 1092, 1508, 1465, 0.6], ["3x1/0AWG+3A+R/A", 912, 1157, 1569, 1524, 0.6], ["3x1/0AWG+3Ph+R/Ph", 976, 1235, 1663, 1588, 0.6], ["3x1/0AWG+3O+R/O", 1015, 1312, 1738, 1656, 0.6], ["3x3/0AWG+3R", 683, 905, 1227, 1170, 0.6], ["3x3/0AWG+2P+R", 740, 1009, 1653, 1546, 0.6], ["3x3/0AWG+5R", 797, 1067, 1466, 1410, 0.6], ["3x3/0AWG+4P+R", 910, 1234, 1599, 1546, 0.6], ["3x3/0AWG+3Po+R/Po", 959, 1229, 1673, 1597, 0.6], ["3x3/0AWG+3A+R/A", 1014, 1294, 1734, 1656, 0.6], ["3x3/0AWG+3Ph+R/Ph", 1078, 1372, 1828, 1720, 0.6], ["3x3/0AWG+3O+R/O", 1117, 1449, 1903, 1788, 0.6], ["3x266MM+3R", 830, 1097, 1449, 1344, 0.6], ["3x266MMC+2P+R", 887, 1161, 1516, 1412, 0.6], ["3x266MCM+5R", 944, 1259, 1587, 1584, 0.6], ["3x266MCM+4P+R", 1057, 1386, 1821, 1720, 0.6], ["3x266MCM+3Po+R/Po", 1106, 1421, 1895, 1771, 0.6], ["3x266MCM+3A+R/A", 1161, 1486, 1956, 1830, 0.6], ["3x266MCM+3Ph+R/Ph", 1225, 1564, 2050, 1894, 0.6], ["3x266MCM+3O+R/O", 1264, 1641, 2125, 1962, 0.6], ["3x477MCM+3R", 1184, 1461, 1897, 1641, 0.6], ["3x477MCM+2P+R", 1241, 1525, 1924, 1709, 0.6], ["3x477MCM+5R", 1298, 1623, 2095, 1881, 0.6], ["3x477MCM+4P+R", 1411, 1750, 2229, 2017, 0.6], ["3x477MCM+3Po+R/Po", 1460, 1785, 2303, 2068, 0.6], ["3x477MCM+3A+R/A", 1515, 1850, 2364, 2127, 0.6], ["3x477MCM+3Ph+R/Ph", 1579, 1928, 2458, 2191, 0.6], ["3x477MCM+3O+R/O", 1618, 2005, 2533, 2260, 0.6], ["SWALLOW(ENH NİHAYET)", 1027, 1027, 1027, 1027, 0.25], ["RAVEN ENH NİHAYET", 2059, 2059, 2059, 2059, 0.25], ["RAVEN (MÜŞTEREK)", 411, 525, 705, 678, 0.25], ["SWALLOW( MÜŞ)", 525, 525, 525, 525, 0.25], ["SWALLOW(TR-ENH)", 1475.8, 1475.8, 1475.8, 1475.8, 0.25], ["SWALLOW(TR-MÜŞ)", null, null, 755, null, 0.25], ["sw+4p+r(tr için)", 1653.54, 1653.54, 1653.54, 1653.54, 0.6], ["sw+5r(tr için)", 1489.45, 1489.45, 1489.45, 1489.45, 0.6], ["sw+3r(tr için)", 1195.45, 1195.45, 1195.45, 1195.45, 0.6], ["sw+3*35(tr için)", null, null, 1165.6, null, 0.4], ["sw+3*50(tr için)", null, null, 1232.8600000000001, null, 0.4], ["SW+3*70(TR İÇİN)", null, null, 1328.9, null, 0.4]];
+const POTANS_DATA = [["T-AG-1", 40], ["T-AG-2", 69], ["T-AG-3", 69], ["T-AG-5", 98], ["T-AG-6", 98], ["T-AG-8", 98], ["1D-AG-1", 15], ["2D-AG-1", 28], ["3D-AG-1", 39], ["4D-AG-1", 62], ["D-AG-2", 43], ["1.BÖLGE D-AG-2 L3=100 CM", 43], ["2.BÖLGE D-AG-3 L3=100 CM", 77], ["3.BÖLGE D-AG-3 L3=100 CM", 109], ["4.BÖLGE D-AG-3 L3=100 CM", 168], ["1.BÖLGE D-AG-3 L3=150 CM", 83], ["2.BÖLGE D-AG-3 L3=150 CM", 147], ["3.BÖLGE D-AG-3 L3=150 CM", 206], ["4.BÖLGE D-AG-3 L3=150 CM", 314], ["1.BÖLGE N-AG-1", 15], ["2.BÖLGE N-AG-1", 28], ["3.BÖLGE N-AG-1", 39], ["4.BÖLGE N-AG-1", 62], ["MT-1", 55], ["MT-2", 74], ["MT-4", 94], ["1.BÖLGE MD-1", 8], ["2.BÖLGE MD-1", 18], ["3.BÖLGE MD-1", 23], ["4.BÖLGE MD-1", 34], ["1.BÖLGE MT-2", 15], ["2.BÖLGE MT-2", 33], ["3.BÖLGE MT-2", 42], ["4.BÖLGE MT-2", 63], ["1.BÖLGE MN-1", 8], ["2.BÖLGE MN-1", 18], ["3.BÖLGE MN-1", 23], ["4.BÖLGE MN-1", 34]];
+const REF_DATA = {"direk": {"label": "Demir Direk (Genel)", "blocks": [{"type": "title", "text": "TAŞIYICI DEMİR DİREK"}, {"type": "row", "cells": ["DİREK TİPİ", "DÜZ HATTA RÜZGAR MENZİLİ    aW (m)", "AĞIRLIK MENZİLİ          ag (m)", "AĞIRLIK MENZİLİ          ag (m)", "KÖŞEDE TAŞIYICI ACISI (DERECE)", "KÖŞEDE TAŞIYICI ACISI (DERECE)", "(h)             İLETKEN TOPRAK MESAFESİ (m)", "DİREĞİN TEMELE GİREN KISMI                 (m)", "DİREĞİN TEMELE GİREN KISMI                 (m)", "DİREĞİN TEMELE GİREN KISMI                 (m)", "DİREK AĞIRLIĞI (kg)", "", "", "", ""]}, {"type": "row", "cells": ["DİREK TİPİ", "DÜZ HATTA RÜZGAR MENZİLİ    aW (m)", "I, II ve III BÖLGE", "IV.      BÖLGE", "I.         BÖLGE", "II, III ve IV. BÖLGE", "(h)             İLETKEN TOPRAK MESAFESİ (m)", "NORMAL ARAZİ", "KAYALIK ARAZİ", "ÇÜRÜK ARAZİ", "DİREK AĞIRLIĞI (kg)", "", "", "", ""]}, {"type": "row", "cells": ["T - 10", "376", "300", "200", "170", "170", "8.75", "1.5", "0.9", "1.8", "258", "", "", "", ""]}, {"type": "row", "cells": ["T - 12", "289", "300", "200", "172", "172", "10.75", "1.5", "0.9", "1.8", "306", "", "", "", ""]}, {"type": "row", "cells": ["T - 14", "215", "300", "200", "175", "175", "12.75", "1.5", "0.9", "1.8", "382", "", "", "", ""]}, {"type": "row", "cells": ["T - 16", "215", "300", "200", "175", "175", "14.75", "1.5", "0.9", "1.8", "450", "", "", "", ""]}, {"type": "row", "cells": ["T - 18", "168", "300", "200", "176", "176", "16.75", "1.5", "0.9", "1.8", "517", "", "", "", ""]}, {"type": "row", "cells": ["T - 20", "168", "300", "200", "176", "176", "18.75", "1.5", "0.9", "1.8", "586", "", "", "", ""]}, {"type": "title", "text": "T ve D direkler köşe taşıyıcı olarak kullanılmaları 160 derece ile sınırlıdır"}, {"type": "blank"}, {"type": "title", "text": "DURDURUCU DEMİR DİREKLER"}, {"type": "row", "cells": ["DİREK TİPİ", "KÖŞEDE TAŞIYICI AÇISI", "KÖŞEDE TAŞIYICI AÇISI", "KÖŞEDE TAŞIYICI AÇISI", "KÖŞEDE TAŞIYICI AÇISI", "(h) İLETKEN TOPRAK MESAFESİ (m)", "(h) İLETKEN TOPRAK MESAFESİ (m)", "DİREĞİN TEMELE GİREN KISMI                 (m)", "DİREĞİN TEMELE GİREN KISMI                 (m)", "DİREĞİN TEMELE GİREN KISMI                 (m)", "DİREK AĞIRLIĞI (kg)", "", "", "", ""]}, {"type": "row", "cells": ["DİREK TİPİ", "I. BÖLGE", "II. BÖLGE", "III. BÖLGE", "IV.      BÖLGE", "MESNET İZOLATÖR", "GERGİ İZOLATÖR", "NORMAL ARAZİ", "KAYALIK ARAZİ", "ÇÜRÜK ARAZİ", "DİREK AĞIRLIĞI (kg)", "", "", "", ""]}, {"type": "row", "cells": ["D - 10", "140", "135", "136", "136", "8.45", "8.2", "1.8", "1.15", "1.9", "279", "", "", "", ""]}, {"type": "row", "cells": ["D - 12", "146", "140", "141", "144", "10.45", "10.2", "1.8", "1.15", "1.9", "344", "", "", "", ""]}, {"type": "row", "cells": ["D - 14", "151", "143", "144", "144", "12.45", "12.2", "1.8", "1.15", "1.9", "418", "", "", "", ""]}, {"type": "row", "cells": ["D - 16", "151", "143", "144", "144", "14.45", "14.2", "1.8", "1.15", "1.9", "506", "", "", "", ""]}, {"type": "row", "cells": ["D - 18", "151", "143", "144", "144", "16.45", "16.2", "1.8", "1.15", "1.9", "591", "", "", "", ""]}, {"type": "row", "cells": ["D - 20", "152", "143", "144", "144", "18.45", "18.2", "1.8", "1.15", "1.9", "671", "", "", "", ""]}, {"type": "title", "text": "Ağırlık menzili  I, II ve III bölgede 300 m, IV bölgede 200 m'dir."}, {"type": "blank"}, {"type": "title", "text": "NİHAYET DEMİR DİREKLER"}, {"type": "row", "cells": ["DİREK TİPİ", "KÖŞEDE TAŞIYICI AÇISI", "KÖŞEDE TAŞIYICI AÇISI", "KÖŞEDE TAŞIYICI AÇISI", "KÖŞEDE TAŞIYICI AÇISI", "(h) İLETKEN TOPRAK MESAFESİ (m)", "(h) İLETKEN TOPRAK MESAFESİ (m)", "DİREĞİN TEMELE GİREN KISMI                 (m)", "DİREĞİN TEMELE GİREN KISMI                 (m)", "DİREĞİN TEMELE GİREN KISMI                 (m)", "DİREK AĞIRLIĞI (kg)", "DİREK AĞIRLIĞI (kg)", "", "", ""]}, {"type": "row", "cells": ["DİREK TİPİ", "I. BÖLGE", "II. BÖLGE", "III. BÖLGE", "IV.      BÖLGE", "MESNET İZOLATÖR", "GERGİ İZOLATÖR", "NORMAL ARAZİ", "KAYALIK ARAZİ", "ÇÜRÜK ARAZİ", "I. BÖLGE", "II, III ve IV. BÖLGE", "", "", ""]}, {"type": "row", "cells": ["N - 10", "154", "154", "154", "154", "8.45", "8.2", "1.8", "1.15", "1.9", "305", "293", "", "", ""]}, {"type": "row", "cells": ["N - 12", "154", "154", "154", "154", "10.45", "10.2", "1.8", "1.15", "1.9", "384", "366", "", "", ""]}, {"type": "row", "cells": ["N - 14", "154", "154", "154", "154", "12.45", "12.2", "1.8", "1.15", "1.9", "476", "448", "", "", ""]}, {"type": "row", "cells": ["N - 16", "154", "154", "154", "154", "14.45", "14.2", "1.8", "1.15", "1.9", "563", "548", "", "", ""]}, {"type": "row", "cells": ["N - 18", "154", "154", "154", "154", "16.45", "16.2", "1.8", "1.15", "1.9", "670", "639", "", "", ""]}, {"type": "row", "cells": ["N - 20", "154", "154", "154", "154", "18.45", "18.2", "1.8", "1.15", "1.9", "767", "739", "", "", ""]}, {"type": "title", "text": "Bütün buz yükü bölgelerin ağırlık menzili (ag) 300 m, rüzgar menzili (aw)  200 m'dir."}, {"type": "blank"}, {"type": "title", "text": "ZAVİYE DEMİR DİREKLER"}, {"type": "row", "cells": ["DİREK TİPİ", "KÖŞEDE TAŞIYICI AÇISI", "KÖŞEDE TAŞIYICI AÇISI", "KÖŞEDE TAŞIYICI AÇISI", "KÖŞEDE TAŞIYICI AÇISI", "(h) İLETKEN TOPRAK MESAFESİ (m)", "(h) İLETKEN TOPRAK MESAFESİ (m)", "DİREĞİN TEMELE GİREN KISMI                 (m)", "DİREĞİN TEMELE GİREN KISMI                 (m)", "DİREĞİN TEMELE GİREN KISMI                 (m)", "DİREK AĞIRLIĞI (kg)", "TEPE KUVVETİ", "TEPE KUVVETİ", "TEPE KUVVETİ", "TEPE KUVVETİ"]}, {"type": "row", "cells": ["DİREK TİPİ", "I. BÖLGE", "II. BÖLGE", "III. BÖLGE", "IV.      BÖLGE", "MESNET İZOLATÖR", "GERGİ İZOLATÖR", "NORMAL ARAZİ", "KAYALIK ARAZİ", "ÇÜRÜK ARAZİ", "DİREK AĞIRLIĞI (kg)", "I. BÖLGE", "II. BÖLGE", "III. BÖLGE", "IV.      BÖLGE"]}, {"type": "row", "cells": ["Z - 10", "90", "90", "90", "90", "8.45", "8.2", "1.8", "1.15", "1.9", "338", "1761", "1732", "1719", "1716"]}, {"type": "row", "cells": ["Z - 12", "90", "90", "90", "90", "10.45", "10.2", "1.8", "1.15", "1.9", "421", "1622", "1596", "1583", "1581"]}, {"type": "row", "cells": ["Z - 14", "90", "90", "90", "90", "12.45", "12.2", "1.8", "1.15", "1.9", "510", "1527", "1502", "1490", "1488"]}, {"type": "row", "cells": ["Z - 16", "90", "90", "90", "90", "14.45", "14.2", "1.8", "1.15", "1.9", "601", "", "", "", ""]}, {"type": "row", "cells": ["Z - 18", "90", "90", "90", "90", "16.45", "16.2", "1.8", "1.15", "1.9", "709", "", "", "", ""]}, {"type": "row", "cells": ["Z - 20", "90", "90", "90", "90", "18.45", "18.2", "1.8", "1.15", "1.9", "809", "", "", "", ""]}, {"type": "title", "text": "Bütün buz yükü bölgelerin ağırlık menzili (ag) 300 m, rüzgar menzili (aw)  200 m'dir."}, {"type": "blank"}, {"type": "blank"}, {"type": "blank"}, {"type": "blank"}, {"type": "title", "text": "2"}]}, "travers": {"label": "Traversler", "blocks": [{"type": "blank"}, {"type": "title", "text": "TAŞICI TRAVERSLER"}, {"type": "row", "cells": ["Tipi", "T - 200", "T - 250", "T - 300", "T - 350", "T - 400", "TÜ - 300", "TÜ - 400"]}, {"type": "row", "cells": ["Ağırlığı (kg)", "32", "42", "49", "60", "72", "49", "73"]}, {"type": "note", "text": "Not: T - 200 traversin ağırlık menzili 300 m'dir. II, III ve IV. Bölgelerde kullanılmaz"}, {"type": "blank"}, {"type": "blank"}, {"type": "title", "text": "DURDURUCU TRAVERSLER"}, {"type": "row", "cells": ["Tipi", "D - 200", "D - 250", "D - 300", "D - 350", "D - 400", "DÜ - 300", "DÜ - 400"]}, {"type": "row", "cells": ["Ağırlığı (kg) (Mesnet İzolatörlü)", "44", "54", "62", "67", "81", "62", "82"]}, {"type": "row", "cells": ["Ağırlığı (kg) (Gergi İzolatörlü)", "41", "51", "59", "64", "79", "59", "80"]}, {"type": "blank"}, {"type": "blank"}, {"type": "blank"}, {"type": "title", "text": "SEKSİYONER ALTI ÇIKIŞ TRAVERSLERİ"}, {"type": "row", "cells": ["Tipi", "Ds - 200", "Ds - 250", "Ds - 300", "Ds - 350", "Ds - 400", "", ""]}, {"type": "row", "cells": ["Ağırlığı (kg)", "71", "81", "89", "94", "108", "", ""]}, {"type": "blank"}, {"type": "blank"}, {"type": "row", "cells": ["Buz yükü bölgesi", "Arazi yüksekliği (m)", "Arazi yüksekliği (m)", "Arazi yüksekliği (m)", "", "", "", ""]}, {"type": "row", "cells": ["I. BÖLGE", "600 m'ye kadar", "600 m'ye kadar", "600 m'ye kadar", "", "", "", ""]}, {"type": "row", "cells": ["II. BÖLGE", "900 m'ye kadar", "900 m'ye kadar", "900 m'ye kadar", "", "", "", ""]}, {"type": "row", "cells": ["III. BÖLGE", "1600 m'ye kadar", "1600 m'ye kadar", "1600 m'ye kadar", "", "", "", ""]}, {"type": "row", "cells": ["IV. BÖLGE", "1600 m'nin üstünde", "1600 m'nin üstünde", "1600 m'nin üstünde", "", "", "", ""]}]}, "trafo": {"label": "Trafo Direkleri", "blocks": [{"type": "blank"}, {"type": "row", "cells": ["Trafo Direği Tipi", "İmalat Şekli", "Tepe Kuvveti (kg)", "Direk Ağırlğı", "Temel Hacmi (m3)", "Monte Edilecek Trafo Gücü (kVA)", "Platform Tipi"]}, {"type": "row", "cells": ["T15", "Kaynaklı", "1500", "787", "3.519", "160 kVA'ya kadar", "Küçük tip"]}, {"type": "row", "cells": ["T15k", "Kaynaklı-Kısa", "1500", "759", "3.519", "160 kVA'ya kadar", "Küçük tip"]}, {"type": "row", "cells": ["T15c", "Kaynaklı -Cıvatalı", "1500", "795", "3.519", "160 kVA'ya kadar", "Küçük tip"]}, {"type": "row", "cells": ["T15k-c", "Kaynaklı -Cıvatalı-Kısa", "1500", "768", "3.519", "160 kVA'ya kadar", "Küçük tip"]}, {"type": "row", "cells": ["T25", "Kaynaklı", "2500", "887", "5.16", "250 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["T25k", "Kaynaklı-Kısa", "2500", "860", "5.16", "250 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["T25c", "Kaynaklı -Cıvatalı", "2500", "897", "5.16", "250 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["T25k-c", "Kaynaklı -Cıvatalı-Kısa", "2500", "870", "5.16", "250 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["T35", "Kaynaklı", "3500", "995", "9.8", "400 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["T35k", "Kaynaklı-Kısa", "3500", "968", "9.8", "400 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["T35c", "Kaynaklı -Cıvatalı", "3500", "1015", "9.8", "400 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["T35k-c", "Kaynaklı -Cıvatalı-Kısa", "3500", "988", "9.8", "400 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["T50", "Kaynaklı", "5000", "1141", "11.7", "400 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["T50k", "Kaynaklı-Kısa", "5000", "1111", "11.7", "400 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["T50c", "Kaynaklı -Cıvatalı", "5000", "1161", "11.7", "400 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["T50k-c", "Kaynaklı -Cıvatalı-Kısa", "5000", "1131", "11.7", "400 kVA'ya kadar", "Büyük tip"]}, {"type": "blank"}, {"type": "row", "cells": ["Trafo Direği Tipi", "İmalat Şekli", "Tepe Kuvveti (kg)", "Direk Ağırlğı", "Temel Hacmi (m3)", "Monte Edilecek Trafo Gücü (kVA)", "Platform Tipi"]}, {"type": "row", "cells": ["GT15", "Galvanizli Cıvatalı", "1500", "851", "3.519", "160 kVA'ya kadar", "Küçük tip"]}, {"type": "row", "cells": ["GT15k", "Galvanizli Cıvatalı-Kısa", "1500", "812", "3.519", "160 kVA'ya kadar", "Küçük tip"]}, {"type": "row", "cells": ["GT25", "Galvanizli Cıvatalı", "2500", "976", "5.16", "250 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["GT25k", "Galvanizli Cıvatalı-Kısa", "2500", "936", "5.16", "250 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["GT35", "Galvanizli Cıvatalı", "3500", "1076", "9.8", "400 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["GT35k", "Galvanizli Cıvatalı-Kısa", "3500", "1036", "9.8", "400 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["GT50", "Galvanizli Cıvatalı", "5000", "1227", "11.7", "400 kVA'ya kadar", "Büyük tip"]}, {"type": "row", "cells": ["GT50k", "Galvanizli Cıvatalı-Kısa", "5000", "1184", "11.7", "400 kVA'ya kadar", "Büyük tip"]}]}};
+
+
+// ================= TAB SWITCH (main) =================
+document.querySelectorAll('.wrap > .tabs > .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.wrap > .tabs > .tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.wrap > .panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.getAttribute('data-tab')).classList.add('active');
+    });
+});
+
+// ================= BUTTON GROUPS =================
+function setupGroup(id, onChange) {
+    const group = document.getElementById(id);
+    group.querySelectorAll('.opt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            group.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (onChange) onChange(btn.getAttribute('data-val'));
+        });
+    });
+}
+let STATE = { bolge: 1, hat: 'AG', potansDurumu: 'YOK', potansIdx: null };
+setupGroup('bolgeGroup', v => STATE.bolge = parseInt(v));
+setupGroup('hatGroup', v => STATE.hat = v);
+setupGroup('potansGroup', v => {
+    STATE.potansDurumu = v;
+    document.getElementById('potansSelectWrap').style.display = (v === 'VAR') ? 'block' : 'none';
+});
+
+// ================= POTANS SELECT =================
+const potansSelect = document.getElementById('potansSelect');
+POTANS_DATA.forEach((p, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = p[0] + '  (+' + p[1] + ' kg)';
+    potansSelect.appendChild(opt);
+});
+potansSelect.addEventListener('change', () => { STATE.potansIdx = parseInt(potansSelect.value); });
+
+// ================= TERTİBAT DATALIST + ROWS =================
+const dl = document.createElement('datalist');
+dl.id = 'tertibatList';
+TERTIBAT_DATA.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t[0];
+    dl.appendChild(opt);
+});
+document.body.appendChild(dl);
+
+const tertibatRowsEl = document.getElementById('tertibatRows');
+const ROW_COUNT = 7;
+for (let i = 0; i < ROW_COUNT; i++) {
+    const div = document.createElement('div');
+    div.className = 'tertibat-row';
+    div.id = 'trow-' + i;
+    div.innerHTML =
+        '<div class="row-num">Tertibat ' + (i+1) + (i===0 ? ' (referans yön)' : '') + '</div>' +
+        '<input type="text" list="tertibatList" placeholder="Tertibat adı seçin/yazın" data-role="name" id="name-' + i + '">' +
+        '<input type="number" placeholder="Açı (°)" value="0" min="0" max="360" data-role="angle" id="angle-' + i + '">' +
+        '<select class="func" data-role="func" id="func-' + i + '">' +
+        '<option value="">Fonksiyon seçin (opsiyonel)</option>' +
+        '<option value="TAŞIYICI">TAŞIYICI</option>' +
+        '<option value="DURDURUCU">DURDURUCU</option>' +
+        '<option value="NİHAYET">NİHAYET</option>' +
+        '</select>';
+    tertibatRowsEl.appendChild(div);
+    document.getElementById('name-' + i).addEventListener('input', function() {
+        div.classList.toggle('filled', this.value.trim() !== '');
+    });
+}
+
+// ================= LOOKUP HELPERS =================
+function findTertibat(name) {
+    if (!name) return null;
+    const idx = TERTIBAT_DATA.findIndex(t => t[0].toLocaleUpperCase('tr-TR') === name.trim().toLocaleUpperCase('tr-TR'));
+    if (idx === -1) return null;
+    return { idx, row: TERTIBAT_DATA[idx] };
+}
+
+function rad(deg) { return deg * Math.PI / 180; }
+
+function calcXY(B, angleDeg, mult) {
+    mult = (mult === undefined) ? 1 : mult;
+    let a = ((angleDeg % 360) + 360) % 360;
+    let x = (a === 90 || a === 270) ? 0 : B * mult * Math.cos(rad(a));
+    let y = (a === 0 || a === 180 || a === 360) ? 0 : B * mult * Math.sin(rad(a));
+    if (Math.abs(x) < 0.001) x = 0;
+    if (Math.abs(y) < 0.001) y = 0;
+    return [x, y];
+}
+
+// ================= MAIN CALCULATION =================
+document.getElementById('calcBtn').addEventListener('click', () => {
+    const slots = [];
+    let warnings = [];
+    for (let i = 0; i < ROW_COUNT; i++) {
+        const nameEl = document.getElementById('name-' + i);
+        const name = nameEl.value.trim();
+        if (!name) { slots.push(null); continue; }
+        const found = findTertibat(name);
+        if (!found) {
+            warnings.push('Tertibat ' + (i+1) + ': "' + name + '" listede bulunamadı, boş bırakıldı.');
+            slots.push(null);
+            continue;
+        }
+        const angle = parseFloat(document.getElementById('angle-' + i).value) || 0;
+        const func = document.getElementById('func-' + i).value;
+        const bolgeVal = found.row[STATE.bolge]; // index 1..4 = bölge 1..4
+        if (bolgeVal === null || bolgeVal === undefined) {
+            warnings.push('Tertibat ' + (i+1) + ' ("' + name + '") için ' + STATE.bolge + '. bölgede tanımlı cer değeri yok.');
+        }
+        const correction = (STATE.hat === 'MÜŞTEREK' && found.idx <= 27) ? 0.81 : 1;
+        const B = (bolgeVal || 0) * correction;
+        const [x, y] = calcXY(B, angle, 1);
+        const zay = found.row[5] || 0;
+        slots.push({ i, name, angle, func, B, x, y, zay });
+    }
+
+    const active = slots.filter(s => s !== null);
+    if (active.length === 0) {
+        alert('En az bir tertibat girmelisiniz.');
+        return;
+    }
+
+    // Base scenario (all intact)
+    let Rx = 0, Ry = 0;
+    active.forEach(s => { Rx += s.x; Ry += s.y; });
+    const baseL = Math.abs(Rx), baseM = Math.abs(Ry);
+    const baseQ = baseL + baseM;
+    const baseN = Math.sqrt(Rx*Rx + Ry*Ry);
+    const candidates = [{ label: 'Sağlam (Rx+Ry)', Rx, Ry, L: baseL, M: baseM, Q: baseQ, N: baseN }];
+
+    // Weakening scenarios: one per active slot
+    active.forEach(s => {
+        let wx, wy;
+        if (s.func === 'TAŞIYICI') {
+            wx = s.x; wy = s.y;
+        } else {
+            const [xx, yy] = calcXY(s.B, s.angle, s.zay);
+            wx = xx; wy = yy;
+        }
+        let sx = wx, sy = wy;
+        active.forEach(o => { if (o.i !== s.i) { sx += o.x; sy += o.y; } });
+        const L = Math.abs(sx), M = Math.abs(sy), Q = L + M, N = Math.sqrt(sx*sx + sy*sy);
+        candidates.push({ label: 'Tertibat ' + (s.i+1) + ' kopması (' + s.name + ')', Rx: sx, Ry: sy, L, M, Q, N });
+    });
+
+    // Find worst by raw Q (before potans)
+    let winnerIdx = 0;
+    candidates.forEach((c, idx) => { if (c.Q > candidates[winnerIdx].Q) winnerIdx = idx; });
+
+    const potansYuk = (STATE.potansDurumu === 'VAR' && STATE.potansIdx !== null) ? POTANS_DATA[STATE.potansIdx][1] : 0;
+
+    let maxL = 0, maxR = 0, maxN = 0, B30 = 0;
+    candidates.forEach((c, idx) => {
+        const Rfinal = (idx === winnerIdx) ? c.M + potansYuk : c.M;
+        const Ffinal = c.L + Rfinal;
+        c.Rfinal = Rfinal;
+        c.Ffinal = Ffinal;
+        if (c.L > maxL) maxL = c.L;
+        if (Rfinal > maxR) maxR = Rfinal;
+        if (c.N > maxN) maxN = c.N;
+        if (Ffinal > B30) B30 = Ffinal;
+    });
+
+    // Pole type selection
+    let direkTipi = '';
+    if (STATE.hat === 'AG') {
+        if (maxL < 160 && maxR < 174) direkTipi = "9-H";
+        else if (maxL < 160 && maxR < 500) direkTipi = "10I";
+        else if (maxL < 230 && maxR < 700) direkTipi = "10U";
+        else if (maxL < 230 && maxR < 900) direkTipi = "12I";
+        else if (B30 <= 1000) direkTipi = "K1";
+        else if (B30 <= 2000) direkTipi = "K2";
+        else if (B30 <= 3000) direkTipi = "K3";
+        else if (B30 <= 4000) direkTipi = "K4";
+        else if (B30 <= 5000) direkTipi = "K5";
+        else direkTipi = "5000 kg üzeri — özel proje / elle hesap gerekli";
+    } else {
+        if (maxL < 121 && maxR < 350) direkTipi = "10I''";
+        else if (maxL < 175 && maxR < 550) direkTipi = "10U''";
+        else if (maxL < 175 && maxR < 750) direkTipi = "12I''";
+        else if (B30 <= 831) direkTipi = "K1''";
+        else if (B30 <= 1330) direkTipi = "K2''";
+        else if (B30 <= 2004) direkTipi = "K3''";
+        else if (B30 <= 2783) direkTipi = "K4''";
+        else if (B30 <= 4432) direkTipi = "K5''";
+        else direkTipi = "4432 kg üzeri — özel proje / elle hesap gerekli";
+    }
+
+    let trafoDirek = '-';
+    if (STATE.hat === 'AG') {
+        if (B30 <= 1500) trafoDirek = 'T-15';
+        else if (B30 <= 2500) trafoDirek = 'T-25';
+        else if (B30 <= 3500) trafoDirek = 'T-35';
+        else if (B30 <= 5000) trafoDirek = 'T-50';
+        else trafoDirek = '5000 kg üzeri';
+    }
+
+    let agacDirek = 'Demir Direk Seçiniz';
+    if (maxN < 174) agacDirek = '9O';
+    else if (maxN < 259) agacDirek = '9A';
+
+    // ---- Render results ----
+    document.getElementById('resB30').textContent = B30.toFixed(1);
+    document.getElementById('resScenario').textContent = candidates[winnerIdx].label;
+    document.getElementById('resDirek').textContent = direkTipi;
+    document.getElementById('resTrafo').textContent = trafoDirek;
+    document.getElementById('resAgac').textContent = agacDirek;
+    document.getElementById('resPotans').textContent = potansYuk > 0 ? ('+' + potansYuk + ' kg') : 'Uygulanmadı';
+
+    const table = document.getElementById('scenarioTable');
+    let html = '<tr><th>Senaryo</th><th>Rx</th><th>Ry</th><th>|Rx|+|Ry|</th><th>Kuvvet (final)</th></tr>';
+    candidates.forEach((c, idx) => {
+        html += '<tr class="' + (idx === winnerIdx ? 'winner' : '') + '">' +
+            '<td>' + c.label + '</td>' +
+            '<td>' + c.Rx.toFixed(1) + '</td>' +
+            '<td>' + c.Ry.toFixed(1) + '</td>' +
+            '<td>' + c.Q.toFixed(1) + '</td>' +
+            '<td>' + c.Ffinal.toFixed(1) + '</td>' +
+            '</tr>';
+    });
+    table.innerHTML = html;
+
+    const warnBox = document.getElementById('warnBox');
+    if (warnings.length) {
+        warnBox.innerHTML = '<b style="color:#e74c3c">Uyarılar:</b><br>' + warnings.map(w => '• ' + w).join('<br>');
+    } else {
+        warnBox.innerHTML = 'Hesaplama TERTİBAT VE CER ve POTANS tablolarındaki değerler kullanılarak, her tertibatın tek başına koptuğu senaryolar da dahil olmak üzere en kötü durum (worst-case) esasına göre yapılmıştır.';
+    }
+
+    document.getElementById('resultBox').classList.add('show');
+    document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+// ================= REFERENCE TAB =================
+const refTabsEl = document.getElementById('refTabs');
+const refPanelsEl = document.getElementById('refPanels');
+const refOrder = ['direk', 'travers', 'trafo'];
+function escapeHtml(s) {
+    if (s === undefined || s === null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+refOrder.forEach((key, idx) => {
+    const sheet = REF_DATA[key];
+    if (!sheet) return;
+    const btn = document.createElement('div');
+    btn.className = 'tab-btn' + (idx === 0 ? ' active' : '');
+    btn.textContent = sheet.label;
+    btn.addEventListener('click', () => {
+        refTabsEl.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        refPanelsEl.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('refpanel-' + key).classList.add('active');
+    });
+    refTabsEl.appendChild(btn);
+
+    const panel = document.createElement('div');
+    panel.className = 'panel' + (idx === 0 ? ' active' : '');
+    panel.id = 'refpanel-' + key;
+
+    let html = '';
+    let openTable = false;
+    sheet.blocks.forEach(b => {
+        if (b.type === 'title') {
+            if (openTable) { html += '</table></div>'; openTable = false; }
+            html += '<div class="block-title">' + escapeHtml(b.text) + '</div>';
+        } else if (b.type === 'note') {
+            if (openTable) { html += '</table></div>'; openTable = false; }
+            html += '<div class="note-ref">' + escapeHtml(b.text) + '</div>';
+        } else if (b.type === 'blank') {
+            if (openTable) { html += '</table></div>'; openTable = false; }
+        } else if (b.type === 'row') {
+            if (!openTable) { html += '<div class="table-scroll"><table class="ref-table">'; openTable = true; }
+            html += '<tr>' + b.cells.map(c => '<td>' + (escapeHtml(c) || '&nbsp;') + '</td>').join('') + '</tr>';
+        }
+    });
+    if (openTable) html += '</table></div>';
+    panel.innerHTML = html;
+    refPanelsEl.appendChild(panel);
+});
+
+document.getElementById('refSearch').addEventListener('input', function() {
+    const term = this.value.trim().toLocaleUpperCase('tr-TR');
+    document.querySelectorAll('#refPanels table.ref-table').forEach(table => {
+        const rows = table.querySelectorAll('tr');
+        rows.forEach((tr, i) => {
+            if (i === 0) return;
+            const text = tr.textContent.toLocaleUpperCase('tr-TR');
+            tr.classList.toggle('hidden', !(!term || text.includes(term)));
+        });
+    });
+});
+</script>
+</body>
+</html>

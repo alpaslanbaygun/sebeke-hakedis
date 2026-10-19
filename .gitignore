@@ -14,3 +14,6 @@ ornek-veri/
 
 # Yerel derleme için çevrimdışı NuGet ayarı (depoya konmaz)
 autocad/test/CekirdekTest/nuget.config
+# Hesap Merkezi paketi derlemede üretilir (araclar/hesap-paketle.mjs)
+ortak/hesap/paket/
+araclar/__pycache__/

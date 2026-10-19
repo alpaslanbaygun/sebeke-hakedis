@@ -1,0 +1,64 @@
+/* ag-gd: aracın açık renkli düzeni Şebeke-M laciverdi + turuncu vurguya çevrilir (yalnız ekran; yazdırma aracın beyaz
+   kâğıt düzeninde kalır). Aracın --hdr değişkeni hem başlık zemini hem yazı rengi olarak kullanıldığından değişken
+   panel rengine çevrilir, yazılar ayrıca boyanır. Web yazı tipi bağlantısı kaynaktan çıkarıldığı için (Barlow, JetBrains
+   Mono) yazı tipleri Şebeke-M'in yazı tiplerine bağlanır; yoksa hücreler tırnaklı yazı tipine düşer. */
+@media screen{
+  html.sm-var{--bg:var(--sm-bg);--sheet:var(--sm-panel);--hdr:var(--sm-panel2);--hdr2:var(--sm-panel2);--line:var(--sm-line);--line2:var(--sm-line2);
+    --txt:var(--sm-tx);--txt2:var(--sm-mut);--inp:var(--sm-bg2);--auto:#122339;--auto-txt:var(--sm-cy);--green:var(--sm-ok);--red:var(--sm-err2);
+    --amber:var(--sm-acc);--kolhdr:var(--sm-panel2)}
+  html.sm-var body{font-family:var(--sm-font);padding-left:12px;padding-right:12px}
+  html.sm-var .topbar{margin-top:12px}
+  html.sm-var td select,html.sm-var td input,html.sm-var .cell-auto,html.sm-var .cell-calc,html.sm-var .gf input,
+  html.sm-var .eqrow,html.sm-var .verdict-row td,html.sm-var .totcard .v{font-family:var(--sm-mono)}
+  html.sm-var .cell-tip select,html.sm-var .act,html.sm-var .eqlabel,html.sm-var .if input{font-family:var(--sm-font)}
+
+  /* başlık, düğmeler, genel alanlar */
+  html.sm-var .title,html.sm-var .prepby b,html.sm-var .gf input,html.sm-var .if input{color:var(--sm-tx)}
+  html.sm-var .act,html.sm-var .gf,html.sm-var .eqbar,html.sm-var .infobar{background:var(--sm-panel);color:var(--sm-tx);box-shadow:none}
+  html.sm-var .act:hover{background:var(--sm-acc);color:#0b1326;border-color:var(--sm-acc)}
+  html.sm-var .sheetwrap{box-shadow:none}
+
+  /* tablo */
+  html.sm-var .banner td{background:var(--sm-panel2);color:var(--sm-tx);border-color:var(--sm-line)}
+  html.sm-var .rowlabel,html.sm-var .addcol{background:var(--sm-panel)}
+  html.sm-var .kolhdr .rowlabel{background:var(--sm-panel2);border-right-color:var(--sm-line)}
+  html.sm-var .kolhdr th{color:var(--sm-tx)}
+  html.sm-var td select,html.sm-var td input{background:var(--sm-bg2);color:var(--sm-tx)}
+  html.sm-var td select:focus,html.sm-var td input:focus{background:var(--sm-bg)}
+  html.sm-var #sheet .nokta-in{background:var(--sm-bg)!important;color:var(--sm-warn2)}
+  html.sm-var .cell-calc{background:var(--sm-panel3);color:#cbd5e1}
+  html.sm-var .cell-calc.ok,html.sm-var .verdict-row td.ok{color:var(--sm-ok2)}
+  html.sm-var .cell-calc.bad,html.sm-var .verdict-row td.bad{color:var(--sm-err2)}
+  html.sm-var .sec td{background:var(--sm-bg)}
+  html.sm-var .warn-cell{background:rgba(239,68,68,.18)!important;color:var(--sm-err2)!important;box-shadow:inset 0 0 0 2px var(--sm-err);animation:none}
+
+  /* Aracın genel table / th / td kuralları (min-width 1100px, ortalı, tek satır, 30px) Şebeke-M bilgi paneline sızmasın */
+  html.sm-var #sm-panel table{min-width:0;width:100%}
+  html.sm-var #sm-panel th,html.sm-var #sm-panel td{white-space:normal;height:auto;text-align:left;font-size:12.5px}
+
+  /* toplamlar ve açıklama */
+  html.sm-var .eqval{color:#cbd5e1}
+  html.sm-var .eqlabel,html.sm-var .eqval.eqbig{color:var(--sm-tx)}
+  html.sm-var .eqval.eqbig.over{color:var(--sm-err2)}
+  html.sm-var .legend .sw[style*="fafbfc"]{background:var(--sm-panel3)!important}
+
+  /* dar ekran (telefon): düğme ve kutular sarılır, tablo kendi kaydırıcısında kalır */
+  html.sm-var .actionbar,html.sm-var .infobar{flex-wrap:wrap}
+  @media (max-width:640px){
+    html.sm-var body{padding-left:8px;padding-right:8px}
+    html.sm-var .topbar{gap:10px}
+    html.sm-var .globals{margin-left:0}
+    html.sm-var .if input{width:120px}
+    html.sm-var .eqbar{padding:12px 10px}
+    html.sm-var .eqrow{gap:8px;font-size:13px}
+    html.sm-var .eqsep{display:none}
+    html.sm-var .eqrow .eqlabel:nth-last-of-type(2){flex-basis:100%;text-align:center;margin-top:6px}   /* "DURUM:" ayrı satıra */
+    html.sm-var #sheet{min-width:0}
+    html.sm-var #sheet .rowlabel{min-width:0;width:112px;padding:0 8px;white-space:normal;font-size:12px;line-height:1.2}
+    html.sm-var #sheet td:not(.rowlabel):not(.addcol),html.sm-var #sheet .kolhdr th:not(.rowlabel):not(.addcol){min-width:112px}
+  }
+
+  /* Şebeke-M'de aracın kendi dosya kaydet / aç düğmeleri gizli (durum projede tutulur); Yazdır ve Excel kalır */
+  html.sm-telefon .actionbar .act[onclick^="saveProject"],html.sm-telefon .actionbar .act[onclick^="openProject"],
+  html.sm-autocad .actionbar .act[onclick^="saveProject"],html.sm-autocad .actionbar .act[onclick^="openProject"]{display:none!important}
+}

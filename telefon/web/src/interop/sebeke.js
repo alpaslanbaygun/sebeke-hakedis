@@ -7,6 +7,7 @@
 //
 // Eşleme tabloları ortak/katalog/volt-eslesme.json'dadır (telefon kopyası: src/ortak/volt-eslesme.js). AutoCAD
 // kurallarının JavaScript karşılığı sh-core.cjs'dir (etiket, kanal kodu, bölge seçimi, proje dosyası yazımı, rapor).
+import { hesapKayitlari } from '../hesap/kayitlar.js';
 import SH from './sh-core.cjs';
 import ESLESME from '../ortak/volt-eslesme.js';
 import KALEMLER from '../ortak/kalemler.js';
@@ -276,8 +277,73 @@ export function sebekeModel(ps, opts = {}) {
     if (p.cls === 'HAT' && linePts.has(p.id)) continue;
     sp.noktalar.push({ id: p.sebekeId || p.id, ad: p.pointNo || '', kod: p.cls || '', saga: r4(p.E), yukari: r4(p.N), kot: p.H != null ? r4(p.H) : 0, hakedis: sp.proje.aktifHakedis, bolge: bolgeIdi(p.E, p.N), telefonId: p.id, olcum: olcumBilgisi(p) });
   }
+  // Teknik hesap sonuçları (Hesap Merkezi): hedef kimlikleri dosyadaki eleman / hat kimliklerine çevrilir
+  const hesaplar = hesaplariDisaAktar(ps, sp, uyarilar);
+  if (hesaplar.length) sp.hesaplar = hesaplar;
   if (uyarilar.length) sp.uyarilar = uyarilar;
   return sp;
+}
+
+/** Telefondaki hesap kayıtları → proje dosyası (hedef: dosyadaki eleman kimliği; hatta parça kimlikleri). */
+function hesaplariDisaAktar(ps, sp, uyarilar) {
+  const out = [];
+  const eqById = new Map((ps.data.equipment || []).map((e) => [e.id, e]));
+  for (const k of hesapKayitlari(ps)) {
+    const h = k.hedef || {};
+    const hedef = { tur: h.tur || 'proje', id: '', no: h.no || '' };
+    const ad = (k.modulAdi || k.modul) + (h.no ? ' · ' + h.no : '');
+    if (h.tur === 'direk' || h.tur === 'trafo') {
+      const e = eqById.get(h.id);
+      if (!e || e.status === 'deleted') { uyarilar.push('Hesap kaydı aktarılmadı, hedef nesne silinmiş: ' + ad); continue; }
+      const el = sp.elemanlar.find((x) => x.telefonId === e.id);
+      if (!el) { uyarilar.push('Hesap kaydı aktarılmadı, hedef dosyaya yazılmadı (ileride durumunda olabilir): ' + ad); continue; }
+      hedef.id = el.id;
+    } else if (h.tur === 'hat' || h.tur === 'kanal') {
+      const parcalar = sp.hatlar.filter((x) => x.telefonId === h.id).map((x) => x.id).concat(sp.kanallar.filter((x) => x.telefonId === h.id).map((x) => x.id));
+      if (!parcalar.length) { uyarilar.push('Hesap kaydı aktarılmadı, hedef hat dosyaya yazılmadı: ' + ad); continue; }
+      hedef.id = parcalar[0];
+      hedef.parcalar = parcalar;
+    }
+    if (h.hatId) {
+      // trafo hedefinde hesaplanan çıkış: telefondaki hattın dosyadaki ilk parçası
+      const kol = sp.hatlar.find((x) => x.telefonId === h.hatId);
+      if (kol) hedef.hatId = kol.id; else uyarilar.push('Hesap kaydının çıkış hattı dosyaya yazılmadı (trafo bilgisiyle açılır): ' + ad);
+    }
+    out.push({ id: k.sebekeId || k.id, modul: k.modul, modulAdi: k.modulAdi, modulSurumu: k.modulSurumu || undefined, hedef, ozet: k.ozet, durum: k.durum,
+      ayrinti: k.ayrinti || {}, modulDurumu: k.modulDurumu || '', kullanilan: k.kullanilan || {}, tarih: k.tarih, kaynak: k.kaynak || 'telefon', yapan: k.yapan || undefined, telefonId: k.id });
+  }
+  return out;
+}
+
+/** Proje dosyasındaki hesap kayıtlarını telefona alır (aynı kayıt yeniden alınırsa daha yeniyse güncellenir). */
+async function hesaplariIceAl(ps, sp, eqByKey, lineByKey, ozet) {
+  const liste = sp.hesaplar || [];
+  if (!liste.length) return;
+  const mevcut = hesapKayitlari(ps);
+  let yeni = 0, guncel = 0;
+  for (const h of liste) {
+    const t = h.hedef || {};
+    let hedef = { tur: t.tur || 'proje', id: '', no: t.no || '' };
+    if (t.tur === 'direk' || t.tur === 'trafo') {
+      const e = eqByKey.get(t.id);
+      if (!e) { ozet.uyarilar.push('Hesap kaydı alınamadı, hedef bulunamadı: ' + (h.modulAdi || h.modul) + ' ' + (t.no || t.id)); continue; }
+      hedef.id = e.id; hedef.no = e.no || hedef.no;
+    } else if (t.tur === 'hat' || t.tur === 'kanal') {
+      const l = [t.id].concat(t.parcalar || []).map((x) => lineByKey.get(x)).find(Boolean);
+      if (!l) { ozet.uyarilar.push('Hesap kaydı alınamadı, hedef hat bulunamadı: ' + (h.modulAdi || h.modul) + ' ' + (t.no || t.id)); continue; }
+      hedef.id = l.id; hedef.no = l.lineNo || hedef.no;
+    }
+    if (t.hatId) { const kol = lineByKey.get(t.hatId); if (kol) hedef.hatId = kol.id; }
+    const rec = { projectId: ps.p.id, kind: 'HESAP', modul: h.modul, modulAdi: h.modulAdi, modulSurumu: h.modulSurumu || '', hedef, ozet: h.ozet, durum: h.durum,
+      ayrinti: h.ayrinti || {}, modulDurumu: h.modulDurumu || '', kullanilan: h.kullanilan || {}, tarih: h.tarih, kaynak: h.kaynak || 'autocad', yapan: h.yapan || '',
+      sebekeId: h.id, name: (h.modulAdi || h.modul) + (hedef.no ? ' · ' + hedef.no : '') };
+    const eski = mevcut.find((d) => d.id === h.telefonId || d.sebekeId === h.id || d.id === h.id);
+    if (eski) {
+      if (String(h.tarih || '') > String(eski.tarih || '')) { await ps.ds.update('documents', eski.id, rec, { reason: 'Hesap kaydı AutoCAD dosyasından güncellendi', silent: true, noAudit: true }); guncel++; }
+    } else { await ps.ds.create('documents', rec, { reason: 'Hesap kaydı AutoCAD dosyasından alındı', silent: true, noAudit: true }); yeni++; }
+  }
+  await ps.reload('documents');
+  ozet.hesap = { yeni, guncel };
 }
 
 /** Açık projeyi .sebeke.json metnine çevirir. */
@@ -721,6 +787,13 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     ozet.nokta++;
   }
   await ps.reload('points'); await ps.reload('equipment'); await ps.reload('lines'); await ps.reload('materials');
+  // Teknik hesap kayıtları: hedefler yeni eklenen nesnelerle birlikte eşlenir
+  {
+    const eq2 = new Map(), ln2 = new Map();
+    for (const e of act(ps.data.equipment)) { eq2.set(e.id, e); if (e.sebekeId) eq2.set(e.sebekeId, e); }
+    for (const l of act(ps.data.lines)) { ln2.set(l.id, l); if (l.sebekeId) ln2.set(l.sebekeId, l); for (const pid of Object.values((l.sebeke || {}).parcalar || {})) ln2.set(pid, l); }
+    await hesaplariIceAl(ps, sp, eq2, ln2, ozet);
+  }
   await ps.recompute('AutoCAD dosyası alındı');
   ozet.uyarilar.push(...(sp.uyarilar || []));
   ozet.projectId = ps.p.id;

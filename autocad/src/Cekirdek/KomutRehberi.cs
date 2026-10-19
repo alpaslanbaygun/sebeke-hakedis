@@ -25,6 +25,8 @@ namespace SebekeHakedis.Cekirdek
             new[] { "Raporlar", "SH_PROJERAPOR", "Proje dosyasından Durum Tespit raporu" },
             new[] { "Raporlar", "SH_OZET", "Çizimdeki proje özeti (bölge, eleman, hat, kanal sayıları, onaylar)" },
             new[] { "Raporlar", "SH_DETAY", "Eksik malzeme bulur (ör. topraklaması olmayan direkler); bulunanları seçer, Excel'e yazar" },
+            new[] { "Teknik hesaplar", "SH_HESAP", "Seçilen direk / hat / trafo / kanal için teknik hesabı tarayıcıda açar (SH_HESAP merkez: uygun hesapların listesi)" },
+            new[] { "Teknik hesaplar", "SH_HESAPLAR", "Hesap merkezi: çizimdeki kayıtlı hesaplar, güncellikleri ve bütün hesap araçları" },
             new[] { "Telefon", "SH_ICEAL", "Telefona gönder: çizimi proje dosyasına yazar (.sebeke.json ya da .volt.json)" },
             new[] { "Telefon", "SH_PROJEAL", "Telefondan al: telefondaki yeni ve değişen nesneleri çizime aktarır" },
             new[] { "Diğer", "SH_HAKKINDA", "Bu pencere: sürüm ve komut listesi" },

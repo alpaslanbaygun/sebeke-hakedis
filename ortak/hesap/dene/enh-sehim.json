@@ -1,0 +1,622 @@
+{
+  "modul": "enh-sehim",
+  "aciklama": "Beklenen değerler özgün enh-sehim.html dosyasından (sahibinin değiştirilmemiş kopyası), aynı girdilerle aracın kendi işlevleri çalıştırılarak alındı (is-A/altin.py): selC + pBY change olayı, M.direk listesi, refresh(true); KPI'lar #kL #kA #kF #kTmin #kSig, bölüm Tn değerleri cozHal(), sehimler #tbRes satırlarından. Durum 1: 1/0 AWG (3xRaven) BY3, direkler D,T,K.T,K.D,T,T,D, a=120,150,135,160,140,125 → 2 bölüm Ar=136,66 / 143,84; Tn(−5°)=480,46 / 457,09; Tn(45°)=239,92 / 238,14; fmax=2,90 (4–5 açıklığı 45°C). Durum 2: 3 AWG (3xSW) BY2 (k=0,20, −5°C buz), D,T,K.T,D,T,D, a=95,5/102,3/88,7/110,2/99,8 → Ar=95,98 / 105,39, Tn,min=60,87, fmax=2,69. Durum 3: iletken/bölge yok → araç varsayılanı 3 AWG BY3, 3–4 açıklığı uzunluksuz (hesaba katılmaz): Ar=134,15, Tn(45°)=41,66, fmax=6,81. Durum 4: Raven BY3 kısa açıklıklar 45/50/40 → Tn(−5°)=742,98 → σ=11,91 > σmax 11 uyarısı. Hesapta karar yoktur: durum her zaman 'bilgi'.",
+  "durumlar": [
+    {
+      "ad": "telefon hattı Raven 7 direk (köşe ve K.T ile)",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme Köyü ENH",
+          "kod": "DNM-01",
+          "yapan": "Ayşe Nur Yılmaz",
+          "unvan": "Elektrik Mühendisi",
+          "firma": "Örnek Mühendislik",
+          "tarih": "2026-10-18",
+          "buzBolgesi": "3"
+        },
+        "hedef": {
+          "tur": "hat",
+          "id": "h7",
+          "no": "H-7"
+        },
+        "hat": {
+          "id": "h7",
+          "no": "H-7",
+          "tur": "OG_HAVAI",
+          "havai": true,
+          "gerilimKV": 34.5,
+          "iletkenler": [
+            {
+              "ad": "3xRaven",
+              "adet": 1,
+              "devre": "OG"
+            }
+          ],
+          "direkler": [
+            {
+              "id": "d1",
+              "no": "1",
+              "tip": "GD-12 (1/0)",
+              "malzeme": "demir",
+              "rol": "N",
+              "aci": 0,
+              "kot": 812.4,
+              "yukseklik": 12,
+              "baglanti": null
+            },
+            {
+              "id": "d2",
+              "no": "2",
+              "tip": "GT-12 (1/0)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 815.1,
+              "yukseklik": 12,
+              "baglanti": null
+            },
+            {
+              "id": "d3",
+              "no": "3",
+              "tip": "GT-12 (1/0)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 6.5,
+              "kot": 818.0,
+              "yukseklik": 12,
+              "baglanti": null
+            },
+            {
+              "id": "d4",
+              "no": "4",
+              "tip": "GK-14 (1/0)",
+              "malzeme": "demir",
+              "rol": "K",
+              "aci": 32.0,
+              "kot": 816.2,
+              "yukseklik": 14,
+              "baglanti": null
+            },
+            {
+              "id": "d5",
+              "no": "5",
+              "tip": "GT-12 (1/0)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 811.7,
+              "yukseklik": 12,
+              "baglanti": null
+            },
+            {
+              "id": "d6",
+              "no": "6",
+              "tip": "GT-12 (1/0)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 809.3,
+              "yukseklik": 12,
+              "baglanti": null
+            },
+            {
+              "id": "d7",
+              "no": "7",
+              "tip": "GD-12 (1/0)",
+              "malzeme": "demir",
+              "rol": "N",
+              "aci": 0,
+              "kot": 807.9,
+              "yukseklik": 12,
+              "baglanti": null
+            }
+          ],
+          "acikliklar": [
+            {
+              "bas": "1",
+              "bit": "2",
+              "uzunluk": 120,
+              "uzunluk3B": 120.03,
+              "dH": 2.7
+            },
+            {
+              "bas": "2",
+              "bit": "3",
+              "uzunluk": 150,
+              "uzunluk3B": 150.03,
+              "dH": 2.9
+            },
+            {
+              "bas": "3",
+              "bit": "4",
+              "uzunluk": 135,
+              "uzunluk3B": 135.01,
+              "dH": -1.8
+            },
+            {
+              "bas": "4",
+              "bit": "5",
+              "uzunluk": 160,
+              "uzunluk3B": 160.06,
+              "dH": -4.5
+            },
+            {
+              "bas": "5",
+              "bit": "6",
+              "uzunluk": 140,
+              "uzunluk3B": 140.02,
+              "dH": -2.4
+            },
+            {
+              "bas": "6",
+              "bit": "7",
+              "uzunluk": 125,
+              "uzunluk3B": 125.01,
+              "dH": -1.4
+            }
+          ],
+          "toplamUzunluk": 830,
+          "ruling": 140.15
+        }
+      },
+      "beklenen": {
+        "dolan": 19,
+        "eksik": 0,
+        "durum": "bilgi",
+        "ozet": "^1/0 AWG · BY 3 · 2 gerilme bölümü · L = 830,00 m · fmax = 2,90 m · Tₙ,min = 238,14 kg$",
+        "degerler": {
+          "Hat uzunluğu": 830,
+          "Gerilme bölümü sayısı": 2,
+          "En büyük açıklık": 160,
+          "En büyük sehim": 2.9,
+          "En düşük çekme kuvveti Tₙ": 238.14,
+          "En büyük çekme kuvveti Tₙ": 480.46,
+          "En küçük gerilme σ": 3.82,
+          "En büyük gerilme σ": 7.7,
+          "Bölüm 1 eşdeğer açıklık Ar": 136.66,
+          "Bölüm 2 eşdeğer açıklık Ar": 143.84,
+          "Tmax = T₁": 686.18,
+          "Başlangıç yükü p₁": 0.6783,
+          "Buz katsayısı k": 0.3,
+          "tablo.satirlar[0][5]": 480.46,
+          "tablo.satirlar[0][6]": 0.81,
+          "tablo.satirlar[1][6]": 1.26,
+          "tablo.satirlar[3][5]": 457.09,
+          "tablo.satirlar[3][26]": 2.9,
+          "tablo.satirlar[3][27]": 319.4,
+          "tablo.satirlar[3][28]": 2.16,
+          "tablo.satirlar[5][1]": "T",
+          "tablo.satirlar[2][1]": "K.T",
+          "tablo.satirlar[3][1]": "K.D",
+          "uyarilar": []
+        }
+      }
+    },
+    {
+      "ad": "AutoCAD yazımıyla Swallow hattı, karışık malzeme",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "autocad",
+        "proje": {
+          "ad": "Deneme Ova ENH",
+          "kod": "DNM-05",
+          "yapan": "Mehmet Ali Kaya",
+          "unvan": "Elektrik-Elektronik Mühendisi",
+          "buzBolgesi": "2"
+        },
+        "hedef": {
+          "tur": "direk",
+          "id": "s3",
+          "no": "S-3"
+        },
+        "direk": {
+          "id": "s3",
+          "no": "S-3",
+          "tur": "OG",
+          "malzeme": "demir",
+          "tip": "G-T-10 (sw)",
+          "rol": "T",
+          "rolKaynagi": "tip",
+          "aci": 4.2,
+          "kot": 96.1,
+          "yukseklik": 10,
+          "baglanti": null
+        },
+        "hat": {
+          "id": "4C1D",
+          "no": "4C1D",
+          "tur": "OG_HAVAI",
+          "havai": true,
+          "gerilimKV": 15.8,
+          "iletkenler": [
+            {
+              "ad": "3xSW",
+              "adet": 1,
+              "devre": "OG"
+            }
+          ],
+          "direkler": [
+            {
+              "id": "s1",
+              "no": "S-1",
+              "tip": "B-N-10 (sw)",
+              "malzeme": "beton",
+              "rol": "N",
+              "aci": 0,
+              "kot": 92.4,
+              "yukseklik": 10,
+              "baglanti": null
+            },
+            {
+              "id": "s2",
+              "no": "S-2",
+              "tip": "G-T-10 (sw)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 94.0,
+              "yukseklik": 10,
+              "baglanti": null
+            },
+            {
+              "id": "s3",
+              "no": "S-3",
+              "tip": "G-T-10 (sw)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 4.2,
+              "kot": 96.1,
+              "yukseklik": 10,
+              "baglanti": null
+            },
+            {
+              "id": "s4",
+              "no": "S-4",
+              "tip": "B-D-10 (sw)",
+              "malzeme": "beton",
+              "rol": "D",
+              "aci": 0,
+              "kot": 95.2,
+              "yukseklik": 10,
+              "baglanti": null
+            },
+            {
+              "id": "s5",
+              "no": "S-5",
+              "tip": "G-T-10 (sw)",
+              "malzeme": "demir",
+              "rol": "T",
+              "aci": 0,
+              "kot": 93.8,
+              "yukseklik": 10,
+              "baglanti": null
+            },
+            {
+              "id": "s6",
+              "no": "S-6",
+              "tip": "G-N-10 (sw)",
+              "malzeme": "demir",
+              "rol": "N",
+              "aci": 0,
+              "kot": 91.5,
+              "yukseklik": 10,
+              "baglanti": null
+            }
+          ],
+          "acikliklar": [
+            {
+              "bas": "S-1",
+              "bit": "S-2",
+              "uzunluk": 95.5,
+              "uzunluk3B": 95.51,
+              "dH": 1.6
+            },
+            {
+              "bas": "S-2",
+              "bit": "S-3",
+              "uzunluk": 102.3,
+              "uzunluk3B": 102.32,
+              "dH": 2.1
+            },
+            {
+              "bas": "S-3",
+              "bit": "S-4",
+              "uzunluk": 88.7,
+              "uzunluk3B": 88.7,
+              "dH": -0.9
+            },
+            {
+              "bas": "S-4",
+              "bit": "S-5",
+              "uzunluk": 110.2,
+              "uzunluk3B": 110.21,
+              "dH": -1.4
+            },
+            {
+              "bas": "S-5",
+              "bit": "S-6",
+              "uzunluk": 99.8,
+              "uzunluk3B": 99.83,
+              "dH": -2.3
+            }
+          ],
+          "toplamUzunluk": 496.5,
+          "ruling": 100.18
+        }
+      },
+      "beklenen": {
+        "dolan": 17,
+        "eksik": 0,
+        "durum": "bilgi",
+        "ozet": "^3 AWG · BY 2 · 2 gerilme bölümü",
+        "degerler": {
+          "Hat uzunluğu": 496.5,
+          "En büyük açıklık": 110.2,
+          "En büyük sehim": 2.69,
+          "En düşük çekme kuvveti Tₙ": 60.87,
+          "En büyük çekme kuvveti Tₙ": 105.82,
+          "Bölüm 1 eşdeğer açıklık Ar": 95.98,
+          "Bölüm 2 eşdeğer açıklık Ar": 105.39,
+          "Buz katsayısı k": 0.2,
+          "Başlangıç yükü p₁": 0.6424,
+          "Başlangıç sıcaklığı t₁": -5,
+          "tablo.satirlar[0][5]": 105.82,
+          "tablo.satirlar[0][6]": 1.16,
+          "tablo.satirlar[3][5]": 92.9,
+          "tablo.satirlar[3][26]": 2.69
+        }
+      }
+    },
+    {
+      "ad": "eksik bağlam: iletken, bölge, yapan, görev ve bir açıklık yok",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme Eksik ENH",
+          "yapan": null,
+          "unvan": null,
+          "buzBolgesi": null
+        },
+        "hedef": {
+          "tur": "hat",
+          "id": "h3",
+          "no": "H-3"
+        },
+        "hat": {
+          "id": "h3",
+          "no": "H-3",
+          "tur": "OG_HAVAI",
+          "havai": true,
+          "gerilimKV": null,
+          "iletkenler": [],
+          "direkler": [
+            {
+              "id": "e1",
+              "no": "1",
+              "tip": null,
+              "malzeme": null,
+              "rol": null,
+              "aci": null,
+              "kot": null,
+              "yukseklik": null,
+              "baglanti": null
+            },
+            {
+              "id": "e2",
+              "no": "2",
+              "tip": null,
+              "malzeme": null,
+              "rol": "T",
+              "aci": 0,
+              "kot": null,
+              "yukseklik": null,
+              "baglanti": null
+            },
+            {
+              "id": "e3",
+              "no": "3",
+              "tip": null,
+              "malzeme": null,
+              "rol": null,
+              "aci": null,
+              "kot": null,
+              "yukseklik": null,
+              "baglanti": null
+            },
+            {
+              "id": "e4",
+              "no": "4",
+              "tip": null,
+              "malzeme": null,
+              "rol": null,
+              "aci": null,
+              "kot": null,
+              "yukseklik": null,
+              "baglanti": null
+            },
+            {
+              "id": "e5",
+              "no": "5",
+              "tip": null,
+              "malzeme": null,
+              "rol": "N",
+              "aci": 0,
+              "kot": null,
+              "yukseklik": null,
+              "baglanti": null
+            }
+          ],
+          "acikliklar": [
+            {
+              "bas": "1",
+              "bit": "2",
+              "uzunluk": 130,
+              "uzunluk3B": null,
+              "dH": null
+            },
+            {
+              "bas": "2",
+              "bit": "3",
+              "uzunluk": 145,
+              "uzunluk3B": null,
+              "dH": null
+            },
+            {
+              "bas": "3",
+              "bit": "4",
+              "uzunluk": null,
+              "uzunluk3B": null,
+              "dH": null
+            },
+            {
+              "bas": "4",
+              "bit": "5",
+              "uzunluk": 125,
+              "uzunluk3B": null,
+              "dH": null
+            }
+          ],
+          "toplamUzunluk": null,
+          "ruling": null
+        }
+      },
+      "beklenen": {
+        "dolan": 6,
+        "eksik": [
+          "Açıklık uzunlukları",
+          "Buz bölgesi",
+          "Direk görevleri",
+          "Direk tipi",
+          "Gerilim U",
+          "Projeyi yapan",
+          "Unvan",
+          "İletken cinsi"
+        ],
+        "durum": "bilgi",
+        "degerler": {
+          "Hat uzunluğu": 400,
+          "Gerilme bölümü sayısı": 1,
+          "En büyük sehim": 6.81,
+          "En düşük çekme kuvveti Tₙ": 41.66,
+          "Bölüm 1 eşdeğer açıklık Ar": 134.15,
+          "Direk sayısı": 5,
+          "uyarilar[0]": "Uzunluğu girilmemiş açıklık hesaba katılmadı: 3–4 (bölüm eşdeğer açıklığı bu açıklık olmadan hesaplandı)."
+        }
+      },
+      "adimlar": [
+        "if (window.__SM.A.deger('#pAdi') !== '—' || window.__SM.A.deger('#pSoy') !== '—') throw new Error('ad alanı: ' + window.__SM.A.deger('#pAdi') + ' ' + window.__SM.A.deger('#pSoy'));"
+      ]
+    },
+    {
+      "ad": "kısa açıklıklar: σmax aşımı uyarısı",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "telefon",
+        "proje": {
+          "ad": "Deneme Köprü Geçişi",
+          "yapan": "Ayşe Nur Yılmaz",
+          "unvan": "Elektrik Mühendisi",
+          "buzBolgesi": "3"
+        },
+        "hedef": {
+          "tur": "hat",
+          "id": "h11",
+          "no": "H-11"
+        },
+        "hat": {
+          "id": "h11",
+          "no": "H-11",
+          "tur": "OG_HAVAI",
+          "havai": true,
+          "gerilimKV": 34.5,
+          "iletkenler": [
+            {
+              "ad": "3xRaven",
+              "adet": 1,
+              "devre": "OG"
+            }
+          ],
+          "direkler": [
+            {
+              "id": "k1",
+              "no": "1",
+              "malzeme": "beton",
+              "rol": "N",
+              "aci": 0
+            },
+            {
+              "id": "k2",
+              "no": "2",
+              "malzeme": "beton",
+              "rol": "T",
+              "aci": 0
+            },
+            {
+              "id": "k3",
+              "no": "3",
+              "malzeme": "beton",
+              "rol": "T",
+              "aci": 0
+            },
+            {
+              "id": "k4",
+              "no": "4",
+              "malzeme": "beton",
+              "rol": "N",
+              "aci": 0
+            }
+          ],
+          "acikliklar": [
+            {
+              "bas": "1",
+              "bit": "2",
+              "uzunluk": 45
+            },
+            {
+              "bas": "2",
+              "bit": "3",
+              "uzunluk": 50
+            },
+            {
+              "bas": "3",
+              "bit": "4",
+              "uzunluk": 40
+            }
+          ],
+          "toplamUzunluk": 135,
+          "ruling": 45.6
+        }
+      },
+      "beklenen": {
+        "durum": "bilgi",
+        "degerler": {
+          "En büyük çekme kuvveti Tₙ": 742.98,
+          "En büyük gerilme σ": 11.91,
+          "En büyük sehim": 0.23,
+          "Bölüm 1 eşdeğer açıklık Ar": 45.55,
+          "uyarilar[0]": "σmax aşılıyor: hesaplanan en büyük gerilme 11,91 kg/mm² > σmax 11,00 kg/mm² (bölüm 1). Seçilen başlangıç hâli bu bölümlerde belirleyici değil; en düşük sıcaklık hâlini kontrol edin."
+        }
+      }
+    },
+    {
+      "ad": "bağlamsız açılış, elle direk girişi ve katalog modu geri yükleme (k, q, hâl korunur)",
+      "baglam": null,
+      "adimlar": [
+        "$('pBY').value='4'; $('pBY').dispatchEvent(new Event('change')); window.__SM.A.yaz('#cQ', 60); window.__SM.A.yaz('#cHal', 'buzruz'); M.direk=[{dn:'1',tip:'D',a:180},{dn:'2',tip:'T',a:200},{dn:'3',tip:'D',a:0}]; refresh(true);"
+      ],
+      "beklenen": {
+        "durum": "bilgi",
+        "degerler": {
+          "Buz katsayısı k": 0.4,
+          "Rüzgâr basıncı q": 60,
+          "Başlangıç yükü p₁": 1.2842,
+          "En düşük çekme kuvveti Tₙ": 29.01,
+          "En büyük sehim": 18.61
+        }
+      }
+    }
+  ]
+}

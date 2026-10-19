@@ -18,6 +18,9 @@ import { CizimDurum } from '../durum-kodu.js';
 const KIND_TITLE = { pole: 'Direk Kaydı', lighting: 'Aydınlatma Direği', transformer: 'Trafo Kaydı', sdk: 'SDK / Box Kaydı', subscriber: 'Abone Kaydı', manhole: 'Menhol Kaydı', kiosk: 'Köşk Kaydı', substation: 'Dağıtım Merkezi', panel: 'Pano Kaydı', luminaire: 'Armatür Kaydı', other: 'Obje Kaydı' };
 const SLOTS = { panel: ['Ön', 'İç', 'Etiket', 'Çevre'], luminaire: ['Genel', 'Etiket'], pole: ['Taban', 'Gövde', 'Tepe', 'Çevre'], transformer: ['Plaka', 'Genel', 'Pano', 'Topraklama'], sdk: ['Ön', 'İç', 'Sigorta', 'Çevre'] };
 
+// Teknik hesapların açılabildiği ekipman türleri → hesap hedefi
+const HESAP_TURU = { pole: 'direk', lighting: 'direk', transformer: 'trafo', kiosk: 'trafo', substation: 'trafo' };
+
 export function EquipmentScreen({ id }) {
   useBus(['project:computed']);
   const ps = app.ps, cat = ps.cat;
@@ -94,7 +97,7 @@ export function EquipmentScreen({ id }) {
   const free = ['panel', 'luminaire', 'other', 'manhole'].includes(d.kind);
   const freePoz = free ? (d.kind === 'luminaire' ? luminairePoz(cat) : d.kind === 'panel' ? (cat.t.panels || []).map((x) => ({ servis: x.servis, name: (x.kind === 'harici' ? 'Harici' : 'Dahili') + ' pano · ' + x.kva + ' kVA' })) : []) : [];
   return html`
-    <${Title} title=${KIND_TITLE[d.kind] || 'Ekipman'} sub=${d.no + ' · ' + new Date(e0.createdAt).toLocaleString('tr-TR')} />
+    <${Title} title=${KIND_TITLE[d.kind] || 'Ekipman'} sub=${d.no + ' · ' + new Date(e0.createdAt).toLocaleString('tr-TR')} right=${HESAP_TURU[d.kind] ? html`<button class="btn sm" title="Bu ${HESAP_TURU[d.kind] === 'direk' ? 'direk' : 'trafo'} için teknik hesaplar" onClick=${() => app.nav.go('hesapMerkezi', { hedef: { tur: HESAP_TURU[d.kind], id } })}><${Icon} n="calc" s=${16} />Hesaplar</button>` : null} />
     <div class="card">
       <div class="row"><${Icon} n="lock" s=${14} c="#94a3b8" /><span class="lbl grow">Konum · ${p.pointNo || '—'}</span><button class="btn sm" onClick=${() => app.nav.go('point', { id: e0.pointId })}>Nokta kaydı</button></div>
       <div class="grid3" style="margin:8px 0"><div><div class="lbl">Y (sağa)</div><div class="num">${fmt(p.E)}</div></div><div><div class="lbl">X (yukarı)</div><div class="num">${fmt(p.N)}</div></div><div><div class="lbl">Z (kot)</div><div class="num">${p.H != null ? fmt(p.H) : 'bilinmiyor'}</div></div></div>
