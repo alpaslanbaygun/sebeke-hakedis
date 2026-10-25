@@ -21,13 +21,31 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 - Çalışan özellikleri bozma; büyük değişiklikten önce geri dönüş noktası (dal / etiket + önceki APK) bırak.
 - Değişiklik açıklamaları (commit) Türkçe yazılır. Çalışma dalı → ana dala (`main`) alınınca sürümler çıkar.
 
-## 2. Durum (19.10.2026)
+## 2. Durum (25.10.2026)
 
 | Parça | Sürüm | Durum |
 | --- | --- | --- |
 | Telefon uygulaması (Şebeke-M) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı), **Hesap Merkezi** (15 hesap); telefonda denenmedi |
-| AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası); AutoCAD'de denenmedi (derleme, çekirdek ve pencere denemeleri CI'da) |
+| AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM | Güncel |
+
+25.10 canlı deneme (AutoCAD 2027, eklenti 0.1.52, uydurma örnek proje): Telefondan Al (72 nesne), Hesap Merkezi (AG
+hattı seçildi, zincir dallanmadan düz geçti), AG gerilim düşümü sayfası (46 bilgi çizimden), Kaydet / yeniden aç /
+güncelle, merkezde kayıt listesi ve rozet, Çizimde göster (yakınlaştırma + seçim), Kayıtlı Hesaplar: **çalıştı**.
+Bulunan ve `sebeke-m` dalında düzeltilen hatalar:
+1. **Eklentinin yazdığı çizim kaydedilip yeniden açılınca AutoCAD çöküyordu** ("Unhandled Access Violation");
+   RECOVER 72 nesnenin hepsini `eWrongObjectType` ile attı. Neden: `CizimYazici.XdataYaz` değeri olmayan uygulama
+   bölümlerini yalnız adıyla yazıyordu; AutoCAD sıfır uzunluklu bölümü saklıyor, DWG okuyucusu bunu verinin sonu
+   sayıp arkasındaki bölümleri bozuyor. Artık değersiz bölüm yazılmaz (silme izi: tek boş dizgi; okuyucu yok sayar).
+   **Bu hata 0.1.52 ve öncesinin Telefondan Al ile çizdiği her çizimde vardı**: böyle bir çizim kaydedilmişse açılışta
+   nesneler kaybolur (RECOVER ile açılır ama nesneler gelmez); projeyi telefon dosyasından yeniden almak gerekir.
+   Düzeltme AutoCAD'de henüz denenmedi (CI derledi); ilk iş: yeni sürümle Telefondan Al → kaydet → yeniden aç.
+2. Boş NIT bölümlü GPS noktası okuyucuda eleman sayılıyor, direkle aynı yerdeki bu sahte eleman hesap zincirinin
+   düğümü oluyordu (branşman noktası "2FA" gibi tanıtıcı çıktı). Okuyucu artık yalnız değeri olan bölüme bakar.
+3. Hesap kaydı Xrecord parçaları 1000 → 250 karakter (DXF 1 dizgi sınırı; çökmenin asıl nedeni değildi ama güvenli).
+4. Hesap sayfasında AutoCAD'de merkeze dönüş düğmesi yoktu; kayıtlı hesapta değişiklik yapınca çip uyarmıyordu.
+Deneme ortamı notları: sayfa Edge yoksa varsayılan tarayıcıda (Chrome) açıldı; Claude'un bilgisayar kullanımında
+AutoCAD'in dosya pencerelerine yazı yazılamıyor, `FILEDIA 0` ile komut satırından yol verildi (sonra 1'e alındı).
 
 19.10 (`sebeke-m` dalı; geri dönüş: `onceki-main-sebeke-m-oncesi` dalı): Şebeke-M markası, harita altlıkları ve
 **Hesap Merkezi**: Baki SONAY'ın 14 HTML hesap aracı (`ortak/hesap/kaynak`, formüller değiştirilmedi; yapılan
@@ -128,10 +146,12 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
-0. **Hesap Merkezi'nin gerçek denemesi** (kullanıcı yapacak): AutoCAD'de bir direk seçip Hesap Merkezi; Edge
-   penceresinde sayfanın açılması, Kaydet, çizimi kaydedip yeniden açınca kaydın durması, Telefona Gönder → telefonda
-   kaydın görünmesi; telefonda bir hesabı kaydedip Telefondan Al ile çizime gelmesi. Hesap sahibi (Baki SONAY) ile
-   ⓘ panellerindeki doğrulanacak tablo değerleri görüşülmeli.
+0. **Çizim yazıcı düzeltmesinin canlı doğrulaması** (yeni sürüm kurulunca): boş çizime Telefondan Al → kaydet →
+   kapat → aç (nesneler duruyor mu, `AUDIT` hata veriyor mu); sonra Hesap Merkezi'nde Kaydet → kaydet → aç (kayıt
+   duruyor mu), `SH_RAPOR` HESAPLAR sayfası, `SH_ICEAL` dosyasında `hesaplar`, Telefona Gönder → telefonda kaydın
+   görünmesi; telefonda bir hesabı kaydedip Telefondan Al ile çizime gelmesi. Bir direk hedefiyle (kollar) de
+   denenmeli (canlı denemede yalnız hat hedefi açıldı). Hesap sahibi (Baki SONAY) ile ⓘ panellerindeki doğrulanacak
+   tablo değerleri görüşülmeli.
 1. **AutoCAD'de ilk deneme** (kullanıcı yapacak): koyu şerit ve pencereler (kategori → öğe → çizim, Ara kutusu,
    yüksek DPI'da pencereler), yeni görünüm, parçalı hat; 18.10 akşam işleri: direğe / SDK'ya tıklayınca yakalama,
    cins seçimi, iki iletken / adet / müşterek, malzeme hafızası, toplu malzeme, armatür (taşı / kopyala / sil / geri al),

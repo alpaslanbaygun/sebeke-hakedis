@@ -401,6 +401,11 @@ fark, bilgilerin nereden geldiğidir (telefonda projeden, AutoCAD'de çizimden).
   Kaydet'e basın.
 - **Hesap sayfası tarayıcıda açılmadı**: Edge yoksa varsayılan tarayıcı kullanılır; yine açılmadıysa komut satırındaki
   adres kopyalanıp tarayıcıya yapıştırılabilir (`SH_HESAP` yazdıktan sonra görünür).
+- **Eklentiyle çizilmiş bir çizim açılırken AutoCAD kapanıyor ("Unhandled Access Violation")**: eklentinin
+  0.1.52 ve önceki sürümleri Telefondan Al ile çizdiği nesnelere bozuk bir veri bölümü yazıyordu; böyle kaydedilmiş
+  çizim açılışta çöker, `RECOVER` ile açılır ama o nesneler gelmez. Çözüm: eklentiyi güncelleyin, boş bir çizime
+  projeyi telefon dosyasından yeniden alın (`SH_PROJEAL`) ve kaydedin. Düzeltme 0.1.53 ve sonrasındadır; ilk
+  kullanımda kaydet → kapat → yeniden aç diye bir kez doğrulayın (düzeltme AutoCAD'de henüz canlı denenmedi).
 - **Şerit sekmesi kayboldu**: komut satırına `SH_SERIT`.
 - **Bir hata oldu**: ayrıntı `%TEMP%\SebekeHakedis_hata.txt` dosyasına yazılır. Destek için `SH_DOKUM`
   çizimin teknik dökümünü kaydeder.
