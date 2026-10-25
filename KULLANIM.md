@@ -338,11 +338,15 @@ fark, bilgilerin nereden geldiğidir (telefonda projeden, AutoCAD'de çizimden).
     komut satırında sorulur.
   - **Kayıtlı Hesaplar**: çizimdeki bütün kayıtlar.
   - Komut satırından: `SH_HESAP` (hesap kimliği sorar; `merkez` ya da ör. `enh-sehim`), `SH_HESAPLAR`.
-  Sayfa bilgisayarın tarayıcısında (Edge uygulama penceresi) açılır; AutoCAD açık kaldığı sürece çizimle konuşur.
+  Sayfa bilgisayarın tarayıcısında açılır (Edge varsa uygulama penceresi, yoksa varsayılan tarayıcı, ör. Chrome);
+  AutoCAD açık kaldığı sürece çizimle konuşur.
 
 ### Sayfada ne olur?
 
 - Üst çubuk: hesabın adı, **hedef** (ör. `Direk SC104`), durum (`19 bilgi projeden · 2 eksik`), **Kaydet**, **ⓘ**.
+  Soldaki **‹** telefonda sayfayı kapatır; AutoCAD'de sayfa Hesap Merkezi'nden açıldıysa merkeze döndürür
+  (kaydedilmemiş değişiklik varsa sorar). Kayıtlı bir hesapta değişiklik yapınca durum çipi
+  **değişiklik kaydedilmedi** diye uyarır.
 - Nesnenin bilgileri (tip, açıklıklar, iletken, kot, trafo gücü, kablolar…) hesabın alanlarına **kendiliğinden
   yazılır**. Projede olmayan bilgiler **turuncu çerçeveyle** işaretlenir ve elle girilir; tahminle doldurulmaz.
 - **ⓘ** paneli: nereden hangi bilgi geldi, neler eksik ("Alana git" ile atlar), uyarılar ve **Hesap hakkında**
