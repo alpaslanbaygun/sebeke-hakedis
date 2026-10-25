@@ -812,18 +812,28 @@ namespace SebekeHakedis.Eklenti
 
         private void XdataYaz(Entity e, CadVarlik v)
         {
+            // Yönetilen uygulamalar: değeri olan yazılır; değeri yoksa yalnız nesnede o uygulamanın eski verisi varsa boş
+            // bölüm yazılır (AutoCAD'de eski değeri silmenin yolu). Yeni nesneye boş bölüm yazılmaz: boş "NIT" bölümü
+            // GPS noktasını okuyucuda eleman gibi gösteriyordu.
+            Dictionary<string, List<string>> eski;
+            try { eski = Toplayici.XdataOku(e); } catch { eski = new Dictionary<string, List<string>>(); }
             using (var rb = new ResultBuffer())
             {
-                foreach (var app in Yonetilen) Bolum(rb, app, v.XdHepsi(app));
+                int bolum = 0;
+                foreach (var app in Yonetilen)
+                {
+                    var l = v.XdHepsi(app);
+                    if (l.Count > 0 || eski.ContainsKey(app)) { Bolum(rb, app, l); bolum++; }
+                }
                 List<string> kimlik;
-                if (v.Xd.TryGetValue(NesneYazici.KimlikUygulamasi, out kimlik) && kimlik.Count > 0) Bolum(rb, NesneYazici.KimlikUygulamasi, kimlik);
+                if (v.Xd.TryGetValue(NesneYazici.KimlikUygulamasi, out kimlik) && kimlik.Count > 0) { Bolum(rb, NesneYazici.KimlikUygulamasi, kimlik); bolum++; }
                 // AutoCAD'in pano çıkış şeması / hücre verisi: yalnız tarifte varsa yazılır (yoksa çizimdeki olduğu gibi kalır)
                 foreach (var app in NesneYazici.EkUygulamalar)
                 {
                     List<string> l;
-                    if (v.Xd.TryGetValue(app, out l) && l.Count > 0) Bolum(rb, app, l);
+                    if (v.Xd.TryGetValue(app, out l) && l.Count > 0) { Bolum(rb, app, l); bolum++; }
                 }
-                e.XData = rb;
+                if (bolum > 0) e.XData = rb;
             }
         }
 

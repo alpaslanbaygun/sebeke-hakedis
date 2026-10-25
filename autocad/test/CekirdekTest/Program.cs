@@ -355,6 +355,19 @@ namespace SebekeHakedis.Test
             Esit("AG_HAVAI", hat.Metin("tur"), "bağlam: hat türü");
             Esit(true, bh.Nesne("trafo") != null && bh.Nesne("trafo").Metin("no") == "SCTR01", "bağlam: hattın başındaki trafo");
             Esit(true, bh.Dizi("zincir") != null && bh.Dizi("zincir").Count == hat.Dizi("acikliklar").Count, "bağlam: zincir (gerilim düşümü / kısa devre için)");
+            Esit("SC101", ((JsonNesne)hat.Dizi("acikliklar")[0]).Metin("bit"), "bağlam: ilk açıklığın bitişi SC101");
+            // AutoCAD'den okunan çizimde yönetilen her uygulamanın yalnız adı yazılmış boş bölümü olabilir (eski değeri silmek
+            // için yazılır). Boş NIT bölümü GPS noktasını eleman yapmamalı; yoksa direğin üstündeki nokta zincir düğümü olur.
+            var cizimBos = NesneYazici.Hepsi(tp, id => false);
+            foreach (var v in cizimBos)
+                foreach (var u in new[] { "GIS", "NIT", "MALZEME", "HAT", "ANAKESIT", "KONTROL", "FULLREG", "HAKNO", "ZKOORD" })
+                    if (!v.Xd.ContainsKey(u)) v.Xd[u] = new List<string>();
+            var okunan = NesneOkuyucu.Oku(cizimBos, "bos-bolum.dwg");
+            Esit(tp.Noktalar.Count, okunan.Noktalar.Count, "okuyucu: boş NIT bölümlü GPS noktası nokta kalır");
+            Esit(tp.Elemanlar.Count, okunan.Elemanlar.Count, "okuyucu: boş bölümler eleman sayısını değiştirmez");
+            Esit(tp.Hatlar.Count, okunan.Hatlar.Count, "okuyucu: boş bölümler hat sayısını değiştirmez");
+            var bh2 = HesapBaglami.Kur(okunan, new HesapHedefi { Tur = "hat", Id = "H17" }, bilgi);
+            Esit("SC101", ((JsonNesne)bh2.Nesne("hat").Dizi("acikliklar")[0]).Metin("bit"), "bağlam: GPS noktalı çizimde zincir düğümü direk (SC101)");
             Esit(true, HesapBaglami.HedefVar(tp, hatHedefi), "bağlam: hat hedefi var");
             Esit(false, HesapBaglami.HedefVar(tp, new HesapHedefi { Tur = "direk", Id = "YOK" }), "bağlam: silinmiş hedef");
             var cikislar = HesapBaglami.TrafoCikislari(tp, "D1");
