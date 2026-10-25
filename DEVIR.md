@@ -36,7 +36,8 @@ Bulunan ve `sebeke-m` dalında düzeltilen hatalar:
 1. **Eklentinin yazdığı çizim kaydedilip yeniden açılınca AutoCAD çöküyordu** ("Unhandled Access Violation");
    RECOVER 72 nesnenin hepsini `eWrongObjectType` ile attı. Neden: `CizimYazici.XdataYaz` değeri olmayan uygulama
    bölümlerini yalnız adıyla yazıyordu; AutoCAD sıfır uzunluklu bölümü saklıyor, DWG okuyucusu bunu verinin sonu
-   sayıp arkasındaki bölümleri bozuyor. Artık değersiz bölüm yazılmaz (silme izi: tek boş dizgi; okuyucu yok sayar).
+   sayıp arkasındaki bölümleri bozuyor. Artık değersiz bölüm yazılmaz; eski veri silinirken AutoCAD'in belgelenmiş
+   yolu kullanılır, AutoCAD bölümü değersiz bırakırsa tek boş dizgi yazılır (`Toplayici.XdataSil`; okuyucu yok sayar).
    **Bu hata 0.1.52 ve öncesinin Telefondan Al ile çizdiği her çizimde vardı**: böyle bir çizim kaydedilmişse açılışta
    nesneler kaybolur (RECOVER ile açılır ama nesneler gelmez); projeyi telefon dosyasından yeniden almak gerekir.
    Düzeltme AutoCAD'de henüz denenmedi (CI derledi); ilk iş: yeni sürümle Telefondan Al → kaydet → yeniden aç.

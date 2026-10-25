@@ -199,6 +199,40 @@ namespace SebekeHakedis.Eklenti
             return d;
         }
 
+        /// <summary>
+        /// Uygulamaların genişletilmiş verisini nesneden siler. Önce AutoCAD'in belgelenmiş yolu denenir (yalnız uygulama
+        /// adı yazılır; eski program da veriyi böyle görmez olur). AutoCAD bölümü silmeyip değersiz bırakırsa (yeni
+        /// nesnelerde böyle davrandığı görüldü) tek boş dizgi yazılır: değersiz bölüm DWG'de sıfır uzunluklu kaydedilir,
+        /// okuyucu bunu verinin sonu sayar ve nesne açılışta atılır (canlı denemede 72 nesne kayboldu).
+        /// </summary>
+        internal static void XdataSil(DBObject o, IList<string> uygulamalar)
+        {
+            if (o == null || uygulamalar == null || uygulamalar.Count == 0) return;
+            if (!o.IsWriteEnabled) o.UpgradeOpen();
+            using (var rb = new ResultBuffer())
+            {
+                foreach (var u in uygulamalar) rb.Add(new TypedValue((int)DxfCode.ExtendedDataRegAppName, u));
+                o.XData = rb;
+            }
+            var ham = XdataOku(o, true);
+            var kalan = new List<string>();
+            foreach (var u in uygulamalar)
+            {
+                List<string> l;
+                if (ham.TryGetValue(u, out l) && l.Count == 0) kalan.Add(u);
+            }
+            if (kalan.Count == 0) return;
+            using (var rb = new ResultBuffer())
+            {
+                foreach (var u in kalan)
+                {
+                    rb.Add(new TypedValue((int)DxfCode.ExtendedDataRegAppName, u));
+                    rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, ""));
+                }
+                o.XData = rb;
+            }
+        }
+
         internal static bool TaniticiylaBul(Database db, string hex, out ObjectId id)
         {
             id = ObjectId.Null;
