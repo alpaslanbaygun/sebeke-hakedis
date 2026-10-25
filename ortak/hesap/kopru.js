@@ -155,7 +155,10 @@
 
   function arayuz() {
     var ortak = SM.ortak || 'ortak/';
-    var geri = SM.ortam === 'telefon' ? h('button', { class: 'sm-geri', title: 'Kapat', 'aria-label': 'Kapat', onclick: function () { geriIstendi(); } }, [h('span', { html: '&#8249;' })]) : null;
+    // Telefonda her zaman "Kapat"; AutoCAD'de sayfa Hesap Merkezi'nden açıldıysa (geçmiş varsa) "Hesap Merkezi'ne dön".
+    var geriVar = SM.ortam === 'telefon' || (SM.ortam === 'autocad' && window.history.length > 1);
+    var geriAdi = SM.ortam === 'telefon' ? 'Kapat' : 'Hesap Merkezi\'ne dön';
+    var geri = geriVar ? h('button', { class: 'sm-geri', title: geriAdi, 'aria-label': geriAdi, onclick: function () { geriIstendi(); } }, [h('span', { html: '&#8249;' })]) : null;
     cipHedef = h('button', { class: 'sm-cip sm-hedef', title: 'Hedef', onclick: panelAcKapa }, ['Bağımsız hesap']);
     cipDurum = h('button', { class: 'sm-cip sm-durum', onclick: panelAcKapa }, ['…']);
     dgmKaydet = h('button', { class: 'sm-kaydet', onclick: kaydet, title: host ? 'Sonucu projeye kaydet' : 'Bağımsız açılışta kayıt yapılmaz' }, ['Kaydet']);
@@ -268,6 +271,8 @@
       t = host ? 'Proje bilgisi yok' : 'Bilgi';
     }
     if (S.kaydedildi) { t = 'Kaydedildi · ' + t.replace(/^Kayıtlı · [^·]+· /, ''); }
+    // Kayıtlı bir hesapta kaydedilmemiş değişiklik varsa çipte belli olsun.
+    if (S.kirli && (S.kayit || S.kaydedildi)) { t += ' · değişiklik kaydedilmedi'; sinif = 'sm-turuncu'; }
     cipDurum.textContent = t;
     cipDurum.className = 'sm-cip sm-durum ' + sinif;
     if (!panel.hidden) panelCiz();
@@ -408,7 +413,7 @@
     var f = function (e) {
       if (!S.hazir || (e.target && e.target.closest && e.target.closest('#sm-ust,#sm-panel,#sm-pencere'))) return;
       if (!e.isTrusted) return;
-      if (!S.kirli) { S.kirli = true; kirliBildir(); }
+      if (!S.kirli) { S.kirli = true; kirliBildir(); if (S.kayit || S.kaydedildi) durumCiz(); }
       kirliZaman = Date.now();
     };
     d.addEventListener('input', f, true);

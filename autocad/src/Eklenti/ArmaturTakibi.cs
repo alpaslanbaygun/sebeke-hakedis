@@ -70,10 +70,16 @@ namespace SebekeHakedis.Eklenti
         /// <summary>Direğe bağ verisini yazar (simge null: bağ silinir). Nesne yazmaya açık olmalı, uygulama adı kayıtlı olmalı.</summary>
         public static void DirekVerisiYaz(DBObject direk, string simge, double dx, double dy)
         {
+            // Silme: veri yoksa dokunulmaz; varsa Toplayici.XdataSil ile silinir. Yalnız uygulama adı yazmak değersiz
+            // (sıfır uzunluklu) bölüm bırakabiliyor; bu kaydedilen çizimi bozuyor (açılışta eWrongObjectType).
+            if (string.IsNullOrEmpty(simge))
+            {
+                using (var var_ = direk.GetXDataForApplication(Uygulama)) if (var_ == null) return;
+                Toplayici.XdataSil(direk, new[] { Uygulama });
+                return;
+            }
             if (!direk.IsWriteEnabled) direk.UpgradeOpen();
-            using (var rb = string.IsNullOrEmpty(simge)
-                ? new ResultBuffer(new TypedValue((int)DxfCode.ExtendedDataRegAppName, Uygulama))
-                : new ResultBuffer(
+            using (var rb = new ResultBuffer(
                     new TypedValue((int)DxfCode.ExtendedDataRegAppName, Uygulama),
                     new TypedValue((int)DxfCode.ExtendedDataAsciiString, simge),
                     new TypedValue((int)DxfCode.ExtendedDataReal, dx),

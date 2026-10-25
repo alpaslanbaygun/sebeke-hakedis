@@ -23,8 +23,18 @@ namespace SebekeHakedis.Cekirdek
         public static bool SebekeCizimiMi(IEnumerable<CadVarlik> varliklar)
         {
             foreach (var v in varliklar)
-                if (v.Xd.ContainsKey("NIT") || v.Xd.ContainsKey("FULLREG") || v.Xd.ContainsKey("HAT")) return true;
+                if (Dolu(v, "NIT") || Dolu(v, "FULLREG") || Dolu(v, "HAT")) return true;
             return false;
+        }
+
+        /// <summary>
+        /// Uygulamanın en az bir değeri var mı. Yalnız adı yazılmış boş bölüm (AutoCAD'de eski değeri silmek için
+        /// yazılır; ör. GPS noktasındaki boş NIT) sayılmaz; yoksa GPS noktası eleman sanılır.
+        /// </summary>
+        private static bool Dolu(CadVarlik v, string uygulama)
+        {
+            List<string> l;
+            return v.Xd.TryGetValue(uygulama, out l) && l != null && l.Exists(x => !string.IsNullOrEmpty(x));
         }
 
         public static Proje Oku(IList<CadVarlik> varliklar, string kaynakAdi)
@@ -55,17 +65,17 @@ namespace SebekeHakedis.Cekirdek
 
                 try
                 {
-                    if (v.Tur == "INSERT" && v.Xd.ContainsKey("HAKNO") && !v.Xd.ContainsKey("NIT"))
+                    if (v.Tur == "INSERT" && Dolu(v, "HAKNO") && !Dolu(v, "NIT"))
                         p.Noktalar.Add(NoktaOku(v));
-                    else if (v.Tur == "INSERT" && v.Xd.ContainsKey("NIT"))
+                    else if (v.Tur == "INSERT" && Dolu(v, "NIT"))
                         p.Elemanlar.Add(ElemanOku(v, katmanTuru, katmanHakedis));
-                    else if (v.CizgiMi && v.Xd.ContainsKey("HAT"))
+                    else if (v.CizgiMi && Dolu(v, "HAT"))
                         p.Hatlar.Add(HatOku(v, katmanTuru, katmanHakedis, tanitici));
-                    else if (v.CizgiMi && v.Xd.ContainsKey("NIT") && katmanTuru == "KABLO_KANALI")
+                    else if (v.CizgiMi && Dolu(v, "NIT") && katmanTuru == "KABLO_KANALI")
                         p.Kanallar.Add(KanalOku(v));
-                    else if (v.CizgiMi && v.Xd.ContainsKey("NIT") && katmanTuru == "YATAY_SONDAJ")
+                    else if (v.CizgiMi && Dolu(v, "NIT") && katmanTuru == "YATAY_SONDAJ")
                         p.Sondajlar.Add(SondajOku(v));
-                    else if (v.CizgiMi && v.Xd.ContainsKey("NIT"))
+                    else if (v.CizgiMi && Dolu(v, "NIT"))
                         p.Uyarilar.Add("Tanınmayan çizgi nesnesi atlandı: " + v.H + " (" + v.Katman + ")");
                 }
                 catch (Exception ex)

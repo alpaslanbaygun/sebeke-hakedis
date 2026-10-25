@@ -338,11 +338,15 @@ fark, bilgilerin nereden geldiğidir (telefonda projeden, AutoCAD'de çizimden).
     komut satırında sorulur.
   - **Kayıtlı Hesaplar**: çizimdeki bütün kayıtlar.
   - Komut satırından: `SH_HESAP` (hesap kimliği sorar; `merkez` ya da ör. `enh-sehim`), `SH_HESAPLAR`.
-  Sayfa bilgisayarın tarayıcısında (Edge uygulama penceresi) açılır; AutoCAD açık kaldığı sürece çizimle konuşur.
+  Sayfa bilgisayarın tarayıcısında açılır (Edge varsa uygulama penceresi, yoksa varsayılan tarayıcı, ör. Chrome);
+  AutoCAD açık kaldığı sürece çizimle konuşur.
 
 ### Sayfada ne olur?
 
 - Üst çubuk: hesabın adı, **hedef** (ör. `Direk SC104`), durum (`19 bilgi projeden · 2 eksik`), **Kaydet**, **ⓘ**.
+  Soldaki **‹** telefonda sayfayı kapatır; AutoCAD'de sayfa Hesap Merkezi'nden açıldıysa merkeze döndürür
+  (kaydedilmemiş değişiklik varsa sorar). Kayıtlı bir hesapta değişiklik yapınca durum çipi
+  **değişiklik kaydedilmedi** diye uyarır.
 - Nesnenin bilgileri (tip, açıklıklar, iletken, kot, trafo gücü, kablolar…) hesabın alanlarına **kendiliğinden
   yazılır**. Projede olmayan bilgiler **turuncu çerçeveyle** işaretlenir ve elle girilir; tahminle doldurulmaz.
 - **ⓘ** paneli: nereden hangi bilgi geldi, neler eksik ("Alana git" ile atlar), uyarılar ve **Hesap hakkında**
@@ -397,6 +401,11 @@ fark, bilgilerin nereden geldiğidir (telefonda projeden, AutoCAD'de çizimden).
   Kaydet'e basın.
 - **Hesap sayfası tarayıcıda açılmadı**: Edge yoksa varsayılan tarayıcı kullanılır; yine açılmadıysa komut satırındaki
   adres kopyalanıp tarayıcıya yapıştırılabilir (`SH_HESAP` yazdıktan sonra görünür).
+- **Eklentiyle çizilmiş bir çizim açılırken AutoCAD kapanıyor ("Unhandled Access Violation")**: eklentinin
+  0.1.52 ve önceki sürümleri Telefondan Al ile çizdiği nesnelere bozuk bir veri bölümü yazıyordu; böyle kaydedilmiş
+  çizim açılışta çöker, `RECOVER` ile açılır ama o nesneler gelmez. Çözüm: eklentiyi güncelleyin, boş bir çizime
+  projeyi telefon dosyasından yeniden alın (`SH_PROJEAL`) ve kaydedin. Düzeltme 0.1.52'den sonraki sürümlerdedir
+  (`SH_HAKKINDA` sürümü gösterir).
 - **Şerit sekmesi kayboldu**: komut satırına `SH_SERIT`.
 - **Bir hata oldu**: ayrıntı `%TEMP%\SebekeHakedis_hata.txt` dosyasına yazılır. Destek için `SH_DOKUM`
   çizimin teknik dökümünü kaydeder.

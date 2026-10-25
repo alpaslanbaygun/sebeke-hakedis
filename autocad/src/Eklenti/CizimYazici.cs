@@ -812,19 +812,40 @@ namespace SebekeHakedis.Eklenti
 
         private void XdataYaz(Entity e, CadVarlik v)
         {
+            // Yönetilen uygulamalar: değeri olan yazılır. Değersiz (yalnız adı yazılmış) bölüm yeni nesneye ASLA yazılmaz:
+            // AutoCAD onu sıfır uzunluklu bölüm olarak saklıyor, DWG okuyucusu sıfır uzunluğu "genişletilmiş veri bitti"
+            // sayıyor ve arkasındaki bölümler nesneyi bozuyor (açılışta eWrongObjectType, nesne atılıyor; canlı denemede
+            // 72 nesne kayboldu). Nesnede eski veri varsa ve yeni değer yoksa veri silinir (Toplayici.XdataSil).
+            Dictionary<string, List<string>> eski;
+            try { eski = Toplayici.XdataOku(e, true); } catch { eski = new Dictionary<string, List<string>>(); }   // ham: önceki sürümün bıraktığı değersiz bölüm de onarılsın
+            var silinecek = new List<string>();
             using (var rb = new ResultBuffer())
             {
-                foreach (var app in Yonetilen) Bolum(rb, app, v.XdHepsi(app));
+                int bolum = 0;
+                foreach (var app in Yonetilen)
+                {
+                    var l = v.XdHepsi(app);
+                    if (l.Count > 0) { Bolum(rb, app, l); bolum++; }
+                    else if (eski.ContainsKey(app)) silinecek.Add(app);
+                }
                 List<string> kimlik;
-                if (v.Xd.TryGetValue(NesneYazici.KimlikUygulamasi, out kimlik) && kimlik.Count > 0) Bolum(rb, NesneYazici.KimlikUygulamasi, kimlik);
+                if (v.Xd.TryGetValue(NesneYazici.KimlikUygulamasi, out kimlik) && kimlik.Count > 0) { Bolum(rb, NesneYazici.KimlikUygulamasi, kimlik); bolum++; }
                 // AutoCAD'in pano çıkış şeması / hücre verisi: yalnız tarifte varsa yazılır (yoksa çizimdeki olduğu gibi kalır)
                 foreach (var app in NesneYazici.EkUygulamalar)
                 {
                     List<string> l;
-                    if (v.Xd.TryGetValue(app, out l) && l.Count > 0) Bolum(rb, app, l);
+                    if (v.Xd.TryGetValue(app, out l) && l.Count > 0) { Bolum(rb, app, l); bolum++; }
                 }
-                e.XData = rb;
+                if (bolum > 0) e.XData = rb;
             }
+            Toplayici.XdataSil(e, silinecek);
+            // Denetim: sıfır uzunluklu bölüm kalmamalı (kalırsa kaydedilen çizim açılırken nesne atılır)
+            try
+            {
+                foreach (var kv in Toplayici.XdataOku(e, true))
+                    if (kv.Value.Count == 0) { Uyarilar.Add("Değersiz genişletilmiş veri bölümü kaldı (" + kv.Key + "): " + e.Handle); break; }
+            }
+            catch { }
         }
 
         private void Bolum(ResultBuffer rb, string app, List<string> degerler)
@@ -897,6 +918,12 @@ namespace SebekeHakedis.Eklenti
                 ParcaKonumu(kose[i], kose[i + 1], kaydirma, out x, out y, out aci);
                 var yazi = YaziYap(d.ToString(bicim, CultureInfo.InvariantCulture), x, y, aci, yh, katman);
                 taniticilar.Add(yazi.Handle.ToString());
+            }
+            // Yazı yoksa: eski bölüm varsa silinir, yoksa hiç yazılmaz — değersiz (sıfır uzunluklu) bölüm çizimi bozar
+            if (taniticilar.Count == 0)
+            {
+                if (Toplayici.XdataOku(cizgi, true).ContainsKey(NesneYazici.ParcaUygulamasi)) Toplayici.XdataSil(cizgi, new[] { NesneYazici.ParcaUygulamasi });
+                return;
             }
             using (var rb = new ResultBuffer())
             {

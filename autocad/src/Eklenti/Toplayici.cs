@@ -166,7 +166,11 @@ namespace SebekeHakedis.Eklenti
             catch { return br.Name; }
         }
 
-        public static Dictionary<string, List<string>> XdataOku(DBObject o)
+        /// <summary>
+        /// Nesnenin genişletilmiş verisi: uygulama adı → değerler. Değeri olmayan ya da yalnız boş dizgilerden oluşan
+        /// bölüm (eski değeri silmek için yazılan iz) yok sayılır; ham=true ile olduğu gibi döner (denetim için).
+        /// </summary>
+        public static Dictionary<string, List<string>> XdataOku(DBObject o, bool ham = false)
         {
             var d = new Dictionary<string, List<string>>(StringComparer.Ordinal);
             ResultBuffer rb = o.XData;
@@ -186,7 +190,47 @@ namespace SebekeHakedis.Eklenti
                     mevcut.Add(Convert.ToString(tv.Value, CultureInfo.InvariantCulture) ?? "");
                 }
             }
+            if (!ham)
+            {
+                var bos = new List<string>();
+                foreach (var kv in d) if (kv.Value.TrueForAll(string.IsNullOrEmpty)) bos.Add(kv.Key);
+                foreach (var k in bos) d.Remove(k);
+            }
             return d;
+        }
+
+        /// <summary>
+        /// Uygulamaların genişletilmiş verisini nesneden siler. Önce AutoCAD'in belgelenmiş yolu denenir (yalnız uygulama
+        /// adı yazılır; eski program da veriyi böyle görmez olur). AutoCAD bölümü silmeyip değersiz bırakırsa (yeni
+        /// nesnelerde böyle davrandığı görüldü) tek boş dizgi yazılır: değersiz bölüm DWG'de sıfır uzunluklu kaydedilir,
+        /// okuyucu bunu verinin sonu sayar ve nesne açılışta atılır (canlı denemede 72 nesne kayboldu).
+        /// </summary>
+        internal static void XdataSil(DBObject o, IList<string> uygulamalar)
+        {
+            if (o == null || uygulamalar == null || uygulamalar.Count == 0) return;
+            if (!o.IsWriteEnabled) o.UpgradeOpen();
+            using (var rb = new ResultBuffer())
+            {
+                foreach (var u in uygulamalar) rb.Add(new TypedValue((int)DxfCode.ExtendedDataRegAppName, u));
+                o.XData = rb;
+            }
+            var ham = XdataOku(o, true);
+            var kalan = new List<string>();
+            foreach (var u in uygulamalar)
+            {
+                List<string> l;
+                if (ham.TryGetValue(u, out l) && l.Count == 0) kalan.Add(u);
+            }
+            if (kalan.Count == 0) return;
+            using (var rb = new ResultBuffer())
+            {
+                foreach (var u in kalan)
+                {
+                    rb.Add(new TypedValue((int)DxfCode.ExtendedDataRegAppName, u));
+                    rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, ""));
+                }
+                o.XData = rb;
+            }
         }
 
         internal static bool TaniticiylaBul(Database db, string hex, out ObjectId id)
