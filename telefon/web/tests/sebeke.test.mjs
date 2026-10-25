@@ -343,6 +343,9 @@ test('A6 · katalog eşleme yardımcıları', async () => {
   assert.equal(direkEsle(ps.cat, 'ENH_DIREK', 'ENH_DEMİR_GLV', 'G-T-12 (sw)').tip.name, 'GT-12 (3 AWG)');
   assert.equal(direkEsle(ps.cat, 'ENH_DIREK', 'ENH_DEMİR', 'D-10 (sw)').tip.name, 'GD-10 (3 AWG)');
   assert.equal(direkEsle(ps.cat, 'MUSTEREK_DIREK', 'MÜŞ_DEMİR_GLV', 'G-K2"').grup, 'mus');
+  assert.equal(direkEsle(ps.cat, 'MUSTEREK_DIREK', 'MÜŞ_DEMİR_GLV', 'G-K2"').tip.name, "G-K2''", 'eski programın G-K2" yazımı katalogdaki G-K2\'\' ile eşleşir');
+  assert.equal(cizimTip('mus', "G-10I''+2"), 'G-10I"+2');
+  assert.equal(direkEsle(ps.cat, 'ENH_DIREK', 'ENH_GLV_CVT', 'P-6').tip.name, 'P-6 (3/0)', 'iletken eki olmayan cıvatalı direk tek adayla eşleşir');
   assert.equal(direkEsle(ps.cat, 'AYD_DIREK', 'AYD_GLV_PLG', 'AD1-100/10').tip.name, 'AD1-100/10');
   assert.equal(direkEsle(ps.cat, 'TRAFO_DIREGI', 'TR_DİREK', 'T-25').tip.name, 'G-T25');
 });

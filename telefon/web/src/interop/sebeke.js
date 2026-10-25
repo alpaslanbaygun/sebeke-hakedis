@@ -78,11 +78,13 @@ export function cizimTip(grup, ad) {
   if (grup === 'beton' || grup === 'beton562') return s.replace(/\./g, ',');
   if (grup === 'bahh') { const m = /^G([A-Z]{1,2})-(\d+)\s*\((3 AWG|1\/0)\)$/i.exec(s); if (m) return 'G-' + m[1].toUpperCase() + '-' + m[2] + ' (' + (m[3].toUpperCase() === '3 AWG' ? 'sw' : '1/0') + ')'; }
   if (grup === 'trafo') { const m = /^G-?T-?(\d+)$/i.exec(s); if (m) return 'G-T-' + m[1]; }
+  if (grup === 'mus') return s.replace(/''/g, '"'); // müşterek: katalogda G-10I'' , eski program çiziminde G-10I"
   return s;
 }
 /** Direk tipi adı: AutoCAD → telefon yazımı. */
 export function voltTip(grup, ad) {
   const s = String(ad || '').trim();
+  if (grup === 'mus') return s.replace(/"/g, "''");
   if (grup === 'beton' || grup === 'beton562') return s.replace(/,/g, '.');
   if (grup === 'bahh') { const m = /^G-([A-Z]{1,2})-(\d+)\s*\((sw|1\/0)\)$/i.exec(s); if (m) return 'G' + m[1].toUpperCase() + '-' + m[2] + ' (' + (m[3].toLowerCase() === 'sw' ? '3 AWG' : '1/0') + ')'; }
   if (grup === 'trafo') { const m = /^G-T-(\d+)$/i.exec(s); if (m) return 'G-T' + m[1]; }
@@ -587,6 +589,8 @@ export function direkEsle(cat, tur, cins, tip) {
   let t = null;
   for (const a of adaylar) { t = cat.poleTypeByName(grup, a); if (t) break; }
   if (!t) { const n = adNormal(tip); t = cat.poleTypes(grup).find((x) => adNormal(x.name) === n) || null; }
+  // Eski program iletken ekini yazmaz (cıvatalı ENH direği "P-6"; katalogda "P-6 (3/0)"): ek atılınca tek aday kalıyorsa o
+  if (!t) { const n = adNormal(voltTip(grup, tip)); const l = cat.poleTypes(grup).filter((x) => adNormal(x.name.replace(/\s*\([^)]*\)\s*$/, '')) === n); if (l.length === 1) t = l[0]; }
   return { grup, tip: t };
 }
 
