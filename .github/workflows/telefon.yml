@@ -78,6 +78,23 @@ jobs:
           cp "telefon/dist/Sebeke-M-$s.apk" cikti/
           echo "APK: Sebeke-M-$s.apk ($(stat -c %s "cikti/Sebeke-M-$s.apk") bayt)" >> cikti/ozet.txt
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Arayüz denemesi · düzeltme kaynağı (tarayıcıda)
+        # Ayarlar › Düzeltme kaynağı bölümü derlenmiş uygulamada açılır (yerel köprü taklidiyle); ekran görüntüleri cikti/ekran.
+        # main'de deneme hatası sürümü durdurmaz (sonuç ozet.txt'de); diğer dallarda durdurur.
+        continue-on-error: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          set -o pipefail
+          python -m pip install --quiet playwright==1.48.0
+          python -m playwright install --with-deps chromium > /dev/null 2>&1
+          mkdir -p cikti/ekran
+          if python telefon/web/tests/ui/gnss_ui.py telefon/web/dist/www cikti/ekran 2>&1 | tee cikti/ui-gnss.log; then d=0; else d=1; fi
+          echo "ARAYÜZ (düzeltme): $(tail -1 cikti/ui-gnss.log)" >> cikti/ozet.txt
+          exit $d
+
       - name: İş akışı eki (dal denemeleri için)
         if: always()
         uses: actions/upload-artifact@v4
