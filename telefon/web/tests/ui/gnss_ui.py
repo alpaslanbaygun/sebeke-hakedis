@@ -116,7 +116,7 @@ async def main():
             await bolum.get_by_role('button', name='Sabit istasyon kurulurken firmadan istenecekler').click(); await pg.wait_for_timeout(200)
             await bolum.screenshot(path=f'{OUT}/gnss_03_sabit_ip.png')
             # Metinden alma
-            await bolum.get_by_role('button', name='Dosyadan / metinden al').click(); await pg.wait_for_timeout(300)
+            await bolum.get_by_role('button', name='Dosyadan al').click(); await pg.wait_for_timeout(300)
             await pg.locator('.modal textarea').fill('Merhaba, istasyon bilgileri:\nSunucu: caster.ornek.com\nPort: 2101\nBağlantı noktası: BASE1\nKullanıcı adı: saha1\nŞifre: s1')
             await pg.locator('.modal').screenshot(path=f'{OUT}/gnss_04_metinden_al.png')
             await pg.locator('.modal').get_by_role('button', name='Al', exact=True).click(); await pg.wait_for_timeout(500)
@@ -131,7 +131,7 @@ async def main():
             kontrol('Bağlı' in durum and 'Referans istasyonu' in durum and 'km' in durum, 'durum: bağlı, istasyon ve uzaklık görünüyor')
             await bolum.screenshot(path=f'{OUT}/gnss_05_bagli.png')
             # Paylaş (şifresiz)
-            await bolum.get_by_role('button', name='Paylaş (dosya)').click(); await pg.wait_for_timeout(300)
+            await bolum.get_by_role('button', name='Paylaş', exact=True).click(); await pg.wait_for_timeout(300)
             await pg.locator('.modal').get_by_role('button', name='Şifresiz').click(); await pg.wait_for_timeout(700)
             saved = await pg.evaluate("() => window.__mock.saved.map((f) => [f.name, f.text])")
             ok = len(saved) == 1 and saved[0][0] == 'Sebeke-M-GNSS-baglanti.json'

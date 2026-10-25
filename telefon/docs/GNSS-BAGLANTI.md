@@ -87,12 +87,12 @@ TUSAGA-Aktif bilgileri: [tusaga-aktif.gov.tr › Sıkça sorulan sorular (teknik
 5. **Süreklilik:** kesintisiz güç kaynağı, sabit hat ya da mobil modem; kesintide yayının kendiliğinden yeniden başlaması.
 6. **Kapsama:** tek istasyonla uzaklık arttıkça FIX zorlaşır; uygulama bağlıyken uzaklığı gösterir (20 km üstünde uyarır).
 
-Bilgiler mesajla gelirse uygulamada `Dosyadan / metinden al` ile yapıştırılır; "Sunucu / Port / Bağlantı noktası /
+Bilgiler mesajla gelirse uygulamada `Dosyadan al` ile yapıştırılır; "Sunucu / Port / Bağlantı noktası /
 Kullanıcı / Şifre" satırları ve `ntrip://…`, `tcp://…` adresleri tanınır.
 
 ## 5. Bağlantı bilgisi dosyası
 
-`Paylaş (dosya)` → `Sebeke-M-GNSS-baglanti.json`:
+`Paylaş` → `Sebeke-M-GNSS-baglanti.json`:
 
 ```json
 {

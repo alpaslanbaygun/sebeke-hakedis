@@ -171,7 +171,7 @@ Ayarlar › "Düzeltme kaynağı · CORS / sabit istasyon" bölümünde her kayn
 Adımlar:
 
 1. Profile dokunun (ya da `+ Profil ekle` › türünü seçin › ad verin).
-2. Bilgileri girin. Bilgiler mesaj ya da dosyayla geldiyse `Dosyadan / metinden al` düğmesine basın (aşağıda).
+2. Bilgileri girin. Bilgiler mesaj ya da dosyayla geldiyse `Dosyadan al` düğmesine basın (aşağıda).
 3. NTRIP'te `Bağlantı noktalarını getir` düğmesine basın ve listeden seçin. Liste en yakın istasyondan başlar.
 4. `Akışı dene` düğmesine basın. Alıcı bağlı olmasa da çalışır: 8 saniyede şifrenin, bağlantı noktasının ve verinin
    doğru gelip gelmediğini, düzeltme veren istasyonun numarasını ve size uzaklığını söyler.
@@ -190,9 +190,9 @@ Telefonda internet olmalıdır; düzeltme telefondan alıcıya iletilir.
 
 ### Bağlantı bilgisi dosyası (başka telefona aktarma)
 
-- `Paylaş (dosya)`: sunucusu dolu bütün profiller `Sebeke-M-GNSS-baglanti.json` dosyasına yazılır; `Şifresiz` ya da
+- `Paylaş`: sunucusu dolu bütün profiller `Sebeke-M-GNSS-baglanti.json` dosyasına yazılır; `Şifresiz` ya da
   `Şifrelerle` seçilir (dosyayı alan herkes şifreleri görür).
-- `Dosyadan / metinden al`: bu dosya seçilir ya da mesajdaki bilgi yapıştırılır. Tanınan biçimler:
+- `Dosyadan al`: bu dosya seçilir ya da mesajdaki bilgi yapıştırılır. Tanınan biçimler:
   `ntrip://kullanıcı:şifre@sunucu:2101/NOKTA`, `tcp://sunucu:port` ve "Sunucu: … / Port: … / Bağlantı noktası: … /
   Kullanıcı: … / Şifre: …" satırları. Aynı adlı profil güncellenir (dosyada şifre yoksa eskisi korunur), yenisi eklenir.
 

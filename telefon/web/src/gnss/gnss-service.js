@@ -299,7 +299,7 @@ export class GnssService {
     try { return await this.bridge.ntripConnect(c); }
     catch (e) { this.ntrip.state = 'error'; this.ntrip.error = e.message; this.emit(); throw e; }
   }
-  async ntripDisconnect() { clearTimeout(this._autoT); await this.bridge.ntripDisconnect().catch(() => {}); this.ntrip.state = 'off'; this.emit(); }
+  async ntripDisconnect() { clearTimeout(this._autoT); await this.bridge.ntripDisconnect().catch(() => {}); Object.assign(this.ntrip, { state: 'off', station: null, types: {}, rateBps: 0 }); this.emit(); }
   /** Akış denemesi (alıcı gerekmez): şifre, bağlantı noktası, veri ve istasyon konumu birkaç saniyede denenir. */
   async ntripProbe(cfg, { seconds = 8, near } = {}) {
     const r = await this.bridge.ntripProbe(Object.assign({}, cfg, { gga: cfg.gga || this.fallbackGGA(near), seconds }));
