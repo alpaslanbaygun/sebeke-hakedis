@@ -98,6 +98,11 @@ async def main():
             opts = await bolum.locator('select option').all_inner_texts()
             kontrol(len(opts) == 4 and opts[1].startswith('VRSRTCM31') and 'km' in opts[1], 'bağlantı noktaları: ' + ' | '.join(opts))
             await bolum.locator('select').first.select_option('VRSRTCM31'); await pg.wait_for_timeout(200)
+            # TUSAGA-Aktif kullanıcı adı ister: boşken deneme yapılmaz
+            await bolum.get_by_role('button', name='Akışı dene').click(); await pg.wait_for_timeout(400)
+            kontrol(await bolum.locator('.alert').count() == 0 and await pg.locator('.toast', has_text='kullanıcı adı').count() == 1, 'TUSAGA-Aktif: kullanıcı adı boşken deneme yapılmadı')
+            kul = bolum.locator('.grid2 .fld').nth(0).locator('input')
+            await kul.fill('alici1'); await kul.press('Tab')
             await bolum.locator('input[type=password]').fill('gizli'); await bolum.locator('input[type=password]').press('Tab')
             # Akış denemesi (alıcısız)
             await bolum.get_by_role('button', name='Akışı dene').click(); await pg.wait_for_timeout(900)
