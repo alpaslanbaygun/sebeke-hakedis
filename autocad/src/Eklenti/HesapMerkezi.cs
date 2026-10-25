@@ -28,7 +28,12 @@ namespace SebekeHakedis.Eklenti
     {
         private const string Sozluk = "SEBEKE_HAKEDIS";
         private const string AltSozluk = "HESAPLAR";
-        private const int ParcaBoyu = 1000;
+        /// <summary>
+        /// Bir Xrecord metin değerinin (DXF 1) en çok uzunluğu. 1000 karakterlik parçalar bellekte sorunsuz yazılıyor ve
+        /// okunuyordu; ama kaydedilen çizim yeniden açılırken AutoCAD çöküyordu (Access Violation). 0–9 kodlu DXF
+        /// dizgileri için güvenli sınır 255'tir; 250 kullanılır.
+        /// </summary>
+        private const int ParcaBoyu = 250;
 
         /// <summary>Sözlük anahtarı: kimlikteki sözlük için uygun olmayan karakterler değiştirilir.</summary>
         private static string Anahtar(string id)
