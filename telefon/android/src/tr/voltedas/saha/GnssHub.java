@@ -66,11 +66,19 @@ public final class GnssHub {
             while ((k = lineBuf.indexOf("\n")) >= 0) {
                 String line = lineBuf.substring(0, k).trim();
                 lineBuf.delete(0, k + 1);
-                if (line.length() > 6 && line.charAt(0) == '$' && line.startsWith("GGA", 3)) lastGGA = line;
+                if (line.length() > 6 && line.charAt(0) == '$' && line.startsWith("GGA", 3) && validGGA(line)) lastGGA = line;
             }
             if (lineBuf.length() > 8192) lineBuf.setLength(0);
         }
     }
+    /** Konumu olan GGA (enlem, boylam dolu ve çözüm kalitesi 0 değil): yayıncıya yalnız bu gönderilir. */
+    static boolean validGGA(String line) {
+        int star = line.indexOf('*');
+        String[] p = (star > 0 ? line.substring(0, star) : line).split(",", -1);
+        return p.length > 6 && !p[2].isEmpty() && !p[4].isEmpty() && !p[6].isEmpty() && !"0".equals(p[6]);
+    }
+    public String lastGGA() { return lastGGA; }
+
     private void flush() {
         String t;
         synchronized (pending) { if (pending.length() == 0) return; t = pending.toString(); pending.setLength(0); }
@@ -80,20 +88,29 @@ public final class GnssHub {
     // ------- NTRIP -------
     public synchronized void ntripStart(NtripClient.Config c) {
         if (ntrip != null) ntrip.stop();
-        ntrip = new NtripClient(c, () -> lastGGA, new NtripClient.Listener() {
-            @Override public void onRtcm(byte[] b, int off, int len) { GnssLink l = link; if (l != null) l.write(b, off, len); }
+        ntripState = new JSONObject();
+        try { ntripState.put("mode", c.isTcp() ? "tcp" : "ntrip"); ntripState.put("host", c.host); ntripState.put("port", c.port); ntripState.put("mount", c.isTcp() ? JSONObject.NULL : c.mount); } catch (Exception ignored) { }
+        final NtripClient[] me = new NtripClient[1];
+        final JSONObject st0 = ntripState;
+        me[0] = new NtripClient(c, () -> lastGGA, new NtripClient.Listener() {
+            @Override public void onRtcm(byte[] b, int off, int len) { GnssLink l = link; if (l != null && ntrip == me[0]) l.write(b, off, len); }
             @Override public void onStatus(String state, String error) {
-                try { ntripState.put("state", state); ntripState.put("error", error == null ? JSONObject.NULL : error); ntripState.put("mount", c.mount); } catch (Exception ignored) { }
+                if (ntripState != st0) return; // eski bağlantının geç gelen olayı
+                try { ntripState.put("state", state); ntripState.put("error", error == null ? JSONObject.NULL : error); } catch (Exception ignored) { }
                 emit("ntrip", ntripState);
             }
-            @Override public void onStats(long bytes, double rateBps, Map<Integer, Integer> types, long lastFrameMs) {
+            @Override public void onStats(NtripClient.Stats s) {
+                if (ntripState != st0) return;
                 try {
-                    JSONObject t = new JSONObject(); for (Map.Entry<Integer, Integer> e : types.entrySet()) t.put(String.valueOf(e.getKey()), e.getValue());
-                    ntripState.put("bytes", bytes); ntripState.put("rateBps", rateBps); ntripState.put("types", t); ntripState.put("lastRtcmMs", lastFrameMs); ntripState.put("state", "connected");
+                    JSONObject t = new JSONObject(); for (Map.Entry<Integer, Integer> e : s.types.entrySet()) t.put(String.valueOf(e.getKey()), e.getValue());
+                    ntripState.put("bytes", s.bytes); ntripState.put("rateBps", s.rateBps); ntripState.put("types", t); ntripState.put("lastRtcmMs", s.lastFrameMs); ntripState.put("state", "connected");
+                    ntripState.put("frames", s.frames); ntripState.put("crcErrors", s.crcErrors); ntripState.put("error", JSONObject.NULL);
+                    if (s.stationId >= 0) { JSONObject st = new JSONObject(); st.put("id", s.stationId); st.put("x", s.x); st.put("y", s.y); st.put("z", s.z); ntripState.put("station", st); }
                 } catch (Exception ignored) { }
                 emit("ntrip", ntripState);
             }
         });
+        ntrip = me[0];
         ntrip.start();
     }
     public synchronized void ntripStop() { if (ntrip != null) { ntrip.stop(); ntrip = null; } }

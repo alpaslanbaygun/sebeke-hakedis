@@ -220,7 +220,7 @@ export function BaseRoverScreen() {
       ${step === 3 ? html`
         <div class="fld"><label>Düzeltme verisi rover'a nasıl ulaşıyor?</label><div class="grid2">${LINKS.map(([k, l]) => html`<${Chip} on=${b.link === k} onClick=${() => set({ link: k })}>${l}</${Chip}>`)}</div></div>
         <div class="fld"><label>Kanal / frekans / protokol (isteğe bağlı)</label><input class="inp" value=${b.channel} placeholder="ör. 438.125 MHz · TRIMTALK 450S" onInput=${(e) => set({ channel: e.target.value })} /></div>
-        <div class="note">${b.link === 'NTRIP' ? 'Base kendi caster\'ına yayın yapıyorsa: Ayarlar › NTRIP bölümünden o caster\'a bağlanın; düzeltme telefondan rover\'a iletilir.' : 'Radyo bağlantısında düzeltme doğrudan base → rover gider; uygulama yalnız rover\'dan gelen RTK durumunu izler. Base ve rover aynı kanal ve protokolde olmalı.'}</div>` : null}
+        <div class="note">${b.link === 'NTRIP' ? 'Base düzeltmeyi internetten veriyorsa (NTRIP sunucusu ya da doğrudan IP:port): Ayarlar › Düzeltme kaynağı › "Sabit istasyon" profiline bilgileri girip bağlanın; düzeltme telefondan rover\'a iletilir, istasyonun uzaklığı da görünür.' : 'Radyo bağlantısında düzeltme doğrudan base → rover gider; uygulama yalnız rover\'dan gelen RTK durumunu izler. Base ve rover aynı kanal ve protokolde olmalı.'}</div>` : null}
       ${step === 4 ? html`
         <div class=${'alert ' + (roverOk ? 'ok' : 'warn')}>${roverOk ? 'Rover bağlı: ' + ((s.receiver || {}).name || 'alıcı') : 'Rover bağlı değil'}</div>
         <div class="note">Rover alıcıyı Android Bluetooth ayarlarından eşleştirin, sonra Ayarlar › Konum kaynağı › Harici GNSS bölümünden seçin. NMEA çıkışı (GGA, RMC, GST, GSA) açık olmalı.</div>

@@ -4,6 +4,7 @@ import { NmeaStream, makeGGA, makeGST, makeGSA, withChecksum, FIX_LABEL , SPECTR
 import { evaluateFix, averageEpochs, DEFAULT_THRESHOLDS } from './quality.js';
 import { project, geoidN, makeCrs, zoneForLon } from '../geo/crs.js';
 import { polar, bearing, dist2 } from '../geo/geom.js';
+import { ecefToGeo, uzaklikKm } from './ntrip-profiles.js';
 
 const EMPTY = () => ({
   source: 'none', link: null, connected: false, fix: 'NONE', lat: null, lon: null, altMSL: null, geoidSep: null,
@@ -16,7 +17,8 @@ export class GnssService {
   constructor({ bus, bridge, now } = {}) {
     this.bus = bus; this.bridge = bridge; this.now = now || (() => Date.now());
     this.state = EMPTY();
-    this.ntrip = { state: 'off', bytes: 0, rateBps: 0, age: null, mount: null, types: {}, error: null };
+    this.ntrip = { state: 'off', mode: null, host: null, port: null, bytes: 0, rateBps: 0, age: null, mount: null, types: {}, error: null, station: null };
+    this.autoNtrip = null; // alıcı bağlanınca kendiliğinden kurulacak düzeltme bağlantısı (köprü ayarı) ya da null
     this.antenna = { height: 2.0, measure: 'vertical', radius: 0.0, pco: 0.0 };
     this.crs = makeCrs({ datum: 'TUREF', projection: 'TM3', cm: 39 });
     this.geoid = { model: 'receiver' };
@@ -45,7 +47,12 @@ export class GnssService {
     return v + (a.pco || 0);
   }
   emit() { if (this.bus) this.bus.emit('gnss:state', this.snapshot()); }
-  snapshot() { return Object.assign({}, this.state, { ntrip: Object.assign({}, this.ntrip), label: FIX_LABEL[this.state.fix] || this.state.fix, method: this.methodOf(), base: this.base }); }
+  snapshot() { return Object.assign({}, this.state, { ntrip: Object.assign({}, this.ntrip, { baseKm: this.baseKm() }), label: FIX_LABEL[this.state.fix] || this.state.fix, method: this.methodOf(), base: this.base }); }
+  /** Düzeltme veren referans istasyonuna (RTCM 1005/1006) uzaklık, km; bilinmiyorsa null. */
+  baseKm() {
+    const st = this.ntrip.station, s = this.state;
+    return st && st.lat != null && s.lat != null ? uzaklikKm(s.lat, s.lon, st.lat, st.lon) : null;
+  }
 
   // ------- Kaynaklar -------
   async connectExternal(link) {
@@ -80,7 +87,7 @@ export class GnssService {
   }
   onLinkStatus(d) {
     if (!d) return;
-    if (d.state === 'connected') { this.state.connected = true; this.state.error = null; }
+    if (d.state === 'connected') { this.state.connected = true; this.state.error = null; this.autoBaglan(); }
     if (d.state === 'disconnected' || d.state === 'error') { this.state.connected = false; this.state.fix = 'NONE'; this.state.error = d.error || null; }
     if (this.bus) this.bus.emit('gnss:link', d);
     this.emit();
@@ -265,7 +272,7 @@ export class GnssService {
       source: s.source, cls: q.cls, warn: q.warn, receiver: s.receiver ? s.receiver.name : null, receiverSerial: s.receiver ? s.receiver.serial || null : null,
       antennaHeight: this.antenna.height, antennaMeasure: this.antenna.measure, antennaVertical: this.antennaVertical(),
       datum: this.crs.datum, crs: this.crs.label, epsg: this.crs.epsg, zone: this.crs.cm, stationId: s.stationId,
-      mountpoint: this.ntrip.mount, correctionSource: this.ntrip.state === 'connected' ? 'NTRIP ' + (this.ntrip.mount || '') : this.method === 'BASE_ROVER' && this.base ? 'Sabit base' + (this.base.link ? ' · ' + this.base.link : '') + (this.base.name ? ' · ' + this.base.name : '') : (s.age != null ? 'Alıcı düzeltmesi' : 'Yok'),
+      mountpoint: this.ntrip.mode === 'tcp' ? null : this.ntrip.mount, correctionSource: this.ntrip.state === 'connected' ? (this.ntrip.mode === 'tcp' ? 'IP ' + (this.ntrip.host || '') + ':' + (this.ntrip.port || '') : 'NTRIP ' + (this.ntrip.mount || '')) + (this.ntrip.station && this.ntrip.station.id != null ? ' · istasyon ' + this.ntrip.station.id : '') : this.method === 'BASE_ROVER' && this.base ? 'Sabit base' + (this.base.link ? ' · ' + this.base.link : '') + (this.base.name ? ' · ' + this.base.name : '') : (s.age != null ? 'Alıcı düzeltmesi' : 'Yok'),
       sigmaEst: s.sigmaEst, timestamp: new Date(a.t1).toISOString(),
       // Ölçüm yöntemi + (varsa) sabit base bilgisi: her ölçüm kaydına yazılır
       method: this.methodOf(), base: this.base && this.method === 'BASE_ROVER' ? Object.assign({}, this.base) : null,
@@ -273,13 +280,57 @@ export class GnssService {
     });
   }
 
-  // ------- NTRIP -------
-  async ntripConnect(cfg) { this.ntrip = Object.assign(this.ntrip, { state: 'connecting', mount: cfg.mount, error: null }); this.emit(); return this.bridge.ntripConnect(cfg); }
-  async ntripDisconnect() { await this.bridge.ntripDisconnect().catch(() => {}); this.ntrip.state = 'off'; this.emit(); }
+  // ------- Düzeltme (NTRIP ya da doğrudan IP:port) -------
+  /**
+   * Alıcının geçerli GGA'sı yokken (henüz konum bulmadıysa) yayıncıya gönderilecek yaklaşık konum: alıcının / telefonun
+   * son konumu, yoksa verilen yakın nokta ({lat, lon}). VRS yayıncıları ilk GGA gelmeden veri göndermez.
+   */
+  fallbackGGA(near) {
+    const s = this.state;
+    const lat = s.lat != null ? s.lat : near && near.lat, lon = s.lon != null ? s.lon : near && near.lon;
+    if (lat == null || lon == null || !isFinite(lat) || !isFinite(lon)) return '';
+    const alt = s.altMSL != null ? s.altMSL : near && near.alt != null ? near.alt : 1000;
+    return makeGGA(lat, lon, alt, 1, 10, 1.0, 0, null, new Date(this.now()));
+  }
+  async ntripConnect(cfg, near) {
+    const c = Object.assign({}, cfg, { gga: cfg.gga || this.fallbackGGA(near) });
+    this.ntrip = Object.assign(this.ntrip, { state: 'connecting', mode: c.mode || 'ntrip', host: c.host || null, port: c.port || null, mount: c.mode === 'tcp' ? null : c.mount, error: null, station: null, types: {}, bytes: 0, rateBps: 0 });
+    this.emit();
+    try { return await this.bridge.ntripConnect(c); }
+    catch (e) { this.ntrip.state = 'error'; this.ntrip.error = e.message; this.emit(); throw e; }
+  }
+  async ntripDisconnect() { clearTimeout(this._autoT); await this.bridge.ntripDisconnect().catch(() => {}); this.ntrip.state = 'off'; this.emit(); }
+  /** Akış denemesi (alıcı gerekmez): şifre, bağlantı noktası, veri ve istasyon konumu birkaç saniyede denenir. */
+  async ntripProbe(cfg, { seconds = 8, near } = {}) {
+    const r = await this.bridge.ntripProbe(Object.assign({}, cfg, { gga: cfg.gga || this.fallbackGGA(near), seconds }));
+    if (r && r.station && r.station.x != null) {
+      r.station = Object.assign({}, r.station, ecefToGeo(r.station.x, r.station.y, r.station.z));
+      const s = this.state, ref = s.lat != null ? s : near;
+      r.baseKm = ref && ref.lat != null ? uzaklikKm(ref.lat, ref.lon, r.station.lat, r.station.lon) : null;
+    }
+    return r;
+  }
   onNtrip(d) {
     if (!d) return;
+    const eski = this.ntrip.station;
     Object.assign(this.ntrip, d);
+    if (d.station && d.station.x != null) {
+      this.ntrip.station = eski && eski.id === d.station.id && eski.x === d.station.x && eski.lat != null ? eski : Object.assign({}, d.station, ecefToGeo(d.station.x, d.station.y, d.station.z));
+    } else if (d.station === undefined) this.ntrip.station = eski;
     this.emit();
+  }
+  /** Alıcı bağlanınca (ayar açıksa ve profil eksiksizse) düzeltmeye kendiliğinden bağlan. */
+  autoBaglan() {
+    const cfg = this.autoNtrip;
+    if (!cfg || this.state.source !== 'external' || !this.bridge || !this.bridge.isNative || !this.bridge.isNative()) return;
+    if (this.ntrip.state === 'connected' || this.ntrip.state === 'connecting') return;
+    // Radyo ile çalışan sabit base + rover düzeninde internet düzeltmesi açılmaz (iki düzeltme karışmasın)
+    if (this.method === 'BASE_ROVER' && this.base && this.base.link && !/ntrip|internet|ip/i.test(this.base.link)) return;
+    clearTimeout(this._autoT);
+    this._autoT = setTimeout(() => {
+      if (!this.state.connected || this.ntrip.state === 'connected' || this.ntrip.state === 'connecting') return;
+      this.ntripConnect(cfg).catch(() => {});
+    }, 1500);
   }
 
   // Aplikasyon hesabı (proje düzleminde)

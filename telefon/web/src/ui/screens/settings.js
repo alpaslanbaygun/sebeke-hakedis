@@ -1,6 +1,6 @@
 // 06 · Ayarlar — konum kaynağı, GNSS alıcı (Bluetooth SPP/BLE), NTRIP, hassasiyet eşikleri, proje CRS/geoit, senkron, kullanıcı
 import { html, useState, useEffect, useBus, Icon, Chip, Seg, Sel, Badge, Title, Toggle, fmt, trn, FIXCOL } from '../kit.js';
-import { loadProfiles, activeProfile, updateActive, selectProfile, addProfile, removeProfile } from '../../gnss/ntrip-profiles.js';
+import { DuzeltmeBolumu, AliciRehberi } from './duzeltme.js';
 import { app } from '../ctx.js';
 import { makeCrs, crsSummary, zoneForLon, TM_ZONES, parseGeoidGrid } from '../../geo/crs.js';
 import { pendingChanges } from '../../core/sync.js';
@@ -14,27 +14,17 @@ export function SettingsScreen() {
   const [devs, setDevs] = useState(null);
   const [scan, setScan] = useState(false);
   const [pend, setPend] = useState(0);
-  const [np, setNp] = useState(() => app.state.ntripProfiles || loadProfiles(null, app.state.ntripCfg));
-  const nt = activeProfile(np);
-  const [mounts, setMounts] = useState([]);
   const [ver, setVer] = useState(null);
   const [floatCap, setFloatCap] = useState(true);
   const [keys, setKeys] = useState(app.state.mapKeys || {});
   const saveKeys = (p) => { const k = Object.assign({}, keys, p); setKeys(k); app.state.mapKeys = k; app.ds.setting('mapKeys', k); app.bus.emit('tiles:error', { anahtar: true }); app.toast('Kaydedildi (yalnız bu cihazda saklanır)', 'ok', 2200); };
   useEffect(() => { app.ds.setting('floatCapture').then((v) => setFloatCap(v !== false)); }, []);
-  useEffect(() => { pendingChanges(app.ds).then((x) => setPend(x.length)); Promise.all([app.ds.setting('ntripProfiles'), app.ds.setting('ntrip')]).then(([pv, v]) => { const st = loadProfiles(pv, v); setNp(st); app.state.ntripProfiles = st; app.state.ntripCfg = activeProfile(st); }); app.bridge.info().then(setVer).catch(() => {}); }, []);
+  useEffect(() => { pendingChanges(app.ds).then((x) => setPend(x.length)); app.bridge.info().then(setVer).catch(() => {}); }, []);
   const native = app.bridge.isNative();
-  const saveNp = (st) => { setNp(st); app.state.ntripProfiles = st; app.state.ntripCfg = activeProfile(st); app.ds.setting('ntripProfiles', st); app.ds.setting('ntrip', activeProfile(st)); };
-  const setN = (p) => saveNp(updateActive(np, p));
-  const pickProfile = (id) => { if (id === np.active) return; const bagli = (g.state.ntrip || {}).state === 'connected' || (g.state.ntrip || {}).state === 'connecting'; if (bagli) g.ntripDisconnect(); setMounts([]); saveNp(selectProfile(np, id)); app.toast(activeProfile(selectProfile(np, id)).name + ' seçildi' + (bagli ? ' · önceki bağlantı kesildi, "Bağlan" deyin' : '')); };
-  const newProfile = async () => { const n = await app.prompt('Yeni NTRIP profili', 'Profil adı', { required: true, placeholder: 'ör. Sabit istasyon · Elazığ', note: 'Sunucu, port, bağlantı noktası ve kullanıcı bilgilerini profil seçiliyken aşağıdan girin.' }); if (!n) return; try { setMounts([]); saveNp(addProfile(np, n)); } catch (e) { app.toast(e.message, 'warn'); } };
-  const delProfile = async () => { if (!(await app.confirm('Profili sil', '"' + nt.name + '" profili silinsin mi?', { danger: true, ok: 'Sil' }))) return; try { setMounts([]); saveNp(removeProfile(np, np.active)); } catch (e) { app.toast(e.message, 'warn'); } };
   const usePhone = async () => { try { await g.usePhone(); app.toast('Telefon konum servisi · TEST modu', 'warn'); } catch (e) { app.toast(e.message, 'err'); } };
   const listBt = async () => { setScan(true); try { const b = await app.bridge.btBonded(); let ble = []; try { ble = await app.bridge.bleScan(5000); } catch (e) { /* BLE yok */ } const bonded = (b || []).map((d) => Object.assign(d, { type: d.kind === 'le' ? 'ble' : 'spp' })); setDevs([...bonded, ...(ble || []).filter((x) => !bonded.some((y) => y.address === x.address)).map((d) => Object.assign(d, { type: 'ble' }))]); } catch (e) { app.toast(e.message, 'err'); } setScan(false); };
   const connect = async (d) => { try { await g.connectExternal({ type: d.type, address: d.address, name: d.name }); await app.ds.setting('lastReceiver', d); app.toast(d.name + ' bağlanıyor…'); } catch (e) { app.toast(e.message, 'err'); } };
   const webConnect = async (type) => { try { await g.connectExternal({ type, name: type === 'web-serial' ? 'USB/seri alıcı' : 'BLE alıcı', baud: 115200 }); } catch (e) { app.toast(e.message, 'err'); } };
-  const ntripTest = async () => { try { const r = await app.bridge.ntripSourcetable({ host: nt.host, port: nt.port, user: nt.user, pass: nt.pass, version: nt.version }); setMounts(r.mounts || []); app.toast((r.mounts || []).length + ' bağlantı noktası bulundu'); } catch (e) { app.toast('NTRIP: ' + e.message, 'err', 5000); } };
-  const ntripConnect = async () => { if (!nt.host || !nt.mount) return app.toast('Sunucu ve mountpoint gerekli', 'warn'); try { await g.ntripConnect(nt); } catch (e) { app.toast('NTRIP: ' + e.message, 'err', 5000); } };
   const th = Object.assign({}, g.thresholds);
   const setTh = (k, v) => { const t = Object.assign({}, ps.p.thresholds || {}, { [k]: v }); ps.updateProject({ thresholds: t }, 'Eşik: ' + k + ' = ' + v); };
   const ant = g.antenna;
@@ -66,16 +56,16 @@ export function SettingsScreen() {
     </div>
     <div class="sect">Ölçüm yöntemi</div>
     <div class="card stack">
-      ${[['TELEFON_GPS', 'Telefon GPS', '±3–10 m · [TELEFON GPS]'], ['HARICI_GNSS', 'Harici GNSS', 'Düzeltmesiz / alıcı düzeltmesi'], ['RTK_NTRIP', 'RTK / NTRIP', 'RTCM telefondan alıcıya · [RTK FIX]'], ['BASE_ROVER', 'Sabit Base + Rover', g.base ? 'Base: ' + g.base.name + (g.base.link ? ' · ' + g.base.link : '') : 'Kendi base istasyonunla · rehberi aç'], ['MANUEL', 'Manuel', 'Koordinat elle / haritadan / Excel · haritada KAYNAK düğmesi']].map(([k, t, d]) => { const on = k === 'MANUEL' ? (app.state.srcMode === 'manual' || app.state.srcMode === 'map') : s.method === k && !(app.state.srcMode === 'manual' || app.state.srcMode === 'map'); return html`<button class=${'srcopt' + (on ? ' on' : '')} style="--c:#10b981" onClick=${async () => {
+      ${[['TELEFON_GPS', 'Telefon GPS', '±3–10 m · [TELEFON GPS]'], ['HARICI_GNSS', 'Harici GNSS', 'Düzeltmesiz / alıcı düzeltmesi'], ['RTK_NTRIP', 'RTK · CORS / sabit istasyon', 'TUSAGA-Aktif, sabit istasyon, yerel ağ · [RTK FIX]'], ['BASE_ROVER', 'Sabit Base + Rover', g.base ? 'Base: ' + g.base.name + (g.base.link ? ' · ' + g.base.link : '') : 'Kendi base istasyonunla · rehberi aç'], ['MANUEL', 'Manuel', 'Koordinat elle / haritadan / Excel · haritada KAYNAK düğmesi']].map(([k, t, d]) => { const on = k === 'MANUEL' ? (app.state.srcMode === 'manual' || app.state.srcMode === 'map') : s.method === k && !(app.state.srcMode === 'manual' || app.state.srcMode === 'map'); return html`<button class=${'srcopt' + (on ? ' on' : '')} style="--c:#10b981" onClick=${async () => {
         if (k === 'TELEFON_GPS') { app.state.srcMode = 'gnss'; await usePhone(); }
         else if (k === 'BASE_ROVER') app.nav.go('baseRover');
         else if (k === 'MANUEL') { app.state.srcMode = 'manual'; app.toast('Haritada KAYNAK düğmesinden Manuel / Haritadan / Excel seçilebilir', 'ok', 4000); app.nav.tab('map'); }
-        else { app.state.srcMode = 'gnss'; if (g.method === 'BASE_ROVER') { g.setMethod(null); await app.ds.setting('gnssMethod', { method: null, base: g.base }); } if (s.source !== 'external') (native ? listBt() : webConnect('web-serial')); else if (k === 'RTK_NTRIP' && nts.state !== 'connected') app.toast('NTRIP bölümünden bağlanın (aşağıda)', 'warn', 4000); }
+        else { app.state.srcMode = 'gnss'; if (g.method === 'BASE_ROVER') { g.setMethod(null); await app.ds.setting('gnssMethod', { method: null, base: g.base }); } if (s.source !== 'external') (native ? listBt() : webConnect('web-serial')); else if (k === 'RTK_NTRIP' && nts.state !== 'connected') app.toast('Düzeltme kaynağı bölümünden bağlanın (aşağıda)', 'warn', 4000); }
       }}><i></i><span class="grow"><b>${t}</b><small>${d}</small></span></button>`; })}
       <div class="note">Etkin yöntem her ölçüm kaydına yazılır: cihaz, seri no, fix, uydu, HDOP/VDOP/PDOP, düzeltme kaynağı, base ve rover bilgisi, operatör.</div>
     </div>
     <div class="card tight list">
-      ${[['Telefon konum servisi', 'Android konum + GNSS durumu · test aşaması', s.source === 'phone'], ['Harici GNSS · Bluetooth NMEA', '$GNGGA, $GNGST, $GNGSA, $GNRMC, $GNHDT · fix tipi ve σ', s.source === 'external'], ['NTRIP düzeltmeli RTK', 'RTCM3 → alıcı · VRS/FKP/MAC · santimetre', nts.state === 'connected']].map(([t, d, on]) => html`<div class="li"><span class=${'badge ' + (on ? 'b-cy' : 'b-ok')} style="width:62px;justify-content:center">${on ? 'ŞİMDİ' : 'HAZIR'}</span><div class="grow"><div class="t" style="font-size:13px">${t}</div><div class="s">${d}</div></div></div>`)}
+      ${[['Telefon konum servisi', 'Android konum + GNSS durumu · test aşaması', s.source === 'phone'], ['Harici GNSS · Bluetooth NMEA', '$GNGGA, $GNGST, $GNGSA, $GNRMC, $GNHDT · fix tipi ve σ', s.source === 'external'], ['Düzeltmeli RTK · CORS / sabit istasyon', 'RTCM3 → alıcı · NTRIP ya da doğrudan IP · santimetre', nts.state === 'connected']].map(([t, d, on]) => html`<div class="li"><span class=${'badge ' + (on ? 'b-cy' : 'b-ok')} style="width:62px;justify-content:center">${on ? 'ŞİMDİ' : 'HAZIR'}</span><div class="grow"><div class="t" style="font-size:13px">${t}</div><div class="s">${d}</div></div></div>`)}
       <div class="note" style="padding:10px 12px">Her noktada kaynak · σH / σV · fix tipi · zaman · cihaz saklanır. Telefonla alınan nokta sonradan GNSS ile ölçülünce yeni kayıt açılmaz; aynı Point ID'nin koordinatı ve kaynağı revize edilir.</div>
     </div>
 
@@ -89,24 +79,11 @@ export function SettingsScreen() {
       <div class="fld"><label>Faz merkezi ofseti (PCO, m)</label><input class="inp mono" type="number" step="0.001" value=${ant.pco} onChange=${(e) => setAnt({ pco: +e.target.value })} /></div>
       <div class="lbl">NMEA çıktısı</div><div class="row wrap" style="gap:6px">${['GGA', 'RMC', 'GST', 'GSA', 'GSV', 'HDT'].map((t) => html`<span class=${'badge ' + (types[t] ? 'b-ok' : 'b-mut')} style="height:30px;font-size:12px;padding:0 10px">$GN${t}</span>`)}</div>
       <div class="note">GST yoksa σ değerleri HDOP'tan tahmin edilir ve "σ tahmini" olarak işaretlenir. Alıcıyı GGA+GST+GSA 1–10 Hz çıkış verecek şekilde ayarlayın.</div>
+      <${AliciRehberi} />
     </div>
 
-    <div class="sect">NTRIP · düzeltme kaynağı</div>
-    <div class="card stack">
-      <div class="lbl">Kayıtlı profiller · dokunarak seçin</div>
-      <div class="chips">${np.list.map((p) => html`<${Chip} on=${p.id === np.active} onClick=${() => pickProfile(p.id)}>${p.name || 'adsız'}</${Chip}>`)}<button class="chip" style="border-style:dashed" onClick=${newProfile}>+ Profil ekle</button></div>
-      <div class="row" style="align-items:flex-end"><div class="fld grow"><label>Profil adı</label><input class="inp" value=${nt.name || ''} onChange=${(e) => setN({ name: e.target.value.trim() || 'profil' })} /></div>${np.list.length > 1 ? html`<button class="btn dang sm" style="height:48px" onClick=${delProfile}>Sil</button>` : null}</div>
-      <div class="note">TUSAGA-Aktif, kendi sabit istasyonunuz ya da başka bir ağ için ayrı profil açın; bilgiler profille birlikte saklanır.</div>
-      <div class="row"><i style=${'width:10px;height:10px;border-radius:5px;background:' + (nts.state === 'connected' ? '#10b981' : nts.state === 'connecting' ? '#f59e0b' : '#475569')}></i><b class=${nts.state === 'connected' ? 'hl' : ''}>${{ connected: 'Bağlı', connecting: 'Bağlanıyor', error: 'Hata', off: 'Kapalı' }[nts.state] || nts.state}</b><span class="grow"></span><span class="mono note">${nts.state === 'connected' ? 'RTCM3 · ' + trn((nts.rateBps || 0) / 1024, 1) + ' kB/s · yaş ' + (s.age != null ? s.age.toFixed(1) + ' s' : '—') : nts.error || ''}</span></div>
-      ${nts.types && Object.keys(nts.types).length ? html`<div class="row wrap" style="gap:4px">${Object.entries(nts.types).map(([k, v]) => html`<span class="badge b-mut">${k}×${v}</span>`)}</div>` : null}
-      <div class="row"><div class="fld grow"><label>Sunucu</label><input class="inp mono" placeholder="[SUNUCU IP / ad]" value=${nt.host} onChange=${(e) => setN({ host: e.target.value.trim() })} /></div><div class="fld" style="width:96px"><label>Port</label><input class="inp mono" type="number" value=${nt.port} onChange=${(e) => setN({ port: +e.target.value })} /></div></div>
-      <div class="fld"><label>Mountpoint</label>${mounts.length ? html`<${Sel} mono value=${nt.mount} options=${[['', 'seçin'], ...mounts.map((m) => [m.name, m.name + ' · ' + (m.format || '') + (m.nmea ? ' · GGA' : '')])]} onChange=${(v) => setN({ mount: v })} />` : html`<input class="inp mono" placeholder="VRS_RTCM32" value=${nt.mount} onChange=${(e) => setN({ mount: e.target.value.trim() })} />`}</div>
-      <div class="grid2"><div class="fld"><label>Kullanıcı</label><input class="inp mono" value=${nt.user} onChange=${(e) => setN({ user: e.target.value })} /></div><div class="fld"><label>Şifre</label><input class="inp mono" type="password" value=${nt.pass} onChange=${(e) => setN({ pass: e.target.value })} /></div></div>
-      <div class="fld"><label>NTRIP sürümü</label><${Seg} value=${nt.version} options=${[[1, 'v1.0'], [2, 'v2.0']]} onChange=${(v) => setN({ version: v })} /></div>
-      <div class="row"><div class="grow"><b>GGA konumunu gönder</b><div class="note">Her ${nt.ggaSec || 1} s · VRS çözümü için gerekli (alıcının GGA'sı iletilir)</div></div><${Toggle} on=${nt.sendGGA} onChange=${(v) => setN({ sendGGA: v })} label="GGA gönder" /></div>
-      <div class="grid2"><button class="btn" disabled=${!native} onClick=${ntripTest}>Bağlantıyı Test Et</button>${nts.state === 'connected' || nts.state === 'connecting' ? html`<button class="btn dang" onClick=${() => g.ntripDisconnect()}>NTRIP'i Kes</button>` : html`<button class="btn pri" disabled=${!native || s.source !== 'external'} onClick=${ntripConnect}>Bağlan</button>`}</div>
-      ${!native ? html`<div class="note">NTRIP istemcisi APK içinde yerel TCP ile çalışır (RTCM doğrudan alıcıya iletilir). Tarayıcıda alıcının kendi NTRIP istemcisini kullanın.</div>` : s.source !== 'external' ? html`<div class="note">NTRIP için önce harici GNSS alıcısına bağlanın.</div>` : null}
-    </div>`}
+
+    <${DuzeltmeBolumu} />`}
 
     ${ps.p ? html`<div class="sect">Hassasiyet eşikleri · proje</div>
     <div class="card tight list">${[['maxSigmaH', 'Yatay σH ≤', 'm', 0.001], ['maxSigmaV', 'Düşey σV ≤', 'm', 0.001], ['maxPdop', 'PDOP ≤', '', 0.1], ['minSats', 'Uydu ≥', 'adet', 1], ['maxAge', 'RTCM yaşı ≤', 's', 0.5], ['minFixSeconds', 'Min. FIX süresi ≥', 's', 1], ['epochs', 'Ortalama epok', 'adet', 1], ['maxAxisOffset', 'Eksen ofseti ≤', 'm', 0.01], ['stakeTolerance', 'Aplikasyon toleransı ≤', 'm', 0.001]].map(([k, l, u, st]) => html`<div class="li"><b class="grow" style="font-size:14px">${l}</b><input class="inp mono" style="width:110px;text-align:right;color:#10b981" type="number" step=${st} value=${th[k]} onChange=${(e) => setTh(k, +e.target.value)} /><span class="note mono" style="width:30px">${u}</span></div>`)}

@@ -23,7 +23,7 @@ export async function setup(opts = {}) {
   await db.open();
   const ds = new DataService(db, { bus, user: { id: 'u1', name: opts.user || 'Test Operatör' }, deviceId: opts.deviceId || 'dev-A', now });
   if (!opts.skipSeed) await importStandard(ds, SEED);
-  const fakeBridge = { isNative: () => false, gnssConnect: async () => {}, gnssDisconnect: async () => {}, phoneStart: async () => {}, phoneStop: async () => {}, ntripConnect: async () => {}, ntripDisconnect: async () => {} };
+  const fakeBridge = { isNative: () => false, gnssConnect: async () => {}, gnssDisconnect: async () => {}, phoneStart: async () => {}, phoneStop: async () => {}, ntripConnect: async () => {}, ntripDisconnect: async () => {}, ntripProbe: async () => ({ connected: false, error: 'yok' }) };
   const gnss = new GnssService({ bus, bridge: fakeBridge, now: () => clock });
   const ps = new ProjectService({ ds, bus, gnss });
   return { bus, db, ds, gnss, ps };

@@ -167,3 +167,21 @@ Testler
 - node --test tests/*.test.mjs → 139 test (CI'da 104 geçer, 35 referans dosyası yok diye atlanır; paket kurulu değilse
   'fake-indexeddb' isteyen 1 test başarısız olur). Yeni: tests/sebeke.test.mjs (6), tests/semboller.test.mjs (3).
 - Tarayıcı denemeleri (tests/ui/*.py) CI'da çalıştırılmıyor; yerelde Playwright + Chromium gerekir.
+
+Düzeltme kaynakları (CORS / sabit istasyon · 25.10.2026)
+=========================================================
+- android/NtripClient.java: bağlantı türü "ntrip" (v1 / v2) ya da "tcp" (doğrudan IP:port, NTRIP'siz). GGA bağlanır
+  bağlanmaz ve okuma beklemeden düzenli gider (1 s okuma süresi; eskiden ilk GGA yoksa VRS yayıncısı veri göndermiyor,
+  istemci 15 s bekleyip kopuyordu). Alıcının GGA'sı yokken Config.ggaFallback (telefonun / projenin yaklaşık konumu).
+  NTRIP v2 parça (chunked) çözücü durumu alanlarda tutar. probe(): alıcısız akış denemesi. Hata iletileri Türkçe ve açıklamalı.
+- android/Rtcm3Parser.java: 1005 / 1006'dan istasyon numarası ve yer merkezli X, Y, Z. GnssHub: yalnız konumu olan GGA
+  saklanır; durum iletisinde mode, host, station. VoltBridge: ntripProbe; doğrulama (TCP'de bağlantı noktası gerekmez).
+- web/src/gnss/ntrip-profiles.js: hazır profiller (TUSAGA-Aktif 212.156.70.42:2101, sabit istasyon, yerel CORS; bir kez
+  eklenir), kendiliğinden bağlanma ayarı, bağlantı bilgisi dosyası (sebeke-m.gnss-baglanti) ve metinden alma (ntrip://,
+  tcp://, "Sunucu / Port / Bağlantı noktası" satırları), ECEF → enlem / boylam, uzaklık.
+- web/src/gnss/gnss-service.js: yaklaşık GGA, ntripProbe, istasyon uzaklığı (baseKm), alıcı bağlanınca kendiliğinden
+  bağlanma (radyolu sabit base düzeninde değil); bağlanma hatasında durum "error" olur ("bağlanıyor"da takılmaz).
+- web/src/ui/screens/duzeltme.js: Ayarlar › Düzeltme kaynağı bölümü ve alıcı ayar rehberi.
+- Dosya haritası ve sabit istasyon gereksinimleri: docs/GNSS-BAGLANTI.md.
+Testler: tests/gnss.test.mjs (6); android/test/NtripTest.java + mock_caster.py (JDK ile: VRS'in GGA beklemesi, v2 parça
+arası bekleme, doğrudan TCP, 1005, akış denemesi).

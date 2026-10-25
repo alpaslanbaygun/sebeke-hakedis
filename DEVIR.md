@@ -25,7 +25,7 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 
 | Parça | Sürüm | Durum |
 | --- | --- | --- |
-| Telefon uygulaması (Şebeke-M) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı), **Hesap Merkezi** (15 hesap); telefonda denenmedi |
+| Telefon uygulaması (Şebeke-M) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı), **Hesap Merkezi** (15 hesap), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası); telefonda denenmedi |
 | AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM | Güncel |
 
@@ -104,7 +104,8 @@ dalı (önceki `main`; eklenti 0.1.16 ve telefon 2.5.8 Releases'te durur).
   (TEDAŞ kataloğu), `web/src/interop/sebeke.js` (telefon ↔ .sebeke.json dönüşümü) ve `sh-core.cjs` (eski program
   kurallarının JS karşılığı: proje dosyası, etiket, kanal, rapor), `web/src/export/dxf.js` (DXF; simgeler ortak tablodan),
   `web/tests` (node --test; `sebeke.test.mjs` dönüşüm testleri), `android/` (Java kabuk), `tools/` (Gradle'sız APK),
-  `keystore/` (imza anahtarı), `docs/` (telefon kılavuzu).
+  `keystore/` (imza anahtarı), `docs/` (telefon kılavuzu; GNSS / düzeltme dosyalarının haritası ve sabit istasyon
+  gereksinimleri `docs/GNSS-BAGLANTI.md`).
 - `ortak/hesap/` — Hesap Merkezi: `kaynak/<id>.html` (araçlar), `moduller.json` (hesap listesi, gruplar, hangi
   hedefe uygun), `kopru-bas.js` + `kopru.js` (sayfa köprüsü: üst çubuk, bağlam doldurma, eksikler, kayıt, güncellik,
   telefonda yazdırma / dosya), `tema.css`, `kurallar.mjs` (iletken çözümleme, uygunluk, güncellik farkları; telefon
@@ -160,12 +161,17 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
    Telefona Gönder → telefonda aç → Telefondan Al, `SH_ONAY` / `SH_DETAY`; eski programla aynı çizimde sırayla
    çalışma (INDEX, aktif hakediş, bölge listesi, onaylar). Hata ayrıntısı `%TEMP%\SebekeHakedis_hata.txt`'ye yazılır.
 2. **Telefonda deneme**: 2.5.x kurulumu, AutoCAD dosyasından proje alma, eski program durum kodları, dışa aktarma;
-   sahada Bluetooth alıcı + NTRIP ile Fixed çözüm.
+   sahada Bluetooth alıcı + düzeltme ile Fixed çözüm (TUSAGA-Aktif ya da sabit istasyon: `Akışı dene`, istasyon
+   uzaklığı, doğrudan IP; alıcı bağlanınca kendiliğinden bağlanma). Sabit istasyon kurulunca bilgileri "Sabit istasyon"
+   profiline girilir (gereksinimler `telefon/docs/GNSS-BAGLANTI.md` › 4).
 3. **Bulut eşitleme** (Faz 7): dosyayı Drive'a elle taşımadan eşitleme. Yöntem kullanıcıyla konuşulmalı.
 4. İstenirse: pano çıkış şeması / hücre düzenleme penceresi, sondaj metrajının telefonda AutoCAD değeriyle korunması
    (şimdi telefon geometriden hesaplar), eski program parolaları ve `HAK_YETKİ`.
 5. Telefonun ofis (web) sürümü 2.3.0'da kaldı; istenirse yeni hesapta yeniden yayınlanır (`telefon/DEVAM-NOTU.md`).
 6. Açık sorular PLAN.md'de (birim fiyat, malzeme eşlemesinin inceltilmesi, "ileride" objeler).
+7. **Tek ortak malzeme listesi** (telefon ve AutoCAD aynı liste; kullanıcı isteği 18.10): başlandı, 25.10'da kullanıcı
+   isteğiyle bekletiliyor. Tasarım: TEDAŞ poz kataloğu ile eski program kalem listesi tek dosyada birleşir; iki listenin
+   ortak adı az (yalnız direk tiplerinin ~530'u eşleşiyor), kalan kalemler iki tarafa da eklenir.
 
 ## 7. Başka hesaba geçiş
 

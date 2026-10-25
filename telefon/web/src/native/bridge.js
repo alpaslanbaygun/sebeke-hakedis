@@ -40,9 +40,10 @@ export const bridge = {
   gnssConnect: (link) => call('gnssConnect', link), // {type:'spp'|'ble', address, name, service?, rx?, tx?}
   gnssDisconnect: () => call('gnssDisconnect', {}),
   gnssWrite: (u8) => call('gnssWrite', { b64: b64(u8) }),
-  // ---- NTRIP (yerel TCP istemci; RTCM doğrudan alıcıya iletilir) ----
+  // ---- Düzeltme: NTRIP ya da doğrudan IP:port (yerel TCP istemci; RTCM doğrudan alıcıya iletilir) ----
   ntripSourcetable: (cfg) => call('ntripSourcetable', cfg),
-  ntripConnect: (cfg) => call('ntripConnect', cfg),
+  ntripConnect: (cfg) => call('ntripConnect', cfg),           // {mode:'ntrip'|'tcp', host, port, mount, user, pass, version, sendGGA, ggaSec, gga}
+  ntripProbe: (cfg) => call('ntripProbe', cfg),               // alıcısız akış denemesi: {connected, error, bytes, frames, types, station}
   ntripDisconnect: () => call('ntripDisconnect', {}),
   // ---- Telefon GNSS (LocationManager + NMEA dinleyici) ----
   phoneStart: (opts) => call('phoneStart', opts || {}),

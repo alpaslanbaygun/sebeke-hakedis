@@ -137,7 +137,7 @@ Proje; noktaları, objeleri, hatları, fotoğrafları ve hakediş kayıtlarıyla
 
 ## GNSS alıcıyı bağlama
 
-Hassas alım için harici bir GNSS alıcı Bluetooth ile bağlanır ve düzeltme verisi (NTRIP ya da kendi base istasyonunuz) açılır. Tüm ayarlar Ayarlar ekranındadır.
+Hassas alım için harici bir GNSS alıcı Bluetooth ile bağlanır ve düzeltme verisi (TUSAGA-Aktif, kendi sabit istasyonunuz ya da yerel bir CORS ağı) açılır. Tüm ayarlar Ayarlar ekranındadır.
 
 ![Solda Ayarlar ekranının konum kaynağı ve ölçüm yöntemi bölümü, sağda kayıtlı NTRIP profilleri](kilavuz/09-gnss-v24.png)
 
@@ -151,18 +151,63 @@ Hassas alım için harici bir GNSS alıcı Bluetooth ile bağlanır ve düzeltme
 
 Liste boşsa alıcı telefonla eşleşmemiştir; birinci adımı tekrarlayın.
 
-### NTRIP düzeltmesi ve kayıtlı profiller
+### Düzeltme kaynağı: TUSAGA-Aktif, sabit istasyon, yerel CORS
 
-1. Önce alıcıyı bağlayın. Alıcı bağlı değilken `Bağlan` düğmesi çalışmaz.
-2. Ayarlar › "NTRIP · düzeltme kaynağı" bölümünde bir profile dokunun ya da `+ Profil ekle` ile yenisini açıp ad verin (ör. "Sabit istasyon").
-3. `Sunucu`, `Port` (genellikle 2101), `Kullanıcı` ve `Şifre` alanlarını doldurun. Yazdıklarınız seçili profile kaydedilir.
-4. `Bağlantıyı Test Et` düğmesine basın. Bağlantı noktaları (mountpoint) listelenir; birini seçin.
-5. `GGA konumunu gönder` açık kalsın; VRS çözümü için gerekir.
-6. `Bağlan` düğmesine basın. Durum "Bağlı" olur, üst çubuk birkaç saniye içinde `RTK FLOAT`, sonra `RTK FIX` gösterir.
+Ayarlar › "Düzeltme kaynağı · CORS / sabit istasyon" bölümünde her kaynak ayrı bir profildir. Uygulama ilk açılışta
+üç hazır profil ekler:
+
+| Profil | Hazır gelen | Sizin gireceğiniz |
+| --- | --- | --- |
+| TUSAGA-Aktif | Sunucu `212.156.70.42`, port `2101`, NTRIP v1, GGA açık | Kullanıcı adı ve şifre (tusaga-aktif.gov.tr hesabınızda alıcıya özel yazılıdır), bağlantı noktası (listeden) |
+| Sabit istasyon | Port `2101` | İstasyonu kuran firmanın verdiği bilgiler |
+| Yerel CORS ağı | Port `2101` | Ağı işleten kurumun (belediye vb.) verdiği bilgiler |
+
+**Bağlantı türü** iki çeşittir:
+
+- `NTRIP`: sunucu, port, bağlantı noktası (mountpoint), kullanıcı adı ve şifre. TUSAGA-Aktif ve çoğu sabit istasyon böyledir.
+- `Doğrudan IP (NTRIP'siz)`: istasyon düzeltmeyi yalnız bir IP adresi ve porttan veriyorsa. Bağlantı noktası, kullanıcı
+  adı ve şifre gerekmez.
+
+Adımlar:
+
+1. Profile dokunun (ya da `+ Profil ekle` › türünü seçin › ad verin).
+2. Bilgileri girin. Bilgiler mesaj ya da dosyayla geldiyse `Dosyadan / metinden al` düğmesine basın (aşağıda).
+3. NTRIP'te `Bağlantı noktalarını getir` düğmesine basın ve listeden seçin. Liste en yakın istasyondan başlar.
+4. `Akışı dene` düğmesine basın. Alıcı bağlı olmasa da çalışır: 8 saniyede şifrenin, bağlantı noktasının ve verinin
+   doğru gelip gelmediğini, düzeltme veren istasyonun numarasını ve size uzaklığını söyler.
+5. Alıcıyı bağlayın, `Bağlan` düğmesine basın. Durum "Bağlı" olur; üst çubuk birkaç saniyede `RTK FLOAT`, sonra `RTK FIX` gösterir.
+
+`Alıcı bağlanınca kendiliğinden bağlan` açıksa (varsayılan), seçili profil eksiksizse alıcı her bağlandığında düzeltme de
+kendiliğinden açılır. Radyo ile çalışan sabit base düzeninde açılmaz.
+
+Bağlıyken bölümde düzeltme veren **referans istasyonunun numarası ve uzaklığı** görünür. Tek istasyonla çalışırken uzaklık
+arttıkça FIX zorlaşır; 20 km'nin üstünde sarı uyarı çıkar.
+
+`Konumu (GGA) gönder` NTRIP'te açık kalmalı: VRS düzeltmesi konumunuza göre hesaplanır. Alıcı henüz konum bulmadıysa
+uygulama telefonun ya da projenin yaklaşık konumunu gönderir, böylece bağlantı beklemede kalmaz.
 
 Telefonda internet olmalıdır; düzeltme telefondan alıcıya iletilir.
 
-Her düzeltme kaynağı (TUSAGA-Aktif, kendi sabit istasyonunuz, başka bir ağ) ayrı bir profil olarak saklanır. Profile dokunmak o kaynağa geçirir; bağlıyken profil değiştirirseniz bağlantı kesilir, `Bağlan` ile yeniden bağlanın. Seçili profili `Sil` düğmesi kaldırır.
+### Bağlantı bilgisi dosyası (başka telefona aktarma)
+
+- `Paylaş (dosya)`: sunucusu dolu bütün profiller `Sebeke-M-GNSS-baglanti.json` dosyasına yazılır; `Şifresiz` ya da
+  `Şifrelerle` seçilir (dosyayı alan herkes şifreleri görür).
+- `Dosyadan / metinden al`: bu dosya seçilir ya da mesajdaki bilgi yapıştırılır. Tanınan biçimler:
+  `ntrip://kullanıcı:şifre@sunucu:2101/NOKTA`, `tcp://sunucu:port` ve "Sunucu: … / Port: … / Bağlantı noktası: … /
+  Kullanıcı: … / Şifre: …" satırları. Aynı adlı profil güncellenir (dosyada şifre yoksa eskisi korunur), yenisi eklenir.
+
+### Alıcı ayarı (bir kez)
+
+Ayarlar › "GNSS alıcı · Bluetooth" › `Alıcı ayar rehberi`: alıcıyı kendi yazılımından **Rover** moduna alın, düzeltme
+girişini **Bluetooth / telefon** seçin, Bluetooth çıkışına **NMEA** (GGA, GST, GSA, RMC) açın, alıcının kendi internet /
+NTRIP bağlantısını ve radyosunu kapatın.
+
+### Sabit istasyon kurulurken firmadan istenecekler
+
+"Sabit istasyon" profilindeki `Sabit istasyon kurulurken firmadan istenecekler` düğmesi listeyi açar: yayın yolu (NTRIP ya
+da doğrudan IP:port ve bilgileri), internetten erişim (sabit IP / alan adı, açık port), mesajlar (RTCM 3.2 MSM4 / MSM5 +
+1005 / 1006 + 1033 + 1230, saniyede bir), istasyon koordinatı (ITRF96, 2005.0 epoğu; anten yüksekliği, koordinat belgesi),
+süreklilik (kesintisiz güç, modem).
 
 ### Alıcı markası
 
@@ -182,7 +227,7 @@ Ayarlar › "Ölçüm yöntemi" › `Sabit Base + Rover` altı adımlık rehberi
 
 1. **BASE bağla:** base adı, cihaz / seri no, anten yüksekliği.
 2. **BASE konumu:** `Bilinen nokta`, `Manuel koordinat`, `Ortalama al` (60 ölçünün ortalaması) ya da `Kayıtlı base`.
-3. **Düzeltme verisi:** `UHF radyo`, `LoRa`, `Dahili / harici radyo`, `NTRIP` ya da `Diğer`.
+3. **Düzeltme verisi:** `UHF radyo`, `LoRa`, `Dahili / harici radyo`, `NTRIP` ya da `Diğer`. Base düzeltmeyi internetten veriyorsa (NTRIP ya da doğrudan IP:port) `NTRIP` seçin ve bağlantıyı "Düzeltme kaynağı" bölümündeki "Sabit istasyon" profilinden kurun.
 4. **ROVER bağla:** elinizdeki alıcıyı Bluetooth ile bağlayın.
 5. **Bağlantı kontrolü:** dört satırın dördü de yeşil olmalı.
 6. **Ölçüme başla:** `ÖLÇÜME BAŞLA` düğmesi. Bundan sonra base bilgisi her ölçüme yazılır.
@@ -871,7 +916,10 @@ Yeni sürümün kurulum dosyasını eski sürümün üzerine kurun; uygulamayı 
 | Alıcı `BAĞLI` ama konum gelmiyor | Alıcı konum cümlelerini göndermiyor | Alıcının kendi yazılımından GGA, GST, GSA ve RMC çıkışını açın |
 | `RTK FLOAT`'ta kalıyor, `RTK FIX` olmuyor | Düzeltme gelmiyor ya da gökyüzü kapalı | NTRIP durumuna ve telefonun internetine bakın; ağaç ve bina altından çıkın; birkaç saniye bekleyin |
 | `YAŞ` sarı yanıyor | Düzeltme verisi gecikiyor | İnternet çekimini kontrol edin; NTRIP'i kesip yeniden bağlanın |
-| NTRIP'te `Bağlan` çalışmıyor | Harici alıcı bağlı değil | Önce alıcıyı bağlayın |
+| Düzeltmede `Bağlan` çalışmıyor | Harici alıcı bağlı değil | Önce alıcıyı bağlayın; bilgileri `Akışı dene` ile alıcısız deneyebilirsiniz |
+| `Akışı dene`: "şifre yanlış (401)" | Kullanıcı adı / şifre | TUSAGA-Aktif'te kullanıcı adı alıcıya özeldir; web hesabınızdan bakın |
+| `Akışı dene`: "bağlantı noktası bulunamadı" | Mountpoint adı yanlış | `Bağlantı noktalarını getir` ile listeden seçin |
+| "Düzeltme verisi gelmiyor" | VRS konumu almadı ya da istasyon yayında değil | `Konumu (GGA) gönder` açık mı; sabit istasyonun yayında olduğunu firmaya sorun |
 | Büyük düğmede `KAYNAK YOK` | Konum kaynağı seçilmemiş | `KAYNAK` düğmesinden seçin |
 | "Önce direk tipini seçin" | Direk tipi boş | Nesne seçiciden tip seçin |
 | "Hassas alım için uygun değil" | Ölçü eşikleri tutmuyor | `Vazgeç · FIX bekle` deyip bekleyin, ya da `Yine de kaydet` |

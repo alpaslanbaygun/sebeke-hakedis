@@ -170,7 +170,14 @@ public final class VoltBridge {
         c.host = a.optString("host", "").trim(); c.port = a.optInt("port", 2101); c.mount = a.optString("mount", "").trim();
         c.user = a.optString("user", ""); c.pass = a.optString("pass", ""); c.version = a.optInt("version", 2);
         c.sendGGA = a.optBoolean("sendGGA", true); c.ggaSec = a.optInt("ggaSec", 1);
+        c.mode = "tcp".equalsIgnoreCase(a.optString("mode", "ntrip")) ? "tcp" : "ntrip";
+        c.ggaFallback = a.optString("gga", "");
         return c;
+    }
+    private static void kontrol(NtripClient.Config c) throws Exception {
+        if (c.host.isEmpty()) throw new Exception("Sunucu adresi gerekli");
+        if (c.port <= 0 || c.port > 65535) throw new Exception("Port 1–65535 arasında olmalı");
+        if (!c.isTcp() && c.mount.isEmpty()) throw new Exception("Bağlantı noktası (mountpoint) gerekli");
     }
     @JavascriptInterface public void ntripSourcetable(String reqId, String json) {
         async(reqId, json, (a) -> {
@@ -183,10 +190,26 @@ public final class VoltBridge {
     @JavascriptInterface public void ntripConnect(String reqId, String json) {
         async(reqId, json, (a) -> {
             NtripClient.Config c = cfg(a);
-            if (c.host.isEmpty() || c.mount.isEmpty()) throw new Exception("Sunucu ve mountpoint gerekli");
+            kontrol(c);
             if (!GnssHub.get().linkActive()) throw new Exception("Önce harici GNSS alıcısına bağlanın");
             GnssHub.get().ntripStart(c);
             return true;
+        });
+    }
+    /** Akış denemesi: alıcı bağlı olmadan birkaç saniye bağlanır; şifre, bağlantı noktası, veri ve istasyon konumu. */
+    @JavascriptInterface public void ntripProbe(String reqId, String json) {
+        async(reqId, json, (a) -> {
+            NtripClient.Config c = cfg(a);
+            kontrol(c);
+            if (c.ggaFallback.isEmpty()) { String g = GnssHub.get().lastGGA(); if (g != null) c.ggaFallback = g; }
+            NtripClient.Probe p = NtripClient.probe(c, a.optInt("seconds", 8));
+            JSONObject o = new JSONObject();
+            o.put("connected", p.connected); o.put("error", p.error == null ? JSONObject.NULL : p.error);
+            o.put("bytes", p.bytes); o.put("frames", p.frames); o.put("crcErrors", p.crcErrors); o.put("firstDataMs", p.firstDataMs);
+            JSONObject t = new JSONObject(); if (p.types != null) for (java.util.Map.Entry<Integer, Integer> e : p.types.entrySet()) t.put(String.valueOf(e.getKey()), e.getValue());
+            o.put("types", t);
+            if (p.stationId >= 0) { JSONObject st = new JSONObject(); st.put("id", p.stationId); st.put("x", p.x); st.put("y", p.y); st.put("z", p.z); o.put("station", st); }
+            return o;
         });
     }
     @JavascriptInterface public void ntripDisconnect(String reqId, String json) { async(reqId, json, (a) -> { GnssHub.get().ntripStop(); return true; }); }

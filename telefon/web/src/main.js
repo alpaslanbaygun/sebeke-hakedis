@@ -9,6 +9,7 @@ import { DataService } from './core/data-service.js';
 import { importStandard, upgradeStandard, SEED_REV } from './core/standards.js';
 import { uuid4 } from './core/ids.js';
 import { GnssService } from './gnss/gnss-service.js';
+import { loadProfiles, activeProfile, hazirProfilleriEkle, otomatikAyar } from './gnss/ntrip-profiles.js';
 import { ProjectService } from './services/project-service.js';
 import { bridge } from './native/bridge.js';
 import { wireRawLog } from './ui/services.js';
@@ -59,6 +60,15 @@ async function boot() {
     const gnss = new GnssService({ bus, bridge });
     const ant = await ds.setting('antenna'); if (ant) gnss.configure({ antenna: ant });
     const gm = await ds.setting('gnssMethod'); if (gm && gm.method) gnss.setMethod(gm.method, gm.base || null);
+    // Düzeltme profilleri: hazır profiller (TUSAGA-Aktif, sabit istasyon, yerel CORS) bir kez eklenir; alıcı bağlanınca
+    // seçili profile kendiliğinden bağlanma ayarı GNSS servisine verilir (son alıcıya bağlanmadan önce)
+    try {
+      const yuklu = loadProfiles(await ds.setting('ntripProfiles'), await ds.setting('ntrip'));
+      const { st, degisti } = hazirProfilleriEkle(yuklu);
+      if (degisti) await ds.setting('ntripProfiles', st);
+      app.state.ntripProfiles = st; app.state.ntripCfg = activeProfile(st);
+      gnss.autoNtrip = otomatikAyar(st);
+    } catch (e) { console.warn('Düzeltme profilleri okunamadı', e); }
     const ps = new ProjectService({ ds, bus, gnss });
     Object.assign(app, { bus, ds, ps, gnss, bridge });
     window.__app = app;
