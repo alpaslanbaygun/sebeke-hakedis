@@ -166,7 +166,11 @@ namespace SebekeHakedis.Eklenti
             catch { return br.Name; }
         }
 
-        public static Dictionary<string, List<string>> XdataOku(DBObject o)
+        /// <summary>
+        /// Nesnenin genişletilmiş verisi: uygulama adı → değerler. Değeri olmayan ya da yalnız boş dizgilerden oluşan
+        /// bölüm (eski değeri silmek için yazılan iz) yok sayılır; ham=true ile olduğu gibi döner (denetim için).
+        /// </summary>
+        public static Dictionary<string, List<string>> XdataOku(DBObject o, bool ham = false)
         {
             var d = new Dictionary<string, List<string>>(StringComparer.Ordinal);
             ResultBuffer rb = o.XData;
@@ -185,6 +189,12 @@ namespace SebekeHakedis.Eklenti
                     if (mevcut == null) continue;
                     mevcut.Add(Convert.ToString(tv.Value, CultureInfo.InvariantCulture) ?? "");
                 }
+            }
+            if (!ham)
+            {
+                var bos = new List<string>();
+                foreach (var kv in d) if (kv.Value.TrueForAll(string.IsNullOrEmpty)) bos.Add(kv.Key);
+                foreach (var k in bos) d.Remove(k);
             }
             return d;
         }

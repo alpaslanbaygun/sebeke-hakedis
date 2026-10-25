@@ -34,7 +34,7 @@ namespace SebekeHakedis.Cekirdek
         private static bool Dolu(CadVarlik v, string uygulama)
         {
             List<string> l;
-            return v.Xd.TryGetValue(uygulama, out l) && l != null && l.Count > 0;
+            return v.Xd.TryGetValue(uygulama, out l) && l != null && l.Exists(x => !string.IsNullOrEmpty(x));
         }
 
         public static Proje Oku(IList<CadVarlik> varliklar, string kaynakAdi)

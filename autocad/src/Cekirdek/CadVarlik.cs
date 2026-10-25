@@ -101,8 +101,9 @@ namespace SebekeHakedis.Cekirdek
             foreach (var u in uygulamalar)
             {
                 if (u == "SH_ID" || u == "ETK") continue;
-                var la = a.XdHepsi(u);
-                var lb = b.XdHepsi(u);
+                // Boş dizgiler sayılmaz: "GIS" [""] ile hiç GIS olmaması aynıdır; silinmiş bölümün izi ("") de yok demektir
+                var la = a.XdHepsi(u).FindAll(x => !string.IsNullOrEmpty(x));
+                var lb = b.XdHepsi(u).FindAll(x => !string.IsNullOrEmpty(x));
                 if (la.Count != lb.Count) { fark = u + " satır sayısı " + la.Count + " → " + lb.Count; return false; }
                 for (int i = 0; i < la.Count; i++) if (!SatirAyni(la[i], lb[i])) { fark = u + ": " + la[i] + " → " + lb[i]; return false; }
             }

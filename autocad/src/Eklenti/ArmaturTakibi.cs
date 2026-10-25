@@ -70,9 +70,16 @@ namespace SebekeHakedis.Eklenti
         /// <summary>Direğe bağ verisini yazar (simge null: bağ silinir). Nesne yazmaya açık olmalı, uygulama adı kayıtlı olmalı.</summary>
         public static void DirekVerisiYaz(DBObject direk, string simge, double dx, double dy)
         {
+            // Silme: veri yoksa yazılmaz; varsa yalnız uygulama adı değil tek boş dizgi yazılır. Yalnız adı yazılmış
+            // (sıfır uzunluklu) bölüm kaydedilen çizimi bozuyor: DWG okuyucusu sıfır uzunluğu verinin sonu sayıyor,
+            // arkasındaki bölümler nesneyi okunmaz ediyor (eWrongObjectType). Okuyucular "" değeri veri yok sayar.
+            if (string.IsNullOrEmpty(simge))
+            {
+                using (var var_ = direk.GetXDataForApplication(Uygulama)) if (var_ == null) return;
+            }
             if (!direk.IsWriteEnabled) direk.UpgradeOpen();
             using (var rb = string.IsNullOrEmpty(simge)
-                ? new ResultBuffer(new TypedValue((int)DxfCode.ExtendedDataRegAppName, Uygulama))
+                ? new ResultBuffer(new TypedValue((int)DxfCode.ExtendedDataRegAppName, Uygulama), new TypedValue((int)DxfCode.ExtendedDataAsciiString, ""))
                 : new ResultBuffer(
                     new TypedValue((int)DxfCode.ExtendedDataRegAppName, Uygulama),
                     new TypedValue((int)DxfCode.ExtendedDataAsciiString, simge),

@@ -812,18 +812,21 @@ namespace SebekeHakedis.Eklenti
 
         private void XdataYaz(Entity e, CadVarlik v)
         {
-            // Yönetilen uygulamalar: değeri olan yazılır; değeri yoksa yalnız nesnede o uygulamanın eski verisi varsa boş
-            // bölüm yazılır (AutoCAD'de eski değeri silmenin yolu). Yeni nesneye boş bölüm yazılmaz: boş "NIT" bölümü
-            // GPS noktasını okuyucuda eleman gibi gösteriyordu.
+            // Yönetilen uygulamalar: değeri olan yazılır. Değersiz (yalnız adı yazılmış) bölüm ASLA yazılmaz: AutoCAD onu
+            // sıfır uzunluklu bölüm olarak saklıyor, DWG okuyucusu sıfır uzunluğu "genişletilmiş veri bitti" sayıyor ve
+            // arkasındaki bölümler nesneyi bozuyor (açılışta eWrongObjectType, nesne atılıyor; canlı denemede 72 nesne
+            // kayboldu). Nesnede eski veri varsa ve yeni değer yoksa tek boş dizgi yazılır; okuyucu (Toplayici.XdataOku)
+            // yalnız boş dizgilerden oluşan bölümü yok sayar.
             Dictionary<string, List<string>> eski;
-            try { eski = Toplayici.XdataOku(e); } catch { eski = new Dictionary<string, List<string>>(); }
+            try { eski = Toplayici.XdataOku(e, true); } catch { eski = new Dictionary<string, List<string>>(); }   // ham: sıfır uzunluklu bölüm de iz ile onarılsın
             using (var rb = new ResultBuffer())
             {
                 int bolum = 0;
                 foreach (var app in Yonetilen)
                 {
                     var l = v.XdHepsi(app);
-                    if (l.Count > 0 || eski.ContainsKey(app)) { Bolum(rb, app, l); bolum++; }
+                    if (l.Count > 0) { Bolum(rb, app, l); bolum++; }
+                    else if (eski.ContainsKey(app)) { Bolum(rb, app, new List<string> { "" }); bolum++; }
                 }
                 List<string> kimlik;
                 if (v.Xd.TryGetValue(NesneYazici.KimlikUygulamasi, out kimlik) && kimlik.Count > 0) { Bolum(rb, NesneYazici.KimlikUygulamasi, kimlik); bolum++; }
@@ -835,6 +838,13 @@ namespace SebekeHakedis.Eklenti
                 }
                 if (bolum > 0) e.XData = rb;
             }
+            // Denetim: sıfır uzunluklu bölüm kalmamalı (kalırsa kaydedilen çizim açılırken nesne atılır)
+            try
+            {
+                foreach (var kv in Toplayici.XdataOku(e, true))
+                    if (kv.Value.Count == 0) { Uyarilar.Add("Değersiz genişletilmiş veri bölümü kaldı (" + kv.Key + "): " + e.Handle); break; }
+            }
+            catch { }
         }
 
         private void Bolum(ResultBuffer rb, string app, List<string> degerler)
@@ -907,6 +917,12 @@ namespace SebekeHakedis.Eklenti
                 ParcaKonumu(kose[i], kose[i + 1], kaydirma, out x, out y, out aci);
                 var yazi = YaziYap(d.ToString(bicim, CultureInfo.InvariantCulture), x, y, aci, yh, katman);
                 taniticilar.Add(yazi.Handle.ToString());
+            }
+            // Yazı yoksa: eski bölüm varsa izi (tek boş dizgi) bırakılır, yoksa hiç yazılmaz — sıfır uzunluklu bölüm çizimi bozar
+            if (taniticilar.Count == 0)
+            {
+                if (!Toplayici.XdataOku(cizgi, true).ContainsKey(NesneYazici.ParcaUygulamasi)) return;
+                taniticilar.Add("");
             }
             using (var rb = new ResultBuffer())
             {
