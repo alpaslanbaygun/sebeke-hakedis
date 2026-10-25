@@ -43,12 +43,20 @@ public class NtripTest {
         "v" + ver + " istasyon (1005): " + k.p.stationId + " X " + k.p.stationX + " Y " + k.p.stationY + " Z " + k.p.stationZ);
       check(k.last != null && k.last.stationId == 2003, "v" + ver + " saniyelik özet istasyonu taşıyor");
 
-      // Yanlış şifre
+      // Yanlış şifre: bir kez dener, hatayı bildirir ve durur (sunucuyu yormaz, hesap kilitlenmez)
       NtripClient.Config yanlis = cfg(port, ver, "VRS_RTCM32"); yanlis.pass = "yanlis";
       Kayit k2 = new Kayit();
       NtripClient bad = new NtripClient(yanlis, () -> null, k2);
-      bad.start(); Thread.sleep(800); bad.stop();
-      check(k2.st.toString().contains("şifre yanlış"), "v" + ver + " yanlış şifre: " + k2.st.subList(0, Math.min(2, k2.st.size())));
+      bad.start(); Thread.sleep(2600);
+      check(k2.st.toString().contains("şifre yanlış") && Collections.frequency(k2.st, "connecting") == 1 && !bad.isRunning(), "v" + ver + " yanlış şifre, yeniden denemez: " + k2.st);
+      bad.stop();
+
+      // Bilinmeyen bağlantı noktası (v2: 200 + kaynak tablosu) → kalıcı hata
+      Kayit k4 = new Kayit();
+      NtripClient yok = new NtripClient(cfg(port, ver, "YOK_BOYLE"), () -> GGA, k4);
+      yok.start(); Thread.sleep(1200);
+      check(k4.st.toString().contains("bulunamadı") && !yok.isRunning(), "v" + ver + " bilinmeyen bağlantı noktası: " + k4.st);
+      yok.stop();
 
       // VRS: alıcı ilk 1,5 s konum vermiyor (GGA yok), sonra veriyor → istemci kilitlenmeden düzeltme almalı
       Kayit k3 = new Kayit();
@@ -57,6 +65,13 @@ public class NtripTest {
       vrs.start(); Thread.sleep(4300); vrs.stop();
       check(k3.p.frames > 0 && k3.p.crcErrors == 0, "v" + ver + " VRS geç GGA: " + k3.p.frames + " çerçeve, " + k3.p.crcErrors + " CRC hatası, durum " + k3.st.subList(0, Math.min(3, k3.st.size())));
     }
+
+    // Kısa oturumlar: veri gelen oturum koptukça bekleme 2 s'den başlar (2, 4, 8… diye büyümez)
+    Kayit kk = new Kayit();
+    NtripClient kisa = new NtripClient(cfg(port, 1, "KISA"), () -> GGA, kk);
+    kisa.start(); Thread.sleep(12000); kisa.stop();
+    int baglanti = Collections.frequency(kk.st, "connecting");
+    check(baglanti >= 4, "kısa oturumlar: 12 s'de " + baglanti + " bağlantı (beklenen ≥ 4)");
 
     // Doğrudan TCP (NTRIP'siz)
     NtripClient.Config t = new NtripClient.Config();
@@ -79,6 +94,20 @@ public class NtripTest {
     NtripClient.Config tp = new NtripClient.Config(); tp.mode = "tcp"; tp.host = "127.0.0.1"; tp.port = port + 1; tp.sendGGA = false;
     NtripClient.Probe pr4 = NtripClient.probe(tp, 4);
     check(pr4.connected && pr4.frames > 0 && pr4.stationId == 2003, "deneme TCP: çerçeve=" + pr4.frames + " istasyon=" + pr4.stationId + " hata=" + pr4.error);
+
+    // RTCM olmayan akış: deneme "RTCM değil" demeli
+    NtripClient.Config nm = new NtripClient.Config(); nm.mode = "tcp"; nm.host = "127.0.0.1"; nm.port = port + 2; nm.sendGGA = false;
+    NtripClient.Probe pr5 = NtripClient.probe(nm, 3);
+    check(pr5.connected && pr5.frames == 0 && pr5.error != null && pr5.error.contains("RTCM"), "deneme RTCM olmayan akış: " + pr5.error);
+
+    // Gelen veriyi okumayan sunucu: GGA yazımı kilitlenince istemci sezer ve bağlantıyı yeniler
+    NtripClient.Config ok = new NtripClient.Config(); ok.mode = "tcp"; ok.host = "127.0.0.1"; ok.port = port + 3; ok.sendGGA = true; ok.ggaSec = 1; ok.dataTimeoutMs = 5000;
+    StringBuilder buyuk = new StringBuilder(); while (buyuk.length() < 16_000_000) buyuk.append(GGA);
+    ok.ggaFallback = buyuk.toString();
+    Kayit ko = new Kayit();
+    NtripClient okumayan = new NtripClient(ok, () -> null, ko);
+    okumayan.start(); Thread.sleep(9000); okumayan.stop();
+    check(ko.st.toString().contains("GGA") && ko.p.frames > 0, "okumayan sunucu: " + ko.st.subList(0, Math.min(4, ko.st.size())));
 
     System.out.println(fail == 0 ? "SONUÇ: hepsi geçti" : "SONUÇ: " + fail + " hata");
     System.exit(fail == 0 ? 0 : 1);

@@ -113,6 +113,30 @@ test('G4 · Metinden bağlantı bilgisi: adres satırları ve "Sunucu / Port / B
   assert.deepEqual(metindenProfiller('bilgi yok'), []);
 });
 
+test('G4b · Metinden alma: adres + ayrı kullanıcı satırları birleşir, web adresi karışmaz, "%" içeren şifre, posta adresi', () => {
+  assert.deepEqual(metindenProfiller('cors.ornek.gov.tr:2101/VRSRTCM31\nKullanıcı: abc\nŞifre: xyz'), [{ mode: 'ntrip', host: 'cors.ornek.gov.tr', port: 2101, mount: 'VRSRTCM31', user: 'abc', pass: 'xyz' }]);
+  assert.deepEqual(metindenProfiller('Belediye CORS\nhttp://www.belediye.bel.tr\nSunucu: 10.1.1.1\nPort: 2101\nMountpoint: RTCM3\nKullanıcı: k\nŞifre: s'), [{ mode: 'ntrip', host: '10.1.1.1', port: 2101, mount: 'RTCM3', user: 'k', pass: 's' }]);
+  assert.equal(parseNtripUrl('http://www.belediye.bel.tr'), null);
+  assert.equal(parseNtripUrl('ntrip://u:100%ok@host.ornek:2101/MP').pass, '100%ok');
+  assert.deepEqual(metindenProfiller('Adres: Atatürk Cad. No:5'), []);
+  assert.equal(metindenProfiller('Caster: cors.ornek\nPort: 2101')[0].mode, 'ntrip', 'yayıncı sözcüğü: NTRIP');
+  assert.equal(metindenProfiller('Sunucu: 1.2.3.4\nPort: 2101\nMountpoint: A\nSürüm: 2.1')[0].version, undefined, '2.1 sürüm sayılmaz');
+  assert.equal(metindenProfiller('Sunucu: 1.2.3.4\nPort: 2101\nMountpoint: A\nNTRIP sürümü: v1.0')[0].version, 1);
+  // İçe alınan doğrudan IP profili GGA göndermez (istasyon gelen veriyi okumayabilir)
+  const st = hazirProfilleriEkle(loadProfiles(null, null)).st;
+  const r = profilleriBirlestir(st, metindenProfiller('tcp://88.1.2.3:9000'));
+  assert.equal(activeProfile(r.st).sendGGA, false);
+  assert.equal(activeProfile(profilleriBirlestir(st, metindenProfiller('ntrip://u:p@h.ornek:2101/M')).st).sendGGA, true);
+  // Kendiliğinden bağlanma: önceki sürümden gelen kayıtta kapalı, yeni kurulumda açık
+  assert.equal(loadProfiles({ active: 'a', list: [{ id: 'a', name: 'x', host: 'h', mount: 'm' }] }, null).auto, false);
+  assert.equal(loadProfiles(null, { name: 'TUSAGA-Aktif', host: 'h', mount: 'm' }).auto, false);
+  assert.equal(loadProfiles(null, null).auto, true);
+  assert.equal(loadProfiles({ active: 'a', auto: true, list: [{ id: 'a', name: 'x', host: 'h', mount: 'm' }] }, null).auto, true);
+  // TUSAGA-Aktif kullanıcı adı olmadan kendiliğinden bağlanmaz
+  const t = Object.assign({}, st.list[0], { mount: 'VRSRTCM31' });
+  assert.equal(profilTamam(t), false); assert.equal(profilTamam(Object.assign({}, t, { user: 'u' })), true);
+});
+
 test('G5 · İstasyon konumu (RTCM 1005) → enlem / boylam ve uzaklık', () => {
   const p = ecef(38.6743, 39.2232, 1100);
   const g = ecefToGeo(p.x, p.y, p.z);

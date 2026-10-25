@@ -183,5 +183,12 @@ Düzeltme kaynakları (CORS / sabit istasyon · 25.10.2026)
   bağlanma (radyolu sabit base düzeninde değil); bağlanma hatasında durum "error" olur ("bağlanıyor"da takılmaz).
 - web/src/ui/screens/duzeltme.js: Ayarlar › Düzeltme kaynağı bölümü ve alıcı ayar rehberi.
 - Dosya haritası ve sabit istasyon gereksinimleri: docs/GNSS-BAGLANTI.md.
-Testler: tests/gnss.test.mjs (6); android/test/NtripTest.java + mock_caster.py (JDK ile: VRS'in GGA beklemesi, v2 parça
-arası bekleme, doğrudan TCP, 1005, akış denemesi).
+- Gözden geçirme düzeltmeleri: durdurulan istemcinin geç gelen olayları arayüzü "bağlı"da bırakmaz (GnssHub durum nesnesi
+  yenilenir); şifre / bağlantı noktası / erişim hatasında (401, 403, 404, kaynak tablosu) istemci bir kez dener ve durur;
+  veri almış oturum koptuğunda bekleme 2 s'den başlar; GGA ayrı yazıcıyla gider, karşı taraf okumazsa sezilir; akış denemesi
+  RTCM olmayan veride hata verir; içe alınan doğrudan IP profilinde GGA kapalı; kendiliğinden bağlanma güncelleyenlerde kapalı
+  başlar; metinden almada adres + kullanıcı satırları birleşir, web adresleri karışmaz; Girdi (kit.js): yazarken ekran
+  yenilense de alan silinmez (ayarlardaki anten ve eşik alanları da).
+Testler: tests/gnss.test.mjs (7); android/test/NtripTest.java + mock_caster.py (JDK ile: VRS'in GGA beklemesi, v2 parça
+arası bekleme, doğrudan TCP, 1005, akış denemesi, kalıcı hata, kısa oturumlar, okumayan sunucu); tests/ui/gnss_ui.py
+(derlenmiş uygulamada Ayarlar › Düzeltme kaynağı; CI'da çalışır, ekran görüntüleri ci-sonuc-android(-dal) › ekran/).

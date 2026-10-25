@@ -11,7 +11,7 @@ export async function ensureSession() {
   const today = new Date().toISOString().slice(0, 10);
   let s = ps.data.surveySessions.find((x) => x.id === app.state.sessionId && !x.endedAt && x.startedAt.slice(0, 10) === today && x.sourceKind === g.state.source);
   if (!s) {
-    s = await ps.ds.create('surveySessions', { projectId: ps.p.id, startedAt: new Date().toISOString(), operator: ps.ds.user.name, sourceKind: g.state.source, receiver: g.state.receiver || null, antenna: Object.assign({}, g.antenna), ntrip: g.ntrip.mount ? { mount: g.ntrip.mount, host: (app.state.ntripCfg || {}).host || null } : null, crs: ps.p.crs.label }, { reason: 'Ölçüm oturumu başladı', silent: true });
+    s = await ps.ds.create('surveySessions', { projectId: ps.p.id, startedAt: new Date().toISOString(), operator: ps.ds.user.name, sourceKind: g.state.source, receiver: g.state.receiver || null, antenna: Object.assign({}, g.antenna), ntrip: g.ntrip.state === 'connected' ? { mode: g.ntrip.mode || 'ntrip', mount: g.ntrip.mount || null, host: g.ntrip.host || (app.state.ntripCfg || {}).host || null, port: g.ntrip.port || null, station: g.ntrip.station ? g.ntrip.station.id : null } : null, crs: ps.p.crs.label }, { reason: 'Ölçüm oturumu başladı', silent: true });
     await ps.reload('surveySessions');
     app.state.sessionId = s.id;
   }

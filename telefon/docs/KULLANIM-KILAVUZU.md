@@ -177,8 +177,10 @@ Adımlar:
    doğru gelip gelmediğini, düzeltme veren istasyonun numarasını ve size uzaklığını söyler.
 5. Alıcıyı bağlayın, `Bağlan` düğmesine basın. Durum "Bağlı" olur; üst çubuk birkaç saniyede `RTK FLOAT`, sonra `RTK FIX` gösterir.
 
-`Alıcı bağlanınca kendiliğinden bağlan` açıksa (varsayılan), seçili profil eksiksizse alıcı her bağlandığında düzeltme de
-kendiliğinden açılır. Radyo ile çalışan sabit base düzeninde açılmaz.
+`Alıcı bağlanınca kendiliğinden bağlan` açıksa, seçili profil eksiksizse alıcı her bağlandığında düzeltme de kendiliğinden
+açılır (yeni kurulumda açık; önceki sürümden güncelleyenlerde kapalı başlar). Radyo ile çalışan sabit base düzeninde açılmaz.
+Şifre ya da bağlantı noktası yanlışsa uygulama bir kez dener, hatayı yazar ve durur (hesap kilitlenmesin); düzeltip
+`Bağlan` deyin.
 
 Bağlıyken bölümde düzeltme veren **referans istasyonunun numarası ve uzaklığı** görünür. Tek istasyonla çalışırken uzaklık
 arttıkça FIX zorlaşır; 20 km'nin üstünde sarı uyarı çıkar.

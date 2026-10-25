@@ -287,6 +287,7 @@ export class GnssService {
    */
   fallbackGGA(near) {
     const s = this.state;
+    if (!near && this.yakinKonum) { try { near = this.yakinKonum(); } catch (e) { near = null; } }
     const lat = s.lat != null ? s.lat : near && near.lat, lon = s.lon != null ? s.lon : near && near.lon;
     if (lat == null || lon == null || !isFinite(lat) || !isFinite(lon)) return '';
     const alt = s.altMSL != null ? s.altMSL : near && near.alt != null ? near.alt : 1000;

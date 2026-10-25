@@ -53,6 +53,8 @@ public final class GnssHub {
     }
     public synchronized void disconnect() {
         if (ntrip != null) { ntrip.stop(); ntrip = null; }
+        ntripState = new JSONObject(); // durdurulan istemcinin geç gelen olayları arayüze ulaşmaz
+        lastGGA = null;
         if (link != null) { link.close(); emit("gnssStatus", j("state", "disconnected", "name", link.name())); link = null; }
     }
     public void write(byte[] b) { GnssLink l = link; if (l != null) l.write(b, 0, b.length); }
@@ -113,7 +115,10 @@ public final class GnssHub {
         ntrip = me[0];
         ntrip.start();
     }
-    public synchronized void ntripStop() { if (ntrip != null) { ntrip.stop(); ntrip = null; } }
+    public synchronized void ntripStop() {
+        if (ntrip != null) { ntrip.stop(); ntrip = null; }
+        ntripState = new JSONObject(); // durdurulan istemcinin geç gelen olayları ("bağlı") arayüze ulaşmaz
+    }
 
     // ------- Telefon GNSS -------
     public synchronized void phoneStart(Context ctx, long interval) {

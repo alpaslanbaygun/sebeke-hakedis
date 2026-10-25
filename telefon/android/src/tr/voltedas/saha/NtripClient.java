@@ -57,9 +57,16 @@ public final class NtripClient {
         public int stationId = -1; public double x, y, z; public long firstDataMs = -1;
     }
 
+    /** Yeniden denemenin anlamsız olduğu hata (şifre, bağlantı noktası, erişim): istemci durur, kullanıcı düzeltir. */
+    static final class KaliciHata extends IOException { KaliciHata(String m) { super(m); } }
+
     private final Config cfg; private final GgaSource gga; private final Listener ls;
     private volatile boolean running; private volatile Socket sock; private Thread th;
     private final Rtcm3Parser parser = new Rtcm3Parser();
+    /** Oturumda veri geldi mi (geldiyse yeniden bağlanma beklemesi baştan başlar). */
+    private volatile boolean gotData;
+    /** Süren GGA yazımının başlangıcı (ms; 0: yazım yok). Karşı taraf okumazsa yazım kilitlenir; okuyucu bunu sezer. */
+    private volatile long ggaYazmaBasi;
 
     public NtripClient(Config cfg, GgaSource gga, Listener ls) { this.cfg = cfg; this.gga = gga; this.ls = ls; }
 
@@ -82,15 +89,20 @@ public final class NtripClient {
     private void loop() {
         int backoff = 2000;
         while (running) {
+            gotData = false;
             try {
-                ls.onStatus("connecting", null);
+                if (running) ls.onStatus("connecting", null);
                 session();
-                backoff = 2000;
+            } catch (KaliciHata e) {
+                // Şifre / bağlantı noktası / erişim hatası: sunucuyu yormadan dur (hesap kilitlenmesin), kullanıcı düzeltir
+                if (running) { running = false; ls.onStatus("error", e.getMessage()); }
+                break;
             } catch (Exception e) {
                 if (!running) break;
                 ls.onStatus("error", message(e));
             }
             if (!running) break;
+            if (gotData) backoff = 2000; // veri almış bir oturum koptuysa kısa beklemeyle yeniden bağlan
             try { Thread.sleep(backoff); } catch (InterruptedException ie) { break; }
             backoff = Math.min(backoff * 2, 30000);
         }
@@ -149,24 +161,56 @@ public final class NtripClient {
         out.flush();
     }
 
-    /** Sunucunun ilk yanıtı: hata ise açıklamalı istisna. */
+    /** Sunucunun ilk yanıtı: hata ise açıklamalı istisna (şifre / bağlantı noktası / erişim hatası kalıcıdır). */
     static boolean checkResponse(List<String> hdr, Config c) throws IOException {
         if (hdr.isEmpty()) throw new IOException("Sunucu yanıt vermedi");
         String st = hdr.get(0);
-        if (st.startsWith("SOURCETABLE")) throw new IOException("Bağlantı noktası (mountpoint) bulunamadı: " + c.mount);
-        if (st.contains(" 401") || st.toUpperCase(Locale.ROOT).contains("BAD PASSWORD") || st.toUpperCase(Locale.ROOT).contains("UNAUTHORIZED"))
-            throw new IOException("Kullanıcı adı ya da şifre yanlış (401)");
-        if (st.contains(" 403")) throw new IOException("Erişim reddedildi (403): hesabın süresi ya da aynı anda bağlantı sınırı");
-        if (st.contains(" 404")) throw new IOException("Bağlantı noktası (mountpoint) bulunamadı (404)");
+        String ST = st.toUpperCase(Locale.ROOT);
+        if (st.startsWith("SOURCETABLE")) throw new KaliciHata("Bağlantı noktası (mountpoint) bulunamadı: " + c.mount);
+        if (st.contains(" 401") || ST.contains("BAD PASSWORD") || ST.contains("UNAUTHORIZED"))
+            throw new KaliciHata("Kullanıcı adı ya da şifre yanlış (401)");
+        if (st.contains(" 403")) throw new KaliciHata("Erişim reddedildi (403): hesabın süresi ya da aynı anda bağlantı sınırı");
+        if (st.contains(" 404")) throw new KaliciHata("Bağlantı noktası (mountpoint) bulunamadı (404)");
         if (!(st.startsWith("ICY 200") || st.matches("HTTP/1\\.[01] 200.*"))) throw new IOException("Sunucu: " + st);
         boolean chunked = false;
-        for (String h : hdr) if (h.toLowerCase(Locale.ROOT).startsWith("transfer-encoding:") && h.toLowerCase(Locale.ROOT).contains("chunked")) chunked = true;
+        for (String h : hdr) {
+            String l = h.toLowerCase(Locale.ROOT);
+            if (l.startsWith("transfer-encoding:") && l.contains("chunked")) chunked = true;
+            // v2 yayıncısı bilinmeyen bağlantı noktasında 200 + kaynak tablosu döndürür
+            if (l.startsWith("content-type:") && l.contains("sourcetable")) throw new KaliciHata("Bağlantı noktası (mountpoint) bulunamadı: " + c.mount);
+        }
         return chunked;
+    }
+
+    /**
+     * GGA yazıcısı: ilk GGA'yı hemen, sonra her ggaSec saniyede gönderir (ayrı iş parçacığında; karşı taraf okumazsa
+     * yazım kilitlenir, okuyucu ggaYazmaBasi ile sezip bağlantıyı yeniler).
+     */
+    private Thread ggaYazici(final Socket s, final OutputStream out) {
+        Thread w = new Thread(() -> {
+            boolean ilk = true;
+            try {
+                while (running && !s.isClosed()) {
+                    if (!ilk) Thread.sleep(Math.max(1, cfg.ggaSec) * 1000L);
+                    ilk = false;
+                    String gl = currentGga();
+                    if (gl == null) { if (!running) break; Thread.sleep(500); ilk = true; continue; }
+                    ggaYazmaBasi = System.currentTimeMillis();
+                    writeLine(out, gl);
+                    ggaYazmaBasi = 0;
+                }
+            } catch (Exception ignored) { ggaYazmaBasi = 0; }
+        }, "ntrip-gga");
+        w.setDaemon(true);
+        w.start();
+        return w;
     }
 
     private void session() throws IOException {
         Socket s = new Socket();
         sock = s;
+        Thread yazici = null;
+        ggaYazmaBasi = 0;
         try {
             if (cfg.host == null || cfg.host.trim().isEmpty()) throw new IOException("Sunucu adresi boş");
             s.connect(new InetSocketAddress(cfg.host.trim(), cfg.port), cfg.timeoutMs);
@@ -174,45 +218,43 @@ public final class NtripClient {
             s.setTcpNoDelay(true);
             OutputStream out = s.getOutputStream();
             InputStream in = s.getInputStream();
-            if (cfg.isTcp()) {
-                // Doğrudan TCP: istek ve başlık yok, akış hemen başlar
-                if (cfg.sendGGA) { String g = currentGga(); if (g != null) writeLine(out, g); }
-            } else {
+            if (!cfg.isTcp()) {
+                // NTRIP: istek (v2'de GGA başlıkta), v1'de GGA isteğin hemen ardından; sonra yanıt başlığı
                 String g = cfg.sendGGA ? currentGga() : null;
                 out.write(request(cfg, cfg.mount, g).getBytes(StandardCharsets.ISO_8859_1));
                 if (cfg.version < 2 && g != null) out.write((g + "\r\n").getBytes(StandardCharsets.ISO_8859_1));
                 out.flush();
                 List<String> hdr = readHeader(in);
                 if (checkResponse(hdr, cfg)) in = new ChunkedInputStream(in);
-                // v2: GGA başlıkta gitti; gövdede de hemen gönder (yalnız gövdeyi okuyan yayıncılar için)
-                if (cfg.version >= 2 && g != null) writeLine(out, g);
             }
+            // Doğrudan TCP'de istek ve başlık yok, akış hemen başlar. GGA (açıksa) ayrı yazıcıyla: hemen ve düzenli
+            // (VRS yayıncısı ilk GGA'yı beklerken veri gelmese de gider)
+            if (cfg.sendGGA) yazici = ggaYazici(s, out);
+            if (!running) return;
             ls.onStatus("connected", null);
-            // Kısa okuma süresi: veri gelmese de GGA düzenli gider (VRS yayıncısı ilk GGA'yı beklerken kilitlenmez)
             s.setSoTimeout(1000);
             byte[] buf = new byte[4096];
             long now = System.currentTimeMillis();
-            long lastGga = now, lastStat = now, lastData = now, statBytes = 0;
+            long lastStat = now, lastData = now, statBytes = 0;
             int dataTimeout = Math.max(cfg.dataTimeoutMs, 5000);
             while (running) {
                 int n;
                 try { n = in.read(buf); } catch (SocketTimeoutException te) { n = 0; }
                 if (n < 0) throw new IOException("Sunucu bağlantıyı kapattı");
                 now = System.currentTimeMillis();
-                if (n > 0) { ls.onRtcm(buf, 0, n); parser.push(buf, 0, n); statBytes += n; lastData = now; }
+                if (n > 0) { gotData = true; ls.onRtcm(buf, 0, n); parser.push(buf, 0, n); statBytes += n; lastData = now; }
                 else if (now - lastData > dataTimeout) throw new IOException("Düzeltme verisi gelmiyor (" + dataTimeout / 1000 + " s)" + (cfg.sendGGA && currentGga() == null ? " · alıcıdan konum (GGA) gelmedi" : ""));
-                if (cfg.sendGGA && now - lastGga >= Math.max(1, cfg.ggaSec) * 1000L) {
-                    String gl = currentGga();
-                    if (gl != null) writeLine(out, gl);
-                    lastGga = now;
-                }
+                long wb = ggaYazmaBasi;
+                if (wb != 0 && now - wb > dataTimeout) throw new IOException("Sunucu konum iletisini (GGA) almıyor; bağlantı yenileniyor");
                 if (now - lastStat >= 1000) {
+                    if (!running) break;
                     ls.onStats(stats(statBytes * 1000.0 / Math.max(1, now - lastStat)));
                     statBytes = 0; lastStat = now;
                 }
             }
         } finally {
             try { s.close(); } catch (IOException ignored) { }
+            if (yazici != null) yazici.interrupt();
         }
     }
 
@@ -259,7 +301,9 @@ public final class NtripClient {
             r.stationId = nc.parser.stationId; r.x = nc.parser.stationX; r.y = nc.parser.stationY; r.z = nc.parser.stationZ;
         }
         r.error = err[0];
-        if (r.error == null && r.connected && r.bytes == 0) r.error = "Bağlandı ama " + Math.max(2, Math.min(seconds, 30)) + " s içinde düzeltme verisi gelmedi" + (c.sendGGA && (c.ggaFallback == null || c.ggaFallback.isEmpty()) ? " (konum bilinmediği için GGA gönderilemedi)" : "");
+        int sure = Math.max(2, Math.min(seconds, 30));
+        if (r.error == null && r.connected && r.bytes == 0) r.error = "Bağlandı ama " + sure + " s içinde düzeltme verisi gelmedi" + (c.sendGGA && (c.ggaFallback == null || c.ggaFallback.isEmpty()) ? " (konum bilinmediği için GGA gönderilemedi)" : "");
+        else if (r.error == null && r.connected && r.frames == 0) r.error = "Veri geliyor ama RTCM düzeltmesi değil: port ya da bağlantı noktası yanlış olabilir";
         if (r.error == null && !r.connected) r.error = "Bağlanılamadı";
         return r;
     }

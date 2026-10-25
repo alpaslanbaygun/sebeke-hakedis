@@ -2,7 +2,11 @@
 # çerçeveleri (1005 istasyon konumu dahil), GGA kaydı. Ayrıca:
 #  - /VRS_BEKLER: gerçek VRS gibi ilk GGA gelene kadar veri göndermez (GGA'sız istemci kilitlenir);
 #                 v2'de parça başlığı ile verisi arasında 1,3 s bekler (kısa okuma süresinde parça çözücü sınanır)
+#  - /KISA: 1,5 s veri verip kapanır (yeniden bağlanma beklemesinin baştan başlaması sınanır)
+#  - bilinmeyen bağlantı noktası: v1 'SOURCETABLE 200 OK', v2 '200 OK' + Content-Type: gnss/sourcetable
 #  - port+1: doğrudan TCP (NTRIP'siz) RTCM yayını
+#  - port+2: doğrudan TCP ama RTCM değil (NMEA gönderir) → akış denemesi "RTCM değil" demeli
+#  - port+3: doğrudan TCP, RTCM gönderir ama gelen veriyi hiç okumaz → GGA yazımı kilitlenir, istemci sezmeli
 # Kullanım: python3 mock_caster.py <port> <süre_s>
 import socket, threading, sys, base64, time, math
 
@@ -77,14 +81,16 @@ def handle(c):
         c.close(); return
     if auth and base64.b64decode(auth[0].split()[-1]).decode() != 'kullanici:sifre':
         c.sendall(b'HTTP/1.1 401 Unauthorized\r\n\r\n' if v2 else b'ERROR - Bad Password\r\n'); c.close(); return
-    if path not in ('/VRS_RTCM32', '/VRS_BEKLER'):
-        c.sendall(b'SOURCETABLE 200 OK\r\n\r\n' + TABLE.encode()); c.close(); return
+    if path not in ('/VRS_RTCM32', '/VRS_BEKLER', '/KISA'):
+        if v2: c.sendall(b'HTTP/1.1 200 OK\r\nContent-Type: gnss/sourcetable\r\n\r\n' + TABLE.encode())
+        else: c.sendall(b'SOURCETABLE 200 OK\r\n\r\n' + TABLE.encode())
+        c.close(); return
     if v2: c.sendall(b'HTTP/1.1 200 OK\r\nNtrip-Version: Ntrip/2.0\r\nTransfer-Encoding: chunked\r\nContent-Type: gnss/data\r\n\r\n')
     else: c.sendall(b'ICY 200 OK\r\n')
     c.settimeout(0.05)
     ggas = rest.count(b'GGA')
     bekler = path == '/VRS_BEKLER'
-    t_end = time.time() + 4.5
+    t_end = time.time() + (1.5 if path == '/KISA' else 4.5)
     sent = 0
     while time.time() < t_end:
         try:
@@ -130,6 +136,31 @@ def handle_tcp(c):
     try: c.close()
     except OSError: pass
 
+def handle_nmea(c):
+    c.settimeout(0.05)
+    t_end = time.time() + 3.0
+    while time.time() < t_end:
+        try: c.sendall(b'$GPGGA,120000.00,3840.4580000,N,03913.3920000,E,1,12,0.8,1031.000,M,36.100,M,,*4F\r\n')
+        except OSError: break
+        time.sleep(0.2)
+    try: c.close()
+    except OSError: pass
+
+def handle_okumayan(c):
+    # Gelen veriyi hiç okumaz: alma tamponu dolunca karşı tarafın yazımı kilitlenir
+    try: c.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
+    except OSError: pass
+    t_end = time.time() + 20.0
+    sent = 0
+    while time.time() < t_end:
+        try: c.sendall(paket())
+        except OSError: break
+        sent += 1
+        time.sleep(0.25)
+    log.append(('okumayan', sent))
+    try: c.close()
+    except OSError: pass
+
 def serve(port, fn):
     s = socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(('127.0.0.1', port)); s.listen(5)
     while True:
@@ -139,6 +170,8 @@ if __name__ == '__main__':
     p = int(sys.argv[1])
     threading.Thread(target=serve, args=(p, handle), daemon=True).start()
     threading.Thread(target=serve, args=(p + 1, handle_tcp), daemon=True).start()
+    threading.Thread(target=serve, args=(p + 2, handle_nmea), daemon=True).start()
+    threading.Thread(target=serve, args=(p + 3, handle_okumayan), daemon=True).start()
     print('ISTASYON', STATION_ID, '%.4f %.4f %.4f' % (X, Y, Z), flush=True)
     time.sleep(float(sys.argv[2]))
     for l in log: print('SUNUCU', l)

@@ -35,7 +35,8 @@ function duzelt(p) {
   q.port = +q.port > 0 ? Math.round(+q.port) : (q.mode === 'tcp' ? 0 : 2101);
   q.version = +q.version === 1 ? 1 : 2;
   q.ggaSec = Math.max(1, Math.round(+q.ggaSec || 1));
-  q.sendGGA = q.sendGGA !== false;
+  // GGA açıkça verilmemişse: NTRIP'te açık, doğrudan IP'de kapalı (istasyon gelen veriyi okumayabilir)
+  q.sendGGA = p.sendGGA === undefined ? q.mode !== 'tcp' : p.sendGGA !== false;
   return q;
 }
 const durum = (st, active, list) => Object.assign({}, st, { active, list });
@@ -44,10 +45,11 @@ const durum = (st, active, list) => Object.assign({}, st, { active, list });
 export function loadProfiles(saved, legacy) {
   if (saved && Array.isArray(saved.list) && saved.list.length) {
     const list = saved.list.map(duzelt);
-    return { active: list.some((p) => p.id === saved.active) ? saved.active : list[0].id, list, auto: saved.auto !== false, hazir: saved.hazir || 0 };
+    // Kendiliğinden bağlanma: önceki sürümlerden gelen kayıtta kapalı başlar (kullanıcı açar), yeni kurulumda açık
+    return { active: list.some((p) => p.id === saved.active) ? saved.active : list[0].id, list, auto: saved.auto === true, hazir: saved.hazir || 0 };
   }
   const p = duzelt(Object.assign({}, legacy || {}));
-  return { active: p.id, list: [p], auto: true, hazir: 0 };
+  return { active: p.id, list: [p], auto: !legacy, hazir: 0 };
 }
 export const activeProfile = (st) => st.list.find((p) => p.id === st.active) || st.list[0];
 export function updateActive(st, patch) { return durum(st, st.active, st.list.map((p) => (p.id === st.active ? duzelt(Object.assign({}, p, patch)) : p))); }
@@ -87,17 +89,17 @@ export function hazirProfilleriEkle(st) {
   return { st: Object.assign({}, st, { list, hazir: 2 }), degisti: true };
 }
 
-/** Profil bağlanmaya hazır mı (sunucu, port ve NTRIP'te bağlantı noktası dolu). */
+/** Profil bağlanmaya hazır mı (sunucu, port; NTRIP'te bağlantı noktası; TUSAGA-Aktif'te kullanıcı adı). */
 export function profilTamam(p) {
-  return !!(p && p.host && +p.port > 0 && (p.mode === 'tcp' || p.mount));
+  return !!p && profilEksikleri(p).length === 0;
 }
-/** Profilde eksik olanlar (kullanıcıya gösterilir). */
+/** Profilde eksik olanlar (kullanıcıya gösterilir). TUSAGA-Aktif kullanıcı adı ister; diğer ağlarda isteğe bağlı. */
 export function profilEksikleri(p) {
   const e = [];
   if (!p.host) e.push('sunucu adresi');
   if (!(+p.port > 0)) e.push('port');
   if (p.mode !== 'tcp' && !p.mount) e.push('bağlantı noktası');
-  if (p.mode !== 'tcp' && (p.kind === 'tusaga' || p.kind === 'yerel') && !p.user) e.push('kullanıcı adı');
+  if (p.mode !== 'tcp' && p.kind === 'tusaga' && !p.user) e.push('kullanıcı adı');
   return e;
 }
 /** Alıcı bağlanınca kendiliğinden kurulacak bağlantı: ayar açık ve seçili profil eksiksizse köprü ayarı, değilse null. */
@@ -125,17 +127,22 @@ export function profilDosyasi(st, { sifreler = false, yalnizSecili = false } = {
   };
 }
 
-/** ntrip://kullanıcı:şifre@sunucu:port/BAĞLANTINOKTASI, tcp://sunucu:port ya da sunucu:port/BAĞLANTINOKTASI */
+const coz = (x) => { try { return decodeURIComponent(x); } catch (e) { return x; } }; // "%" içeren şifre bozulmasın
+
+/**
+ * ntrip://kullanıcı:şifre@sunucu:port/BAĞLANTINOKTASI, tcp://sunucu:port ya da sunucu:port/BAĞLANTINOKTASI.
+ * Şemasız metinde port zorunludur (yanlış eşleşmeyi önler). http:// gibi başka şemalar (web sayfası) tanınmaz.
+ */
 export function parseNtripUrl(s) {
   const t = String(s || '').trim();
-  const m = /^(?:(ntrips?|tcp|http):\/\/)?(?:([^:@/\s]*)(?::([^@/\s]*))?@)?([A-Za-z0-9.-]+|\[[0-9a-fA-F:]+\])(?::(\d{1,5}))?(?:\/([^\s?#]*))?$/i.exec(t);
-  if (!m || (!m[1] && !m[5])) return null; // şemasız metinde port zorunlu (yanlış eşleşmeyi önler)
+  const m = /^(?:(ntrip|tcp):\/\/)?(?:([^:@/\s]*)(?::([^@/\s]*))?@)?([A-Za-z0-9.-]+|\[[0-9a-fA-F:]+\])(?::(\d{1,5}))?(?:\/([^\s?#]*))?$/i.exec(t);
+  if (!m || (!m[1] && !m[5])) return null;
   const sema = (m[1] || '').toLowerCase();
   const tcp = sema === 'tcp' || (!sema && !m[6] && !!m[5]);
   const p = { mode: tcp ? 'tcp' : 'ntrip', host: m[4], port: m[5] ? +m[5] : (tcp ? 0 : 2101) };
-  if (!tcp) p.mount = decodeURIComponent(m[6] || '');
-  if (m[2]) p.user = decodeURIComponent(m[2]);
-  if (m[3] !== undefined && m[2] !== undefined) p.pass = decodeURIComponent(m[3]);
+  if (!tcp) p.mount = coz(m[6] || '');
+  if (m[2]) p.user = coz(m[2]);
+  if (m[3] !== undefined && m[2] !== undefined) p.pass = coz(m[3]);
   return p;
 }
 
@@ -143,7 +150,7 @@ export function parseNtripUrl(s) {
 const ascii = (s) => String(s || '').toLocaleLowerCase('tr-TR').replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c').replace(/\s+/g, ' ').trim();
 const ANAHTARLAR = [
   [/^(profil|profil adi|ad|adi|name|isim|istasyon|istasyon adi)$/, 'name'],
-  [/^(sunucu|sunucu adresi|ip|ip adresi|adres|host|caster|caster adresi|yayinci|server|ntrip sunucusu)$/, 'host'],
+  [/^(sunucu|sunucu adresi|ip|ip adresi|host|caster|caster adresi|yayinci|server|ntrip sunucusu|ntrip caster)$/, 'host'],
   [/^(port|kapi|port no)$/, 'port'],
   [/^(mount ?point|mount|baglanti noktasi|nokta|mp)$/, 'mount'],
   [/^(kullanici|kullanici adi|user|username|user name|kullanici kodu)$/, 'user'],
@@ -151,14 +158,34 @@ const ANAHTARLAR = [
   [/^(surum|ntrip surumu|ntrip versiyonu|versiyon|version)$/, 'version'],
   [/^(tur|baglanti turu|mode|yontem)$/, 'mode']
 ];
+const ADRES_SATIRI = (s) => /^(ntrip|tcp):\/\//i.test(s) || /^[^\s:/@]+:\d{1,5}\/\S+$/.test(s) || /^[^\s:/@]+(:[^\s@/]*)?@[^\s:/]+:\d{1,5}\/\S+$/.test(s);
+function surumCoz(v) {
+  const x = ascii(v).replace(/^ntrip\s*/, '').replace(/^v/, '');
+  return /^1(\.0)?$/.test(x) ? 1 : /^2(\.0)?$/.test(x) ? 2 : undefined;
+}
+/** "Anahtar: değer" satırları (tek profil); tanınmayan anahtarlar atlanır. */
+function anahtarDegerleri(satirlar) {
+  const p = {};
+  for (const s of satirlar) {
+    for (const parca of s.split(/[;,]\s*(?=[^:=]+[:=])/)) {
+      const m = /^([^:=]+)[:=]\s*(.*)$/.exec(parca.trim());
+      if (!m) continue;
+      const e = ANAHTARLAR.find(([re]) => re.test(ascii(m[1])));
+      const v = m[2].trim();
+      if (e && v !== '' && p[e[1]] === undefined) p[e[1]] = v;
+    }
+  }
+  if (p.version !== undefined) p.version = surumCoz(p.version);
+  return p;
+}
 
 /**
- * Metinden profiller: bu uygulamanın dosyası (JSON), tek profil / profil dizisi (JSON), satır satır ntrip:// / tcp://
- * adresleri ya da "Sunucu: …, Port: …, Mountpoint: …, Kullanıcı: …, Şifre: …" biçimli bilgi metni.
- * Döner: [{ name?, mode, host, port, mount?, user?, pass?, version? }, …]
+ * Metinden profiller: bu uygulamanın dosyası (JSON), tek profil / profil dizisi (JSON), ntrip:// / tcp:// adresleri ya da
+ * "Sunucu: …, Port: …, Bağlantı noktası: …, Kullanıcı: …, Şifre: …" biçimli bilgi metni. Tek bir adres satırı ile
+ * ayrı kullanıcı / şifre satırları aynı profilde birleşir. Döner: [{ name?, mode, host, port, mount?, user?, pass?, version? }, …]
  */
 export function metindenProfiller(text) {
-  const t = String(text || '').replace(/^﻿/, '').trim();
+  const t = String(text || '').replace(/^\uFEFF/, '').trim();
   if (!t) return [];
   if (t[0] === '{' || t[0] === '[') {
     let j;
@@ -166,35 +193,30 @@ export function metindenProfiller(text) {
     const dizi = Array.isArray(j) ? j : Array.isArray(j.profiller) ? j.profiller : Array.isArray(j.list) ? j.list : [j];
     return dizi.filter((p) => p && typeof p === 'object' && (p.host || p.sunucu)).map((p) => temizle({ name: p.name || p.ad, kind: p.kind, mode: p.mode, host: p.host || p.sunucu, port: p.port, mount: p.mount, user: p.user, pass: p.pass, version: p.version, sendGGA: p.sendGGA, ggaSec: p.ggaSec }));
   }
-  const out = [];
   const satirlar = t.split(/\r?\n/).map((s) => s.trim().replace(/^[-•*]\s*/, '')).filter(Boolean);
-  // 1) şemalı ya da bağlantı noktalı adres satırları (ntrip://…, tcp://…, sunucu:port/NOKTA)
-  for (const s of satirlar) { if (!/^[a-z]+:\/\//i.test(s) && !/:\d{1,5}\/\S/.test(s)) continue; const p = parseNtripUrl(s); if (p) out.push(temizle(p)); }
-  if (out.length) return out;
-  // 2) "anahtar: değer" bilgi metni (tek profil)
-  const p = {};
-  for (const s of satirlar) {
-    for (const parca of s.split(/[;,]\s*(?=[^:=]+[:=])/)) {
-      const m = /^([^:=]+)[:=]\s*(.*)$/.exec(parca.trim());
-      if (!m) continue;
-      const k = ascii(m[1]), v = m[2].trim();
-      const e = ANAHTARLAR.find(([re]) => re.test(k));
-      if (e && v !== '' && p[e[1]] === undefined) p[e[1]] = v;
-    }
+  // 1) adres satırları
+  const urller = [];
+  for (const s of satirlar) { if (!ADRES_SATIRI(s)) continue; const p = parseNtripUrl(s); if (p) urller.push(temizle(p)); }
+  if (urller.length > 1) return urller;
+  // 2) "anahtar: değer" bilgisi
+  const kv = anahtarDegerleri(satirlar);
+  if (urller.length === 1) {
+    const u = urller[0], ek = {};
+    for (const k of ['name', 'user', 'pass', 'version']) if (kv[k] !== undefined && u[k] === undefined) ek[k] = kv[k];
+    if (u.mode !== 'tcp' && !u.mount && kv.mount) ek.mount = kv.mount;
+    return [temizle(Object.assign({}, u, ek))];
   }
-  if (!p.host) {
-    // 3) yalnız "sunucu:port" satırları: doğrudan IP bağlantısı
-    for (const s of satirlar) { const u = parseNtripUrl(s); if (u && u.mode === 'tcp') out.push(temizle(u)); }
-    return out;
+  if (kv.host) {
+    const u = parseNtripUrl(kv.host); // "Sunucu: 1.2.3.4:2101" ya da "…:2101/NOKTA" biçimi
+    if (u) { kv.host = u.host; if (!kv.port && u.port) kv.port = u.port; if (!kv.mount && u.mount) kv.mount = u.mount; }
+    if (/\s/.test(kv.host)) return []; // adres değil (ör. posta adresi)
+    if (kv.mode) kv.mode = /tcp|ip/i.test(kv.mode) && !/ntrip/i.test(kv.mode) ? 'tcp' : 'ntrip';
+    else kv.mode = kv.mount || kv.user || /ntrip|caster|mount|baglanti noktasi/.test(ascii(t)) ? 'ntrip' : 'tcp';
+    return [temizle(kv)];
   }
-  if (p.host) {
-    const u = parseNtripUrl(p.host); // "Sunucu: 1.2.3.4:2101" biçimi
-    if (u) { p.host = u.host; if (!p.port && u.port) p.port = u.port; if (!p.mount && u.mount) p.mount = u.mount; }
-    if (p.mode) p.mode = /tcp|ip/i.test(p.mode) && !/ntrip/i.test(p.mode) ? 'tcp' : 'ntrip';
-    else p.mode = p.mount ? 'ntrip' : p.user ? 'ntrip' : 'tcp';
-    if (p.version) p.version = /1/.test(p.version) ? 1 : 2;
-    out.push(temizle(p));
-  }
+  // 3) yalnız "sunucu:port" satırları: doğrudan IP
+  const out = [];
+  for (const s of satirlar) { const u = parseNtripUrl(s); if (u && u.mode === 'tcp') out.push(temizle(u)); }
   return out;
 }
 function temizle(p) {
@@ -213,8 +235,10 @@ function temizle(p) {
  */
 export function profilleriBirlestir(st, gelen) {
   let list = st.list.slice(), eklenen = 0, guncellenen = 0, ilk = null;
-  for (const g of gelen || []) {
-    if (!g || !g.host) continue;
+  for (const g0 of gelen || []) {
+    if (!g0 || !g0.host) continue;
+    const g = Object.assign({}, g0);
+    if (g.sendGGA === undefined && g.mode === 'tcp') g.sendGGA = false;
     const ad = String(g.name || '').trim() || (g.mode === 'tcp' ? 'IP ' + g.host + ':' + (g.port || '') : g.host + (g.mount ? ' · ' + g.mount : ''));
     const i = list.findIndex((p) => kucuk(p.name) === kucuk(ad));
     if (i >= 0) {

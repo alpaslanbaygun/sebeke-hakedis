@@ -70,6 +70,15 @@ export function Txt({ value, onChange, placeholder, mono }) { return html`<input
 export function Stepper({ value, onChange, min = 0, step = 1 }) {
   return html`<div class="stepper"><button type="button" onClick=${() => onChange(Math.max(min, +(value - step).toFixed(3)))}>−</button><span>${value}</span><button type="button" onClick=${() => onChange(+(value + step).toFixed(3))}>+</button></div>`;
 }
+/**
+ * Yazarken ekran yenilense de silinmeyen alan: yazılan taslak bileşende tutulur, odaktan çıkınca (ya da Enter'da)
+ * onSave ile kaydedilir. (value + onChange alanları, ekran saniyede birkaç kez yenilenince yazılanı geri alıyordu.)
+ */
+export function Girdi({ value, onSave, cls = 'inp mono', ...rest }) {
+  const [taslak, setTaslak] = useState(null);
+  const yazili = value === null || value === undefined ? '' : String(value);
+  return html`<input class=${cls} ...${rest} value=${taslak !== null ? taslak : yazili} onInput=${(e) => setTaslak(e.target.value)} onBlur=${(e) => { const v = e.target.value; setTaslak(null); if (v !== yazili) onSave(v); }} onKeyDown=${(e) => { if (e.key === 'Enter') e.target.blur(); }} />`;
+}
 export function Badge({ k = 'mut', children }) { return html`<span class=${'badge b-' + k}>${children}</span>`; }
 export function Title({ title, sub, back = true, right }) {
   if (app.web && (app.state.depth || 1) <= 1) back = false;   // web: menüden açılan ekranda geri düğmesi olmaz

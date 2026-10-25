@@ -1,7 +1,7 @@
 // Ayarlar › Düzeltme kaynağı: TUSAGA-Aktif (CORS-TR), kendi sabit istasyonunuz, yerel CORS ağları.
 // Bağlantı türü NTRIP ya da doğrudan IP:port; akış denemesi (alıcısız), referans istasyonu ve uzaklığı, alıcı bağlanınca
 // kendiliğinden bağlanma, bağlantı bilgisi dosyası (al / paylaş). Ayrıca alıcı ayar rehberi.
-import { html, useState, useBus, Icon, Chip, Seg, Sel, Badge, Toggle, trn } from '../kit.js';
+import { html, useState, useEffect, useBus, Icon, Chip, Seg, Sel, Badge, Toggle, Girdi, trn } from '../kit.js';
 import { app } from '../ctx.js';
 import {
   loadProfiles, activeProfile, updateActive, selectProfile, addProfile, removeProfile, setAuto, otomatikAyar, profilEksikleri,
@@ -37,6 +37,11 @@ export function DuzeltmeBolumu() {
   const [deneme, setDeneme] = useState(null);
   const [mesgul, setMesgul] = useState('');
   const [kurulum, setKurulum] = useState(false);
+  // Açılışta profiller yüklenemediyse veritabanından okunur (boş listeyle kayıtlı profillerin üzerine yazılmasın)
+  useEffect(() => {
+    if (app.state.ntripProfiles) return;
+    Promise.all([app.ds.setting('ntripProfiles'), app.ds.setting('ntrip')]).then(([pv, v]) => { const st = loadProfiles(pv, v); app.state.ntripProfiles = st; setNp(st); }).catch(() => {});
+  }, []);
   const nts = g.ntrip;
   const tcp = nt.mode === 'tcp';
   const ref = s.lat != null ? { lat: s.lat, lon: s.lon } : yakinNokta();
@@ -83,7 +88,7 @@ export function DuzeltmeBolumu() {
     setMesgul('');
   };
   const dene = async () => {
-    const eksik = profilEksikleri(nt).filter((x) => x !== 'kullanıcı adı');
+    const eksik = profilEksikleri(nt);
     if (eksik.length) return app.toast('Eksik: ' + eksik.join(', '), 'warn', 5000);
     setMesgul('deneme'); setDeneme(null);
     try { setDeneme(await g.ntripProbe(baglantiAyari(nt), { seconds: 8, near: ref })); }
@@ -91,7 +96,7 @@ export function DuzeltmeBolumu() {
     setMesgul('');
   };
   const baglan = async () => {
-    const eksik = profilEksikleri(nt).filter((x) => x !== 'kullanıcı adı');
+    const eksik = profilEksikleri(nt);
     if (eksik.length) return app.toast('Eksik: ' + eksik.join(', '), 'warn', 5000);
     try { await g.ntripConnect(baglantiAyari(nt), ref); } catch (e) { app.toast('Düzeltme: ' + e.message, 'err', 5000); }
   };
@@ -115,7 +120,7 @@ export function DuzeltmeBolumu() {
     const dolu = np.list.filter((p) => p.host).length;
     if (!dolu) return app.toast('Paylaşılacak profil yok: önce sunucu bilgilerini girin', 'warn', 4000);
     const secim = await app.modal((close) => html`<div class="mh"><h3>Bağlantı bilgilerini paylaş</h3></div><div class="mb"><div class="note" style="font-size:14px">${dolu} profil tek dosyaya yazılır; dosya başka telefonda "Dosyadan al" ile alınır. Şifreler de yazılsın mı? Dosyayı alan herkes şifreleri görür.</div></div>
-      <div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn grow" onClick=${() => close('sifresiz')}>Şifresiz</button><button class="btn grow pri" onClick=${() => close('sifreli')}>Şifrelerle</button></div>`);
+      <div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn grow" onClick=${() => close('sifreli')}>Şifrelerle</button><button class="btn grow pri" onClick=${() => close('sifresiz')}>Şifresiz</button></div>`);
     if (!secim) return;
     const u8 = new TextEncoder().encode(JSON.stringify(profilDosyasi(np, { sifreler: secim === 'sifreli' }), null, 2));
     try { await app.bridge.shareFile('Sebeke-M-GNSS-baglanti.json', 'application/json', u8); } catch (e) { app.toast(e.message, 'err', 5000); }
@@ -130,7 +135,7 @@ export function DuzeltmeBolumu() {
     <div class="card stack">
       <div class="lbl">Kayıtlı profiller · dokunarak seçin</div>
       <div class="chips">${np.list.map((p) => html`<${Chip} on=${p.id === np.active} onClick=${() => sec(p.id)}>${p.name || 'adsız'}</${Chip}>`)}<button class="chip" style="border-style:dashed" onClick=${yeni}>+ Profil ekle</button></div>
-      <div class="row" style="align-items:flex-end"><div class="fld grow"><label>Profil adı · ${TUR_KISA[nt.kind] || TUR_KISA.diger}</label><input class="inp" value=${nt.name || ''} onChange=${(e) => setN({ name: e.target.value.trim() || 'profil' })} /></div>${np.list.length > 1 ? html`<button class="btn dang sm" style="height:48px" onClick=${sil}>Sil</button>` : null}</div>
+      <div class="row" style="align-items:flex-end"><div class="fld grow"><label>Profil adı · ${TUR_KISA[nt.kind] || TUR_KISA.diger}</label><${Girdi} key=${nt.id + ':ad'} cls="inp" value=${nt.name || ''} onSave=${(v) => setN({ name: v.trim() || 'profil' })} /></div>${np.list.length > 1 ? html`<button class="btn dang sm" style="height:48px" onClick=${sil}>Sil</button>` : null}</div>
       <div class="note">${IPUCU[nt.kind] || IPUCU.diger}</div>
       ${nt.kind === 'sabit' ? html`<button class="btn sm" onClick=${() => setKurulum(!kurulum)}><${Icon} n=${kurulum ? 'up' : 'down'} s=${16} />Sabit istasyon kurulurken firmadan istenecekler</button>
         ${kurulum ? html`<div class="card tight" style="padding:10px 12px"><ol class="note" style="margin:0;padding-left:18px;font-size:13px;line-height:1.5">
@@ -147,15 +152,15 @@ export function DuzeltmeBolumu() {
       ${tipler.length ? html`<div class="row wrap" style="gap:4px">${tipler.map(([k, v]) => html`<span class="badge b-mut" title=${RTCM_NAMES[k] || ''}>${k}×${v}</span>`)}</div>` : null}
 
       <div class="fld"><label>Bağlantı türü</label><${Seg} value=${nt.mode} options=${[['ntrip', 'NTRIP'], ['tcp', 'Doğrudan IP (NTRIP\'siz)']]} onChange=${(v) => setN({ mode: v, sendGGA: v !== 'tcp' })} /></div>
-      <div class="row"><div class="fld grow"><label>${tcp ? 'İstasyonun IP adresi / alan adı' : 'Sunucu'}</label><input class="inp mono" placeholder=${tcp ? 'ör. 88.1.2.3' : '[SUNUCU IP / ad]'} value=${nt.host} onChange=${(e) => setN({ host: e.target.value.trim() })} /></div><div class="fld" style="width:96px"><label>Port</label><input class="inp mono" type="number" inputmode="numeric" placeholder=${tcp ? '9000' : '2101'} value=${nt.port || ''} onChange=${(e) => setN({ port: +e.target.value })} /></div></div>
+      <div class="row"><div class="fld grow"><label>${tcp ? 'İstasyonun IP adresi / alan adı' : 'Sunucu'}</label><${Girdi} key=${nt.id + ':host'} placeholder=${tcp ? 'ör. 88.1.2.3' : '[SUNUCU IP / ad]'} autocomplete="off" autocapitalize="off" spellcheck="false" value=${nt.host} onSave=${(v) => setN({ host: v.trim() })} /></div><div class="fld" style="width:96px"><label>Port</label><${Girdi} key=${nt.id + ':port'} type="number" inputmode="numeric" placeholder=${tcp ? '9000' : '2101'} value=${nt.port || ''} onSave=${(v) => setN({ port: +v })} /></div></div>
       ${tcp ? html`<div class="note">Doğrudan IP: istasyon düzeltmeyi bu adresten düz yayınlar; bağlantı noktası, kullanıcı adı ve şifre gerekmez.</div>` : html`
-      <div class="fld"><label>Bağlantı noktası (mountpoint)</label>${mounts.length ? html`<${Sel} mono value=${nt.mount} options=${[['', 'seçin'], ...mounts.map((m) => [m.name, m.name + ' · ' + (m.format || '') + (m.nmea ? ' · VRS' : '') + (m.km != null ? ' · ' + km(m.km) : '')])]} onChange=${(v) => setN({ mount: v })} />` : html`<input class="inp mono" placeholder=${nt.kind === 'tusaga' ? 'listeden seçin (ör. VRSRTCM31)' : 'ör. BASE1'} value=${nt.mount} onChange=${(e) => setN({ mount: e.target.value.trim() })} />`}</div>
+      <div class="fld"><label>Bağlantı noktası (mountpoint)</label>${mounts.length ? html`<${Sel} mono value=${nt.mount} options=${[['', 'seçin'], ...mounts.map((m) => [m.name, m.name + ' · ' + (m.format || '') + (m.nmea ? ' · VRS' : '') + (m.km != null ? ' · ' + km(m.km) : '')])]} onChange=${(v) => setN({ mount: v })} />` : html`<${Girdi} key=${nt.id + ':mount'} placeholder=${nt.kind === 'tusaga' ? 'listeden seçin (ör. VRSRTCM31)' : 'ör. BASE1'} autocomplete="off" autocapitalize="off" spellcheck="false" value=${nt.mount} onSave=${(v) => setN({ mount: v.trim() })} />`}</div>
       <button class="btn sm" disabled=${!native || !!mesgul} onClick=${noktalar}><${Icon} n="list" s=${16} />${mesgul === 'liste' ? 'Liste alınıyor…' : 'Bağlantı noktalarını getir'}</button>
-      <div class="grid2"><div class="fld"><label>Kullanıcı</label><input class="inp mono" autocomplete="off" value=${nt.user} onChange=${(e) => setN({ user: e.target.value })} /></div><div class="fld"><label>Şifre</label><input class="inp mono" type="password" autocomplete="off" value=${nt.pass} onChange=${(e) => setN({ pass: e.target.value })} /></div></div>
+      <div class="grid2"><div class="fld"><label>Kullanıcı</label><${Girdi} key=${nt.id + ':user'} autocomplete="off" autocapitalize="off" spellcheck="false" value=${nt.user} onSave=${(v) => setN({ user: v })} /></div><div class="fld"><label>Şifre</label><${Girdi} key=${nt.id + ':pass'} type="password" autocomplete="off" value=${nt.pass} onSave=${(v) => setN({ pass: v })} /></div></div>
       <div class="fld"><label>NTRIP sürümü</label><${Seg} value=${nt.version} options=${[[1, 'v1.0'], [2, 'v2.0']]} onChange=${(v) => setN({ version: v })} /></div>`}
       <div class="row"><div class="grow"><b>Konumu (GGA) gönder</b><div class="note">${tcp ? 'Doğrudan IP\'de genelde gerekmez; istasyon isterse açın' : 'Her ' + (nt.ggaSec || 1) + ' s · VRS çözümü için gerekli; alıcı konum bulmadan önce telefonun ya da projenin yaklaşık konumu gider'}</div></div><${Toggle} on=${nt.sendGGA} onChange=${(v) => setN({ sendGGA: v })} label="GGA gönder" /></div>
 
-      <div class="grid2"><button class="btn" disabled=${!native || !!mesgul} onClick=${dene}>${mesgul === 'deneme' ? 'Deneniyor (8 s)…' : 'Akışı dene'}</button>${bagliMi ? html`<button class="btn dang" onClick=${() => g.ntripDisconnect()}>Bağlantıyı kes</button>` : html`<button class="btn pri" disabled=${!native || s.source !== 'external'} onClick=${baglan}>Bağlan</button>`}</div>
+      <div class="grid2"><button class="btn" disabled=${!native || !!mesgul || bagliMi} title=${bagliMi ? 'Bağlıyken denenmez (aynı hesapla ikinci bağlantı açılmasın)' : ''} onClick=${dene}>${mesgul === 'deneme' ? 'Deneniyor (8 s)…' : 'Akışı dene'}</button>${bagliMi ? html`<button class="btn dang" onClick=${() => g.ntripDisconnect()}>Bağlantıyı kes</button>` : html`<button class="btn pri" disabled=${!native || s.source !== 'external'} onClick=${baglan}>Bağlan</button>`}</div>
       ${deneme ? html`<div class=${'alert ' + (deneme.error ? 'err' : 'ok')} style="display:block">${deneme.error ? html`<b>Olmadı:</b> ${deneme.error}` : html`<b>Bağlantı tamam.</b> ${deneme.frames} mesaj geldi${deneme.firstDataMs >= 0 ? ' (ilk veri ' + trn(deneme.firstDataMs / 1000, 1) + ' s)' : ''}.
         ${deneme.station && deneme.station.lat != null ? html`<div>Referans istasyonu <b>${deneme.station.id}</b>${deneme.baseKm != null ? html` · <b>${km(deneme.baseKm)}</b> uzakta` : ''}</div>` : html`<div class="note">İstasyon konumu (1005/1006) bu sürede gelmedi.</div>`}
         <div class="note">${Object.keys(deneme.types || {}).map(tur).join(' · ')}</div>`}</div>` : null}

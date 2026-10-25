@@ -70,6 +70,8 @@ async function boot() {
       gnss.autoNtrip = otomatikAyar(st);
     } catch (e) { console.warn('Düzeltme profilleri okunamadı', e); }
     const ps = new ProjectService({ ds, bus, gnss });
+    // Alıcı henüz konum bulmadan düzeltmeye bağlanırken (VRS) gönderilecek yaklaşık konum: projedeki ilk konumlu nokta
+    gnss.yakinKonum = () => { const p = ps.p ? (ps.data.points || []).find((x) => x.lat != null && x.lon != null) : null; return p ? { lat: p.lat, lon: p.lon, alt: p.H } : null; };
     Object.assign(app, { bus, ds, ps, gnss, bridge });
     window.__app = app;
     app.state.basemap = (await ds.setting('basemap')) || 'none';
