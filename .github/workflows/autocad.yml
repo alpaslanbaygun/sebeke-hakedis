@@ -75,31 +75,51 @@ jobs:
 
       - name: İmzala (kod imzalama sertifikası tanımlıysa)
         # Sertifika depo sırlarındadır: IMZA_PFX (PFX dosyasının base64 hâli) ve IMZA_PAROLA.
-        # Tanımlı değilse DLL'ler imzasız kalır; kurulum güvenilir klasöre yapıldığı için AutoCAD yine uyarmaz.
+        # Tanımlı değilse DLL'ler imzasız kalır (kurulum güvenilir klasöre yapıldığı için AutoCAD uyarmaz);
+        # imza adımı yine de geçici bir sertifikayla DLL kopyaları üzerinde denenir (paket etkilenmez).
         shell: pwsh
         env:
           IMZA_PFX: ${{ secrets.IMZA_PFX }}
           IMZA_PAROLA: ${{ secrets.IMZA_PAROLA }}
         run: |
-          $dll = @('autocad/src/Eklenti/bin/Release/net46/SebekeHakedis.dll', 'autocad/src/Eklenti/bin/Release/net8.0-windows/SebekeHakedis.dll')
-          if (-not $env:IMZA_PFX) {
-            "İMZA: yok (kod imzalama sertifikası tanımlı değil; kurulum güvenilir klasöre)" | Out-File -Append -Encoding utf8 cikti/ozet.txt
-            exit 0
-          }
-          $pfx = Join-Path $env:RUNNER_TEMP 'imza.pfx'
-          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:IMZA_PFX))
-          $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe |
-            Where-Object { $_.FullName -like '*\x64\*' } | Sort-Object FullName -Descending | Select-Object -First 1
-          if (-not $signtool) { "İMZA: signtool bulunamadı" | Out-File -Append -Encoding utf8 cikti/ozet.txt; exit 1 }
-          try {
-            foreach ($d in $dll) {
-              & $signtool.FullName sign /f $pfx /p $env:IMZA_PAROLA /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "Şebeke-M" $d
+          function Imzala([string]$pfx, [string]$parola, [string[]]$dosyalar) {
+            $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe |
+              Where-Object { $_.FullName -like '*\x64\*' } | Sort-Object FullName -Descending | Select-Object -First 1
+            if (-not $signtool) { throw "signtool bulunamadı" }
+            foreach ($d in $dosyalar) {
+              & $signtool.FullName sign /f $pfx /p $parola /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "Şebeke-M" $d
               if ($LASTEXITCODE -ne 0) { throw "imzalanamadı: $d" }
             }
-          } finally { Remove-Item $pfx -Force -ErrorAction SilentlyContinue }
-          foreach ($d in $dll) {
-            $i = Get-AuthenticodeSignature $d
-            "İMZA: $d → $($i.Status) · $($i.SignerCertificate.Subject)" | Out-File -Append -Encoding utf8 cikti/ozet.txt
+          }
+          $dll = @('autocad/src/Eklenti/bin/Release/net46/SebekeHakedis.dll', 'autocad/src/Eklenti/bin/Release/net8.0-windows/SebekeHakedis.dll')
+          if ($env:IMZA_PFX) {
+            $pfx = Join-Path $env:RUNNER_TEMP 'imza.pfx'
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:IMZA_PFX))
+            try { Imzala $pfx $env:IMZA_PAROLA $dll } finally { Remove-Item $pfx -Force -ErrorAction SilentlyContinue }
+            foreach ($d in $dll) {
+              $i = Get-AuthenticodeSignature $d
+              "İMZA: $d → $($i.Status) · $($i.SignerCertificate.Subject)" | Out-File -Append -Encoding utf8 cikti/ozet.txt
+            }
+            exit 0
+          }
+          try {
+            $dene = Join-Path $env:RUNNER_TEMP 'imza-dene'
+            New-Item -ItemType Directory -Force $dene | Out-Null
+            $kopyalar = @()
+            for ($i = 0; $i -lt $dll.Count; $i++) { $k = Join-Path $dene ("$i-SebekeHakedis.dll"); Copy-Item $dll[$i] $k; $kopyalar += $k }
+            $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject 'CN=Sebeke-M imza denemesi' -CertStoreLocation Cert:\CurrentUser\My -NotAfter (Get-Date).AddDays(1)
+            $parola = [guid]::NewGuid().ToString()
+            $pfx = Join-Path $env:RUNNER_TEMP 'dene.pfx'
+            Export-PfxCertificate -Cert $cert -FilePath $pfx -Password (ConvertTo-SecureString $parola -AsPlainText -Force) | Out-Null
+            try { Imzala $pfx $parola $kopyalar } finally {
+              Remove-Item $pfx -Force -ErrorAction SilentlyContinue
+              Remove-Item $cert.PSPath -Force -ErrorAction SilentlyContinue
+            }
+            $imzali = @($kopyalar | Where-Object { (Get-AuthenticodeSignature $_).SignerCertificate })
+            if ($imzali.Count -ne $kopyalar.Count) { throw "kopyalardan $($kopyalar.Count - $imzali.Count) tanesi imzasız kaldı" }
+            "İMZA: yok (kod imzalama sertifikası tanımlı değil; kurulum güvenilir klasöre) · imza adımı geçici sertifikayla denendi: geçti" | Out-File -Append -Encoding utf8 cikti/ozet.txt
+          } catch {
+            "İMZA: yok (sertifika tanımlı değil) · imza denemesi yapılamadı: $($_.Exception.Message)" | Out-File -Append -Encoding utf8 cikti/ozet.txt
           }
 
       - name: Kurulum paketini hazırla
