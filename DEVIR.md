@@ -131,6 +131,16 @@ dalı (önceki `main`; eklenti 0.1.16 ve telefon 2.5.8 Releases'te durur).
 - Claude'un bulut ortamında npm / NuGet / .NET erişimi kapalı olabilir; derleme ve tam testler CI'a bırakılır,
   yerelde bağımlılıksız testler çalıştırılır. İş akışı ekleri (artifact) buradan indirilemez; günlükler bu yüzden
   git dallarına yazılır.
+- **Eklentinin kurulumu ve imzası** (26.10.2026): `KUR.bat` eklentiyi `%ProgramFiles%\Autodesk\ApplicationPlugins`'e
+  kurar (bir kez yönetici izni). Autodesk'e göre bu klasördeki eklentiler güvenilirdir ve imzaları denetlenmez; bu
+  yüzden DLL imzasız olsa da AutoCAD "imzalanmamış dosya" uyarısı göstermez. İzin verilmezse kullanıcı klasörüne
+  (`%APPDATA%\…`) kurar, o zaman uyarı çıkar. Başka klasörlerde kalan eski kopyaları siler (iki kez yüklenmesin).
+  CI'daki "Kurulum denemesi" adımı kurup kaldırarak sınar (`KUR.bat /sessiz`, `KALDIR.bat /sessiz`).
+  DLL'ler imzasızdır; gerçek imza satın alınmış bir kod imzalama sertifikası ister (kullanıcı kararı). CI'daki
+  "İmzala" adımı hazırdır: depo sırları `IMZA_PFX` (PFX'in base64 hâli) ve `IMZA_PAROLA` tanımlanınca iki DLL
+  SHA-256 ve zaman damgasıyla imzalanır, sonuç `ozet.txt`'ye yazılır. 2023'ten beri satılan sertifikaların anahtarı
+  donanımda ya da bulutta durduğu için çoğu PFX olarak verilmez; o durumda sağlayıcının imzalama aracı bu adıma
+  eklenir. Kendinden imzalı sertifikayı kullanıcının bilgisayarlarına "güvenilir kök" olarak kurdurmak önerilmez.
 - **APK imza anahtarı** `telefon/keystore/voltsaha-release.jks` (alias ve şifre `telefon/README_KAYNAK.txt`).
   Değiştirilmemeli: değişirse telefondaki uygulama güncellenemez. Sürüm kodu 1000+N (telefondaki 2.4.0 = 240'tan büyük).
 - Eski telefon uygulaması (0.2.3, Kotlin + sh-core): `telefon-eski-0.2.3` dalında durur; kodu `android/`
@@ -172,6 +182,8 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 7. **Tek ortak malzeme listesi** (telefon ve AutoCAD aynı liste; kullanıcı isteği 18.10): başlandı, 25.10'da kullanıcı
    isteğiyle bekletiliyor. Tasarım: TEDAŞ poz kataloğu ile eski program kalem listesi tek dosyada birleşir; iki listenin
    ortak adı az (yalnız direk tiplerinin ~530'u eşleşiyor), kalan kalemler iki tarafa da eklenir.
+8. **Kod imzalama sertifikası** (isteğe bağlı, kullanıcı kararı): güvenlik uyarısı kurulum klasörüyle çözüldü; DLL'lerin
+   gerçekten imzalı olması istenirse ticari bir kod imzalama sertifikası alınır, CI'daki "İmzala" adımına bağlanır.
 
 ## 7. Başka hesaba geçiş
 

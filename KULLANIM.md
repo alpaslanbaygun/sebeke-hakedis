@@ -33,8 +33,12 @@ projeleriniz silinmez.
 2. Zip'e sağ tıklayın › **Tümünü ayıkla**.
 3. AutoCAD açıksa kapatın. Ayıklanan klasördeki **KUR.bat** dosyasına çift tıklayın.
    Windows "bilgisayarınız korundu" derse: **Ek bilgi › Yine de çalıştır**.
-4. AutoCAD'i açın. Şeritte **ŞEBEKE-M** ve **ŞEBEKE-M ARAÇLAR** sekmeleri görünür.
-   Güvenlik uyarısı çıkarsa **Her zaman yükle** deyin.
+4. Windows **yönetici izni** sorar: **Evet** deyin. Eklenti AutoCAD'in güvenilir saydığı klasöre
+   (`C:\Program Files\Autodesk\ApplicationPlugins`) kurulur; AutoCAD orada imza aramaz, **güvenlik uyarısı çıkmaz**.
+5. AutoCAD'i açın. Şeritte **ŞEBEKE-M** ve **ŞEBEKE-M ARAÇLAR** sekmeleri görünür.
+
+Yönetici izni veremiyorsanız (ör. kurum bilgisayarı) **Hayır** deyin: eklenti yine kurulur ama kendi kullanıcı
+klasörünüze; o zaman AutoCAD ilk açılışta "imzalanmamış dosya" uyarısı gösterir, **Her zaman yükle** deyin.
 
 Güncellemek için yeni zip ile aynı adımları tekrarlayın. Kaldırmak için **KALDIR.bat**. Sürüm ve komut listesi:
 her iki sekmenin başındaki **Şebeke-M › Hakkında** düğmesi (`SH_HAKKINDA`).

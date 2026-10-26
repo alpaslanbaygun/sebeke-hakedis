@@ -10,12 +10,20 @@ KURULUM
 2. AutoCAD açıksa kapatın.
 3. KUR.bat dosyasına çift tıklayın.
    Windows "bilgisayarınız korundu" uyarısı verirse: "Ek bilgi" → "Yine de çalıştır".
-4. AutoCAD'i açın. Şeritte "ŞEBEKE-M" ve "ŞEBEKE-M ARAÇLAR" sekmeleri görünür.
-   Güvenlik uyarısı çıkarsa "Her zaman yükle" (Always Load) seçin.
-Önceki sürüm (Şebeke Hakediş adıyla) kuruluysa KUR.bat onun üzerine kurar; ayrıca kaldırmanız gerekmez.
+4. Windows yönetici izni sorar: "Evet" deyin.
+   Eklenti AutoCAD'in güvenilir saydığı klasöre kurulur:
+   C:\Program Files\Autodesk\ApplicationPlugins\SebekeHakedis.bundle
+   AutoCAD bu klasördeki eklentilerde imza aramaz; "imzalanmamış dosya" güvenlik uyarısı çıkmaz.
+5. AutoCAD'i açın. Şeritte "ŞEBEKE-M" ve "ŞEBEKE-M ARAÇLAR" sekmeleri görünür.
+Yönetici izni veremiyorsanız "Hayır" deyin: eklenti kendi kullanıcı klasörünüze kurulur; o zaman
+AutoCAD ilk açılışta güvenlik uyarısı gösterir, "Her zaman yükle" (Always Load) seçin.
+Önceki sürüm kuruluysa KUR.bat onun üzerine kurar ve başka klasörlerde kalan eski kopyaları siler;
+ayrıca kaldırmanız gerekmez.
 
 ELLE KURULUM (KUR.bat çalışmazsa)
-- SebekeHakedis.bundle klasörünü şuraya kopyalayın:
+- SebekeHakedis.bundle klasörünü şuraya kopyalayın (yönetici izni ister; güvenlik uyarısı çıkmaz):
+  C:\Program Files\Autodesk\ApplicationPlugins
+- Yönetici izni yoksa şuraya kopyalayın (AutoCAD ilk açılışta uyarır):
   %APPDATA%\Autodesk\ApplicationPlugins
   (Dosya Gezgini adres çubuğuna yazıp Enter'a basın.)
 
@@ -56,7 +64,7 @@ KOMUTLAR
 Ayrıntılı kullanım: GitHub deposundaki KULLANIM.md
 
 KALDIRMA
-  KALDIR.bat dosyasını çalıştırın, AutoCAD'i yeniden başlatın.
+  KALDIR.bat dosyasını çalıştırın (yönetici izni sorulursa "Evet"), AutoCAD'i yeniden başlatın.
 
 SORUN OLURSA
   Hata ayrıntısı şu dosyaya yazılır: %TEMP%\SebekeHakedis_hata.txt

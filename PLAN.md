@@ -30,6 +30,9 @@
 - eski programın çizimdeki ortak kayıtları (sayaç, aktif hakediş, bölge listesi, onaylar) eklentide de okunur ve yazılır;
   onaylı hakediş kilitlidir.
 - AutoCAD sürümleri: **2016–2024** ve **2025 ve sonrası** (LT yok).
+- **Kurulum ve imza** (26.10.2026): eklenti AutoCAD'in güvenilir klasörüne (`Program Files\Autodesk\ApplicationPlugins`)
+  kurulur; orada imza aranmadığı için "imzalanmamış dosya" uyarısı çıkmaz. Gerçek kod imzası için ticari sertifika
+  gerekir; alınırsa CI imzalamaya hazırdır.
 - Veri aktarımı: **önce dosya** (Google Drive'da `.sebeke.json`; telefonun `.volt.json` ve teslim paketi de
   eklentide açılır), **sonra bulut eşitleme**.
 - Telefon ekranları Google Stitch'te değil, uygulamanın kendi tasarımıyla elle düzenlenir; büyük tasarım
@@ -63,6 +66,8 @@
 
 ## Sahada / AutoCAD'de denenecekler
 
+- Kurulum: `KUR.bat` yönetici izni ister, eklenti `Program Files\Autodesk\ApplicationPlugins`'e kurulur, AutoCAD
+  açılışında güvenlik uyarısı çıkmaz; kullanıcı klasöründeki eski kopya silinmiş olur.
 - Şerit: kategori düğmeleri, öğeye tıklayınca pencere açılmadan çizim, Tip / Ara / Durum / Hakediş kutuları, özet satırı;
   dar ekranda bölümlerin küçülmesi; AutoCAD açık temasında simgelerin okunması.
 - Koyu pencereler: yüksek DPI'da (125 %, 150 %) yazı ve kutuların taşmaması, başlıktan sürükleme, Enter / Esc.

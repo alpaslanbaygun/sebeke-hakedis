@@ -6,7 +6,7 @@ name: AutoCAD eklentisi
 
 on:
   push:
-    branches: [main, hat-malzeme-simge, sebeke-m]
+    branches: [main, hat-malzeme-simge, sebeke-m, imzalama]
     paths:
       - 'autocad/**'
       - 'ortak/**'
@@ -73,6 +73,35 @@ jobs:
           if ($LASTEXITCODE -ne 0) { "DERLEME: BAŞARISIZ" | Out-File -Append -Encoding utf8 cikti/ozet.txt; exit 1 }
           "DERLEME: geçti" | Out-File -Append -Encoding utf8 cikti/ozet.txt
 
+      - name: İmzala (kod imzalama sertifikası tanımlıysa)
+        # Sertifika depo sırlarındadır: IMZA_PFX (PFX dosyasının base64 hâli) ve IMZA_PAROLA.
+        # Tanımlı değilse DLL'ler imzasız kalır; kurulum güvenilir klasöre yapıldığı için AutoCAD yine uyarmaz.
+        shell: pwsh
+        env:
+          IMZA_PFX: ${{ secrets.IMZA_PFX }}
+          IMZA_PAROLA: ${{ secrets.IMZA_PAROLA }}
+        run: |
+          $dll = @('autocad/src/Eklenti/bin/Release/net46/SebekeHakedis.dll', 'autocad/src/Eklenti/bin/Release/net8.0-windows/SebekeHakedis.dll')
+          if (-not $env:IMZA_PFX) {
+            "İMZA: yok (kod imzalama sertifikası tanımlı değil; kurulum güvenilir klasöre)" | Out-File -Append -Encoding utf8 cikti/ozet.txt
+            exit 0
+          }
+          $pfx = Join-Path $env:RUNNER_TEMP 'imza.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:IMZA_PFX))
+          $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe |
+            Where-Object { $_.FullName -like '*\x64\*' } | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) { "İMZA: signtool bulunamadı" | Out-File -Append -Encoding utf8 cikti/ozet.txt; exit 1 }
+          try {
+            foreach ($d in $dll) {
+              & $signtool.FullName sign /f $pfx /p $env:IMZA_PAROLA /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "Şebeke-M" $d
+              if ($LASTEXITCODE -ne 0) { throw "imzalanamadı: $d" }
+            }
+          } finally { Remove-Item $pfx -Force -ErrorAction SilentlyContinue }
+          foreach ($d in $dll) {
+            $i = Get-AuthenticodeSignature $d
+            "İMZA: $d → $($i.Status) · $($i.SignerCertificate.Subject)" | Out-File -Append -Encoding utf8 cikti/ozet.txt
+          }
+
       - name: Kurulum paketini hazırla
         shell: pwsh
         run: |
@@ -87,6 +116,30 @@ jobs:
           Compress-Archive -Path "$kok/*" -DestinationPath "cikti/SebekeHakedis-$s.zip" -Force
           Get-ChildItem -Recurse $kok | Select-Object FullName, Length | Format-Table -AutoSize | Out-String -Width 200 | Out-File -Append -Encoding utf8 cikti/ozet.txt
           "PAKET: cikti/SebekeHakedis-$s.zip" | Out-File -Append -Encoding utf8 cikti/ozet.txt
+
+      - name: Kurulum denemesi (KUR.bat / KALDIR.bat)
+        shell: pwsh
+        run: |
+          $s = "${{ steps.surum.outputs.surum }}"
+          $acik = Join-Path $env:RUNNER_TEMP 'kur-dene'
+          Expand-Archive "cikti/SebekeHakedis-$s.zip" -DestinationPath $acik -Force
+          $pf = if ($env:ProgramW6432) { $env:ProgramW6432 } else { $env:ProgramFiles }
+          $hedef = Join-Path $pf 'Autodesk\ApplicationPlugins\SebekeHakedis.bundle'
+          $kullanici = Join-Path $env:APPDATA 'Autodesk\ApplicationPlugins\SebekeHakedis.bundle'
+          # Eski davranışı taklit: kullanıcı klasöründe eski bir kopya varken kurulum onu da temizlemeli
+          New-Item -ItemType Directory -Force $kullanici | Out-Null
+          Set-Content -Path (Join-Path $kullanici 'PackageContents.xml') -Value '<eski/>'
+          & (Join-Path $acik 'KUR.bat') /sessiz 2>&1 | Tee-Object -FilePath cikti/kurulum-denemesi.log
+          $ok = (Test-Path (Join-Path $hedef 'PackageContents.xml')) -and
+                (Test-Path (Join-Path $hedef 'Contents\R20-R24\SebekeHakedis.dll')) -and
+                (Test-Path (Join-Path $hedef 'Contents\R25\SebekeHakedis.dll')) -and
+                -not (Test-Path $kullanici)
+          "kuruldu: $ok ($hedef)" | Tee-Object -Append -FilePath cikti/kurulum-denemesi.log
+          & (Join-Path $acik 'KALDIR.bat') /sessiz 2>&1 | Tee-Object -Append -FilePath cikti/kurulum-denemesi.log
+          $kalkti = -not (Test-Path $hedef)
+          "kaldırıldı: $kalkti" | Tee-Object -Append -FilePath cikti/kurulum-denemesi.log
+          if (-not ($ok -and $kalkti)) { "KURULUM DENEMESİ: BAŞARISIZ" | Out-File -Append -Encoding utf8 cikti/ozet.txt; exit 1 }
+          "KURULUM DENEMESİ: geçti (güvenilir klasöre kuruldu, eski kopya temizlendi, kaldırıldı)" | Out-File -Append -Encoding utf8 cikti/ozet.txt
 
       - name: İş akışı eki (dal denemeleri için)
         if: always()
@@ -103,7 +156,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $s = "${{ steps.surum.outputs.surum }}"
-          gh release create "v$s" "cikti/SebekeHakedis-$s.zip" --title "Şebeke-M AutoCAD eklentisi $s" --notes "Kurulum: zip'i indirin, bir klasöre çıkarın, KUR.bat'ı çalıştırın, AutoCAD'i yeniden başlatın. AutoCAD 2016–2024 ve 2025+ desteklenir."
+          gh release create "v$s" "cikti/SebekeHakedis-$s.zip" --title "Şebeke-M AutoCAD eklentisi $s" --notes "Kurulum: zip'i indirin, bir klasöre çıkarın, KUR.bat'ı çalıştırın ve Windows'un yönetici izni sorusuna Evet deyin (eklenti AutoCAD'in güvenilir klasörüne kurulur, güvenlik uyarısı çıkmaz). AutoCAD'i yeniden başlatın. AutoCAD 2016–2024 ve 2025+ desteklenir."
 
       - name: Sonuçları ci-sonuc dalına yaz
         # main: ci-sonuc · diğer dallar: ci-sonuc-dal
