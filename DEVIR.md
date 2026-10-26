@@ -40,7 +40,11 @@ Bulunan ve `sebeke-m` dalında düzeltilen hatalar:
    yolu kullanılır, AutoCAD bölümü değersiz bırakırsa tek boş dizgi yazılır (`Toplayici.XdataSil`; okuyucu yok sayar).
    **Bu hata 0.1.52 ve öncesinin Telefondan Al ile çizdiği her çizimde vardı**: böyle bir çizim kaydedilmişse açılışta
    nesneler kaybolur (RECOVER ile açılır ama nesneler gelmez); projeyi telefon dosyasından yeniden almak gerekir.
-   Düzeltme AutoCAD'de henüz denenmedi (CI derledi); ilk iş: yeni sürümle Telefondan Al → kaydet → yeniden aç.
+   **0.1.58 ile canlı doğrulandı (25.10 akşam):** Telefondan Al (72 nesne) → kaydet → kapat → aç: nesneler yerinde,
+   `AUDIT` 0 hata; direk SC108'e tepe kuvveti hesabı kaydı → kaydet → aç: "1 hesap kaydı okundu"; gerçek bir eski
+   program çiziminin kopyası `SH_GORUNUM` ile çevrildi (396 nesne) → kaydet → aç: 286 eleman / 99 hat / 10 kanal,
+   Durum Tespit raporu orijinalinkiyle birebir aynı (bütün sayfalar, tanıtıcılar dâhil). O çizimdeki 5 `AUDIT`
+   uyarısı (eski tip POLYLINE köşelerinde katman farkı) orijinalde de aynı numaralarla var; dönüşümden gelmiyor.
 2. Boş NIT bölümlü GPS noktası okuyucuda eleman sayılıyor, direkle aynı yerdeki bu sahte eleman hesap zincirinin
    düğümü oluyordu (branşman noktası "2FA" gibi tanıtıcı çıktı). Okuyucu artık yalnız değeri olan bölüme bakar.
 3. Hesap kaydı Xrecord parçaları 1000 → 250 karakter (DXF 1 dizgi sınırı; çökmenin asıl nedeni değildi ama güvenli).
@@ -158,12 +162,12 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
-0. **Çizim yazıcı düzeltmesinin canlı doğrulaması** (yeni sürüm kurulunca): boş çizime Telefondan Al → kaydet →
-   kapat → aç (nesneler duruyor mu, `AUDIT` hata veriyor mu); sonra Hesap Merkezi'nde Kaydet → kaydet → aç (kayıt
-   duruyor mu), `SH_RAPOR` HESAPLAR sayfası, `SH_ICEAL` dosyasında `hesaplar`, Telefona Gönder → telefonda kaydın
-   görünmesi; telefonda bir hesabı kaydedip Telefondan Al ile çizime gelmesi. Bir direk hedefiyle (kollar) de
-   denenmeli (canlı denemede yalnız hat hedefi açıldı). Hesap sahibi (Baki SONAY) ile ⓘ panellerindeki doğrulanacak
-   tablo değerleri görüşülmeli.
+0. **Gerçek telefonda deneme** (AutoCAD tarafı 25.10'da canlı doğrulandı, yukarıda): AutoCAD'den gelen hesap
+   kaydının telefonda görünmesi ve "güncel" kalması (telefon koduyla kapta denendi; rekortman kolu düzeltmesi A10),
+   telefonda bir hesabı kaydedip Telefondan Al ile çizime gelmesi. Hesap sahibi (Baki SONAY) ile ⓘ panellerindeki
+   doğrulanacak tablo değerleri görüşülmeli (ör. tepe kuvveti AER yer tutucu değerleri: SC108'de "1,0 kg").
+   Eski program çiziminde telefon kataloğunda karşılığı olmayan hat tipleri (`4P+R`, `5R`, `R`, `3R`, `3A+P+R`):
+   metraj korunuyor; katalog kaydı için poz / birim fiyat bilgisi gerekir.
 1. **AutoCAD'de ilk deneme** (kullanıcı yapacak): koyu şerit ve pencereler (kategori → öğe → çizim, Ara kutusu,
    yüksek DPI'da pencereler), yeni görünüm, parçalı hat; 18.10 akşam işleri: direğe / SDK'ya tıklayınca yakalama,
    cins seçimi, iki iletken / adet / müşterek, malzeme hafızası, toplu malzeme, armatür (taşı / kopyala / sil / geri al),

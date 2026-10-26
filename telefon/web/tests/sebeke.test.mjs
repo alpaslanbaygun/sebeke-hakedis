@@ -482,3 +482,21 @@ test('A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef
   assert.deepEqual(geri.hesaplar.map((h) => h.id).sort(), sp.hesaplar.map((h) => h.id).sort(), 'kimlikler korunur');
   assert.equal(geri.hesaplar.find((h) => h.modul === 'amax').ozet, 'güncellenmiş', 'özet güncel');
 });
+
+test('A10 · katalogda olmayan AutoCAD hattı (rekortman): hesap bağlamında iletken ve hat türü AutoCAD\'deki gibi', async () => {
+  const { baglamKur } = await import('../src/hesap/baglam.js');
+  const { farklar } = await import('../../../ortak/hesap/kurallar.mjs');
+  const dosya = JSON.parse(fs.readFileSync(path.join(here, '../../../autocad/test/CekirdekTest/telefon-proje.sebeke.json'), 'utf8'));
+  const { ps } = await setup();
+  await sebekeIceAl(ps, dosya, { name: 'rekortman' });
+  const e = ps.data.equipment.find((x) => x.no === 'SC108');
+  assert.ok(e, 'SC108 alındı');
+  const b = baglamKur(ps, { tur: 'direk', id: e.id }, {});
+  const rek = b.direk.kollar.find((k) => k.hatTur === 'REKORTMAN');
+  assert.ok(rek, 'rekortman kolu AutoCAD türüyle gelir');
+  assert.deepEqual(rek.iletkenler.map((i) => [i.ad, i.adet, i.devre]), [['4x16 Nyy Alm.', 1, 'AG']], 'iletken eklentinin HAT satırından');
+  // AutoCAD'de kaydedilmiş bir hesabın kullandığı değerler telefonda da aynı: platformlar arası fark yok
+  const i = b.direk.kollar.indexOf(rek);
+  const kullanilan = { ['direk.kollar[' + i + '].iletkenler[0].ad']: '4x16 Nyy Alm.', ['direk.kollar[' + i + '].iletkenler[0].adet']: 1 };
+  assert.equal(farklar(kullanilan, b, { platformlarArasi: true }).length, 0);
+});

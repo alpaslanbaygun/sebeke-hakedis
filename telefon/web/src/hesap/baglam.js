@@ -21,7 +21,13 @@ function kotOf(p) {
   return h == null ? null : r2(h);
 }
 
+/** AutoCAD'den gelip telefon kataloğunda karşılığı bulunamayan hat (devresi yok, eklentinin satırları saklı). */
+function eslesmeyenAutocadHatti(l) {
+  return !(l.circuits || []).length && !!(l.sebeke && !l.sebeke.kanal && (l.sebeke.tur || (l.sebeke.kalemler || []).length));
+}
+
 function hatTuru(l) {
+  if (eslesmeyenAutocadHatti(l) && l.sebeke.tur) return l.sebeke.tur; // ör. REKORTMAN: AutoCAD bağlamıyla aynı
   const roller = new Set((l.circuits || []).map((c) => (c.role === 'ENH' ? 'OG' : c.role)));
   const yer = l.install === 'yeralti';
   if (l.lineType === 'AYD') return yer ? 'AG_YERALTI' : 'AYDINLATMA';
@@ -37,7 +43,22 @@ function gerilimKV(l) {
   return 0.4;
 }
 
+// Eklentinin adetli yazımı: "3x(1x240/25 Xlpe Alm.)" (Cekirdek.Iletkenler.AdetliYazi ile aynı)
+const ADETLI = /^\s*(\d+)\s*[xX×]\s*\((.+)\)\s*$/;
+function adetli(yazi) { const m = ADETLI.exec(String(yazi || '')); return m && +m[1] >= 1 ? { adet: +m[1], ic: m[2].trim() } : null; }
+
 function iletkenler(l, cat) {
+  if (eslesmeyenAutocadHatti(l)) {
+    // Katalogda karşılığı yok: iletkenler eklentinin HAT satırlarından (AutoCAD'deki HesapBaglami.Iletkenler ile aynı kural),
+    // böylece iki platform aynı iletken adını verir ve kayıt platform değiştirince "güncel değil" düşmez.
+    return (l.sebeke.kalemler || []).filter((k) => k && k.kaynak === 'HAT').map((k) => {
+      const yazi = String(k.aciklama || k.tanim || '');
+      const a = adetli(yazi);
+      const ad = (a ? a.ic : (k.tanim || yazi)).trim();
+      const n = adetli(k.aciklama) || adetli(k.tanim);
+      return { ad, adet: n ? n.adet : 1, devre: String(k.cins || '').startsWith('OG_') ? 'OG' : 'AG' };
+    }).filter((x) => x.ad);
+  }
   return (l.circuits || []).map((c) => {
     const p = circuitParts(c, cat);
     return { ad: p ? p.label : c.key, adet: Math.max(1, c.count || 1), devre: c.role === 'OG' || c.role === 'ENH' ? 'OG' : 'AG' };
