@@ -1,8 +1,10 @@
 # Devir notu
 
 Bu proje başka bir hesaba (GitHub ya da Claude) geçerken sohbet geçmişi taşınmaz. Devam etmek için
-gereken her şey bu depodadır. Yeni oturum önce bu dosyayı, sonra [README.md](README.md),
-[PLAN.md](PLAN.md), [KULLANIM.md](KULLANIM.md) ve [ortak/VERI-MODELI.md](ortak/VERI-MODELI.md) dosyalarını okumalı.
+gereken her şey bu depodadır. Yeni oturum önce bu dosyayı okur; dosya ve kural ararken otomatik dizin
+[HARITA.md](HARITA.md) kullanılır. [README.md](README.md), [PLAN.md](PLAN.md), [KULLANIM.md](KULLANIM.md) ve
+[ortak/VERI-MODELI.md](ortak/VERI-MODELI.md) iş gerektirdiğinde okunur (hepsini her oturumda baştan okumak işi
+yavaşlatır). Claude'un her oturumda kendiliğinden okuduğu kısa not: [CLAUDE.md](CLAUDE.md).
 Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.md) (eski depodan gelen tarihçe) ve
 [telefon/README_KAYNAK.txt](telefon/README_KAYNAK.txt) (kaynak yapısı, sürüm notları).
 
@@ -27,7 +29,7 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 | --- | --- | --- |
 | Telefon uygulaması (Şebeke-M) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı), **Hesap Merkezi** (15 hesap), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası); telefonda denenmedi |
 | AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
-| Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM | Güncel |
+| Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
 
 25.10 canlı deneme (AutoCAD 2027, eklenti 0.1.52, uydurma örnek proje): Telefondan Al (72 nesne), Hesap Merkezi (AG
 hattı seçildi, zincir dallanmadan düz geçti), AG gerilim düşümü sayfası (46 bilgi çizimden), Kaydet / yeniden aç /
@@ -74,6 +76,10 @@ dalı (önceki `main`; eklenti 0.1.16 ve telefon 2.5.8 Releases'te durur).
 
 ## 3. Kod haritası
 
+- Otomatik dizin [HARITA.md](HARITA.md) (28.10.2026): iki platformda aynı kuralı uygulayan dosya çiftleri, değişince
+  en çok yeri etkileyen dosyalar, komutların tanımlandığı ve anıldığı yerler, her dosya için bir satır. Dosya eklenince,
+  silinince ya da görevi değişince `python3 araclar/kod-haritasi/kod_haritasi.py` ile yenilenir (networkx gerekir);
+  `--sayfa harita.html` aynı bilgiden yakınlaştırılabilir harita sayfası da üretir (numpy gerekir).
 - `ortak/` — proje dosyası biçimi (`VERI-MODELI.md`), `katalog/kalemler.json` (eski program malzeme kataloğu),
   `katalog/katsayilar.json` (rapor katsayıları), `katalog/semboller.json` (lejant simge takımı; üretici
   `araclar/semboller-uret.mjs`), `katalog/volt-eslesme.json` (telefon kataloğu ↔ eski program eşlemesi).
@@ -204,6 +210,6 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 Bu sohbet ve Claude'un kullanıcı hakkındaki notları diğer hesaba geçmez. Diğer hesapta GitHub'ı bağlayın
 (depoya erişebilen GitHub hesabıyla), bu depoyla yeni bir oturum açın ve şunu yazın:
 
-> Bu depo "Şebeke-M" (eski adıyla Şebeke Hakediş) projesi. Önce DEVIR.md'yi, sonra README.md, PLAN.md, KULLANIM.md ve
-> ortak/VERI-MODELI.md'yi oku; DEVIR.md'deki çalışma kurallarına uy. Bana Türkçe, kısa ve adım adım yaz.
+> Bu depo "Şebeke-M" (eski adıyla Şebeke Hakediş) projesi. Önce DEVIR.md'yi oku; dosya ararken HARITA.md'yi kullan,
+> diğer belgeleri iş gerektirdiğinde aç; DEVIR.md'deki çalışma kurallarına uy. Bana Türkçe, kısa ve adım adım yaz.
 > Önce durumu iki cümleyle özetle, sonra sıradaki işi sor.
