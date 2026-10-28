@@ -80,6 +80,10 @@ dalı (önceki `main`; eklenti 0.1.16 ve telefon 2.5.8 Releases'te durur).
   en çok yeri etkileyen dosyalar, komutların tanımlandığı ve anıldığı yerler, her dosya için bir satır. Dosya eklenince,
   silinince ya da görevi değişince `python3 araclar/kod-haritasi/kod_haritasi.py` ile yenilenir (networkx gerekir);
   `--sayfa harita.html` aynı bilgiden yakınlaştırılabilir harita sayfası da üretir (numpy gerekir).
+- Claude Code ayarı (`.claude/`, 28.10.2026): `settings.json`'daki kanca (`araclar/kod-haritasi/kanca.py`) oturumdaki
+  ilk dosya aramasında Claude'a haritayı hatırlatır; dosya eklenip silinmiş de harita yenilenmemişse bunu söyler.
+  Aramayı engellemez, python3 yoksa sessiz kalır. `/harita` becerisi (`skills/harita`) haritayı yeniler ve istenirse
+  sayfasını yayımlar (yayımlı sayfa: https://claude.ai/artifact/PJLGVnejxTfozyomQzkGi9).
 - `ortak/` — proje dosyası biçimi (`VERI-MODELI.md`), `katalog/kalemler.json` (eski program malzeme kataloğu),
   `katalog/katsayilar.json` (rapor katsayıları), `katalog/semboller.json` (lejant simge takımı; üretici
   `araclar/semboller-uret.mjs`), `katalog/volt-eslesme.json` (telefon kataloğu ↔ eski program eşlemesi).

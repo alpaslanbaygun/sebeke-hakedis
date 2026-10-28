@@ -14,6 +14,7 @@ yayımlanacak biçimdedir (belge iskeleti yayımlarken eklenir).
 """
 import argparse
 import collections
+import hashlib
 import json
 import math
 import os
@@ -21,17 +22,14 @@ import re
 import subprocess
 import sys
 
-try:
-    import networkx as nx
-except ImportError:
-    sys.exit('networkx gerekli: pip install networkx')
+nx = None  # networkx; cozumle() yükler (kanca.py bu dosyadan yalnız dosya listesini kullanır)
 
 BURASI = os.path.dirname(os.path.abspath(__file__))
 KOK = subprocess.check_output(['git', '-C', BURASI, 'rev-parse', '--show-toplevel'], text=True).strip()
 
 # Haritanın kendisi ve Claude notu haritaya girmez (her dosyayı andıkları için merkeze otururlardı).
 HARIC = {'HARITA.md', 'CLAUDE.md'}
-HARIC_KLASOR = ('araclar/kod-haritasi/',)
+HARIC_KLASOR = ('araclar/kod-haritasi/', '.claude/')
 IKILI = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'woff', 'woff2', 'ttf', 'jks', 'ico', 'jar', 'apk', 'zip', 'dll', 'exe',
          'dwg', 'xlsx', 'pdf'}
 
@@ -181,10 +179,29 @@ def satir_bul(t, konum):
 
 
 # ---------------------------------------------------------------- çözümleme
-def cozumle():
+def dosya_listesi():
+    """Haritaya giren dosyalar: git'teki metin dosyaları (ikili, harita ve Claude ayarları hariç)."""
     dosyalar = [f for f in subprocess.check_output(['git', '-C', KOK, 'ls-files'], text=True).split('\n') if f]
-    dosyalar = [f for f in dosyalar if uzanti(f) not in IKILI and os.path.basename(f) != '.gitignore'
-                and f not in HARIC and not f.startswith(HARIC_KLASOR) and os.path.exists(os.path.join(KOK, f))]
+    return [f for f in dosyalar if uzanti(f) not in IKILI and os.path.basename(f) != '.gitignore'
+            and f not in HARIC and not f.startswith(HARIC_KLASOR) and os.path.exists(os.path.join(KOK, f))]
+
+
+def liste_izi(dosyalar):
+    """Dosya listesinin izi; HARITA.md'nin sonuna yazılır, kanca.py haritanın eskiyip eskimediğine buna bakar."""
+    return hashlib.sha1('\n'.join(sorted(dosyalar)).encode('utf-8')).hexdigest()[:16]
+
+
+IZ_RE = re.compile(r'<!-- dosya-listesi: ([0-9a-f]+) -->')
+
+
+def cozumle():
+    global nx
+    try:
+        import networkx
+    except ImportError:
+        sys.exit('networkx gerekli: pip install networkx')
+    nx = networkx
+    dosyalar = dosya_listesi()
     fset = set(dosyalar)
     metin = {f: oku(f) for f in dosyalar}
 
@@ -515,6 +532,8 @@ def harita_md(v):
             else:
                 parca.append(' · bağsız')
             y(''.join(parca))
+    y('')
+    y('<!-- dosya-listesi: %s -->' % liste_izi([n for n in D if D[n]['tur'] != 'komut']))
     y('')
     return '\n'.join(s)
 

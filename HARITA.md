@@ -419,7 +419,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 ### Proje belgeleri — `kök`
 
 - `.gitattributes` · 10 satır · bağsız
-- `DEVIR.md` — Devir notu — Bu proje başka bir hesaba (GitHub ya da Claude) geçerken sohbet geçmişi taşınmaz. Deva… · 215 satır · 64 bağ · HesapMerkezi.cs, HesapSunucu.cs, baglam.js
+- `DEVIR.md` — Devir notu — Bu proje başka bir hesaba (GitHub ya da Claude) geçerken sohbet geçmişi taşınmaz. Deva… · 219 satır · 64 bağ · HesapMerkezi.cs, HesapSunucu.cs, baglam.js
 - `KULLANIM.md` — Şebeke-M — Kullanım Kılavuzu — İki araç var, ikisi aynı proje dosyasını (`.sebeke.json`) kullanır: · 415 satır · 30 bağ · cizim-stili.json, KALDIR.bat, KUR.bat
 - `PLAN.md` — Plan — telefon uygulaması bırakıldı, geri dönüş: `telefon-eski-0.2.3` dalı). Kataloğu TEDAŞ pozları… · 111 satır · 16 bağ · ArayuzSimgeleri.cs, cizim-stili.json, kategoriler.json
 - `README.md` — Şebeke-M — Elektrik dağıtım şebekesi yapım işlerinde saha ölçümü, metraj, hakediş, Durum Tespit rap… · 78 satır · 36 bağ · hesap-dene.py, hesap-paketle.mjs, ortak-tablolar.mjs
@@ -440,3 +440,5 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 - `araclar/ortak-tablolar.mjs` · 19 satır · 11 bağ · semboller-uret.mjs, cizim-stili.js, kalemler.js
 - `araclar/semboller-onizle.mjs` · 40 satır · 2 bağ · semboller.json, VERI-MODELI.md
 - `araclar/semboller-uret.mjs` · 193 satır · 6 bağ · ortak-tablolar.mjs, semboller.js, semboller.json
+
+<!-- dosya-listesi: 95f72fa5f16ae964 -->
