@@ -16,4 +16,4 @@ ornek-veri/
 autocad/test/CekirdekTest/nuget.config
 # Hesap Merkezi paketi derlemede üretilir (araclar/hesap-paketle.mjs)
 ortak/hesap/paket/
-araclar/__pycache__/
+__pycache__/

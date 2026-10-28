@@ -9,4 +9,5 @@ Bu dosya her oturumun başında kendiliğinden okunur; kısa tutulur.
 - HARITA.md'nin 1. bölümündeki dosyalar aynı kuralı AutoCAD'de ve telefonda ayrı ayrı uygular: biri değişirse öteki
   de değiştirilir, iki tarafın denemeleri çalıştırılır.
 - Dosya eklenince, silinince ya da bir dosyanın görevi değişince harita yenilenir ve aynı değişiklikle gönderilir:
-  `python3 araclar/kod-haritasi/kod_haritasi.py` (gerekirse `pip install networkx`).
+  `python3 araclar/kod-haritasi/kod_haritasi.py` (gerekirse `pip install networkx`) ya da `/harita`.
+- `.claude/settings.json`'daki kanca oturumdaki ilk aramada haritayı hatırlatır, harita eskimişse bunu da söyler.
