@@ -5,7 +5,7 @@ import { measure } from '../services.js';
 import { renumberDialog } from './field.js';
 import { HakRow, HakHistory } from './team.js';
 import { STATUSES, HAK_STATUSES, HAK_ORDER, hakOf } from '../../core/schema.js';
-import { circuitLabel, lineLabel, CABLE_DEFAULTS, KAPLAMA, YONTEM, kanalModel } from '../../grid/lines.js';
+import { circuitLabel, lineLabelText, malzemeYazisi, CABLE_DEFAULTS, KAPLAMA, YONTEM, kanalModel } from '../../grid/lines.js';
 import { autoRecipeOn } from '../../grid/recipe.js';
 import { MaterialPicker } from './matpick.js';
 import { offsetPolyline, dms } from '../../geo/geom.js';
@@ -89,7 +89,7 @@ export function LineScreen({ id }) {
     const ends = [l0.nodes[0], l0.nodes[l0.nodes.length - 1]];
     const cands = ps.data.lines.filter((x) => x.id !== id && (ends.includes(x.nodes[0]) || ends.includes(x.nodes[x.nodes.length - 1])));
     if (!cands.length) return app.toast('Ortak uçlu hat yok', 'warn');
-    const bid = await app.modal((close) => html`<div class="mh"><h3>Birleştirilecek hat</h3></div><div class="mb" style="padding:0"><div class="list">${cands.map((c) => html`<button class="li" onClick=${() => close(c.id)}><div class="grow"><div class="t">${c.lineNo}</div><div class="s">${lineLabel(c, cat)}</div></div></button>`)}</div></div>`);
+    const bid = await app.modal((close) => html`<div class="mh"><h3>Birleştirilecek hat</h3></div><div class="mb" style="padding:0"><div class="list">${cands.map((c) => html`<button class="li" onClick=${() => close(c.id)}><div class="grow"><div class="t">${c.lineNo}</div><div class="s">${lineLabelText(c, cat)}</div></div></button>`)}</div></div>`);
     if (bid) { try { await ps.mergeLines(id, bid); app.toast('Birleştirildi'); } catch (e) { app.toast(e.message, 'err'); } }
   };
   const offset = async () => {
@@ -103,7 +103,7 @@ export function LineScreen({ id }) {
     app.toast(nl.lineNo + ' ofset hat oluşturuldu (İLERİDE)');
   };
   const cb = Object.assign({}, CABLE_DEFAULTS, d.cable || {});
-  return html`<${Title} title=${d.lineNo + ' · ' + d.lineType} sub=${lineLabel(l0, cat) + ' · ' + trn(li.length3D, 2) + ' m'} right=${html`<button class="btn sm" title="Bu hat için teknik hesaplar" onClick=${() => app.nav.go('hesapMerkezi', { hedef: { tur: 'hat', id } })}><${Icon} n="calc" s=${16} />Hesaplar</button>`} />
+  return html`<${Title} title=${d.lineNo + ' · ' + d.lineType} sub=${lineLabelText(l0, cat) + ' · ' + trn(li.length3D, 2) + ' m'} right=${html`<button class="btn sm" title="Bu hat için teknik hesaplar" onClick=${() => app.nav.go('hesapMerkezi', { hedef: { tur: 'hat', id } })}><${Icon} n="calc" s=${16} />Hesaplar</button>`} />
     ${iss.map((i) => html`<div class=${'alert ' + (i.severity === 'error' ? 'err' : 'warn')}><${Badge} k=${CODE_KIND[i.code]}>${i.code}</${Badge}> ${i.message}</div>`)}
     <div class="grid3"><div class="stat"><b>2B</b><span>${trn(li.length2D, 2)}</span><small>m</small></div><div class="stat"><b>3B</b><span>${trn(li.length3D, 2)}</span><small>m</small></div><div class="stat"><b>Kaynak</b><span style="font-size:15px">${li.lenSource || '—'}</span></div></div>
     <div class="card stack">
@@ -119,7 +119,7 @@ export function LineScreen({ id }) {
     </div>
     <div class="sect">İletken / kablo devreleri <span class="r"><button class="btn xs" onClick=${() => set({ circuits: [...d.circuits, { role: roleOpts[0][0], key: cat.lineDefault(roleOpts[0][0], d.install), count: 1 }] })}>+ Devre</button></span></div>
     ${d.circuits.map((c, i) => html`<div class="card stack"><div class="row"><${Sel} value=${c.role} options=${roleOpts} onChange=${(v) => setC(i, { role: v })} /><select class="inp mono" style="width:70px" value=${c.count || 1} onChange=${(e) => setC(i, { count: +e.target.value })}>${[1, 2, 3, 4].map((n) => html`<option value=${n}>${n}×</option>`)}</select><button class="btn dang sm" aria-label="Sil" disabled=${d.circuits.length < 2} onClick=${() => set({ circuits: d.circuits.filter((_, j) => j !== i) })}><${Icon} n="x" s=${16} /></button></div>
-      ${c.custom ? html`<div class="mono note">Çıplak: ${circuitLabel(c, cat)}</div>` : html`<${Sel} mono value=${c.key} options=${cat.lineTypesFor(c.role === 'AYD' ? 'AG' : c.role, d.install).map((x) => [x.name, x.name])} onChange=${(v) => setC(i, { key: v, custom: null })} />`}
+      ${c.custom ? html`<div class="mono note">Çıplak: ${malzemeYazisi(circuitLabel(c, cat))}</div>` : html`<${Sel} mono value=${c.key} options=${cat.lineTypesFor(c.role === 'AYD' ? 'AG' : c.role, d.install).map((x) => [x.name, malzemeYazisi(x.name)])} onChange=${(v) => setC(i, { key: v, custom: null })} />`}
       <div class="note">${(() => { const lt = cat.lineType(c.key); const cd = lt ? cat.conductor(lt.parts[0].conductor) : null; return cd ? (cd.tech || cd.family + ' · ' + (cd.kgPerKm ? cd.kgPerKm + ' kg/km' : '')) + (cd.yd ? ' · YD ' + cd.yd : '') : ''; })()}</div></div>`)}
     ${d.install === 'yeralti' ? (() => { const km = kanalModel(d.cable); const kn = li.cable && li.cable.kanal; const fld = ([k, l]) => html`<div class="fld"><label>${l}</label><input class="inp mono" type="number" step="0.05" value=${(d.cable || {})[k] ?? (k === 'joints' || k === 'depth' ? '' : cb[k])} onChange=${(e) => setCable({ [k]: e.target.value === '' ? null : +e.target.value })} /></div>`;
       return html`<div class="sect">Kanal</div><div class="card stack">

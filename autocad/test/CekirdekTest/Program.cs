@@ -231,6 +231,7 @@ namespace SebekeHakedis.Test
             KoordinatVeKml(p);
             MifDene(p);
             AltlikDene();
+            MalzemeYazimiDene();
 
             // Yazıcı: AutoCAD çiziminden okunan proje yeniden çizim nesnesine yazılıp okununca aynı rapor
             GidisDonus(p, "ornek-dokum");
@@ -548,6 +549,46 @@ namespace SebekeHakedis.Test
             int ortaX = (int)Math.Round((512000 - p.E0) / p.Cozunurluk), ortaY = (int)Math.Round((p.N1 - 4280000) / p.Cozunurluk);
             Esit(true, (cikti[ortaY * p.Genislik + ortaX - 5] & 0xFF0000) == 0xFF0000 && (cikti[ortaY * p.Genislik + ortaX + 5] & 0xFF0000) == 0, "altlık: sınır doğru yerde (±5 piksel)");
             Esit(true, HaritaAltligi.GoogleOturumGovdesi("hybrid").Contains("layerRoadmap") && HaritaAltligi.BingAdresi("https://ecn.{subdomain}.x/a{quadkey}.jpeg?mkt={culture}", new[] { "t0", "t1" }, 3, 3, 5) == "https://ecn.t0.x/a213.jpeg?mkt=tr-TR", "altlık: Google oturumu ve Bing adresi");
+        }
+
+        /// <summary>
+        /// Malzeme adlarının görünen yazımı: büyük harf, standart birim ve kodlar, açılan kısaltmalar. Örnekler
+        /// ortak/deneme/malzeme-yazimi.json'da; telefondaki deneme (telefon/web/tests/malzeme-yazimi.test.mjs) aynı dosyayı okur.
+        /// </summary>
+        /// <summary>Örnekler ortak dosyada: telefondaki deneme de aynı dosyayı okur.</summary>
+        private static List<string[]> MalzemeYazimiOrnekleri()
+        {
+            var kok = Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "malzeme-yazimi.json"), Encoding.UTF8)) as JsonNesne;
+            var l = new List<string[]>();
+            foreach (var x in kok.Dizi("ornekler"))
+                if (x is List<object> c && c.Count >= 2) l.Add(new[] { Convert.ToString(c[0]), Convert.ToString(c[1]) });
+            return l;
+        }
+
+        private static void MalzemeYazimiDene()
+        {
+            Console.WriteLine("Malzeme yazımı:");
+            int dogru = 0;
+            var ornekler = MalzemeYazimiOrnekleri();
+            foreach (var o in ornekler)
+            {
+                string g = MalzemeYazimi.Duzelt(o[0]);
+                if (g == o[1]) dogru++;
+                else Console.WriteLine("    fark: '" + o[0] + "' → '" + g + "' (beklenen '" + o[1] + "')");
+            }
+            Esit(true, ornekler.Count >= 30, "malzeme yazımı: ortak örnek dosyası okundu (" + ornekler.Count + ")");
+            Esit(ornekler.Count, dogru, "malzeme yazımı: örnekler");
+            // Bütün katalog: ikinci kez uygulanınca değişmez, boşalan ya da çok uzayan ad yok
+            var katalog = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            int sabit = 0, bozuk = 0;
+            foreach (var it in katalog.Kalemler)
+            {
+                string a = MalzemeYazimi.Duzelt(it.Tanim), b = MalzemeYazimi.Duzelt(a);
+                if (a == b) sabit++; else Console.WriteLine("    değişiyor: '" + it.Tanim + "' → '" + a + "' → '" + b + "'");
+                if (a.Trim().Length == 0 && it.Tanim.Trim().Length > 0 || a.Length > it.Tanim.Length * 3 + 20) bozuk++;
+            }
+            Esit(katalog.Kalemler.Count, sabit, "malzeme yazımı: bütün katalogda ikinci uygulama değiştirmez (" + katalog.Kalemler.Count + " ad)");
+            Esit(0, bozuk, "malzeme yazımı: boşalan / bozulan ad yok");
         }
 
         private static void CizimGorunumu()
@@ -1334,7 +1375,8 @@ namespace SebekeHakedis.Test
             Esit(0, fark, "rapor satırları aynı");
             // Etiket ve sayı yazımı
             var h0 = p.Hatlar.Count > 0 ? p.Hatlar[0] : null;
-            if (h0 != null) Esit(h0.Etiket != "" ? geri.Hatlar.Find(x => x.Id == h0.Id).Etiket.StartsWith(h0.Etiket.Split('/')[0], StringComparison.Ordinal) : true, true, "hat etiketi okunur");
+            // Etiketteki malzeme adı görünen yazımla (MalzemeYazimi): "^ 3X50" → "^ 3x50"
+            if (h0 != null) Esit(h0.Etiket != "" ? geri.Hatlar.Find(x => x.Id == h0.Id).Etiket.StartsWith(MalzemeYazimi.Duzelt(h0.Etiket.Split('/')[0]), StringComparison.Ordinal) : true, true, "hat etiketi okunur");
         }
 
         /// <summary>Telefonun yazdığı bir proje dosyası boş çizime aktarılır, geri okunur; ikinci aktarım iş çıkarmamalı.</summary>

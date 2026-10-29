@@ -441,7 +441,7 @@
    * yazılıdır (eklentideki NesneYazici.HatEtiketi / EtiketGovdesi ile aynı).
    */
   function hatEtiketi(durum, kesit) {
-    const k = kesit || '';
+    const k = malzemeYazisi(kesit || '');
     switch (durum) {
       case 'M': return '^ ' + k;
       case 'M+M': return '* ' + k;
@@ -452,6 +452,61 @@
       case 'MEVCUT': return '(' + k + ')';
       default: return k; // ME ve bilinmeyenler düz yazılır (AutoCAD "TANIMSIZ" yazar)
     }
+  }
+
+  // ---------------------------------------------------------------- Malzeme adlarının görünen yazımı
+  // Eklentideki MalzemeYazimi.Duzelt ile aynı kurallar, aynı sıra: kelimeler BÜYÜK (Türkçe), birimler standart (kV, kVA,
+  // kA, mm…; sayıdan sonra, aralarında boşluk), kablo kodları büyük, metaller Cu / Al ("Alm." → "Al"), boyut çarpısı x,
+  // yaygın kısaltmalar açık (Herm. → HERMETİK…), ondalık virgül. Yalnız görünen yazı değişir; kayıtlı veri, rapor ve
+  // eşleşme aynı kalır. Aynı yazıya ikinci kez uygulanınca değişmez.
+  const YZ_HARF = 'A-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû';
+  const YZ_ACILIM = [
+    ['GEN. TANK.', 'GENLEŞME TANKLI'], ['SOD.BUH.AMP.', 'SODYUM BUHARLI AMPUL'], ['ANH. OTO. SİG.', 'ANAHTARLI OTOMATİK SİGORTA'],
+    ['İŞLETME TOP.', 'İŞLETME TOPRAKLAMASI'], ['MESNET İZO.', 'MESNET İZOLATÖRÜ'], ['GEÇİT İZO.', 'GEÇİT İZOLATÖRÜ'],
+    ['ZİNC. İZO.', 'ZİNCİR İZOLATÖRÜ'], ['İRT.KLEMENS', 'İRTİBAT KLEMENSİ'], ['PLUG-IN BAŞ.', 'PLUG-IN BAŞLIK'], ['SF6 G.K', 'SF6 GAZLI KESİCİ'],
+    ['VAK. K.', 'VAKUM KESİCİ'], ['VAK.', 'VAKUM'], ['YÜK AYR.', 'YÜK AYIRICI'], ['YÜK.BAS.', 'YÜKSEK BASINÇLI'], ['ŞEF. TÜP.', 'ŞEFFAF TÜP'],
+    ['HERM.', 'HERMETİK'], ['ARM.', 'ARMATÜR'], ['K.B.', 'KABLO BAŞLIĞI'], ['K.B', 'KABLO BAŞLIĞI'], ['SİGOR.', 'SİGORTALI'],
+    ['TOPR.', 'TOPRAKLAMALI'], ['KÖŞEB.', 'KÖŞEBENT'], ['KÖŞEBNT', 'KÖŞEBENT'], ['TRAV.', 'TRAVERS'], ['HÜC.', 'HÜCRESİ'], ['PLMR', 'POLİMER'],
+    ['PN.', 'PANO'], ['D.T.', 'DT'], ['D.T', 'DT'], ['H.T.', 'HT'], ['H.T', 'HT'], ['ALM.', 'Al'],
+    ['TUTANAGI', 'TUTANAĞI'], ['SÜKÜLMESİ', 'SÖKÜLMESİ'], ['İZOLATOR', 'İZOLATÖR'], ['KANCASİ', 'KANCASI'], ['PARAFUDUR', 'PARAFUDR'], ['MAŞON', 'MANŞON']
+  ];
+  const YZ_BIRIM = [['KVAR', 'kVAr'], ['MVAR', 'MVAr'], ['KVA', 'kVA'], ['KV', 'kV'], ['KA', 'kA'], ['KN', 'kN'], ['KW', 'kW'], ['HZ', 'Hz'], ['MM²', 'mm²'], ['MM', 'mm'], ['CM', 'cm']];
+  const YZ_METAL = [['CU', 'Cu'], ['AL', 'Al']];
+  const yzKac = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const harfMi = (c) => !!c && new RegExp('[' + YZ_HARF + '\\d]').test(c);
+  let yzKurallar = null;
+  function yzHazirla() {
+    if (yzKurallar) return yzKurallar;
+    const acilim = YZ_ACILIM.map(([a, b]) => [new RegExp('(?<![' + YZ_HARF + '\\d])' + yzKac(a) + (/[A-Za-zÇĞİÖŞÜ]/.test(a[a.length - 1]) ? '(?![' + YZ_HARF + '])' : ''), 'g'), b]);
+    const birim = YZ_BIRIM.map(([a, b]) => [new RegExp('(?<=\\d\\s?)' + yzKac(a) + '(?![' + YZ_HARF + '\\d])', 'g'), b])
+      .concat(YZ_METAL.map(([a, b]) => [new RegExp('(?<![' + YZ_HARF + '\\d])' + yzKac(a) + '(?![' + YZ_HARF + '\\d])', 'g'), b]));
+    yzKurallar = {
+      acilim, birim,
+      sodyum: new RegExp('(?<=\\d\\s?W\\s)SB(?![' + YZ_HARF + '\\d])', 'g'),
+      carpi: /(?<=[\d)"'])X(?=[\d(])/g,
+      carpiKod: /(?<=\d)X(?=[A-ZÇĞİÖŞÜ]{2})/g,
+      metre: new RegExp('(\\d)\\s?(?:MT|M)\\.?(?![' + YZ_HARF + '\\d.])', 'g'),
+      birimBosluk: new RegExp('(\\d)(kVAr|MVAr|kVA|MVA|kV|kA|kN|kW|Hz|mm²|mm|cm)(?![' + YZ_HARF + '\\d])', 'g'),
+      avw: /(\d{2,})(A|V|W)(?=$|[\s,;)/\-])/g,
+      ondalik: /(?<![\d.,])(\d+)\.(\d+)(?![\d.])/g,
+      parantez: /\(\s+|\s+\)/g
+    };
+    return yzKurallar;
+  }
+  /** Malzeme adının görünen yazımı (eklentideki MalzemeYazimi.Duzelt ile aynı). */
+  function malzemeYazisi(s) {
+    if (s == null || !String(s).trim()) return s == null ? '' : String(s);
+    const r = yzHazirla();
+    let t = String(s).replace(/\\/g, '/').replace(/\s+/g, ' ').trim().toLocaleUpperCase('tr-TR');
+    for (const [re, deger] of r.acilim) {
+      const metin = t;
+      t = metin.replace(re, (m, ofs) => deger + (harfMi(metin[ofs + m.length]) ? ' ' : ''));
+    }
+    t = t.replace(r.sodyum, 'SODYUM BUHARLI');
+    for (const [re, deger] of r.birim) t = t.replace(re, deger);
+    t = t.replace(r.carpi, 'x').replace(r.carpiKod, 'x').replace(r.metre, '$1 m').replace(r.birimBosluk, '$1 $2').replace(r.avw, '$1 $2')
+      .replace(r.ondalik, '$1,$2').replace(r.parantez, (m) => m.trim());
+    return t.replace(/\s+/g, ' ').trim();
   }
 
   /**
@@ -959,7 +1014,7 @@
     temiz, sayi, tr, ordinal, siraKarsilastir,
     tmIleri, tmGeri, domBoylamdan, domTahmin,
     mesafe, uzunluk, ortaNokta, icinde, alan, dogruParcasinaMesafe, cokgeneMesafe, bolgeSec, kutu, projeKutusu,
-    katsayiHazirla, kanalUnsurlari, kanalKodu, kanalKablolari, kanalHacmi, hatMetraji, metrajYazisi, hatEtiketi,
+    katsayiHazirla, kanalUnsurlari, kanalKodu, kanalKablolari, kanalHacmi, hatMetraji, metrajYazisi, hatEtiketi, malzemeYazisi,
     sonrakiGis, enBuyukSira,
     katalogHazirla, anaTipler, hatKesitleri, malzemeler, kalemYap, kalemToplami, birimler,
     yeniProje, projeOku, projeYaz, yeniId, zaman,

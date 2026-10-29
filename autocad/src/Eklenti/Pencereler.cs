@@ -26,7 +26,7 @@ namespace SebekeHakedis.Eklenti
         public bool Hafiza = true;
 
         public override string ToString() =>
-            Turler.ElemanAdi(Tur) + " · " + (Tip != null ? Tip.Tanim.Trim() : "") + " · " + Durum + (Turler.DemontajMi(Durum) && !string.IsNullOrEmpty(DmDurum) ? " " + DmDurum : "") +
+            Turler.ElemanAdi(Tur) + " · " + (Tip != null ? Tip.Gorunen : "") + " · " + Durum + (Turler.DemontajMi(Durum) && !string.IsNullOrEmpty(DmDurum) ? " " + DmDurum : "") +
             " · " + Hakedis + ". hakediş";
     }
 
@@ -60,7 +60,7 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
-        public override string ToString() => Turler.HatAdi(Tur) + " · " + IletkenYazisi + " · " + Durum + " · " + Hakedis + ". hakediş";
+        public override string ToString() => Turler.HatAdi(Tur) + " · " + MalzemeYazimi.Duzelt(IletkenYazisi) + " · " + Durum + " · " + Hakedis + ". hakediş";
     }
 
     internal sealed class KanalSecimi
@@ -84,7 +84,7 @@ namespace SebekeHakedis.Eklenti
         public string Durum = "M";
         public int Hakedis = 1;
 
-        public override string ToString() => "Yatay sondaj · " + (Tip != null ? Tip.Tanim : "") + " · " + Durum;
+        public override string ToString() => "Yatay sondaj · " + (Tip != null ? Tip.Gorunen : "") + " · " + Durum;
     }
 
     /// <summary>Toplu malzeme penceresinden çıkan satır: her seçili elemana eklenecek malzeme.</summary>
@@ -411,7 +411,7 @@ namespace SebekeHakedis.Eklenti
             {
                 Ara = ara;
                 _k = k;
-                Liste.Baslik = o => ((KatalogKalemi)o).Tanim.Trim();
+                Liste.Baslik = o => ((KatalogKalemi)o).Gorunen;
                 Liste.Alt = o => AltYazi(_k, (KatalogKalemi)o);
                 if (simge != null) Liste.Simge = o => simge((KatalogKalemi)o);
                 ara.Kutu.TextChanged += (s, e) => Suz(Secili != null ? Secili.Anahtar : null);
@@ -444,7 +444,7 @@ namespace SebekeHakedis.Eklenti
             {
                 if (!string.IsNullOrEmpty(Cins) && it.Cins != Cins) return false;
                 if (sozcukler.Length == 0) return true;
-                string y = Norm(it.Tanim + " " + it.Cins + " " + it.Birim + " " + it.PozNo + " " + (_k != null ? _k.CinsAdi(it.Cins) : ""));
+                string y = Norm(it.Tanim + " " + it.Gorunen + " " + it.Cins + " " + it.Birim + " " + it.PozNo + " " + (_k != null ? _k.CinsAdi(it.Cins) : ""));
                 foreach (var s in sozcukler) if (y.IndexOf(s, StringComparison.Ordinal) < 0) return false;
                 return true;
             }
@@ -651,7 +651,7 @@ namespace SebekeHakedis.Eklenti
                     var tip = liste.Secili;
                     string d = durum.Secili, dmk = dmKodu();
                     int hafizaSayisi = hafiza.Checked && t != null && tip != null ? HizliSecim.Hafiza.Sayisi(t.Kod, tip.Cins, tip.Tanim) : 0;
-                    alt.Ozet.Text = "Çizilecek: " + (t != null ? t.Ad : "?") + " · " + (tip != null ? tip.Tanim.Trim() : "tip seçin") + " · " + d +
+                    alt.Ozet.Text = "Çizilecek: " + (t != null ? t.Ad : "?") + " · " + (tip != null ? tip.Gorunen : "tip seçin") + " · " + d +
                                     (dmk.Length > 0 ? " " + dmk : "") + " · " + (int)hak.Value + ". hakediş" + (hafizaSayisi > 0 ? " · +" + hafizaSayisi + " malzeme" : "");
                     alt.Ozet.Simge = t == null ? null : tip != null ? SembolResmi(t.Kod, tip.Cins, d, dmk, 22) : TurSimgesi(t.Kod, false, false, 18);
                 };
@@ -820,7 +820,7 @@ namespace SebekeHakedis.Eklenti
                 }
                 Boya.Yazi(g, "Adet", KoyuYazi.Kucuk, new Rectangle(Adet.Left, Olcu.S(6), Adet.Width, Olcu.S(16)), KoyuRenk.Ikincil,
                     TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.SingleLine);
-                Boya.Yazi(g, _kesit.Tanim.Trim(), KoyuYazi.Kalin, new Rectangle(Olcu.S(12), Olcu.S(24), Math.Max(1, w), Olcu.S(20)), KoyuRenk.Yazi,
+                Boya.Yazi(g, _kesit.Gorunen, KoyuYazi.Kalin, new Rectangle(Olcu.S(12), Olcu.S(24), Math.Max(1, w), Olcu.S(20)), KoyuRenk.Yazi,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
                 Boya.Yazi(g, _k != null ? _k.CinsAdi(_kesit.Cins) : _kesit.Cins, KoyuYazi.Kucuk, new Rectangle(Olcu.S(12), Olcu.S(44), Math.Max(1, w), Olcu.S(16)), KoyuRenk.Ikincil,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
@@ -889,7 +889,7 @@ namespace SebekeHakedis.Eklenti
                 {
                     var t = seciliTur();
                     var hs = new HatSecimi { Iletkenleri = iletkenler() };
-                    alt.Ozet.Text = "Çizilecek: " + (t != null ? t.Ad : "?") + " · " + (hs.Iletkenleri.Count > 0 ? hs.IletkenYazisi : "iletken seçin") + " · " + durum.Secili + " · " + (int)hak.Value + ". hakediş";
+                    alt.Ozet.Text = "Çizilecek: " + (t != null ? t.Ad : "?") + " · " + (hs.Iletkenleri.Count > 0 ? MalzemeYazimi.Duzelt(hs.IletkenYazisi) : "iletken seçin") + " · " + durum.Secili + " · " + (int)hak.Value + ". hakediş";
                     alt.Ozet.Simge = t != null ? TurSimgesi(t.Kod, true, false, 18) : null;
                 };
                 var kilitDenetle = KilitBagla(o, hak, bilgi, alt.Tamam, normal);
@@ -1250,7 +1250,7 @@ namespace SebekeHakedis.Eklenti
                 Action ozetYaz = () =>
                 {
                     var k = liste.Secili;
-                    alt.Ozet.Text = "Çizilecek: Yatay sondaj · " + (k != null ? k.Tanim.Trim() : "tip seçin") + " · " + durum.Secili + " · " + (int)hak.Value + ". hakediş";
+                    alt.Ozet.Text = "Çizilecek: Yatay sondaj · " + (k != null ? k.Gorunen : "tip seçin") + " · " + durum.Secili + " · " + (int)hak.Value + ". hakediş";
                     alt.Ozet.Simge = Boya.Simge("sondaj", SondajRengi, 18);
                 };
                 var kilitDenetle = KilitBagla(o, hak, bilgi, alt.Tamam, normal);
@@ -1472,9 +1472,9 @@ namespace SebekeHakedis.Eklenti
                     {
                         case 0: e.Value = r.Eleman.GisId; break;
                         case 1: e.Value = an.Cins; break;
-                        case 2: e.Value = an.Tanim; break;
+                        case 2: e.Value = MalzemeYazimi.Duzelt(an.Tanim); break;
                         case 3: e.Value = an.Durum; break;
-                        case 4: e.Value = r.Malzeme != null ? r.Malzeme.Tanim.Trim() + "  ·  " + Bicim(r.Malzeme.Miktar) + " " + BirimAdi(r.Malzeme.Birim) : "yok"; break;
+                        case 4: e.Value = r.Malzeme != null ? MalzemeYazimi.Duzelt(r.Malzeme.Tanim) + "  ·  " + Bicim(r.Malzeme.Miktar) + " " + BirimAdi(r.Malzeme.Birim) : "yok"; break;
                         case 5: e.Value = r.Proje; break;
                     }
                 };
@@ -1641,7 +1641,7 @@ namespace SebekeHakedis.Eklenti
                         case 0: e.Value = r.Hakedis; break;
                         case 1: e.Value = r.Durum; break;
                         case 2: e.Value = r.Cins; break;
-                        case 3: e.Value = (r.Tip ?? "").Trim(); break;
+                        case 3: e.Value = MalzemeYazimi.Duzelt(r.Tip ?? ""); break;
                         case 4: e.Value = (Bicim(r.Miktar) + " " + giris).Trim(); break;
                         case 5: e.Value = (Bicim(r.Toplam) + " " + rapor).Trim(); break;
                         case 6: e.Value = r.Tutar != 0 ? r.Tutar.ToString("N2", Tr) : ""; break;
@@ -1876,7 +1876,8 @@ namespace SebekeHakedis.Eklenti
         public static void CbsBilgisi(string dosya, List<string[]> satirlar)
         {
             Hazirla();
-            int boy = Math.Min(620, 160 + Math.Max(4, satirlar.Count) * 30);
+            // Başlık 42 + dosya satırı + tablo başlığı 34 + satırlar (30) + altbilgi 60
+            int boy = Math.Min(640, 204 + Math.Max(4, satirlar.Count) * 30);
             using (var w = new KoyuPencere("CBS bilgisi", 620, boy, Boya.Simge("cbs_al", KoyuRenk.Yesil, 20)))
             {
                 var kapat = new KoyuDugme("Kapat") { DialogResult = DialogResult.Cancel };
@@ -2040,7 +2041,7 @@ namespace SebekeHakedis.Eklenti
                 Action ozetYaz = () =>
                 {
                     var it = tl.Secili;
-                    alt.Ozet.Text = it != null ? "Seçili: " + it.Tanim.Trim() + "  ·  " + AltYazi(k, it) : "Listeden bir malzeme seçin";
+                    alt.Ozet.Text = it != null ? "Seçili: " + it.Gorunen + "  ·  " + AltYazi(k, it) : "Listeden bir malzeme seçin";
                 };
                 tl.Degisti += () => ozetYaz();
                 tl.Secildi += () => alt.Tamam.PerformClick();
@@ -2139,7 +2140,7 @@ namespace SebekeHakedis.Eklenti
                 Action<int, TopluMalzemeSatiri> satirYaz = (r, t) =>
                 {
                     var row = g.Rows[r];
-                    row.Cells[0].Value = t.Kalem.Tanim.Trim() + "  ·  " + o.Katalog.CinsAdi(t.Kalem.Cins);
+                    row.Cells[0].Value = MalzemeYazimi.Duzelt(t.Kalem.Tanim) + "  ·  " + o.Katalog.CinsAdi(t.Kalem.Cins);
                     row.Cells[1].Value = Bicim(t.Miktar);
                     string[] b = (t.Kalem.Birim ?? "").Split('/');
                     row.Cells[2].Value = b.Length > 0 ? b[0] : "";
@@ -2631,7 +2632,7 @@ namespace SebekeHakedis.Eklenti
                     yukleniyor = true;
                     var row = g.Rows[r];
                     row.Cells[0].Value = k.Cins;
-                    row.Cells[1].Value = string.IsNullOrEmpty(k.Aciklama) ? k.Tanim : k.Tanim + "  (" + k.Aciklama + ")";
+                    row.Cells[1].Value = string.IsNullOrEmpty(k.Aciklama) ? MalzemeYazimi.Duzelt(k.Tanim) : MalzemeYazimi.Duzelt(k.Tanim) + "  (" + MalzemeYazimi.Duzelt(k.Aciklama) + ")";
                     row.Cells[2].Value = k.Durum ?? "";
                     row.Cells[3].Value = Bicim(k.Miktar);
                     row.Cells[4].Value = k.Birim;

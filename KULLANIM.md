@@ -301,6 +301,16 @@ Demontaj simgeleri sarı çizilir. Simgeler metre cinsindendir, 1 ölçekle konu
 için **Telefon Görünümü** (`SH_GORUNUM`); değişmeyen eski bloklara dokunulmaz. Eski programın simgeleri istenirse
 **Çizim Ayarları › Görünüm**.
 
+### Malzeme adlarının yazımı
+
+Katalogdaki adlar eski listeden geldiği gibi karışık yazılmıştır ("3x50/16 Xlpe Alm.", "1X16+25 ALPEK", "36KV 630A").
+Çizimdeki hat etiketlerinde, pencerelerde, şeritte ve telefonda (listeler, DXF) tek düzende görünür: kelimeler
+BÜYÜK harf; birimler standart (kV, kVA, kA, mm, cm, m) ve sayıdan ayrı; kablo kodları NYY, XLPE; metaller Cu, Al;
+boyut çarpısı küçük x; yaygın kısaltmalar açık (HERMETİK, GENLEŞME TANKLI, ARMATÜR, KABLO BAŞLIĞI...).
+Örnek: "3x50/16 Xlpe Alm." → "3x50/16 XLPE Al", "17,5 kV 25 kVA Herm." → "17,5 kV 25 kVA HERMETİK".
+Yalnız görünen yazı değişir: çizimdeki veri, Durum Tespit ve Excel raporları ile eski programla eşleşme aynı kalır.
+Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yenilenir.
+
 ### Diğer düğmeler
 
 | Düğme | Komut | Ne yapar |

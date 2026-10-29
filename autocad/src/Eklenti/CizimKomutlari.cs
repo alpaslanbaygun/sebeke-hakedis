@@ -285,7 +285,7 @@ namespace SebekeHakedis.Eklenti
                         son = null;
                         armaturSayisi++;
                         HizliSecim.Hatirla(direk);
-                        ed.WriteMessage("\n" + secim.Tip.Tanim.Trim() + " " + Ad(direk) + " direğine malzeme olarak eklendi.");
+                        ed.WriteMessage("\n" + secim.Tip.Gorunen + " " + Ad(direk) + " direğine malzeme olarak eklendi.");
                         continue;
                     }
                 }

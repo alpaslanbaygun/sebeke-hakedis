@@ -361,7 +361,7 @@ namespace SebekeHakedis.Eklenti
             var k = TemelKatalog;
             foreach (var it in liste)
             {
-                string y = Norm(it.Tanim + " " + it.Cins + " " + it.PozNo + " " + k.CinsAdi(it.Cins));
+                string y = Norm(it.Tanim + " " + it.Gorunen + " " + it.Cins + " " + it.PozNo + " " + k.CinsAdi(it.Cins));
                 bool uygun = true;
                 foreach (var s in sozcukler) if (y.IndexOf(s, StringComparison.Ordinal) < 0) { uygun = false; break; }
                 if (!uygun) continue;
@@ -437,7 +437,7 @@ namespace SebekeHakedis.Eklenti
                 else
                 {
                     var t = SeciliTip(oge, TemelKatalog);
-                    if (t != null) parca.Add(t.Tanim.Trim());
+                    if (t != null) parca.Add(t.Gorunen);
                 }
                 parca.Add(Durum + (Turler.DemontajMi(Durum) && !string.IsNullOrEmpty(DmDurum) ? " " + DmDurum : ""));
                 parca.Add(Hakedis > 0 ? Hakedis + ". hakediş" : "aktif hakediş");

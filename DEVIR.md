@@ -23,13 +23,23 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 - Çalışan özellikleri bozma; büyük değişiklikten önce geri dönüş noktası (dal / etiket + önceki APK) bırak.
 - Değişiklik açıklamaları (commit) Türkçe yazılır. Çalışma dalı → ana dala (`main`) alınınca sürümler çıkar.
 
-## 2. Durum (25.10.2026)
+## 2. Durum (29.10.2026)
 
 | Parça | Sürüm | Durum |
 | --- | --- | --- |
 | Telefon uygulaması (Şebeke-M) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı), **Hesap Merkezi** (15 hesap), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası); telefonda denenmedi |
 | AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
+
+29.10 (`cizim-duzeltmeleri` dalı; kullanıcının 13 maddelik listesi): çizimde yazılar hattın renginde ve **Tahoma**;
+metraj yalnız açıklık başına (iki direk / iki SDK arası; elemansız kırılma köşesinde bölünmez), etikette metraj ve
+kod yok; hat renkleri ayrıştı (OG havai kırmızı, abone turuncu kesik, OG kablo pembe, AG kablo mavi, müşterek mor);
+kanal iki kenar çizgisiyle (genişlik = üst genişlik; `KenarTakibi` eksen değişince kenarları yeniler); kanal ölçüleri
+şeritten; **Proje Özeti** penceresi (proje listesi, malzeme listesi, Excel); **CBS ve Harita** paneli: Google Earth
+(`SH_KML`), MIF / MID dışa ve içe (`SH_MIFVER`, `SH_MIFAL`, `SH_CBSBILGI`), **harita altlığı** (`SH_ALTLIK`;
+anahtarlar yalnız kullanıcının bilgisayarında); malzeme adlarının görünen yazımı (`MalzemeYazimi` ↔ sh-core
+`malzemeYazisi`, örnekler `ortak/deneme/malzeme-yazimi.json`; kayıt ve Durum Tespit ham adla kalır). Var olan
+çizimler için bir kez **Telefon Görünümü** (`SH_GORUNUM`) çalıştırılır. Bu işler AutoCAD'de canlı denenmedi (§6).
 
 25.10 canlı deneme (AutoCAD 2027, eklenti 0.1.52, uydurma örnek proje): Telefondan Al (72 nesne), Hesap Merkezi (AG
 hattı seçildi, zincir dallanmadan düz geçti), AG gerilim düşümü sayfası (46 bilgi çizimden), Kaydet / yeniden aç /
@@ -172,6 +182,11 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
+- **29.10 işlerinin AutoCAD'de denenmesi** (kullanıcıyla): eski bir çizimde `SH_GORUNUM` (renkler, Tahoma, açıklık
+  metrajı, kanal kenarları); kanal ekseni taşınınca / kopyalanınca / silinince kenarlar; şeritten kanal ölçüsü;
+  Proje Özeti ve Excel; `SH_KML` dosyasının Google Earth'te açılması; `SH_MIFVER` dosyalarının MapInfo / QGIS'te
+  açılması, `SH_MIFAL` ile geri alınması; `SH_ALTLIK` (anahtarsız Esri ile, sonra kullanıcının anahtarıyla). Kanal
+  kenarlarının eski programda sorun çıkarmadığı (kenarlar kanal katmanında, yalnız SH_SAHIP verili) denetlenmeli.
 0. **Gerçek telefonda deneme** (AutoCAD tarafı 25.10'da canlı doğrulandı, yukarıda): AutoCAD'den gelen hesap
    kaydının telefonda görünmesi ve "güncel" kalması (telefon koduyla kapta denendi; rekortman kolu düzeltmesi A10),
    telefonda bir hesabı kaydedip Telefondan Al ile çizime gelmesi. Hesap sahibi (Baki SONAY) ile ⓘ panellerindeki

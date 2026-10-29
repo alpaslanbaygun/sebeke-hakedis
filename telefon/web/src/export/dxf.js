@@ -5,6 +5,7 @@
 // düzenini kullanır; böylece telefonun DXF'i ile eklentinin çizimi birebir aynı görünür.
 import SEMBOLLER from '../ortak/semboller.js';
 import STIL from '../ortak/cizim-stili.js';
+import SH from '../interop/sh-core.cjs';
 const f = (v) => (Number.isFinite(v) ? (+v).toFixed(4) : '0.0');
 
 class W {
@@ -208,7 +209,8 @@ export function buildDXF(model, opts = {}) {
       }
     }
     const mid = Math.floor((l.coords.length - 1) / 2), a = l.coords[mid], b = l.coords[mid + 1];
-    const tag = (kesitFmt[l.state] || '{t}').replace('{t}', l.label);
+    // Malzeme adı ortak yazımla (eklentideki MalzemeYazimi): "3x50/16 Xlpe Alm." → "3x50/16 XLPE Al"
+    const tag = (kesitFmt[l.state] || '{t}').replace('{t}', l.channelOnly ? l.label : SH.malzemeYazisi(l.label));
     text(YAZI(), (a.E + b.E) / 2 + hdx, (a.N + b.N) / 2 + hdy, 0, l.no + ' ' + tag, th, segAng(a, b), aci); nTxt++;
   }
   for (const e of model.equipment) {

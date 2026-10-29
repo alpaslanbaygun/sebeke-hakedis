@@ -334,10 +334,13 @@ namespace SebekeHakedis.Cekirdek
             return EtiketGovdesi(h.Durum, kesit);
         }
 
-        /// <summary>Durum işaretli etiket gövdesi (hat etiketi; telefondaki sh-core hatEtiketi ile aynı).</summary>
+        /// <summary>
+        /// Durum işaretli etiket gövdesi (hat etiketi; telefondaki sh-core hatEtiketi ile aynı). Kesit görünen yazımla
+        /// (MalzemeYazimi: "3x50/16 Xlpe Alm." → "3x50/16 XLPE Al").
+        /// </summary>
         public static string EtiketGovdesi(string durum, string kesit)
         {
-            kesit = kesit ?? "";
+            kesit = MalzemeYazimi.Duzelt(kesit ?? "");
             switch (durum)
             {
                 case "M": return "^ " + kesit;

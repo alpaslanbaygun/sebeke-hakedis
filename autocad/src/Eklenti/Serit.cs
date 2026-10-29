@@ -613,7 +613,7 @@ namespace SebekeHakedis.Eklenti
                 foreach (var it in liste)
                 {
                     string ac = TipAciklamasi(it);
-                    var b = new RibbonButton { Text = it.Tanim.Trim(), ShowText = true, Tag = it, ToolTip = it.Tanim.Trim() + " · " + ac, Description = ac };
+                    var b = new RibbonButton { Text = it.Gorunen, ShowText = true, Tag = it, ToolTip = it.Gorunen + " · " + ac, Description = ac };
                     _tip.Items.Add(b);
                     if (it == secili) cur = b;
                 }
@@ -663,7 +663,7 @@ namespace SebekeHakedis.Eklenti
                     foreach (var it in HizliSecim.EkListe(oge))
                     {
                         string ac = TipAciklamasi(it);
-                        var b = new RibbonButton { Text = it.Tanim.Trim(), ShowText = true, Tag = it, ToolTip = it.Tanim.Trim() + " · " + ac, Description = ac };
+                        var b = new RibbonButton { Text = it.Gorunen, ShowText = true, Tag = it, ToolTip = it.Gorunen + " · " + ac, Description = ac };
                         _ek.Items.Add(b);
                         if (ek != null && it.Anahtar == ek.Anahtar) curEk = b;
                     }
@@ -796,7 +796,7 @@ namespace SebekeHakedis.Eklenti
                 var t = HizliSecim.SeciliTip(oge, HizliSecim.TemelKatalog);
                 string kaynak = "";
                 var l = t != null ? HizliSecim.Hafiza.Bul(oge.Tur, t.Cins, t.Tanim, out kaynak) : null;
-                ek = l != null && l.Count > 0 ? "\n\n" + oge.Ad + " · " + t.Tanim.Trim() + ": " + MalzemeHafizasi.Ozet(l, kaynak) : "\n\n" + oge.Ad + " için hafızada malzeme yok.";
+                ek = l != null && l.Count > 0 ? "\n\n" + oge.Ad + " · " + t.Gorunen + ": " + MalzemeHafizasi.Ozet(l, kaynak) : "\n\n" + oge.Ad + " için hafızada malzeme yok.";
             }
             _hafiza.ToolTip = (HizliSecim.HafizaAcik ? "AÇIK: " : "KAPALI: ") +
                               "yeni konan direğe, trafoya … aynı tür ve tipteki son elemanın malzemeleri kendiliğinden eklenir. Hafıza, bir elemanın malzemeleri düzenlenince (Malzeme, Toplu Malzeme) güncellenir." + ek;
@@ -985,7 +985,7 @@ namespace SebekeHakedis.Eklenti
             try { HizliSecim.TipSec(oge, bulunan[0]); }
             finally { _yukleniyor = false; }
             SecimiGoster();
-            Uygulama.Yaz("Şerit: " + bulunan.Count + (bulunan.Count >= 40 ? "+" : "") + " tip bulundu; ilki seçildi (" + bulunan[0].Tanim.Trim() + "). Tip listesinden değiştirebilirsiniz.");
+            Uygulama.Yaz("Şerit: " + bulunan.Count + (bulunan.Count >= 40 ? "+" : "") + " tip bulundu; ilki seçildi (" + bulunan[0].Gorunen + "). Tip listesinden değiştirebilirsiniz.");
         }
 
         // ---------------- Yardımcılar ----------------

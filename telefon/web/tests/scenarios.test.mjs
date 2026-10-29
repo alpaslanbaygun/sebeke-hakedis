@@ -333,7 +333,7 @@ test('21 · DXF üretimi: katman/ACI/blok/yazı, Türkçe kodlama', async () => 
   assert.ok(/LAYER\r\n\s*2\r\nELEKTRIK-HAT-OG\r\n\s*70\r\n0\r\n\s*62\r\n1\r\n/.test(t.replace(/\r\n2\r\n/g, '\r\n2\r\n')) || t.includes('ELEKTRIK-HAT-OG'));
   assert.ok(t.includes('SH_KAFES_OG_YENI') && t.includes('SH_TRAFO_DIREK_YENI'), 'ortak simge takımının blokları (eklentiyle aynı adlar)');
   assert.equal(f.stats.inserts, 7);
-  assert.ok(t.includes('3xSwallow'));
+  assert.ok(t.includes('3xSWALLOW'), 'iletken adı malzeme adlarının ortak yazımıyla (BÜYÜK harf)');
   // Türkçe karakterler Windows-1254 (Ş=0xDE, ş=0xFE, ğ=0xF0), UTF-8 dizisi yok
   const sp = ps.result.spans[1];
   const pa = ps.pointById(sp.fromId); await ps.createPoint({ pointNo: 'Şahinkaya deresi geçişi', cls: 'DETAY', critical: false, coord: { E: pa.E + 5, N: pa.N + 5, H: pa.H }, source: 'MANUAL' }); await ps.recompute('detay');

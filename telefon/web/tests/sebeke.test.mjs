@@ -151,8 +151,8 @@ test('A3b · çizim durum kodu korunur: KM / ME / M+M seçimi ve demontaj türü
   assert.equal(el(eski).durum, 'MEVCUT', 'durum MEVCUT olunca KM düşer');
   assert.equal(SH.hatEtiketi('KM', '3xSW'), '/3xSW\\');
   assert.equal(SH.hatEtiketi('ENH', '3xSW'), '{3xSW}');
-  assert.equal(SH.hatEtiketi('M', '3x50 Alm.'), '^ 3x50 Alm.'); // metraj ve tanıtıcı yok (açıklık yazısında)
-  assert.equal(SH.hatEtiketi('DM', '3x50 Alm.'), '>3x50 Alm.<');
+  assert.equal(SH.hatEtiketi('M', '3x50 Alm.'), '^ 3x50 Al'); // metraj ve tanıtıcı yok (açıklık yazısında); malzeme adı görünen yazımla
+  assert.equal(SH.hatEtiketi('DM', '3x50 Alm.'), '>3x50 Al<');
   // Geri alma: sebeke.durum ve dmDurum telefon kaydına yazılır
   const { ps: ps2 } = await setup();
   const ozet = await sebekeIceAl(ps2, JSON.parse(sebekeYaz(ps)), { name: 'durumlar' });
@@ -396,7 +396,7 @@ test('A8 · çok iletkenli hat: müşterekte OG + AG iki kalem ve birleşik ana 
   assert.equal(ak[0].cins, 'ALPEK_KABLOLAR'); assert.equal(ak[0].tanim, '3X50/16+70 ALPEK'); assert.equal(ak[0].aciklama, '3x(3X50/16+70 ALPEK)');
   const metraj = ak[0].miktar / 3;
   assert.ok(Number.isInteger(metraj) && metraj >= 40, 'güzergâh metrajı tam metre: ' + metraj);
-  assert.equal(alpek.etiket, '^ 3x(3X50/16+70 ALPEK)'); // metraj etikette değil, açıklık yazısında
+  assert.equal(alpek.etiket, '^ 3x(3x50/16+70 ALPEK)'); // metraj etikette değil, açıklık yazısında; görünen yazım (3X → 3x)
   // Başka telefona al: devreler (rol, tip, adet) aynen gelir; geri yazınca kalemler değişmez
   const { ps: ps2 } = await setup();
   const oz = await sebekeIceAl(ps2, SH.projeOku(SH.projeYaz(sp)), { name: 'cok-iletken' });

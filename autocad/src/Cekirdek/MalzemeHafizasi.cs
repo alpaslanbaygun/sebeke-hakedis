@@ -163,7 +163,7 @@ namespace SebekeHakedis.Cekirdek
             if (l == null || l.Count == 0) return "";
             var parca = new List<string>();
             for (int i = 0; i < l.Count && i < enCok; i++)
-                parca.Add(SayiCoz.Temiz(l[i].Miktar, 3).ToString("0.###", CultureInfo.GetCultureInfo("tr-TR")) + " × " + (l[i].Tanim ?? "").Trim());
+                parca.Add(SayiCoz.Temiz(l[i].Miktar, 3).ToString("0.###", CultureInfo.GetCultureInfo("tr-TR")) + " × " + MalzemeYazimi.Duzelt(l[i].Tanim ?? ""));
             if (l.Count > enCok) parca.Add("… +" + (l.Count - enCok));
             return l.Count + " malzeme" + (string.IsNullOrEmpty(kaynak) ? "" : " (" + kaynak + ")") + ": " + string.Join(", ", parca);
         }
