@@ -1737,6 +1737,141 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
+        /// <summary>
+        /// Harita altlığı: sağlayıcı (anahtarsız / anahtarlı / özel), anahtar, alan ve ayrıntı. Ayar yerinde güncellenir
+        /// (anahtarlar yalnız bu bilgisayarda saklanır). Vazgeçilirse false.
+        /// </summary>
+        public static bool HaritaAltligiSec(AltlikAyari a)
+        {
+            Hazirla();
+            using (var f = new KoyuPencere("Harita altlığı", 880, 620, Boya.Simge("altlik", KoyuRenk.MaviAcik, 20)))
+            {
+                var alt = AltKur(f, "Altlığı getir", false, 140);
+
+                // Sol: sağlayıcılar (gruplu)
+                Etiket(f, "Harita", 16, 56, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var liste = new IkiSatirListe();
+                liste.Baslik = x => ((AltlikSaglayici)x).Ad;
+                liste.Alt = x =>
+                {
+                    var s = (AltlikSaglayici)x;
+                    if (s.Tur == "ozel") return "adresi siz girersiniz";
+                    if (s.Anahtar.Length == 0) return "anahtarsız";
+                    return (a.Anahtar(s.Anahtar).Length > 0 ? "anahtar girildi" : "anahtar gerekir") + " · " + AnahtarAdi(s.Anahtar);
+                };
+                liste.Simge = x => Boya.Simge(((AltlikSaglayici)x).Uydu ? "altlik" : "konum", KoyuRenk.Ikincil, 18);
+                foreach (var g in new[] { new[] { "ucretsiz", "Anahtarsız" }, new[] { "anahtarli", "Anahtarlı (kendi anahtarınızla)" }, new[] { "ozel", "Özel" } })
+                {
+                    liste.Items.Add(new ListeBasligi(g[1]));
+                    foreach (var s in HaritaAltligi.Saglayicilar) if (s.Grup == g[0]) liste.Items.Add(s);
+                }
+                Koy(f, new Cerceve(liste), 16, 80, 330, 464);
+
+                // Sağ: seçilen sağlayıcı, anahtar, alan, ayrıntı
+                const int X = 362, W = 502;
+                var ad = Etiket(f, "", X, 54, W, KoyuYazi.Baslik, KoyuRenk.Yazi);
+                var not = Aciklama(f, "", X, 80, W, 54);
+                var kosul = new LinkLabel { AutoSize = false, BackColor = Color.Transparent, LinkColor = KoyuRenk.MaviAcik, ActiveLinkColor = KoyuRenk.Yesil, Font = KoyuYazi.Kucuk, LinkBehavior = LinkBehavior.HoverUnderline };
+                Koy(f, kosul, X, 136, W, 20);
+                kosul.LinkClicked += (s, e) => { try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(kosul.Tag as string) { UseShellExecute = true }); } catch { } };
+                var anahtarEtiket = Etiket(f, "Anahtar", X, 168);
+                var anahtar = Koy(f, new MetinKutusu(""), X, 188, W - 92, 30);
+                var goster = Koy(f, new KoyuOnay("Göster"), X + W - 80, 194);
+                anahtar.Kutu.UseSystemPasswordChar = true;
+                goster.CheckedChanged += (s, e) => anahtar.Kutu.UseSystemPasswordChar = !goster.Checked;
+                var anahtarNot = Aciklama(f, "Anahtar yalnız bu bilgisayarda saklanır; çizime ve proje dosyalarına yazılmaz.", X, 222, W, 20);
+
+                Etiket(f, "Alan", X, 252, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var alanlar = new[]
+                {
+                    Koy(f, new KoyuSecim("Şebekenin bulunduğu alan"), X, 274),
+                    Koy(f, new KoyuSecim("Ekranda görünen alan"), X + 220, 274),
+                    Koy(f, new KoyuSecim("Pencereyle seç"), X, 302),
+                };
+                alanlar[Math.Max(0, Math.Min(2, a.Alan))].Checked = true;
+                Etiket(f, "Ayrıntı", X, 336, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var kalite = Koy(f, new Panel { BackColor = Color.Transparent }, X, 358, W, 28);
+                var kaliteler = new[]
+                {
+                    Koy(kalite, new KoyuSecim("Düşük (≈1 m, hızlı)"), 0, 0),
+                    Koy(kalite, new KoyuSecim("Normal (≈0,5 m)"), 170, 0),
+                    Koy(kalite, new KoyuSecim("Yüksek (≈0,25 m)"), 320, 0),
+                };
+                kaliteler[Math.Max(0, Math.Min(2, a.Kalite))].Checked = true;
+                var eskiler = Koy(f, new KoyuOnay("Önceki altlıkları kaldır (ALTLIK katmanındaki resimler)"), X, 398);
+                eskiler.Checked = a.EskileriSil;
+                Koy(f, new BilgiCubugu(BilgiTuru.Bilgi, "Altlık çizime resim olarak konur: ALTLIK katmanı, nesnelerin altında. Resim çizimin yanındaki " +
+                    "\"Altlik\" klasörüne kaydedilir. Alan büyükse ayrıntı kendiliğinden düşürülür (en çok 4096 piksel). " +
+                    "İndirme sırasında Esc ile vazgeçilir."), X, 434, W, 110);
+
+                // Sağlayıcı değişince: ad, not, koşul, anahtar kutusu
+                AltlikSaglayici secili = null;
+                Action anahtarSakla = () =>
+                {
+                    if (secili != null && secili.Anahtar.Length > 0) a.Anahtarlar[secili.Anahtar] = anahtar.Text.Trim();
+                };
+                Action goster_ = () =>
+                {
+                    anahtarSakla();
+                    secili = liste.SelectedItem as AltlikSaglayici;
+                    if (secili == null) return;
+                    ad.Text = secili.Ad;
+                    not.Text = secili.Not;
+                    kosul.Text = string.IsNullOrEmpty(secili.Kosul) ? "" : "Kullanım koşulları: " + secili.Kosul;
+                    kosul.Tag = secili.Kosul;
+                    bool ister = secili.Anahtar.Length > 0;
+                    anahtarEtiket.Visible = anahtar.Visible = goster.Visible = anahtarNot.Visible = ister;
+                    anahtarEtiket.Text = secili.Tur == "ozel" ? "Karo adresi (XYZ)" : AnahtarAdi(secili.Anahtar) + " anahtarı";
+                    anahtar.Ipucu = secili.Tur == "ozel" ? "https://sunucu/{z}/{x}/{y}.png" : "anahtarı yapıştırın";
+                    anahtar.Kutu.UseSystemPasswordChar = secili.Tur != "ozel" && !goster.Checked;
+                    goster.Visible = ister && secili.Tur != "ozel";
+                    anahtar.Text = ister ? a.Anahtar(secili.Anahtar) : "";
+                    alt.Tamam.Enabled = true;
+                };
+                liste.SelectedIndexChanged += (s, e) => goster_();
+                anahtar.Kutu.TextChanged += (s, e) => { if (secili != null && secili.Anahtar.Length > 0) { a.Anahtarlar[secili.Anahtar] = anahtar.Text.Trim(); liste.Invalidate(); } };
+                int ilk = -1;
+                for (int i = 0; i < liste.Items.Count; i++)
+                    if (liste.Items[i] is AltlikSaglayici s && s.Id == a.Saglayici) ilk = i;
+                liste.SelectedIndex = ilk >= 0 ? ilk : liste.IlkOge();
+
+                alt.Tamam.Click += (s, e) =>
+                {
+                    anahtarSakla();
+                    if (secili == null) { Uyar("Bir harita seçin."); return; }
+                    string k = a.Anahtar(secili.Anahtar);
+                    if (secili.Tur == "ozel")
+                    {
+                        if (!(k.StartsWith("http", StringComparison.OrdinalIgnoreCase) && (k.Contains("{q}") || (k.Contains("{z}") && k.Contains("{x}") && k.Contains("{y}")))))
+                        { Uyar("Karo adresini {z}, {x}, {y} yerleriyle yazın (ör. https://sunucu/{z}/{x}/{y}.png)."); return; }
+                    }
+                    else if (secili.Anahtar.Length > 0 && k.Length == 0) { Uyar(secili.Ad + " için " + AnahtarAdi(secili.Anahtar) + " anahtarını girin."); return; }
+                    f.DialogResult = DialogResult.OK;
+                };
+                if (Goster(f) != DialogResult.OK) return false;
+                a.Saglayici = secili.Id;
+                a.Alan = Array.FindIndex(alanlar, r => r.Checked);
+                a.Kalite = Array.FindIndex(kaliteler, r => r.Checked);
+                a.EskileriSil = eskiler.Checked;
+                return true;
+            }
+        }
+
+        private static string AnahtarAdi(string anahtar)
+        {
+            switch (anahtar)
+            {
+                case "google": return "Google";
+                case "bing": return "Bing Maps";
+                case "azure": return "Azure Maps";
+                case "esri": return "ArcGIS";
+                case "yandex": return "Yandex";
+                case "maptiler": return "MapTiler";
+                case "ozel": return "Özel";
+                default: return anahtar ?? "";
+            }
+        }
+
         /// <summary>CBS'den alınan nesnenin bilgileri (MID satırı): sütun ve değer.</summary>
         public static void CbsBilgisi(string dosya, List<string[]> satirlar)
         {

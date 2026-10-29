@@ -321,6 +321,7 @@ namespace SebekeHakedis.Eklenti
             cbs.Items.Add(Dugme("CBS'ye\nAktar", "CBS için MapInfo MIF / MID dosyaları: her nesne türü (eleman, hat, kanal, sondaj, proje sınırı, GPS noktası) ayrı dosya, çizim koordinatıyla.", "_SH_MIFVER ", "cbs_ver", null));
             cbs.Items.Add(Dugme("CBS'den\nAl", "MapInfo MIF / MID dosyalarını çizime altlık olarak alır (nokta, çizgi, alan, yazı). Koordinatlar çizimin dilimine çevrilir; bilgiler nesnede saklanır.", "_SH_MIFAL ", "cbs_al", null));
             cbs.Items.Add(Dugme("CBS\nBilgisi", "CBS'den alınan bir nesnenin bilgilerini (MID satırı) gösterir.", "_SH_CBSBILGI ", "bilgi", null));
+            cbs.Items.Add(Dugme("Harita\nAltlığı", "Uydu görüntüsü ya da harita altlığı: Esri, Google, Bing / Azure, Yandex, MapTiler, OpenStreetMap ya da özel sunucu (anahtarlılar kendi anahtarınızla). Çizimin koordinatına oturtulmuş resim olarak, nesnelerin altına konur.", "_SH_ALTLIK ", "altlik", Color.FromRgb(0x3B, 0xA4, 0xF6)));
 
             HesapPanelleri(araclar);
 

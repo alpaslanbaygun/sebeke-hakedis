@@ -183,6 +183,7 @@ kendiliğinden artar. Her komut AutoCAD'in **U** (Geri Al) komutuyla tek seferde
 | Hakediş | Aktif Hakediş, Hakediş Onayı |
 | Raporlar | Durum Tespit, Dosyadan Rapor, Proje Özeti, Eksik Malzeme |
 | Telefon | Telefondan Al, Telefona Gönder |
+| CBS ve Harita | Google Earth, CBS'ye Aktar, CBS'den Al, CBS Bilgisi, Harita Altlığı |
 | Teknik Hesaplamalar | Hesap Merkezi, Kayıtlı Hesaplar, **Hat ve Direk ▾** (sehim, uplift, ag–aw, Amax, iletken kopma, tepe kuvveti TEDAŞ, cer vektörü), **Elektrik ▾** (OG / AG gerilim düşümü, OG / AG kısa devre, bakır–alüminyum kesit) |
 | Proje ve Yerleşim | Beton Köşk, Kanal Planı, AG Tek Hat |
 
@@ -320,9 +321,46 @@ için **Telefon Görünümü** (`SH_GORUNUM`); değişmeyen eski bloklara dokunu
 | Dosyadan Rapor | `SH_PROJERAPOR` | Bir proje dosyasından Excel rapor (çizim açmadan; telefon dosyaları da olur). |
 | Proje Özeti | `SH_OZET` | Pencere: solda projeler (bölgeler), sağda seçilen projenin malzeme listesi (hakediş, durum ve aramayla süzülür). **Excel'e aktar** proje listesini ve görünen malzeme listesini yazar; "Tüm projeler" seçiliyse her projenin listesi de ayrı sayfada. |
 | Eksik Malzeme | `SH_DETAY` | Eski programdaki DETAY sorgusu: ör. "topraklaması **olmayan** AG direkleri". Hangi elemanlarda (ana cins, tip, durum, bölge) hangi ara malzemenin (cins, tip, durum, hakediş) aranacağını seçin; **olmayanlar / olanlar / hepsi**. Sonuç pencerede listelenir; **Çizimde seç** bulunan elemanları seçer, **Excel'e yaz** ayrıca DETAY dosyasını yazar. |
+| Google Earth | `SH_KML` | Aşağıda: CBS ve harita. |
+| CBS'ye Aktar / CBS'den Al / CBS Bilgisi | `SH_MIFVER` / `SH_MIFAL` / `SH_CBSBILGI` | Aşağıda: CBS ve harita. |
+| Harita Altlığı | `SH_ALTLIK` | Aşağıda: CBS ve harita. |
 | Hesap Merkezi | `SH_HESAP merkez` | Bölüm 5. Seçili nesne için uygun hesapların listesi ve kayıtlı sonuçları. |
 | Kayıtlı Hesaplar | `SH_HESAPLAR` | Bölüm 5. Çizimdeki bütün hesap kayıtları. |
 | Hat ve Direk ▾, Elektrik ▾, Beton Köşk, Kanal Planı, AG Tek Hat | `SH_HESAP <hesap>` | Bölüm 5. Seçili nesne için o hesabı açar. |
+
+### CBS ve harita
+
+Bu düğmeler çizimin gerçek koordinatını kullanır: **ITRF96, 3° TM**. Çizimin dilimi (dilim orta meridyeni:
+27, 30, 33, 36, 39, 42, 45) **Çizim Ayarları**'nda yoksa ilk kullanımda bir kez sorulur ve çizime kaydedilir
+(Elazığ, Malatya, Erzincan: 39°). Çizim yerel / kaydırılmış koordinatla çizilmişse uyarılırsınız.
+
+- **Google Earth** (`SH_KML`): çizimi `.kmz` (ya da `.kml`) olarak kaydeder. Her proje (bölge) bir klasördür:
+  proje sınırı, elemanlar, hatlar, kanallar, sondajlar; GPS noktaları ayrı klasörde (kapalı gelir). Renkler
+  telefon ekranındakiyle aynıdır; demontajlar yarı saydamdır. Bir nesneye tıklayınca GIS no, tip, durum, hakediş,
+  proje, metraj ve malzemeleri görünür.
+- **CBS'ye Aktar** (`SH_MIFVER`): MapInfo **MIF / MID** dosyaları. Verdiğiniz ada her nesne türü için ek gelir:
+  `ad_ELEMAN`, `ad_HAT`, `ad_KANAL`, `ad_SONDAJ`, `ad_BOLGE` (proje sınırı), `ad_NOKTA` (GPS noktası); her biri
+  `.mif` + `.mid`. Koordinatlar çizim koordinatıdır (dosyada dilim yazılıdır), harfler Türkçe Windows kod sayfasıdır.
+  Sütunlar: `KIMLIK`, `GIS_NO`, `TUR` / `TUR_ADI`, `CINS`, `TIP`, `DURUM`, `DM_DURUM`, `HAKEDIS`, `PROJE`,
+  `PROJE_KODU`, `MALZEME`, `SAGA`, `YUKARI`, `KOT`, `ACI` (eleman); hatta `KESIT`, `ETIKET`, `UZUNLUK`, `METRAJ`;
+  kanalda `KABLOLAR`, `ZEMIN`, `ALT_CM`, `UST_CM`, `DERIN_CM`, `BAS_NO`, `BIT_NO`.
+- **CBS'den Al** (`SH_MIFAL`): bir ya da birkaç `.mif` dosyası seçin (yanında aynı adlı `.mid`). Noktalar küçük
+  daire (adı / numarası yanında), çizgiler ve alanlar çoklu çizgi, yazılar yazı olarak **altlık** çizilir; her dosya
+  kendi katmanındadır (`CBS-dosya adı`). TM (başka dilim, UTM), enlem-boylam ve düz koordinat çizimin dilimine
+  çevrilir. Datum ITRF96 / WGS84 değilse (ör. ED50) uyarılırsınız (birkaç metre kayabilir). Bu nesneler hakediş
+  nesnesi değildir: rapora ve telefona girmez.
+- **CBS Bilgisi** (`SH_CBSBILGI`): CBS'den alınan nesneyi seçin; dosyadaki bütün bilgileri (MID satırı) gösterir.
+- **Harita Altlığı** (`SH_ALTLIK`): uydu görüntüsü ya da harita, çizime oturtulmuş resim olarak **ALTLIK** katmanına,
+  nesnelerin altına konur; altına kaynağın atıf yazısı yazılır. Resim çizimin yanındaki `Altlik` klasörüne kaydedilir.
+  - Anahtarsız: **Esri uydu**, **OpenStreetMap** (yalnız küçük alanlar; toplu indirme yasak).
+  - Kendi anahtarınızla: **Google** (uydu, uydu + yol adları, harita; Map Tiles API), **Bing** (yalnız kurumsal
+    anahtar: ücretsiz anahtarlar kapatıldı, kurumsal anahtarlar 30.06.2028'e kadar), **Azure Maps** (Bing'in yerine),
+    **Esri (ArcGIS anahtarı)**, **Yandex**, **MapTiler**; ya da kurumunuzun **özel karo sunucusu** (`{z}/{x}/{y}`).
+  - Anahtar yalnız bu bilgisayarda saklanır (`%APPDATA%\SebekeHakedis\altlik.json`); çizime ve proje dosyalarına yazılmaz.
+  - Alan: şebekenin bulunduğu alan, ekranda görünen alan ya da pencereyle seçilen alan. Ayrıntı: düşük (≈1 m),
+    normal (≈0,5 m), yüksek (≈0,25 m); alan büyükse ayrıntı kendiliğinden düşer (resim en çok 4096 piksel).
+  - Her sağlayıcının kullanım koşulları geçerlidir (pencerede bağlantısı var); bazıları görüntünün kalıcı
+    saklanmasını kısıtlar.
 
 ### Eski programla ortak kayıtlar
 

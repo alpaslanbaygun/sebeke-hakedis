@@ -230,6 +230,7 @@ namespace SebekeHakedis.Test
             ProjeOzetiDene(p, dt);
             KoordinatVeKml(p);
             MifDene(p);
+            AltlikDene();
 
             // Yazıcı: AutoCAD çiziminden okunan proje yeniden çizim nesnesine yazılıp okununca aynı rapor
             GidisDonus(p, "ornek-dokum");
@@ -489,6 +490,64 @@ namespace SebekeHakedis.Test
             var trv = MifDosyasi.Oku(MifDosyasi.DosyaMetni(MifDosyasi.Turkce.GetBytes(tr)), MifDosyasi.DosyaMetni(MifDosyasi.Turkce.GetBytes("\"ŞİĞÜÖÇışğüöç\"\n")));
             Esit("ŞİĞÜÖÇışğüöç", trv.Nesneler[0].Degerler[0], "MID: Türkçe Windows kod sayfası");
             Esit("ğüş", MifDosyasi.DosyaMetni(Encoding.UTF8.GetBytes("ğüş")), "MID: Charset'siz UTF-8");
+        }
+
+        /// <summary>Harita altlığı: karo hesabı, plan (zoom, karo aralığı), karo mozaiğinin TM'ye çevrilmesi.</summary>
+        private static void AltlikDene()
+        {
+            Console.WriteLine("Harita altlığı:");
+            Esit("213", HaritaAltligi.QuadKey(3, 5, 3), "altlık: Bing karo anahtarı (belgedeki örnek)");
+            double kx, ky, ex, ey;
+            HaritaAltligi.KaroKonumu(0, 0, 1, false, out kx, out ky);
+            Esit(true, Math.Abs(kx - 1) < 1e-12 && Math.Abs(ky - 1) < 1e-12, "altlık: 0°,0° → dünyanın ortası");
+            HaritaAltligi.KaroKonumu(38.67, 39.22, 18, false, out kx, out ky);
+            HaritaAltligi.KaroKonumu(38.67, 39.22, 18, true, out ex, out ey);
+            Esit(true, Math.Abs(kx - ex) < 1e-9 && ey - ky > 100 && ey - ky < 2000, "altlık: Yandex (elipsoidal) karoları kuzeyde daha aşağıda");
+            Esit("https://a/18/5/7?k=a%20b", HaritaAltligi.Adres("https://a/{z}/{x}/{y}?k={key}", 18, 5, 7, "a b"), "altlık: karo adresi");
+            Esit(true, HaritaAltligi.Saglayicilar.Length >= 12 && HaritaAltligi.Bul("google_s").Anahtar == "google" && HaritaAltligi.Bul("yandex_m").Elipsoidal, "altlık: sağlayıcılar");
+
+            var esri = HaritaAltligi.Bul("esri");
+            var p = HaritaAltligi.Planla(511500, 4279600, 512500, 4280400, 39, esri, 0.5);
+            Esit(18, p.Z, "altlık: 1 km alan, 0,5 m → zoom 18");
+            Esit(true, p.KaroSayisi > 40 && p.KaroSayisi < 200 && Math.Abs(p.Cozunurluk - 0.4646) < 0.01, "altlık: karo sayısı ve piksel boyu");
+            Esit(true, p.Genislik > 2000 && p.Genislik < 2300 && p.Yukseklik > 1600 && p.Yukseklik < 1800, "altlık: resim boyu");
+            var buyuk = HaritaAltligi.Planla(500000, 4270000, 520000, 4290000, 39, esri, 0.5);
+            Esit(true, buyuk.Z <= 14 && Math.Max(buyuk.Genislik, buyuk.Yukseklik) <= HaritaAltligi.EnBuyukKenar && buyuk.KaroSayisi <= HaritaAltligi.EnCokKaro, "altlık: 20 km alanda zoom düşer, sınırlar aşılmaz");
+
+            // Mozaik: belli bir boylamın batısı kırmızı, belli bir enlemin kuzeyi yeşil; TM'ye çevrilen resimde her piksel kendi konumunun rengini alır
+            int ts = 256, mw = (p.X1 - p.X0 + 1) * ts, mh = (p.Y1 - p.Y0 + 1) * ts;
+            double sinirBoylam, sinirEnlem;
+            Koordinat.EnlemBoylam(512000, 4280000, 39, out sinirEnlem, out sinirBoylam);
+            double sx, sy;
+            HaritaAltligi.KaroKonumu(sinirEnlem, sinirBoylam, p.Z, false, out sx, out sy);
+            int sutun = (int)Math.Round((sx - p.X0) * ts), satir = (int)Math.Round((sy - p.Y0) * ts);
+            var moz = new int[mw * mh];
+            for (int y = 0; y < mh; y++)
+                for (int x = 0; x < mw; x++)
+                    moz[y * mw + x] = unchecked((int)0xFF000000) | (x < sutun ? 0xFF0000 : 0) | (y < satir ? 0x00FF00 : 0);
+            var cikti = HaritaAltligi.Donustur(p, moz, mw, mh, ts, 39);
+            Esit(p.Genislik * p.Yukseklik, cikti.Length, "altlık: çıktı boyu");
+            var rnd = new Random(7);
+            int dogru = 0, sayilan = 0;
+            for (int k = 0; k < 400; k++)
+            {
+                int x = rnd.Next(p.Genislik), y = rnd.Next(p.Yukseklik);
+                double e = p.E0 + (x + 0.5) * p.Cozunurluk, n = p.N1 - (y + 0.5) * p.Cozunurluk, en, boy;
+                Koordinat.EnlemBoylam(e, n, 39, out en, out boy);
+                double px, py;
+                HaritaAltligi.KaroKonumu(en, boy, p.Z, false, out px, out py);
+                double dx = (px - p.X0) * ts - sutun, dy = (py - p.Y0) * ts - satir;
+                if (Math.Abs(dx) < 2 || Math.Abs(dy) < 2) continue; // sınıra çok yakın: aradeğer karışık renk verir
+                sayilan++;
+                int c = cikti[y * p.Genislik + x];
+                bool kirmizi = (c & 0xFF0000) == 0xFF0000, yesil = (c & 0x00FF00) == 0x00FF00;
+                if (kirmizi == dx < 0 && yesil == dy < 0 && ((c >> 24) & 255) == 255) dogru++;
+            }
+            Esit(sayilan, dogru, "altlık: TM'ye çevrilen resimde her piksel kendi yerinin rengini alır (" + sayilan + " örnek)");
+            // TM'de sınır çizgisi: 512000 doğusu kırmızı değil (çıktının o sütununun iki yanı)
+            int ortaX = (int)Math.Round((512000 - p.E0) / p.Cozunurluk), ortaY = (int)Math.Round((p.N1 - 4280000) / p.Cozunurluk);
+            Esit(true, (cikti[ortaY * p.Genislik + ortaX - 5] & 0xFF0000) == 0xFF0000 && (cikti[ortaY * p.Genislik + ortaX + 5] & 0xFF0000) == 0, "altlık: sınır doğru yerde (±5 piksel)");
+            Esit(true, HaritaAltligi.GoogleOturumGovdesi("hybrid").Contains("layerRoadmap") && HaritaAltligi.BingAdresi("https://ecn.{subdomain}.x/a{quadkey}.jpeg?mkt={culture}", new[] { "t0", "t1" }, 3, 3, 5) == "https://ecn.t0.x/a213.jpeg?mkt=tr-TR", "altlık: Google oturumu ve Bing adresi");
         }
 
         private static void CizimGorunumu()

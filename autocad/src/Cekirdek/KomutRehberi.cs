@@ -33,6 +33,7 @@ namespace SebekeHakedis.Cekirdek
             new[] { "CBS ve harita", "SH_MIFVER", "CBS'ye MapInfo MIF / MID: her nesne türü ayrı dosya, çizim koordinatıyla" },
             new[] { "CBS ve harita", "SH_MIFAL", "CBS'den MIF / MID alır: noktalar, çizgiler, alanlar, yazılar altlık olarak çizilir" },
             new[] { "CBS ve harita", "SH_CBSBILGI", "CBS'den alınan nesnenin bilgilerini gösterir" },
+            new[] { "CBS ve harita", "SH_ALTLIK", "Harita altlığı: uydu / harita resmi (Esri, Google, Bing / Azure, Yandex...; anahtarlılar kendi anahtarınızla)" },
             new[] { "Diğer", "SH_HAKKINDA", "Bu pencere: sürüm ve komut listesi" },
             new[] { "Diğer", "SH_SERIT", "Şerit sekmelerini yeniden kurar (kaybolursa)" },
             new[] { "Diğer", "SH_DOKUM", "Destek için çizimin teknik dökümünü kaydeder" },
