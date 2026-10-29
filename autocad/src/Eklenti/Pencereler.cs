@@ -1139,13 +1139,17 @@ namespace SebekeHakedis.Eklenti
                 int zi = zemin.Items.IndexOf(string.IsNullOrEmpty(zeminSecili) ? "TOPRAK" : zeminSecili);
                 if (zemin.Items.Count > 0) zemin.SelectedIndex = Math.Max(0, zi);
 
-                // Sağ: ölçüler, hızlı seçim, durum, hakediş
+                // Sağ: ölçüler (şeritte girilmişse oradan), hızlı seçim, durum, hakediş
+                HizliSecim.Yukle();
+                double ilkAlt = onceki != null ? onceki.Alt : HizliSecim.KanalAlt > 0 ? HizliSecim.KanalAlt : a.KanalAlt;
+                double ilkUst = onceki != null ? onceki.Ust : HizliSecim.KanalUst > 0 ? HizliSecim.KanalUst : a.KanalUst;
+                double ilkDer = onceki != null ? onceki.Derinlik : HizliSecim.KanalDerinlik > 0 ? HizliSecim.KanalDerinlik : a.KanalDerinlik;
                 Etiket(f, "Alt genişlik (cm)", 272, 56);
-                var altG = Koy(f, new SayiKutusu(0, 1000, D(onceki != null ? onceki.Alt : a.KanalAlt), 0, 5), 272, 76, 136, 30);
+                var altG = Koy(f, new SayiKutusu(0, 1000, D(ilkAlt), 0, 5), 272, 76, 136, 30);
                 Etiket(f, "Üst genişlik (cm)", 420, 56);
-                var ust = Koy(f, new SayiKutusu(0, 1000, D(onceki != null ? onceki.Ust : a.KanalUst), 0, 5), 420, 76, 136, 30);
+                var ust = Koy(f, new SayiKutusu(0, 1000, D(ilkUst), 0, 5), 420, 76, 136, 30);
                 Etiket(f, "Derinlik (cm)", 568, 56);
-                var der = Koy(f, new SayiKutusu(0, 1000, D(onceki != null ? onceki.Derinlik : a.KanalDerinlik), 0, 5), 568, 76, 136, 30);
+                var der = Koy(f, new SayiKutusu(0, 1000, D(ilkDer), 0, 5), 568, 76, 136, 30);
                 Etiket(f, "Hakediş", 716, 56);
                 var hak = Koy(f, new SayiKutusu(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis), 716, 76, 88, 30);
                 Etiket(f, "Hızlı seçim (alt × üst × derinlik)", 272, 118);

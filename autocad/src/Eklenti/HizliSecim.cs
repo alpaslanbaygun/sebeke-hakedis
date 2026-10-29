@@ -22,6 +22,11 @@ namespace SebekeHakedis.Eklenti
         public static int Hakedis;
         /// <summary>Kanal öğelerinde kanaldaki kablolar (OG, AG, AYD, REK); boşsa öğenin kendi kablosu.</summary>
         public static string KanalKablolari = "";
+        /// <summary>
+        /// Yeni kanalın ölçüleri (cm; şeritten ya da son kanal penceresinden): alt genişlik, üst genişlik, derinlik.
+        /// 0: çizimin ayarı (Çizim Ayarları › kanal varsayılanları) kullanılır.
+        /// </summary>
+        public static double KanalAlt, KanalUst, KanalDerinlik;
         /// <summary>Malzeme hafızası açık mı: yeni elemana aynı tür ve tipteki son elemanın malzemeleri kendiliğinden eklenir.</summary>
         public static bool HafizaAcik = true;
 
@@ -465,6 +470,17 @@ namespace SebekeHakedis.Eklenti
             Degisti?.Invoke();
         }
 
+        /// <summary>Kanal ölçüsünü seçer (cm; şerit ya da kanal penceresi); şerit yenilenir.</summary>
+        public static void KanalOlcusuSec(double alt, double ust, double derinlik)
+        {
+            Yukle();
+            KanalAlt = Math.Max(0, alt);
+            KanalUst = Math.Max(0, ust);
+            KanalDerinlik = Math.Max(0, derinlik);
+            Kaydet();
+            Degisti?.Invoke();
+        }
+
         /// <summary>Komutta kullanılacak hakediş: şeritte seçilmişse o, değilse çizimin aktif hakedişi.</summary>
         public static int Hakedis_(OrtamVerisi o) => Hakedis > 0 ? Hakedis : o.Hakedis;
 
@@ -509,6 +525,13 @@ namespace SebekeHakedis.Eklenti
                 DmDurum = kok.Metin("dm");
                 Hakedis = kok.Tam("hakedis");
                 KanalKablolari = kok.Metin("kanalKablolari");
+                var ko = kok.Dizi("kanalOlcu");
+                if (ko != null && ko.Count >= 3)
+                {
+                    KanalAlt = SayiCoz.Coz(Convert.ToString(ko[0], CultureInfo.InvariantCulture));
+                    KanalUst = SayiCoz.Coz(Convert.ToString(ko[1], CultureInfo.InvariantCulture));
+                    KanalDerinlik = SayiCoz.Coz(Convert.ToString(ko[2], CultureInfo.InvariantCulture));
+                }
                 HafizaAcik = kok.Mantik("hafizaAcik") ?? true;
                 SozlukOku(kok, "tip", _tip);
                 SozlukOku(kok, "cins", _cins);
@@ -564,6 +587,7 @@ namespace SebekeHakedis.Eklenti
                 kok["dm"] = DmDurum ?? "";
                 kok["hakedis"] = (double)Hakedis;
                 kok["kanalKablolari"] = KanalKablolari ?? "";
+                kok["kanalOlcu"] = new List<object> { KanalAlt, KanalUst, KanalDerinlik };
                 kok["hafizaAcik"] = HafizaAcik;
                 kok["tip"] = Sozluk(_tip);
                 kok["cins"] = Sozluk(_cins);

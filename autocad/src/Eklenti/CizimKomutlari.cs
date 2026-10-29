@@ -441,6 +441,7 @@ namespace SebekeHakedis.Eklenti
                 var o = Ortam.Hazirla(belge);
                 var secim = Pencereler.Kanal(o, null);
                 if (secim == null) return;
+                HizliSecim.KanalOlcusuSec(secim.Alt, secim.Ust, secim.Derinlik); // şeritte de bu ölçü görünsün
                 o.AyarKaydet();
                 KanalDongusu(o, secim, null);
             });
@@ -465,6 +466,7 @@ namespace SebekeHakedis.Eklenti
                     {
                         secim = s2; o.AyarKaydet();
                         if (oge != null) HizliSecim.KanalKablolari = (s2.Og ? "OG," : "") + (s2.Ag ? "AG," : "") + (s2.Ayd ? "AYD," : "") + (s2.Rek ? "REK," : "");
+                        HizliSecim.KanalOlcusuSec(s2.Alt, s2.Ust, s2.Derinlik);
                         ed.WriteMessage("\n" + secim);
                     }
                     continue;
@@ -681,7 +683,11 @@ namespace SebekeHakedis.Eklenti
                         var secim = new KanalSecimi
                         {
                             Og = kablolar.Contains("OG,"), Ag = kablolar.Contains("AG,"), Ayd = kablolar.Contains("AYD,"), Rek = kablolar.Contains("REK,"),
-                            Zemin = tip != null ? tip.Tanim.Trim() : o.Ayar.KanalZemin, Alt = o.Ayar.KanalAlt, Ust = o.Ayar.KanalUst, Derinlik = o.Ayar.KanalDerinlik,
+                            Zemin = tip != null ? tip.Tanim.Trim() : o.Ayar.KanalZemin,
+                            // Ölçüler şeritten (Kanal satırı); girilmemişse çizimin ayarından
+                            Alt = HizliSecim.KanalAlt > 0 ? HizliSecim.KanalAlt : o.Ayar.KanalAlt,
+                            Ust = HizliSecim.KanalUst > 0 ? HizliSecim.KanalUst : o.Ayar.KanalUst,
+                            Derinlik = HizliSecim.KanalDerinlik > 0 ? HizliSecim.KanalDerinlik : o.Ayar.KanalDerinlik,
                             Durum = durum, Hakedis = hak,
                         };
                         if (secim.Kod == 0) secim.Ag = true;
@@ -690,6 +696,9 @@ namespace SebekeHakedis.Eklenti
                             secim = Pencereler.Kanal(o, secim);
                             if (secim == null) return;
                         }
+                        // Kullanılan ölçü şeritte görünsün (pencereden değiştirildiyse de)
+                        if (secim.Alt != HizliSecim.KanalAlt || secim.Ust != HizliSecim.KanalUst || secim.Derinlik != HizliSecim.KanalDerinlik)
+                            HizliSecim.KanalOlcusuSec(secim.Alt, secim.Ust, secim.Derinlik);
                         o.AyarKaydet();
                         KanalDongusu(o, secim, oge);
                         break;

@@ -31,9 +31,11 @@ namespace SebekeHakedis.Eklenti
         private const string AyrintiAciklamasi = "Etkin öğeyi süzgeçli, aramalı pencereyle çizer (bütün tipler, cins düğmeleri, GIS numarası, demontaj türü; hatlarda iki iletken ve adet).";
         private static bool _bekliyor, _yukleniyor, _olayBagli;
 
-        private static RibbonCombo _cins, _tip, _durum, _dm, _hakedis, _adet, _ek;
-        private static RibbonTextBox _ara;
-        private static RibbonLabel _dmEtiket, _adetEtiket, _ekEtiket;
+        private static RibbonCombo _cins, _tip, _durum, _dm, _hakedis, _adet, _ek, _kanalHazir;
+        private static RibbonTextBox _ara, _kanalAlt, _kanalUst, _kanalDer;
+        private static RibbonLabel _dmEtiket, _adetEtiket, _ekEtiket, _kanalEtiket, _kanalAltEtiket, _kanalUstEtiket, _kanalDerEtiket;
+        /// <summary>Hazır kanal ölçüleri (alt × üst × derinlik, cm): kanal penceresindeki hızlı seçimlerle aynı.</summary>
+        private static readonly int[][] KanalHazir = { new[] { 40, 40, 80 }, new[] { 40, 40, 100 }, new[] { 60, 60, 120 }, new[] { 80, 80, 150 } };
         /// <summary>"Ayrıntılı…" düğmesi: ipucunda sıradaki tıklamada çizilecek olanın tam yazısı (şeritte uzun yazı yer kaplamasın).</summary>
         private static RibbonButton _ayrinti;
         private static RibbonToggleButton _hafiza;
@@ -238,6 +240,31 @@ namespace SebekeHakedis.Eklenti
             _ek.CurrentChanged += (s, e) => { if (!_yukleniyor) EkSecildi(_ek.Current as RibbonButton); };
             s3.Items.Add(_ek);
             ay.Items.Add(s3);
+            // Kanal: ölçüler (yalnız kanal öğesinde görünür). Yazıp Enter; hazır ölçüler listeden.
+            var s4 = new RibbonRowPanel();
+            _kanalEtiket = Etiket("Kanal");
+            s4.Items.Add(_kanalEtiket);
+            _kanalHazir = new RibbonCombo { Width = 128, ShowText = false, Size = RibbonItemSize.Standard, ToolTip = "Hazır kanal ölçüsü: alt genişlik × üst genişlik × derinlik (cm)." };
+            _kanalHazir.Items.Add(new RibbonButton { Text = "Hazır ölçü…", ShowText = true, Tag = null });
+            foreach (var h in KanalHazir)
+                _kanalHazir.Items.Add(new RibbonButton { Text = h[0] + " × " + h[1] + " × " + h[2], ShowText = true, Tag = h, ToolTip = "Alt " + h[0] + " cm, üst " + h[1] + " cm, derinlik " + h[2] + " cm" });
+            _kanalHazir.CurrentChanged += (s, e) => { if (!_yukleniyor) KanalHazirSecildi(_kanalHazir.Current as RibbonButton); };
+            s4.Items.Add(_kanalHazir);
+            s4.Items.Add(new RibbonRowBreak());
+            _kanalAltEtiket = KisaEtiket("Alt");
+            s4.Items.Add(_kanalAltEtiket);
+            _kanalAlt = KanalKutusu("Kanalın alt genişliği (cm)");
+            s4.Items.Add(_kanalAlt);
+            _kanalUstEtiket = KisaEtiket("Üst");
+            s4.Items.Add(_kanalUstEtiket);
+            _kanalUst = KanalKutusu("Kanalın üst genişliği (cm). Kanal çizimde bu genişlikte iki kenar çizgisiyle görünür.");
+            s4.Items.Add(_kanalUst);
+            s4.Items.Add(new RibbonRowBreak());
+            _kanalDerEtiket = Etiket("Derinlik");
+            s4.Items.Add(_kanalDerEtiket);
+            _kanalDer = KanalKutusu("Kanalın derinliği (cm)");
+            s4.Items.Add(_kanalDer);
+            ay.Items.Add(s4);
             _ayrinti = Dugme("Ayrıntılı…", AyrintiAciklamasi, "_SH_HIZLIAYRINTI ", "bilgi", null);
             ay.Items.Add(_ayrinti);
 
@@ -490,7 +517,7 @@ namespace SebekeHakedis.Eklenti
             {
                 case "SH_ELEMAN": return oge.Ad + ": tıklayın, sonra çizimde yerlerini gösterin (her tıklama bir eleman). Tip, durum ve hakediş Ayarlar panelinden.";
                 case "SH_HAT": return oge.Ad + ": direkten direğe tıklayın; hat her direkte biter, her parçanın metrajı ayrı yazılır. Kesit Ayarlar panelinden.";
-                case "SH_KANAL": return oge.Ad + ": kanal köşelerini gösterin; box / direk aralarında parçalanır. Zemin Ayarlar panelinden, ölçüler Çizim Ayarları'ndan.";
+                case "SH_KANAL": return oge.Ad + ": kanal köşelerini gösterin; box / direk aralarında parçalanır. Zemin (Tip) ve ölçüler (Kanal: alt, üst, derinlik) Ayarlar panelinden.";
                 case "SH_SONDAJ": return oge.Ad + ": sondajın başını ve sonunu gösterin.";
                 default: return oge.Ad;
             }
@@ -633,10 +660,103 @@ namespace SebekeHakedis.Eklenti
                     }
                     _ek.Current = curEk;
                 }
+                // Kanal: ölçüler
+                bool kanal = oge != null && oge.Komut == "SH_KANAL";
+                foreach (var it in new object[] { _kanalEtiket, _kanalHazir, _kanalAltEtiket, _kanalAlt, _kanalUstEtiket, _kanalUst, _kanalDerEtiket, _kanalDer })
+                    if (it != null) Ozellik(it, "IsVisible", kanal);
+                if (kanal) KanalOlcusunuGoster();
                 Hafiza_();
                 OzetiGoster();
             }
             finally { _yukleniyor = false; }
+        }
+
+        // ---------------- Kanal ölçüleri ----------------
+
+        private static RibbonLabel KisaEtiket(string yazi)
+        {
+            var l = new RibbonLabel { Text = yazi, ShowText = true, ShowImage = false };
+            Ozellik(l, "Width", 28.0);
+            Ozellik(l, "MinWidth", 28.0);
+            return l;
+        }
+
+        private static RibbonTextBox KanalKutusu(string ipucu)
+        {
+            var k = new RibbonTextBox { ShowText = false, ShowImage = false, ToolTip = ipucu + ". Yazıp Enter'a basın; yeni kanallar bu ölçüyle çizilir. Boş bırakılırsa Çizim Ayarları'ndaki ölçü kullanılır." };
+            Ozellik(k, "Width", 48.0);
+            Ozellik(k, "IsEmptyTextValid", true);
+            Ozellik(k, "AcceptTextOnLostFocus", true);
+            Ozellik(k, "SelectTextOnFocus", true);
+            Ozellik(k, "InvokesCommand", true);
+            Ozellik(k, "CommandHandler", new KanalKutusuIsleyici());
+            return k;
+        }
+
+        private static string Cm(double d) => d > 0 ? d.ToString("0.#", CultureInfo.GetCultureInfo("tr-TR")) : "";
+
+        /// <summary>Kutulara seçili kanal ölçüsü; girilmemişse boş (çizimin ayarı kullanılır).</summary>
+        private static void KanalOlcusunuGoster()
+        {
+            Ozellik(_kanalAlt, "TextValue", Cm(HizliSecim.KanalAlt));
+            Ozellik(_kanalUst, "TextValue", Cm(HizliSecim.KanalUst));
+            Ozellik(_kanalDer, "TextValue", Cm(HizliSecim.KanalDerinlik));
+            // Boş kutuda "ayar": o ölçü için çizimin ayarı kullanılır
+            Ozellik(_kanalAlt, "Prompt", HizliSecim.KanalAlt > 0 ? "" : "ayar");
+            Ozellik(_kanalUst, "Prompt", HizliSecim.KanalUst > 0 ? "" : "ayar");
+            Ozellik(_kanalDer, "Prompt", HizliSecim.KanalDerinlik > 0 ? "" : "ayar");
+            if (_kanalHazir != null && _kanalHazir.Items.Count > 0)
+            {
+                object sec = _kanalHazir.Items[0];
+                foreach (var it in _kanalHazir.Items)
+                    if (it is RibbonButton b && b.Tag is int[] h && h[0] == HizliSecim.KanalAlt && h[1] == HizliSecim.KanalUst && h[2] == HizliSecim.KanalDerinlik) sec = b;
+                _kanalHazir.Current = sec;
+            }
+        }
+
+        private static void KanalHazirSecildi(RibbonButton b)
+        {
+            var h = b != null ? b.Tag as int[] : null;
+            if (h == null) return;
+            _yukleniyor = true;
+            try { HizliSecim.KanalOlcusuSec(h[0], h[1], h[2]); }
+            finally { _yukleniyor = false; }
+            SecimiGoster();
+            Uygulama.Yaz("Şerit: kanal ölçüsü " + h[0] + " × " + h[1] + " × " + h[2] + " cm (alt × üst × derinlik).");
+        }
+
+        /// <summary>Kanal kutusunda Enter (ya da kutudan çıkınca): üç ölçü birlikte okunur; geçersiz sayı eski değerinde kalır.</summary>
+        private static void KanalOlcusuGirildi()
+        {
+            if (_yukleniyor) return;
+            Func<RibbonTextBox, double, double> oku = (k, eski) =>
+            {
+                string m = (KutuMetni(k) ?? "").Trim();
+                if (m.Length == 0) return eski;
+                double d = SayiCoz.Coz(m, double.NaN);
+                return double.IsNaN(d) || d < 0 || d > 1000 ? eski : d;
+            };
+            double alt = oku(_kanalAlt, HizliSecim.KanalAlt), ust = oku(_kanalUst, HizliSecim.KanalUst), der = oku(_kanalDer, HizliSecim.KanalDerinlik);
+            if (alt == HizliSecim.KanalAlt && ust == HizliSecim.KanalUst && der == HizliSecim.KanalDerinlik) { KanalOlcusunuGoster(); return; }
+            _yukleniyor = true;
+            try { HizliSecim.KanalOlcusuSec(alt, ust, der); }
+            finally { _yukleniyor = false; }
+            SecimiGoster();
+            Uygulama.Yaz("Şerit: kanal ölçüsü " + Cm(alt) + " × " + Cm(ust) + " × " + Cm(der) + " cm (alt × üst × derinlik).");
+        }
+
+        private sealed class KanalKutusuIsleyici : ICommand
+        {
+#pragma warning disable 67
+            public event EventHandler CanExecuteChanged;
+#pragma warning restore 67
+            public bool CanExecute(object parameter) => true;
+
+            public void Execute(object parameter)
+            {
+                try { KanalOlcusuGirildi(); }
+                catch (Exception ex) { Uygulama.Yaz("Şerit: " + ex.Message); }
+            }
         }
 
         /// <summary>Elemanın verilen durumdaki simgesi (şeritteki durum listesinde).</summary>
