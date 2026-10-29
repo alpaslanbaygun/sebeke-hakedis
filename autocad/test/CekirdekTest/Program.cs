@@ -641,7 +641,30 @@ namespace SebekeHakedis.Test
             Esit(30.0, uz, "ikinci açıklık metrajı");
             Esit(true, Geometri.AciklikSiniri("BOX", "SDK") && Geometri.AciklikSiniri("AG_DIREK", "DIREK_AG") && Geometri.AciklikSiniri("TRAFO_MERKEZI", "TRAFO_KOSK"), "açıklık sınırı: direk, SDK, trafo");
             Esit(false, Geometri.AciklikSiniri("EK_MUFU", "MUFU") || Geometri.AciklikSiniri("DIGER", "MENHOL"), "açıklık sınırı değil: ek mufu, menhol");
+
+            // Yazı yeri parçanın kendi ekseninde (telefondaki dxf.js yaziKonumu ile aynı): yatay hatta dünya ekseniyle aynı,
+            // dik hatta metraj bir yanda, etiket öbür yanda (çizginin üstüne binip birbirini örtmez)
+            double x, y, aci;
+            Geometri.YaziKonumu(new[] { 0.0, 0.0 }, new[] { 10.0, 0.0 }, new[] { 0.0, 0.8 }, out x, out y, out aci);
+            Esit("5,000 0,800 0,0", Konum(x, y, aci), "yazı yeri: yatay hatta metraj 0,8 m üstte");
+            Geometri.YaziKonumu(new[] { 10.0, 0.0 }, new[] { 0.0, 0.0 }, new[] { 0.0, 0.8 }, out x, out y, out aci);
+            Esit("5,000 0,800 0,0", Konum(x, y, aci), "yazı yeri: ters çizilmiş yatay hatta da aynı (yazı ters dönmez)");
+            Geometri.YaziKonumu(new[] { 0.0, 0.0 }, new[] { 0.0, 10.0 }, new[] { 0.0, 0.8 }, out x, out y, out aci);
+            Esit("-0,800 5,000 90,0", Konum(x, y, aci), "yazı yeri: dik hatta metraj çizginin solunda");
+            Geometri.YaziKonumu(new[] { 0.0, 0.0 }, new[] { 0.0, 10.0 }, CizimStili.HatKaydirma, out x, out y, out aci);
+            Esit("2,500 5,000 90,0", Konum(x, y, aci), "yazı yeri: dik hatta etiket çizginin sağında");
+            Geometri.YaziKonumu(new[] { 0.0, 0.0 }, new[] { 10.0, 10.0 }, new[] { 1.0, 0.0 }, out x, out y, out aci);
+            Esit("5,707 5,707 45,0", Konum(x, y, aci), "yazı yeri: boyunca kaydırma parça doğrultusunda");
+            // Kanal / sondaj metrajı kablonun metrajından bir satır yukarıda: iki yazı üst üste binmez
+            Esit(true, CizimStili.KaziKaydirma[1] >= CizimStili.ParcaKaydirma[1] + CizimStili.ParcaMetraji, "kazı metrajı kablo metrajının üstünde (" + CizimStili.KaziKaydirma[1] + " m)");
+            Esit(true, NesneYazici.Kanal(kanal, "SC", null).KaziMetraji, "kanal metrajı kazı metrajı");
+            Esit(true, NesneYazici.Sondaj(new Sondaj { Id = "S1", Durum = "M", Kose = { new[] { 0.0, 0.0 }, new[] { 8.0, 0.0 } } }, "SC", null).KaziMetraji, "sondaj metrajı kazı metrajı");
+            Esit(false, NesneYazici.Hat(new Hat { Id = "H2", Tur = "AG_YERALTI", Durum = "M", Kose = { new[] { 0.0, 0.0 }, new[] { 5.0, 0.0 } } }, "SC", null).KaziMetraji, "hat metrajı kazı metrajı değil");
         }
+
+        private static string Konum(double x, double y, double aci) =>
+            x.ToString("0.000", CultureInfo.GetCultureInfo("tr-TR")) + " " + y.ToString("0.000", CultureInfo.GetCultureInfo("tr-TR")) + " " +
+            (aci * 180 / Math.PI).ToString("0.0", CultureInfo.GetCultureInfo("tr-TR"));
 
         // ---------------- Hesap Merkezi: kayıt, güncellik, bağlam, sunucu ----------------
 

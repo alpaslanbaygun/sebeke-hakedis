@@ -66,6 +66,24 @@ namespace SebekeHakedis.Cekirdek
         }
 
         /// <summary>
+        /// Parça yazısının (metraj, hat etiketi) yeri ve açısı: parçanın (a→b) ortasından, parçanın kendi ekseninde
+        /// kaydırılır — kaydirma[0] parça boyunca (okuma yönünde), kaydirma[1] parçaya dik (artı: yazının üst yanı, eksi:
+        /// alt yanı). Açı parçanın doğrultusu, ters okunmasın diye −90° … 90° aralığına çevrilir. Yatay parçada sonuç
+        /// dünya ekseninde kaydırmayla aynıdır; dik ya da eğik parçada da metraj çizginin bir yanında, etiket öbür yanında
+        /// kalır (kaydırma dünya ekseninde uygulanınca dik hatta iki yazı çizginin üstüne düşüp birbirini örtüyordu).
+        /// Telefondaki DXF yazıcıyla aynı kural (telefon/web/src/export/dxf.js › yaziKonumu).
+        /// </summary>
+        public static void YaziKonumu(double[] a, double[] b, double[] kaydirma, out double x, out double y, out double aci)
+        {
+            aci = Math.Atan2(b[1] - a[1], b[0] - a[0]);
+            if (aci > Math.PI / 2) aci -= Math.PI;
+            if (aci < -Math.PI / 2) aci += Math.PI;
+            double c = Math.Cos(aci), s = Math.Sin(aci), boyunca = kaydirma[0], dik = kaydirma[1];
+            x = (a[0] + b[0]) / 2 + boyunca * c - dik * s;
+            y = (a[1] + b[1]) / 2 + boyunca * s + dik * c;
+        }
+
+        /// <summary>
         /// Hat çizerken tıklanan noktanın yapıştığı eleman: simgesinin üstüne (yarı genişliğinin biraz dışına kadar) ya da
         /// verilen mesafe içine tıklanan elemanlardan merkezi en yakın olan. mesafe: en az yakalama mesafesi (ayar; 0 ise
         /// yakalama kapalı), ekran: ekrandaki birkaç piksellik pay (uzaktan bakarken küçük simgeler de yakalansın).

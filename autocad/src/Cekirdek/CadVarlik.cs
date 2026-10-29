@@ -31,6 +31,11 @@ namespace SebekeHakedis.Cekirdek
         /// elemansız kırılma köşelerinde bölünmez.
         /// </summary>
         public bool ParcaMetraji;
+        /// <summary>
+        /// Metraj kanal / sondaj metrajı mı: içindeki kablonun metrajıyla üst üste binmesin diye bir satır yukarıya yazılır
+        /// (CizimStili.KaziKaydirma).
+        /// </summary>
+        public bool KaziMetraji;
         /// <summary>Çizginin iki yanına çizilecek kenarların arası (m; kanal). 0: kenar yok.</summary>
         public double KenarGenisligi;
         /// <summary>

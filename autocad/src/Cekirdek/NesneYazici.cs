@@ -370,6 +370,7 @@ namespace SebekeHakedis.Cekirdek
             var v = new CadVarlik { H = c.Id, Tur = "LWPOLYLINE", Katman = onEk + "_KABLO_KANALI" };
             foreach (var k in c.Kose) v.Kose.Add(new[] { k[0], k[1] });
             v.ParcaMetraji = true;
+            v.KaziMetraji = true;
             v.KenarGenisligi = KanalGenisligi(c);
             Stil(v, "KANAL", c.Durum);
             var ana = c.Kalemler.Find(k => k.Ana) ?? new Kalem { Cins = c.Kod.ToString(CultureInfo.InvariantCulture), Tanim = c.Zemin, Durum = c.Durum, Hakedis = c.Hakedis, Birim = "mt/m³", Katsayi = 1, Ana = true };
@@ -389,6 +390,7 @@ namespace SebekeHakedis.Cekirdek
             var v = new CadVarlik { H = s.Id, Tur = "LWPOLYLINE", Katman = onEk + "_YATAY_SONDAJ" };
             foreach (var k in s.Kose) v.Kose.Add(new[] { k[0], k[1] });
             v.ParcaMetraji = true;
+            v.KaziMetraji = true;
             Stil(v, "SONDAJ", s.Durum);
             var ana = s.Kalemler.Find(k => k.Ana) ?? new Kalem { Cins = "YATAY_DELGİ", Tanim = s.Tip, Durum = s.Durum, Hakedis = s.Hakedis, Birim = "mt/mt", Katsayi = 1, Ana = true };
             Ekle(v, "GIS", A(s.BasNo) + ";" + A(s.BitNo) + ";" + Sayi(ana.Miktar));

@@ -571,7 +571,7 @@ namespace SebekeHakedis.Eklenti
             v.H = h;
             NesneYazici.TaniticiYaz(v, h);
             XdataYaz(pl, v);
-            if (v.ParcaMetraji) ParcaMetrajlariYaz(pl, v.Kose);
+            if (v.ParcaMetraji) ParcaMetrajlariYaz(pl, v.Kose, v.KaziMetraji);
             if (etiket != null) EtiketYaz(pl, etiket.Replace(NesneYazici.Tanitici, h), v.Kose);
             if (v.KenarGenisligi > 0) KenarlariYaz(pl, v.KenarGenisligi);
             return id;
@@ -641,7 +641,7 @@ namespace SebekeHakedis.Eklenti
             StilUygula(ent, v);
             XdataYaz(ent, v);
             if (br != null) { ArmaturYaz(br, v); DugumEkle(br); }
-            if (br == null && v.ParcaMetraji) ParcaMetrajlariYaz(ent, v.Kose);
+            if (br == null && v.ParcaMetraji) ParcaMetrajlariYaz(ent, v.Kose, v.KaziMetraji);
             if (etiket != null) EtiketYaz(ent, etiket.Replace(NesneYazici.Tanitici, h), v.Kose);
             if (br == null) KenarlariYaz(ent, v.KenarGenisligi);
         }
@@ -954,17 +954,11 @@ namespace SebekeHakedis.Eklenti
         // ---------------- Yazı konumları (telefonun DXF'iyle aynı) ----------------
 
         /// <summary>
-        /// Parçanın (a→b) ortası + kaydırma (dünya ekseninde) ve yazı açısı: parça doğrultusu, okunur olacak biçimde
-        /// (−90° … 90°] aralığına çevrilir — telefondaki DXF yazıcıyla aynı kural.
+        /// Parçanın (a→b) ortası + kaydırma (parçanın kendi ekseninde: boyunca, dik) ve yazı açısı (okunur yönde) —
+        /// Geometri.YaziKonumu; telefondaki DXF yazıcıyla aynı kural.
         /// </summary>
-        private static void ParcaKonumu(double[] a, double[] b, double[] kaydirma, out double x, out double y, out double aci)
-        {
-            x = (a[0] + b[0]) / 2 + kaydirma[0];
-            y = (a[1] + b[1]) / 2 + kaydirma[1];
-            aci = Math.Atan2(b[1] - a[1], b[0] - a[0]);
-            if (aci > Math.PI / 2) aci -= Math.PI;
-            if (aci < -Math.PI / 2) aci += Math.PI;
-        }
+        private static void ParcaKonumu(double[] a, double[] b, double[] kaydirma, out double x, out double y, out double aci) =>
+            Geometri.YaziKonumu(a, b, kaydirma, out x, out y, out aci);
 
         private DBText YaziYap(string metin, double x, double y, double aci, double yukseklik, ObjectId katman, Color renk)
         {
@@ -990,14 +984,16 @@ namespace SebekeHakedis.Eklenti
         /// Metraj yazıları: her açıklığın (havai hatta iki direk, yer altında iki bağlantı elemanı arası) toplam uzunluğu,
         /// açıklığın en uzun parçasının ortasına, hattın renginde ("12.34", telefondaki gibi). Elemansız kırılma köşelerine
         /// ayrıca yazılmaz. Eski yazılar silinir; tanıtıcılar nesnenin SH_PARCA verisinde, sahibi yazının SH_SAHIP verisinde.
+        /// kazi: kanal / sondaj metrajı — içindeki kablonun metrajıyla üst üste binmesin diye bir satır yukarıda.
         /// </summary>
-        public void ParcaMetrajlariYaz(Entity cizgi, List<double[]> kose)
+        public void ParcaMetrajlariYaz(Entity cizgi, List<double[]> kose, bool kazi = false)
         {
             UygulamalariKaydet();
             ParcaMetrajlariSil(cizgi);
             if (kose == null || kose.Count < 2) return;
             double yh = CizimStili.Yuklu ? CizimStili.ParcaMetraji : EtiketYuksekligi * 0.8;
-            double[] kaydirma = CizimStili.Yuklu ? CizimStili.ParcaKaydirma : new[] { 0.0, 0.8 };
+            double[] kaydirma = kazi ? (CizimStili.Yuklu ? CizimStili.KaziKaydirma : new[] { 0.0, 2.7 })
+                                     : (CizimStili.Yuklu ? CizimStili.ParcaKaydirma : new[] { 0.0, 0.8 });
             string bicim = CizimStili.Yuklu ? CizimStili.ParcaBicimi : "0.00";
             var katman = YaziKatmani(KatmanAdi(cizgi.LayerId));
             var renk = GorunenRenk(cizgi);

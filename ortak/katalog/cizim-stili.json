@@ -18,8 +18,10 @@
   "aciklama": "Ana yazı 1.8 m (1.8 mm basımda); parça metrajı 0.8×, açı ve ölçü noktası yazısı 0.7×. Bütün yazılar Tahoma (yazı stili SEBEKE-M); hat etiketi ve metraj yazısı hattın rengindedir."
  },
  "etiketler": {
-  "parcaMetraji": { "bicim": "0.00", "kaydirma": [0, 0.8], "aciklama": "Her açıklığın uzunluğu: havai hatta iki direk, yer altında iki bağlantı elemanı (SDK, pano, trafo, direk…) arası; kırılma noktalarına ayrıca yazılmaz. Açıklığın en uzun parçasının ortasında 0.8 m yukarıda, parça doğrultusunda, hattın renginde." },
-  "hat": { "kaydirma": [0, -2.5], "aciklama": "Hat etiketi orta parçanın ortasında 2.5 m aşağıda, parça doğrultusunda, hattın renginde. Telefon: 'hat no kesit' (kesit biçimi duruma göre); eklenti: durum işaretiyle kesit (^ kesit, (kesit) mevcut …). Metraj ve tanıtıcı etikete yazılmaz: metraj açıklık yazısındadır." },
+  "kaydirmaAciklamasi": "parcaMetraji, kaziMetraji ve hat kaydırmaları parçanın kendi ekseninde: [parça boyunca, parçaya dik] (dik: yazının üst yanı artı, alt yanı eksi). Yatay hatta 'yukarı / aşağı' demektir; dik ya da eğik hatta da metraj çizginin bir yanında, etiket öbür yanında kalır. eleman ve aci kaydırmaları dünya ekseninde [sağa, yukarı].",
+  "parcaMetraji": { "bicim": "0.00", "kaydirma": [0, 0.8], "aciklama": "Her açıklığın uzunluğu: havai hatta iki direk, yer altında iki bağlantı elemanı (SDK, pano, trafo, direk…) arası; kırılma noktalarına ayrıca yazılmaz. Açıklığın en uzun parçasının ortasında, çizginin 0.8 m üst yanında, parça doğrultusunda, hattın renginde." },
+  "kaziMetraji": { "kaydirma": [0, 2.7], "aciklama": "Kanal ve yatay sondaj metrajı: içindeki kablonun metrajıyla üst üste binmesin diye bir satır yukarıda (0.8 + 1.44 yazı + 0.46 ara), kanalın / sondajın renginde." },
+  "hat": { "kaydirma": [0, -2.5], "aciklama": "Hat etiketi orta parçanın ortasında, çizginin 2.5 m alt yanında, parça doğrultusunda, hattın renginde. Telefon: 'hat no kesit' (kesit biçimi duruma göre); eklenti: durum işaretiyle kesit (^ kesit, (kesit) mevcut …). Metraj ve tanıtıcı etikete yazılmaz: metraj açıklık yazısındadır." },
   "kesit": { "MEVCUT": "({t})", "YENI": "{t}", "ILERIDE": "<{t}>", "DMM": "[{t}]", "DEMONTAJ": ">{t}<" },
   "eleman": { "kaydirma": [3.5, 3.0], "satirArasi": 2.2, "aciklama": "Eleman yazısı simgenin sağ üstünde: 'no tip'. Eklentide GIS_ID ve TİP öznitelikleri alt alta aynı yerde." },
   "aci": { "kaydirma": [3.5, 0.6], "bicim": "α=0.00°" }

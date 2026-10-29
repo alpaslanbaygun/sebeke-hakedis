@@ -224,9 +224,11 @@ payla). **Boş yere tıklamak yalnız köşe koyar**, direk konmaz.
 Hat her direkte, SDK'da ya da pano/trafoda **biter ve yeniden başlar**: iki direk arası ayrı bir nesnedir, metrajı
 ve etiketi kendine aittir. Direksiz ara köşeler (kırılma noktaları) parçanın içinde kalır. Her parçanın altına
 **hat bilgisi** (durum işareti ve iletken, ör. `^ 3X50/16+70 ALPEK`), üstüne **bir kez uzunluğu** yazılır: yer altında
-iki SDK, havai hatta iki direk arasına tek metraj; kırılma noktalarına ayrıca yazılmaz. Yazılar hattın renginde ve
-Tahoma yazı tipindedir. Kanal ve sondaj da aynıdır. Telefon bu parçaları tek hat olarak gösterir, geri gönderince
-parçalar korunur.
+iki SDK, havai hatta iki direk arasına tek metraj; kırılma noktalarına ayrıca yazılmaz. "Alt" ve "üst" çizginin
+kendi yönüne göredir: dik ya da eğik hatta da uzunluk çizginin bir yanında, hat bilgisi öbür yanında durur, yazılar
+çizginin üstüne binmez. Yazılar hattın renginde ve Tahoma yazı tipindedir. Kanal ve sondaj da aynıdır; yalnız
+uzunlukları bir satır daha yukarıda, kendi renklerindedir (içlerindeki kablonun uzunluğuyla üst üste binmesin diye).
+Telefon bu parçaları tek hat olarak gösterir, geri gönderince parçalar korunur.
 
 Yakalama mesafesinin alt sınırı **Çizim Ayarları › Genel › Direğe yakalama mesafesi**'dir; **0** yakalamayı kapatır.
 
@@ -361,7 +363,8 @@ Bu düğmeler çizimin gerçek koordinatını kullanır: **ITRF96, 3° TM**. Çi
   nesnesi değildir: rapora ve telefona girmez.
 - **CBS Bilgisi** (`SH_CBSBILGI`): CBS'den alınan nesneyi seçin; dosyadaki bütün bilgileri (MID satırı) gösterir.
 - **Harita Altlığı** (`SH_ALTLIK`): uydu görüntüsü ya da harita, çizime oturtulmuş resim olarak **ALTLIK** katmanına,
-  nesnelerin altına konur; altına kaynağın atıf yazısı yazılır. Resim çizimin yanındaki `Altlik` klasörüne kaydedilir.
+  nesnelerin altına konur; altına kaynağın atıf yazısı yazılır. Resim çizimin yanındaki `Altlik` klasörüne kaydedilir
+  (çizim henüz kaydedilmediyse `Belgeler\Altlik`).
   - Anahtarsız: **Esri uydu**, **OpenStreetMap** (yalnız küçük alanlar; toplu indirme yasak).
   - Kendi anahtarınızla: **Google** (uydu, uydu + yol adları, harita; Map Tiles API), **Bing** (yalnız kurumsal
     anahtar: ücretsiz anahtarlar kapatıldı, kurumsal anahtarlar 30.06.2028'e kadar), **Azure Maps** (Bing'in yerine),

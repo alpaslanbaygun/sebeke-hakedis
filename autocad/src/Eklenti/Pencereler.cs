@@ -1801,7 +1801,8 @@ namespace SebekeHakedis.Eklenti
                 var eskiler = Koy(f, new KoyuOnay("Önceki altlıkları kaldır (ALTLIK katmanındaki resimler)"), X, 398);
                 eskiler.Checked = a.EskileriSil;
                 Koy(f, new BilgiCubugu(BilgiTuru.Bilgi, "Altlık çizime resim olarak konur: ALTLIK katmanı, nesnelerin altında. Resim çizimin yanındaki " +
-                    "\"Altlik\" klasörüne kaydedilir. Alan büyükse ayrıntı kendiliğinden düşürülür (en çok 4096 piksel). " +
+                    "\"Altlik\" klasörüne kaydedilir (çizim henüz kaydedilmediyse Belgeler\\Altlik). Alan büyükse ayrıntı " +
+                    "kendiliğinden düşürülür (en çok 4096 piksel). " +
                     "İndirme sırasında Esc ile vazgeçilir."), X, 434, W, 110);
 
                 // Sağlayıcı değişince: ad, not, koşul, anahtar kutusu

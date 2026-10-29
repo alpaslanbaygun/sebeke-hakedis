@@ -40,7 +40,11 @@ namespace SebekeHakedis.Cekirdek
 
         public static double BlokOlcegi = 1;
         public static double YaziYuksekligi = 1.8, ParcaMetraji = 1.44, AciYazisi = 1.26, NoktaYazisi = 1.26;
-        public static double[] ParcaKaydirma = { 0, 0.8 }, HatKaydirma = { 0, -2.5 }, ElemanKaydirma = { 3.5, 3.0 }, AciKaydirma = { 3.5, 0.6 };
+        /// <summary>
+        /// Yazı kaydırmaları (m). Parça metrajı, kazı (kanal / sondaj) metrajı ve hat etiketi parçanın kendi ekseninde
+        /// (boyunca, dik; Geometri.YaziKonumu); eleman ve açı yazısı dünya ekseninde (sağa, yukarı).
+        /// </summary>
+        public static double[] ParcaKaydirma = { 0, 0.8 }, KaziKaydirma = { 0, 2.7 }, HatKaydirma = { 0, -2.5 }, ElemanKaydirma = { 3.5, 3.0 }, AciKaydirma = { 3.5, 0.6 };
         public static double SatirArasi = 2.2;
         public static string ParcaBicimi = "0.00";
         /// <summary>Yazı tipi (TrueType), dosyası ve eklentinin yazı stili adı.</summary>
@@ -86,6 +90,7 @@ namespace SebekeHakedis.Cekirdek
             if (et != null)
             {
                 ParcaKaydirma = Cift(et.Nesne("parcaMetraji"), ParcaKaydirma);
+                KaziKaydirma = Cift(et.Nesne("kaziMetraji"), KaziKaydirma);
                 HatKaydirma = Cift(et.Nesne("hat"), HatKaydirma);
                 ElemanKaydirma = Cift(et.Nesne("eleman"), ElemanKaydirma);
                 AciKaydirma = Cift(et.Nesne("aci"), AciKaydirma);

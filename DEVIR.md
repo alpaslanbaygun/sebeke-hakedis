@@ -39,7 +39,17 @@ kanal iki kenar çizgisiyle (genişlik = üst genişlik; `KenarTakibi` eksen de�
 (`SH_KML`), MIF / MID dışa ve içe (`SH_MIFVER`, `SH_MIFAL`, `SH_CBSBILGI`), **harita altlığı** (`SH_ALTLIK`;
 anahtarlar yalnız kullanıcının bilgisayarında); malzeme adlarının görünen yazımı (`MalzemeYazimi` ↔ sh-core
 `malzemeYazisi`, örnekler `ortak/deneme/malzeme-yazimi.json`; kayıt ve Durum Tespit ham adla kalır). Var olan
-çizimler için bir kez **Telefon Görünümü** (`SH_GORUNUM`) çalıştırılır. Bu işler AutoCAD'de canlı denenmedi (§6).
+çizimler için bir kez **Telefon Görünümü** (`SH_GORUNUM`) çalıştırılır.
+
+29.10 akşam canlı deneme (AutoCAD 2027, eklenti 0.1.64, uydurma örnek proje): Telefondan Al (72 nesne), renkler /
+Tahoma / açıklık metrajı / kanal kenarları (taşı, kopyala, geri al), şeritten kanal ölçüsü, Proje Özeti ve Excel
+(PROJELER + MALZEME LİSTESİ sayfaları), `SH_KML` (KMZ, 72 nesne, koordinatlar Elazığ'da doğru yerde), `SH_MIFVER`
+(5 katman, .mif + .mid), `SH_MIFAL` (boş çizime 72 nesne; dilim dosyadan alındı), `SH_CBSBILGI`, `SH_ALTLIK` (Esri,
+35 karo, nesnelerin altında, atıf yazısıyla): **çalıştı**. Denemede görülüp düzeltilen: dik hatta metraj ile hat
+bilgisi çizginin üstüne düşüp birbirini örtüyordu (kaydırma dünya ekseninde uygulanıyordu) → kaydırma artık parçanın
+kendi ekseninde (`Geometri.YaziKonumu` ↔ dxf.js `yaziKonumu`); kanal / sondaj metrajı içindeki kablonun metrajıyla
+çakışıyordu → bir satır yukarıda (`etiketler.kaziMetraji`); telefon DXF'inde yalnız kanal / sondaj kablo renginde
+çiziliyordu → kendi renk ve çizgisinde.
 
 25.10 canlı deneme (AutoCAD 2027, eklenti 0.1.52, uydurma örnek proje): Telefondan Al (72 nesne), Hesap Merkezi (AG
 hattı seçildi, zincir dallanmadan düz geçti), AG gerilim düşümü sayfası (46 bilgi çizimden), Kaydet / yeniden aç /
@@ -182,11 +192,11 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
-- **29.10 işlerinin AutoCAD'de denenmesi** (kullanıcıyla): eski bir çizimde `SH_GORUNUM` (renkler, Tahoma, açıklık
-  metrajı, kanal kenarları); kanal ekseni taşınınca / kopyalanınca / silinince kenarlar; şeritten kanal ölçüsü;
-  Proje Özeti ve Excel; `SH_KML` dosyasının Google Earth'te açılması; `SH_MIFVER` dosyalarının MapInfo / QGIS'te
-  açılması, `SH_MIFAL` ile geri alınması; `SH_ALTLIK` (anahtarsız Esri ile, sonra kullanıcının anahtarıyla). Kanal
-  kenarlarının eski programda sorun çıkarmadığı (kenarlar kanal katmanında, yalnız SH_SAHIP verili) denetlenmeli.
+- **29.10 işlerinin kalan denemeleri** (örnek projeyle canlı denendi, §2): gerçek eski bir çizimde `SH_GORUNUM`
+  (renkler, Tahoma, açıklık metrajı, kanal kenarları, dik hatta yazıların yeri — 0.1.65 ve sonrası); `SH_KML`
+  dosyasının Google Earth'te, `SH_MIFVER` dosyalarının MapInfo / QGIS'te açılması (dosyalar denetlendi, o
+  programlarda açılmadı); `SH_ALTLIK` kullanıcının kendi anahtarıyla (Google / Yandex …). Kanal kenarlarının eski
+  programda sorun çıkarmadığı (kenarlar kanal katmanında, yalnız SH_SAHIP verili) denetlenmeli.
 0. **Gerçek telefonda deneme** (AutoCAD tarafı 25.10'da canlı doğrulandı, yukarıda): AutoCAD'den gelen hesap
    kaydının telefonda görünmesi ve "güncel" kalması (telefon koduyla kapta denendi; rekortman kolu düzeltmesi A10),
    telefonda bir hesabı kaydedip Telefondan Al ile çizime gelmesi. Hesap sahibi (Baki SONAY) ile ⓘ panellerindeki
