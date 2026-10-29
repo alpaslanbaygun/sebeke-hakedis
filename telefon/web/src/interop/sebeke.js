@@ -228,9 +228,9 @@ export function sebekeModel(ps, opts = {}) {
         if (k === 0) hat.kalemler.push(...manuel); // elle eklenen malzemeler ilk parçaya
         kalemBilgisiUygula(hat.kalemler, kayitliBilgi(sb, kimlik));
         const ana = hat.kalemler.find((x) => x.kaynak === 'HAT') || hat.kalemler[0];
-        // Etiketteki uzunluk güzergâhın metrajıdır (adetli iletkende miktar / adet); tek iletkende adetli tam yazım
+        // Etiket: durum işaretiyle iletken (metraj açıklık yazısındadır); tek iletkende adetli tam yazım
         const tekAdetli = ana && hat.kalemler.filter((x) => x.kaynak === 'HAT').length === 1 && iletkenAdedi(ana) > 1;
-        hat.etiket = SH.hatEtiketi(durum, tekAdetli ? ana.aciklama : kesit.aciklama || kesit.tanim, ana ? ana.miktar / iletkenAdedi(ana) : Math.ceil(hat.cizimUzunlugu - 1e-6));
+        hat.etiket = SH.hatEtiketi(durum, tekAdetli ? ana.aciklama : kesit.aciklama || kesit.tanim);
         sp.hatlar.push(hat);
       }
       // Yeraltı: kazı kanalı ya da yatay sondaj ayrı nesnedir (parça parça)

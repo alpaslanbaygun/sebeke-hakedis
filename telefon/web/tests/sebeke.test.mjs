@@ -81,7 +81,7 @@ test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Dur
   assert.equal(ogler.length, 3, 'direkten direğe üç parça');
   const og = ogler[0];
   assert.equal(og.anaKesit, '3xSW'); assert.equal(og.kalemler[0].cins, 'OG_İLETKEN'); assert.equal(og.kalemler[0].birim, 'mt/mt');
-  assert.ok(/^\^ 3xSW\/\d+m$/.test(og.etiket), og.etiket);
+  assert.equal(og.etiket, '^ 3xSW', 'etikette metraj yok (açıklık yazısında)');
   assert.equal(og.kose.length, 2);
   assert.deepEqual(og.uclar, [poles[0].id, poles[1].id]);
   assert.deepEqual(ogler[2].uclar, [poles[2].id, poles[3].id]);
@@ -149,8 +149,10 @@ test('A3b · çizim durum kodu korunur: KM / ME / M+M seçimi ve demontaj türü
   assert.equal(el(dm).durum, 'DM');
   assert.equal(el(dm).kalemler[0].dmDurum, 'KESİK', 'demontaj türü nesnenin kendi pozuna yazılır');
   assert.equal(el(eski).durum, 'MEVCUT', 'durum MEVCUT olunca KM düşer');
-  assert.equal(SH.hatEtiketi('KM', '3xSW', 120), '/3xSW\\/120m');
-  assert.equal(SH.hatEtiketi('ENH', '3xSW', 120), '{3xSW}/120m');
+  assert.equal(SH.hatEtiketi('KM', '3xSW'), '/3xSW\\');
+  assert.equal(SH.hatEtiketi('ENH', '3xSW'), '{3xSW}');
+  assert.equal(SH.hatEtiketi('M', '3x50 Alm.'), '^ 3x50 Al'); // metraj ve tanıtıcı yok (açıklık yazısında); malzeme adı görünen yazımla
+  assert.equal(SH.hatEtiketi('DM', '3x50 Alm.'), '>3x50 Al<');
   // Geri alma: sebeke.durum ve dmDurum telefon kaydına yazılır
   const { ps: ps2 } = await setup();
   const ozet = await sebekeIceAl(ps2, JSON.parse(sebekeYaz(ps)), { name: 'durumlar' });
@@ -385,16 +387,16 @@ test('A8 · çok iletkenli hat: müşterekte OG + AG iki kalem ve birleşik ana 
     const satir = h.kalemler.filter((k) => k.kaynak === 'HAT');
     assert.deepEqual(satir.map((k) => k.cins + ' ' + k.tanim), ['OG_İLETKEN 3xSW', 'AG_İLETKEN 3P+R']);
     assert.equal(h.anaKesit, '3xSW / 3P+R');
-    assert.equal(h.etiket, '^ 3xSW / 3P+R/' + SH.metrajYazisi(satir[0].miktar) + 'm');
+    assert.equal(h.etiket, '^ 3xSW / 3P+R');
   }
-  // 3 adet ALPEK: tek kalem, miktar adet × güzergâh, tam yazım "3x(…)"; etiketteki uzunluk güzergâhın kendisi
+  // 3 adet ALPEK: tek kalem, miktar adet × güzergâh, tam yazım "3x(…)"
   const alpek = sp.hatlar.find((h) => h.tur === 'AG_HAVAI');
   const ak = alpek.kalemler.filter((k) => k.kaynak === 'HAT');
   assert.equal(ak.length, 1);
   assert.equal(ak[0].cins, 'ALPEK_KABLOLAR'); assert.equal(ak[0].tanim, '3X50/16+70 ALPEK'); assert.equal(ak[0].aciklama, '3x(3X50/16+70 ALPEK)');
   const metraj = ak[0].miktar / 3;
   assert.ok(Number.isInteger(metraj) && metraj >= 40, 'güzergâh metrajı tam metre: ' + metraj);
-  assert.equal(alpek.etiket, '^ 3x(3X50/16+70 ALPEK)/' + metraj + 'm');
+  assert.equal(alpek.etiket, '^ 3x(3x50/16+70 ALPEK)'); // metraj etikette değil, açıklık yazısında; görünen yazım (3X → 3x)
   // Başka telefona al: devreler (rol, tip, adet) aynen gelir; geri yazınca kalemler değişmez
   const { ps: ps2 } = await setup();
   const oz = await sebekeIceAl(ps2, SH.projeOku(SH.projeYaz(sp)), { name: 'cok-iletken' });

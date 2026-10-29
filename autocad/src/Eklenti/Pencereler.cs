@@ -26,7 +26,7 @@ namespace SebekeHakedis.Eklenti
         public bool Hafiza = true;
 
         public override string ToString() =>
-            Turler.ElemanAdi(Tur) + " · " + (Tip != null ? Tip.Tanim.Trim() : "") + " · " + Durum + (Turler.DemontajMi(Durum) && !string.IsNullOrEmpty(DmDurum) ? " " + DmDurum : "") +
+            Turler.ElemanAdi(Tur) + " · " + (Tip != null ? Tip.Gorunen : "") + " · " + Durum + (Turler.DemontajMi(Durum) && !string.IsNullOrEmpty(DmDurum) ? " " + DmDurum : "") +
             " · " + Hakedis + ". hakediş";
     }
 
@@ -60,7 +60,7 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
-        public override string ToString() => Turler.HatAdi(Tur) + " · " + IletkenYazisi + " · " + Durum + " · " + Hakedis + ". hakediş";
+        public override string ToString() => Turler.HatAdi(Tur) + " · " + MalzemeYazimi.Duzelt(IletkenYazisi) + " · " + Durum + " · " + Hakedis + ". hakediş";
     }
 
     internal sealed class KanalSecimi
@@ -84,7 +84,7 @@ namespace SebekeHakedis.Eklenti
         public string Durum = "M";
         public int Hakedis = 1;
 
-        public override string ToString() => "Yatay sondaj · " + (Tip != null ? Tip.Tanim : "") + " · " + Durum;
+        public override string ToString() => "Yatay sondaj · " + (Tip != null ? Tip.Gorunen : "") + " · " + Durum;
     }
 
     /// <summary>Toplu malzeme penceresinden çıkan satır: her seçili elemana eklenecek malzeme.</summary>
@@ -411,7 +411,7 @@ namespace SebekeHakedis.Eklenti
             {
                 Ara = ara;
                 _k = k;
-                Liste.Baslik = o => ((KatalogKalemi)o).Tanim.Trim();
+                Liste.Baslik = o => ((KatalogKalemi)o).Gorunen;
                 Liste.Alt = o => AltYazi(_k, (KatalogKalemi)o);
                 if (simge != null) Liste.Simge = o => simge((KatalogKalemi)o);
                 ara.Kutu.TextChanged += (s, e) => Suz(Secili != null ? Secili.Anahtar : null);
@@ -444,7 +444,7 @@ namespace SebekeHakedis.Eklenti
             {
                 if (!string.IsNullOrEmpty(Cins) && it.Cins != Cins) return false;
                 if (sozcukler.Length == 0) return true;
-                string y = Norm(it.Tanim + " " + it.Cins + " " + it.Birim + " " + it.PozNo + " " + (_k != null ? _k.CinsAdi(it.Cins) : ""));
+                string y = Norm(it.Tanim + " " + it.Gorunen + " " + it.Cins + " " + it.Birim + " " + it.PozNo + " " + (_k != null ? _k.CinsAdi(it.Cins) : ""));
                 foreach (var s in sozcukler) if (y.IndexOf(s, StringComparison.Ordinal) < 0) return false;
                 return true;
             }
@@ -651,7 +651,7 @@ namespace SebekeHakedis.Eklenti
                     var tip = liste.Secili;
                     string d = durum.Secili, dmk = dmKodu();
                     int hafizaSayisi = hafiza.Checked && t != null && tip != null ? HizliSecim.Hafiza.Sayisi(t.Kod, tip.Cins, tip.Tanim) : 0;
-                    alt.Ozet.Text = "Çizilecek: " + (t != null ? t.Ad : "?") + " · " + (tip != null ? tip.Tanim.Trim() : "tip seçin") + " · " + d +
+                    alt.Ozet.Text = "Çizilecek: " + (t != null ? t.Ad : "?") + " · " + (tip != null ? tip.Gorunen : "tip seçin") + " · " + d +
                                     (dmk.Length > 0 ? " " + dmk : "") + " · " + (int)hak.Value + ". hakediş" + (hafizaSayisi > 0 ? " · +" + hafizaSayisi + " malzeme" : "");
                     alt.Ozet.Simge = t == null ? null : tip != null ? SembolResmi(t.Kod, tip.Cins, d, dmk, 22) : TurSimgesi(t.Kod, false, false, 18);
                 };
@@ -820,7 +820,7 @@ namespace SebekeHakedis.Eklenti
                 }
                 Boya.Yazi(g, "Adet", KoyuYazi.Kucuk, new Rectangle(Adet.Left, Olcu.S(6), Adet.Width, Olcu.S(16)), KoyuRenk.Ikincil,
                     TextFormatFlags.Left | TextFormatFlags.Top | TextFormatFlags.SingleLine);
-                Boya.Yazi(g, _kesit.Tanim.Trim(), KoyuYazi.Kalin, new Rectangle(Olcu.S(12), Olcu.S(24), Math.Max(1, w), Olcu.S(20)), KoyuRenk.Yazi,
+                Boya.Yazi(g, _kesit.Gorunen, KoyuYazi.Kalin, new Rectangle(Olcu.S(12), Olcu.S(24), Math.Max(1, w), Olcu.S(20)), KoyuRenk.Yazi,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
                 Boya.Yazi(g, _k != null ? _k.CinsAdi(_kesit.Cins) : _kesit.Cins, KoyuYazi.Kucuk, new Rectangle(Olcu.S(12), Olcu.S(44), Math.Max(1, w), Olcu.S(16)), KoyuRenk.Ikincil,
                     TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
@@ -889,7 +889,7 @@ namespace SebekeHakedis.Eklenti
                 {
                     var t = seciliTur();
                     var hs = new HatSecimi { Iletkenleri = iletkenler() };
-                    alt.Ozet.Text = "Çizilecek: " + (t != null ? t.Ad : "?") + " · " + (hs.Iletkenleri.Count > 0 ? hs.IletkenYazisi : "iletken seçin") + " · " + durum.Secili + " · " + (int)hak.Value + ". hakediş";
+                    alt.Ozet.Text = "Çizilecek: " + (t != null ? t.Ad : "?") + " · " + (hs.Iletkenleri.Count > 0 ? MalzemeYazimi.Duzelt(hs.IletkenYazisi) : "iletken seçin") + " · " + durum.Secili + " · " + (int)hak.Value + ". hakediş";
                     alt.Ozet.Simge = t != null ? TurSimgesi(t.Kod, true, false, 18) : null;
                 };
                 var kilitDenetle = KilitBagla(o, hak, bilgi, alt.Tamam, normal);
@@ -1139,13 +1139,17 @@ namespace SebekeHakedis.Eklenti
                 int zi = zemin.Items.IndexOf(string.IsNullOrEmpty(zeminSecili) ? "TOPRAK" : zeminSecili);
                 if (zemin.Items.Count > 0) zemin.SelectedIndex = Math.Max(0, zi);
 
-                // Sağ: ölçüler, hızlı seçim, durum, hakediş
+                // Sağ: ölçüler (şeritte girilmişse oradan), hızlı seçim, durum, hakediş
+                HizliSecim.Yukle();
+                double ilkAlt = onceki != null ? onceki.Alt : HizliSecim.KanalAlt > 0 ? HizliSecim.KanalAlt : a.KanalAlt;
+                double ilkUst = onceki != null ? onceki.Ust : HizliSecim.KanalUst > 0 ? HizliSecim.KanalUst : a.KanalUst;
+                double ilkDer = onceki != null ? onceki.Derinlik : HizliSecim.KanalDerinlik > 0 ? HizliSecim.KanalDerinlik : a.KanalDerinlik;
                 Etiket(f, "Alt genişlik (cm)", 272, 56);
-                var altG = Koy(f, new SayiKutusu(0, 1000, D(onceki != null ? onceki.Alt : a.KanalAlt), 0, 5), 272, 76, 136, 30);
+                var altG = Koy(f, new SayiKutusu(0, 1000, D(ilkAlt), 0, 5), 272, 76, 136, 30);
                 Etiket(f, "Üst genişlik (cm)", 420, 56);
-                var ust = Koy(f, new SayiKutusu(0, 1000, D(onceki != null ? onceki.Ust : a.KanalUst), 0, 5), 420, 76, 136, 30);
+                var ust = Koy(f, new SayiKutusu(0, 1000, D(ilkUst), 0, 5), 420, 76, 136, 30);
                 Etiket(f, "Derinlik (cm)", 568, 56);
-                var der = Koy(f, new SayiKutusu(0, 1000, D(onceki != null ? onceki.Derinlik : a.KanalDerinlik), 0, 5), 568, 76, 136, 30);
+                var der = Koy(f, new SayiKutusu(0, 1000, D(ilkDer), 0, 5), 568, 76, 136, 30);
                 Etiket(f, "Hakediş", 716, 56);
                 var hak = Koy(f, new SayiKutusu(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis), 716, 76, 88, 30);
                 Etiket(f, "Hızlı seçim (alt × üst × derinlik)", 272, 118);
@@ -1246,7 +1250,7 @@ namespace SebekeHakedis.Eklenti
                 Action ozetYaz = () =>
                 {
                     var k = liste.Secili;
-                    alt.Ozet.Text = "Çizilecek: Yatay sondaj · " + (k != null ? k.Tanim.Trim() : "tip seçin") + " · " + durum.Secili + " · " + (int)hak.Value + ". hakediş";
+                    alt.Ozet.Text = "Çizilecek: Yatay sondaj · " + (k != null ? k.Gorunen : "tip seçin") + " · " + durum.Secili + " · " + (int)hak.Value + ". hakediş";
                     alt.Ozet.Simge = Boya.Simge("sondaj", SondajRengi, 18);
                 };
                 var kilitDenetle = KilitBagla(o, hak, bilgi, alt.Tamam, normal);
@@ -1468,9 +1472,9 @@ namespace SebekeHakedis.Eklenti
                     {
                         case 0: e.Value = r.Eleman.GisId; break;
                         case 1: e.Value = an.Cins; break;
-                        case 2: e.Value = an.Tanim; break;
+                        case 2: e.Value = MalzemeYazimi.Duzelt(an.Tanim); break;
                         case 3: e.Value = an.Durum; break;
-                        case 4: e.Value = r.Malzeme != null ? r.Malzeme.Tanim.Trim() + "  ·  " + Bicim(r.Malzeme.Miktar) + " " + BirimAdi(r.Malzeme.Birim) : "yok"; break;
+                        case 4: e.Value = r.Malzeme != null ? MalzemeYazimi.Duzelt(r.Malzeme.Tanim) + "  ·  " + Bicim(r.Malzeme.Miktar) + " " + BirimAdi(r.Malzeme.Birim) : "yok"; break;
                         case 5: e.Value = r.Proje; break;
                     }
                 };
@@ -1536,6 +1540,371 @@ namespace SebekeHakedis.Eklenti
                 f.Kapsam = son.Kapsam;
                 sonuc = DetaySorgu.Sorgula(p, f, dt);
                 return islem == DetayIslemi.Vazgec ? DetayIslemi.Sec : islem;
+            }
+        }
+
+        // ================= Proje özeti =================
+
+        /// <summary>Proje özeti penceresinde görünen liste (Excel'e aktarılırken): seçili proje ve süzgeçler.</summary>
+        public sealed class ProjeOzetiGorunumu
+        {
+            public ProjeOzeti.ProjeSatiri Proje;
+            public int Hakedis;
+            public string Durum = "", Ara = "";
+        }
+
+        /// <summary>
+        /// Proje özeti: solda projeler (bölgeler), sağda seçilen projenin malzeme listesi; hakediş, durum ve aramayla süzülür.
+        /// "Excel'e aktar" listeleri yazar (excel), pencere açık kalır. Dönen değer: son görünüm.
+        /// </summary>
+        public static ProjeOzetiGorunumu ProjeOzetiGoster(ProjeOzeti oz, Action<ProjeOzetiGorunumu> excel)
+        {
+            Hazirla();
+            var gorunum = new ProjeOzetiGorunumu { Proje = oz.Projeler.Count > 0 ? oz.Projeler[0] : null };
+            using (var w = new KoyuPencere("Proje özeti", 1040, 680, Boya.Simge("ozet", KoyuRenk.Yesil, 20)))
+            {
+                // Altbilgi: solda Excel'e aktar, sağda Kapat
+                var kapat = new KoyuDugme("Kapat") { DialogResult = DialogResult.Cancel };
+                int bh = S(34), by = (w.Alt.Height - bh) / 2;
+                kapat.SetBounds(w.Alt.Width - S(16) - S(104), by, S(104), bh);
+                var excelDugme = new KoyuDugme("Excel'e aktar", DugmeTuru.Birincil, Boya.Simge("excel", Color.White, 16));
+                excelDugme.SetBounds(S(16), by, S(150), bh);
+                w.Alt.Controls.Add(excelDugme);
+                w.Alt.Controls.Add(kapat);
+                var excelBilgi = Etiket(w.Alt, "Proje listesi ve görünen malzeme listesi yazılır.", 182, 0, 560, KoyuYazi.Kucuk, KoyuRenk.Soluk);
+                excelBilgi.Top = (w.Alt.Height - excelBilgi.Height) / 2;
+                w.CancelButton = kapat;
+
+                // Sol: projeler
+                Etiket(w, "Projeler", 16, 56, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var liste = new IkiSatirListe();
+                var simgeTumu = Boya.Simge("ozet", KoyuRenk.Yesil, 18);
+                var simgeProje = Boya.Simge("bolge", KoyuRenk.Ikincil, 18);
+                liste.Baslik = x => ((ProjeOzeti.ProjeSatiri)x).GorunenAd;
+                liste.Alt = x =>
+                {
+                    var s = (ProjeOzeti.ProjeSatiri)x;
+                    if (s.Tumu) return (oz.Projeler.Count - 1).ToString("N0", Tr) + " proje · " + s.Malzeme.ToString("N0", Tr) + " malzeme";
+                    if (s.Ad.Length == 0) return "Bölgeye bağlı olmayan nesneler";
+                    return (s.Kod.Length > 0 ? s.Kod : "Proje kodu yok") + " · " + s.Malzeme.ToString("N0", Tr) + " malzeme";
+                };
+                liste.Simge = x => ((ProjeOzeti.ProjeSatiri)x).Tumu ? simgeTumu : simgeProje;
+                foreach (var pr in oz.Projeler) liste.Items.Add(pr);
+                Koy(w, new Cerceve(liste), 16, 80, 300, 524);
+
+                // Sağ: başlık, süzgeçler, malzeme listesi
+                var baslik = Etiket(w, "", 332, 54, 692, KoyuYazi.Baslik, KoyuRenk.Yazi);
+                var altBaslik = Etiket(w, "", 332, 80, 692, KoyuYazi.Kucuk, KoyuRenk.Soluk);
+                Etiket(w, "Hakediş", 332, 114);
+                var hak = Koy(w, new KoyuAcilir(), 392, 108, 124);
+                hak.Items.Add(Hepsi);
+                foreach (var h in oz.Hakedisler) hak.Items.Add(h + ". hakediş");
+                hak.SelectedIndex = 0;
+                Etiket(w, "Durum", 532, 114);
+                var durum = Koy(w, new KoyuAcilir(), 584, 108, 124);
+                durum.Items.Add(Hepsi);
+                foreach (var d in oz.Durumlar) durum.Items.Add(d);
+                durum.SelectedIndex = 0;
+                var ara = Koy(w, new MetinKutusu("", "Cins ya da malzeme ara", Boya.Simge("ara", KoyuRenk.Soluk, 16)), 724, 106, 300, 32);
+
+                var g = new DataGridView
+                {
+                    VirtualMode = true,
+                    ReadOnly = true,
+                    AllowUserToAddRows = false,
+                    AllowUserToDeleteRows = false,
+                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                    MultiSelect = false,
+                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                };
+                KoyuTablo.Uygula(g);
+                string[] basliklar = { "Hak.", "Durum", "Cins", "Malzeme", "Miktar", "Rapor miktarı", "Tutar (TL)" };
+                float[] agirlik = { 44, 66, 176, 176, 84, 100, 80 };
+                for (int i = 0; i < basliklar.Length; i++)
+                {
+                    var c = new DataGridViewTextBoxColumn { HeaderText = basliklar[i], FillWeight = agirlik[i], SortMode = DataGridViewColumnSortMode.NotSortable };
+                    if (i >= 4) c.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                    g.Columns.Add(c);
+                }
+                Koy(w, new Cerceve(g), 332, 150, 692, 422);
+                var toplam = Etiket(w, "", 332, 582, 692, KoyuYazi.Govde, KoyuRenk.Ikincil);
+
+                var gorunen = new List<DurumTespit.OzetSatiri>();
+                g.CellValueNeeded += (s, e) =>
+                {
+                    if (e.RowIndex < 0 || e.RowIndex >= gorunen.Count) return;
+                    var r = gorunen[e.RowIndex];
+                    string[] birim = (r.Birim ?? "").Split('/');
+                    string giris = birim.Length > 0 ? birim[0] : "", rapor = birim.Length > 1 ? birim[1] : giris;
+                    switch (e.ColumnIndex)
+                    {
+                        case 0: e.Value = r.Hakedis; break;
+                        case 1: e.Value = r.Durum; break;
+                        case 2: e.Value = r.Cins; break;
+                        case 3: e.Value = MalzemeYazimi.Duzelt(r.Tip ?? ""); break;
+                        case 4: e.Value = (Bicim(r.Miktar) + " " + giris).Trim(); break;
+                        case 5: e.Value = (Bicim(r.Toplam) + " " + rapor).Trim(); break;
+                        case 6: e.Value = r.Tutar != 0 ? r.Tutar.ToString("N2", Tr) : ""; break;
+                    }
+                };
+
+                Func<ProjeOzetiGorunumu> oku = () => new ProjeOzetiGorunumu
+                {
+                    Proje = liste.SelectedItem as ProjeOzeti.ProjeSatiri ?? (oz.Projeler.Count > 0 ? oz.Projeler[0] : null),
+                    Hakedis = hak.SelectedIndex > 0 ? oz.Hakedisler[hak.SelectedIndex - 1] : 0,
+                    Durum = durum.SelectedIndex > 0 ? oz.Durumlar[durum.SelectedIndex - 1] : "",
+                    Ara = (ara.Text ?? "").Trim(),
+                };
+                Action yenile = () =>
+                {
+                    var v = oku();
+                    gorunum = v;
+                    var p = v.Proje;
+                    if (p == null) return;
+                    baslik.Text = p.GorunenAd;
+                    var bilgi = new List<string>();
+                    if (!p.Tumu && p.Kod.Length > 0) bilgi.Add("Proje kodu " + p.Kod);
+                    if (p.Tumu) bilgi.Add(oz.CizimAdi);
+                    bilgi.Add(p.Eleman.ToString("N0", Tr) + " eleman · " + p.Hat.ToString("N0", Tr) + " hat · " + p.Kanal.ToString("N0", Tr) + " kanal · " + p.Sondaj.ToString("N0", Tr) + " sondaj");
+                    altBaslik.Text = string.Join("   ·   ", bilgi.ToArray());
+                    List<DurumTespit.OzetSatiri> l;
+                    try { l = oz.Malzemeler(p, v.Hakedis, v.Durum, v.Ara); }
+                    catch { l = new List<DurumTespit.OzetSatiri>(); }
+                    gorunen = l;
+                    g.RowCount = 0;
+                    g.RowCount = l.Count;
+                    g.Invalidate();
+                    double tutar = 0;
+                    foreach (var r in l) tutar += r.Tutar;
+                    string suzgec = ProjeOzeti.SuzgecYazisi(v.Hakedis, v.Durum, v.Ara);
+                    toplam.Text = l.Count.ToString("N0", Tr) + " malzeme satırı" + (tutar != 0 ? " · toplam " + SayiCoz.Temiz(tutar, 2).ToString("N2", Tr) + " TL" : "") +
+                                  (suzgec.Length > 0 ? "   (süzgeç: " + suzgec + ")" : "");
+                };
+                var zamanlayici = new Timer { Interval = 250 };
+                zamanlayici.Tick += (s, e) => { zamanlayici.Stop(); yenile(); };
+                liste.SelectedIndexChanged += (s, e) => yenile();
+                hak.SelectedIndexChanged += (s, e) => yenile();
+                durum.SelectedIndexChanged += (s, e) => yenile();
+                ara.Kutu.TextChanged += (s, e) => { zamanlayici.Stop(); zamanlayici.Start(); };
+                w.FormClosed += (s, e) => { zamanlayici.Stop(); zamanlayici.Dispose(); };
+                if (liste.Items.Count > 0) liste.SelectedIndex = 0;
+                w.Shown += (s, e) => { yenile(); liste.Focus(); };
+
+                excelDugme.Click += (s, e) =>
+                {
+                    zamanlayici.Stop();
+                    yenile();
+                    try { excel?.Invoke(gorunum); }
+                    catch (Exception ex) { Uyar("Excel dosyası yazılamadı: " + ex.Message); }
+                };
+                Goster(w);
+                return gorunum;
+            }
+        }
+
+        // ================= CBS ve harita =================
+
+        /// <summary>
+        /// Çizimin koordinat dilimini (3° TM dilim orta meridyeni) sorar: Google Earth, CBS (MIF) ve harita altlığı için
+        /// gerekir. Seçilen dilim çağıran tarafından çizimin ayarlarına kaydedilir. Vazgeçilirse 0.
+        /// </summary>
+        public static int DomSec(int dom, string neden)
+        {
+            Hazirla();
+            using (var f = new KoyuPencere("Koordinat dilimi", 560, 330, Boya.Simge("kml", KoyuRenk.Yesil, 20)))
+            {
+                var alt = AltKur(f, "Devam", false);
+                Aciklama(f, (string.IsNullOrEmpty(neden) ? "" : neden + " için ") + "çizim koordinatlarının hangi 3° dilimde olduğunu seçin " +
+                            "(ITRF96, dilim orta meridyeni). Seçim çizimin ayarlarına kaydedilir; bir daha sorulmaz.", 16, 58, 528, 54);
+                var kap = Koy(f, new Panel { BackColor = Color.Transparent }, 16, 118, 528, 64);
+                var secimler = new List<KoyuSecim>();
+                for (int i = 0; i < Turler.Domlar.Length; i++)
+                {
+                    int m = Turler.Domlar[i];
+                    var r = Koy(kap, new KoyuSecim(m.ToString(CultureInfo.InvariantCulture) + "°") { Tag = m }, (i % 4) * 130, (i / 4) * 30);
+                    r.Checked = dom == m;
+                    secimler.Add(r);
+                }
+                Aciklama(f, "Örnek: Elazığ, Malatya, Erzincan 39° · Ankara 33° · İstanbul 30°. Telefondaki projeyle aynı olmalı.", 16, 190, 528, 48);
+                alt.Tamam.Click += (s, e) =>
+                {
+                    if (!secimler.Exists(r => r.Checked)) { Uyar("Dilimi seçin."); return; }
+                    f.DialogResult = DialogResult.OK;
+                };
+                if (Goster(f) != DialogResult.OK) return 0;
+                var sec = secimler.Find(r => r.Checked);
+                return sec != null ? (int)sec.Tag : 0;
+            }
+        }
+
+        /// <summary>
+        /// Harita altlığı: sağlayıcı (anahtarsız / anahtarlı / özel), anahtar, alan ve ayrıntı. Ayar yerinde güncellenir
+        /// (anahtarlar yalnız bu bilgisayarda saklanır). Vazgeçilirse false.
+        /// </summary>
+        public static bool HaritaAltligiSec(AltlikAyari a)
+        {
+            Hazirla();
+            using (var f = new KoyuPencere("Harita altlığı", 880, 620, Boya.Simge("altlik", KoyuRenk.MaviAcik, 20)))
+            {
+                var alt = AltKur(f, "Altlığı getir", false, 140);
+
+                // Sol: sağlayıcılar (gruplu)
+                Etiket(f, "Harita", 16, 56, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var liste = new IkiSatirListe();
+                liste.Baslik = x => ((AltlikSaglayici)x).Ad;
+                liste.Alt = x =>
+                {
+                    var s = (AltlikSaglayici)x;
+                    if (s.Tur == "ozel") return "adresi siz girersiniz";
+                    if (s.Anahtar.Length == 0) return "anahtarsız";
+                    return (a.Anahtar(s.Anahtar).Length > 0 ? "anahtar girildi" : "anahtar gerekir") + " · " + AnahtarAdi(s.Anahtar);
+                };
+                liste.Simge = x => Boya.Simge(((AltlikSaglayici)x).Uydu ? "altlik" : "konum", KoyuRenk.Ikincil, 18);
+                foreach (var g in new[] { new[] { "ucretsiz", "Anahtarsız" }, new[] { "anahtarli", "Anahtarlı (kendi anahtarınızla)" }, new[] { "ozel", "Özel" } })
+                {
+                    liste.Items.Add(new ListeBasligi(g[1]));
+                    foreach (var s in HaritaAltligi.Saglayicilar) if (s.Grup == g[0]) liste.Items.Add(s);
+                }
+                Koy(f, new Cerceve(liste), 16, 80, 330, 464);
+
+                // Sağ: seçilen sağlayıcı, anahtar, alan, ayrıntı
+                const int X = 362, W = 502;
+                var ad = Etiket(f, "", X, 54, W, KoyuYazi.Baslik, KoyuRenk.Yazi);
+                var not = Aciklama(f, "", X, 80, W, 54);
+                var kosul = new LinkLabel { AutoSize = false, BackColor = Color.Transparent, LinkColor = KoyuRenk.MaviAcik, ActiveLinkColor = KoyuRenk.Yesil, Font = KoyuYazi.Kucuk, LinkBehavior = LinkBehavior.HoverUnderline };
+                Koy(f, kosul, X, 136, W, 20);
+                kosul.LinkClicked += (s, e) => { try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(kosul.Tag as string) { UseShellExecute = true }); } catch { } };
+                var anahtarEtiket = Etiket(f, "Anahtar", X, 168);
+                var anahtar = Koy(f, new MetinKutusu(""), X, 188, W - 92, 30);
+                var goster = Koy(f, new KoyuOnay("Göster"), X + W - 80, 194);
+                anahtar.Kutu.UseSystemPasswordChar = true;
+                goster.CheckedChanged += (s, e) => anahtar.Kutu.UseSystemPasswordChar = !goster.Checked;
+                var anahtarNot = Aciklama(f, "Anahtar yalnız bu bilgisayarda saklanır; çizime ve proje dosyalarına yazılmaz.", X, 222, W, 20);
+
+                Etiket(f, "Alan", X, 252, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var alanlar = new[]
+                {
+                    Koy(f, new KoyuSecim("Şebekenin bulunduğu alan"), X, 274),
+                    Koy(f, new KoyuSecim("Ekranda görünen alan"), X + 220, 274),
+                    Koy(f, new KoyuSecim("Pencereyle seç"), X, 302),
+                };
+                alanlar[Math.Max(0, Math.Min(2, a.Alan))].Checked = true;
+                Etiket(f, "Ayrıntı", X, 336, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var kalite = Koy(f, new Panel { BackColor = Color.Transparent }, X, 358, W, 28);
+                var kaliteler = new[]
+                {
+                    Koy(kalite, new KoyuSecim("Düşük (≈1 m, hızlı)"), 0, 0),
+                    Koy(kalite, new KoyuSecim("Normal (≈0,5 m)"), 170, 0),
+                    Koy(kalite, new KoyuSecim("Yüksek (≈0,25 m)"), 320, 0),
+                };
+                kaliteler[Math.Max(0, Math.Min(2, a.Kalite))].Checked = true;
+                var eskiler = Koy(f, new KoyuOnay("Önceki altlıkları kaldır (ALTLIK katmanındaki resimler)"), X, 398);
+                eskiler.Checked = a.EskileriSil;
+                Koy(f, new BilgiCubugu(BilgiTuru.Bilgi, "Altlık çizime resim olarak konur: ALTLIK katmanı, nesnelerin altında. Resim çizimin yanındaki " +
+                    "\"Altlik\" klasörüne kaydedilir (çizim henüz kaydedilmediyse Belgeler\\Altlik). Alan büyükse ayrıntı " +
+                    "kendiliğinden düşürülür (en çok 4096 piksel). " +
+                    "İndirme sırasında Esc ile vazgeçilir."), X, 434, W, 110);
+
+                // Sağlayıcı değişince: ad, not, koşul, anahtar kutusu
+                AltlikSaglayici secili = null;
+                Action anahtarSakla = () =>
+                {
+                    if (secili != null && secili.Anahtar.Length > 0) a.Anahtarlar[secili.Anahtar] = anahtar.Text.Trim();
+                };
+                Action goster_ = () =>
+                {
+                    anahtarSakla();
+                    secili = liste.SelectedItem as AltlikSaglayici;
+                    if (secili == null) return;
+                    ad.Text = secili.Ad;
+                    not.Text = secili.Not;
+                    kosul.Text = string.IsNullOrEmpty(secili.Kosul) ? "" : "Kullanım koşulları: " + secili.Kosul;
+                    kosul.Tag = secili.Kosul;
+                    bool ister = secili.Anahtar.Length > 0;
+                    anahtarEtiket.Visible = anahtar.Visible = goster.Visible = anahtarNot.Visible = ister;
+                    anahtarEtiket.Text = secili.Tur == "ozel" ? "Karo adresi (XYZ)" : AnahtarAdi(secili.Anahtar) + " anahtarı";
+                    anahtar.Ipucu = secili.Tur == "ozel" ? "https://sunucu/{z}/{x}/{y}.png" : "anahtarı yapıştırın";
+                    anahtar.Kutu.UseSystemPasswordChar = secili.Tur != "ozel" && !goster.Checked;
+                    goster.Visible = ister && secili.Tur != "ozel";
+                    anahtar.Text = ister ? a.Anahtar(secili.Anahtar) : "";
+                    alt.Tamam.Enabled = true;
+                };
+                liste.SelectedIndexChanged += (s, e) => goster_();
+                anahtar.Kutu.TextChanged += (s, e) => { if (secili != null && secili.Anahtar.Length > 0) { a.Anahtarlar[secili.Anahtar] = anahtar.Text.Trim(); liste.Invalidate(); } };
+                int ilk = -1;
+                for (int i = 0; i < liste.Items.Count; i++)
+                    if (liste.Items[i] is AltlikSaglayici s && s.Id == a.Saglayici) ilk = i;
+                liste.SelectedIndex = ilk >= 0 ? ilk : liste.IlkOge();
+
+                alt.Tamam.Click += (s, e) =>
+                {
+                    anahtarSakla();
+                    if (secili == null) { Uyar("Bir harita seçin."); return; }
+                    string k = a.Anahtar(secili.Anahtar);
+                    if (secili.Tur == "ozel")
+                    {
+                        if (!(k.StartsWith("http", StringComparison.OrdinalIgnoreCase) && (k.Contains("{q}") || (k.Contains("{z}") && k.Contains("{x}") && k.Contains("{y}")))))
+                        { Uyar("Karo adresini {z}, {x}, {y} yerleriyle yazın (ör. https://sunucu/{z}/{x}/{y}.png)."); return; }
+                    }
+                    else if (secili.Anahtar.Length > 0 && k.Length == 0) { Uyar(secili.Ad + " için " + AnahtarAdi(secili.Anahtar) + " anahtarını girin."); return; }
+                    f.DialogResult = DialogResult.OK;
+                };
+                if (Goster(f) != DialogResult.OK) return false;
+                a.Saglayici = secili.Id;
+                a.Alan = Array.FindIndex(alanlar, r => r.Checked);
+                a.Kalite = Array.FindIndex(kaliteler, r => r.Checked);
+                a.EskileriSil = eskiler.Checked;
+                return true;
+            }
+        }
+
+        private static string AnahtarAdi(string anahtar)
+        {
+            switch (anahtar)
+            {
+                case "google": return "Google";
+                case "bing": return "Bing Maps";
+                case "azure": return "Azure Maps";
+                case "esri": return "ArcGIS";
+                case "yandex": return "Yandex";
+                case "maptiler": return "MapTiler";
+                case "ozel": return "Özel";
+                default: return anahtar ?? "";
+            }
+        }
+
+        /// <summary>CBS'den alınan nesnenin bilgileri (MID satırı): sütun ve değer.</summary>
+        public static void CbsBilgisi(string dosya, List<string[]> satirlar)
+        {
+            Hazirla();
+            // Başlık 42 + dosya satırı + tablo başlığı 34 + satırlar (30) + altbilgi 60
+            int boy = Math.Min(640, 204 + Math.Max(4, satirlar.Count) * 30);
+            using (var w = new KoyuPencere("CBS bilgisi", 620, boy, Boya.Simge("cbs_al", KoyuRenk.Yesil, 20)))
+            {
+                var kapat = new KoyuDugme("Kapat") { DialogResult = DialogResult.Cancel };
+                int bh = S(34), by = (w.Alt.Height - bh) / 2;
+                kapat.SetBounds(w.Alt.Width - S(16) - S(104), by, S(104), bh);
+                w.Alt.Controls.Add(kapat);
+                w.CancelButton = kapat;
+                w.AcceptButton = kapat;
+                Etiket(w, string.IsNullOrEmpty(dosya) ? "CBS nesnesi" : "Dosya: " + dosya, 16, 54, 588, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var g = new DataGridView
+                {
+                    ReadOnly = true,
+                    AllowUserToAddRows = false,
+                    AllowUserToDeleteRows = false,
+                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                    MultiSelect = true,
+                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                    ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText,
+                };
+                KoyuTablo.Uygula(g);
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Sütun", FillWeight = 35, SortMode = DataGridViewColumnSortMode.NotSortable });
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Değer", FillWeight = 65, SortMode = DataGridViewColumnSortMode.NotSortable });
+                foreach (var s in satirlar) g.Rows.Add(s[0], s.Length > 1 ? s[1] : "");
+                int ust = 80, en = 588, yuk = (int)Math.Round(w.IcerikSonu - ust - 12.0);
+                Koy(w, new Cerceve(g), 16, ust, en, Math.Max(80, yuk));
+                Goster(w);
             }
         }
 
@@ -1673,7 +2042,7 @@ namespace SebekeHakedis.Eklenti
                 Action ozetYaz = () =>
                 {
                     var it = tl.Secili;
-                    alt.Ozet.Text = it != null ? "Seçili: " + it.Tanim.Trim() + "  ·  " + AltYazi(k, it) : "Listeden bir malzeme seçin";
+                    alt.Ozet.Text = it != null ? "Seçili: " + it.Gorunen + "  ·  " + AltYazi(k, it) : "Listeden bir malzeme seçin";
                 };
                 tl.Degisti += () => ozetYaz();
                 tl.Secildi += () => alt.Tamam.PerformClick();
@@ -1772,7 +2141,7 @@ namespace SebekeHakedis.Eklenti
                 Action<int, TopluMalzemeSatiri> satirYaz = (r, t) =>
                 {
                     var row = g.Rows[r];
-                    row.Cells[0].Value = t.Kalem.Tanim.Trim() + "  ·  " + o.Katalog.CinsAdi(t.Kalem.Cins);
+                    row.Cells[0].Value = MalzemeYazimi.Duzelt(t.Kalem.Tanim) + "  ·  " + o.Katalog.CinsAdi(t.Kalem.Cins);
                     row.Cells[1].Value = Bicim(t.Miktar);
                     string[] b = (t.Kalem.Birim ?? "").Split('/');
                     row.Cells[2].Value = b.Length > 0 ? b[0] : "";
@@ -2264,7 +2633,7 @@ namespace SebekeHakedis.Eklenti
                     yukleniyor = true;
                     var row = g.Rows[r];
                     row.Cells[0].Value = k.Cins;
-                    row.Cells[1].Value = string.IsNullOrEmpty(k.Aciklama) ? k.Tanim : k.Tanim + "  (" + k.Aciklama + ")";
+                    row.Cells[1].Value = string.IsNullOrEmpty(k.Aciklama) ? MalzemeYazimi.Duzelt(k.Tanim) : MalzemeYazimi.Duzelt(k.Tanim) + "  (" + MalzemeYazimi.Duzelt(k.Aciklama) + ")";
                     row.Cells[2].Value = k.Durum ?? "";
                     row.Cells[3].Value = Bicim(k.Miktar);
                     row.Cells[4].Value = k.Birim;

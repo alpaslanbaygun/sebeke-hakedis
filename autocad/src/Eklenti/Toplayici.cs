@@ -30,7 +30,7 @@ namespace SebekeHakedis.Eklenti
 
                     var xd = XdataOku(ent);
                     if (xd.Count == 0) continue; // AutoCAD nesneleri her zaman genişletilmiş veri taşır
-                    if (xd.Count == 1 && xd.ContainsKey(NesneYazici.ArmaturUygulamasi)) continue; // direğin armatür simgesi (süs)
+                    if (SusMu(xd)) continue; // başka nesnenin süsü: armatür simgesi, hat etiketi, metraj yazısı, kanal kenarı
 
                     var v = Cevir(ent, tr);
                     if (v == null) continue;
@@ -57,10 +57,32 @@ namespace SebekeHakedis.Eklenti
             return liste;
         }
 
-        /// <summary>Tek bir nesneyi (genişletilmiş verisiyle) çevirir; hat ise etiket yazısı da eklenir.</summary>
+        /// <summary>Genişletilmiş verisi yalnız süs bölümlerinden (SH_ARM, SH_SAHIP) oluşan nesne başka bir nesnenin süsüdür.</summary>
+        internal static bool SusMu(Dictionary<string, List<string>> xd)
+        {
+            if (xd == null || xd.Count == 0) return false;
+            foreach (var k in xd.Keys) if (Array.IndexOf(NesneYazici.SusUygulamalari, k) < 0) return false;
+            return true;
+        }
+
+        /// <summary>Süs seçildiyse (kanal kenarı, hat etiketi) sahibi; değilse kendisi.</summary>
+        internal static Entity SusSahibi(Transaction tr, Entity ent)
+        {
+            if (ent == null) return null;
+            List<string> sahip;
+            var xd = XdataOku(ent);
+            if (!SusMu(xd) || !xd.TryGetValue(NesneYazici.SahipUygulamasi, out sahip) || sahip.Count == 0) return ent;
+            ObjectId id;
+            if (!TaniticiylaBul(ent.Database, sahip[0], out id)) return ent;
+            try { return tr.GetObject(id, OpenMode.ForRead, false) as Entity ?? ent; }
+            catch { return ent; }
+        }
+
+        /// <summary>Tek bir nesneyi (genişletilmiş verisiyle) çevirir; hat ise etiket yazısı da eklenir. Süs seçildiyse sahibi.</summary>
         internal static List<CadVarlik> Tek(Transaction tr, Entity ent)
         {
             var l = new List<CadVarlik>();
+            ent = SusSahibi(tr, ent);
             var v = Cevir(ent, tr);
             if (v == null) return l;
             v.Xd = XdataOku(ent);

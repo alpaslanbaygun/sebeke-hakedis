@@ -22,6 +22,11 @@ namespace SebekeHakedis.Eklenti
         public static int Hakedis;
         /// <summary>Kanal öğelerinde kanaldaki kablolar (OG, AG, AYD, REK); boşsa öğenin kendi kablosu.</summary>
         public static string KanalKablolari = "";
+        /// <summary>
+        /// Yeni kanalın ölçüleri (cm; şeritten ya da son kanal penceresinden): alt genişlik, üst genişlik, derinlik.
+        /// 0: çizimin ayarı (Çizim Ayarları › kanal varsayılanları) kullanılır.
+        /// </summary>
+        public static double KanalAlt, KanalUst, KanalDerinlik;
         /// <summary>Malzeme hafızası açık mı: yeni elemana aynı tür ve tipteki son elemanın malzemeleri kendiliğinden eklenir.</summary>
         public static bool HafizaAcik = true;
 
@@ -356,7 +361,7 @@ namespace SebekeHakedis.Eklenti
             var k = TemelKatalog;
             foreach (var it in liste)
             {
-                string y = Norm(it.Tanim + " " + it.Cins + " " + it.PozNo + " " + k.CinsAdi(it.Cins));
+                string y = Norm(it.Tanim + " " + it.Gorunen + " " + it.Cins + " " + it.PozNo + " " + k.CinsAdi(it.Cins));
                 bool uygun = true;
                 foreach (var s in sozcukler) if (y.IndexOf(s, StringComparison.Ordinal) < 0) { uygun = false; break; }
                 if (!uygun) continue;
@@ -432,7 +437,7 @@ namespace SebekeHakedis.Eklenti
                 else
                 {
                     var t = SeciliTip(oge, TemelKatalog);
-                    if (t != null) parca.Add(t.Tanim.Trim());
+                    if (t != null) parca.Add(t.Gorunen);
                 }
                 parca.Add(Durum + (Turler.DemontajMi(Durum) && !string.IsNullOrEmpty(DmDurum) ? " " + DmDurum : ""));
                 parca.Add(Hakedis > 0 ? Hakedis + ". hakediş" : "aktif hakediş");
@@ -461,6 +466,17 @@ namespace SebekeHakedis.Eklenti
         public static void HakedisSec(int hakedis)
         {
             Hakedis = Math.Max(0, hakedis);
+            Kaydet();
+            Degisti?.Invoke();
+        }
+
+        /// <summary>Kanal ölçüsünü seçer (cm; şerit ya da kanal penceresi); şerit yenilenir.</summary>
+        public static void KanalOlcusuSec(double alt, double ust, double derinlik)
+        {
+            Yukle();
+            KanalAlt = Math.Max(0, alt);
+            KanalUst = Math.Max(0, ust);
+            KanalDerinlik = Math.Max(0, derinlik);
             Kaydet();
             Degisti?.Invoke();
         }
@@ -509,6 +525,13 @@ namespace SebekeHakedis.Eklenti
                 DmDurum = kok.Metin("dm");
                 Hakedis = kok.Tam("hakedis");
                 KanalKablolari = kok.Metin("kanalKablolari");
+                var ko = kok.Dizi("kanalOlcu");
+                if (ko != null && ko.Count >= 3)
+                {
+                    KanalAlt = SayiCoz.Coz(Convert.ToString(ko[0], CultureInfo.InvariantCulture));
+                    KanalUst = SayiCoz.Coz(Convert.ToString(ko[1], CultureInfo.InvariantCulture));
+                    KanalDerinlik = SayiCoz.Coz(Convert.ToString(ko[2], CultureInfo.InvariantCulture));
+                }
                 HafizaAcik = kok.Mantik("hafizaAcik") ?? true;
                 SozlukOku(kok, "tip", _tip);
                 SozlukOku(kok, "cins", _cins);
@@ -564,6 +587,7 @@ namespace SebekeHakedis.Eklenti
                 kok["dm"] = DmDurum ?? "";
                 kok["hakedis"] = (double)Hakedis;
                 kok["kanalKablolari"] = KanalKablolari ?? "";
+                kok["kanalOlcu"] = new List<object> { KanalAlt, KanalUst, KanalDerinlik };
                 kok["hafizaAcik"] = HafizaAcik;
                 kok["tip"] = Sozluk(_tip);
                 kok["cins"] = Sozluk(_cins);

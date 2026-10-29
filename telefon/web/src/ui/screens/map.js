@@ -7,7 +7,7 @@ import { dist2, bearing, polygonArea, polylineLength, dms, segProject } from '..
 import { STATUSES, TRAFO_STATUSES, HAK_STATUSES, HAK_ORDER, EQUIPMENT_KINDS, hakOf } from '../../core/schema.js';
 import { sourceInfo, sourceText } from '../../core/source.js';
 import { resolveCoord, crsChoices, luminairePoz } from '../../services/survey-service.js';
-import { lineLabel, KAPLAMA, YONTEM } from '../../grid/lines.js';
+import { lineLabelText, KAPLAMA, YONTEM } from '../../grid/lines.js';
 import { koskGovdeleri } from '../../grid/cabin-recipe.js';
 import { KABIN_POSTLARI } from './cabin.js';
 import { roleLabel } from '../../grid/checks.js';
@@ -446,7 +446,7 @@ function SelectionPanel({ sel, select, eng, openLine }) {
     const act = app.state.activeLineId === l.id;
     return html`<div class="body">
       <div class="row"><span style=${'width:22px;height:4px;background:' + (GCOL[l.lineType] || '#fff')}></span><b class="grow" style="font-size:16px">${l.lineNo} · ${l.lineType} ${l.install}</b><button class="btn xs" onClick=${() => select(null)}><${Icon} n="x" s=${16} /></button></div>
-      <div class="mono" style="font-size:13px">${lineLabel(l, ps.cat) || 'iletken tanımsız'}</div>
+      <div class="mono" style="font-size:13px">${lineLabelText(l, ps.cat) || 'iletken tanımsız'}</div>
       ${app.state.energyCfg && (app.state.energyCfg.og || app.state.energyCfg.ag) ? (() => { const es = (energyState() || { lineState: new Map() }).lineState.get(l.id); return html`<div class="row"><${Badge} k=${es === 'on' ? 'ok' : es === 'off' ? 'err' : es === 'mixed' ? 'warn' : 'mut'}>${{ on: 'ENERJİLİ', off: 'ENERJİSİZ', mixed: 'KISMEN ENERJİLİ', skip: 'DEVRE DIŞI', na: 'KAPSAM DIŞI' }[es] || '—'}</${Badge}><span class="grow"></span><button class=${'btn xs' + (l.energyOpen ? ' warn' : '')} onClick=${async () => { await ps.updateLine(l.id, { energyOpen: !l.energyOpen }, l.lineNo + (l.energyOpen ? ' kapatıldı (enerji geçer)' : ' açıldı (enerji geçmez)')); app.bus.emit('ui:sel'); }}>${l.energyOpen ? 'Hat AÇIK · kapat' : 'Hattı aç (ayır)'}</button></div>`; })() : null}
       <div class="grid3"><div class="stat"><b>2B</b><span>${trn(li.length2D, 2)}</span><small>m</small></div><div class="stat"><b>3B</b><span>${trn(li.length3D, 2)}</span><small>m</small></div><div class="stat"><b>Açıklık</b><span>${li.spans || 0}</span></div></div>
       <div class="grid2">
@@ -661,7 +661,7 @@ function LineSheet({ active, close, rerender }) {
     return wrap(html`
       <div class="card" style=${'border-color:' + (GCOL[active.lineType] || '#334155')}>
         <div class="row"><b class="grow" style="font-size:16px">${active.lineNo} · ${active.lineType} · ${active.install}</b><${Badge} k="ok">ÇİZİLİYOR</${Badge}></div>
-        <div class="mono" style="font-size:12px;margin:4px 0">${lineLabel(active, cat) || 'iletken tanımsız'}</div>
+        <div class="mono" style="font-size:12px;margin:4px 0">${lineLabelText(active, cat) || 'iletken tanımsız'}</div>
         <div class="note">${active.nodes.length} düğüm · ${trn(li.length3D || 0, 2)} m (3B)${last ? ' · son: ' + last.pointNo : ''}</div>
       </div>
       <div class="row card" style="padding:10px 12px"><span class="grow" style="font-size:14px"><b>Alınanları bu hatta ekle</b><div class="note">Açıkken aldığın her direk, trafo ve SDK sırayla bu hatta bağlanır.</div></span><${Toggle} on=${toLine} onChange=${(v) => { app.state.toLine = v; rerender(); }} label="Alınanları hatta ekle" /></div>
@@ -716,7 +716,7 @@ function LineSheet({ active, close, rerender }) {
         <div class="note">${meth === 'sondaj' ? 'Yatay sondaj: metraja sondaj boyu (m) gelir; kazı hacmi hesaplanmaz.' : 'Kanal hesabı: uzunluk × genişlik × derinlik = m³, seçilen kaplamanın kalemine yazılır.' + (meth === 'borulu' ? ' Borulu geçişte boru metrajı da gelir.' : '')}</div>` : null}` : null}
     <div class="note">Hattı başlattıktan sonra direkleri sırayla al; her direk otomatik bağlanır, köşe ve rol kendiliğinden hesaplanır. İletken bilgisi sonradan Hat kaydından değişir.</div>
     ${others.length ? html`<div class="lbl" style="margin-top:4px">Mevcut hatta devam et</div>
-      <div class="card tight list">${others.map((l) => html`<button class="li" onClick=${() => { app.state.activeLineId = l.id; app.state.toLine = true; app.state.lineStartPoint = null; app.bus.emit('ui:sel'); app.toast(l.lineNo + ' çizime açıldı'); close(); }}><span style=${'width:18px;height:4px;flex-shrink:0;background:' + (GCOL[l.lineType] || '#fff')}></span><span class="grow"><span class="t">${l.lineNo} · ${l.lineType} · ${l.install}</span><div class="m">${l.nodes.length} düğüm · ${lineLabel(l, cat) || ''}</div></span><${Icon} n="next" s=${18} c="#94a3b8" /></button>`)}</div>` : null}`,
+      <div class="card tight list">${others.map((l) => html`<button class="li" onClick=${() => { app.state.activeLineId = l.id; app.state.toLine = true; app.state.lineStartPoint = null; app.bus.emit('ui:sel'); app.toast(l.lineNo + ' çizime açıldı'); close(); }}><span style=${'width:18px;height:4px;flex-shrink:0;background:' + (GCOL[l.lineType] || '#fff')}></span><span class="grow"><span class="t">${l.lineNo} · ${l.lineType} · ${l.install}</span><div class="m">${l.nodes.length} düğüm · ${lineLabelText(l, cat) || ''}</div></span><${Icon} n="next" s=${18} c="#94a3b8" /></button>`)}</div>` : null}`,
     html`<button class="btn grow" style="height:52px;flex:0 0 30%" onClick=${() => { app.state.lineStartPoint = null; close(); }}>Vazgeç</button><button class="btn pri grow" style="height:52px;font-size:16px" onClick=${start}><${Icon} n="plus" s=${20} c="#0b1326" />HAT BAŞLAT</button>`);
 }
 

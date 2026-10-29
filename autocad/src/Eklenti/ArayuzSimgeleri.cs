@@ -124,6 +124,20 @@ namespace SebekeHakedis.Eklenti
                 case "eksik":
                     return new[] { Belge, BelgeKosesi, D(12.3, 14, 2.8), "M14.3,16 L17,18.7" };
 
+                // ---- CBS ve harita ----
+                case "kml":
+                    // yerküre: daire, ekvator, iki meridyen
+                    return new[] { D(12, 12, 8.5), "M3.5,12 H20.5", "M12,3.5 Q6.8,12 12,20.5", "M12,3.5 Q17.2,12 12,20.5", "M5,7.8 H19", "M5,16.2 H19" };
+                case "cbs_ver":
+                    // katlanmış harita + dışarı ok
+                    return new[] { "M3,6.5 L7,5 L11,6.5 L15,5 V17 L11,18.5 L7,17 L3,18.5 Z", "M7,5 V17", "M11,6.5 V18.5", "M16.5,12 H21.5", "M19.2,9.7 L21.5,12 L19.2,14.3" };
+                case "cbs_al":
+                    // katlanmış harita + içeri ok
+                    return new[] { "M3,6.5 L7,5 L11,6.5 L15,5 V17 L11,18.5 L7,17 L3,18.5 Z", "M7,5 V17", "M11,6.5 V18.5", "M21.5,12 H16.5", "M18.8,9.7 L16.5,12 L18.8,14.3" };
+                case "altlik":
+                    // üst üste harita katmanları
+                    return new[] { "M12,3.5 L20.5,8.3 L12,13.1 L3.5,8.3 Z", "M3.5,12.3 L12,17.1 L20.5,12.3", "M3.5,16.1 L12,20.9 L20.5,16.1" };
+
                 // ---- Genel ----
                 case "bilgi":
                     return new[] { D(12, 12, 9), "M12,11 V16.5", "!" + D(12, 7.7, 1.25) };

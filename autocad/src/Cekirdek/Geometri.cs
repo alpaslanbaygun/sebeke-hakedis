@@ -66,6 +66,24 @@ namespace SebekeHakedis.Cekirdek
         }
 
         /// <summary>
+        /// Parça yazısının (metraj, hat etiketi) yeri ve açısı: parçanın (a→b) ortasından, parçanın kendi ekseninde
+        /// kaydırılır — kaydirma[0] parça boyunca (okuma yönünde), kaydirma[1] parçaya dik (artı: yazının üst yanı, eksi:
+        /// alt yanı). Açı parçanın doğrultusu, ters okunmasın diye −90° … 90° aralığına çevrilir. Yatay parçada sonuç
+        /// dünya ekseninde kaydırmayla aynıdır; dik ya da eğik parçada da metraj çizginin bir yanında, etiket öbür yanında
+        /// kalır (kaydırma dünya ekseninde uygulanınca dik hatta iki yazı çizginin üstüne düşüp birbirini örtüyordu).
+        /// Telefondaki DXF yazıcıyla aynı kural (telefon/web/src/export/dxf.js › yaziKonumu).
+        /// </summary>
+        public static void YaziKonumu(double[] a, double[] b, double[] kaydirma, out double x, out double y, out double aci)
+        {
+            aci = Math.Atan2(b[1] - a[1], b[0] - a[0]);
+            if (aci > Math.PI / 2) aci -= Math.PI;
+            if (aci < -Math.PI / 2) aci += Math.PI;
+            double c = Math.Cos(aci), s = Math.Sin(aci), boyunca = kaydirma[0], dik = kaydirma[1];
+            x = (a[0] + b[0]) / 2 + boyunca * c - dik * s;
+            y = (a[1] + b[1]) / 2 + boyunca * s + dik * c;
+        }
+
+        /// <summary>
         /// Hat çizerken tıklanan noktanın yapıştığı eleman: simgesinin üstüne (yarı genişliğinin biraz dışına kadar) ya da
         /// verilen mesafe içine tıklanan elemanlardan merkezi en yakın olan. mesafe: en az yakalama mesafesi (ayar; 0 ise
         /// yakalama kapalı), ekran: ekrandaki birkaç piksellik pay (uzaktan bakarken küçük simgeler de yakalansın).
@@ -86,6 +104,57 @@ namespace SebekeHakedis.Cekirdek
                 if (d <= r && d < enKisa) { enKisa = d; en = e; }
             }
             return en;
+        }
+
+        /// <summary>Metraj yazısında açıklığın sınırı sayılmayan eleman türleri: hattın üstünde ara elemanlar.</summary>
+        private static readonly HashSet<string> AraElemanlar = new HashSet<string>(StringComparer.Ordinal) { "EK_MUFU" };
+
+        /// <summary>
+        /// Eleman türü açıklık sınırı mı: havai hatta direk, yer altında bağlantı elemanı (SDK, pano, trafo, kofre, direk…).
+        /// Ek mufu ve menhol hattın üstündeki ara elemanlardır: iki SDK arasındaki metraj onlarda bölünmez.
+        /// </summary>
+        public static bool AciklikSiniri(string tur, string aile)
+        {
+            if (string.IsNullOrEmpty(tur) && string.IsNullOrEmpty(aile)) return false;
+            if (tur != null && AraElemanlar.Contains(tur)) return false;
+            return aile != "MENHOL" && aile != "ARMATUR";
+        }
+
+        /// <summary>
+        /// Açıklıklar: çizgi, üstünde eleman (direk, SDK…) olan köşelerinden bölünür; elemansız kırılma köşeleri
+        /// açıklığın içinde kalır. Uçlar her zaman sınırdır. dugumMu(i): i. köşe bir elemanın üstünde mi.
+        /// Dönüş: her açıklık için [baş köşe, bit köşe].
+        /// </summary>
+        public static List<int[]> Acikliklar(IList<double[]> kose, Func<int, bool> dugumMu)
+        {
+            var l = new List<int[]>();
+            if (kose == null || kose.Count < 2) return l;
+            int bas = 0;
+            for (int i = 1; i < kose.Count; i++)
+            {
+                if (i < kose.Count - 1 && (dugumMu == null || !dugumMu(i))) continue;
+                l.Add(new[] { bas, i });
+                bas = i;
+            }
+            return l;
+        }
+
+        /// <summary>
+        /// Açıklığın metraj yazısı: toplam uzunluk ve yazının konacağı parça (açıklığın en uzun parçası; uzunluğu sıfır
+        /// olan parçalar sayılmaz). Açıklık sıfır uzunluktaysa false.
+        /// </summary>
+        public static bool AciklikYazisi(IList<double[]> kose, int bas, int bit, out int parca, out double uzunluk)
+        {
+            parca = -1;
+            uzunluk = 0;
+            double enUzun = 0;
+            for (int i = bas; i < bit && i + 1 < kose.Count; i++)
+            {
+                double d = Mesafe(kose[i], kose[i + 1]);
+                uzunluk += d;
+                if (d > enUzun + 1e-9) { enUzun = d; parca = i; }
+            }
+            return parca >= 0 && uzunluk > 1e-6;
         }
 
         /// <summary>Nokta çokgenin içinde mi (ışın yöntemi).</summary>

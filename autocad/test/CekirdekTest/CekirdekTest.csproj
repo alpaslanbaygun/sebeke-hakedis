@@ -21,6 +21,7 @@
     <None Include="..\..\..\ortak\katalog\semboller.json" Link="semboller.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\katalog\kategoriler.json" Link="kategoriler.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\katalog\cizim-stili.json" Link="cizim-stili.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\ortak\deneme\malzeme-yazimi.json" Link="malzeme-yazimi.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

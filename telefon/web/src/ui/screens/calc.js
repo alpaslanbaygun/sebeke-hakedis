@@ -3,7 +3,7 @@ import { html, useState, useBus, Icon, Chip, Seg, Sel, Badge, Title, Stat, Empty
 import { app } from '../ctx.js';
 import { dms } from '../../geo/geom.js';
 import { roleLabel } from '../../grid/checks.js';
-import { lineLabel } from '../../grid/lines.js';
+import { lineLabelText } from '../../grid/lines.js';
 import { greenBookPage } from '../../qty/metraj.js';
 import { JOB_LABEL, SOURCE_LABEL } from '../../core/schema.js';
 import { hesapKayitlari } from '../../hesap/kayitlar.js';
@@ -38,9 +38,9 @@ export function CalcScreen() {
       <button class="stat" style="text-align:left;color:inherit" onClick=${() => app.nav.go('hakedis')}><b>Hakediş</b><span style="font-size:16px">${ps.data.periods.length}</span></button>
       <button class="stat" style="text-align:left;color:inherit" disabled=${!l} onClick=${() => app.nav.go('enh', { id: l.id })}><b>ENH</b><span style="font-size:16px">${enh && !enh.error ? 'OK' : '—'}</span></button>
     </div>
-    ${lines.length > 1 ? html`<${Sel} value=${l && l.id} options=${lines.map((x) => [x.id, x.lineNo + ' · ' + x.lineType + ' · ' + lineLabel(x, cat)])} onChange=${(v) => { setLid(v); app.state.calcLine = v; }} />` : null}
+    ${lines.length > 1 ? html`<${Sel} value=${l && l.id} options=${lines.map((x) => [x.id, x.lineNo + ' · ' + x.lineType + ' · ' + lineLabelText(x, cat)])} onChange=${(v) => { setLid(v); app.state.calcLine = v; }} />` : null}
     ${l ? html`<div class="grid3" style="margin-top:4px"><${Stat} label="Toplam 2D" value=${trn(tot2, 3)} unit="m" /><${Stat} label="Toplam 3D" value=${trn(tot3, 3)} unit="m" /><${Stat} label="Direk / köşe" value=${poles.length + ' / ' + corners.length} /></div>
-    <div class="card tight"><div class="row" style="padding:12px"><span class="lbl grow">Açıklık ve sehim</span><span class="mono note">${enh && !enh.error ? enh.conductor + ' · ' + enh.zone.label + ' · +' + enh.zone.tMax + '°C' : lineLabel(l, cat)}</span></div>
+    <div class="card tight"><div class="row" style="padding:12px"><span class="lbl grow">Açıklık ve sehim</span><span class="mono note">${enh && !enh.error ? enh.conductor + ' · ' + enh.zone.label + ' · +' + enh.zone.tMax + '°C' : lineLabelText(l, cat)}</span></div>
       <div class="scrollx"><table class="t"><thead><tr><th>Açıklık</th><th class="n">2D m</th><th class="n">3D m</th><th class="n">ΔH m</th><th class="n">Sehim</th></tr></thead><tbody>
       ${spans.map((s) => html`<tr><td class="mono" style="color:#ff8a8a;font-weight:700">${s.fromNo.replace(/^\D+-/, '')} → ${s.toNo.replace(/^\D+-/, '')}</td><td class="n">${fmt(s.length2D)}</td><td class="n">${fmt(s.length3D)}</td><td class="n">${(s.dH >= 0 ? '+' : '') + fmt(s.dH)}</td><td class="n">${sagOf(s) != null ? fmt(sagOf(s)) : '—'}</td></tr>`)}
       <tr><td class="lbl">Toplam</td><td class="n">${fmt(tot2)}</td><td class="n">${fmt(tot3)}</td><td></td><td></td></tr></tbody></table></div>
@@ -65,7 +65,7 @@ export function EnhScreen({ id }) {
   const zone = ps.p.enhZone || 'II';
   const [st, setSt] = useState('S4');
   if (!l) return html`<${Title} title="ENH" />`;
-  return html`<${Title} title=${'ENH · ' + l.lineNo} sub=${lineLabel(l, ps.cat)} />
+  return html`<${Title} title=${'ENH · ' + l.lineNo} sub=${lineLabelText(l, ps.cat)} />
     <div class="fld"><label>Buz / iklim bölgesi (proje)</label><${Seg} value=${zone} options=${enhT.zones.map((z) => [z.id, z.id])} onChange=${(v) => ps.updateProject({ enhZone: v }, 'ENH bölgesi ' + v)} /></div>
     ${enhT.verified ? null : html`<div class="alert warn"><${Icon} n="warn" s=${16} /><span>${enhT.note}</span></div>`}
     ${!res || res.error ? html`<div class="alert err">${res ? res.error : 'Hesap yok'}</div>` : html`

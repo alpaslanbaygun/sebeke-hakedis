@@ -5,6 +5,7 @@
 // düzenini kullanır; böylece telefonun DXF'i ile eklentinin çizimi birebir aynı görünür.
 import SEMBOLLER from '../ortak/semboller.js';
 import STIL from '../ortak/cizim-stili.js';
+import SH from '../interop/sh-core.cjs';
 const f = (v) => (Number.isFinite(v) ? (+v).toFixed(4) : '0.0');
 
 class W {
@@ -28,11 +29,57 @@ export function legendLayers() {
 }
 const KAT = (anahtar) => STIL.katmanlar[anahtar].telefon;
 const poleLayer = (e) => (e.kind === 'lighting' || e.group === 'ayd' ? KAT('DIREK_AYD') : e.volt === 'OG' ? (e.group === 'mus' ? KAT('DIREK_MUSTEREK') : KAT('DIREK_OG')) : KAT('DIREK_AG'));
-const lineLayer = (l) => (l.install === 'yeralti' ? KAT('KABLO') : { AG: KAT('HAT_AG'), OG: KAT('HAT_OG'), AYD: KAT('HAT_AYD'), ENH: KAT('HAT_ENH'), ABONE: KAT('HAT_ABONE') }[l.lineType] || KAT('HAT_AG'));
+/**
+ * Hattın ortak stil anahtarı: yer altında AG / OG kablo ayrı, müşterek hat kendi renginde (eklentideki hatKatmani ile
+ * aynı); yalnız kanal / sondaj (kablosuz kazı) kablo gibi değil, kendi renginde ve çizgisinde (eklentideki KANAL / SONDAJ).
+ */
+const lineKey = (l) => (l.channelOnly ? (l.cable && l.cable.method === 'sondaj' ? 'SONDAJ' : 'KANAL')
+  : l.install === 'yeralti' ? (l.lineType === 'OG' ? 'KABLO_OG' : 'KABLO')
+  : l.musterek ? 'HAT_MUSTEREK' : { AG: 'HAT_AG', OG: 'HAT_OG', AYD: 'HAT_AYD', ENH: 'HAT_ENH', ABONE: 'HAT_ABONE' }[l.lineType] || 'HAT_AG');
+const lineLayer = (l) => KAT(lineKey(l));
 // Direk rengi: mevcut / yeni / DMM (ortak stil)
 const POLE_ACI = STIL.direkRenkleri;
 const DEMONTAJ_ACI = STIL.direkRenkleri.demontaj;
 const stIdx = (st) => (st === 'YENI' ? 1 : st === 'DMM' ? 2 : 0);
+/** Hattın rengi (nesneye yazılır; yazıları da bu renkte): türünün rengi, demontajda sarı. */
+const lineAci = (l) => (l.state === 'DEMONTAJ' ? DEMONTAJ_ACI : STIL.katmanlar[lineKey(l)].aci);
+/** Metraj yazısında açıklık sınırı olmayan elemanlar: hattın üstündeki ara elemanlar (eklentideki Geometri.AciklikSiniri). */
+const ARA_ELEMAN = new Set(['manhole', 'luminaire']);
+
+/**
+ * Açıklıklar: hat, üstünde eleman (direk, SDK, pano, trafo…) olan köşelerinden bölünür; elemansız kırılma köşeleri
+ * açıklığın içinde kalır. Her açıklık için toplam uzunluk ve yazının konacağı parça (en uzun parça) döner.
+ */
+export function spanTexts(coords, isNode) {
+  const out = [];
+  if (!coords || coords.length < 2) return out;
+  let bas = 0;
+  for (let i = 1; i < coords.length; i++) {
+    if (i < coords.length - 1 && !isNode(coords[i], i)) continue;
+    let len = 0, best = -1, bestLen = 0;
+    for (let k = bas; k < i; k++) {
+      const d = Math.hypot(coords[k + 1].E - coords[k].E, coords[k + 1].N - coords[k].N);
+      len += d;
+      if (d > bestLen + 1e-9) { bestLen = d; best = k; }
+    }
+    if (best >= 0 && len > 1e-6) out.push({ from: bas, to: i, seg: best, length: len });
+    bas = i;
+  }
+  return out;
+}
+/**
+ * Parça yazısının (metraj, hat etiketi) yeri ve açısı: parçanın (a→b) ortasından parçanın kendi ekseninde kaydırılır —
+ * dx parça boyunca (okuma yönünde), dy parçaya dik (artı: yazının üst yanı). Açı (derece) parçanın doğrultusu, ters
+ * okunmasın diye −90 … 90 aralığında. Yatay hatta dünya ekseninde kaydırmayla aynı; dik hatta da metraj çizginin bir
+ * yanında, etiket öbür yanında kalır (eklentideki Geometri.YaziKonumu ile aynı kural).
+ */
+export function yaziKonumu(a, b, dx, dy) {
+  let ang = Math.atan2(b.N - a.N, b.E - a.E) * 180 / Math.PI;
+  if (ang > 90) ang -= 180;
+  if (ang < -90) ang += 180;
+  const r = ang * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+  return { x: (a.E + b.E) / 2 + dx * c - dy * s, y: (a.N + b.N) / 2 + dx * s + dy * c, ang };
+}
 const YAZI = () => KAT('YAZI'), OLCU = () => KAT('OLCU');
 
 /** Demontaj türünden (KESİK / SÖKÜK) demontaj varyantı: DM · KESIK · SOKUK (eklentideki Semboller.Varyant ile aynı). */
@@ -131,6 +178,8 @@ export function buildDXF(model, opts = {}) {
   const th = opts.textH || STIL.yazi.yukseklik;
   const thParca = th * (STIL.yazi.parcaMetraji / STIL.yazi.yukseklik), thKucuk = th * (STIL.yazi.aciYazisi / STIL.yazi.yukseklik);
   const [pdx, pdy] = STIL.etiketler.parcaMetraji.kaydirma, [hdx, hdy] = STIL.etiketler.hat.kaydirma, [edx, edy] = STIL.etiketler.eleman.kaydirma, [adx, ady] = STIL.etiketler.aci.kaydirma;
+  // Kanal / sondaj (yalnız kanal) metrajı: içindeki kablonun metrajıyla üst üste binmesin diye bir satır yukarıda
+  const [kdx, kdy] = (STIL.etiketler.kaziMetraji || STIL.etiketler.parcaMetraji).kaydirma;
   const allPts = model.points.filter((p) => p.E != null);
   const ext = allPts.reduce((a, p) => ({ x0: Math.min(a.x0, p.E), y0: Math.min(a.y0, p.N), x1: Math.max(a.x1, p.E), y1: Math.max(a.y1, p.N) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
   if (!Number.isFinite(ext.x0)) Object.assign(ext, { x0: 0, y0: 0, x1: 100, y1: 100 });
@@ -151,7 +200,7 @@ export function buildDXF(model, opts = {}) {
   w.g(0, 'LAYER').g(2, '0').g(70, 0).g(62, 7).g(6, 'CONTINUOUS');
   for (const l of layers) w.g(0, 'LAYER').g(2, l.name).g(70, 0).g(62, l.aci).g(6, l.lt);
   w.g(0, 'ENDTAB');
-  w.g(0, 'TABLE').g(2, 'STYLE').g(70, 1).g(0, 'STYLE').g(2, 'STANDARD').g(70, 0).g(40, 0).g(41, 1).g(50, 0).g(71, 0).g(42, th).g(3, 'txt').g(4, '').g(0, 'ENDTAB');
+  w.g(0, 'TABLE').g(2, 'STYLE').g(70, 1).g(0, 'STYLE').g(2, 'STANDARD').g(70, 0).g(40, 0).g(41, 1).g(50, 0).g(71, 0).g(42, th).g(3, STIL.yazi.fontDosyasi || 'tahoma.ttf').g(4, '').g(0, 'ENDTAB');
   w.g(0, 'ENDSEC');
   blocks(w);
   // ENTITIES
@@ -159,24 +208,31 @@ export function buildDXF(model, opts = {}) {
   const text = (layer, x, y, z, s, h = th, rot = 0, color = null) => { w.g(0, 'TEXT').g(8, layer); if (color != null) w.g(62, color); w.g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(40, f(h)).g(1, s).g(50, f(rot)); };
   const insert = (layer, block, x, y, z, color = null, rot = 0) => { w.g(0, 'INSERT').g(8, layer); if (color != null) w.g(62, color); w.g(2, block).g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(41, 1).g(42, 1).g(43, 1).g(50, f(rot)); };
   const kesitFmt = STIL.etiketler.kesit;
+  // Açıklık sınırı olan elemanların noktaları (direk, SDK, pano, trafo…)
+  const nodePts = new Set(model.equipment.filter((e) => e.pointId && !ARA_ELEMAN.has(e.kind)).map((e) => e.pointId));
   let nLines = 0, nIns = 0, nTxt = 0;
   for (const l of model.lines) {
     if (l.coords.length < 2) continue;
-    const layer = lineLayer(l), lt = l.state === 'ILERIDE' ? 'DASHED' : null;
+    // Çizgi tipi katmandan; ileride yapılacak hat kesikli, yalnız kanal / sondaj kendi çizgisinde (katmanı kabloyla ortak)
+    const layer = lineLayer(l), lt = l.state === 'ILERIDE' ? 'DASHED' : l.channelOnly ? STIL.katmanlar[lineKey(l)].cizgi || null : null, aci = lineAci(l);
     for (let i = 0; i < l.coords.length - 1; i++) {
       const a = l.coords[i], b = l.coords[i + 1];
-      w.g(0, 'LINE').g(8, layer); if (lt) w.g(6, lt); if (l.state === 'DEMONTAJ') w.g(62, DEMONTAJ_ACI);
+      w.g(0, 'LINE').g(8, layer); if (lt) w.g(6, lt); w.g(62, aci);
       w.g(10, f(a.E)).g(20, f(a.N)).g(30, f(a.H || 0)).g(11, f(b.E)).g(21, f(b.N)).g(31, f(b.H || 0)); nLines++;
-      if (opts.spanText !== false) {
-        const mx = (a.E + b.E) / 2, my = (a.N + b.N) / 2; let ang = Math.atan2(b.N - a.N, b.E - a.E) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
-        const d = Math.hypot(b.E - a.E, b.N - a.N);
-        text(YAZI(), mx + pdx, my + pdy, 0, d.toFixed(2), thParca, ang); nTxt++;
+    }
+    // Metraj: her açıklığa bir yazı (iki direk / iki bağlantı elemanı arası), hattın renginde
+    if (opts.spanText !== false) {
+      const [mdx, mdy] = l.channelOnly ? [kdx, kdy] : [pdx, pdy];
+      for (const sp of spanTexts(l.coords, (c) => nodePts.has(c.id))) {
+        const k = yaziKonumu(l.coords[sp.seg], l.coords[sp.seg + 1], mdx, mdy);
+        text(YAZI(), k.x, k.y, 0, sp.length.toFixed(2), thParca, k.ang, aci); nTxt++;
       }
     }
-    const mid = Math.floor((l.coords.length - 1) / 2), a = l.coords[mid], b = l.coords[mid + 1];
-    let ang = Math.atan2(b.N - a.N, b.E - a.E) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
-    const tag = (kesitFmt[l.state] || '{t}').replace('{t}', l.label);
-    text(YAZI(), (a.E + b.E) / 2 + hdx, (a.N + b.N) / 2 + hdy, 0, l.no + ' ' + tag, th, ang); nTxt++;
+    const mid = Math.floor((l.coords.length - 1) / 2);
+    // Malzeme adı ortak yazımla (eklentideki MalzemeYazimi): "3x50/16 Xlpe Alm." → "3x50/16 XLPE Al"
+    const tag = (kesitFmt[l.state] || '{t}').replace('{t}', l.channelOnly ? l.label : SH.malzemeYazisi(l.label));
+    const k = yaziKonumu(l.coords[mid], l.coords[mid + 1], hdx, hdy);
+    text(YAZI(), k.x, k.y, 0, l.no + ' ' + tag, th, k.ang, aci); nTxt++;
   }
   for (const e of model.equipment) {
     if (e.E == null) continue;

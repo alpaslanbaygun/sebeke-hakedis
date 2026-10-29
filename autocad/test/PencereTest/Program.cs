@@ -426,6 +426,62 @@ namespace SebekeHakedis.PencereTest
                 Esit(true, g != null && g.Rows.Count > KomutRehberi.Liste.Length, "hakkında: komutlar gruplu listelenir");
             });
 
+            // Proje özeti: projeler solda, seçilen projenin malzeme listesi sağda; Excel'e aktar görünen listeyi verir
+            var poz = new ProjeOzeti(o.Proje);
+            Pencereler.ProjeOzetiGorunumu aktarilan = null;
+            Dene("25-proje-ozeti", () =>
+            {
+                Pencereler.ProjeOzetiGoster(poz, gv => aktarilan = gv);
+                Esit(true, aktarilan != null && aktarilan.Proje != null && !aktarilan.Proje.Tumu, "proje özeti: Excel'e aktar seçili projeyi verir");
+                Esit("DM", aktarilan != null ? aktarilan.Durum : "", "proje özeti: süzgeç Excel'e gider");
+            }, f =>
+            {
+                var lb = Bul<IkiSatirListe>(f, x => true);
+                Esit(poz.Projeler.Count, lb.Items.Count, "proje özeti: proje listesi");
+                var g = Bul<DataGridView>(f, x => true);
+                Esit(poz.Malzemeler(poz.Projeler[0]).Count, g.RowCount, "proje özeti: tüm projelerin malzeme listesi");
+                int son = poz.Projeler.Count - 1;
+                lb.SelectedIndex = son;
+                Esit(poz.Malzemeler(poz.Projeler[son]).Count, g.RowCount, "proje özeti: seçilen projenin malzeme listesi");
+                var durum = Bul<KoyuAcilir>(f, c => c.Items.Contains("DM"));
+                durum.SelectedItem = "DM";
+                Esit(poz.Malzemeler(poz.Projeler[son], 0, "DM").Count, g.RowCount, "proje özeti: durum süzgeci");
+                Resim(f, "sonra");
+                Bul<Button>(f, b => b.Text == "Excel'e aktar").PerformClick();
+            });
+
+            // Koordinat dilimi (Google Earth / CBS / harita altlığı için; çizimde yoksa sorulur)
+            Dene("26-koordinat-dilimi", () => Esit(39, Pencereler.DomSec(0, "Google Earth dosyası"), "dilim: seçilen dilim döner"), f =>
+            {
+                Bul<KoyuSecim>(f, r => r.Text == "39°").Checked = true;
+                Resim(f, "sonra");
+            });
+
+            // CBS'den alınan nesnenin bilgileri
+            Dene("27-cbs-bilgisi", () => Pencereler.CbsBilgisi("Direkler_2026", new List<string[]>
+            {
+                new[] { "GIS_NO", "SC1024" }, new[] { "TUR", "AG_DIREK" }, new[] { "TIP", "10I" }, new[] { "DURUM", "MEVCUT" },
+                new[] { "MALZEME", "G-L-50 × 1; Topraklama × 1" }, new[] { "ISLETME", "Merkez" },
+            }));
+
+            // Harita altlığı: sağlayıcı, anahtar (yalnız bu bilgisayarda), alan, ayrıntı
+            var altlik = new AltlikAyari();
+            Dene("28-harita-altligi", () =>
+            {
+                Esit(true, Pencereler.HaritaAltligiSec(altlik), "altlık: Altlığı getir");
+                Esit("google_s", altlik.Saglayici, "altlık: seçilen sağlayıcı");
+                Esit("deneme-anahtar", altlik.Anahtar("google"), "altlık: anahtar saklanır");
+                Esit(2, altlik.Kalite, "altlık: ayrıntı yüksek");
+            }, f =>
+            {
+                var lb = Bul<IkiSatirListe>(f, x => true);
+                Esit(true, lb.SelectedItem is AltlikSaglayici s0 && s0.Id == "esri", "altlık: varsayılan Esri (anahtarsız)");
+                for (int i = 0; i < lb.Items.Count; i++) if (lb.Items[i] is AltlikSaglayici s && s.Id == "google_s") lb.SelectedIndex = i;
+                Bul<MetinKutusu>(f, m => m.Visible).Text = "deneme-anahtar";
+                Bul<KoyuSecim>(f, r => r.Text.StartsWith("Yüksek", StringComparison.Ordinal)).Checked = true;
+                Resim(f, "sonra");
+            });
+
             // Şerit menü önizlemesi (AutoCAD olmadan; aynı veri ve simgelerle)
             Console.WriteLine("14-serit");
             SeritOnizleme.Hepsi(_klasor);

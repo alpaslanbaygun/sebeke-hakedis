@@ -1,5 +1,6 @@
 // Hat sistemi: havai iletken metrajı (m / kg), yeraltı kablo + kanal metrajı, abone hattı ekleri.
 // Kg hesabı gerçek iletken ağırlığı (kg/km) üzerinden yapılır.
+import SH from '../interop/sh-core.cjs';
 
 export const LINE_TYPE_LABEL = { AG: 'AG', OG: 'OG', AYD: 'Aydınlatma', ENH: 'ENH', ABONE: 'Abone' };
 
@@ -24,6 +25,15 @@ export function lineLabel(line, cat) {
   const og = (line.circuits || []).filter((c) => c.role === 'OG' || c.role === 'ENH').map((c) => circuitLabel(c, cat)).join(' + ');
   const ag = (line.circuits || []).filter((c) => c.role !== 'OG' && c.role !== 'ENH').map((c) => circuitLabel(c, cat)).join(' + ');
   return [og, ag].filter(Boolean).join(' / ') || (line.channelOnly ? 'Kanal / kazı (kablosuz)' : '');
+}
+/**
+ * Hattın ekranda görünen iletken yazısı: malzeme adlarının ortak yazımıyla (BÜYÜK harf, standart birim ve kodlar;
+ * eklentideki MalzemeYazimi.Duzelt ile aynı). Kayıt, eşleşme ve raporlar lineLabel'ı (ham yazı) kullanır.
+ */
+export const malzemeYazisi = (s) => SH.malzemeYazisi(s);
+export function lineLabelText(line, cat) {
+  const l = lineLabel(line, cat);
+  return (line.circuits || []).length ? SH.malzemeYazisi(l) : l;
 }
 export function isBareAG(line, cat) {
   return (line.circuits || []).some((c) => (c.role === 'AG' || c.role === 'AYD') && (c.custom || (circuitParts(c, cat) || { parts: [] }).parts.some((p) => p.kind === 'AAC')));

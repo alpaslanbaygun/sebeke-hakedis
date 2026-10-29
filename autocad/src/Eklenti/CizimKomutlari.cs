@@ -285,7 +285,7 @@ namespace SebekeHakedis.Eklenti
                         son = null;
                         armaturSayisi++;
                         HizliSecim.Hatirla(direk);
-                        ed.WriteMessage("\n" + secim.Tip.Tanim.Trim() + " " + Ad(direk) + " direğine malzeme olarak eklendi.");
+                        ed.WriteMessage("\n" + secim.Tip.Gorunen + " " + Ad(direk) + " direğine malzeme olarak eklendi.");
                         continue;
                     }
                 }
@@ -441,6 +441,7 @@ namespace SebekeHakedis.Eklenti
                 var o = Ortam.Hazirla(belge);
                 var secim = Pencereler.Kanal(o, null);
                 if (secim == null) return;
+                HizliSecim.KanalOlcusuSec(secim.Alt, secim.Ust, secim.Derinlik); // şeritte de bu ölçü görünsün
                 o.AyarKaydet();
                 KanalDongusu(o, secim, null);
             });
@@ -465,6 +466,7 @@ namespace SebekeHakedis.Eklenti
                     {
                         secim = s2; o.AyarKaydet();
                         if (oge != null) HizliSecim.KanalKablolari = (s2.Og ? "OG," : "") + (s2.Ag ? "AG," : "") + (s2.Ayd ? "AYD," : "") + (s2.Rek ? "REK," : "");
+                        HizliSecim.KanalOlcusuSec(s2.Alt, s2.Ust, s2.Derinlik);
                         ed.WriteMessage("\n" + secim);
                     }
                     continue;
@@ -681,7 +683,11 @@ namespace SebekeHakedis.Eklenti
                         var secim = new KanalSecimi
                         {
                             Og = kablolar.Contains("OG,"), Ag = kablolar.Contains("AG,"), Ayd = kablolar.Contains("AYD,"), Rek = kablolar.Contains("REK,"),
-                            Zemin = tip != null ? tip.Tanim.Trim() : o.Ayar.KanalZemin, Alt = o.Ayar.KanalAlt, Ust = o.Ayar.KanalUst, Derinlik = o.Ayar.KanalDerinlik,
+                            Zemin = tip != null ? tip.Tanim.Trim() : o.Ayar.KanalZemin,
+                            // Ölçüler şeritten (Kanal satırı); girilmemişse çizimin ayarından
+                            Alt = HizliSecim.KanalAlt > 0 ? HizliSecim.KanalAlt : o.Ayar.KanalAlt,
+                            Ust = HizliSecim.KanalUst > 0 ? HizliSecim.KanalUst : o.Ayar.KanalUst,
+                            Derinlik = HizliSecim.KanalDerinlik > 0 ? HizliSecim.KanalDerinlik : o.Ayar.KanalDerinlik,
                             Durum = durum, Hakedis = hak,
                         };
                         if (secim.Kod == 0) secim.Ag = true;
@@ -690,6 +696,9 @@ namespace SebekeHakedis.Eklenti
                             secim = Pencereler.Kanal(o, secim);
                             if (secim == null) return;
                         }
+                        // Kullanılan ölçü şeritte görünsün (pencereden değiştirildiyse de)
+                        if (secim.Alt != HizliSecim.KanalAlt || secim.Ust != HizliSecim.KanalUst || secim.Derinlik != HizliSecim.KanalDerinlik)
+                            HizliSecim.KanalOlcusuSec(secim.Alt, secim.Ust, secim.Derinlik);
                         o.AyarKaydet();
                         KanalDongusu(o, secim, oge);
                         break;
@@ -895,6 +904,19 @@ namespace SebekeHakedis.Eklenti
 
         // ================= SH_MALZEME =================
 
+        /// <summary>Seçilen nesne başka nesnenin süsüyse (kanal kenarı) sahibinin kimliği; değilse kendisi.</summary>
+        private static ObjectId SahibiIle(Database db, ObjectId id)
+        {
+            using (var tr = db.TransactionManager.StartOpenCloseTransaction())
+            {
+                var ent = tr.GetObject(id, OpenMode.ForRead, false) as Entity;
+                var s = Toplayici.SusSahibi(tr, ent);
+                var sonuc = s != null ? s.ObjectId : id;
+                tr.Commit();
+                return sonuc;
+            }
+        }
+
         private static object NesneBul(Proje p, string h)
         {
             object n = p.Elemanlar.Find(x => string.Equals(x.Id, h, StringComparison.OrdinalIgnoreCase));
@@ -971,7 +993,8 @@ namespace SebekeHakedis.Eklenti
                 peo.AddAllowedClass(typeof(Polyline3d), true);
                 var r = ed.GetEntity(peo);
                 if (r.Status != PromptStatus.OK) return;
-                string h = r.ObjectId.Handle.ToString();
+                var secilen = SahibiIle(o.Db, r.ObjectId);
+                string h = secilen.Handle.ToString();
                 var nesne = NesneBul(o.Proje, h);
                 if (nesne == null)
                 {
@@ -990,7 +1013,7 @@ namespace SebekeHakedis.Eklenti
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
                     var y = Yazici(o, tr);
-                    NesneyiYaz(o, y, r.ObjectId, nesne, eskiDurum, eskiHakedis, eskiDm);
+                    NesneyiYaz(o, y, secilen, nesne, eskiDurum, eskiHakedis, eskiDm);
                     tr.Commit();
                     UyarilariYaz(ed, y);
                 }

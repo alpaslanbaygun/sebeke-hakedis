@@ -22,6 +22,9 @@ namespace SebekeHakedis.Cekirdek
 
         public string Anahtar => Cins + "|" + Tanim;
 
+        /// <summary>Adın görünen yazımı (MalzemeYazimi: "3x50/16 Xlpe Alm." → "3x50/16 XLPE Al"); kayıtta Tanim kullanılır.</summary>
+        public string Gorunen => MalzemeYazimi.Duzelt(Tanim);
+
         /// <summary>Liste ve aramada görünen yazı: "G-K2 · AG_DEMİR_GLV · 504 kg/ad".</summary>
         public string Yazi
         {
@@ -30,7 +33,7 @@ namespace SebekeHakedis.Cekirdek
                 string[] b = (Birim ?? "").Split('/');
                 string g = b.Length > 0 ? b[0] : "", r = b.Length > 1 ? b[1] : g;
                 string ek = r == "kg" ? Katsayi.ToString("0.##", CultureInfo.InvariantCulture).Replace('.', ',') + " kg/" + g : Birim;
-                return Tanim.Trim() + "   ·   " + Cins + "   ·   " + ek + (string.IsNullOrEmpty(PozNo) ? "" : "   ·   poz " + PozNo);
+                return Gorunen + "   ·   " + Cins + "   ·   " + ek + (string.IsNullOrEmpty(PozNo) ? "" : "   ·   poz " + PozNo);
             }
         }
 
