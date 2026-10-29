@@ -318,7 +318,7 @@ için **Telefon Görünümü** (`SH_GORUNUM`); değişmeyen eski bloklara dokunu
 | Telefona Gönder | `SH_ICEAL` | Bölüm 2. `.sebeke.json` (varsayılan) ya da `.volt.json` olarak kaydeder (onaylar ve hesap kayıtları da gider). |
 | Durum Tespit | `SH_RAPOR` | Bu çizimden Excel rapor (eski programın sayfaları; ayrıca **DETAY** sayfası: her elemanın ara malzemeleri satır satır; **HESAPLAR** sayfası: teknik hesap sonuçları ve güncellikleri). |
 | Dosyadan Rapor | `SH_PROJERAPOR` | Bir proje dosyasından Excel rapor (çizim açmadan; telefon dosyaları da olur). |
-| Proje Özeti | `SH_OZET` | Bölge, eleman, hat, kanal sayıları ve hakediş onayları. |
+| Proje Özeti | `SH_OZET` | Pencere: solda projeler (bölgeler), sağda seçilen projenin malzeme listesi (hakediş, durum ve aramayla süzülür). **Excel'e aktar** proje listesini ve görünen malzeme listesini yazar; "Tüm projeler" seçiliyse her projenin listesi de ayrı sayfada. |
 | Eksik Malzeme | `SH_DETAY` | Eski programdaki DETAY sorgusu: ör. "topraklaması **olmayan** AG direkleri". Hangi elemanlarda (ana cins, tip, durum, bölge) hangi ara malzemenin (cins, tip, durum, hakediş) aranacağını seçin; **olmayanlar / olanlar / hepsi**. Sonuç pencerede listelenir; **Çizimde seç** bulunan elemanları seçer, **Excel'e yaz** ayrıca DETAY dosyasını yazar. |
 | Hesap Merkezi | `SH_HESAP merkez` | Bölüm 5. Seçili nesne için uygun hesapların listesi ve kayıtlı sonuçları. |
 | Kayıtlı Hesaplar | `SH_HESAPLAR` | Bölüm 5. Çizimdeki bütün hesap kayıtları. |

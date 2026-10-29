@@ -426,6 +426,30 @@ namespace SebekeHakedis.PencereTest
                 Esit(true, g != null && g.Rows.Count > KomutRehberi.Liste.Length, "hakkında: komutlar gruplu listelenir");
             });
 
+            // Proje özeti: projeler solda, seçilen projenin malzeme listesi sağda; Excel'e aktar görünen listeyi verir
+            var poz = new ProjeOzeti(o.Proje);
+            Pencereler.ProjeOzetiGorunumu aktarilan = null;
+            Dene("25-proje-ozeti", () =>
+            {
+                Pencereler.ProjeOzetiGoster(poz, gv => aktarilan = gv);
+                Esit(true, aktarilan != null && aktarilan.Proje != null && !aktarilan.Proje.Tumu, "proje özeti: Excel'e aktar seçili projeyi verir");
+                Esit("DM", aktarilan != null ? aktarilan.Durum : "", "proje özeti: süzgeç Excel'e gider");
+            }, f =>
+            {
+                var lb = Bul<IkiSatirListe>(f, x => true);
+                Esit(poz.Projeler.Count, lb.Items.Count, "proje özeti: proje listesi");
+                var g = Bul<DataGridView>(f, x => true);
+                Esit(poz.Malzemeler(poz.Projeler[0]).Count, g.RowCount, "proje özeti: tüm projelerin malzeme listesi");
+                int son = poz.Projeler.Count - 1;
+                lb.SelectedIndex = son;
+                Esit(poz.Malzemeler(poz.Projeler[son]).Count, g.RowCount, "proje özeti: seçilen projenin malzeme listesi");
+                var durum = Bul<KoyuAcilir>(f, c => c.Items.Contains("DM"));
+                durum.SelectedItem = "DM";
+                Esit(poz.Malzemeler(poz.Projeler[son], 0, "DM").Count, g.RowCount, "proje özeti: durum süzgeci");
+                Resim(f, "sonra");
+                Bul<Button>(f, b => b.Text == "Excel'e aktar").PerformClick();
+            });
+
             // Şerit menü önizlemesi (AutoCAD olmadan; aynı veri ve simgelerle)
             Console.WriteLine("14-serit");
             SeritOnizleme.Hepsi(_klasor);

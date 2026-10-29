@@ -23,7 +23,7 @@ namespace SebekeHakedis.Cekirdek
             new[] { "Hakediş", "SH_ONAY", "Hakediş onayı (Kontrol → Hakediş → GIS); onaylanan hakediş kilitlenir" },
             new[] { "Raporlar", "SH_RAPOR", "Bu çizimden Durum Tespit raporu (Excel)" },
             new[] { "Raporlar", "SH_PROJERAPOR", "Proje dosyasından Durum Tespit raporu" },
-            new[] { "Raporlar", "SH_OZET", "Çizimdeki proje özeti (bölge, eleman, hat, kanal sayıları, onaylar)" },
+            new[] { "Raporlar", "SH_OZET", "Proje özeti penceresi: projeler ve seçilen projenin malzeme listesi; Excel'e aktarılır" },
             new[] { "Raporlar", "SH_DETAY", "Eksik malzeme bulur (ör. topraklaması olmayan direkler); bulunanları seçer, Excel'e yazar" },
             new[] { "Teknik hesaplar", "SH_HESAP", "Seçilen direk / hat / trafo / kanal için teknik hesabı tarayıcıda açar (SH_HESAP merkez: uygun hesapların listesi)" },
             new[] { "Teknik hesaplar", "SH_HESAPLAR", "Hesap merkezi: çizimdeki kayıtlı hesaplar, güncellikleri ve bütün hesap araçları" },

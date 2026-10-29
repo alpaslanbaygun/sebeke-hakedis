@@ -133,6 +133,10 @@ namespace SebekeHakedis.Eklenti
             });
         }
 
+        /// <summary>
+        /// Proje özeti: projeler (bölgeler) ve seçilen projenin malzeme listesi bir pencerede; listeler Excel'e aktarılır.
+        /// Toplamlar Durum Tespit raporunun ÖZET sayfasıyla aynıdır.
+        /// </summary>
         [CommandMethod("SH_OZET", CommandFlags.Modal)]
         public void Ozet()
         {
@@ -142,21 +146,17 @@ namespace SebekeHakedis.Eklenti
             {
                 var p = CizimdenProje(belge);
                 if (p == null) return;
-                var ed = belge.Editor;
-                ed.WriteMessage("\n──────── " + p.Ad + " ────────");
-                ed.WriteMessage("\nBölge (alt proje): " + p.Bolgeler.Count + "   ·   GPS noktası: " + p.Noktalar.Count);
-                ed.WriteMessage("\nEleman: " + p.Elemanlar.Count + "   ·   Hat: " + p.Hatlar.Count + "   ·   Kanal: " + p.Kanallar.Count + "   ·   Sondaj: " + p.Sondajlar.Count);
-                var turler = new SortedDictionary<string, int>(StringComparer.Ordinal);
-                foreach (var e in p.Elemanlar) { int c; turler.TryGetValue(e.Tur, out c); turler[e.Tur] = c + 1; }
-                foreach (var kv in turler) ed.WriteMessage("\n   " + kv.Key + ": " + kv.Value);
-                var hak = new SortedDictionary<int, int>();
-                foreach (var e in p.Elemanlar) { int c; hak.TryGetValue(e.Hakedis, out c); hak[e.Hakedis] = c + 1; }
-                var sb = new StringBuilder();
-                foreach (var kv in hak) sb.Append("  H" + kv.Key + ": " + kv.Value);
-                ed.WriteMessage("\nHakedişe göre eleman:" + sb);
-                foreach (var kv in p.Onaylar)
-                    if ((kv.Value & 7) != 0) ed.WriteMessage("\nOnay · " + kv.Key + ". hakediş: " + HakedisOnayi.Metin(kv.Value) + (HakedisOnayi.Kilitli(p.Onaylar, kv.Key) ? "  (kilitli)" : ""));
-                if (p.Uyarilar.Count > 0) ed.WriteMessage("\nUyarı: " + p.Uyarilar.Count + " nesne okunamadı (ayrıntı raporun UYARILAR sayfasında).");
+                var oz = new ProjeOzeti(p);
+                Pencereler.ProjeOzetiGoster(oz, g =>
+                {
+                    string ek = g.Proje == null || g.Proje.Tumu ? "_PROJE_OZETI_" : "_" + g.Proje.GorunenAd + "_MALZEME_";
+                    string yol = KayitYeriSor("Proje özetini Excel'e kaydet", "Excel dosyası (*.xlsx)|*.xlsx",
+                        Ad(belge) + ek + DateTime.Now.ToString("dd.MM.yyyy_HH_mm") + ".xlsx", Klasor(belge));
+                    if (yol == null) return;
+                    oz.ExcelYaz(yol, g.Proje, g.Hakedis, g.Durum, g.Ara, Uygulama.Surum);
+                    Uygulama.Yaz("Proje özeti Excel'e yazıldı: " + yol);
+                    Ac(yol);
+                });
             });
         }
 

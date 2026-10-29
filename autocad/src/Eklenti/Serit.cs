@@ -306,7 +306,7 @@ namespace SebekeHakedis.Eklenti
             var rapor = Panel(araclar, "Raporlar");
             rapor.Items.Add(Dugme("Durum\nTespit", "Bu çizimden Durum Tespit raporunu Excel olarak üretir.", "_SH_RAPOR ", "rapor", null));
             rapor.Items.Add(Dugme("Dosyadan\nRapor", "Bir proje dosyasından (.sebeke.json, .volt.json ya da teslim paketi) Durum Tespit raporu üretir.", "_SH_PROJERAPOR ", "dosya_rapor", null));
-            rapor.Items.Add(Dugme("Proje\nÖzeti", "Çizimdeki bölge, direk, hat ve kanal sayılarını ve hakediş onaylarını gösterir.", "_SH_OZET ", "ozet", null));
+            rapor.Items.Add(Dugme("Proje\nÖzeti", "Projeleri (bölgeleri) ve seçilen projenin malzeme listesini bir pencerede gösterir; listeler Excel'e aktarılır.", "_SH_OZET ", "ozet", null));
             rapor.Items.Add(Dugme("Eksik\nMalzeme", "Eksik malzeme bul (DETAY sorgusu): ör. topraklaması olmayan direkler. Bulunanlar çizimde seçilir, istenirse Excel'e yazılır.", "_SH_DETAY ", "eksik", null));
 
             var telefon = Panel(araclar, "Telefon");

@@ -1543,6 +1543,165 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
+        // ================= Proje özeti =================
+
+        /// <summary>Proje özeti penceresinde görünen liste (Excel'e aktarılırken): seçili proje ve süzgeçler.</summary>
+        public sealed class ProjeOzetiGorunumu
+        {
+            public ProjeOzeti.ProjeSatiri Proje;
+            public int Hakedis;
+            public string Durum = "", Ara = "";
+        }
+
+        /// <summary>
+        /// Proje özeti: solda projeler (bölgeler), sağda seçilen projenin malzeme listesi; hakediş, durum ve aramayla süzülür.
+        /// "Excel'e aktar" listeleri yazar (excel), pencere açık kalır. Dönen değer: son görünüm.
+        /// </summary>
+        public static ProjeOzetiGorunumu ProjeOzetiGoster(ProjeOzeti oz, Action<ProjeOzetiGorunumu> excel)
+        {
+            Hazirla();
+            var gorunum = new ProjeOzetiGorunumu { Proje = oz.Projeler.Count > 0 ? oz.Projeler[0] : null };
+            using (var w = new KoyuPencere("Proje özeti", 1040, 680, Boya.Simge("ozet", KoyuRenk.Yesil, 20)))
+            {
+                // Altbilgi: solda Excel'e aktar, sağda Kapat
+                var kapat = new KoyuDugme("Kapat") { DialogResult = DialogResult.Cancel };
+                int bh = S(34), by = (w.Alt.Height - bh) / 2;
+                kapat.SetBounds(w.Alt.Width - S(16) - S(104), by, S(104), bh);
+                var excelDugme = new KoyuDugme("Excel'e aktar", DugmeTuru.Birincil, Boya.Simge("excel", Color.White, 16));
+                excelDugme.SetBounds(S(16), by, S(150), bh);
+                w.Alt.Controls.Add(excelDugme);
+                w.Alt.Controls.Add(kapat);
+                var excelBilgi = Etiket(w.Alt, "Proje listesi ve görünen malzeme listesi yazılır.", 182, 0, 560, KoyuYazi.Kucuk, KoyuRenk.Soluk);
+                excelBilgi.Top = (w.Alt.Height - excelBilgi.Height) / 2;
+                w.CancelButton = kapat;
+
+                // Sol: projeler
+                Etiket(w, "Projeler", 16, 56, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var liste = new IkiSatirListe();
+                var simgeTumu = Boya.Simge("ozet", KoyuRenk.Yesil, 18);
+                var simgeProje = Boya.Simge("bolge", KoyuRenk.Ikincil, 18);
+                liste.Baslik = x => ((ProjeOzeti.ProjeSatiri)x).GorunenAd;
+                liste.Alt = x =>
+                {
+                    var s = (ProjeOzeti.ProjeSatiri)x;
+                    if (s.Tumu) return (oz.Projeler.Count - 1).ToString("N0", Tr) + " proje · " + s.Malzeme.ToString("N0", Tr) + " malzeme";
+                    if (s.Ad.Length == 0) return "Bölgeye bağlı olmayan nesneler";
+                    return (s.Kod.Length > 0 ? s.Kod : "Proje kodu yok") + " · " + s.Malzeme.ToString("N0", Tr) + " malzeme";
+                };
+                liste.Simge = x => ((ProjeOzeti.ProjeSatiri)x).Tumu ? simgeTumu : simgeProje;
+                foreach (var pr in oz.Projeler) liste.Items.Add(pr);
+                Koy(w, new Cerceve(liste), 16, 80, 300, 524);
+
+                // Sağ: başlık, süzgeçler, malzeme listesi
+                var baslik = Etiket(w, "", 332, 54, 692, KoyuYazi.Baslik, KoyuRenk.Yazi);
+                var altBaslik = Etiket(w, "", 332, 80, 692, KoyuYazi.Kucuk, KoyuRenk.Soluk);
+                Etiket(w, "Hakediş", 332, 114);
+                var hak = Koy(w, new KoyuAcilir(), 392, 108, 124);
+                hak.Items.Add(Hepsi);
+                foreach (var h in oz.Hakedisler) hak.Items.Add(h + ". hakediş");
+                hak.SelectedIndex = 0;
+                Etiket(w, "Durum", 532, 114);
+                var durum = Koy(w, new KoyuAcilir(), 584, 108, 124);
+                durum.Items.Add(Hepsi);
+                foreach (var d in oz.Durumlar) durum.Items.Add(d);
+                durum.SelectedIndex = 0;
+                var ara = Koy(w, new MetinKutusu("", "Cins ya da malzeme ara", Boya.Simge("ara", KoyuRenk.Soluk, 16)), 724, 106, 300, 32);
+
+                var g = new DataGridView
+                {
+                    VirtualMode = true,
+                    ReadOnly = true,
+                    AllowUserToAddRows = false,
+                    AllowUserToDeleteRows = false,
+                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                    MultiSelect = false,
+                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                };
+                KoyuTablo.Uygula(g);
+                string[] basliklar = { "Hak.", "Durum", "Cins", "Malzeme", "Miktar", "Rapor miktarı", "Tutar (TL)" };
+                float[] agirlik = { 34, 52, 150, 190, 84, 100, 92 };
+                for (int i = 0; i < basliklar.Length; i++)
+                {
+                    var c = new DataGridViewTextBoxColumn { HeaderText = basliklar[i], FillWeight = agirlik[i], SortMode = DataGridViewColumnSortMode.NotSortable };
+                    if (i >= 4) c.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                    g.Columns.Add(c);
+                }
+                Koy(w, new Cerceve(g), 332, 150, 692, 422);
+                var toplam = Etiket(w, "", 332, 582, 692, KoyuYazi.Govde, KoyuRenk.Ikincil);
+
+                var gorunen = new List<DurumTespit.OzetSatiri>();
+                g.CellValueNeeded += (s, e) =>
+                {
+                    if (e.RowIndex < 0 || e.RowIndex >= gorunen.Count) return;
+                    var r = gorunen[e.RowIndex];
+                    string[] birim = (r.Birim ?? "").Split('/');
+                    string giris = birim.Length > 0 ? birim[0] : "", rapor = birim.Length > 1 ? birim[1] : giris;
+                    switch (e.ColumnIndex)
+                    {
+                        case 0: e.Value = r.Hakedis; break;
+                        case 1: e.Value = r.Durum; break;
+                        case 2: e.Value = r.Cins; break;
+                        case 3: e.Value = (r.Tip ?? "").Trim(); break;
+                        case 4: e.Value = (Bicim(r.Miktar) + " " + giris).Trim(); break;
+                        case 5: e.Value = (Bicim(r.Toplam) + " " + rapor).Trim(); break;
+                        case 6: e.Value = r.Tutar != 0 ? r.Tutar.ToString("N2", Tr) : ""; break;
+                    }
+                };
+
+                Func<ProjeOzetiGorunumu> oku = () => new ProjeOzetiGorunumu
+                {
+                    Proje = liste.SelectedItem as ProjeOzeti.ProjeSatiri ?? (oz.Projeler.Count > 0 ? oz.Projeler[0] : null),
+                    Hakedis = hak.SelectedIndex > 0 ? oz.Hakedisler[hak.SelectedIndex - 1] : 0,
+                    Durum = durum.SelectedIndex > 0 ? oz.Durumlar[durum.SelectedIndex - 1] : "",
+                    Ara = (ara.Text ?? "").Trim(),
+                };
+                Action yenile = () =>
+                {
+                    var v = oku();
+                    gorunum = v;
+                    var p = v.Proje;
+                    if (p == null) return;
+                    baslik.Text = p.GorunenAd;
+                    var bilgi = new List<string>();
+                    if (!p.Tumu && p.Kod.Length > 0) bilgi.Add("Proje kodu " + p.Kod);
+                    if (p.Tumu) bilgi.Add(oz.CizimAdi);
+                    bilgi.Add(p.Eleman.ToString("N0", Tr) + " eleman · " + p.Hat.ToString("N0", Tr) + " hat · " + p.Kanal.ToString("N0", Tr) + " kanal · " + p.Sondaj.ToString("N0", Tr) + " sondaj");
+                    altBaslik.Text = string.Join("   ·   ", bilgi.ToArray());
+                    List<DurumTespit.OzetSatiri> l;
+                    try { l = oz.Malzemeler(p, v.Hakedis, v.Durum, v.Ara); }
+                    catch { l = new List<DurumTespit.OzetSatiri>(); }
+                    gorunen = l;
+                    g.RowCount = 0;
+                    g.RowCount = l.Count;
+                    g.Invalidate();
+                    double tutar = 0;
+                    foreach (var r in l) tutar += r.Tutar;
+                    string suzgec = ProjeOzeti.SuzgecYazisi(v.Hakedis, v.Durum, v.Ara);
+                    toplam.Text = l.Count.ToString("N0", Tr) + " malzeme satırı" + (tutar != 0 ? " · toplam " + SayiCoz.Temiz(tutar, 2).ToString("N2", Tr) + " TL" : "") +
+                                  (suzgec.Length > 0 ? "   (süzgeç: " + suzgec + ")" : "");
+                };
+                var zamanlayici = new Timer { Interval = 250 };
+                zamanlayici.Tick += (s, e) => { zamanlayici.Stop(); yenile(); };
+                liste.SelectedIndexChanged += (s, e) => yenile();
+                hak.SelectedIndexChanged += (s, e) => yenile();
+                durum.SelectedIndexChanged += (s, e) => yenile();
+                ara.Kutu.TextChanged += (s, e) => { zamanlayici.Stop(); zamanlayici.Start(); };
+                w.FormClosed += (s, e) => { zamanlayici.Stop(); zamanlayici.Dispose(); };
+                if (liste.Items.Count > 0) liste.SelectedIndex = 0;
+                w.Shown += (s, e) => { yenile(); liste.Focus(); };
+
+                excelDugme.Click += (s, e) =>
+                {
+                    zamanlayici.Stop();
+                    yenile();
+                    try { excel?.Invoke(gorunum); }
+                    catch (Exception ex) { Uyar("Excel dosyası yazılamadı: " + ex.Message); }
+                };
+                Goster(w);
+                return gorunum;
+            }
+        }
+
         // ================= Hakediş onayı =================
 
         /// <summary>Onay tablosunun satırı (aktif hakediş vurgulu).</summary>

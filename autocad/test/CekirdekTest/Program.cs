@@ -227,6 +227,7 @@ namespace SebekeHakedis.Test
             string xlsx = Path.Combine(Path.GetTempPath(), "sebeke-test.xlsx");
             RaporYazici.Yaz(p, xlsx, "test");
             Esit(true, new FileInfo(xlsx).Length > 2000, "Excel dosyası yazıldı");
+            ProjeOzetiDene(p, dt);
 
             // Yazıcı: AutoCAD çiziminden okunan proje yeniden çizim nesnesine yazılıp okununca aynı rapor
             GidisDonus(p, "ornek-dokum");
@@ -268,6 +269,66 @@ namespace SebekeHakedis.Test
         }
 
         /// <summary>Çizim görünümü: ortak stil (renkler, yazı tipi, kanal kenarı), açıklık metrajı, hat etiketi.</summary>
+        /// <summary>Proje özeti penceresinin verisi: proje listesi, malzeme listesi (ÖZET ile aynı toplamlar), süzgeçler, Excel.</summary>
+        private static void ProjeOzetiDene(Proje p, DurumTespit dt)
+        {
+            Console.WriteLine("Proje özeti:");
+            var oz = new ProjeOzeti(p);
+            var tumu = oz.Projeler[0];
+            Esit(true, tumu.Tumu, "proje özeti: ilk satır tüm projeler");
+            Esit(1 + p.Bolgeler.Count, oz.Projeler.Count, "proje özeti: her bölge bir proje (bölgesiz nesne yok)");
+            int eleman = 0, hat = 0, kanal = 0, sondaj = 0;
+            foreach (var s in oz.Projeler) if (!s.Tumu) { eleman += s.Eleman; hat += s.Hat; kanal += s.Kanal; sondaj += s.Sondaj; }
+            Esit(p.Elemanlar.Count, eleman, "proje özeti: eleman sayıları projelere dağılır");
+            Esit(p.Elemanlar.Count + p.Hatlar.Count + p.Kanallar.Count + p.Sondajlar.Count, tumu.Eleman + tumu.Hat + tumu.Kanal + tumu.Sondaj, "proje özeti: tüm projeler sayıları");
+            Esit(p.Hatlar.Count + p.Kanallar.Count + p.Sondajlar.Count, hat + kanal + sondaj, "proje özeti: hat, kanal, sondaj sayıları projelere dağılır");
+            var b1 = oz.Projeler.Find(s => !s.Tumu && s.Ad == dt.ProjeAdi("B1"));
+            Esit(true, b1 != null && b1.Eleman > 0, "proje özeti: SC77'nin bölgesi listede");
+
+            // Malzeme listesi: ÖZET ile aynı toplamlar; tüm projelerde aynı malzemeler birleşir
+            var ozet = dt.Ozet();
+            double toplam = 0, b1Toplam = 0;
+            foreach (var o in ozet) { toplam += o.Toplam; if (b1 != null && o.Proje == b1.Ad) b1Toplam += o.Toplam; }
+            var hepsi = oz.Malzemeler(tumu);
+            double hepsiToplam = 0;
+            foreach (var o in hepsi) hepsiToplam += o.Toplam;
+            Esit(SayiCoz.Temiz(toplam), SayiCoz.Temiz(hepsiToplam), "proje özeti: tüm projelerin toplamı ÖZET toplamına eşit");
+            Esit(true, hepsi.Count <= ozet.Count && hepsi.TrueForAll(o => o.Proje == ""), "proje özeti: tüm projelerde projeler birleşir");
+            double b1Liste = 0;
+            foreach (var o in oz.Malzemeler(b1)) b1Liste += o.Toplam;
+            Esit(SayiCoz.Temiz(b1Toplam), SayiCoz.Temiz(b1Liste), "proje özeti: seçilen projenin listesi yalnız o projenin satırları");
+            Esit(ozet.Count, oz.Malzemeler(null).Count, "proje özeti: proje bazında liste ÖZET satırlarıyla aynı");
+
+            // Süzgeçler
+            Esit(true, oz.Hakedisler.Count > 0 && oz.Durumlar.Count > 0, "proje özeti: hakediş ve durum listeleri dolu");
+            int h = oz.Hakedisler[0];
+            Esit(true, oz.Malzemeler(tumu, h).TrueForAll(o => o.Hakedis == h), "proje özeti: hakediş süzgeci");
+            Esit(true, oz.Malzemeler(tumu, 0, "DM").TrueForAll(o => o.Durum == "DM") && oz.Malzemeler(tumu, 0, "DM").Count > 0, "proje özeti: durum süzgeci (DM)");
+            var iletken = oz.Malzemeler(tumu, 0, null, "al_iletken");
+            Esit(true, iletken.Count > 0 && iletken.TrueForAll(o => o.Cins.StartsWith("AL_İLETKEN", StringComparison.Ordinal)), "proje özeti: arama büyük/küçük harf ve İ/I farkı gözetmez");
+            Esit(0, oz.Malzemeler(tumu, 0, null, "bu-yok").Count, "proje özeti: bulunamayan arama boş liste");
+            Esit("2. hakediş · durum DM · arama \"rose\"", ProjeOzeti.SuzgecYazisi(2, "DM", " rose "), "proje özeti: süzgeç yazısı");
+
+            // Excel: tüm projeler (üç sayfa) ve tek proje
+            string yol = Path.Combine(Path.GetTempPath(), "sebeke-proje-ozeti.xlsx");
+            oz.ExcelYaz(yol, tumu, 0, "", "", "test");
+            Esit(true, new FileInfo(yol).Length > 2000, "proje özeti: Excel yazıldı (tüm projeler)");
+            using (var z = System.IO.Compression.ZipFile.OpenRead(yol))
+            {
+                string wb;
+                using (var r = new StreamReader(z.GetEntry("xl/workbook.xml").Open(), Encoding.UTF8)) wb = r.ReadToEnd();
+                Esit(true, wb.Contains("PROJELER") && wb.Contains("MALZEME LİSTESİ") && wb.Contains("PROJE BAZINDA"), "proje özeti: Excel sayfaları (projeler, malzeme listesi, proje bazında)");
+            }
+            oz.ExcelYaz(yol, b1, h, "", "", "test");
+            using (var z = System.IO.Compression.ZipFile.OpenRead(yol))
+            {
+                string wb;
+                using (var r = new StreamReader(z.GetEntry("xl/workbook.xml").Open(), Encoding.UTF8)) wb = r.ReadToEnd();
+                Esit(false, wb.Contains("PROJE BAZINDA"), "proje özeti: tek projede proje bazında sayfası yok");
+            }
+            try { File.Delete(yol); } catch { }
+        }
+
         private static void CizimGorunumu()
         {
             Console.WriteLine("Çizim görünümü");

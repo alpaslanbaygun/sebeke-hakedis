@@ -52,7 +52,7 @@ KOMUTLAR
  Raporlar
   SH_RAPOR         Bu çizimden Durum Tespit raporu (Excel)
   SH_PROJERAPOR    Proje dosyasından Durum Tespit raporu
-  SH_OZET          Çizimdeki bölge, eleman, hat, kanal sayıları
+  SH_OZET          Proje özeti: projeler ve malzeme listesi (Excel'e aktarılır)
   SH_DETAY         Eksik malzeme bul
  Telefon
   SH_ICEAL         Telefona gönder: çizimi proje dosyasına yazar (.sebeke.json)
