@@ -49,7 +49,8 @@ Tahoma / açıklık metrajı / kanal kenarları (taşı, kopyala, geri al), şer
 bilgisi çizginin üstüne düşüp birbirini örtüyordu (kaydırma dünya ekseninde uygulanıyordu) → kaydırma artık parçanın
 kendi ekseninde (`Geometri.YaziKonumu` ↔ dxf.js `yaziKonumu`); kanal / sondaj metrajı içindeki kablonun metrajıyla
 çakışıyordu → bir satır yukarıda (`etiketler.kaziMetraji`); telefon DXF'inde yalnız kanal / sondaj kablo renginde
-çiziliyordu → kendi renk ve çizgisinde.
+çiziliyordu → kendi renk ve çizgisinde. Düzeltme 0.1.65 ile aynı örnek projede canlı doğrulandı (eğik kanal + kablo:
+kablo metrajı, kanal metrajı ve hat bilgisi ayrı ayrı okunuyor).
 
 25.10 canlı deneme (AutoCAD 2027, eklenti 0.1.52, uydurma örnek proje): Telefondan Al (72 nesne), Hesap Merkezi (AG
 hattı seçildi, zincir dallanmadan düz geçti), AG gerilim düşümü sayfası (46 bilgi çizimden), Kaydet / yeniden aç /
