@@ -292,6 +292,13 @@ namespace SebekeHakedis.Cekirdek
             return EkranRengi("diger");
         }
 
+        /// <summary>Katman anahtarının (HAT_AG, KABLO_OG, KANAL, SONDAJ...) telefondaki ekran rengi.</summary>
+        public static string EkranKatmanRengi(string anahtar, string varsayilan = "#cbd5e1")
+        {
+            var h = _ekran != null ? _ekran.Nesne("hat") : null;
+            return h != null ? h.Metin(anahtar, varsayilan) : varsayilan;
+        }
+
         /// <summary>Hattın telefondaki ekran rengi.</summary>
         public static string EkranHatRengi(string tur)
         {

@@ -228,6 +228,8 @@ namespace SebekeHakedis.Test
             RaporYazici.Yaz(p, xlsx, "test");
             Esit(true, new FileInfo(xlsx).Length > 2000, "Excel dosyası yazıldı");
             ProjeOzetiDene(p, dt);
+            KoordinatVeKml(p);
+            MifDene(p);
 
             // Yazıcı: AutoCAD çiziminden okunan proje yeniden çizim nesnesine yazılıp okununca aynı rapor
             GidisDonus(p, "ornek-dokum");
@@ -327,6 +329,166 @@ namespace SebekeHakedis.Test
                 Esit(false, wb.Contains("PROJE BAZINDA"), "proje özeti: tek projede proje bazında sayfası yok");
             }
             try { File.Delete(yol); } catch { }
+        }
+
+        /// <summary>TM ↔ enlem-boylam (telefondaki geo/crs.js ile aynı sonuç) ve Google Earth dosyası (KML / KMZ).</summary>
+        private static void KoordinatVeKml(Proje p)
+        {
+            Console.WriteLine("Koordinat ve KML:");
+            double enlem, boylam, saga, yukari;
+            // Beklenen değerler telefondaki geo/crs.js'den (TUREF / TM39 ve TM30)
+            Koordinat.EnlemBoylam(512345.678, 4280000.123, 39, out enlem, out boylam);
+            Esit(true, Math.Abs(enlem - 38.6530704324) < 1e-9 && Math.Abs(boylam - 39.1418263245) < 1e-9, "koordinat: TM39 → enlem/boylam telefonla aynı");
+            Koordinat.CizimKoordinati(38.6748, 39.2232, 39, out saga, out yukari);
+            Esit(true, Math.Abs(saga - 519423.2181) < 1e-3 && Math.Abs(yukari - 4282426.3998) < 1e-3, "koordinat: enlem/boylam → TM39 telefonla aynı");
+            Koordinat.EnlemBoylam(500000, 4400000, 30, out enlem, out boylam);
+            Esit(true, Math.Abs(enlem - 39.7340495594) < 1e-9 && Math.Abs(boylam - 30) < 1e-12, "koordinat: orta meridyende boylam = DOM");
+            Koordinat.CizimKoordinati(enlem, boylam, 30, out saga, out yukari);
+            Esit(true, Math.Abs(saga - 500000) < 1e-4 && Math.Abs(yukari - 4400000) < 1e-4, "koordinat: gidip gelince aynı (0,1 mm)");
+            Esit(39, Koordinat.DomBul(39.9), "koordinat: boylamın dilimi");
+            Esit(true, Koordinat.TmDilimindeMi(512345, 4280000) && !Koordinat.TmDilimindeMi(1200, 3400), "koordinat: TM dilimi denetimi");
+
+            string kml = KmlYazici.Metin(p, 39, "test");
+            var x = new System.Xml.XmlDocument();
+            bool okundu = true;
+            try { x.LoadXml(kml); } catch { okundu = false; }
+            Esit(true, okundu, "KML: geçerli XML");
+            var ns = new System.Xml.XmlNamespaceManager(x.NameTable);
+            ns.AddNamespace("k", "http://www.opengis.net/kml/2.2");
+            var nesneler = CbsYapisi.Nesneler(p);
+            Esit(nesneler.Count, okundu ? x.SelectNodes("//k:Placemark", ns).Count : -1, "KML: her nesne bir yer işareti");
+            Esit(p.Elemanlar.Count, nesneler.FindAll(n => n.Katman == CbsYapisi.Eleman).Count, "KML: bütün elemanlar");
+            Esit(true, okundu && x.SelectNodes("//k:Folder/k:name", ns).Count >= p.Bolgeler.Count, "KML: her proje bir klasör");
+            var direk = p.Elemanlar.Find(e => e.GisId == "SC77");
+            var gis = okundu ? x.SelectSingleNode("//k:Placemark[k:name='SC77']/k:ExtendedData/k:Data[@name='TIP']/k:value", ns) : null;
+            Esit(true, gis != null && gis.InnerText == direk.Kalemler.Find(k => k.Ana).Tanim.Trim(), "KML: elemanın tipi öznitelikte");
+            var hat = p.Hatlar[0];
+            var cizgi = okundu ? x.SelectSingleNode("//k:LineString/k:coordinates", ns) : null;
+            Esit(true, cizgi != null && cizgi.InnerText.Split(' ').Length >= 2, "KML: hat köşeleri");
+            Esit(true, kml.Contains("<Data name=\"HAKEDIS\">") && kml.Contains("<Data name=\"PROJE_KODU\">"), "KML: hakediş ve proje kodu öznitelikleri");
+            // Hat rengi ortak çizim stilinden (telefon ekranı): AG havai yeşil
+            Esit(true, kml.Contains("<LineStyle><color>ff"), "KML: çizgi biçimleri");
+            bool atildi = false;
+            try { KmlYazici.Metin(p, 0, "test"); } catch (ArgumentException) { atildi = true; }
+            Esit(true, atildi, "KML: DOM yoksa yazılmaz");
+
+            string kmz = Path.Combine(Path.GetTempPath(), "sebeke-test.kmz");
+            KmlYazici.Yaz(p, 39, kmz, "test");
+            using (var z = System.IO.Compression.ZipFile.OpenRead(kmz))
+            {
+                var g = z.GetEntry("doc.kml");
+                string ic = "";
+                if (g != null) using (var r = new StreamReader(g.Open(), Encoding.UTF8)) ic = r.ReadToEnd();
+                Esit(true, g != null && ic.Length > 0 && ic.Contains("<kml"), "KMZ: içinde doc.kml");
+            }
+            try { File.Delete(kmz); } catch { }
+        }
+
+        /// <summary>MIF / MID: Şebeke-M'in yazdığı katmanlar geri okunur; başka programların nesne türleri, stilleri, koordinat sistemleri.</summary>
+        private static void MifDene(Proje p)
+        {
+            Console.WriteLine("MIF / MID:");
+            var nesneler = CbsYapisi.Nesneler(p);
+            foreach (var k in CbsYapisi.Katmanlar)
+            {
+                var l = nesneler.FindAll(n => n.Katman == k);
+                if (l.Count == 0) continue;
+                string mif, mid;
+                MifDosyasi.KatmanYaz(k, l, 39, out mif, out mid);
+                // Dosyaya Türkçe kod sayfasıyla yazılır, okurken Charset satırından çözülür
+                var bayt = MifDosyasi.Turkce.GetBytes(mif);
+                var v = MifDosyasi.Oku(MifDosyasi.DosyaMetni(bayt), MifDosyasi.DosyaMetni(MifDosyasi.Turkce.GetBytes(mid)));
+                Esit(l.Count, v.Nesneler.Count, "MIF " + k.Ad + ": nesne sayısı");
+                Esit(k.Alanlar.Length, v.Sutunlar.Count, "MIF " + k.Ad + ": sütunlar");
+                Esit("tm", v.Sistem, "MIF " + k.Ad + ": TM koordinat sistemi");
+                Esit(0, v.Uyarilar.Count, "MIF " + k.Ad + ": uyarı yok");
+                MifDosyasi.CizimeCevir(v, 39);
+                bool konum = true, deger = true;
+                for (int i = 0; i < l.Count && i < v.Nesneler.Count; i++)
+                {
+                    var a = l[i].Kose; var b = v.Nesneler[i].Parcalar.Count > 0 ? v.Nesneler[i].Parcalar[0] : new List<double[]>();
+                    if (a.Count != b.Count) { konum = false; continue; }
+                    for (int j = 0; j < a.Count; j++) if (Math.Abs(a[j][0] - b[j][0]) > 0.001 || Math.Abs(a[j][1] - b[j][1]) > 0.001) konum = false;
+                    for (int j = 0; j < k.Alanlar.Length; j++)
+                    {
+                        string beklenen = CbsYapisi.Yazi(l[i].Degerler[j]);
+                        if (k.Alanlar[j].Tur == 'C' && beklenen.Length > k.Alanlar[j].Uzunluk) beklenen = beklenen.Substring(0, k.Alanlar[j].Uzunluk);
+                        if (k.Alanlar[j].Tur != 'C' && beklenen.Length == 0) beklenen = "0";
+                        if (j >= v.Nesneler[i].Degerler.Length || v.Nesneler[i].Degerler[j] != beklenen) { deger = false; Console.WriteLine("    fark: " + k.Alanlar[j].Ad + " '" + beklenen + "' → '" + (j < v.Nesneler[i].Degerler.Length ? v.Nesneler[i].Degerler[j] : "-") + "'"); }
+                    }
+                }
+                Esit(true, konum, "MIF " + k.Ad + ": koordinatlar 1 mm içinde aynı");
+                Esit(true, deger, "MIF " + k.Ad + ": değerler aynı (Türkçe harfler dâhil)");
+            }
+
+            // Başka programın dosyası: her nesne türü, stiller, tırnaklı değerler
+            string dis =
+                "Version 300\nCharset \"UTF-8\"\nDelimiter \";\"\nCoordSys Earth Projection 1, 104\nColumns 3\n  AD Char(30)\n  NO Integer\n  NOT Char(50)\nData\n\n" +
+                "Point 39.2232 38.6748\n    Symbol (35,255,12)\n" +
+                "Line 39.2232 38.6748 39.2240 38.6750\n    Pen (1,2,16711680)\n" +
+                "Pline Multiple 2\n  2\n39.22 38.67\n39.23 38.67\n  3\n39.22 38.68\n39.23 38.68\n39.23 38.69\n    Pen (2,2,0)\n" +
+                "Region 2\n  4\n39.22 38.67\n39.23 38.67\n39.23 38.68\n39.22 38.67\n  3\n39.221 38.671\n39.222 38.671\n39.222 38.672\n    Pen (1,2,0)\n    Brush (2,16777215,0)\n" +
+                "Text\n    \"Trafo \"\"T-1\"\"\"\n    39.2232 38.6748 39.2236 38.6749\n    Font (\"Arial\",0,0,65280)\n    Angle 30\n" +
+                "Rect 39.20 38.60 39.21 38.61\n" +
+                "Ellipse 39.20 38.60 39.21 38.61\n" +
+                "Arc 39.20 38.60 39.21 38.61 0 90\n" +
+                "Multipoint 2 39.20 38.60 39.21 38.61\n" +
+                "Collection 2\n  Multipoint 1 39.2 38.6\n  Pline 2\n39.2 38.6\n39.21 38.61\n" +
+                "None\n";
+            string disMid = "\"SC 1; A\";1;\"çift \"\"tırnak\"\"\"\n\"İkinci\";2;\"\"\n\"\";3;x\n\"ü\";4;\"\"\n\"yazı\";5;\"\"\n;6;\n;7;\n;8;\n;9;\n;10;\n;11;\n";
+            var d = MifDosyasi.Oku(dis, disMid);
+            Esit(11, d.Nesneler.Count, "MIF dış: 11 nesne");
+            Esit(0, d.Atlanan, "MIF dış: atlanan yok");
+            string turler = string.Join(",", d.Nesneler.ConvertAll(n => n.Tur).ToArray());
+            Esit("nokta,cizgi,cizgi,alan,yazi,alan,alan,cizgi,nokta,nokta,yok", turler, "MIF dış: nesne türleri");
+            Esit(2, d.Nesneler[2].Parcalar.Count, "MIF dış: çoklu çizgi iki parça");
+            Esit(2, d.Nesneler[3].Parcalar.Count, "MIF dış: iki halkalı alan");
+            Esit(3, d.Nesneler[3].Parcalar[0].Count, "MIF dış: halkanın tekrarlanan son köşesi atılır");
+            Esit(255, d.Nesneler[0].Renk, "MIF dış: simge rengi");
+            Esit(16711680, d.Nesneler[1].Renk, "MIF dış: kalem rengi");
+            Esit("Trafo \"T-1\"", d.Nesneler[4].Metin, "MIF dış: yazı (iç tırnaklı)");
+            Esit(65280, d.Nesneler[4].Renk, "MIF dış: yazı rengi");
+            Esit(30.0, d.Nesneler[4].Aci, "MIF dış: yazı açısı");
+            Esit("SC 1; A", d.Nesneler[0].Degerler[0], "MID: tırnak içinde ayırıcı");
+            Esit("çift \"tırnak\"", d.Nesneler[0].Degerler[2], "MID: iç tırnak");
+            Esit("x", d.Nesneler[2].Degerler[2], "MID: tırnaksız değer");
+            Esit("6", d.Nesneler[5].Degerler[1], "MID: boş değerli satır");
+            Esit(2, d.Nesneler[8].Parcalar.Count, "MIF dış: çoklu nokta");
+            Esit(true, d.Nesneler[9].Parcalar.Count == 1 && d.Nesneler[9].Tur == "nokta", "MIF dış: topluluk (ilk parçanın türü)");
+            MifDosyasi.CizimeCevir(d, 39);
+            double s, y;
+            Koordinat.CizimKoordinati(38.6748, 39.2232, 39, out s, out y);
+            Esit(true, Math.Abs(d.Nesneler[0].Parcalar[0][0][0] - s) < 1e-6 && Math.Abs(d.Nesneler[0].Parcalar[0][0][1] - y) < 1e-6, "MIF dış: coğrafi koordinat çizim dilimine çevrilir");
+            Esit(true, d.Nesneler[4].YaziBoyu > 5 && d.Nesneler[4].YaziBoyu < 20, "MIF dış: yazı yüksekliği metreye çevrilir");
+
+            // Başka dilim (TM42) ve UTM: çizimin dilimine (TM39) çevrilir
+            double s42, y42, sU, yU;
+            Koordinat.EnlemBoylamdanTm(38.6748, 39.2232, 42, 1, 500000, 0, out s42, out y42);
+            Koordinat.EnlemBoylamdanTm(38.6748, 39.2232, 39, 0.9996, 500000, 0, out sU, out yU);
+            foreach (var kv in new[] { new { cs = "CoordSys Earth Projection 8, 104, \"m\", 42, 0, 1, 500000, 0", x = s42, yy = y42, ad = "TM42" },
+                                       new { cs = "CoordSys Earth Projection 8, 104, \"m\", 39, 0, 0.9996, 500000, 0", x = sU, yy = yU, ad = "UTM 37" } })
+            {
+                var t = MifDosyasi.Oku("Version 300\n" + kv.cs + "\nColumns 1\n  A Char(5)\nData\nPoint " + kv.x.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + " " +
+                                       kv.yy.ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) + "\n", "\"a\"\n");
+                MifDosyasi.CizimeCevir(t, 39);
+                var q = t.Nesneler[0].Parcalar[0][0];
+                Esit(true, Math.Abs(q[0] - s) < 0.001 && Math.Abs(q[1] - y) < 0.001, "MIF: " + kv.ad + " → TM39 (1 mm)");
+            }
+            var ed50 = MifDosyasi.Oku("Version 300\nCoordSys Earth Projection 8, 28, \"m\", 39, 0, 1, 500000, 0\nColumns 1\n  A Char(5)\nData\nPoint 500000 4280000\n", null);
+            MifDosyasi.CizimeCevir(ed50, 39);
+            Esit(true, ed50.Uyarilar.Exists(u => u.Contains("datum")), "MIF: ITRF96 / WGS84 olmayan datumda uyarı");
+            var duz = MifDosyasi.Oku("Version 300\nCoordSys NonEarth Units \"m\" Bounds (0, 0) (1000000, 5000000)\nColumns 0\nData\nPoint 512345.6 4280000.1\n", null);
+            MifDosyasi.CizimeCevir(duz, 39);
+            Esit(512345.6, duz.Nesneler[0].Parcalar[0][0][0], "MIF: düz koordinat olduğu gibi");
+            var yazisiz = MifDosyasi.Oku("Version 300\nColumns 0\nData\nPoint 512345.6 4280000.1\n", null);
+            MifDosyasi.CizimeCevir(yazisiz, 39);
+            Esit(512345.6, yazisiz.Nesneler[0].Parcalar[0][0][0], "MIF: CoordSys yoksa metre koordinat olduğu gibi");
+
+            // Kod sayfaları: Türkçe Windows ve UTF-8
+            string tr = "Version 300\nCharset \"WindowsTurkish\"\nColumns 1\n  AD Char(20)\nData\nPoint 1 2\n";
+            var trv = MifDosyasi.Oku(MifDosyasi.DosyaMetni(MifDosyasi.Turkce.GetBytes(tr)), MifDosyasi.DosyaMetni(MifDosyasi.Turkce.GetBytes("\"ŞİĞÜÖÇışğüöç\"\n")));
+            Esit("ŞİĞÜÖÇışğüöç", trv.Nesneler[0].Degerler[0], "MID: Türkçe Windows kod sayfası");
+            Esit("ğüş", MifDosyasi.DosyaMetni(Encoding.UTF8.GetBytes("ğüş")), "MID: Charset'siz UTF-8");
         }
 
         private static void CizimGorunumu()

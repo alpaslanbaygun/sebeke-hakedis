@@ -1619,7 +1619,7 @@ namespace SebekeHakedis.Eklenti
                 };
                 KoyuTablo.Uygula(g);
                 string[] basliklar = { "Hak.", "Durum", "Cins", "Malzeme", "Miktar", "Rapor miktarı", "Tutar (TL)" };
-                float[] agirlik = { 34, 52, 150, 190, 84, 100, 92 };
+                float[] agirlik = { 44, 66, 176, 176, 84, 100, 80 };
                 for (int i = 0; i < basliklar.Length; i++)
                 {
                     var c = new DataGridViewTextBoxColumn { HeaderText = basliklar[i], FillWeight = agirlik[i], SortMode = DataGridViewColumnSortMode.NotSortable };
@@ -1699,6 +1699,75 @@ namespace SebekeHakedis.Eklenti
                 };
                 Goster(w);
                 return gorunum;
+            }
+        }
+
+        // ================= CBS ve harita =================
+
+        /// <summary>
+        /// Çizimin koordinat dilimini (3° TM dilim orta meridyeni) sorar: Google Earth, CBS (MIF) ve harita altlığı için
+        /// gerekir. Seçilen dilim çağıran tarafından çizimin ayarlarına kaydedilir. Vazgeçilirse 0.
+        /// </summary>
+        public static int DomSec(int dom, string neden)
+        {
+            Hazirla();
+            using (var f = new KoyuPencere("Koordinat dilimi", 560, 330, Boya.Simge("kml", KoyuRenk.Yesil, 20)))
+            {
+                var alt = AltKur(f, "Devam", false);
+                Aciklama(f, (string.IsNullOrEmpty(neden) ? "" : neden + " için ") + "çizim koordinatlarının hangi 3° dilimde olduğunu seçin " +
+                            "(ITRF96, dilim orta meridyeni). Seçim çizimin ayarlarına kaydedilir; bir daha sorulmaz.", 16, 58, 528, 54);
+                var kap = Koy(f, new Panel { BackColor = Color.Transparent }, 16, 118, 528, 64);
+                var secimler = new List<KoyuSecim>();
+                for (int i = 0; i < Turler.Domlar.Length; i++)
+                {
+                    int m = Turler.Domlar[i];
+                    var r = Koy(kap, new KoyuSecim(m.ToString(CultureInfo.InvariantCulture) + "°") { Tag = m }, (i % 4) * 130, (i / 4) * 30);
+                    r.Checked = dom == m;
+                    secimler.Add(r);
+                }
+                Aciklama(f, "Örnek: Elazığ, Malatya, Erzincan 39° · Ankara 33° · İstanbul 30°. Telefondaki projeyle aynı olmalı.", 16, 190, 528, 48);
+                alt.Tamam.Click += (s, e) =>
+                {
+                    if (!secimler.Exists(r => r.Checked)) { Uyar("Dilimi seçin."); return; }
+                    f.DialogResult = DialogResult.OK;
+                };
+                if (Goster(f) != DialogResult.OK) return 0;
+                var sec = secimler.Find(r => r.Checked);
+                return sec != null ? (int)sec.Tag : 0;
+            }
+        }
+
+        /// <summary>CBS'den alınan nesnenin bilgileri (MID satırı): sütun ve değer.</summary>
+        public static void CbsBilgisi(string dosya, List<string[]> satirlar)
+        {
+            Hazirla();
+            int boy = Math.Min(620, 160 + Math.Max(4, satirlar.Count) * 30);
+            using (var w = new KoyuPencere("CBS bilgisi", 620, boy, Boya.Simge("cbs_al", KoyuRenk.Yesil, 20)))
+            {
+                var kapat = new KoyuDugme("Kapat") { DialogResult = DialogResult.Cancel };
+                int bh = S(34), by = (w.Alt.Height - bh) / 2;
+                kapat.SetBounds(w.Alt.Width - S(16) - S(104), by, S(104), bh);
+                w.Alt.Controls.Add(kapat);
+                w.CancelButton = kapat;
+                w.AcceptButton = kapat;
+                Etiket(w, string.IsNullOrEmpty(dosya) ? "CBS nesnesi" : "Dosya: " + dosya, 16, 54, 588, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var g = new DataGridView
+                {
+                    ReadOnly = true,
+                    AllowUserToAddRows = false,
+                    AllowUserToDeleteRows = false,
+                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                    MultiSelect = true,
+                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                    ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText,
+                };
+                KoyuTablo.Uygula(g);
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Sütun", FillWeight = 35, SortMode = DataGridViewColumnSortMode.NotSortable });
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Değer", FillWeight = 65, SortMode = DataGridViewColumnSortMode.NotSortable });
+                foreach (var s in satirlar) g.Rows.Add(s[0], s.Length > 1 ? s[1] : "");
+                int ust = 80, en = 588, yuk = (int)Math.Round(w.IcerikSonu - ust - 12.0);
+                Koy(w, new Cerceve(g), 16, ust, en, Math.Max(80, yuk));
+                Goster(w);
             }
         }
 

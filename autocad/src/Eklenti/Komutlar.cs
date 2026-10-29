@@ -369,7 +369,7 @@ namespace SebekeHakedis.Eklenti
             return string.IsNullOrEmpty(ad) ? "Proje" : ad;
         }
 
-        private static string KayitYeriSor(string baslik, string filtre, string dosyaAdi, string klasor)
+        internal static string KayitYeriSor(string baslik, string filtre, string dosyaAdi, string klasor)
         {
             using (var dlg = new WinForms.SaveFileDialog
             {
@@ -385,18 +385,18 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
-        private static void Ac(string yol)
+        internal static void Ac(string yol, string baslik = "Rapor hazır")
         {
             try
             {
-                var cevap = WinForms.MessageBox.Show("Rapor hazır:\n" + yol + "\n\nŞimdi açılsın mı?", Marka.Ad,
+                var cevap = WinForms.MessageBox.Show(baslik + ":\n" + yol + "\n\nŞimdi açılsın mı?", Marka.Ad,
                     WinForms.MessageBoxButtons.YesNo, WinForms.MessageBoxIcon.Information);
                 if (cevap == WinForms.DialogResult.Yes) Process.Start(new ProcessStartInfo(yol) { UseShellExecute = true });
             }
             catch (System.Exception ex) { Uygulama.Yaz("Dosya açılamadı: " + ex.Message); }
         }
 
-        private static string Ad(Document belge)
+        internal static string Ad(Document belge)
         {
             string ad = Path.GetFileNameWithoutExtension(belge.Name ?? "");
             return string.IsNullOrEmpty(ad) ? "Proje" : ad;

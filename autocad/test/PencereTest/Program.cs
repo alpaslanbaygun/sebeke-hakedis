@@ -450,6 +450,20 @@ namespace SebekeHakedis.PencereTest
                 Bul<Button>(f, b => b.Text == "Excel'e aktar").PerformClick();
             });
 
+            // Koordinat dilimi (Google Earth / CBS / harita altlığı için; çizimde yoksa sorulur)
+            Dene("26-koordinat-dilimi", () => Esit(39, Pencereler.DomSec(0, "Google Earth dosyası"), "dilim: seçilen dilim döner"), f =>
+            {
+                Bul<KoyuSecim>(f, r => r.Text == "39°").Checked = true;
+                Resim(f, "sonra");
+            });
+
+            // CBS'den alınan nesnenin bilgileri
+            Dene("27-cbs-bilgisi", () => Pencereler.CbsBilgisi("Direkler_2026", new List<string[]>
+            {
+                new[] { "GIS_NO", "SC1024" }, new[] { "TUR", "AG_DIREK" }, new[] { "TIP", "10I" }, new[] { "DURUM", "MEVCUT" },
+                new[] { "MALZEME", "G-L-50 × 1; Topraklama × 1" }, new[] { "ISLETME", "Merkez" },
+            }));
+
             // Şerit menü önizlemesi (AutoCAD olmadan; aynı veri ve simgelerle)
             Console.WriteLine("14-serit");
             SeritOnizleme.Hepsi(_klasor);

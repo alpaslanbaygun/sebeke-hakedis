@@ -314,6 +314,14 @@ namespace SebekeHakedis.Eklenti
             telefon.Items.Add(Dugme("Telefondan\nAl", "Telefondan gelen proje dosyasındaki (.sebeke.json, .volt.json ya da teslim paketi .zip) yeni ve değişen nesneleri bu çizime aktarır.", "_SH_PROJEAL ", "telefon_al", telRengi));
             telefon.Items.Add(Dugme("Telefona\nGönder", "Bu çizimi telefonda açılacak proje dosyasına yazar (.sebeke.json ya da telefon biçimi .volt.json).", "_SH_ICEAL ", "telefon_gonder", telRengi));
 
+            // CBS ve harita: Google Earth, MIF dışa / içe aktarma, CBS bilgisi
+            var cbs = Panel(araclar, "CBS ve Harita");
+            var cbsRengi = Color.FromRgb(0x23, 0xA4, 0x55);
+            cbs.Items.Add(Dugme("Google\nEarth", "Çizimi Google Earth dosyası olarak kaydeder (KMZ / KML): her proje bir klasör; direk, hat, kanal, sondaj bilgileriyle. Koordinatlar çizimin diliminden çevrilir.", "_SH_KML ", "kml", cbsRengi));
+            cbs.Items.Add(Dugme("CBS'ye\nAktar", "CBS için MapInfo MIF / MID dosyaları: her nesne türü (eleman, hat, kanal, sondaj, proje sınırı, GPS noktası) ayrı dosya, çizim koordinatıyla.", "_SH_MIFVER ", "cbs_ver", null));
+            cbs.Items.Add(Dugme("CBS'den\nAl", "MapInfo MIF / MID dosyalarını çizime altlık olarak alır (nokta, çizgi, alan, yazı). Koordinatlar çizimin dilimine çevrilir; bilgiler nesnede saklanır.", "_SH_MIFAL ", "cbs_al", null));
+            cbs.Items.Add(Dugme("CBS\nBilgisi", "CBS'den alınan bir nesnenin bilgilerini (MID satırı) gösterir.", "_SH_CBSBILGI ", "bilgi", null));
+
             HesapPanelleri(araclar);
 
             KategorileriGoster();
