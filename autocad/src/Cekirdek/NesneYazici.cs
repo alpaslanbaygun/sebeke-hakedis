@@ -25,11 +25,20 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Direğin yanındaki armatür simgesinin tanıtıcısı (direkte armatür malzemesi varken).</summary>
         public const string ArmaturUygulamasi = "SH_ARM";
 
+        /// <summary>Kanalın iki kenar çizgisinin tanıtıcıları (kanal ekseninde; AutoCAD tanıtıcı türüyle, kopyada çevrilir).</summary>
+        public const string KenarUygulamasi = "SH_KENAR";
+
+        /// <summary>Süs nesnesinin (hat etiketi, kanal kenarı) sahibinin tanıtıcısı: kopyalanmış nesne başkasının süsünü almasın.</summary>
+        public const string SahipUygulamasi = "SH_SAHIP";
+
+        /// <summary>Yalnız bunları taşıyan nesneler başka bir nesnenin süsüdür (kendi verisi yoktur; okunurken atlanır).</summary>
+        public static readonly string[] SusUygulamalari = { ArmaturUygulamasi, SahipUygulamasi };
+
         /// <summary>AutoCAD'in eklentinin düzenlemediği verileri: pano çıkış şeması (ANA, CON), bina tipi trafo hücreleri (FIDER).</summary>
         public static readonly string[] EkUygulamalar = { "ANA", "CON", "FIDER" };
 
         /// <summary>XDATA uygulama adları (çizimde kayıtlı olmalı).</summary>
-        public static readonly string[] Uygulamalar = { "GIS", "NIT", "MALZEME", "HAT", "ANAKESIT", "ETK", "KONTROL", "FULLREG", "HAKNO", "ZKOORD", KimlikUygulamasi, ParcaUygulamasi, ArmaturUygulamasi, "ANA", "CON", "FIDER" };
+        public static readonly string[] Uygulamalar = { "GIS", "NIT", "MALZEME", "HAT", "ANAKESIT", "ETK", "KONTROL", "FULLREG", "HAKNO", "ZKOORD", KimlikUygulamasi, ParcaUygulamasi, ArmaturUygulamasi, KenarUygulamasi, SahipUygulamasi, "ANA", "CON", "FIDER" };
 
 
         // ---------------- Sayı ve alan yazımı (AutoCAD: Türkçe ondalık virgül) ----------------
@@ -308,36 +317,48 @@ namespace SebekeHakedis.Cekirdek
         }
 
         /// <summary>
-        /// Hat etiketi: "^ 3X50/16+70 ALPEK/341m/(tanıtıcı)" (telefondaki etikete AutoCAD gibi tanıtıcı eklenir).
-        /// Ön ekler AutoCAD ile aynı: * M+M · ^ M · [ ] DM+M · &gt; &lt; DM · / \ KM · { } ENH · ( ) MEVCUT.
-        /// Gerçek bir AutoCAD çiziminde 3.377 etiketin 3.340'ı bununla birebir aynıdır; kalanlar AutoCAD'in
-        /// güncellemediği eski etiketlerdir.
+        /// Hat etiketi: durum işaretiyle iletken, ör. "^ 3X50/16+70 ALPEK". İşaretler AutoCAD ile aynı: * M+M · ^ M ·
+        /// [ ] DM+M · &gt; &lt; DM · / \ KM · { } ENH · ( ) MEVCUT. Eski AutoCAD etiketinin sonundaki metraj ve tanıtıcı
+        /// yazılmaz: metraj her açıklığın üstünde ayrıca yazılıdır, etiketin sahibi yazının kendi verisindedir (SH_SAHIP).
+        /// Telefondaki karşılığı sh-core hatEtiketi.
         /// </summary>
         public static string HatEtiketi(Hat h)
         {
             var hatlar = Iletkenler.HatKalemleri(h);
             var kl = hatlar.Count > 0 ? hatlar[0] : null;
-            // Etiketteki uzunluk güzergâhın metrajıdır (adetli satırda miktar / adet)
-            double m = kl != null ? kl.Miktar / Math.Max(1, Iletkenler.Adet(kl)) : Math.Ceiling(Geometri.Uzunluk(h.Kose));
             // Çoklu iletken: hepsi telefondaki gibi (OG + … / AG + …). Tek iletken: AutoCAD hattın tam yazımını kullanır
             // (ör. "3(1x150/25) Xlpe Alm."), yoksa ana kesit.
             string kesit = hatlar.Count > 1 ? Iletkenler.EtiketKesiti(hatlar)
                 : kl != null && !string.IsNullOrEmpty(kl.Aciklama) ? kl.Aciklama
                 : !string.IsNullOrEmpty(h.AnaKesit) ? h.AnaKesit : (kl != null ? kl.Tanim : "");
-            string metraj = Metraj.Yazi(m) + "m";
-            string govde;
-            switch (h.Durum)
+            return EtiketGovdesi(h.Durum, kesit);
+        }
+
+        /// <summary>Durum işaretli etiket gövdesi (hat etiketi; telefondaki sh-core hatEtiketi ile aynı).</summary>
+        public static string EtiketGovdesi(string durum, string kesit)
+        {
+            kesit = kesit ?? "";
+            switch (durum)
             {
-                case "M": govde = "^ " + kesit + "/" + metraj; break;
-                case "M+M": govde = "* " + kesit + "/" + metraj; break;
-                case "DM": govde = ">" + kesit + "</" + metraj; break;
-                case "DM+M": govde = "[" + kesit + "]/" + metraj; break;
-                case "KM": govde = "/" + kesit + "\\/" + metraj; break;
-                case "ENH": govde = "{" + kesit + "}/" + metraj; break;
-                case "MEVCUT": govde = "(" + kesit + ")/" + metraj; break;
-                default: govde = kesit + "/" + metraj; break; // ME ve bilinmeyenler düz (AutoCAD "TANIMSIZ" yazar)
+                case "M": return "^ " + kesit;
+                case "M+M": return "* " + kesit;
+                case "DM": return ">" + kesit + "<";
+                case "DM+M": return "[" + kesit + "]";
+                case "KM": return "/" + kesit + "\\";
+                case "ENH": return "{" + kesit + "}";
+                case "MEVCUT": return "(" + kesit + ")";
+                default: return kesit; // ME ve bilinmeyenler düz (AutoCAD "TANIMSIZ" yazar)
             }
-            return govde + "/(" + Tanitici + ")";
+        }
+
+        /// <summary>
+        /// Kanalın kenar çizgileri arası (m): üst genişlik, yoksa alt genişlik (kanalda santimetre), o da yoksa stilin
+        /// varsayılanı.
+        /// </summary>
+        public static double KanalGenisligi(Kanal c)
+        {
+            double cm = c.UstGenislik > 0 ? c.UstGenislik : c.AltGenislik;
+            return cm > 0 ? cm / 100.0 : CizimStili.KanalKenari.VarsayilanGenislik;
         }
 
         /// <summary>Kanal: çoklu çizgi (önEk_KABLO_KANALI) + GIS (baş;bit;uzunluk;derinlik;alt;üst), KONTROL, NIT.</summary>
@@ -346,6 +367,7 @@ namespace SebekeHakedis.Cekirdek
             var v = new CadVarlik { H = c.Id, Tur = "LWPOLYLINE", Katman = onEk + "_KABLO_KANALI" };
             foreach (var k in c.Kose) v.Kose.Add(new[] { k[0], k[1] });
             v.ParcaMetraji = true;
+            v.KenarGenisligi = KanalGenisligi(c);
             Stil(v, "KANAL", c.Durum);
             var ana = c.Kalemler.Find(k => k.Ana) ?? new Kalem { Cins = c.Kod.ToString(CultureInfo.InvariantCulture), Tanim = c.Zemin, Durum = c.Durum, Hakedis = c.Hakedis, Birim = "mt/m³", Katsayi = 1, Ana = true };
             var nit = ana.Kopya();

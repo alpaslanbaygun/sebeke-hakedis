@@ -31,6 +31,7 @@ namespace SebekeHakedis.Eklenti
         {
             try { Serit.Kur(); } catch (System.Exception ex) { Yaz("Şerit menü kurulamadı: " + ex.Message); }
             try { ArmaturTakibi.Baslat(); } catch (System.Exception ex) { Yaz("Armatür takibi başlatılamadı: " + ex.Message); }
+            try { KenarTakibi.Baslat(); } catch (System.Exception ex) { Yaz("Kanal kenarı takibi başlatılamadı: " + ex.Message); }
             try { HesapMerkezi.Baslat(); } catch (System.Exception ex) { Yaz("Hesap merkezi başlatılamadı: " + ex.Message); }
             Yaz(Marka.Ad + " " + Surum + " yüklendi. Şeritte ŞEBEKE-M ve ŞEBEKE-M ARAÇLAR sekmeleri; komut listesi için SH_HAKKINDA.");
         }

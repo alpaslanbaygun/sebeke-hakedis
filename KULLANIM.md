@@ -221,20 +221,22 @@ yeter; eklenti en yakın elemanı yakalar (simge ne kadar büyükse o kadar geni
 payla). **Boş yere tıklamak yalnız köşe koyar**, direk konmaz.
 
 Hat her direkte, SDK'da ya da pano/trafoda **biter ve yeniden başlar**: iki direk arası ayrı bir nesnedir, metrajı
-ve etiketi kendine aittir. Direksiz ara köşeler parçanın içinde kalır. Her parçanın üstüne **hat bilgisi**
-(durum işareti, iletken, uzunluk) ve iki direğin arasına uzunluğu yazılır. Kanal ve sondaj da aynıdır. Telefon bu
-parçaları tek hat olarak gösterir, geri gönderince parçalar korunur.
+ve etiketi kendine aittir. Direksiz ara köşeler (kırılma noktaları) parçanın içinde kalır. Her parçanın altına
+**hat bilgisi** (durum işareti ve iletken, ör. `^ 3X50/16+70 ALPEK`), üstüne **bir kez uzunluğu** yazılır: yer altında
+iki SDK, havai hatta iki direk arasına tek metraj; kırılma noktalarına ayrıca yazılmaz. Yazılar hattın renginde ve
+Tahoma yazı tipindedir. Kanal ve sondaj da aynıdır. Telefon bu parçaları tek hat olarak gösterir, geri gönderince
+parçalar korunur.
 
 Yakalama mesafesinin alt sınırı **Çizim Ayarları › Genel › Direğe yakalama mesafesi**'dir; **0** yakalamayı kapatır.
 
 ### İki iletken, adet ve müşterek hat
 
 - **Adet**: aynı iletkenden birkaç tane (ör. 3 adet 3X50/16+70 ALPEK). Malzeme miktarı adet × hat boyu olur;
-  etikete `3x(3X50/16+70 ALPEK)/40m` yazılır (40 m hattın kendi boyu).
+  etikete `3x(3X50/16+70 ALPEK)` yazılır, hattın kendi boyu (40 m) üstündeki metraj yazısındadır.
 - **2. iletken**: aynı hatta ikinci bir iletken ya da kablo (ör. 3P+R yanına 1X16+25 ALPEK). Her iletken ayrı malzeme
   satırıdır; etikette `+` ile birleşir.
 - **Müşterek hat**: 1. iletken OG, 2. iletken AG olarak gelir (ör. 3xSW + 4P+R). Etiket `OG / AG` biçimindedir:
-  `^ 3xSW / 4P+R/120m`. Raporda OG ve AG iletkeni ayrı satırlarda çıkar.
+  `^ 3xSW / 4P+R`. Raporda OG ve AG iletkeni ayrı satırlarda çıkar.
 - Telefona gönderince her iletken telefonda ayrı devre olur (adediyle); geri gelince yine aynı satırlar yazılır.
 
 ### Malzeme hafızası ve toplu malzeme
@@ -260,6 +262,29 @@ saklanır.
 ### Görünüm: telefondakiyle aynı
 
 Simgeler, renkler, çizgi tipleri ve yazılar telefondaki çizimle birebir aynıdır (`ortak/katalog/cizim-stili.json`).
+Her hat türünün rengi ayrıdır; demontajdaki hat sarıdır:
+
+| Hat | Renk | Çizgi |
+| --- | --- | --- |
+| OG havai | kırmızı | sürekli |
+| AG havai | yeşil | sürekli |
+| Abone | turuncu | kesik |
+| Müşterek | mor | sürekli |
+| Aydınlatma | camgöbeği | sürekli |
+| ENH | eflatun | sürekli |
+| AG yer altı kablo | mavi | kesik-noktalı |
+| OG yer altı kablo | pembe | kesik-noktalı |
+| Yatay sondaj | sarı-turuncu | noktalı |
+| Kablo kanalı | gri | iki kenar çizgisi + eksen |
+
+**Kablo kanalı** hat gibi görünmez: kanalın genişliğinde (üst genişlik; yoksa alt genişlik, o da yoksa 40 cm) iki
+gri kenar çizgisiyle çizilir, ortadaki eksen çizgisi kanalın kendisidir. Kanalı seçmek için eksene ya da kenarına
+tıklayın. Kanalı AutoCAD'in komutlarıyla taşır, uzatır, köşesini oynatır, kopyalar ya da silerseniz kenarları da
+onunla gider. Eklentinin bütün yazıları Tahoma'dır (yazı stili `SEBEKE-M`).
+
+Bu görünümden önce çizilmiş çizimleri bir kez **Telefon Görünümü** (`SH_GORUNUM`) ile çevirin: etiketler, metraj
+yazıları, renkler, kanal kenarları ve yazı tipi yenilenir.
+
 Beton / ağaç direk daire, demir direk kare. Her durumun simgesi ayrıdır:
 
 | Durum | Simge |
@@ -283,7 +308,7 @@ için **Telefon Görünümü** (`SH_GORUNUM`); değişmeyen eski bloklara dokunu
 | Toplu Malzeme | `SH_TOPLUMALZEME` | Seçilen bütün direklere (trafo, SDK…) aynı malzemeleri birden ekler. |
 | Malzeme Hafızası | — | Açıkken son elemanın malzemeleri aynı tipteki yeni elemana kendiliğinden eklenir; tıklayınca kapanır / açılır. |
 | Metraj | `SH_METRAJ` | Seçilen hat / kanal / sondajın metrajını çizim uzunluğundan yeniden hesaplar (önce listeyi gösterip sorar). |
-| Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (simge, renk, etiket, parça metrajları). |
+| Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (simge, renk, etiket, metraj yazıları, kanal kenarları, Tahoma yazı tipi). |
 | Aktif Hakediş | `SH_HAKEDIS` | Aktif hakediş: yeni çizilenler bu hakedişin katmanlarına (`SC_3.HAK.…`) konur. Eski programın aktif hakedişiyle ortaktır. |
 | Hakediş Onayı | `SH_ONAY` | Her hakediş için sırayla **Kontrol → Hakediş → GIS** onayı (eski programın onay kaydı; o program aynı işaretleri görür). **Hakediş onayı verilen hakediş kilitlenir**: o hakedişe yeni nesne çizilemez, malzeme satırları gri görünür ve değiştirilemez / silinemez, metraj güncellemesi o nesneleri atlar, telefondan gelen değişiklik o hakedişe dokunuyorsa aktarılmaz. Kilitli direğe açık hakedişte yeni malzeme eklemek serbesttir. |
 | Çizim Ayarları | `SH_AYARLAR` | Katman / GIS ön eki, koordinat dilimi, **tarife (şehir / köy-bakım ve karakteristik)**, sembol takımı, etiket yüksekliği, direğe yakalama mesafesi, metraj yuvarlama ve ek paylar, kanal varsayılanları, **proje bilgileri** (ad, kod, hesabı yapan, unvan, firma, buz bölgesi). Çizimin içinde saklanır. |

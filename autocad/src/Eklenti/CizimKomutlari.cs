@@ -895,6 +895,19 @@ namespace SebekeHakedis.Eklenti
 
         // ================= SH_MALZEME =================
 
+        /// <summary>Seçilen nesne başka nesnenin süsüyse (kanal kenarı) sahibinin kimliği; değilse kendisi.</summary>
+        private static ObjectId SahibiIle(Database db, ObjectId id)
+        {
+            using (var tr = db.TransactionManager.StartOpenCloseTransaction())
+            {
+                var ent = tr.GetObject(id, OpenMode.ForRead, false) as Entity;
+                var s = Toplayici.SusSahibi(tr, ent);
+                var sonuc = s != null ? s.ObjectId : id;
+                tr.Commit();
+                return sonuc;
+            }
+        }
+
         private static object NesneBul(Proje p, string h)
         {
             object n = p.Elemanlar.Find(x => string.Equals(x.Id, h, StringComparison.OrdinalIgnoreCase));
@@ -971,7 +984,8 @@ namespace SebekeHakedis.Eklenti
                 peo.AddAllowedClass(typeof(Polyline3d), true);
                 var r = ed.GetEntity(peo);
                 if (r.Status != PromptStatus.OK) return;
-                string h = r.ObjectId.Handle.ToString();
+                var secilen = SahibiIle(o.Db, r.ObjectId);
+                string h = secilen.Handle.ToString();
                 var nesne = NesneBul(o.Proje, h);
                 if (nesne == null)
                 {
@@ -990,7 +1004,7 @@ namespace SebekeHakedis.Eklenti
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
                     var y = Yazici(o, tr);
-                    NesneyiYaz(o, y, r.ObjectId, nesne, eskiDurum, eskiHakedis, eskiDm);
+                    NesneyiYaz(o, y, secilen, nesne, eskiDurum, eskiHakedis, eskiDm);
                     tr.Commit();
                     UyarilariYaz(ed, y);
                 }

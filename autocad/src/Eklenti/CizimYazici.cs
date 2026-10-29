@@ -25,9 +25,12 @@ namespace SebekeHakedis.Eklenti
         /// <summary>
         /// Blok tanımının sürümü (blok sözlüğünde saklanır). 2: metre cinsinden geometri, 1 ölçek, telefon yazı düzeni;
         /// 3: panoda çıkış şeması öznitelikleri (C_1…C_8); 4: demontaj işaretleri simgeden taşar (DM "/", KESİK "//", SÖKÜK "X"),
-        /// demontajda kafes direğin iç çarpısı yok.
+        /// demontajda kafes direğin iç çarpısı yok; 5: öznitelik yazıları eklentinin yazı stilinde (Tahoma).
         /// </summary>
-        private const string BlokSurumu = "4";
+        private const string BlokSurumu = "5";
+
+        /// <summary>Metraj yazısında köşenin bir elemanın üstünde sayılacağı uzaklık (m) ve eleman ızgarasının hücresi.</summary>
+        private const double DugumToleransi = 0.5, DugumHucresi = 5.0;
 
         private const string Sozluk = "SEBEKE_HAKEDIS", BlokKaydi = "BLOK";
 
@@ -36,6 +39,9 @@ namespace SebekeHakedis.Eklenti
         private BlockTableRecord _ms;
         private readonly Dictionary<string, ObjectId> _katmanlar = new Dictionary<string, ObjectId>(StringComparer.OrdinalIgnoreCase);
         private bool _uygulamalar, _bloklarDenetlendi;
+        private ObjectId _yaziStili = ObjectId.Null;
+        /// <summary>Açıklık sınırı olan elemanların yerleri (ızgara hücresi → noktalar); ilk metraj yazısında okunur.</summary>
+        private Dictionary<long, List<double[]>> _dugumler;
 
         /// <summary>Yeni hat etiketlerinin ve eleman yazılarının yüksekliği (m).</summary>
         public double EtiketYuksekligi = 1.8;
@@ -112,6 +118,84 @@ namespace SebekeHakedis.Eklenti
             }
             _katmanlar[ad] = id;
             return id;
+        }
+
+        /// <summary>
+        /// Eklentinin yazı stili (ortak stildeki yazı tipi: Tahoma): yoksa oluşturulur, yazı tipi değiştirilmişse düzeltilir.
+        /// Hat etiketi, metraj yazıları ve simge öznitelikleri bu stille yazılır.
+        /// </summary>
+        public ObjectId YaziStili()
+        {
+            if (!_yaziStili.IsNull) return _yaziStili;
+            string ad = CizimStili.YaziStili, font = CizimStili.YaziFontu, dosya = CizimStili.YaziFontDosyasi;
+            try
+            {
+                var tst = (TextStyleTable)_tr.GetObject(_db.TextStyleTableId, OpenMode.ForRead);
+                TextStyleTableRecord ts;
+                if (tst.Has(ad)) ts = (TextStyleTableRecord)_tr.GetObject(tst[ad], OpenMode.ForRead);
+                else
+                {
+                    ts = new TextStyleTableRecord { Name = ad };
+                    tst.UpgradeOpen();
+                    tst.Add(ts);
+                    _tr.AddNewlyCreatedDBObject(ts, true);
+                }
+                if (!string.Equals(ts.Font.TypeFace, font, StringComparison.OrdinalIgnoreCase) || !string.Equals(ts.FileName, dosya, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!ts.IsWriteEnabled) ts.UpgradeOpen();
+                    ts.FileName = dosya;
+                    ts.Font = new Autodesk.AutoCAD.GraphicsInterface.FontDescriptor(font, false, false, 0, 34);
+                    ts.TextSize = 0;
+                    ts.XScale = 1;
+                }
+                _yaziStili = ts.ObjectId;
+            }
+            catch (Exception ex)
+            {
+                Uyarilar.Add("Yazı stili kurulamadı, çizimin geçerli stili kullanıldı (" + ex.Message + ")");
+                _yaziStili = _db.Textstyle;
+            }
+            return _yaziStili;
+        }
+
+        /// <summary>Nesnenin görünen rengi (katmana göreyse katmanın rengi): hat etiketi ve metraj yazıları bu renkte yazılır.</summary>
+        private Color GorunenRenk(Entity e)
+        {
+            var c = e.Color;
+            if (c.IsByLayer)
+            {
+                try { return ((LayerTableRecord)_tr.GetObject(e.LayerId, OpenMode.ForRead)).Color; }
+                catch { return Color.FromColorIndex(ColorMethod.ByAci, 7); }
+            }
+            if (c.IsByBlock) return Color.FromColorIndex(ColorMethod.ByAci, 7);
+            return c;
+        }
+
+        /// <summary>Süs nesnesinin (etiket, metraj yazısı, kanal kenarı) sahibi: SH_SAHIP'teki tanıtıcı; yazılmamışsa null.</summary>
+        internal static string SahibiOku(DBObject o)
+        {
+            List<string> l;
+            return Toplayici.XdataOku(o).TryGetValue(NesneYazici.SahipUygulamasi, out l) && l.Count > 0 && !string.IsNullOrEmpty(l[0]) ? l[0] : null;
+        }
+
+        /// <summary>Süsün sahibini yazar (AutoCAD tanıtıcı türüyle: birlikte kopyalanınca kopyanın sahibi kopya olur).</summary>
+        private void SahibiYaz(DBObject sus, string sahip)
+        {
+            UygulamalariKaydet();
+            if (!sus.IsWriteEnabled) sus.UpgradeOpen();
+            using (var rb = new ResultBuffer(
+                new TypedValue((int)DxfCode.ExtendedDataRegAppName, NesneYazici.SahipUygulamasi),
+                new TypedValue((int)DxfCode.ExtendedDataHandle, sahip)))
+            {
+                sus.XData = rb;
+            }
+        }
+
+        /// <summary>Süs bu nesnenin mi: sahibi yazılıysa o; değilse (eski çizim) bu nesneye bağlı sayılır.</summary>
+        private static bool Sahibi(DBObject sus, string sahip)
+        {
+            string s = SahibiOku(sus);
+            return s == null || string.Equals(s, sahip, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>Yazıların katmanı: nesnenin ön ekiyle &lt;önek&gt;_YAZI (telefondaki ELEKTRIK-YAZI karşılığı).</summary>
@@ -432,7 +516,7 @@ namespace SebekeHakedis.Eklenti
             ad.Height = yukseklik;
             ad.Invisible = gizli;
             ad.LayerId = _db.LayerZero;
-            ad.TextStyleId = _db.Textstyle;
+            ad.TextStyleId = YaziStili();
             btr.AppendEntity(ad);
             _tr.AddNewlyCreatedDBObject(ad, true);
         }
@@ -468,6 +552,7 @@ namespace SebekeHakedis.Eklenti
             OznitelikleriKur(br, btrId, v.Oz);
             XdataYaz(br, v);
             ArmaturYaz(br, v);
+            DugumEkle(br);
             return id;
         }
 
@@ -488,6 +573,7 @@ namespace SebekeHakedis.Eklenti
             XdataYaz(pl, v);
             if (v.ParcaMetraji) ParcaMetrajlariYaz(pl, v.Kose);
             if (etiket != null) EtiketYaz(pl, etiket.Replace(NesneYazici.Tanitici, h), v.Kose);
+            if (v.KenarGenisligi > 0) KenarlariYaz(pl, v.KenarGenisligi);
             return id;
         }
 
@@ -554,9 +640,10 @@ namespace SebekeHakedis.Eklenti
             else KoseleriGuncelle(ent, v);
             StilUygula(ent, v);
             XdataYaz(ent, v);
-            if (br != null) ArmaturYaz(br, v);
+            if (br != null) { ArmaturYaz(br, v); DugumEkle(br); }
             if (br == null && v.ParcaMetraji) ParcaMetrajlariYaz(ent, v.Kose);
             if (etiket != null) EtiketYaz(ent, etiket.Replace(NesneYazici.Tanitici, h), v.Kose);
+            if (br == null) KenarlariYaz(ent, v.KenarGenisligi);
         }
 
         private string EtkinAd(BlockReference br)
@@ -717,12 +804,13 @@ namespace SebekeHakedis.Eklenti
             var ent = _tr.GetObject(id, OpenMode.ForWrite, false) as Entity;
             if (ent == null) return;
             var yazi = Etiket(ent);
-            if (yazi != null && !BaskaHattin(yazi.TextString, ent.Handle.ToString()))
+            if (yazi != null && !BaskaHattin(yazi, ent.Handle.ToString()))
             {
                 yazi.UpgradeOpen();
                 yazi.Erase();
             }
             ParcaMetrajlariSil(ent);
+            KenarlariSil(ent);
             var arm = ent is BlockReference ? ArmaturBul((BlockReference)ent) : null;
             if (arm != null)
             {
@@ -878,11 +966,12 @@ namespace SebekeHakedis.Eklenti
             if (aci < -Math.PI / 2) aci += Math.PI;
         }
 
-        private DBText YaziYap(string metin, double x, double y, double aci, double yukseklik, ObjectId katman)
+        private DBText YaziYap(string metin, double x, double y, double aci, double yukseklik, ObjectId katman, Color renk)
         {
             var yazi = new DBText();
             yazi.SetDatabaseDefaults(_db);
-            yazi.TextStyleId = _db.Textstyle;
+            yazi.TextStyleId = YaziStili();
+            if (renk != null) yazi.Color = renk;
             yazi.Height = yukseklik;
             yazi.TextString = metin;
             yazi.LayerId = katman;
@@ -898,25 +987,31 @@ namespace SebekeHakedis.Eklenti
         // ---------------- Parça metrajları ----------------
 
         /// <summary>
-        /// Her parçanın (iki köşe arası) uzunluğunu parçanın ortasına yazar ("12.34", telefondaki gibi); eski yazılar
-        /// silinir. Yazıların tanıtıcıları nesnenin SH_PARCA verisinde tutulur (güncelleme ve silme için).
+        /// Metraj yazıları: her açıklığın (havai hatta iki direk, yer altında iki bağlantı elemanı arası) toplam uzunluğu,
+        /// açıklığın en uzun parçasının ortasına, hattın renginde ("12.34", telefondaki gibi). Elemansız kırılma köşelerine
+        /// ayrıca yazılmaz. Eski yazılar silinir; tanıtıcılar nesnenin SH_PARCA verisinde, sahibi yazının SH_SAHIP verisinde.
         /// </summary>
         public void ParcaMetrajlariYaz(Entity cizgi, List<double[]> kose)
         {
+            UygulamalariKaydet();
             ParcaMetrajlariSil(cizgi);
             if (kose == null || kose.Count < 2) return;
             double yh = CizimStili.Yuklu ? CizimStili.ParcaMetraji : EtiketYuksekligi * 0.8;
             double[] kaydirma = CizimStili.Yuklu ? CizimStili.ParcaKaydirma : new[] { 0.0, 0.8 };
             string bicim = CizimStili.Yuklu ? CizimStili.ParcaBicimi : "0.00";
             var katman = YaziKatmani(KatmanAdi(cizgi.LayerId));
+            var renk = GorunenRenk(cizgi);
+            string sahip = cizgi.Handle.ToString();
             var taniticilar = new List<string>();
-            for (int i = 0; i < kose.Count - 1; i++)
+            foreach (var a in Geometri.Acikliklar(kose, i => DugumVar(kose[i][0], kose[i][1])))
             {
-                double d = Math.Sqrt(Math.Pow(kose[i + 1][0] - kose[i][0], 2) + Math.Pow(kose[i + 1][1] - kose[i][1], 2));
-                if (d < 1e-6) continue;
+                int parca;
+                double d;
+                if (!Geometri.AciklikYazisi(kose, a[0], a[1], out parca, out d)) continue;
                 double x, y, aci;
-                ParcaKonumu(kose[i], kose[i + 1], kaydirma, out x, out y, out aci);
-                var yazi = YaziYap(d.ToString(bicim, CultureInfo.InvariantCulture), x, y, aci, yh, katman);
+                ParcaKonumu(kose[parca], kose[parca + 1], kaydirma, out x, out y, out aci);
+                var yazi = YaziYap(d.ToString(bicim, CultureInfo.InvariantCulture), x, y, aci, yh, katman, renk);
+                SahibiYaz(yazi, sahip);
                 taniticilar.Add(yazi.Handle.ToString());
             }
             // Yazı yoksa: eski bölüm varsa silinir, yoksa hiç yazılmaz — değersiz (sıfır uzunluklu) bölüm çizimi bozar
@@ -939,12 +1034,177 @@ namespace SebekeHakedis.Eklenti
             var xd = Toplayici.XdataOku(cizgi);
             List<string> l;
             if (!xd.TryGetValue(NesneYazici.ParcaUygulamasi, out l)) return;
+            string sahip = cizgi.Handle.ToString();
             foreach (var h in l)
             {
                 ObjectId tid;
                 if (string.IsNullOrEmpty(h) || !Toplayici.TaniticiylaBul(_db, h, out tid)) continue;
-                var yazi = _tr.GetObject(tid, OpenMode.ForWrite, false) as DBText;
-                if (yazi != null && !yazi.IsErased) yazi.Erase();
+                var yazi = _tr.GetObject(tid, OpenMode.ForRead, false) as DBText;
+                // AutoCAD'le kopyalanmış hat asıl hattın yazılarını silmesin
+                if (yazi == null || yazi.IsErased || !Sahibi(yazi, sahip)) continue;
+                yazi.UpgradeOpen();
+                yazi.Erase();
+            }
+        }
+
+        // ---------------- Açıklık sınırları: çizimdeki elemanlar ----------------
+
+        private static long Hucre(double x, double y) =>
+            ((long)Math.Floor(x / DugumHucresi) << 32) ^ (long)(uint)(int)Math.Floor(y / DugumHucresi);
+
+        /// <summary>Köşe bir elemanın (açıklık sınırı olan: direk, SDK, pano, trafo, kofre…) üstünde mi.</summary>
+        private bool DugumVar(double x, double y)
+        {
+            var d = Dugumler();
+            int cx = (int)Math.Floor(x / DugumHucresi), cy = (int)Math.Floor(y / DugumHucresi);
+            for (int i = cx - 1; i <= cx + 1; i++)
+                for (int j = cy - 1; j <= cy + 1; j++)
+                {
+                    List<double[]> l;
+                    if (!d.TryGetValue(((long)i << 32) ^ (long)(uint)j, out l)) continue;
+                    foreach (var p in l)
+                        if (Math.Abs(p[0] - x) <= DugumToleransi && Math.Abs(p[1] - y) <= DugumToleransi
+                            && (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y) <= DugumToleransi * DugumToleransi) return true;
+                }
+            return false;
+        }
+
+        /// <summary>Açıklık sınırı olan elemanlar: çizimden bir kez okunur; bu yazıcıyla eklenenler de katılır.</summary>
+        private Dictionary<long, List<double[]>> Dugumler()
+        {
+            if (_dugumler != null) return _dugumler;
+            _dugumler = new Dictionary<long, List<double[]>>();
+            var sinif = Autodesk.AutoCAD.Runtime.RXObject.GetClass(typeof(BlockReference));
+            foreach (ObjectId id in Ms)
+            {
+                if (!id.ObjectClass.IsDerivedFrom(sinif)) continue;
+                var br = _tr.GetObject(id, OpenMode.ForRead, false) as BlockReference;
+                if (br != null && !br.IsErased) DugumEkle(br);
+            }
+            return _dugumler;
+        }
+
+        private void DugumEkle(BlockReference br)
+        {
+            if (_dugumler == null) return; // henüz okunmadı: okunurken bu da gelir
+            List<string> nit;
+            if (!Toplayici.XdataOku(br).TryGetValue("NIT", out nit) || nit.Count == 0) return;
+            string cins = (nit[0] ?? "").Split(';')[0];
+            string tur = NesneOkuyucu.ElemanTuru(cins);
+            if (!Geometri.AciklikSiniri(tur, Semboller.Aile(tur, cins))) return;
+            long k = Hucre(br.Position.X, br.Position.Y);
+            List<double[]> l;
+            if (!_dugumler.TryGetValue(k, out l)) _dugumler[k] = l = new List<double[]>();
+            l.Add(new[] { br.Position.X, br.Position.Y });
+        }
+
+        // ---------------- Kanal kenarları ----------------
+
+        /// <summary>
+        /// Çizginin iki yanına (eksenden genişliğin yarısı kadar) kenar çizgilerini yeniden çizer (kanal); eskileri silinir.
+        /// Kenarlar eksenin süsüdür: tanıtıcıları eksenin SH_KENAR verisinde, sahibi kenarın SH_SAHIP verisinde (ikisi de
+        /// AutoCAD tanıtıcı türüyle: eksenle birlikte kopyalanınca kopyaya geçer). genislik 0: kenar yok.
+        /// </summary>
+        public void KenarlariYaz(Entity eksen, double genislik)
+        {
+            if (eksen == null) return;
+            bool vardi = Toplayici.XdataOku(eksen, true).ContainsKey(NesneYazici.KenarUygulamasi);
+            if (genislik <= 0 && !vardi) return;
+            UygulamalariKaydet();
+            KenarlariSil(eksen);
+            var egri = eksen as Curve;
+            var taniticilar = new List<string>();
+            if (egri != null && genislik > 0)
+            {
+                var stil = CizimStili.Yuklu ? CizimStili.KanalKenari : new KenarStil();
+                var renk = GorunenRenk(eksen);
+                var cizgi = CizgiTipi(stil.Cizgi);
+                string sahip = eksen.Handle.ToString();
+                foreach (double d in new[] { genislik / 2, -genislik / 2 })
+                {
+                    DBObjectCollection kenarlar;
+                    try { kenarlar = egri.GetOffsetCurves(d); }
+                    catch (Exception ex) { Uyarilar.Add("Kanal kenarı çizilemedi (" + sahip + "): " + ex.Message); continue; }
+                    foreach (DBObject o in kenarlar)
+                    {
+                        var k = o as Entity;
+                        if (k == null) { o.Dispose(); continue; }
+                        k.SetDatabaseDefaults(_db);
+                        k.LayerId = eksen.LayerId;
+                        k.Color = renk;
+                        if (!cizgi.IsNull) k.LinetypeId = cizgi;
+                        if (k is Polyline kp) kp.Plinegen = true;
+                        Ms.AppendEntity(k);
+                        _tr.AddNewlyCreatedDBObject(k, true);
+                        SahibiYaz(k, sahip);
+                        taniticilar.Add(k.Handle.ToString());
+                    }
+                }
+            }
+            if (taniticilar.Count == 0)
+            {
+                if (vardi) Toplayici.XdataSil(eksen, new[] { NesneYazici.KenarUygulamasi });
+                return;
+            }
+            using (var rb = new ResultBuffer())
+            {
+                rb.Add(new TypedValue((int)DxfCode.ExtendedDataRegAppName, NesneYazici.KenarUygulamasi));
+                rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, KenarImzasi(egri, genislik)));
+                foreach (var h in taniticilar) rb.Add(new TypedValue((int)DxfCode.ExtendedDataHandle, h));
+                if (!eksen.IsWriteEnabled) eksen.UpgradeOpen();
+                eksen.XData = rb;
+            }
+        }
+
+        /// <summary>
+        /// Kenarların çizildiği andaki eksenin izi (uzunluk, uçlar, kapsam, genişlik; mm): eksen AutoCAD'le değişince
+        /// kenarların yeniden çizilmesi gerektiği buradan anlaşılır. Tanıtıcı sanılmasın diye "I:" ile başlar.
+        /// </summary>
+        internal static string KenarImzasi(Curve c, double genislik)
+        {
+            try
+            {
+                var e = c.GeometricExtents;
+                var d = new[] { c.GetDistanceAtParameter(c.EndParam), c.StartPoint.X, c.StartPoint.Y, c.EndPoint.X, c.EndPoint.Y,
+                                e.MinPoint.X, e.MinPoint.Y, e.MaxPoint.X, e.MaxPoint.Y, genislik };
+                var p = new string[d.Length];
+                for (int i = 0; i < d.Length; i++) p[i] = Math.Round(d[i], 3).ToString("0.###", CultureInfo.InvariantCulture);
+                return "I:" + string.Join(",", p);
+            }
+            catch { return "I:?"; }
+        }
+
+        /// <summary>Eksenin kenarları güncel mi: iz aynı ve kenarların hepsi yerinde (silinmemiş, bu eksenin).</summary>
+        public bool KenarlarGuncel(Curve eksen, double genislik)
+        {
+            List<string> l;
+            if (!Toplayici.XdataOku(eksen).TryGetValue(NesneYazici.KenarUygulamasi, out l) || l.Count < 2) return genislik <= 0;
+            if (l[0] != KenarImzasi(eksen, genislik)) return false;
+            string sahip = eksen.Handle.ToString();
+            for (int i = 1; i < l.Count; i++)
+            {
+                ObjectId kid;
+                if (!Toplayici.TaniticiylaBul(_db, l[i], out kid)) return false;
+                var k = _tr.GetObject(kid, OpenMode.ForRead, false) as Entity;
+                if (k == null || k.IsErased || !string.Equals(SahibiOku(k), sahip, StringComparison.OrdinalIgnoreCase)) return false;
+            }
+            return true;
+        }
+
+        /// <summary>Eksenin kendi kenar çizgilerini siler (başka eksenin kenarlarına — kopyanınkine — dokunmaz).</summary>
+        public void KenarlariSil(Entity eksen)
+        {
+            List<string> l;
+            if (!Toplayici.XdataOku(eksen).TryGetValue(NesneYazici.KenarUygulamasi, out l)) return;
+            string sahip = eksen.Handle.ToString();
+            foreach (var h in l)
+            {
+                ObjectId kid;
+                if (string.IsNullOrEmpty(h) || !Toplayici.TaniticiylaBul(_db, h, out kid)) continue;
+                var k = _tr.GetObject(kid, OpenMode.ForRead, false) as Entity;
+                if (k == null || k.IsErased || !string.Equals(SahibiOku(k), sahip, StringComparison.OrdinalIgnoreCase)) continue;
+                k.UpgradeOpen();
+                k.Erase();
             }
         }
 
@@ -966,16 +1226,22 @@ namespace SebekeHakedis.Eklenti
             return _tr.GetObject(tid, OpenMode.ForRead, false) as DBText;
         }
 
-        /// <summary>Etiket başka bir hatta mı ait ("…/(TANITICI)" sonu farklı)? Kopyalanmış hatlar aynı etiketi gösterebilir.</summary>
-        private static bool BaskaHattin(string metin, string handle)
+        /// <summary>
+        /// Etiket başka bir hatta mı ait? Sahibi yazının SH_SAHIP verisinde; eski etiketlerde metnin sonundaki
+        /// "…/(TANITICI)". Kopyalanmış hatlar aynı etiketi gösterebilir.
+        /// </summary>
+        private static bool BaskaHattin(DBText yazi, string handle)
         {
-            var m = EtiketTaniticisi.Match(metin ?? "");
+            string sahip = SahibiOku(yazi);
+            if (sahip != null) return !string.Equals(sahip, handle, StringComparison.OrdinalIgnoreCase);
+            var m = EtiketTaniticisi.Match(yazi.TextString ?? "");
             return m.Success && !string.Equals(m.Groups[1].Value, handle, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
         /// Hat etiketini yazar ya da günceller: orta parçanın ortasında, parça doğrultusunda, 2,5 m aşağıda
-        /// (telefonun DXF'indeki hat yazısıyla aynı yer), yazı katmanında. Etiketin tanıtıcısı hattın ETK verisine yazılır.
+        /// (telefonun DXF'indeki hat yazısıyla aynı yer), yazı katmanında, hattın renginde. Etiketin tanıtıcısı hattın ETK
+        /// verisine, hattın tanıtıcısı etiketin SH_SAHIP verisine yazılır.
         /// </summary>
         private void EtiketYaz(Entity hat, string metin, List<double[]> kose)
         {
@@ -987,20 +1253,24 @@ namespace SebekeHakedis.Eklenti
                 ParcaKonumu(kose[orta], kose[orta + 1], CizimStili.Yuklu ? CizimStili.HatKaydirma : new[] { 0.0, -2.5 }, out x, out y, out aci);
             }
             var katman = YaziKatmani(KatmanAdi(hat.LayerId));
+            var renk = GorunenRenk(hat);
 
             var yazi = Etiket(hat);
-            if (yazi != null && BaskaHattin(yazi.TextString, hat.Handle.ToString())) yazi = null;
+            if (yazi != null && BaskaHattin(yazi, hat.Handle.ToString())) yazi = null;
 
             if (yazi == null)
             {
                 if (!konumVar) return;
-                yazi = YaziYap(metin, x, y, aci, EtiketYuksekligi, katman);
+                yazi = YaziYap(metin, x, y, aci, EtiketYuksekligi, katman, renk);
             }
             else
             {
                 yazi.UpgradeOpen();
                 if (yazi.TextString != metin) yazi.TextString = metin;
                 if (yazi.LayerId != katman) yazi.LayerId = katman;
+                if (!yazi.Color.Equals(renk)) yazi.Color = renk;
+                var stil = YaziStili();
+                if (yazi.TextStyleId != stil) yazi.TextStyleId = stil;
                 if (EtiketleriYenile && konumVar)
                 {
                     // Telefon düzeni: sola dayalı, taban çizgisinde, orta parçanın 2,5 m altında, 1,8 m
@@ -1024,6 +1294,7 @@ namespace SebekeHakedis.Eklenti
                     try { yazi.AdjustAlignment(_db); } catch { }
                 }
             }
+            if (!string.Equals(SahibiOku(yazi), hat.Handle.ToString(), StringComparison.OrdinalIgnoreCase)) SahibiYaz(yazi, hat.Handle.ToString());
 
             using (var rb = new ResultBuffer(
                 new TypedValue((int)DxfCode.ExtendedDataRegAppName, "ETK"),

@@ -10,6 +10,16 @@ namespace SebekeHakedis.Cekirdek
         public string Anahtar = "", Telefon = "", Cizgi = "";
         public List<string> KatmanTurleri = new List<string>();
         public short Aci = 7, AciYeni = -1, AciDmm = -1;
+        /// <summary>Kenar çizgileri (kanal): yoksa null.</summary>
+        public KenarStil Kenar;
+    }
+
+    /// <summary>Çizginin iki yanına çizilen kenar çizgileri (kanal): renk, çizgi tipi, genişlik bilinmezse kullanılan (m).</summary>
+    public sealed class KenarStil
+    {
+        public short Aci = 8;
+        public string Cizgi = "CONTINUOUS";
+        public double VarsayilanGenislik = 0.4;
     }
 
     /// <summary>
@@ -33,6 +43,8 @@ namespace SebekeHakedis.Cekirdek
         public static double[] ParcaKaydirma = { 0, 0.8 }, HatKaydirma = { 0, -2.5 }, ElemanKaydirma = { 3.5, 3.0 }, AciKaydirma = { 3.5, 0.6 };
         public static double SatirArasi = 2.2;
         public static string ParcaBicimi = "0.00";
+        /// <summary>Yazı tipi (TrueType), dosyası ve eklentinin yazı stili adı.</summary>
+        public static string YaziFontu = "Tahoma", YaziFontDosyasi = "tahoma.ttf", YaziStili = "SEBEKE-M";
 
         public static void Yukle(string json)
         {
@@ -53,6 +65,8 @@ namespace SebekeHakedis.Cekirdek
                 };
                 var pd = o.Dizi("katmanTurleri");
                 if (pd != null) foreach (var p in pd) { var s = Convert.ToString(p, CultureInfo.InvariantCulture); if (!string.IsNullOrEmpty(s)) { k.KatmanTurleri.Add(s); katmanTurleri[s] = k; } }
+                var ke = o.Nesne("kenar");
+                if (ke != null) k.Kenar = new KenarStil { Aci = (short)ke.Tam("aci", 8), Cizgi = ke.Metin("cizgi", "CONTINUOUS"), VarsayilanGenislik = ke.Ondalik("varsayilanGenislik", 0.4) };
                 katmanlar[kv.Key] = k;
             }
             var olcek = kok.Nesne("olcek");
@@ -64,6 +78,9 @@ namespace SebekeHakedis.Cekirdek
                 ParcaMetraji = yazi.Ondalik("parcaMetraji", YaziYuksekligi * 0.8);
                 AciYazisi = yazi.Ondalik("aciYazisi", YaziYuksekligi * 0.7);
                 NoktaYazisi = yazi.Ondalik("noktaYazisi", YaziYuksekligi * 0.7);
+                YaziFontu = yazi.Metin("font", YaziFontu);
+                YaziFontDosyasi = yazi.Metin("fontDosyasi", YaziFontDosyasi);
+                YaziStili = yazi.Metin("stil", YaziStili);
             }
             var et = kok.Nesne("etiketler");
             if (et != null)
@@ -241,6 +258,16 @@ namespace SebekeHakedis.Cekirdek
         }
 
         public static short DemontajRengi => _demontajRengi;
+
+        /// <summary>Kanalın kenar çizgileri (stil yüklü değilse ya da tanımsızsa varsayılan).</summary>
+        public static KenarStil KanalKenari
+        {
+            get
+            {
+                var k = Yuklu ? Katman("KANAL") : null;
+                return k != null && k.Kenar != null ? k.Kenar : new KenarStil();
+            }
+        }
 
         // ---------------- Ekran renkleri (telefonun koyu ekranı; şerit simgeleri) ----------------
 

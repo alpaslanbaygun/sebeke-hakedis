@@ -77,9 +77,15 @@ namespace SebekeHakedis.Test
             Esit("SH_MENHOL_MEVCUT", Semboller.BlokAdi("DIGER", "MENHOL", "MEVCUT"), "simge: diğer › menhol");
             var kmHat = new Hat { Tur = "OG_HAVAI", AnaKesit = "3xSW", Durum = "KM" };
             kmHat.Kalemler.Add(new Kalem { Kaynak = "HAT", Tanim = "3xSW", Miktar = 120 });
-            Esit("/3xSW\\/120m/({H})", NesneYazici.HatEtiketi(kmHat), "hat etiketi: KM → /tip\\");
+            Esit("/3xSW\\", NesneYazici.HatEtiketi(kmHat), "hat etiketi: KM → /tip\\ (metraj ve tanıtıcı yok)");
             kmHat.Durum = "ENH";
-            Esit("{3xSW}/120m/({H})", NesneYazici.HatEtiketi(kmHat), "hat etiketi: ENH → {tip}");
+            Esit("{3xSW}", NesneYazici.HatEtiketi(kmHat), "hat etiketi: ENH → {tip}");
+            kmHat.Durum = "M";
+            Esit("^ 3xSW", NesneYazici.HatEtiketi(kmHat), "hat etiketi: M → ^ tip");
+            Esit(">3xSW<", NesneYazici.EtiketGovdesi("DM", "3xSW"), "hat etiketi: DM → >tip<");
+            Esit("(3xSW)", NesneYazici.EtiketGovdesi("MEVCUT", "3xSW"), "hat etiketi: MEVCUT → (tip)");
+            Esit("[3xSW]", NesneYazici.EtiketGovdesi("DM+M", "3xSW"), "hat etiketi: DM+M → [tip]");
+            Esit("* 3xSW", NesneYazici.EtiketGovdesi("M+M", "3xSW"), "hat etiketi: M+M → * tip");
             Esit("SH_SDK_YENI", Semboller.BlokAdi("BOX", "BOX_PANO", "M"), "simge: box → SDK");
             Esit("SH_PANO_YENI", Semboller.BlokAdi("PANO", "AG_PANO_HT", "M+M"), "simge: pano");
             Esit("SH_MUFU_MEVCUT", Semboller.BlokAdi("EK_MUFU", "EK_MUFU_AG_ALM", "MEVCUT"), "simge: ek mufu");
@@ -258,6 +264,60 @@ namespace SebekeHakedis.Test
             RaporUyumu(varliklar, xlsx);
             OnayAkisi(varliklar);
             HesapMerkezi_(tp);
+            CizimGorunumu(); // ortak çizim stilini yükler: en sonda (önceki denetimler stilsiz yazımı dener)
+        }
+
+        /// <summary>Çizim görünümü: ortak stil (renkler, yazı tipi, kanal kenarı), açıklık metrajı, hat etiketi.</summary>
+        private static void CizimGorunumu()
+        {
+            Console.WriteLine("Çizim görünümü");
+            if (!CizimStili.Yuklu) CizimStili.Yukle(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "cizim-stili.json"), Encoding.UTF8));
+            Esit("Tahoma", CizimStili.YaziFontu, "yazı tipi Tahoma");
+            Esit("SEBEKE-M", CizimStili.YaziStili, "yazı stili");
+            Esit((short)1, CizimStili.HatRengi("OG_HAVAI", "M"), "renk: OG havai kırmızı");
+            Esit((short)84, CizimStili.HatRengi("AG_HAVAI", "M"), "renk: AG havai yeşil");
+            Esit((short)30, CizimStili.HatRengi("REKORTMAN", "M"), "renk: abone turuncu");
+            Esit((short)200, CizimStili.HatRengi("MUSTEREK", "M"), "renk: müşterek mor");
+            Esit((short)150, CizimStili.HatRengi("AG_YERALTI", "M"), "renk: AG yer altı mavi");
+            Esit((short)230, CizimStili.HatRengi("OG_YERALTI", "M"), "renk: OG yer altı pembe");
+            Esit((short)2, CizimStili.HatRengi("OG_YERALTI", "DM"), "renk: demontaj sarı");
+            var renkler = new Dictionary<short, string>();
+            foreach (var t in new[] { "OG_HAVAI", "AG_HAVAI", "AYDINLATMA", "REKORTMAN", "MUSTEREK", "AG_YERALTI", "OG_YERALTI" })
+            {
+                short r = CizimStili.HatRengi(t, "M");
+                Esit(false, renkler.ContainsKey(r), "renk: " + t + " başka hatla aynı değil" + (renkler.ContainsKey(r) ? " (" + renkler[r] + ")" : ""));
+                renkler[r] = t;
+            }
+            foreach (var k in new[] { "KANAL", "SONDAJ", "HAT_ENH" })
+                Esit(false, renkler.ContainsKey(CizimStili.Katman(k).Aci), "renk: " + k + " hatlardan ayrı");
+            Esit("KABLO_OG", CizimStili.KatmanTuruStili("SC_2.HAK.OG_YER_XLPE").Anahtar, "katman: OG yer altı kendi stilinde");
+            Esit("KABLO", CizimStili.KatmanTuruStili("SC_2.HAK.AG_YER_HAT").Anahtar, "katman: AG yer altı");
+            Esit("CENTER", CizimStili.Katman("KANAL").Cizgi, "kanal ekseni eksen çizgisi");
+            Esit(true, CizimStili.CizgiDeseni("CENTER") != null, "eksen çizgisi deseni tanımlı");
+            Esit((short)8, CizimStili.KanalKenari.Aci, "kanal kenarı gri");
+            Esit(0.4, CizimStili.KanalKenari.VarsayilanGenislik, "kanal kenarı varsayılan genişlik");
+            Esit(0.6, NesneYazici.KanalGenisligi(new Kanal { UstGenislik = 60, AltGenislik = 40 }), "kanal genişliği: üst genişlik (cm → m)");
+            Esit(0.4, NesneYazici.KanalGenisligi(new Kanal { AltGenislik = 40 }), "kanal genişliği: üst yoksa alt");
+            Esit(0.4, NesneYazici.KanalGenisligi(new Kanal()), "kanal genişliği: ölçü yoksa varsayılan");
+            var kanal = new Kanal { Id = "K1", UstGenislik = 70, Durum = "M", Kose = { new[] { 0.0, 0.0 }, new[] { 10.0, 0.0 } } };
+            Esit(0.7, NesneYazici.Kanal(kanal, "SC", null).KenarGenisligi, "kanal tarifi kenar genişliğini taşır");
+            Esit(0.0, NesneYazici.Hat(new Hat { Id = "H1", Tur = "AG_YERALTI", Durum = "M", Kose = { new[] { 0.0, 0.0 }, new[] { 5.0, 0.0 } } }, "SC", null).KenarGenisligi, "hatta kenar yok");
+
+            // Açıklıklar: elemansız kırılma köşelerinde bölünmez
+            var kose = new List<double[]> { new[] { 0.0, 0.0 }, new[] { 30.0, 0.0 }, new[] { 30.0, 40.0 }, new[] { 50.0, 40.0 }, new[] { 50.0, 50.0 } };
+            var tek = Geometri.Acikliklar(kose, i => false);
+            Esit(1, tek.Count, "açıklık: elemansız köşelerde tek açıklık");
+            int parca; double uz;
+            Esit(true, Geometri.AciklikYazisi(kose, tek[0][0], tek[0][1], out parca, out uz), "açıklık yazısı var");
+            Esit(100.0, uz, "açıklık metrajı tüm parçaların toplamı");
+            Esit(1, parca, "yazı en uzun parçada (30→40)");
+            var iki = Geometri.Acikliklar(kose, i => i == 2);
+            Esit(2, iki.Count, "açıklık: elemanlı köşede bölünür");
+            Esit("0-2 2-4", iki[0][0] + "-" + iki[0][1] + " " + iki[1][0] + "-" + iki[1][1], "açıklık sınırları");
+            Geometri.AciklikYazisi(kose, iki[1][0], iki[1][1], out parca, out uz);
+            Esit(30.0, uz, "ikinci açıklık metrajı");
+            Esit(true, Geometri.AciklikSiniri("BOX", "SDK") && Geometri.AciklikSiniri("AG_DIREK", "DIREK_AG") && Geometri.AciklikSiniri("TRAFO_MERKEZI", "TRAFO_KOSK"), "açıklık sınırı: direk, SDK, trafo");
+            Esit(false, Geometri.AciklikSiniri("EK_MUFU", "MUFU") || Geometri.AciklikSiniri("DIGER", "MENHOL"), "açıklık sınırı değil: ek mufu, menhol");
         }
 
         // ---------------- Hesap Merkezi: kayıt, güncellik, bağlam, sunucu ----------------
@@ -870,7 +930,8 @@ namespace SebekeHakedis.Test
             Esit("SC_DEMONTAJ", dmAdim.Varlik.Katman, "demontaja çevrilen direk demontaj katmanına geçer");
             Esit(dm.Blok, dmAdim.Varlik.Blok, "adsız bloklu direğin bloğu korunur");
             var hatAdim = plan.Adimlar.Find(x => x.Hedef == hat.Id);
-            Esit(true, hatAdim.Etiket != null && hatAdim.Etiket.Contains("/" + Metraj.Yazi(hk.Miktar) + "m/"), "metrajı değişen hattın etiketi güncellenir");
+            Esit(true, hatAdim != null && hatAdim.Varlik.ParcaMetraji, "metrajı değişen hat güncellenir (metraj yazıları yeniden yazılır)");
+            Esit(true, hatAdim.Etiket != null && !hatAdim.Etiket.Contains("m/") && !hatAdim.Etiket.Contains("("), "hat etiketinde metraj ve tanıtıcı yok");
 
             Uygula(cizim, plan, true);
             var sonra = NesneOkuyucu.Oku(cizim, "ornek.dwg");

@@ -26,8 +26,13 @@ namespace SebekeHakedis.Cekirdek
         public short Renk = -1;
         /// <summary>Nesneye yazılacak çizgi tipi ("" dokunma, "CONTINUOUS" sürekli). Çizimden okunurken doldurulmaz.</summary>
         public string CizgiTipi = "";
-        /// <summary>Çizgi nesnesinin her parçasına (iki köşe arası) uzunluk yazısı yazılsın mı (hat, kanal, sondaj).</summary>
+        /// <summary>
+        /// Çizgi nesnesine metraj yazısı yazılsın mı (hat, kanal, sondaj): her açıklığa (iki eleman arasına) bir yazı;
+        /// elemansız kırılma köşelerinde bölünmez.
+        /// </summary>
         public bool ParcaMetraji;
+        /// <summary>Çizginin iki yanına çizilecek kenarların arası (m; kanal). 0: kenar yok.</summary>
+        public double KenarGenisligi;
         /// <summary>
         /// Direğin hemen yanına çizilecek armatür simgesinin bloğu ("": yok). Direkte armatür malzemesi varsa dolar; simge
         /// direğe bağlı bir süsdür (kendi verisi yoktur), direkle birlikte güncellenir ve silinir.

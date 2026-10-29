@@ -88,6 +88,57 @@ namespace SebekeHakedis.Cekirdek
             return en;
         }
 
+        /// <summary>Metraj yazısında açıklığın sınırı sayılmayan eleman türleri: hattın üstünde ara elemanlar.</summary>
+        private static readonly HashSet<string> AraElemanlar = new HashSet<string>(StringComparer.Ordinal) { "EK_MUFU" };
+
+        /// <summary>
+        /// Eleman türü açıklık sınırı mı: havai hatta direk, yer altında bağlantı elemanı (SDK, pano, trafo, kofre, direk…).
+        /// Ek mufu ve menhol hattın üstündeki ara elemanlardır: iki SDK arasındaki metraj onlarda bölünmez.
+        /// </summary>
+        public static bool AciklikSiniri(string tur, string aile)
+        {
+            if (string.IsNullOrEmpty(tur) && string.IsNullOrEmpty(aile)) return false;
+            if (tur != null && AraElemanlar.Contains(tur)) return false;
+            return aile != "MENHOL" && aile != "ARMATUR";
+        }
+
+        /// <summary>
+        /// Açıklıklar: çizgi, üstünde eleman (direk, SDK…) olan köşelerinden bölünür; elemansız kırılma köşeleri
+        /// açıklığın içinde kalır. Uçlar her zaman sınırdır. dugumMu(i): i. köşe bir elemanın üstünde mi.
+        /// Dönüş: her açıklık için [baş köşe, bit köşe].
+        /// </summary>
+        public static List<int[]> Acikliklar(IList<double[]> kose, Func<int, bool> dugumMu)
+        {
+            var l = new List<int[]>();
+            if (kose == null || kose.Count < 2) return l;
+            int bas = 0;
+            for (int i = 1; i < kose.Count; i++)
+            {
+                if (i < kose.Count - 1 && (dugumMu == null || !dugumMu(i))) continue;
+                l.Add(new[] { bas, i });
+                bas = i;
+            }
+            return l;
+        }
+
+        /// <summary>
+        /// Açıklığın metraj yazısı: toplam uzunluk ve yazının konacağı parça (açıklığın en uzun parçası; uzunluğu sıfır
+        /// olan parçalar sayılmaz). Açıklık sıfır uzunluktaysa false.
+        /// </summary>
+        public static bool AciklikYazisi(IList<double[]> kose, int bas, int bit, out int parca, out double uzunluk)
+        {
+            parca = -1;
+            uzunluk = 0;
+            double enUzun = 0;
+            for (int i = bas; i < bit && i + 1 < kose.Count; i++)
+            {
+                double d = Mesafe(kose[i], kose[i + 1]);
+                uzunluk += d;
+                if (d > enUzun + 1e-9) { enUzun = d; parca = i; }
+            }
+            return parca >= 0 && uzunluk > 1e-6;
+        }
+
         /// <summary>Nokta çokgenin içinde mi (ışın yöntemi).</summary>
         public static bool Icinde(double[] p, IList<double[]> cokgen)
         {

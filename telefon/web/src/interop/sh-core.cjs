@@ -436,18 +436,21 @@
    * Hat etiketi (AutoCAD yazımı, tanıtıcı olmadan): M "^ kesit/341m", M+M "* kesit/15m",
    * DM ">kesit</42m", DM+M "[kesit]/7m", MEVCUT "(kesit)/40m".
    */
-  function hatEtiketi(durum, kesit, metraj) {
-    const m = metrajYazisi(metraj) + 'm';
+  /**
+   * Hat etiketi: durum işaretiyle iletken ("^ 3x50 Alm."). Metraj etikete yazılmaz: çizimde her açıklığın üstünde ayrıca
+   * yazılıdır (eklentideki NesneYazici.HatEtiketi / EtiketGovdesi ile aynı).
+   */
+  function hatEtiketi(durum, kesit) {
     const k = kesit || '';
     switch (durum) {
-      case 'M': return '^ ' + k + '/' + m;
-      case 'M+M': return '* ' + k + '/' + m;
-      case 'DM': return '>' + k + '</' + m;
-      case 'DM+M': return '[' + k + ']/' + m;
-      case 'KM': return '/' + k + '\\/' + m;
-      case 'ENH': return '{' + k + '}/' + m;
-      case 'MEVCUT': return '(' + k + ')/' + m;
-      default: return k + '/' + m; // ME ve bilinmeyenler düz yazılır (AutoCAD "TANIMSIZ" yazar)
+      case 'M': return '^ ' + k;
+      case 'M+M': return '* ' + k;
+      case 'DM': return '>' + k + '<';
+      case 'DM+M': return '[' + k + ']';
+      case 'KM': return '/' + k + '\\';
+      case 'ENH': return '{' + k + '}';
+      case 'MEVCUT': return '(' + k + ')';
+      default: return k; // ME ve bilinmeyenler düz yazılır (AutoCAD "TANIMSIZ" yazar)
     }
   }
 
