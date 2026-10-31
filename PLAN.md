@@ -63,6 +63,7 @@
 | 10 | Arayüz: Google Stitch tasarımıyla şerit ve bütün pencereler, koyu tema | tamam (AutoCAD'de deneme bekliyor) |
 | 9 | eski programdan alınanlar ve şerit: tam katalog, durum kodları, tarife, telefonla aynı görünüm, dinamik şerit, parçalı hat, sayaç / hakediş / bölge kayıtları, eksik malzeme (DETAY), hakediş onayı ve kilit, pano / hücre verisinin korunması | tamam (AutoCAD'de ve sahada deneme bekliyor) |
 | 11 | Şebeke-M: marka (ad, logo, iki şerit sekmesi, Hakkında), harita altlıkları, **Hesap Merkezi** (14 hesap aracı + AG tek hat; telefon iframe köprüsü, AutoCAD yerel sunucu; bağlam / kayıt / güncellik; raporlarda HESAPLAR; proje dosyasıyla taşıma) | tamam (AutoCAD'de ve telefonda deneme bekliyor; hesap tablolarındaki şüpheli değerler aracın sahibiyle doğrulanacak) |
+| 12 | Eklentiyle eşitleme (kural: eklenti güncellenince telefon da güncellenir): haritada çizim görünümü (renk, çizgi, açıklık metrajı, hat etiketi, kanal kenarları), Google Earth ve CBS (MIF / MID) eklentiyle aynı (ortak deneme `ortak/deneme/cbs`), aynı altlık listesi (Esri ArcGIS, Bing, Azure) | tamam (telefonda deneme bekliyor) |
 
 ## Sahada / AutoCAD'de denenecekler
 
