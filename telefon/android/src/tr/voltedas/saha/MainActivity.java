@@ -70,7 +70,8 @@ public final class MainActivity extends Activity {
         s.setAllowContentAccess(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         s.setTextZoom(100);
-        s.setUserAgentString(s.getUserAgentString() + " VoltEdasSaha/2.0");
+        // Uygulama kimliği (ürün adı, sürüm): karo sunucuları ve web sayfaları uygulamayı bununla tanır
+        s.setUserAgentString(s.getUserAgentString() + " " + appKimligi());
         bridge = new VoltBridge(this);
         web.addJavascriptInterface(bridge, "VoltNative");
         web.setWebViewClient(new WebViewClient() {
@@ -142,12 +143,14 @@ public final class MainActivity extends Activity {
     // sürümlü User-Agent; yalnız ASCII). Sürüm her yayında değişir, ad sabit kalır.
     private String tileUa;
     private String tileUserAgent() {
-        if (tileUa == null) {
-            String v = "0";
-            try { v = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { }
-            tileUa = "SebekeM/" + v + " (Android; " + getPackageName() + "; saha olcum uygulamasi)";
-        }
+        if (tileUa == null) tileUa = appKimligi() + " (Android; " + getPackageName() + "; saha olcum uygulamasi)";
         return tileUa;
+    }
+    /** "SebekeM/<sürüm>": ürün adı ve yüklü sürüm (WebView ve karo vekilinin User-Agent'ında). */
+    private String appKimligi() {
+        String v = "0";
+        try { v = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { }
+        return "SebekeM/" + v;
     }
 
     private WebResourceResponse tile(String url) {

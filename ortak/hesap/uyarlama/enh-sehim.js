@@ -6,8 +6,8 @@
    Aracın bilinen iki tuzağına karşı önlem:
    - Katalog modunda kayıt geri yüklenirken araç buz katsayısı k, rüzgâr basıncı q, başlangıç hâli ve elle girilen
      t1 / p1 değerlerini varsayılana döndürür → durumYukle bunları kayıttan yeniden yazar.
-   - Araç "projeyi yapan" adı boşsa ya da eski bir addaysa kendi yazarının adını yazar (kunyeDuzelt) → adlar her
-     geri yüklemeden sonra yeniden yazılır; ad yoksa "—" yazılır. */
+   - Aracın künye düzeltmesi (kunyeDuzelt) unvanı kendi varsayılanına çevirebilir → ad ve unvan her geri yüklemeden
+     sonra yeniden yazılır; ad yoksa "—" yazılır. */
 (function () {
   'use strict';
   var TABLO = '.wrap > .card:nth-of-type(3)';            // "Direkler ve açıklıklar" kartı (tablo yeniden çizilse de kalır)
@@ -142,7 +142,7 @@
       if (kv != null && seceneVar('pU', kvYazi(kv))) { A.yaz('#pU', kvYazi(kv)); dolan('Gerilim U', kvYazi(kv), 'kV', kvYol, kv); }
       else r.eksik.push({ alan: 'Gerilim U', sec: '#pU', neden: kv != null ? 'Hattın gerilimi (' + kvYazi(kv) + ' kV) listede yok; rapor başlığı için seçin.' : 'Hattın gerilimi projede yok; rapor başlığı için seçin.' });
 
-      // ---- 4. Projeyi yapan (araç boş adı kendi yazarının adıyla doldurur: boşsa "—")
+      // ---- 4. Projeyi yapan (boşsa "—")
       var ad = bos(P.yapan) ? '' : String(P.yapan).trim().replace(/\s+/g, ' ');
       var parca = ad ? ad.split(' ') : [];
       var adi = parca.length > 1 ? parca.slice(0, -1).join(' ') : (parca[0] || '');

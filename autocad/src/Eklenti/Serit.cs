@@ -290,9 +290,10 @@ namespace SebekeHakedis.Eklenti
 
             // 5) Düzenle
             var duzen = Panel(sekme, "Düzenle");
+            duzen.Items.Add(Dugme("Hat\nDeğiştir", "Çizilmiş hatların iletkenini (tip, cins), türünü, durumunu ve hakedişini değiştirir: hatları seçin (ya da önce seçip basın), pencerede yeni iletkeni seçin. Kablo tipi yazısı, katman ve renk güncellenir; metraj korunur.", "_SH_HATDEGISTIR ", "hat_havai", null));
             duzen.Items.Add(Dugme("Metraj", "Seçilen hat, kanal ve sondajların metrajını çizim uzunluğundan yeniden hesaplar (parça metrajları yenilenir).", "_SH_METRAJ ", "metraj", null));
             duzen.Items.Add(Dugme("Telefon\nGörünümü", "Çizimi telefonun görünümüne çevirir: simgeler (durumuna göre), renkler, hat etiketleri, her parçanın uzunluğu, direklerin yanındaki armatürler. Veriye dokunmaz.", "_SH_GORUNUM ", "gorunum", null));
-            duzen.Items.Add(Dugme("Çizim\nAyarları", "Katman ön eki, tarife (şehir / köy), simge takımı, etiket yüksekliği, yakalama, metraj payları, kanal ölçüleri.", "_SH_AYARLAR ", "ayarlar", null));
+            duzen.Items.Add(Dugme("Çizim\nAyarları", "Katman ön eki, tarife (şehir / köy), simge ve yazı boyutları, yakalama, metraj payları, kanal ölçüleri.", "_SH_AYARLAR ", "ayarlar", null));
 
             // Araçlar sekmesi: Şebeke-M | Hakediş | Raporlar | Telefon
             var araclar = new RibbonTab { Title = "ŞEBEKE-M ARAÇLAR", Id = AracSekmesiKimligi };

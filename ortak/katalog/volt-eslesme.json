@@ -61,7 +61,7 @@
   "İzolatör": "AG_İZOLATÖR", "İzolatör|OG": "OG_İZOLATÖR",
   "Topraklama": "TOPRAKLAMA", "Koruma": "PARAFUDR", "Trafo": "TRAFO_GENLEŞME_TANKLI", "Trafo platformu": "TRAVERS_VE_KONSOLLAR_GLV",
   "Pano / box": "AG_PANO_HT", "Pano": "AG_PANO_HT", "Aydınlatma": "ARMATÜR", "Aydınlatma direği": "AYD_GLV_PLG",
-  "Kablo / abone": "AG_ALİMİNYUM_KABLO", "Kablo / abone|OG": "OG_ALİMİNYUM_KABLO", "Kablo / abone|ABONE": "REKORTMAN_ALİMİNYUM", "Kablo / abone|AYD": "AYDINLATMA_KABLO",
+  "Kablo / abone": "AG_ALÜMİNYUM_KABLO", "Kablo / abone|OG": "OG_ALÜMİNYUM_KABLO", "Kablo / abone|ABONE": "REKORTMAN_ALÜMİNYUM", "Kablo / abone|AYD": "AYDINLATMA_KABLO",
   "İletken": "AG_İLETKEN", "İletken|OG": "OG_İLETKEN",
   "Köşk / hücre": "HÜCRELER_METAL", "Boru": "GALVANİZLİ_GAZ_BORUSU",
   "Demir direk": "AG_DEMİR_GLV", "Demir direk|OG": "ENH_DEMİR_GLV", "Beton direk": "AG_BETON", "Beton direk|OG": "ENH_BETON", "Ağaç direk": "AG_AĞAÇ"
@@ -72,15 +72,15 @@
  "hatlar": {
   "aciklama": "Telefon hat tipi + tesis → eklenti hat türü ve iletken kaleminin cinsi",
   "AG:havai": { "tur": "AG_HAVAI", "ciplak": "AG_İLETKEN", "demetli": "ALPEK_KABLOLAR", "tarife": "0107" },
-  "AG:yeralti": { "tur": "AG_YERALTI", "kablo": "AG_ALİMİNYUM_KABLO", "tarife": "0105" },
+  "AG:yeralti": { "tur": "AG_YERALTI", "kablo": "AG_ALÜMİNYUM_KABLO", "tarife": "0105" },
   "OG:havai": { "tur": "OG_HAVAI", "ciplak": "OG_İLETKEN", "demetli": "OG_İLETKEN", "tarife": "0106" },
-  "OG:yeralti": { "tur": "OG_YERALTI", "kablo": "OG_ALİMİNYUM_KABLO", "tarife": "0104" },
+  "OG:yeralti": { "tur": "OG_YERALTI", "kablo": "OG_ALÜMİNYUM_KABLO", "tarife": "0104" },
   "ENH:havai": { "tur": "OG_HAVAI", "ciplak": "OG_İLETKEN", "demetli": "OG_İLETKEN", "tarife": "0103" },
-  "ENH:yeralti": { "tur": "OG_YERALTI", "kablo": "OG_ALİMİNYUM_KABLO", "tarife": "0104" },
+  "ENH:yeralti": { "tur": "OG_YERALTI", "kablo": "OG_ALÜMİNYUM_KABLO", "tarife": "0104" },
   "AYD:havai": { "tur": "AYDINLATMA", "ciplak": "AG_İLETKEN", "demetli": "AYDINLATMA_KABLO", "tarife": "0108" },
   "AYD:yeralti": { "tur": "AYDINLATMA", "kablo": "AYDINLATMA_KABLO", "tarife": "0108" },
-  "ABONE:havai": { "tur": "REKORTMAN", "ciplak": "REKORTMAN_ALİMİNYUM", "demetli": "REKORTMAN_ALİMİNYUM", "tarife": "0110" },
-  "ABONE:yeralti": { "tur": "REKORTMAN", "kablo": "REKORTMAN_ALİMİNYUM", "tarife": "0110" },
+  "ABONE:havai": { "tur": "REKORTMAN", "ciplak": "REKORTMAN_ALÜMİNYUM", "demetli": "REKORTMAN_ALÜMİNYUM", "tarife": "0110" },
+  "ABONE:yeralti": { "tur": "REKORTMAN", "kablo": "REKORTMAN_ALÜMİNYUM", "tarife": "0110" },
   "MUSTEREK": { "tur": "MUSTEREK", "tarife": "0106" }
  },
  "hatTurleriTers": {

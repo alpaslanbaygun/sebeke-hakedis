@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using SebekeHakedis.Cekirdek;
 
 namespace SebekeHakedis.Test
@@ -14,6 +15,7 @@ namespace SebekeHakedis.Test
     ///   katsayilar hedef.json         : ortak katsayı dosyasını üretir
     ///   gidisdonus proje.sebeke.json  : projeyi çizim nesnelerine yazıp geri okur, raporları karşılaştırır
     ///   semboller [dokum.txt]         : simge takımı denetimleri ve ilkel dökümü (telefonun tablosuyla karşılaştırma)
+    ///   cbs klasor/                   : telefonla ortak CBS denemesinin beklenen dosyalarını yazar (ortak/deneme/cbs/beklenen)
     /// </summary>
     public static class Program
     {
@@ -36,6 +38,7 @@ namespace SebekeHakedis.Test
                     case "bosaaktar": BosaAktar(args[1]); break;
                     case "katsayilar": File.WriteAllText(args[1], Json.Yaz(Katsayilar.Varsayilan.JsonYap()) + "\n", new UTF8Encoding(false)); Console.WriteLine("yazıldı: " + args[1]); break;
                     case "semboller": SembolleriYukle(); Semboller_(); SembolDokumu(args.Length > 1 ? args[1] : null); break;
+                    case "cbs": CbsBeklenenYaz(args[1]); break;
                     default: Console.WriteLine("Bilinmeyen komut: " + komut); return 2;
                 }
             }
@@ -257,7 +260,19 @@ namespace SebekeHakedis.Test
             Esit(true, vdt.Satirlar.Exists(r => r.Cins == "AL_İLETKENLER" && r.Tip == "SWALLOW"), "telefon dosyası: OG hattı tel tel açılır");
             Esit(true, vdt.Satirlar.Exists(r => r.Cins == "KABLO_KANALI" && r.Tip == "ASFALT"), "telefon dosyası: kanal paylaştırılır");
             BosaAktar(voltYol);
-            Esit("SC_1.HAK.AGDİR", NesneYazici.ElemanKatmani("SC", "AG_DIREK", "M", 1), "katman: hakediş");
+            Esit("SC_1.HAK.AGDIR", NesneYazici.ElemanKatmani("SC", "AG_DIREK", "M", 1), "katman: hakediş (Türkçe karaktersiz)");
+            Esit("SC_2.HAK.MUSDIR", NesneYazici.ElemanKatmani("SC", "MUSTEREK_DIREK", "M", 2), "katman: müşterek direk MUSDIR");
+            Esit("SC_1.HAK.MUSTEREK_HAT", NesneYazici.HatKatmani("SC", "MUSTEREK", "M", 1), "katman: müşterek hat MUSTEREK_HAT");
+            Esit("SC_1.HAK.AYDDIR", NesneYazici.ElemanKatmani("ŞÇ", "AYD_DIREK", "M", 1), "katman: önekteki Türkçe harf de çevrilir");
+            Esit("SC_1.HAK.AGDIR", NesneYazici.Eleman(new Eleman { Id = "A1", Tur = "AG_DIREK", Durum = "M", Hakedis = 1, Katman = "SC_1.HAK.AGDİR" }, "SC", "SH_X", null).Katman,
+                 "katman: çizimdeki eski adlı katman yeni adıyla yazılır");
+            Esit("SC_1.HAK.MUSDIR", KatmanAdlari.Ascii("SC_1.HAK.MÜŞDİR"), "katman adı: ASCII çevirisi");
+            Esit("MUSTEREK_HAT", KatmanAdlari.Tur("MÜŞTEREK_HAT"), "katman türü: eski ad yeni ada");
+            Esit(true, KatmanAdlari.SebekeKatmani("SC_3.HAK.ENHDİR") && KatmanAdlari.SebekeKatmani("SÇ_MEVCUT") && KatmanAdlari.SebekeKatmani("CBS-Ölçü"),
+                 "şebeke katmanı: hakediş, özel ve CBS katmanları çevrilir");
+            Esit(false, KatmanAdlari.SebekeKatmani("Benim çizgilerim"), "kullanıcının kendi katmanına dokunulmaz");
+            Esit("MUSTEREK", NesneOkuyucu.HatTuru("MÜŞTEREK_HAT", "") + "|" + NesneOkuyucu.HatTuru("MUSTEREK_HAT", "") == "MUSTEREK|MUSTEREK" ? "MUSTEREK" : "?",
+                 "eski ve yeni müşterek hat katmanı aynı türde okunur");
             Esit("SC_DEMONTAJ", NesneYazici.ElemanKatmani("SC", "AG_DIREK", "DM", 3), "katman: demontaj");
             Esit("SC_STANDART", NesneYazici.ElemanKatmani("SC", "KOFRE", "M+M", 2), "katman: kofre");
             Esit("SC_2.HAK.OG_YER_XLPE", NesneYazici.HatKatmani("SC", "OG_YERALTI", "DM+M", 2), "katman: OG yeraltı");
@@ -270,6 +285,8 @@ namespace SebekeHakedis.Test
             OnayAkisi(varliklar);
             HesapMerkezi_(tp);
             CizimGorunumu(); // ortak çizim stilini yükler: en sonda (önceki denetimler stilsiz yazımı dener)
+            CbsOrtakDeneme(); // telefonla aynı CBS dosyaları (stil yüklü olmalı: renkler ortak stilden)
+            CbsIceAktarimDene(); // CBS'den şebeke nesnesi olarak alma
         }
 
         /// <summary>Çizim görünümü: ortak stil (renkler, yazı tipi, kanal kenarı), açıklık metrajı, hat etiketi.</summary>
@@ -333,6 +350,173 @@ namespace SebekeHakedis.Test
             try { File.Delete(yol); } catch { }
         }
 
+        // ---------------- Telefonla ortak CBS denemesi (ortak/deneme/cbs) ----------------
+
+        /// <summary>
+        /// Ortak denemenin çıktıları: aynı proje dosyasından (deneme.sebeke.json) eklentinin yazdığı Google Earth dosyası
+        /// (üretim tarihi "TARIH" yazılır) ve her katmanın MIF / MID metni. Telefon (telefon/web/src/export/cbs.js) aynı
+        /// girdiden aynı metinleri üretmek zorundadır: telefon/web/tests/cbs.test.mjs aynı beklenen dosyalarla karşılaştırır.
+        /// </summary>
+        private static SortedDictionary<string, string> CbsCiktilari(Proje p)
+        {
+            var d = new SortedDictionary<string, string>(StringComparer.Ordinal);
+            string kml = KmlYazici.Metin(p, p.Dom, "test");
+            d["deneme.kml"] = Regex.Replace(kml, "(<description>Şebeke-M test · [^<]*? → WGS84 · )[^<]*(</description>)", "${1}TARIH${2}");
+            var hepsi = CbsYapisi.Nesneler(p);
+            foreach (var k in CbsYapisi.Katmanlar)
+            {
+                var l = hepsi.FindAll(n => n.Katman == k);
+                if (l.Count == 0) continue;
+                string mif, mid;
+                MifDosyasi.KatmanYaz(k, l, p.Dom, out mif, out mid);
+                d["deneme_" + k.Ad + ".mif"] = mif;
+                d["deneme_" + k.Ad + ".mid"] = mid;
+            }
+            return d;
+        }
+
+        private static Proje CbsDenemeProjesi()
+        {
+            SembolleriYukle();
+            if (!CizimStili.Yuklu) CizimStili.Yukle(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "cizim-stili.json"), Encoding.UTF8));
+            // Cins adları katalogdan (eklentide çizimin kataloğu; telefonda ortak/katalog/kalemler.json)
+            CbsYapisi.CinsAdlari = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null).CinsAdi;
+            return ProjeDosyasi.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "cbs", "deneme.sebeke.json"), Encoding.UTF8));
+        }
+
+        /// <summary>
+        /// Eklentinin CBS çıktısı ortak beklenen dosyalarla birebir aynı mı. Eklentinin KML / MIF yazımı değişirse bu denetim
+        /// bozulur: beklenenler `cbs` komutuyla yeniden yazılır ve telefon da aynı değişikliği alır (DEVIR.md çalışma kuralı).
+        /// </summary>
+        private static void CbsOrtakDeneme()
+        {
+            Console.WriteLine("CBS: telefonla ortak deneme (ortak/deneme/cbs)");
+            var p = CbsDenemeProjesi();
+            string klasor = Path.Combine(AppContext.BaseDirectory, "cbs", "beklenen");
+            var ciktilar = CbsCiktilari(p);
+            Esit(1 + 2 * CbsYapisi.Katmanlar.Length, ciktilar.Count, "CBS ortak: KML ve bütün katmanların MIF / MID'i (" + CbsYapisi.Katmanlar.Length + " katman)");
+            foreach (var kv in ciktilar)
+            {
+                string yol = Path.Combine(klasor, kv.Key);
+                string beklenen = File.Exists(yol) ? File.ReadAllText(yol, new UTF8Encoding(false)) : null;
+                string fark = beklenen == null ? " — beklenen dosya yok" : IlkFark(beklenen, kv.Value);
+                Esit(true, fark.Length == 0, "CBS ortak: " + kv.Key + fark);
+            }
+        }
+
+        /// <summary>
+        /// CBS'den (MIF / MID) şebeke nesnesi olarak alma: Şebeke-M'in kendi dosyaları geri okununca aynı nesneler (tür, GIS no,
+        /// durum, malzemeler); aynı çizime alınınca tanıtıcıyla eşleşir; başka CBS'nin dosyası adından, sütun adlarından tanınır.
+        /// </summary>
+        private static void CbsIceAktarimDene()
+        {
+            Console.WriteLine("CBS'den alma (MIF → şebeke nesnesi):");
+            // Ayırıcısı yazılmamış MIF: MID virgülle ayrılmışsa virgül alınır (MapInfo'ya göre varsayılan sekme)
+            var vv = MifDosyasi.Oku("Version 300\nColumns 3\n  NO Integer\n  TIP Char(20)\n  DURUM Char(20)\nData\nPoint 1 2\n", "1,\"G-K2\",\"Yeni\"\n");
+            Esit("1|G-K2|Yeni", string.Join("|", vv.Nesneler[0].Degerler), "CBS al: ayırıcısı yazılmamış MIF'te virgüllü MID");
+            var vs = MifDosyasi.Oku("Version 300\nColumns 2\n  NO Integer\n  TIP Char(20)\nData\nPoint 1 2\n", "1\t\"9,3/3\"\n");
+            Esit("1|9,3/3", string.Join("|", vs.Nesneler[0].Degerler), "CBS al: ayırıcısı yazılmamış MIF'te sekmeli MID (değerde virgül)");
+            var p = CbsDenemeProjesi();
+            var katalog = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            var kaynaklar = new List<CbsKaynagi>();
+            var hepsi = CbsYapisi.Nesneler(p);
+            foreach (var k in CbsYapisi.Katmanlar)
+            {
+                var l = hepsi.FindAll(n => n.Katman == k);
+                if (l.Count == 0) continue;
+                string mif, mid;
+                MifDosyasi.KatmanYaz(k, l, p.Dom, out mif, out mid);
+                var v = MifDosyasi.Oku(MifDosyasi.DosyaMetni(MifDosyasi.Turkce.GetBytes(mif)), MifDosyasi.DosyaMetni(MifDosyasi.Turkce.GetBytes(mid)));
+                MifDosyasi.CizimeCevir(v, p.Dom);
+                var kay = new CbsKaynagi { Ad = "deneme_" + k.Ad, Veri = v };
+                CbsIceAktarim.Tani(kay);
+                Esit(k.Ad + " Şebeke-M", kay.Katman + (kay.SebekeM ? " Şebeke-M" : ""), "CBS al: " + k.Ad + " dosyası tanınır");
+                kaynaklar.Add(kay);
+            }
+            int sira = 9000;
+            var ayar = new CbsAlmaAyari { Sira = () => (++sira).ToString(CultureInfo.InvariantCulture), HatMetraji = (L, t) => Math.Ceiling(L) };
+            var uyarilar = new List<string>();
+            var bos = CbsIceAktarim.ProjeyeCevir(kaynaklar, katalog, new Proje(), ayar, uyarilar);
+            Esit(p.Elemanlar.Count + "|" + p.Hatlar.Count + "|" + p.Kanallar.Count + "|" + p.Sondajlar.Count + "|" + p.Bolgeler.FindAll(b => b.Sinir.Count >= 3).Count + "|" + p.Noktalar.Count,
+                 bos.Elemanlar.Count + "|" + bos.Hatlar.Count + "|" + bos.Kanallar.Count + "|" + bos.Sondajlar.Count + "|" + bos.Bolgeler.Count + "|" + bos.Noktalar.Count,
+                 "CBS al: bütün nesneler geri gelir (eleman, hat, kanal, sondaj, bölge, nokta)");
+            bool ayni = true;
+            foreach (var e in p.Elemanlar)
+            {
+                var g = bos.Elemanlar.Find(x => x.Id == "CBS:" + e.Id);
+                if (g == null || g.Tur != e.Tur || (g.GisId ?? "") != (e.GisId ?? "") || g.Durum != e.Durum || g.Hakedis != e.Hakedis || g.Kalemler.Count != e.Kalemler.Count ||
+                    Math.Abs(g.Saga - e.Saga) > 0.001 || Math.Abs(g.Yukari - e.Yukari) > 0.001 || (g.Guc ?? "") != (e.Guc ?? "") || g.Kontrol != e.Kontrol)
+                {
+                    ayni = false;
+                    Console.WriteLine("    fark: " + e.Id + " " + e.GisId + (g == null ? " yok" : " tür " + g.Tur + "/" + e.Tur + " durum " + g.Durum + "/" + e.Durum + " hak " + g.Hakedis + "/" + e.Hakedis +
+                                      " kalem " + g.Kalemler.Count + "/" + e.Kalemler.Count + " güç '" + g.Guc + "'/'" + e.Guc + "' kontrol " + g.Kontrol + "/" + e.Kontrol));
+                }
+            }
+            Esit(true, ayni, "CBS al: elemanların türü, GIS no, durumu, hakedişi, yeri, gücü ve malzeme satırları aynı");
+            var h0 = p.Hatlar[0];
+            var hg = bos.Hatlar.Find(x => x.Id == "CBS:" + h0.Id);
+            Esit(h0.Tur + "|" + h0.Kalemler.Count + "|" + Iletkenler.HatKalemleri(h0)[0].Tanim, hg.Tur + "|" + hg.Kalemler.Count + "|" + Iletkenler.HatKalemleri(hg)[0].Tanim,
+                 "CBS al: hattın türü, malzemeleri ve iletkeni aynı (malzeme tablosundan)");
+            Esit(0, RaporFarki(p, bos), "CBS al: Durum Tespit raporu aynı (malzeme satırları, miktarlar)");
+            // Aynı çizime geri alınınca tanıtıcısıyla eşleşir: nesne çift olmaz
+            var ayniCizim = CbsIceAktarim.ProjeyeCevir(kaynaklar, katalog, p, ayar, new List<string>());
+            Esit(true, ayniCizim.Elemanlar.TrueForAll(x => p.Elemanlar.Exists(e => e.Id == x.Id)), "CBS al: aynı çizime geri alınca elemanlar tanıtıcısıyla eşleşir");
+
+            // Başka bir CBS'nin dosyası: adından direk, sütunları eş anlamlılarıyla; durum ve tür tahmini
+            string dmif = "Version 300\nCharset \"WindowsTurkish\"\nDelimiter \",\"\nCoordSys Earth Projection 8, 104, \"m\", 39, 0, 1, 500000, 0\nColumns 5\n  OBJECTID Integer\n" +
+                          "  DIREK_NO Char(20)\n  DIREK_TIPI Char(40)\n  DURUMU Char(20)\n  GERILIM Char(10)\nData\n\nPoint 519300 4282100\nPoint 519340 4282100\n";
+            string dmid = "17,\"D-101\",\"9I\",\"İşletmede\",\"0,4 kV\"\n18,\"D-102\",\"G-K2\",\"Sökülecek\",\"34,5 kV\"\n";
+            var dv = MifDosyasi.Oku(dmif, dmid);
+            MifDosyasi.CizimeCevir(dv, 39);
+            var dk = new CbsKaynagi { Ad = "ENH_DIREKLER", Veri = dv };
+            CbsIceAktarim.Tani(dk);
+            Esit("DIREK|False|0|1|2|3", dk.Katman + "|" + dk.SebekeM + "|" + dk.Sutun("KIMLIK") + "|" + dk.Sutun("GIS_NO") + "|" + dk.Sutun("TIP") + "|" + dk.Sutun("DURUM"),
+                 "CBS al (dış): adından direk dosyası; OBJECTID, DIREK_NO, DIREK_TIPI, DURUMU sütunları eşlenir");
+            var dp = CbsIceAktarim.ProjeyeCevir(new[] { dk }, katalog, new Proje(), ayar, new List<string>());
+            Esit("D-101|AG_DIREK|MEVCUT|CBS:ENH_DIREKLER:17", dp.Elemanlar[0].GisId + "|" + dp.Elemanlar[0].Tur + "|" + dp.Elemanlar[0].Durum + "|" + dp.Elemanlar[0].Id,
+                 "CBS al (dış): GIS no, tür, durum (işletmede → mevcut), kalıcı kimlik");
+            Esit("ENH_DIREK|DM", dp.Elemanlar[1].Tur + "|" + dp.Elemanlar[1].Durum, "CBS al (dış): 34,5 kV direk ENH direği, sökülecek → demontaj");
+            Esit(true, dp.Elemanlar[0].Kalemler.Count == 1 && dp.Elemanlar[0].Kalemler[0].Ana, "CBS al (dış): direğin kendi malzemesi (katalogdan ya da tipinden)");
+            // Hat dosyası: kablo tipi katalogdan, türü cinsinden
+            string hmif = "Version 300\nDelimiter \",\"\nCoordSys Earth Projection 8, 104, \"m\", 39, 0, 1, 500000, 0\nColumns 2\n  ID Integer\n  KABLO_TIPI Char(40)\nData\n\nPline 2\n519300 4282000\n519340 4282000\n";
+            var hv = MifDosyasi.Oku(hmif, "5,\"3x95+50 NYY ALM.\"\n");
+            MifDosyasi.CizimeCevir(hv, 39);
+            var hk = new CbsKaynagi { Ad = "AG_KABLO_HATLARI", Veri = hv };
+            CbsIceAktarim.Tani(hk);
+            var hp = CbsIceAktarim.ProjeyeCevir(new[] { hk }, katalog, new Proje(), ayar, new List<string>());
+            Esit("HAT|AG_YERALTI|3x95+50 Nyy Alm.|40", hk.Katman + "|" + hp.Hatlar[0].Tur + "|" + Iletkenler.HatKalemleri(hp.Hatlar[0])[0].Tanim + "|" + Iletkenler.HatKalemleri(hp.Hatlar[0])[0].Miktar,
+                 "CBS al (dış): kablo hattı katalogdaki kabloyla, yer altı AG, metraj çizim uzunluğundan");
+            Esit("M|M+M|DM+M|MEVCUT|DM|X", CbsIceAktarim.DurumKodu("yeni", "X") + "|" + CbsIceAktarim.DurumKodu("m+m", "X") + "|" + CbsIceAktarim.DurumKodu("Değişecek", "X") + "|" +
+                 CbsIceAktarim.DurumKodu("Mevcut", "X") + "|" + CbsIceAktarim.DurumKodu("DEMONTAJ", "X") + "|" + CbsIceAktarim.DurumKodu("?", "X"), "CBS al: durum yazıları");
+            Esit(KanalKodu.OG | KanalKodu.AG, CbsIceAktarim.KanalKoduOku("OG/AG"), "CBS al: kanal kablo yazısı → kod");
+        }
+
+        /// <summary>İki metnin ilk farkı (satır no ve iki satır); aynıysa boş.</summary>
+        private static string IlkFark(string a, string b)
+        {
+            if (a == b) return "";
+            var x = a.Split('\n');
+            var y = b.Split('\n');
+            for (int i = 0; i < Math.Max(x.Length, y.Length); i++)
+            {
+                string s = i < x.Length ? x[i] : "(yok)", t = i < y.Length ? y[i] : "(yok)";
+                if (s != t) return " — " + (i + 1) + ". satır farklı:\n      beklenen: " + s.TrimEnd('\r') + "\n      eklenti : " + t.TrimEnd('\r');
+            }
+            return " — satır sonları farklı";
+        }
+
+        /// <summary>Ortak denemenin beklenen dosyalarını yazar (eklentinin çıktısı esastır).</summary>
+        private static void CbsBeklenenYaz(string klasor)
+        {
+            var p = CbsDenemeProjesi();
+            Directory.CreateDirectory(klasor);
+            foreach (var kv in CbsCiktilari(p))
+            {
+                File.WriteAllText(Path.Combine(klasor, kv.Key), kv.Value, new UTF8Encoding(false));
+                Console.WriteLine("yazıldı: " + Path.Combine(klasor, kv.Key));
+            }
+        }
+
         /// <summary>TM ↔ enlem-boylam (telefondaki geo/crs.js ile aynı sonuç) ve Google Earth dosyası (KML / KMZ).</summary>
         private static void KoordinatVeKml(Proje p)
         {
@@ -358,8 +542,15 @@ namespace SebekeHakedis.Test
             var ns = new System.Xml.XmlNamespaceManager(x.NameTable);
             ns.AddNamespace("k", "http://www.opengis.net/kml/2.2");
             var nesneler = CbsYapisi.Nesneler(p);
-            Esit(nesneler.Count, okundu ? x.SelectNodes("//k:Placemark", ns).Count : -1, "KML: her nesne bir yer işareti");
-            Esit(p.Elemanlar.Count, nesneler.FindAll(n => n.Katman == CbsYapisi.Eleman).Count, "KML: bütün elemanlar");
+            Esit(nesneler.FindAll(n => n.Katman != CbsYapisi.Malzeme).Count, okundu ? x.SelectNodes("//k:Placemark", ns).Count : -1, "KML: her nesne bir yer işareti (malzeme satırları hariç)");
+            Esit(p.Elemanlar.Count, nesneler.FindAll(n => Array.IndexOf(CbsYapisi.ElemanKatmanlari, n.Katman) >= 0).Count, "KML: bütün elemanlar (direk, trafo, SDK, pano, diğer)");
+            Esit(p.Elemanlar.FindAll(e => e.Tur.EndsWith("DIREK", StringComparison.Ordinal)).Count, nesneler.FindAll(n => n.Katman == CbsYapisi.Direk).Count, "CBS: direkler DIREK katmanında");
+            int satir = 0;
+            foreach (var e in p.Elemanlar) satir += e.Kalemler.Count;
+            foreach (var h in p.Hatlar) if (h.Kose.Count >= 2) satir += h.Kalemler.Count;
+            foreach (var c in p.Kanallar) if (c.Kose.Count >= 2) satir += c.Kalemler.Count;
+            foreach (var so in p.Sondajlar) if (so.Kose.Count >= 2) satir += so.Kalemler.Count;
+            Esit(satir, nesneler.FindAll(n => n.Katman == CbsYapisi.Malzeme).Count, "CBS: bütün malzeme satırları MALZEME tablosunda");
             Esit(true, okundu && x.SelectNodes("//k:Folder/k:name", ns).Count >= p.Bolgeler.Count, "KML: her proje bir klasör");
             var direk = p.Elemanlar.Find(e => e.GisId == "SC77");
             var gis = okundu ? x.SelectSingleNode("//k:Placemark[k:name='SC77']/k:ExtendedData/k:Data[@name='TIP']/k:value", ns) : null;
@@ -401,6 +592,7 @@ namespace SebekeHakedis.Test
                 var bayt = MifDosyasi.Turkce.GetBytes(mif);
                 var v = MifDosyasi.Oku(MifDosyasi.DosyaMetni(bayt), MifDosyasi.DosyaMetni(MifDosyasi.Turkce.GetBytes(mid)));
                 Esit(l.Count, v.Nesneler.Count, "MIF " + k.Ad + ": nesne sayısı");
+                if (k.Geometri == "yok") Esit(true, v.Nesneler.TrueForAll(z => z.Tur == "yok"), "MIF " + k.Ad + ": haritada yeri yok (None)");
                 Esit(k.Alanlar.Length, v.Sutunlar.Count, "MIF " + k.Ad + ": sütunlar");
                 Esit("tm", v.Sistem, "MIF " + k.Ad + ": TM koordinat sistemi");
                 Esit(0, v.Uyarilar.Count, "MIF " + k.Ad + ": uyarı yok");
@@ -652,15 +844,53 @@ namespace SebekeHakedis.Test
             Geometri.YaziKonumu(new[] { 0.0, 0.0 }, new[] { 0.0, 10.0 }, new[] { 0.0, 0.8 }, out x, out y, out aci);
             Esit("-0,800 5,000 90,0", Konum(x, y, aci), "yazı yeri: dik hatta metraj çizginin solunda");
             Geometri.YaziKonumu(new[] { 0.0, 0.0 }, new[] { 0.0, 10.0 }, CizimStili.HatKaydirma, out x, out y, out aci);
-            Esit("2,500 5,000 90,0", Konum(x, y, aci), "yazı yeri: dik hatta etiket çizginin sağında");
+            Esit("0,700 5,000 90,0", Konum(x, y, aci), "yazı yeri: dik hatta etiket çizginin sağında (üst kenarı 0,7 m ötede)");
             Geometri.YaziKonumu(new[] { 0.0, 0.0 }, new[] { 10.0, 10.0 }, new[] { 1.0, 0.0 }, out x, out y, out aci);
             Esit("5,707 5,707 45,0", Konum(x, y, aci), "yazı yeri: boyunca kaydırma parça doğrultusunda");
             // Kanal / sondaj metrajı kablonun metrajından bir satır yukarıda: iki yazı üst üste binmez
-            Esit(true, CizimStili.KaziKaydirma[1] >= CizimStili.ParcaKaydirma[1] + CizimStili.ParcaMetraji, "kazı metrajı kablo metrajının üstünde (" + CizimStili.KaziKaydirma[1] + " m)");
+            Esit(0.46, CizimStili.KaziBosluk, "kazı metrajı ile kablo metrajı arası boşluk");
+            Esit(true, CizimStili.ParcaKaydirma[1] > 0 && CizimStili.HatKaydirma[1] < 0, "metraj çizginin üst yanında, etiket alt yanında");
+
+            // Yazılar parçanın ortasına ortalı, parçaya sığdırılmış (YaziDuzeni; telefondaki dxf.js yaziSigdir ile aynı)
+            Esit(true, Math.Abs(YaziDuzeni.Genislik("12.34", 1.44) - (0.57 * 4 + 0.36) * 1.44) < 1e-9, "yazı genişliği harf tablosundan");
+            double h, gk;
+            YaziDuzeni.Sigdir("12.34", 1.44, 30, out h, out gk);
+            Esit("1,440 1,000", Konum2(h, gk), "sığan yazı olduğu gibi kalır");
+            string uzun = "^ 3x95+50 NYY Al";
+            double w = YaziDuzeni.Genislik(uzun, 1.8);
+            YaziDuzeni.Sigdir(uzun, 1.8, w / 0.9 * 0.8, out h, out gk);
+            Esit("1,800 0,800", Konum2(h, gk), "biraz uzun yazı daraltılır (genişlik katsayısı 0,8)");
+            YaziDuzeni.Sigdir(uzun, 1.8, w / 0.9 * 0.3, out h, out gk);
+            Esit("1,080 0,600", Konum2(h, gk), "çok uzun yazı en dar (0,6) ve en küçük (%60) ölçüde");
+            YaziDuzeni.Sigdir(uzun, 1.8, w / 0.9 * 0.48, out h, out gk);
+            Esit("1,440 0,600", Konum2(h, gk), "daraltma yetmezse yükseklik küçülür (0,48 = 0,6 × 0,8)");
+            Esit(1, YaziDuzeni.EnUzunParca(kose), "etiket en uzun parçada (30→40)");
+            YaziDuzeni.Yerlestir(new[] { 0.0, 0.0 }, new[] { 0.0, 50.0 }, CizimStili.HatKaydirma[1], uzun, 1.8, out x, out y, out aci, out h, out gk);
+            Esit("0,700 25,000 90,0", Konum(x, y, aci), "dik hatta etiket ortalı: parçanın ortası, çizginin sağında");
+            // Harf tablosu ortak stildekiyle aynı (telefon oradan okur)
+            var stilJson = Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "cizim-stili.json"), Encoding.UTF8)) as JsonNesne;
+            var harfler = stilJson.Nesne("yazi").Nesne("harfGenislikleri");
+            int harfSayisi = 0, harfFarki = 0;
+            foreach (var kv in harfler)
+            {
+                if (kv.Key == "aciklama") continue;
+                harfSayisi++;
+                double g = kv.Key == "varsayilan" ? YaziDuzeni.Varsayilan : YaziDuzeni.Genislik(kv.Key, 1);
+                if (kv.Key.Length != 1 && kv.Key != "varsayilan") harfFarki++;
+                else if (Math.Abs(g - Convert.ToDouble(kv.Value, CultureInfo.InvariantCulture)) > 1e-9) harfFarki++;
+            }
+            Esit(YaziDuzeni.HarfSayisi + 1, harfSayisi, "harf tablosu: ortak stilde de aynı sayıda harf");
+            Esit(0, harfFarki, "harf tablosu: ortak stildeki genişliklerle aynı");
+            var sigdir = stilJson.Nesne("yazi").Nesne("sigdirma");
+            Esit(YaziDuzeni.Pay + " " + YaziDuzeni.EnDarGenislik + " " + YaziDuzeni.EnKucukYukseklik,
+                 sigdir.Ondalik("pay") + " " + sigdir.Ondalik("enDarGenislik") + " " + sigdir.Ondalik("enKucukYukseklik"), "sığdırma sınırları ortak stildekiyle aynı");
             Esit(true, NesneYazici.Kanal(kanal, "SC", null).KaziMetraji, "kanal metrajı kazı metrajı");
             Esit(true, NesneYazici.Sondaj(new Sondaj { Id = "S1", Durum = "M", Kose = { new[] { 0.0, 0.0 }, new[] { 8.0, 0.0 } } }, "SC", null).KaziMetraji, "sondaj metrajı kazı metrajı");
             Esit(false, NesneYazici.Hat(new Hat { Id = "H2", Tur = "AG_YERALTI", Durum = "M", Kose = { new[] { 0.0, 0.0 }, new[] { 5.0, 0.0 } } }, "SC", null).KaziMetraji, "hat metrajı kazı metrajı değil");
         }
+
+        private static string Konum2(double a, double b) =>
+            a.ToString("0.000", CultureInfo.GetCultureInfo("tr-TR")) + " " + b.ToString("0.000", CultureInfo.GetCultureInfo("tr-TR"));
 
         private static string Konum(double x, double y, double aci) =>
             x.ToString("0.000", CultureInfo.GetCultureInfo("tr-TR")) + " " + y.ToString("0.000", CultureInfo.GetCultureInfo("tr-TR")) + " " +
@@ -704,7 +934,7 @@ namespace SebekeHakedis.Test
             var k = new HesapKaydi
             {
                 Id = HesapKaydi.YeniKimlik(), Modul = "ag-gd", ModulAdi = "AG Gerilim Düşümü", ModulSurumu = "abc123", HedefTur = "trafo", HedefId = "D1", HedefNo = "SCTR01",
-                HedefHatId = "H14", Ozet = "%1,57 · uygun", Durum = "uygun", ModulDurumu = "{\"kols\":[1,2]}", Tarih = HesapKaydi.Simdi(), Kaynak = "autocad", Yapan = "Ayşe", TelefonId = "tel-1",
+                HedefHatId = "H14", Ozet = "%1,57 · uygun", Durum = "uygun", ModulDurumu = "{\"kols\":[1,2]}", Tarih = HesapKaydi.Simdi(), Kaynak = "autocad", Yapan = "Deneme Kişisi", TelefonId = "tel-1",
             };
             k.HedefParcalar.AddRange(new[] { "H14", "H15" });
             k.Kullanilan["trafo.gucKVA"] = 160.0;
@@ -736,7 +966,7 @@ namespace SebekeHakedis.Test
             Esit(1, volt.Hesaplar.Count, "telefon dosyası (.volt.json): hesap kaydı taşınır");
 
             // Bağlam: telefon projesindeki AG hattı, direk ve trafo
-            var bilgi = new ProjeBilgisi { Ad = "Deneme", Yapan = "Ayşe", BuzBolgesi = "3" };
+            var bilgi = new ProjeBilgisi { Ad = "Deneme", Yapan = "Deneme Kişisi", BuzBolgesi = "3" };
             var direkHedefi = new HesapHedefi { Tur = "direk", Id = "D6" };
             var bd = HesapBaglami.Kur(tp, direkHedefi, bilgi);
             Esit("SC104", direkHedefi.No, "bağlam: direk numarası hedefe yazılır");
@@ -1055,6 +1285,24 @@ namespace SebekeHakedis.Test
             try { ProjeDosyasi.Oku("{\"format\":\"volt-project/2\",\"project\":{},\"data\":{}}"); }
             catch (FormatException ex) { hata = ex.Message; }
             Esit(true, hata.Contains("AutoCAD bölümü"), "eski telefon dosyasında anlaşılır hata");
+
+            // Simge ve yazı boyutları (proje.boyutlar): varsayılansa yazılmaz; telefonla aynı alan adları (uyum.test.mjs U3)
+            Esit(false, yazilan.Contains("\"boyutlar\""), "varsayılan boyutlar dosyaya yazılmaz");
+            kopya.Boyutlar = new Boyutlar { SimgeOlcegi = 1.5, EtiketYuksekligi = 2, MetrajYuksekligi = 1.6, ElemanYaziYuksekligi = 2.2 };
+            string boyutlu = ProjeDosyasi.Yaz(kopya, "test");
+            var bg = ProjeDosyasi.Oku(boyutlu).Boyutlar;
+            Esit(true, bg != null && bg.Ayni(kopya.Boyutlar), "boyutlar dosyadan okunur (" + bg + ")");
+            Esit(true, ProjeDosyasi.Oku(ProjeDosyasi.VoltYaz(kopya, "test")).Boyutlar.Ayni(kopya.Boyutlar), "boyutlar telefon dosyasında da");
+            var bozuk = ProjeDosyasi.Oku("{\"bicim\":\"sebeke-hakedis.proje\",\"surum\":1,\"proje\":{\"ad\":\"D\",\"boyutlar\":{\"simgeOlcegi\":99,\"etiketYuksekligi\":2.5}}}").Boyutlar;
+            Esit("1 2,5 1,44 1,8", bozuk.SimgeOlcegi.ToString(CultureInfo.GetCultureInfo("tr-TR")) + " " + bozuk.EtiketYuksekligi.ToString(CultureInfo.GetCultureInfo("tr-TR")) + " " +
+                 bozuk.MetrajYuksekligi.ToString(CultureInfo.GetCultureInfo("tr-TR")) + " " + bozuk.ElemanYaziYuksekligi.ToString(CultureInfo.GetCultureInfo("tr-TR")),
+                 "aralık dışı boyut varsayılana döner, eksik alan varsayılan");
+            var ayar = new CizimAyarlari();
+            Esit(false, ayar.BoyutlarDegisik, "yeni çizimde boyutlar varsayılan");
+            ayar.BoyutlariKoy(kopya.Boyutlar);
+            Esit(true, ayar.BoyutlarDegisik && ayar.BoyutlariVer().Ayni(kopya.Boyutlar), "ayarlara alınan boyutlar");
+            var ayar2 = CizimAyarlari.Ciftlerden(ayar.Ciftler());
+            Esit(true, ayar2.BoyutlariVer().Ayni(kopya.Boyutlar), "boyutlar çizimin ayarlarında saklanır");
         }
 
         /// <summary>İki projenin Durum Tespit satır sayısı ve kg toplamı farkı (0 = aynı).</summary>
@@ -1119,12 +1367,71 @@ namespace SebekeHakedis.Test
             Esit("SH_KAFES_AG_DMM", NesneYazici.BlokSec(new List<Eleman>(), new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "DM+M", Blok = "SH_KAFES_AG_YENI" }), "simge: duruma göre yeniden seçilir");
             Esit("SH_DIREK_AG_YENI", NesneYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "M", Blok = "SH_DIREK_AG_YENI" }), "simge: SH_ bloğu korunur");
             // Katalog (eklentiye gömülen dosya), sıra üreteci, armatürlü direk (önceki sürümde ayrı blokta tanımlıydı)
-            var k = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            string katalogMetni = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8);
+            var k = Katalog.Oku(katalogMetni, null);
             Esit(true, k.Kalemler.Count > 2500, "katalog okundu (tam liste)");
+
+            // Cins kodlarındaki yazım hataları (31.10.2026): katalogda yalnız yeni kodlar; eski kod okunurken çevrilir
+            var eskiCinsler = ((JsonNesne)Json.Oku(katalogMetni)).Nesne("eskiCinsler");
+            int eslesen = 0;
+            foreach (var kv in eskiCinsler)
+            {
+                if (kv.Key == "aciklama") continue;
+                Esit(Convert.ToString(kv.Value, CultureInfo.InvariantCulture), CinsKodu.Duzelt(kv.Key), "cins kodu: " + kv.Key + " katalogdaki gibi çevrilir");
+                eslesen++;
+            }
+            Esit(CinsKodu.Eski.Count, eslesen, "cins kodu: eklentinin tablosu katalogdaki eskiCinsler ile aynı");
+            Esit(0, k.Kalemler.FindAll(x => CinsKodu.Eski.ContainsKey(x.Cins)).Count, "katalogda eski (yazım hatalı) cins kodu yok");
+            Esit(0, k.Cinsler.FindAll(x => x.Ad.Contains("̇") || x.Ad != x.Ad.Trim()).Count, "cins adlarında bozuk harf yok (i̇)");
+            Esit("Bakır bara", k.CinsAdi("BAKIR_BARA"), "cins adı Türkçe yazımla");
+            Esit("Rekortman (alüminyum)", k.CinsAdi("REKORTMAN_ALİMİNYUM"), "cins adı: eski kodla da bulunur");
+            Esit(true, k.Bul("AG_ALİMİNYUM_KABLO", "3x95+50 Nyy Alm.") != null && k.Bul("AG_ALİMİNYUM_KABLO", "3x95+50 Nyy Alm.").Cins == "AG_ALÜMİNYUM_KABLO",
+                 "katalog: eski kodla aranan kalem yeni koduyla gelir");
+            Esit("AG_ALÜMİNYUM_KABLO", NesneOkuyucu.HatKalemiOku("AG_ALİMİNYUM_KABLO;;3x95+50 Nyy Alm.;M;0;10;mt/mt;1;10;0,00;1;0105;7001;").Cins,
+                 "çizimdeki eski kodlu hat kalemi yeni kodla okunur");
+            Esit("KOFRE", NesneOkuyucu.MalzemeOku("KOFRA;KOFRE TIP-1;M+M;0;1;ad/ad;1;1;0,00;1;0113;7002;").Cins, "çizimdeki KOFRA malzemesi KOFRE okunur");
+            Esit("KOFRE", NesneOkuyucu.ElemanTuru("KOFRE") + "|" + NesneOkuyucu.ElemanTuru("KOFRA") == "KOFRE|KOFRE" ? "KOFRE" : "?", "eleman türü: eski ve yeni kofre kodu");
+            Esit("AG_YERALTI", NesneOkuyucu.HatTuru("", "AG_ALÜMİNYUM_KABLO"), "hat türü: yeni alüminyum kablo kodu");
+            var eskiDosya = ProjeDosyasi.Oku("{\"bicim\":\"sebeke-hakedis.proje\",\"surum\":1,\"proje\":{\"ad\":\"D\"},\"elemanlar\":[{\"id\":\"E1\",\"tur\":\"KOFRE\",\"cins\":\"KOFRA\",\"tip\":\"KOFRE TIP-1\",\"kalemler\":[{\"cins\":\"KOFRA\",\"tanim\":\"KOFRE TIP-1\",\"ana\":true}]}]," +
+                                             "\"hatlar\":[{\"id\":\"H1\",\"tur\":\"AG_YERALTI\",\"kalemler\":[{\"cins\":\"AG_ALİMİNYUM_KABLO\",\"tanim\":\"3x95+50 Nyy Alm.\",\"kaynak\":\"HAT\"}]}]}");
+            Esit("KOFRE|KOFRE|AG_ALÜMİNYUM_KABLO", eskiDosya.Elemanlar[0].Cins + "|" + eskiDosya.Elemanlar[0].Kalemler[0].Cins + "|" + eskiDosya.Hatlar[0].Kalemler[0].Cins,
+                 "eski proje dosyasındaki kodlar yeni kodla okunur");
             int sira = 7000;
             Func<string> yeniSira = () => (++sira).ToString(CultureInfo.InvariantCulture);
+
             var arm = k.Bul("ARMATÜR", "70W Sodyum Arm.");
             Esit(true, arm != null, "katalog: armatür kalemi");
+
+            // Hat Değiştir (SH_HATDEGISTIR): çizilmiş hattın iletkeni değişir, diğer malzemeler ve metraj korunur
+            var alpek50 = k.HatKesitleri("AG_HAVAI").Find(x => x.Tanim.Contains("50/16+70") && x.Tanim.ToUpperInvariant().Contains("ALPEK"));
+            var alpek70 = k.HatKesitleri("AG_HAVAI").Find(x => x.Tanim.Contains("70/16+95") && x.Tanim.ToUpperInvariant().Contains("ALPEK"));
+            var nyy = k.Bul("AG_ALÜMİNYUM_KABLO", "3x95+50 Nyy Alm.");
+            Esit(true, alpek50 != null && alpek70 != null && nyy != null, "katalog: ALPEK 3x50, 3x70 ve NYY kabloları");
+            var dh = new Hat { Id = "HD1", Tur = "AG_HAVAI", Durum = "M", Hakedis = 1, Katman = "SC_1.HAK.AG_HAT", CizimUzunlugu = 40 };
+            dh.Kose.Add(new[] { 0.0, 0.0 }); dh.Kose.Add(new[] { 40.0, 0.0 });
+            dh.Kalemler.Add(Katalog.KalemYap(arm, 2, "M", 1, false, "MALZEME", "6990"));
+            dh.Kalemler.AddRange(Iletkenler.Kalemler(new[] { new HatIletkeni(alpek50) }, 42, "M", 1, () => "6991", "", false));
+            dh.Kalemler.Add(Katalog.KalemYap(arm, 1, "M", 1, false, "MALZEME", "6992"));
+            dh.Kalemler[1].Miktar = 45; // elle düzeltilmiş metraj
+            dh.AnaKesit = alpek50.Tanim;
+            double dm = Iletkenler.Degistir(dh, "AG_HAVAI", new[] { new HatIletkeni(alpek70) }, "M", 1, t => 99, yeniSira, "", false);
+            Esit(45.0, dm, "hat değiştir: aynı türde metraj korunur");
+            Esit(3, dh.Kalemler.Count, "hat değiştir: satır sayısı aynı, diğer malzemelere dokunulmaz");
+            Esit(alpek70.Tanim + "|HAT|6991|45", dh.Kalemler[1].Tanim + "|" + dh.Kalemler[1].Kaynak + "|" + dh.Kalemler[1].Sira + "|" + dh.Kalemler[1].Miktar,
+                 "hat değiştir: yeni iletken eski satırın yerinde, sıra numarası korunur");
+            Esit(alpek70.Tanim, dh.AnaKesit, "hat değiştir: ana kesit");
+            Esit("SC_1.HAK.AG_HAT", dh.Katman, "hat değiştir: tür aynıysa katman korunur");
+            Esit(true, NesneYazici.HatEtiketi(dh).Contains("70/16+95"), "hat değiştir: kablo tipi yazısı yeni iletkenle (" + NesneYazici.HatEtiketi(dh) + ")");
+            dm = Iletkenler.Degistir(dh, "AG_YERALTI", new[] { new HatIletkeni(nyy, 2) }, "DM+M", 2, t => t == "AG_YERALTI" ? 43 : 0, yeniSira, "", false);
+            Esit("43|86|2x(3x95+50 Nyy Alm.)|DM+M|2", dm + "|" + dh.Kalemler[1].Miktar + "|" + dh.Kalemler[1].Aciklama + "|" + dh.Kalemler[1].Durum + "|" + dh.Kalemler[1].Hakedis,
+                 "hat değiştir: tür değişince yeni türün metrajı; adet × metraj, durum, hakediş");
+            Esit("|AG_YERALTI|DM+M|2", dh.Katman + "|" + dh.Tur + "|" + dh.Durum + "|" + dh.Hakedis, "hat değiştir: tür değişince katman yeniden belirlenir");
+            Esit(true, NesneYazici.Hat(dh, "SC", null).Katman.Contains("1.HAK") == false, "hat değiştir: yeni katman yeni hakedişte (" + NesneYazici.Hat(dh, "SC", null).Katman + ")");
+            dm = Iletkenler.Degistir(dh, "AG_YERALTI", new[] { new HatIletkeni(alpek50), new HatIletkeni(nyy) }, "M", 2, null, yeniSira, "", false);
+            Esit("4|HAT|HAT|MALZEME", dh.Kalemler.Count + "|" + dh.Kalemler[1].Kaynak + "|" + dh.Kalemler[2].Kaynak + "|" + dh.Kalemler[3].Kaynak,
+                 "hat değiştir: iki iletken iki satır (eski sıra, sonra yeni sıra numarası)");
+            Esit(true, dh.Kalemler[2].Sira == "7001" || dh.Kalemler[2].Sira == "7002", "hat değiştir: fazla satıra yeni sıra numarası (" + dh.Kalemler[2].Sira + ")");
+
             var adirek = new Eleman { Id = "D5", Tur = "AG_DIREK", Cins = "AG_BETON", Tip = "9,3/2", Durum = "M", Hakedis = 1 };
             adirek.Kalemler.Add(new Kalem { Cins = "AG_BETON", Tanim = "9,3/2", Durum = "M", Ana = true, Kaynak = "NIT", Miktar = 1 });
             Esit("", NesneYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null).Armatur, "armatür: malzemesi yoksa simge yok");
@@ -1271,7 +1578,7 @@ namespace SebekeHakedis.Test
             Esit(true, plan.Silinenler.ContainsKey(silinen), "değişen proje: telefonda silinen kanal sorulur");
             var yeniAdim = plan.Adimlar.Find(x => x.Kimlik == "Tk1");
             Esit("Tk1", yeniAdim.Varlik.XdIlk(NesneYazici.KimlikUygulamasi), "yeni nesneye telefon kimliği yazılır");
-            Esit("SC_2.HAK.AGDİR", yeniAdim.Varlik.Katman, "yeni direk hakediş katmanında");
+            Esit("SC_2.HAK.AGDIR", yeniAdim.Varlik.Katman, "yeni direk hakediş katmanında");
             var dmAdim = plan.Adimlar.Find(x => x.Hedef == dm.Id);
             Esit("SC_DEMONTAJ", dmAdim.Varlik.Katman, "demontaja çevrilen direk demontaj katmanına geçer");
             Esit(dm.Blok, dmAdim.Varlik.Blok, "adsız bloklu direğin bloğu korunur");

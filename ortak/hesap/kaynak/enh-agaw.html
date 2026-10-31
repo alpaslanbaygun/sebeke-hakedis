@@ -122,7 +122,6 @@ svg{max-width:100%}
     <h1>ENH a<sub>g</sub>–a<sub>w</sub> Bağıntısı Kontrolü</h1>
     <div class="sub">Taşıyıcı direklerde izolatör salınımı — TEDAŞ Dağıtım Hatları Proje Teknik Kılavuzu 2014/1 ve 2014/3</div>
   </div>
-  <div class="badge"><b>Baki SONAY</b><span>Elektrik-Elektronik Mühendisi</span></div>
 </header>
 
 <div class="card">
@@ -137,7 +136,7 @@ svg{max-width:100%}
   <div class="g5">
     <div style="grid-column:span 2"><label>Proje adı</label><input id="pAd" class="in"></div>
     <div><label>Hat / iş no</label><input id="pHat" class="in"></div>
-    <div><label>Hazırlayan</label><input id="pKim" class="in" value="BAKİ SONAY"></div>
+    <div><label>Hazırlayan</label><input id="pKim" class="in" value=""></div>
     <div><label>Unvan</label><input id="pUnv" class="in" value="ELEKTRİK-ELEKTRONİK MÜH."></div>
   </div>
 </div>
@@ -233,7 +232,7 @@ function formulMetni(r){
 }
 
 /* ---------- model ---------- */
-var M = { ad:"", hat:"", kim:"BAKİ SONAY", unv:"ELEKTRİK-ELEKTRONİK MÜH.",
+var M = { ad:"", hat:"", kim:"", unv:"ELEKTRİK-ELEKTRONİK MÜH.",
           il:"", iz:"", dk:"", b:"", a:"", birim:"der", sat:[] };
 
 function yeniSatir(d){
@@ -369,7 +368,7 @@ function apply(d){
   if(!d||!d.M) return false;
   M=d.M; M.sat=(M.sat||[]).map(yeniSatir);
   $("pAd").value=M.ad||""; $("pHat").value=M.hat||"";
-  $("pKim").value=M.kim||"BAKİ SONAY"; $("pUnv").value=M.unv||"ELEKTRİK-ELEKTRONİK MÜH.";
+  $("pKim").value=M.kim||""; $("pUnv").value=M.unv||"ELEKTRİK-ELEKTRONİK MÜH.";
   zincir(true);
   setBirim(M.birim||"der",false);
   return true;

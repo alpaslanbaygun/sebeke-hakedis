@@ -33,7 +33,7 @@ namespace SebekeHakedis.Cekirdek
         public bool ParcaMetraji;
         /// <summary>
         /// Metraj kanal / sondaj metrajı mı: içindeki kablonun metrajıyla üst üste binmesin diye bir satır yukarıya yazılır
-        /// (CizimStili.KaziKaydirma).
+        /// (CizimStili.KaziBosluk).
         /// </summary>
         public bool KaziMetraji;
         /// <summary>Çizginin iki yanına çizilecek kenarların arası (m; kanal). 0: kenar yok.</summary>

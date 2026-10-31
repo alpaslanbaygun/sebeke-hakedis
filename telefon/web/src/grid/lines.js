@@ -1,11 +1,81 @@
 // Hat sistemi: havai iletken metrajı (m / kg), yeraltı kablo + kanal metrajı, abone hattı ekleri.
 // Kg hesabı gerçek iletken ağırlığı (kg/km) üzerinden yapılır.
 import SH from '../interop/sh-core.cjs';
+import KATSAYILAR from '../ortak/katsayilar.js';
+import KALEMLER from '../ortak/kalemler.js';
+import ESLESME from '../ortak/volt-eslesme.js';
 
 export const LINE_TYPE_LABEL = { AG: 'AG', OG: 'OG', AYD: 'Aydınlatma', ENH: 'ENH', ABONE: 'Abone' };
 
-// Devre tanımından parça listesi (katalog hat tipi ya da özel çıplak AG kombinasyonu 3P+R(+R))
+/**
+ * AutoCAD kataloğundaki iletken / kablo devresi: anahtar "@CİNS|tanım" (eklentinin HAT kalemi; ör. "@AG_İLETKEN|4P+R",
+ * "@AG_BAKIR_KABLO|4x10 Nyy Cu"). Telefon kataloğunda karşılığı olmayan iletken AutoCAD'den böyle gelir; hat ekranında
+ * eklentinin listesinden de seçilir. Dışa aktarımda aynı cins ve tanımla döner (iki tarafta aynı iletken).
+ */
+export function autocadDevresi(c) {
+  const k = c && typeof c.key === 'string' && c.key.charAt(0) === '@' ? c.key.slice(1) : '';
+  const i = k.indexOf('|');
+  return i > 0 ? { cins: k.slice(0, i), tanim: k.slice(i + 1) } : null;
+}
+export const autocadAnahtari = (cins, tanim) => '@' + cins + '|' + tanim;
+/**
+ * Devrenin rolüne ve tesisine uyan AutoCAD cinsleri: hattın türünün cins grubu (kalemler.json › gruplar.hatlar; eklentideki
+ * Katalog.HatCinsListesi). Grup yoksa null.
+ */
+export function autocadGrubu(role, install) {
+  const e = ESLESME.hatlar[(role || 'AG') + ':' + (install === 'yeralti' ? 'yeralti' : 'havai')];
+  const g = e ? ((KALEMLER.gruplar || {}).hatlar || {})[e.tur] : null;
+  return g && g.length ? g : null;
+}
+/** AutoCAD'deki tipin cinsi devrenin rolüne ve tesisine uyuyor mu (grup yoksa uyar sayılır). */
+export function autocadUygun(ac, role, install) {
+  const g = autocadGrubu(role, install);
+  return !g || g.includes(SH.cinsDuzelt(ac.cins));
+}
+/**
+ * Devrenin iletken adı (tertip tahmini gibi ada bakan yerler için): telefon tipinde anahtar, AutoCAD tipinde tanım ve
+ * çıplak iletken açılımındaki tel adları (3xSW → "3xSW SWALLOW").
+ */
+export function devreYazisi(c) {
+  const ac = autocadDevresi(c);
+  if (!ac) return (c && c.key) || '';
+  const tablo = String(ac.cins).startsWith('OG_') ? KATSAYILAR.ogIletken : KATSAYILAR.agIletken;
+  const acilim = tablo && tablo.acilim ? tablo.acilim[ac.tanim] : null;
+  return ac.tanim + (acilim ? ' ' + Object.keys(acilim).join(' ') : '');
+}
+const buyuk = (s) => String(s || '').toLocaleUpperCase('tr').replace(/İ/g, 'I');
+/**
+ * AutoCAD devresinin parçaları: çıplak iletken kombinasyonu (4P+R, 3A+P+R, 2(3xSW)…) eklentinin Durum Tespit
+ * açılımıyla tel tel (katsayilar.json › agIletken / ogIletken; kg ağırlıkla), kablo ve demetli iletken metreyle.
+ */
+function autocadParcalari(ac, cat) {
+  const og = String(ac.cins).startsWith('OG_');
+  const tablo = og ? KATSAYILAR.ogIletken : KATSAYILAR.agIletken;
+  const acilim = tablo && tablo.acilim ? tablo.acilim[ac.tanim] : null;
+  if (acilim) {
+    return {
+      unit: 'kg', coresPerCircuit: 1, label: ac.tanim, autocad: ac,
+      parts: Object.entries(acilim).map(([ad, n]) => {
+        const cd = cat.t.conductors.find((x) => buyuk(x.name) === buyuk(ad)) || null;
+        const kgm = (tablo.agirlikKgM || {})[ad];
+        return { conductor: cd ? cd.name : ad, count: n, kgPerKm: cd && cd.kgPerKm ? cd.kgPerKm : kgm ? kgm * 1000 : null, yd: cd ? cd.yd : null, kind: cd ? cd.kind : og ? 'ACSR' : 'AAC' };
+      })
+    };
+  }
+  return { unit: 'm', coresPerCircuit: 1, label: ac.tanim, autocad: ac, parts: [{ conductor: autocadAnahtari(ac.cins, ac.tanim), count: 1, kgPerKm: null, yd: null, kind: autocadTuru(ac.cins) }] };
+}
+/** AutoCAD cinsinin telefon iletken türü: ALPEK demetli (AER), çıplak iletken (AG: AAC, OG: ACSR), diğerleri kablo. */
+function autocadTuru(cins) {
+  const c = buyuk(cins);
+  if (c.includes('ALPEK')) return 'AER';
+  if (c.includes('ILETKEN') && !c.startsWith('TOP_')) return c.startsWith('OG_') ? 'ACSR' : 'AAC';
+  return 'KABLO';
+}
+
+// Devre tanımından parça listesi (katalog hat tipi, özel çıplak AG kombinasyonu 3P+R(+R) ya da AutoCAD kataloğundaki iletken)
 export function circuitParts(c, cat) {
+  const ac = autocadDevresi(c);
+  if (ac) return autocadParcalari(ac, cat);
   if (c.custom) {
     const parts = [[c.custom.f || 'P', 3], [c.custom.nt || 'R', 1]].concat(c.custom.ay ? [[c.custom.ay, 1]] : []);
     return {
@@ -53,7 +123,7 @@ export function overheadQuantities(line, len3D, cat, opts = {}) {
         const kg = p.kgPerKm ? (meters * p.kgPerKm) / 1000 : null;
         out.push({ servis: p.yd, qty: kg ?? 0, unit: 'Kg', meters, why: (p.count * n) + '× ' + p.conductor + ' · ' + meters.toFixed(2) + ' m × ' + (p.kgPerKm ? (p.kgPerKm / 1000).toFixed(5) : '?') + ' kg/m', conductor: p.conductor, role: c.role, missing: !p.yd || !p.kgPerKm, refType: 'line', refId: line.id });
       } else {
-        out.push({ servis: p.yd, qty: meters, unit: 'm', meters, why: c.key + ' · ' + len3D.toFixed(2) + ' m × ' + (cp.coresPerCircuit * n), conductor: p.conductor, role: c.role, missing: !p.yd, refType: 'line', refId: line.id });
+        out.push(Object.assign({ servis: p.yd, qty: meters, unit: 'm', meters, why: (cp.autocad ? cp.label : c.key) + ' · ' + len3D.toFixed(2) + ' m × ' + (cp.coresPerCircuit * n), conductor: p.conductor, role: c.role, missing: !p.yd, refType: 'line', refId: line.id }, cp.autocad ? { name: SH.malzemeYazisi(cp.label) } : null));
       }
     }
   }
@@ -102,7 +172,7 @@ export function cableQuantities(line, route, endKinds, cat, opts = {}) {
     if (cp.coresPerCircuit > 1) singleCore = true;
     const servis = (km0.yeni ? true : cfg.channelType === 'toprak') ? (p.ydToprak || p.yd) : p.yd;
     const m = coreLen * cp.coresPerCircuit * n;
-    out.push({ servis, qty: m, unit: 'm', meters: m, why: c.key + ' · ' + coreLen.toFixed(2) + ' m × ' + (cp.coresPerCircuit * n) + ' damar/devre', conductor: c.key, role: c.role, missing: !servis, refType: 'line', refId: line.id, breakdown });
+    out.push(Object.assign({ servis, qty: m, unit: 'm', meters: m, why: (cp.autocad ? cp.label : c.key) + ' · ' + coreLen.toFixed(2) + ' m × ' + (cp.coresPerCircuit * n) + ' damar/devre', conductor: c.key, role: c.role, missing: !servis, refType: 'line', refId: line.id, breakdown }, cp.autocad ? { name: SH.malzemeYazisi(cp.label) } : null));
   }
   // Kanal ve yardımcı malzemeler (Material anahtarları → poz eşlemesi standart tablosunda)
   const mat = (key, qty, unit, why) => { if (qty > 0) out.push({ material: key, servis: null, qty, unit, why, refType: 'line', refId: line.id }); };

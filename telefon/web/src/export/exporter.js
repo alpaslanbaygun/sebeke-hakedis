@@ -2,7 +2,10 @@
 import { buildExportModel } from './model.js';
 import { buildDXF, dxfBytes } from './dxf.js';
 import { shapefileLayers, writeShapefile } from './shp.js';
-import { buildGeoJSON, buildKML, buildKMZ, buildNCN, buildPointsCSV } from './gis.js';
+import { buildGeoJSON, kml3BKlasoru, buildNCN, buildPointsCSV } from './gis.js';
+import { kmlMetni, mifDosyalari, mifCoordSys, cp1254 } from './cbs.js';
+import { unproject, project as projLL } from '../geo/crs.js';
+import SH from '../interop/sh-core.cjs';
 import { buildXLSX } from './xlsx.js';
 import { buildReportHTML } from './report.js';
 import { zip, enc, sha256Hex } from './zip.js';
@@ -21,7 +24,8 @@ export const FORMATS = {
   voltjson: { label: 'Telefon proje dosyası', ext: '.volt.json', desc: 'Projenin tam yedeği (tüm kayıtlar) + AutoCAD bölümü; eklenti ve telefon bunu açar' },
   dxf: { label: 'AutoCAD DXF', ext: '.dxf', desc: 'Lejant katmanları, bloklar, ACI renkleri, çizgi tipleri, yazılar · 1/1000' },
   ncn: { label: 'Netcad NCN', ext: '.ncn', desc: 'Nokta adı · Y · X · Z · kod (NCZ kapalı formattır; Netcad DXF+NCN içe alır)' },
-  kmz: { label: 'Google Earth KMZ', ext: '.kmz', desc: 'Gerçek koordinat, 3B direk ve tel modelleri' },
+  kmz: { label: 'Google Earth KMZ', ext: '.kmz', desc: 'AutoCAD eklentisiyle aynı: her proje bir klasör (sınır, eleman, hat, kanal, sondaj), GPS noktaları; her nesnenin bilgileri (GIS no, tip, durum, hakediş, metraj…) · ek klasörde 3B direk ve iletken' },
+  mif: { label: 'CBS MapInfo (MIF / MID)', ext: '.zip', desc: 'AutoCAD eklentisiyle aynı katmanlar ve sütunlar: eleman, hat, kanal, sondaj, proje sınırı, GPS noktası · Türkçe Windows kod sayfası · seçilen koordinat sisteminde' },
   shp: { label: 'CBS Shapefile', ext: '.zip', desc: 'SHP + SHX + DBF + PRJ + CPG · ekipman, hat, açıklık, ölçü katmanları' },
   geojson: { label: 'GeoJSON', ext: '.geojson', desc: 'RFC 7946 (WGS84) + proje CRS sürümü' },
   xlsx: { label: 'Excel (Metraj · Yeşil Defter · Hakediş)', ext: '.xlsx', desc: 'Montaj / Demontaj / DMM sayfaları, poz, malzeme, hakediş' },
@@ -73,6 +77,42 @@ export function workbookSheets(model, ps) {
   return sheets;
 }
 
+// ---------------- CBS (Google Earth, MapInfo): AutoCAD eklentisiyle aynı dosyalar ----------------
+/**
+ * Eklentinin proje modeli: telefonun .sebeke.json'u eklentinin okuduğu biçimde (CBS çıktıları bundan üretilir).
+ * Projede AutoCAD'den gelen bölge yoksa dosyaya noktaları kapsayan bir sınır uydurulur (eklenti bölgesiz proje almaz);
+ * bu sınır gerçek değildir: CBS çıktısına yazılmaz (proje adı yine klasör adıdır).
+ */
+export function eklentiModeli(ps) {
+  const p = SH.projeOku(sebekeYaz(ps));
+  const sb = ps.p.sebeke || {};
+  if (!(Array.isArray(sb.bolgeler) && sb.bolgeler.length)) for (const b of p.bolgeler) b.sinir = [];
+  return p;
+}
+/**
+ * CBS dosyasına yazılamayan nesneler: eklentinin dosyasına da girmeyenler ("ileride" durumundakiler, konumu ya da iki
+ * noktası olmayanlar). Dışa Aktarım ekranı bunları uyarı olarak gösterir.
+ */
+export const cbsUyarilari = (p) => (p.uyarilar || []).filter((u) => /ileride|konumu yok|iki noktası yok/.test(u))
+  .map((u) => u.replace('AutoCAD dosyasına yazılmaz', 'Google Earth / CBS dosyasına yazılmaz (eklentide de yoktur)'));
+/** Koordinat sisteminin adı: eklentideki gibi "ITRF96 / TM 39 (3°)"; başka sistemde kendi adı. */
+const sistemAdi = (crs) => (crs.projection === 'TM3' && crs.datum === 'TUREF' && !crs.local ? 'ITRF96 / TM ' + crs.cm + ' (3°)' : crs.label);
+const tarihYazisi = (d = new Date()) => { const z = (n) => String(n).padStart(2, '0'); return z(d.getDate()) + '.' + z(d.getMonth() + 1) + '.' + d.getFullYear() + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()); };
+/** Google Earth (KML) metni: eklentinin yazdığıyla aynı içerik + telefonun 3B direk / iletken klasörü (başta kapalı). */
+export function googleEarthMetni(ps, model, opts = {}, p = eklentiModeli(ps)) {
+  const crs = ps.p.crs;
+  return kmlMetni(p, { donustur: (E, N) => { const g = unproject(E, N, crs); return [g.lon, g.lat]; }, surum: opts.surum || 'telefon', sistem: sistemAdi(crs), tarih: tarihYazisi(), ek: model ? kml3BKlasoru(model) : '' });
+}
+/**
+ * MapInfo MIF / MID dosyaları (Türkçe Windows kod sayfasında baytlar): her dolu katman base_KATMAN.mif + .mid. hedefCrs
+ * verilirse (Dışa Aktarım'daki koordinat seçimi) köşeler o sisteme çevrilir ve CoordSys satırı ona göre yazılır.
+ */
+export function mifCiktilari(ps, base, hedefCrs, p = eklentiModeli(ps)) {
+  const kaynak = ps.p.crs, hedef = hedefCrs || kaynak;
+  const koordinat = JSON.stringify(hedef) === JSON.stringify(kaynak) ? null : (k) => { const g = unproject(k[0], k[1], kaynak); const q = projLL(g.lat, g.lon, hedef); return [q.E, q.N]; };
+  return mifDosyalari(p, base, { coordSys: mifCoordSys(hedef), koordinat, hane: hedef.projection === 'GEO' ? 8 : 3 }).map((d) => ({ name: d.name, data: cp1254(d.text) }));
+}
+
 export async function exportFormat(ps, fmt, opts = {}) {
   const model = buildExportModel(ps, { crs: opts.crs });
   const base = (ps.p.code || ps.p.name || 'proje').replace(/[^\p{L}\p{N}_-]+/gu, '_');
@@ -81,8 +121,9 @@ export async function exportFormat(ps, fmt, opts = {}) {
     case 'sebeke': return [{ name: base + '.sebeke.json', mime: 'application/json', data: enc(sebekeYaz(ps)) }];
     case 'voltjson': return [{ name: base + '.volt.json', mime: 'application/json', data: enc(JSON.stringify(voltProjeYaz(ps), null, 1)) }];
     case 'ncn': return [{ name: base + '.ncn', mime: 'text/plain', data: enc(buildNCN(model)) }];
-    case 'kml': return [{ name: base + '.kml', mime: 'application/vnd.google-earth.kml+xml', data: enc(buildKML(model)) }];
-    case 'kmz': return [{ name: base + '.kmz', mime: 'application/vnd.google-earth.kmz', data: await buildKMZ(model) }];
+    case 'kml': { const p = eklentiModeli(ps); return [{ name: base + '.kml', mime: 'application/vnd.google-earth.kml+xml', data: enc(googleEarthMetni(ps, model, opts, p)), uyarilar: cbsUyarilari(p) }]; }
+    case 'kmz': { const p = eklentiModeli(ps); return [{ name: base + '.kmz', mime: 'application/vnd.google-earth.kmz', data: await zip([{ name: 'doc.kml', data: enc(googleEarthMetni(ps, model, opts, p)) }]), uyarilar: cbsUyarilari(p) }]; }
+    case 'mif': { const p = eklentiModeli(ps); const files = mifCiktilari(ps, base, opts.crs, p); return [{ name: base + '_cbs_mif.zip', mime: 'application/zip', data: await zip(files), files: files.map((f) => f.name), uyarilar: cbsUyarilari(p) }]; }
     case 'geojson': return [{ name: base + '_wgs84.geojson', mime: 'application/geo+json', data: enc(buildGeoJSON(model)) }, { name: base + '_' + (model.crs.epsg || 'proje') + '.geojson', mime: 'application/geo+json', data: enc(buildGeoJSON(model, { projected: true })) }];
     case 'shp': {
       const files = [];
@@ -141,7 +182,9 @@ async function deliveryPackage(ps, model, base, opts) {
   // HARITA: GIS çıktıları
   add('HARITA/' + base + '_wgs84.geojson', buildGeoJSON(model));
   add('HARITA/' + base + '_proje.geojson', buildGeoJSON(model, { projected: true }));
-  add('HARITA/' + base + '.kmz', await buildKMZ(model));
+  const cbsModeli = eklentiModeli(ps);
+  add('HARITA/' + base + '.kmz', await zip([{ name: 'doc.kml', data: enc(googleEarthMetni(ps, model, opts, cbsModeli)) }]));
+  for (const f of mifCiktilari(ps, base, opts.crs, cbsModeli)) add('HARITA/mif/' + f.name, f.data);
   // EXPORT: CAD + SHP
   add('EXPORT/' + base + '.dxf', dxfBytes(buildDXF(model).text));
   add('EXPORT/' + base + '.ncn', buildNCN(model));

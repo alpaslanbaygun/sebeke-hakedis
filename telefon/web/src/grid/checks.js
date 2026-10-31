@@ -1,6 +1,6 @@
 // Otomatik uygunluk kontrolleri (kayıt öncesi ve proje geneli).
 // Kodlar: UYUMSUZ · EKSİK VERİ · ÖLÇÜ KABUL EDİLMEDİ · MALZEME EKSİK · UYARI
-import { circuitParts } from './lines.js';
+import { circuitParts, autocadUygun } from './lines.js';
 import { TRAFO_STATUSES, RECIPE_KINDS } from '../core/schema.js';
 import { sourceInfo } from '../core/source.js';
 
@@ -60,13 +60,23 @@ export function checkLine(l, cat, ctx = {}) {
   for (const c of l.circuits || []) {
     const cp = circuitParts(c, cat);
     if (!cp) { out.push(I('EKSİK VERİ', 'error', l, 'İletken katalogda yok: ' + c.key)); continue; }
+    const ad = cp.autocad ? cp.label : c.key;
     const cond = c.custom ? null : cat.conductor(cp.parts[0].conductor);
-    const isOGcond = cond ? (cond.voltage || []).includes('OG') : false;
-    if ((c.role === 'OG' || c.role === 'ENH') && cond && !isOGcond) out.push(I('UYUMSUZ', 'error', l, 'OG hatta AG iletkeni seçilmiş (' + c.key + ')', { group: 'Hat' }));
-    if ((c.role === 'AG' || c.role === 'AYD' || c.role === 'ABONE') && isOGcond) out.push(I('UYUMSUZ', 'error', l, 'AG devresinde OG iletkeni seçilmiş (' + c.key + ')', { group: 'Hat' }));
-    if (l.install === 'yeralti' && cond && cond.kind !== 'KABLO') out.push(I('UYUMSUZ', 'error', l, 'Yeraltı hatta havai iletken seçilmiş (' + c.key + ')', { group: 'Hat' }));
-    if (l.install === 'havai' && cond && cond.kind === 'KABLO') out.push(I('UYUMSUZ', 'error', l, 'Havai hatta yeraltı kablosu seçilmiş (' + c.key + ')', { group: 'Hat' }));
-    if (cp.parts.some((p) => !p.yd)) out.push(I('MALZEME EKSİK', 'warn', l, c.key + ' için Yeşil Defter servis kodu tanımsız', { group: 'Hat' }));
+    // AutoCAD'deki tip: OG / AG ayrımı cinsinden (OG_ ile başlar), tesis uyumu cinsin hat türü grubundan (eklentideki gibi)
+    const isOGcond = cp.autocad ? String(cp.autocad.cins).startsWith('OG_') : cond ? (cond.voltage || []).includes('OG') : false;
+    if ((c.role === 'OG' || c.role === 'ENH') && (cond || cp.autocad) && !isOGcond) out.push(I('UYUMSUZ', 'error', l, 'OG hatta AG iletkeni seçilmiş (' + ad + ')', { group: 'Hat' }));
+    if ((c.role === 'AG' || c.role === 'AYD' || c.role === 'ABONE') && isOGcond) out.push(I('UYUMSUZ', 'error', l, 'AG devresinde OG iletkeni seçilmiş (' + ad + ')', { group: 'Hat' }));
+    if (cp.autocad) {
+      // AutoCAD'den gelen tip çizimde böyle olabilir (eski program her cinsi yazar): uyarı, hata değil
+      if (isOGcond === (c.role === 'OG' || c.role === 'ENH') && !autocadUygun(cp.autocad, c.role, l.install)) {
+        const oteki = autocadUygun(cp.autocad, c.role, l.install === 'yeralti' ? 'havai' : 'yeralti');
+        out.push(I('UYUMSUZ', 'warn', l, oteki ? (l.install === 'yeralti' ? 'Yeraltı hatta havai iletken seçilmiş (' : 'Havai hatta yeraltı kablosu seçilmiş (') + ad + ')' : ad + " bu hat türünde kullanılmıyor (AutoCAD'deki tip)", { group: 'Hat' }));
+      }
+    } else {
+      if (l.install === 'yeralti' && cond && cond.kind !== 'KABLO') out.push(I('UYUMSUZ', 'error', l, 'Yeraltı hatta havai iletken seçilmiş (' + ad + ')', { group: 'Hat' }));
+      if (l.install === 'havai' && cond && cond.kind === 'KABLO') out.push(I('UYUMSUZ', 'error', l, 'Havai hatta yeraltı kablosu seçilmiş (' + ad + ')', { group: 'Hat' }));
+    }
+    if (cp.parts.some((p) => !p.yd)) out.push(I('MALZEME EKSİK', 'warn', l, cp.autocad ? ad + ": AutoCAD'deki tip, telefonun poz listesinde karşılığı yok (metraj AutoCAD'e aynı kalemle gider)" : ad + ' için Yeşil Defter servis kodu tanımsız', { group: 'Hat' }));
   }
   if (l.lineType === 'OG' || l.lineType === 'ENH') {
     if ((l.circuits || []).some((c) => c.role !== 'OG' && c.role !== 'ENH') && !l.musterek) out.push(I('UYUMSUZ', 'warn', l, 'OG hatta AG devresi var ama müşterek işaretli değil'));

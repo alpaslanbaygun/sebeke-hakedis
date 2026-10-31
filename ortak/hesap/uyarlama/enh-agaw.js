@@ -402,7 +402,7 @@
       if (!d || !d.M) return;
       var m = kopya(d.M);
       apply({ M: m });                         // aracın kendi geri yükleme işlevi
-      // apply() boş hazırlayan / unvan alanına aracın yazarının adını koyar: kayıttaki değer aynen geri yazılır
+      // apply() boş hazırlayan / unvan alanına aracın varsayılanını koyar: kayıttaki değer aynen geri yazılır
       M.kim = m.kim == null ? '' : m.kim; alanEl('pKim').value = M.kim;
       M.unv = m.unv == null ? '' : m.unv; alanEl('pUnv').value = M.unv;
       render(true); ozet();

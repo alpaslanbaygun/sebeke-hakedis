@@ -10,7 +10,7 @@
     "proje": {
      "ad": "Yeşilköy Kooperatifi ENH",
      "kod": "PRJ-104",
-     "yapan": "Ayşe Demir",
+     "yapan": "Deneme Kullanıcı",
      "unvan": "Elektrik Mühendisi",
      "tarih": "2026-10-12"
     },
@@ -110,7 +110,7 @@
     "kaynak": "autocad",
     "proje": {
      "ad": "Örnek OSB Dağıtım",
-     "yapan": "Mehmet Kaya",
+     "yapan": "Örnek Kullanıcı",
      "tarih": "2026-09-30"
     },
     "hedef": {
@@ -258,7 +258,7 @@
     "kaynak": "telefon",
     "proje": {
      "ad": "Deneme Sanayi Bölgesi Besleme",
-     "yapan": "Ayşe Demir",
+     "yapan": "Deneme Kullanıcı",
      "unvan": "Elektrik Mühendisi",
      "tarih": "2026-10-15"
     },

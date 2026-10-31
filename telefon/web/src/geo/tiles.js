@@ -21,3 +21,9 @@ export function tileLL(x, y, z, proj = '3857') {
   if (proj === '3395') { for (let i = 0; i < 8; i++) { const s = Math.sin(phi); phi = 2 * Math.atan(Math.exp(m) * Math.pow((1 + E * s) / (1 - E * s), E / 2)) - Math.PI / 2; } }
   return { lat: phi / RAD, lon };
 }
+/** Bing karo anahtarı (quadkey): eklentideki HaritaAltligi.QuadKey ile aynı. */
+export function quadKey(x, y, z) {
+  let q = '';
+  for (let i = z; i > 0; i--) { const m = 1 << (i - 1); q += String((x & m ? 1 : 0) + (y & m ? 2 : 0)); }
+  return q;
+}

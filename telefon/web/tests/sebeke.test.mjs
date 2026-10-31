@@ -4,7 +4,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { setup, newProject, buildPoleLine, rtkObs, route } from './helpers.mjs';
-import { sebekeYaz, sebekeModel, sebekeIceAl, voltProjeYaz, voltProjeOku, cizimTip, voltTip, cizimKesit, hatTipiEsle, direkEsle, SH } from '../src/interop/sebeke.js';
+import { sebekeYaz, sebekeModel, sebekeIceAl, voltProjeYaz, voltProjeOku, cizimTip, voltTip, cizimKesit, hatTipiEsle, direkEsle, autocadSecenekleri, SH } from '../src/interop/sebeke.js';
+import { lineLabel, circuitParts, autocadAnahtari } from '../src/grid/lines.js';
+import KALEMLER from '../src/ortak/kalemler.js';
 import KATSAYILAR from '../src/ortak/katsayilar.js';
 import { exportFormat } from '../src/export/exporter.js';
 
@@ -96,7 +98,7 @@ test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Dur
   const ag = sp.hatlar.find((h) => h.tur === 'AG_HAVAI');
   assert.equal(ag.anaKesit, '3X70/16+95 ALPEK'); assert.equal(ag.kalemler[0].cins, 'ALPEK_KABLOLAR'); assert.equal(ag.kalemler[0].tarife, '0107');
   const yer = sp.hatlar.find((h) => h.tur === 'AG_YERALTI');
-  assert.equal(yer.anaKesit, '3x95+50 Nyy Alm.'); assert.equal(yer.kalemler[0].cins, 'AG_ALİMİNYUM_KABLO');
+  assert.equal(yer.anaKesit, '3x95+50 Nyy Alm.'); assert.equal(yer.kalemler[0].cins, 'AG_ALÜMİNYUM_KABLO', 'cins kodu yazım hatası düzeltilmiş');
   assert.equal(sp.kanallar.length, 1);
   const kn = sp.kanallar[0];
   assert.equal(kn.kod, 4); assert.equal(kn.zemin, 'ASFALT'); assert.equal(kn.altGenislik, 40); assert.equal(kn.derinlik, 80);
@@ -233,8 +235,9 @@ test('A4 · AutoCAD örnek dosyası telefona alınır: direk tipleri katalogdan 
   const og = ps.data.lines.find((l) => l.lineType === 'OG');
   assert.equal(og.install, 'havai'); assert.deepEqual(og.circuits.map((c) => c.key), ['3xSwallow']);
   const ag = ps.data.lines.find((l) => l.lineType === 'AG' && l.install === 'havai');
-  assert.equal(ag.circuits.length, 0, '3A+P+R telefon kataloğunda yok → kalemler saklanır');
+  assert.deepEqual(ag.circuits.map((c) => c.key), ['@AG_İLETKEN|3A+P+R'], '3A+P+R telefon kataloğunda yok → AutoCAD kataloğundaki iletken olarak gelir');
   assert.equal(ag.sebeke.anaKesit, '3A+P+R');
+  assert.equal(lineLabel(ag, ps.cat), '3A+P+R', 'telefondaki yazı AutoCAD tanımı');
   const kanal = ps.data.lines.find((l) => l.channelOnly && l.cable.method === 'acik');
   assert.ok(kanal); assert.equal(kanal.cable.surface, 'toprak'); assert.equal(kanal.cable.width, 0.4); assert.equal(kanal.cable.depth, 1);
   const sondaj = ps.data.lines.find((l) => l.channelOnly && l.cable.method === 'sondaj');
@@ -251,7 +254,11 @@ test('A4 · AutoCAD örnek dosyası telefona alınır: direk tipleri katalogdan 
   assert.equal(e7.durum, 'DM'); assert.equal(e7.cins, 'AG_DEMİR'); assert.equal(e7.tip, '10I', 'eklentiden gelen cins ve tip korunur');
   assert.equal(geri.bolgeler.length, 2);
   const h1 = geri.hatlar.find((h) => h.tur === 'AG_HAVAI');
-  assert.equal(h1.anaKesit, '3A+P+R'); assert.equal(h1.kalemler[0].cins, 'AG_İLETKEN'); assert.equal(h1.kalemler[0].miktar, 100);
+  assert.equal(h1.anaKesit, '3A+P+R'); assert.equal(h1.kalemler[0].cins, 'AG_İLETKEN'); assert.equal(h1.kalemler[0].tanim, '3A+P+R');
+  // Telefonda dokunulmayan hat: eklentinin metrajı aynen döner (telefonun hesabı 98,99 m → 99; dosyada 100 yazılı)
+  assert.equal(h1.kalemler[0].miktar, 100);
+  assert.equal(h1.kalemler[0].sira, '14', 'kalemin INDEX sırası korunur');
+  assert.equal(h1.kalemler[0].kontrol, false, 'miktar değişmediği için KONTROL işareti de korunur');
   const h2 = geri.hatlar.find((h) => h.tur === 'OG_HAVAI');
   assert.equal(h2.anaKesit, '3xSW'); assert.equal(h2.kalemler[0].cins, 'OG_İLETKEN');
   assert.equal(geri.kanallar.length, 1); assert.equal(geri.kanallar[0].kod, 12); assert.equal(geri.kanallar[0].zemin, 'TOPRAK');
@@ -336,7 +343,9 @@ test('A6 · katalog eşleme yardımcıları', async () => {
   assert.equal(hatTipiEsle(ps.cat, '3xSW', 'OG', 'havai').name, '3xSwallow');
   assert.equal(hatTipiEsle(ps.cat, '3x1\\0', 'OG', 'havai').name, '3xRaven');
   assert.equal(hatTipiEsle(ps.cat, '3X50/16+70 ALPEK', 'AG', 'havai').name, '3x50/16+70 AER');
-  assert.equal(hatTipiEsle(ps.cat, '1x150/25 Xlpe Alm.', 'OG', 'yeralti').name, '3x(1x150/25) YE3SV');
+  assert.equal(hatTipiEsle(ps.cat, '1x150/25 Xlpe Alm.', 'OG', 'yeralti').name, '3x(1x150/25) NA2XSY', 'alüminyum XLPE → NA2XSY');
+  assert.equal(hatTipiEsle(ps.cat, '1x150/25 Xlpe', 'OG', 'yeralti').name, '3x(1x150/25) YE3SV', 'bakır XLPE (eklentide "Alm." yok) → YE3SV');
+  assert.deepEqual(cizimKesit('3x(1x95/16) YE3SV', 'OG', 'yeralti'), { tanim: '1x95/16 Xlpe', aciklama: '3(1x95/16) Xlpe' });
   assert.equal(hatTipiEsle(ps.cat, '3x95+50 Nyy Alm.', 'AG', 'yeralti').name, 'NAYY 3x95+50');
   assert.equal(hatTipiEsle(ps.cat, '4x16 Nyy Alm.', 'AG', 'yeralti').name, 'NAYY 4x16');
   assert.equal(hatTipiEsle(ps.cat, '3P+R', 'AG', 'havai').name, '3P+R');
@@ -408,7 +417,8 @@ test('A8 · çok iletkenli hat: müşterekte OG + AG iki kalem ve birleşik ana 
   const geri = sebekeModel(ps2);
   const ozet = (p) => p.hatlar.map((h) => h.tur + ' ' + h.anaKesit + ' ' + h.kalemler.filter((k) => k.kaynak === 'HAT').map((k) => k.cins + ':' + k.tanim + ':' + (k.aciklama || '') + ':' + k.miktar).join(',')).sort();
   assert.deepEqual(ozet(geri), ozet(sp));
-  // Eklentide çizilmiş, telefonda karşılığı olmayan iletkenli (4P+R) müşterek hat: kalemler aynen korunur ve geri döner
+  // Eklentide çizilmiş, telefon kataloğunda karşılığı olmayan iletkenli (4P+R) müşterek hat: AG devresi AutoCAD kataloğundaki
+  // iletkenle açılır (telefonda düzenlenebilir), geri yazınca aynı kalemler döner
   const dosya = SH.projeOku(SH.projeYaz(sp));
   const cad = dosya.hatlar.find((h) => h.tur === 'MUSTEREK');
   dosya.hatlar = [cad]; dosya.kanallar = [];
@@ -416,12 +426,65 @@ test('A8 · çok iletkenli hat: müşterekte OG + AG iki kalem ve birleşik ana 
   const ag = cad.kalemler.find((k) => k.cins === 'AG_İLETKEN'); ag.tanim = '4P+R';
   cad.anaKesit = '3xSW / 4P+R';
   const { ps: ps3 } = await setup();
-  await sebekeIceAl(ps3, dosya, { name: 'eklenti' });
+  const oz3 = await sebekeIceAl(ps3, dosya, { name: 'eklenti' });
+  assert.equal(oz3.eslesmeyen.length, 0, JSON.stringify(oz3.eslesmeyen));
   const l3 = ps3.data.lines.find((l) => l.musterek);
-  assert.equal(l3.circuits.length, 0, 'eşleşmeyen iletken: devre açılmaz');
+  assert.deepEqual(l3.circuits.map((c) => c.role + ' ' + c.key + ' ' + c.count), ['OG 3xSwallow 1', 'AG @AG_İLETKEN|4P+R 1']);
   const h3 = sebekeModel(ps3).hatlar.find((h) => h.tur === 'MUSTEREK');
   assert.equal(h3.anaKesit, '3xSW / 4P+R');
   assert.deepEqual(h3.kalemler.filter((k) => k.kaynak === 'HAT').map((k) => k.cins + ' ' + k.tanim), ['OG_İLETKEN 3xSW', 'AG_İLETKEN 4P+R']);
+  assert.equal(h3.kalemler.find((k) => k.tanim === '4P+R').miktar, cad.kalemler.find((k) => k.tanim === '4P+R').miktar, 'aynı güzergâh: aynı metraj');
+});
+
+test('A8b · eklentinin kataloğundaki her iletken / kablo telefonda bir devre olur; dokunulmayan hat aynı kalem ve metrajla, telefonda değişen hat yeni metrajla döner', async () => {
+  const gruplar = KALEMLER.gruplar.hatlar;
+  const turu = (cins) => Object.keys(gruplar).find((t) => t !== 'MUSTEREK' && gruplar[t].includes(cins)) || 'AG_YERALTI';
+  const kalemler = KALEMLER.kalemler.filter((k) => k.rol === 'hat');
+  assert.ok(kalemler.length > 300, 'katalogda ' + kalemler.length + ' iletken / kablo');
+  const sp = SH.yeniProje({ ad: 'İletkenler', dom: 39, hakedis: 1 });
+  kalemler.forEach((k, i) => {
+    const x = 519000 + (i % 20) * 100, y = 4282000 + Math.floor(i / 20) * 30;
+    // Eklentideki metraj = çizim boyu (50 m) + ek pay (2 m)
+    sp.hatlar.push({ id: 'H' + (i + 1), tur: turu(k.cins), anaKesit: k.tanim, durum: 'M', hakedis: 1, bolge: '', etiket: '', kontrol: true, katman: '', kose: [[x, y], [x + 50, y]], kalemler: [Object.assign(SH.kalemYap(k, { miktar: 52, durum: 'M', hakedis: 1, kaynak: 'HAT', sira: String(i + 1) }), { kontrol: true })] });
+  });
+  const { ps } = await setup();
+  const oz = await sebekeIceAl(ps, SH.projeOku(SH.projeYaz(sp)), { name: 'iletkenler' });
+  assert.equal(oz.eslesmeyen.length, 0, JSON.stringify(oz.eslesmeyen.slice(0, 5)));
+  assert.equal(oz.yeniHat, kalemler.length);
+  const hatlar = ps.data.lines.filter((l) => l.status !== 'deleted');
+  let autocadTipi = 0;
+  for (const l of hatlar) {
+    const k = kalemler[+l.sebekeId.slice(1) - 1];
+    assert.equal(l.circuits.length, 1, k.cins + ' ' + k.tanim + ': telefonda devre açılır');
+    const c = l.circuits[0];
+    assert.ok(circuitParts(c, ps.cat), k.tanim + ': parçaları bulunur');
+    if (c.key.startsWith('@')) {
+      autocadTipi++;
+      assert.equal(c.key, autocadAnahtari(k.cins, k.tanim));
+      // Hat ekranındaki listede de var (hattın türüne uyan cinslerde)
+      if (gruplar[l.sebeke.tur] && gruplar[l.sebeke.tur].includes(k.cins)) assert.ok(autocadSecenekleri(ps.cat, c.role, l.install).some((x) => x[0] === c.key), k.tanim + ': hat ekranında seçilebilir');
+    }
+  }
+  assert.ok(autocadTipi > 200, autocadTipi + ' iletken AutoCAD tipiyle geldi');
+  // Dokunmadan geri yaz: aynı tür, cins, tanım, metraj; KONTROL işareti korunur
+  const satir = (h) => h.kalemler.filter((k) => k.kaynak === 'HAT').map((k) => [k.cins, k.tanim, k.miktar, k.kontrol, k.sira].join(' · '));
+  const geri = new Map(sebekeModel(ps).hatlar.map((h) => [h.id, h]));
+  for (const h of sp.hatlar) {
+    const g = geri.get(h.id);
+    assert.ok(g, h.id + ' geri yazıldı');
+    assert.equal(g.tur, h.tur, h.anaKesit + ': tür');
+    assert.deepEqual(satir(g), satir(h), h.anaKesit + ': HAT kalemi');
+  }
+  // Telefonda boyu değişen hat: telefonun metrajıyla döner (AutoCAD'deki ek pay yeni boya taşınmaz)
+  const l0 = hatlar.find((l) => l.circuits[0].key === '@AG_İLETKEN|4P+R');
+  assert.ok(l0, '4P+R hattı');
+  const son = ps.pointById(l0.nodes[l0.nodes.length - 1]);
+  await ps.ds.update('points', son.id, { E: son.E + 10 }, { reason: 'deneme: nokta taşındı' });
+  await ps.reload('points'); await ps.recompute('nokta taşındı');
+  const g2 = sebekeModel(ps).hatlar.find((h) => h.telefonId === l0.id);
+  const k2 = g2.kalemler.find((k) => k.kaynak === 'HAT');
+  assert.equal(k2.miktar, 60, '60 m: telefonun hesabı');
+  assert.equal(k2.kontrol, null, 'miktar değişti: KONTROL işareti düşer');
 });
 
 test('A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef kimlikleri, trafo çıkışı, daha yeni kayıt kazanır', async () => {
@@ -439,15 +502,15 @@ test('A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef
   assert.equal(bh.hat.acikliklar.length, 2); assert.equal(Math.round(bh.hat.toplamUzunluk), 80);
   // Kayıt: trafo hedefi + çıkış (hatId); aynı hedefte yeniden kaydetmek üzerine yazar
   const hedef = { tur: 'trafo', id: tr.id, no: tr.no, hatId: agHat.id };
-  const id1 = await hesapKaydet(ps, { modul: 'ag-gd', modulAdi: 'AG Gerilim Düşümü', hedef, ozet: '%1,5', durum: 'uygun', ayrinti: { girdiler: [{ ad: 'Güç', deger: 160, birim: 'kVA' }], degerler: [], uyarilar: [] }, modulDurumu: { a: 1 }, kullanilan: { 'trafo.gucKVA': 160, 'hat.acikliklar[0].uzunluk': bh.hat.acikliklar[0].uzunluk } }, 'Ayşe');
-  const id2 = await hesapKaydet(ps, { modul: 'ag-gd', hedef, ozet: '%1,6', durum: 'uygun', kayitId: '', kullanilan: { 'trafo.gucKVA': 160 } }, 'Ayşe');
+  const id1 = await hesapKaydet(ps, { modul: 'ag-gd', modulAdi: 'AG Gerilim Düşümü', hedef, ozet: '%1,5', durum: 'uygun', ayrinti: { girdiler: [{ ad: 'Güç', deger: 160, birim: 'kVA' }], degerler: [], uyarilar: [] }, modulDurumu: { a: 1 }, kullanilan: { 'trafo.gucKVA': 160, 'hat.acikliklar[0].uzunluk': bh.hat.acikliklar[0].uzunluk } }, 'Deneme Kişisi');
+  const id2 = await hesapKaydet(ps, { modul: 'ag-gd', hedef, ozet: '%1,6', durum: 'uygun', kayitId: '', kullanilan: { 'trafo.gucKVA': 160 } }, 'Deneme Kişisi');
   assert.equal(id1, id2, 'aynı trafo ve çıkış: tek kayıt');
-  await hesapKaydet(ps, { modul: 'ag-gd', hedef: { tur: 'trafo', id: tr.id, no: tr.no }, ozet: 'çıkışsız', durum: 'bilgi', kullanilan: {} }, 'Ayşe');
-  await hesapKaydet(ps, { modul: 'amax', hedef: { tur: 'direk', id: agPts[1].id, no: agPts[1].no }, ozet: 'amax 120 m', durum: 'bilgi', kullanilan: { 'direk.kollar[0].aciklik': 40 } }, 'Ayşe');
+  await hesapKaydet(ps, { modul: 'ag-gd', hedef: { tur: 'trafo', id: tr.id, no: tr.no }, ozet: 'çıkışsız', durum: 'bilgi', kullanilan: {} }, 'Deneme Kişisi');
+  await hesapKaydet(ps, { modul: 'amax', hedef: { tur: 'direk', id: agPts[1].id, no: agPts[1].no }, ozet: 'amax 120 m', durum: 'bilgi', kullanilan: { 'direk.kollar[0].aciklik': 40 } }, 'Deneme Kişisi');
   assert.equal(hesapKayitlari(ps).length, 3, 'trafo (çıkışlı), trafo (çıkışsız), direk');
   assert.ok(kayitBul(ps, 'ag-gd', hedef) && kayitBul(ps, 'ag-gd', hedef).ozet === '%1,6');
   assert.ok(kayitBul(ps, 'ag-gd', { tur: 'trafo', id: tr.id, no: tr.no }).ozet === 'çıkışsız', 'çıkışsız kayıt ayrı');
-  const g = guncellik(ps, kayitBul(ps, 'ag-gd', hedef), 'Ayşe');
+  const g = guncellik(ps, kayitBul(ps, 'ag-gd', hedef), 'Deneme Kişisi');
   assert.equal(g.farklar.length, 0, 'kayıt güncel');
   // Dosyaya: hedef kimlikleri dosyadaki kimliklere, çıkış ilk parçaya; telefonId taşınır
   const sp = sebekeModel(ps);
@@ -456,7 +519,7 @@ test('A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef
   const trEl = sp.elemanlar.find((e) => e.telefonId === tr.id);
   assert.equal(hk.hedef.id, trEl.id, 'trafo hedefi dosyadaki eleman kimliğiyle');
   assert.ok(sp.hatlar.some((h) => h.id === hk.hedef.hatId && h.telefonId === agHat.id), 'çıkış hattı dosyadaki parça kimliğiyle');
-  assert.equal(hk.telefonId, id1); assert.equal(hk.kaynak, 'telefon'); assert.equal(hk.yapan, 'Ayşe');
+  assert.equal(hk.telefonId, id1); assert.equal(hk.kaynak, 'telefon'); assert.equal(hk.yapan, 'Deneme Kişisi');
   const dk = sp.hesaplar.find((h) => h.modul === 'amax');
   assert.equal(dk.hedef.id, sp.elemanlar.find((e) => e.telefonId === agPts[1].id).id);
   const metin = SH.projeYaz(sp);
@@ -501,4 +564,73 @@ test('A10 · katalogda olmayan AutoCAD hattı (rekortman): hesap bağlamında il
   const i = b.direk.kollar.indexOf(rek);
   const kullanilan = { ['direk.kollar[' + i + '].iletkenler[0].ad']: '4x16 Nyy Alm.', ['direk.kollar[' + i + '].iletkenler[0].adet']: 1 };
   assert.equal(farklar(kullanilan, b, { platformlarArasi: true }).length, 0);
+});
+
+test('A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosyasıyla aynı içerik, Türkçe kod sayfası, koordinat seçimi', async () => {
+  const { unzip } = await import('../src/export/zip.js');
+  const { kmlMetni, cbsNesneleri, mifDosyalari, mifCoordSys } = await import('../src/export/cbs.js');
+  const { makeCrs, unproject } = await import('../src/geo/crs.js');
+  const { eklentiModeli } = await import('../src/export/exporter.js');
+  const { ps, poles } = await ornekProje();
+  // "İleride" durumundaki direk: eklentinin dosyasına girmez, CBS'ye de yazılmaz; dışa aktarım uyarır
+  const ileride = await ps.addEquipment('pole', { group: 'sehir', typeId: ps.cat.poleTypeByName('sehir', 'G-K2').id, state: 'ILERIDE' }, { obs: rtkObs(519600, 4282450, 1056) });
+  const sp = eklentiModeli(ps);
+  assert.ok(sp.bolgeler.length === 1 && sp.bolgeler[0].sinir.length === 0, 'AutoCAD bölgesi yok: uydurma proje sınırı CBS modelinde yok');
+  const nesneler = cbsNesneleri(sp);
+  assert.ok(!nesneler.some((n) => n.katman.ad === 'BOLGE'), 'uydurma sınır yazılmaz');
+  // KMZ: içinde doc.kml; asıl içerik eklentinin yazacağıyla aynı (aynı proje modelinden), sonda 3B klasörü (kapalı)
+  const [kmz] = await exportFormat(ps, 'kmz', { surum: 'telefon 9.9.9' });
+  assert.ok(kmz.uyarilar.length === 1 && kmz.uyarilar[0].startsWith(ileride.no + ': "ileride"') && kmz.uyarilar[0].includes('Google Earth / CBS'), 'ileride direk uyarısı: ' + kmz.uyarilar);
+  const kml = new TextDecoder().decode((await unzip(kmz.data))['doc.kml']);
+  const crs = ps.p.crs;
+  const asil = kmlMetni(sp, { donustur: (E, N) => { const g = unproject(E, N, crs); return [g.lon, g.lat]; }, surum: 'telefon 9.9.9', sistem: 'ITRF96 / TM 39 (3°)', tarih: 'T' });
+  const govde = (s) => s.replace(/<description>Şebeke-M [^<]*<\/description>/, '').replace(/<Folder><name>3B direk[\s\S]*?<\/Folder>\n/, '');
+  assert.equal(govde(kml), govde(asil), 'KMZ içeriği eklentinin yapısıyla aynı');
+  assert.match(kml, /<description>Şebeke-M telefon 9\.9\.9 · ITRF96 \/ TM 39 \(3°\) → WGS84 · \d\d\.\d\d\.\d{4} \d\d:\d\d<\/description>/);
+  assert.match(kml, /<Folder><name>3B direk ve iletken \(telefon\)<\/name><visibility>0<\/visibility>/, '3B klasörü başta kapalı');
+  assert.ok(!kml.includes('<name>' + ileride.no + '</name>'), 'ileride direk ne asıl klasörlerde ne 3B klasöründe');
+  assert.ok(kml.includes('<Folder><name>' + ps.p.name + '</name>'), 'proje yine klasör adı');
+  assert.equal((asil.match(/<Placemark>/g) || []).length, nesneler.filter((n) => n.katman.ad !== 'MALZEME').length, 'her CBS nesnesi bir yer işareti (malzeme satırları hariç)');
+  const direk = nesneler.find((n) => n.katman.ad === 'DIREK' && n.ad === poles[0].no);
+  assert.ok(direk && kml.includes('<name>' + poles[0].no + '</name><styleUrl>#placemark_circle_'), 'direk adı GIS no, simgesi daire');
+  assert.ok(kml.includes('<Data name="TIP"><displayName>Tip</displayName><value>G-D-10 (sw)</value></Data>'), 'tipi öznitelikte');
+  // MIF / MID: dolu katmanlar, Türkçe Windows kod sayfası, proje sisteminin CoordSys satırı
+  const [z] = await exportFormat(ps, 'mif');
+  const files = await unzip(z.data);
+  const base = Object.keys(files).find((n) => n.endsWith('_DIREK.mif')).replace('_DIREK.mif', '');
+  for (const k of ['DIREK', 'HAT', 'KANAL', 'MALZEME']) assert.ok(files[base + '_' + k + '.mif'] && files[base + '_' + k + '.mid'], k);
+  assert.ok(!files[base + '_BOLGE.mif'], 'uydurma proje sınırı MIF\'e yazılmaz');
+  const metin1254 = (u8) => { const t = new TextDecoder('windows-1254').decode(u8); return t; };
+  const mif = metin1254(files[base + '_DIREK.mif']), mid = metin1254(files[base + '_DIREK.mid']);
+  assert.ok(mif.includes('Charset "WindowsTurkish"\r\n') && mif.includes(mifCoordSys(crs) + '\r\n'));
+  assert.ok(mid.includes('"ENH_DEMİR_GLV"'), 'Türkçe harfler 1254 kod sayfasında doğru');
+  const beklenen = mifDosyalari(sp, base, { coordSys: mifCoordSys(crs) }).find((d) => d.name === base + '_DIREK.mid').text;
+  assert.equal(mid, beklenen, 'MID metni eklentinin yapısıyla aynı');
+  // Başka koordinat sistemi (Dışa Aktarım'daki seçim): köşeler çevrilir, CoordSys ona göre
+  const utm = makeCrs({ datum: 'WGS84', projection: 'UTM', zone: 37 });
+  const [zu] = await exportFormat(ps, 'mif', { crs: utm });
+  const fu = await unzip(zu.data);
+  const mifU = metin1254(fu[base + '_DIREK.mif']);
+  assert.ok(mifU.includes('CoordSys Earth Projection 8, 104, "m", 39, 0, 0.9996, 500000, 0'), 'UTM CoordSys');
+  const ilk = (t) => t.match(/Point ([\d.]+) ([\d.]+)/).slice(1).map(Number);
+  const [e1, n1] = ilk(mif), [e2, n2] = ilk(mifU);
+  assert.ok(Math.abs(e2 - (500000 + (e1 - 500000) * 0.9996)) < 0.01 && Math.abs(n2 - n1 * 0.9996) < 0.01, 'UTM köşesi TM köşesinin 0,9996 katı (aynı orta meridyen)');
+  // Öznitelikteki SAGA / YUKARI da yeni sistemde (geometriyle aynı)
+  // Sütunlar MIF'in Columns bölümünden, ilk satırın değerleri MID'den (tırnaklı metindeki virgül ayırıcı sayılmaz)
+  const sutun = (fs, k, ad) => {
+    const ki = metin1254(fs[base + '_' + k + '.mif']).split('\r\n').filter((x) => /^  [A-Z]/.test(x)).map((x) => x.trim().split(' ')[0]).indexOf(ad);
+    const satir = metin1254(fs[base + '_' + k + '.mid']).split('\r\n')[0], d = [];
+    let cur = '', q = false;
+    for (let i = 0; i < satir.length; i++) { const c = satir[i]; if (q) { if (c === '"' && satir[i + 1] === '"') { cur += '"'; i++; } else if (c === '"') q = false; else cur += c; } else if (c === '"') q = true; else if (c === ',') { d.push(cur); cur = ''; } else cur += c; }
+    d.push(cur);
+    return d[ki];
+  };
+  const sagaU = +sutun(fu, 'DIREK', 'SAGA'), yukariU = +sutun(fu, 'DIREK', 'YUKARI');
+  assert.ok(Math.abs(sagaU - e2) < 0.0011 && Math.abs(yukariU - n2) < 0.0011, 'UTM: SAGA / YUKARI sütunları geometriyle aynı: ' + sagaU + ' ' + yukariU + ' ↔ ' + e2 + ' ' + n2);
+  const uzU = +sutun(fu, 'HAT', 'UZUNLUK'), uz0 = +sutun(files, 'HAT', 'UZUNLUK');
+  assert.ok(uz0 > 0 && Math.abs(uzU - uz0 * 0.9996) < 0.02 && sutun(fu, 'HAT', 'METRAJ') === sutun(files, 'HAT', 'METRAJ'), 'UTM: çizim uzunluğu yeni sistemde, metraj değişmez: ' + uz0 + ' → ' + uzU);
+  // Teslim paketi: HARITA klasöründe KMZ ve MIF/MID
+  const [pk] = await exportFormat(ps, 'package');
+  const pf = Object.keys(await unzip(pk.data));
+  assert.ok(pf.some((n) => /\/HARITA\/.*\.kmz$/.test(n)) && pf.some((n) => /\/HARITA\/mif\/.*_DIREK\.mif$/.test(n)), 'paket: KMZ ve MIF');
 });

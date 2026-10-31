@@ -162,11 +162,52 @@ namespace SebekeHakedis.Cekirdek
         public List<HesapKaydi> Hesaplar = new List<HesapKaydi>();
         /// <summary>Hakediş onayları (AutoCAD HAK_ONAY): hakediş no → bitler (Kontrol 4, Hakediş 2, GIS 1). Bkz. HakedisOnayi.</summary>
         public SortedDictionary<int, int> Onaylar = new SortedDictionary<int, int>();
+        /// <summary>Simge ve yazı boyutları (proje dosyasında "boyutlar"; null: varsayılan, telefonla aynı).</summary>
+        public Boyutlar Boyutlar;
 
         public Bolge BolgeBul(string id)
         {
             foreach (var b in Bolgeler) if (b.Id == id) return b;
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Çizimin simge ve yazı boyutları (Çizim Ayarları › Görünüm; proje dosyasında proje.boyutlar — telefon da okur, DXF'i
+    /// bunlarla çizer): simge büyüklüğü (kat; 1 = telefonla aynı, 1/1000 pafta), hat etiketi (kablo tipi), metraj ve eleman
+    /// yazısı (GIS no, tip) yüksekliği (m).
+    /// </summary>
+    public sealed class Boyutlar
+    {
+        public const double VarsayilanSimge = 1, VarsayilanEtiket = 1.8, VarsayilanMetraj = 1.44, VarsayilanEleman = 1.8;
+        public double SimgeOlcegi = VarsayilanSimge, EtiketYuksekligi = VarsayilanEtiket, MetrajYuksekligi = VarsayilanMetraj,
+                      ElemanYaziYuksekligi = VarsayilanEleman;
+
+        /// <summary>Hepsi varsayılan mı (dosyaya yalnız farklıysa yazılır).</summary>
+        public bool Varsayilan =>
+            Math.Abs(SimgeOlcegi - VarsayilanSimge) < 1e-9 && Math.Abs(EtiketYuksekligi - VarsayilanEtiket) < 1e-9 &&
+            Math.Abs(MetrajYuksekligi - VarsayilanMetraj) < 1e-9 && Math.Abs(ElemanYaziYuksekligi - VarsayilanEleman) < 1e-9;
+
+        /// <summary>Makul aralık (simge 0,1–20 kat; yazılar 0,05–50 m); bozuk değer varsayılana döner.</summary>
+        public Boyutlar Duzelt()
+        {
+            if (!(SimgeOlcegi >= 0.1 && SimgeOlcegi <= 20)) SimgeOlcegi = VarsayilanSimge;
+            if (!(EtiketYuksekligi >= 0.05 && EtiketYuksekligi <= 50)) EtiketYuksekligi = VarsayilanEtiket;
+            if (!(MetrajYuksekligi >= 0.05 && MetrajYuksekligi <= 50)) MetrajYuksekligi = VarsayilanMetraj;
+            if (!(ElemanYaziYuksekligi >= 0.05 && ElemanYaziYuksekligi <= 50)) ElemanYaziYuksekligi = VarsayilanEleman;
+            return this;
+        }
+
+        public bool Ayni(Boyutlar b) =>
+            b != null && Math.Abs(SimgeOlcegi - b.SimgeOlcegi) < 1e-9 && Math.Abs(EtiketYuksekligi - b.EtiketYuksekligi) < 1e-9 &&
+            Math.Abs(MetrajYuksekligi - b.MetrajYuksekligi) < 1e-9 && Math.Abs(ElemanYaziYuksekligi - b.ElemanYaziYuksekligi) < 1e-9;
+
+        /// <summary>Kısa yazı: "simge 1,5 kat · kablo tipi 2 m · metraj 1,6 m · eleman 2 m".</summary>
+        public override string ToString()
+        {
+            var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+            return "simge " + SimgeOlcegi.ToString("0.##", tr) + " kat · kablo tipi " + EtiketYuksekligi.ToString("0.##", tr) + " m · metraj " +
+                   MetrajYuksekligi.ToString("0.##", tr) + " m · eleman yazısı " + ElemanYaziYuksekligi.ToString("0.##", tr) + " m";
         }
     }
 

@@ -76,6 +76,7 @@ async function boot() {
     window.__app = app;
     app.state.basemap = (await ds.setting('basemap')) || 'none';
     app.state.mapKeys = (await ds.setting('mapKeys')) || {};
+    app.state.haritaOlcek = (await ds.setting('haritaOlcek')) || { simge: 1, yazi: 1 };
     if (WEB) {
       app.state.srcMode = 'map';                                         // ofiste varsayılan kaynak: haritadan seç
       probeTiles().then((ok) => { app.state.tilesOk = ok; if (!ok) app.state.basemap = 'none'; bus.emit('settings:change', { key: 'tilesOk' }); });

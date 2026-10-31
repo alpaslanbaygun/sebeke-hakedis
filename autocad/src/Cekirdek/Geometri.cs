@@ -89,7 +89,7 @@ namespace SebekeHakedis.Cekirdek
         /// yakalama kapalı), ekran: ekrandaki birkaç piksellik pay (uzaktan bakarken küçük simgeler de yakalansın).
         /// Simge tablosu yüklü değilse yalnız mesafe ve ekran payı kullanılır.
         /// </summary>
-        public static Eleman YakinEleman(IEnumerable<Eleman> elemanlar, double x, double y, double mesafe, double ekran = 0)
+        public static Eleman YakinEleman(IEnumerable<Eleman> elemanlar, double x, double y, double mesafe, double ekran = 0, double simgeOlcegi = 1)
         {
             if (elemanlar == null || mesafe <= 0) return null;
             Eleman en = null;
@@ -100,7 +100,7 @@ namespace SebekeHakedis.Cekirdek
                 double dx = e.Saga - x, dy = e.Yukari - y;
                 double d = Math.Sqrt(dx * dx + dy * dy);
                 double r = Math.Max(mesafe, ekran);
-                if (Semboller.Yuklu) r = Math.Max(r, Semboller.YariGenislik(e) * 1.15);
+                if (Semboller.Yuklu) r = Math.Max(r, Semboller.YariGenislik(e) * 1.15 * (simgeOlcegi > 0 ? simgeOlcegi : 1));
                 if (d <= r && d < enKisa) { enKisa = d; en = e; }
             }
             return en;

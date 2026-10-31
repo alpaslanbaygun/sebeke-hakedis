@@ -2,7 +2,7 @@
 import { app } from './ctx.js';
 import { ulid } from '../core/ids.js';
 import { html } from './kit.js';
-import { tileX, tileY } from '../geo/tiles.js';
+import { tileX, tileY, quadKey } from '../geo/tiles.js';
 
 // Aktif ölçüm oturumu (alıcı + anten + NTRIP bilgisiyle)
 export async function ensureSession() {
@@ -111,6 +111,9 @@ export const BASEMAPS = [
   { id: 'maptiler_u', grup: 'anahtarli', key: 'maptiler', label: 'MapTiler uydu', url: 'https://api.maptiler.com/maps/satellite/256/{z}/{x}/{y}.jpg?key={key}', maxZoom: 20,
     attr: '© MapTiler © OpenStreetMap katkıda bulunanlar', kosul: 'https://www.maptiler.com/cloud/terms/',
     note: 'MapTiler sokak ile aynı anahtar ve kota.' },
+  { id: 'esri_k', grup: 'anahtarli', key: 'esri', label: 'Esri uydu (ArcGIS anahtarı)', url: 'https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token={key}', maxZoom: 19,
+    attr: 'Kaynak: Esri, Vantor, Earthstar Geographics', kosul: 'https://goto.arcgisonline.com/maps/World_Imagery',
+    note: 'ArcGIS Location Platform ya da ArcGIS Online anahtarı (API key) gerekir; aylık ücretsiz kullanım payı vardır. Anahtarsız Esri uydu yoğun kullanımda kesilirse bunu seçin.' },
   { id: 'google_m', grup: 'anahtarli', key: 'google', provider: 'google', gType: 'roadmap', label: 'Google harita', maxZoom: 21,
     attr: 'Harita verileri © Google', kosul: 'https://cloud.google.com/maps-platform/terms',
     note: 'Google Map Tiles API anahtarı (Google Cloud hesabı) gerekir. Aylık ücretsiz kullanım payı vardır; aşılırsa ücretlendirilir.' },
@@ -118,11 +121,23 @@ export const BASEMAPS = [
     attr: 'Görüntü © Google', kosul: 'https://cloud.google.com/maps-platform/terms', note: 'Google harita ile aynı anahtar.' },
   { id: 'google_h', grup: 'anahtarli', key: 'google', provider: 'google', gType: 'hybrid', label: 'Google uydu + yol adları', maxZoom: 20,
     attr: 'Görüntü ve harita verileri © Google', kosul: 'https://cloud.google.com/maps-platform/terms', note: 'Google harita ile aynı anahtar.' },
+  { id: 'bing_a', grup: 'anahtarli', key: 'bing', provider: 'bing', set: 'Aerial', label: 'Bing uydu', maxZoom: 19,
+    attr: '© Microsoft Bing', kosul: 'https://learn.microsoft.com/en-us/bingmaps/rest-services/imagery',
+    note: 'Bing Maps kurumsal (Enterprise) anahtarı gerekir: ücretsiz (Basic) anahtarlar kapatıldı, kurumsal anahtarlar 30.06.2028\'e kadar çalışır. Yeni anahtar için Azure Maps\'i seçin.' },
+  { id: 'bing_h', grup: 'anahtarli', key: 'bing', provider: 'bing', set: 'AerialWithLabelsOnDemand', label: 'Bing uydu + yol adları', maxZoom: 19,
+    attr: '© Microsoft Bing', kosul: 'https://learn.microsoft.com/en-us/bingmaps/rest-services/imagery', note: 'Bing uydu ile aynı anahtar.' },
+  { id: 'azure_s', grup: 'anahtarli', key: 'azure', provider: 'azure', label: 'Azure Maps uydu (Bing\'in yerine)', maxZoom: 19,
+    url: 'https://atlas.microsoft.com/map/tile?api-version=2024-04-01&tilesetId=microsoft.imagery&zoom={z}&x={x}&y={y}&tileSize=256&subscription-key={key}',
+    attr: '© Microsoft, Azure Maps', kosul: 'https://learn.microsoft.com/en-us/rest/api/maps/render/get-map-tile',
+    note: 'Azure Maps hesabının anahtarı (subscription key) gerekir; aylık ücretsiz kullanım payı vardır.' },
+  { id: 'azure_m', grup: 'anahtarli', key: 'azure', provider: 'azure', label: 'Azure Maps yol haritası', maxZoom: 21,
+    url: 'https://atlas.microsoft.com/map/tile?api-version=2024-04-01&tilesetId=microsoft.base.road&zoom={z}&x={x}&y={y}&tileSize=256&subscription-key={key}',
+    attr: '© Microsoft, Azure Maps', kosul: 'https://learn.microsoft.com/en-us/rest/api/maps/render/get-map-tile', note: 'Azure Maps uydu ile aynı anahtar.' },
   { id: 'yandex_m', grup: 'anahtarli', key: 'yandex', provider: 'yandex', proj: '3395', label: 'Yandex harita',
     url: 'https://tiles.api-maps.yandex.ru/v1/tiles/?x={x}&y={y}&z={z}&lang=tr_TR&l=map&apikey={key}', maxZoom: 19,
     attr: '© Yandex', kosul: 'https://yandex.com/dev/tiles/', note: 'Yandex Tiles API anahtarı gerekir; ücretsiz kullanım payı sınırlıdır.' },
   { id: 'ozel', grup: 'ozel', key: 'ozelUrl', label: 'Özel karo sunucusu (XYZ)', maxZoom: 20, offline: true,
-    note: 'Kurumunuzun ya da izin aldığınız sağlayıcının XYZ adresi ({z}/{x}/{y}). Offline indirme açık; koşullara uymak kullanıcının sorumluluğundadır.' }
+    note: 'Kurumunuzun ya da izin aldığınız sağlayıcının XYZ adresi ({z}/{x}/{y} ya da Bing tipi {q}). Offline indirme açık; koşullara uymak kullanıcının sorumluluğundadır.' }
 ];
 
 export const basemapById = (id) => BASEMAPS.find((b) => b.id === id) || BASEMAPS[0];
@@ -146,11 +161,20 @@ const httpNeden = (st) => (st === 401 || st === 403 ? 'erişim reddedildi (' + s
   : st === 429 ? 'kota ya da hız sınırı aşıldı (429)' : st === 504 || st === 502 ? 'sunucuya ulaşılamadı (' + st + ')' : 'sunucu hatası (' + st + ')');
 
 // Google Map Tiles (resmî): harita türü başına oturum belirteci alınır, süresi dolana kadar saklanır
-const gSessions = new Map();
+const gSessions = new Map(), gBekleyen = new Map(), gHata = new Map();
 async function googleSession(bm, key) {
   const k = bm.gType + '|' + key;
   const cur = gSessions.get(k);
   if (cur && cur.expiry > Date.now() / 1000 + 60) return cur.session;
+  // Anahtar reddedildiyse bir dakika yeniden sorulmaz; aynı anda istenen karolar tek oturum isteğini bekler
+  const h = gHata.get(k);
+  if (h && h.until > Date.now()) throw h.e;
+  if (gBekleyen.has(k)) return gBekleyen.get(k);
+  const p = googleSessionAl(bm, key, k);
+  gBekleyen.set(k, p);
+  try { return await p; } catch (e) { gHata.set(k, { e, until: Date.now() + 60000 }); throw e; } finally { gBekleyen.delete(k); }
+}
+async function googleSessionAl(bm, key, k) {
   const body = bm.gType === 'hybrid' ? { mapType: 'satellite', layerTypes: ['layerRoadmap'], language: 'tr', region: 'TR' } : { mapType: bm.gType, language: 'tr', region: 'TR' };
   const r = await fetch('https://tile.googleapis.com/v1/createSession?key=' + encodeURIComponent(key), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   if (!r.ok) { const e = new Error('Google anahtarı kabul edilmedi (' + r.status + ')'); e.durum = r.status; throw e; }
@@ -158,13 +182,35 @@ async function googleSession(bm, key) {
   gSessions.set(k, { session: j.session, expiry: +j.expiry || Date.now() / 1000 + 3600 });
   return j.session;
 }
+// Bing Maps (kurumsal anahtar): görüntü kümesinin karo adresi şablonu meta veriden alınır (eklentideki gibi). İstek bir
+// kez yapılır: aynı anda istenen karolar aynı isteği bekler (her meta veri isteği Bing'de ücretli işlem sayılır);
+// anahtar reddedilirse sonuç bir dakika saklanır, her karo için yeniden sorulmaz.
+const bingMetas = new Map();
+function bingMeta(bm, key) {
+  const k = bm.set + '|' + key;
+  let p = bingMetas.get(k);
+  if (p) return p;
+  p = (async () => {
+    const u = 'https://dev.virtualearth.net/REST/v1/Imagery/Metadata/' + bm.set + '?key=' + encodeURIComponent(key) + '&uriScheme=https&output=json';
+    const r = await fetch(app.bridge && app.bridge.isNative() ? '/_tile?u=' + encodeURIComponent(u) : u);
+    if (!r.ok) { const e = new Error('Bing Maps anahtarı kabul edilmedi (' + r.status + ')'); e.durum = r.status; throw e; }
+    const j = await r.json();
+    const res = (((j.resourceSets || [])[0] || {}).resources || [])[0] || {};
+    if (!res.imageUrl) throw new Error('Bing Maps karo adresi alınamadı');
+    return { url: res.imageUrl, alt: res.imageUrlSubdomains || [] };
+  })();
+  bingMetas.set(k, p);
+  p.catch(() => setTimeout(() => { if (bingMetas.get(k) === p) bingMetas.delete(k); }, 60000));
+  return p;
+}
 /** Karo adresi. Anahtar isteyen altlıkta anahtar yoksa hata (anahtarsız genel adres denenmez). */
 export async function tileUrl(bm, z, x, y, keys) {
   keys = keys || app.state.mapKeys || {};
-  const fill = (u) => u.replace('{z}', z).replace('{x}', x).replace('{y}', y).replace('{s}', bm.sub ? bm.sub[(x + y) % bm.sub.length] : '');
+  const fill = (u) => u.replace('{z}', z).replace('{x}', x).replace('{y}', y).replace('{q}', quadKey(x, y, z)).replace('{s}', bm.sub ? bm.sub[(x + y) % bm.sub.length] : '');
   const key = basemapKey(bm, keys);
   if (bm.key && !key) { const e = new Error(bm.label + ': anahtar girilmemiş (Ayarlar › Harita altlığı)'); e.anahtar = true; throw e; }
   if (bm.provider === 'google') { const s = await googleSession(bm, key); return 'https://tile.googleapis.com/v1/2dtiles/' + z + '/' + x + '/' + y + '?session=' + encodeURIComponent(s) + '&key=' + encodeURIComponent(key); }
+  if (bm.provider === 'bing') { const m = await bingMeta(bm, key); return m.url.replace('{subdomain}', m.alt.length ? m.alt[(x + y) % m.alt.length] : 't0').replace('{quadkey}', quadKey(x, y, z)).replace('{culture}', 'tr-TR'); }
   if (bm.id === 'ozel') return fill(key);
   return fill(bm.url).replace('{key}', encodeURIComponent(key));
 }

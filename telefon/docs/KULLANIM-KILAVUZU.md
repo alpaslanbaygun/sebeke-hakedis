@@ -1,6 +1,6 @@
 # Şebeke-M Kullanım Kılavuzu
 
-6 Ekim 2026 · Alpaslan
+6 Ekim 2026
 
 Bu kılavuz, Şebeke-M telefon uygulamasının (eski adıyla VOLT-EDAŞ Saha) 2.4.0 ve sonraki (2.5.x) sürümlerini sahada kullanacak kişiler içindir. Uygulama Android telefonda çalışır; internet olmadan da kayıt alır.
 
@@ -472,8 +472,8 @@ Haritanın görünümü sağ üstteki Katmanlar düğmesinden ayarlanır; proje 
 Katmanlar penceresinin altındaki `Altlık` listesinden seçilir. Üç grup vardır:
 
 - **Ücretsiz (anahtarsız)**: `OpenStreetMap`, `OpenTopoMap (topoğrafik)`, `Esri uydu görüntüsü`. Her zaman kullanılabilir.
-- **Anahtarlı (ücretsiz katmanı olan)**: `MapTiler sokak`, `MapTiler uydu`, `Google harita`, `Google uydu`, `Google uydu + yol adları`, `Yandex harita`. Kendi anahtarınızı Ayarlar › "Harita altlığı" bölümüne yazın; anahtar girilmemişse o altlık listede kapalı görünür ve denenmez (anahtarsız genel adresler kaldırıldı; sağlayıcı koşullarına uymuyordu).
-- **Özel**: kendi karo sunucunuz (XYZ adresi).
+- **Anahtarlı (ücretsiz katmanı olan)**: `MapTiler sokak`, `MapTiler uydu`, `Esri uydu (ArcGIS anahtarı)`, `Google harita`, `Google uydu`, `Google uydu + yol adları`, `Bing uydu`, `Bing uydu + yol adları`, `Azure Maps uydu`, `Azure Maps yol haritası`, `Yandex harita`. Kendi anahtarınızı Ayarlar › "Harita altlığı" bölümüne yazın; anahtar girilmemişse o altlık listede kapalı görünür ve denenmez (anahtarsız genel adresler kaldırıldı; sağlayıcı koşullarına uymuyordu). Bing yalnız kurumsal (Enterprise) anahtarla çalışır; yeni anahtar alacaksanız Azure Maps'i seçin. Liste AutoCAD eklentisinin altlık listesiyle aynıdır.
+- **Özel**: kendi karo sunucunuz (XYZ adresi: `{z}`, `{x}`, `{y}` ya da Bing tipi `{q}`).
 
 Notlar:
 
@@ -484,7 +484,16 @@ Notlar:
 
 ### Katmanlar
 
-Katmanlar penceresinde her satır bir katmanı açar ya da kapatır: A.G. şebeke, O.G. şebeke, Aydınlatma, E.N.H., Abone, Yeraltı kablo, Trafo ve box, Mevcut elemanlar, Demontaj işareti, Hakediş durumu (renkler), Veri kaynağı etiketleri, Ölçü noktaları, Etiketler, Açıklık yazıları, Koordinat ızgarası, Altlık harita, CAD çizimi.
+Katmanlar penceresinde her satır bir katmanı açar ya da kapatır: A.G. şebeke, O.G. şebeke, Aydınlatma, E.N.H., Abone, Yeraltı kablo, Kanal kenarı ve sondaj, Trafo ve box, Mevcut elemanlar, Demontaj (sarı), Hakediş durumu (renkler), Veri kaynağı etiketleri, Ölçü noktaları, Etiketler (eleman, hat), Açıklık metrajı, Koordinat ızgarası, Altlık harita, CAD çizimi.
+
+### Haritadaki çizim görünümü
+
+Harita, AutoCAD eklentisinin çizimiyle aynı görünür (renkler ve çizgiler ortak çizim stilinden; `Lejant ve katman ayrıntıları` ekranında hepsi listelenir):
+
+- **Hat renkleri**: A.G. havai yeşil, O.G. havai kırmızı, aydınlatma açık mavi, E.N.H. pembe-mor, abone turuncu kesik, müşterek mor, A.G. yeraltı kablo mavi kesik-nokta, O.G. yeraltı kablo pembe kesik-nokta, kanal gri eksen çizgisi, yatay sondaj sarı-turuncu noktalı. İleride yapılacak hat kesikli, demontaj hattı sarı, mevcut hat soluk.
+- **Metraj**: her açıklığa bir kez yazılır (havai hatta iki direk, yer altında iki bağlantı elemanı arası; elemansız kırılma köşesinde bölünmez), açıklığın en uzun parçasının üst yanında, hattın renginde. Kanal ve sondaj metrajı, içindeki kablonun metrajıyla çakışmasın diye bir satır yukarıdadır.
+- **Hat etiketi**: "hat no kesit" (ör. `H1 3P+R/P`; mevcutta `(…)`, ileride `<…>`), orta parçanın alt yanında. Etiketler yakınlaşınca görünür.
+- **Kanal**: yakınlaşınca eksenin iki yanında kanal genişliğinde iki kenar çizgisi görünür (genişlik girilmemişse 0,4 m). Yatay sondajla geçen kablonun altında sondajın noktalı çizgisi vardır.
 
 ### Ölçüm ve düzenleme araçları
 
@@ -554,7 +563,7 @@ Tolerans varsayılan olarak 0,02 metredir; Ayarlar › "Hassasiyet eşikleri · 
 
 ## Teknik hesaplar (Hesap Merkezi)
 
-Elektrik-Elektronik Mühendisi **Baki SONAY**'ın hesap sayfaları uygulamaya formülleri değiştirilmeden eklenmiştir;
+Hesap sayfaları uygulamaya formülleri değiştirilmeden eklenmiştir;
 AutoCAD eklentisinde de aynı sayfalar açılır. Hesaplar üç gruptur:
 
 | Grup | Hesaplar |
@@ -833,7 +842,8 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 | Telefon proje dosyası | .volt.json | Projenin tam yedeği (tüm kayıtlar) + AutoCAD bölümü; eklenti ve telefon bunu da açar |
 | AutoCAD DXF | .dxf | Katmanlar, semboller (eklentiyle aynı bloklar), yazılar; 1/1000 |
 | Netcad NCN | .ncn | Nokta adı, Y, X, Z, kod. Netcad'e DXF ile birlikte alınır |
-| Google Earth KMZ | .kmz | Gerçek koordinatta 3 boyutlu direk ve tel |
+| Google Earth KMZ | .kmz | AutoCAD eklentisinin Google Earth dosyasıyla aynı: her proje bir klasör (sınır, elemanlar, hatlar, kanallar, sondajlar), GPS noktaları; nesneye dokununca bilgileri (GIS no, tür, tip, durum, hakediş, proje, malzemeler, metraj). Ayrı klasörde (başta kapalı) gerçek yükseklikte 3 boyutlu direk ve tel |
+| CBS MapInfo (MIF / MID) | .zip | AutoCAD eklentisinin CBS dosyalarıyla aynı katman ve sütunlar, şebeke elemanı bazında: DIREK, TRAFO, SDK, PANO, ELEMAN (diğer elemanlar), HAT (iletkenleri, adetleri, baş ve bit elemanıyla), KANAL, SONDAJ, BOLGE (proje sınırı), NOKTA (GPS noktası) ve MALZEME (her nesnenin bütün malzeme satırları; haritada yeri olmayan tablo); bütün öznitelikler (GIS no, tür, cins, tip, durum, hakediş, güç, gerilim, kontrol…); her katman bir `.mif` + `.mid` çifti, Türkçe karakterler Windows kod sayfasında. Seçilen koordinat sisteminde yazılır; QGIS ve MapInfo açar |
 | CBS Shapefile | .zip | Ekipman, hat, açıklık ve ölçü katmanları |
 | GeoJSON | .geojson | CBS yazılımları için |
 | Excel | .xlsx | Metraj, Yeşil Defter ve hakediş sayfaları |
@@ -841,6 +851,7 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 | Teslim paketi | .zip | Proje klasörü: saha alımı, hakediş, GNSS kayıtları, fotoğraflar, harita, rapor |
 
 - Kontrol listesinde hata varken de çıktı alınabilir; uygulama önce sorar ve hatayı teslim paketine yazar.
+- Google Earth ve CBS (MIF / MID) dosyaları AutoCAD eklentisinin dosyalarıyla aynıdır: "ileride" durumundaki nesneler (eklentide olmadıkları için) bu dosyalara yazılmaz, dışa aktarımda uyarı çıkar. Projede AutoCAD'den gelen bölge yoksa proje sınırı yazılmaz; proje adı klasörün adıdır. MIF'te koordinatlar ve `SAGA` / `YUKARI` sütunları seçilen koordinat sistemindedir.
 - Veri değişince önceki çıktılar "Son üretilenler" listesinde `ESKİDİ` olarak işaretlenir; yeniden üretin.
 
 ### AutoCAD eklentisiyle çalışma (Şebeke-M)
@@ -947,5 +958,5 @@ Yeni sürümün kurulum dosyasını eski sürümün üzerine kurun; uygulamayı 
 - Asfalt, beton ve parke kaplamalı kanal ile boru kalemlerinin poz numarası ve fiyatı girilmemiştir.
 - PB köşklerin iç ölçüleri tanımlı değildir; plan çizimi tip proje ölçüsünü kullanır.
 - USB ile GNSS bağlantısı yoktur; yalnız Bluetooth.
-- Kayıtlı NTRIP profilleri, Google ve Yandex altlığı ile büyük CAD dosyaları gerçek cihazda henüz denenmedi.
+- Kayıtlı NTRIP profilleri, anahtarlı altlıklar (Google, Yandex, Esri ArcGIS, Bing, Azure Maps) ile büyük CAD dosyaları gerçek cihazda henüz denenmedi. Google Earth (KMZ) ve CBS (MIF / MID) dosyalarının yapısı eklentininkiyle karşılaştırılarak doğrulandı; Google Earth ve QGIS'te açılışları telefonda denenmedi.
 - Tepe kuvveti ve ENH sonuçları yardımcı hesaptır; proje müellifinin kontrolünden geçmelidir.

@@ -32,18 +32,18 @@ async def main():
             await pg.evaluate("() => window.__app.nav.go('hub')"); await pg.wait_for_timeout(400); await shot(pg, 't00_hub')
             await pg.locator('button', has_text='Kullanıcılar ve hakediş onayı').click(); await pg.wait_for_timeout(300); await shot(pg, 't01_team_off')
             await pg.get_by_text('İlk yöneticiyi tanımla · onayı aç').click(); await pg.wait_for_timeout(250)
-            await pg.locator('input.inp:not([type=password])').last.fill('Alpaslan Yönetici'); await pins(pg, '9999', '9999'); await shot(pg, 't02_first_admin')
+            await pg.locator('input.inp:not([type=password])').last.fill('Deneme Yönetici'); await pins(pg, '9999', '9999'); await shot(pg, 't02_first_admin')
             await pg.get_by_text('Kaydet', exact=True).click(); await pg.wait_for_timeout(900); await shot(pg, 't03_team_on')
-            await add_member(pg, 'Ali Saha', 'saha', '1111'); await add_member(pg, 'Ayşe Kontrol', 'kontrol', '2222'); await add_member(pg, 'Hakan Hakediş', 'hakedis', '3333'); await add_member(pg, 'Oya Onay', 'onay', '4444')
+            await add_member(pg, 'Saha Kişisi', 'saha', '1111'); await add_member(pg, 'Kontrol Kişisi', 'kontrol', '2222'); await add_member(pg, 'Hakediş Kişisi', 'hakedis', '3333'); await add_member(pg, 'Onay Kişisi', 'onay', '4444')
             await shot(pg, 't04_members'); await pg.locator('main.screen').evaluate('(m) => m.scrollBy(0, 900)'); await shot(pg, 't05_rules')
             await pg.locator('main.screen').evaluate('(m) => m.scrollTo(0, 0)')
             await pg.get_by_text('Oturumu kapat').click(); await pg.wait_for_timeout(300)
             # yanlış şifre
             await pg.locator('button', has_text='Oturum aç').first.click(); await pg.wait_for_timeout(250)
-            await pg.get_by_role('dialog').locator('button.li', has_text='Ali Saha').click(); await pins(pg, '0000'); await pg.get_by_role('dialog').get_by_role('button', name='Giriş').click(); await pg.wait_for_timeout(300); await shot(pg, 't06_wrong_pin')
+            await pg.get_by_role('dialog').locator('button.li', has_text='Saha Kişisi').click(); await pins(pg, '0000'); await pg.get_by_role('dialog').get_by_role('button', name='Giriş').click(); await pg.wait_for_timeout(300); await shot(pg, 't06_wrong_pin')
             assert await pg.get_by_text('Şifre yanlış').count() == 1
             await pins(pg, '1111'); await pg.get_by_role('dialog').get_by_role('button', name='Giriş').click(); await pg.wait_for_timeout(500)
-            who = await pg.evaluate("() => window.__app.ps.member && window.__app.ps.member.name"); print('oturum:', who); assert who == 'Ali Saha'
+            who = await pg.evaluate("() => window.__app.ps.member && window.__app.ps.member.name"); print('oturum:', who); assert who == 'Saha Kişisi'
             # haritada obje kartı: saha için KONTROL soluk
             await pg.get_by_text('Harita', exact=True).first.click(); await pg.wait_for_timeout(500)
             await pg.evaluate("() => { const a = window.__app; a.state.sel = { type: 'point', id: window.__ids.pts[1] }; a.bus.emit('ui:sel'); }"); await pg.wait_for_timeout(400); await shot(pg, 't07_map_card_saha')
@@ -51,7 +51,7 @@ async def main():
             h = await pg.evaluate("() => window.__app.ps.eqById(window.__ids.poles[1]).hak"); print('saha kontrol denedi →', h); assert h == 'TAMAMLANDI'
             # kontrol mühendisi: onay bekleyenler
             await pg.evaluate("() => { const a = window.__app; a.state.sel = null; a.bus.emit('ui:sel'); a.ps.logout(); a.nav.go('team'); }"); await pg.wait_for_timeout(400)
-            await login(pg, 'Ayşe Kontrol', '2222'); await shot(pg, 't09_pending_kontrol')
+            await login(pg, 'Kontrol Kişisi', '2222'); await shot(pg, 't09_pending_kontrol')
             await pg.locator('.card.tight.list .li button.grow').nth(0).click(); await pg.locator('.card.tight.list .li button.grow').nth(1).click(); await pg.wait_for_timeout(200)
             await pg.get_by_text('Seçilenleri onayla').click(); await pg.wait_for_timeout(250); await pg.get_by_text('Onayla', exact=True).click(); await pg.wait_for_timeout(900); await shot(pg, 't10_after_approve')
             st = await pg.evaluate("() => { const ps = window.__app.ps; return ps.hakCounts(); }"); print('durumlar:', st); assert st.get('KONTROL') == 2 and st.get('TAMAMLANDI') == 3

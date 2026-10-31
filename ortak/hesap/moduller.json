@@ -1,6 +1,6 @@
 {
   "surum": 1,
-  "aciklama": "Hesap Merkezi'ndeki hesaplar. Telefon uygulaması (Hesaplar ekranı, direk ve hat ekranları) ile AutoCAD eklentisi (ŞEBEKE-M ARAÇLAR sekmesi, hesap merkezi) aynı listeyi kullanır. uygunluk: hangi hedefte açılabileceği (ortak/hesap/uygunluk.mjs). Hesap araçlarının yazarı Elektrik-Elektronik Mühendisi Baki SONAY; formüller ve tablolar değiştirilmeden eklenmiştir.",
+  "aciklama": "Hesap Merkezi'ndeki hesaplar. Telefon uygulaması (Hesaplar ekranı, direk ve hat ekranları) ile AutoCAD eklentisi (ŞEBEKE-M ARAÇLAR sekmesi, hesap merkezi) aynı listeyi kullanır. uygunluk: hangi hedefte açılabileceği (ortak/hesap/uygunluk.mjs). Hesap araçlarının formülleri ve tabloları değiştirilmeden eklenmiştir.",
   "gruplar": [
     { "id": "mekanik", "ad": "Hat ve direk hesapları", "kisa": "Hat ve direk" },
     { "id": "elektrik", "ad": "Elektrik hesapları", "kisa": "Elektrik" },

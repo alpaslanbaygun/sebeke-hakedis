@@ -1,0 +1,21 @@
+Version 300
+Charset "WindowsTurkish"
+Delimiter ","
+CoordSys Earth Projection 8, 104, "m", 39, 0, 1, 500000, 0 Bounds (0, 3000000) (1000000, 5000000)
+Columns 10
+  KIMLIK Char(20)
+  TIP Char(80)
+  BAS_NO Char(20)
+  BIT_NO Char(20)
+  DURUM Char(10)
+  HAKEDIS Integer
+  PROJE Char(120)
+  PROJE_KODU Char(40)
+  UZUNLUK Float
+  METRAJ Float
+Data
+
+Pline 2
+519650.000 4282100.000
+519700.000 4282100.000
+    Pen (2,2,16498468)

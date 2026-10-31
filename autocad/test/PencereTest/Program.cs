@@ -146,6 +146,18 @@ namespace SebekeHakedis.PencereTest
                 Resim(f, "sonra");
             });
 
+            // Hat Değiştir: pencere hattın şimdiki iletkeniyle açılır, başlık ve düğme "değiştir"
+            Dene("03d-hat-degistir", () =>
+            {
+                var simdiki = o.Katalog.HatKesitleri("AG_HAVAI").Find(x => x.Tanim == "3X50/16+70 ALPEK");
+                var s = Pencereler.Hat(o, new HatSecimi { Tur = "AG_HAVAI", Durum = "M", Hakedis = 1, Iletkenleri = { new HatIletkeni(simdiki) } }, 3);
+                Esit("3X50/16+70 ALPEK", s?.Kesit?.Tanim, "hat değiştir: hattın şimdiki iletkeniyle açılır");
+            }, f =>
+            {
+                Esit("Hat değiştir", f.Text, "hat değiştir: pencere başlığı");
+                Esit(true, Bul<KoyuDugme>(f, d => d.Text == "Değiştir") != null, "hat değiştir: Değiştir düğmesi");
+            });
+
             // Müşterek hat: OG ve AG iletken birlikte gelir
             Dene("03b-hat-musterek", () =>
             {
@@ -206,12 +218,23 @@ namespace SebekeHakedis.PencereTest
                 bool ok = Pencereler.Ayarlar(o);
                 Esit(true, ok, "ayarlar: Tamam");
                 Esit(39, o.Ayar.Dom, "ayarlar: DOM seçildi");
+                Esit(1.0, o.Ayar.SimgeOlcegi, "ayarlar: Varsayılana dön simgeyi 1 kata getirdi");
+                Esit(2.5, o.Ayar.ElemanYaziYuksekligi, "ayarlar: eleman yazısı yüksekliği");
+                Esit(2.0, o.Ayar.EtiketYuksekligi, "ayarlar: hat etiketi (kablo tipi) yüksekliği");
+                Esit(1.2, o.Ayar.MetrajYuksekligi, "ayarlar: metraj yazısı yüksekliği");
             }, f =>
             {
                 var dom = Bul<KoyuSecim>(f, r => r.Text == "39°");
                 dom.Checked = true;
                 var sekme = Bul<Sekmeler>(f, x => true);
-                string[] adlar = { "genel", "tarife", "gorunum", "metraj" };
+                // Boyutlar (Görünüm sekmesi açıkken: gizli düğmeye basılamaz): simge 3 kat → Varsayılana dön → 1; yazılar elle
+                sekme.Secili = 3;
+                Bul<SayiKutusu>(f, k => k.Name == "simgeOlcegi").Value = 3;
+                Bul<KoyuDugme>(f, d => d.Name == "boyutVarsayilan").PerformClick();
+                Bul<SayiKutusu>(f, k => k.Name == "elemanYaziYuksekligi").Value = 2.5m;
+                Bul<SayiKutusu>(f, k => k.Name == "etiketYuksekligi").Value = 2.0m;
+                Bul<SayiKutusu>(f, k => k.Name == "metrajYuksekligi").Value = 1.2m;
+                string[] adlar = { "genel", "proje", "tarife", "gorunum", "metraj" };
                 for (int i = 1; i < adlar.Length; i++)
                 {
                     sekme.Secili = i;
@@ -463,6 +486,36 @@ namespace SebekeHakedis.PencereTest
                 new[] { "GIS_NO", "SC1024" }, new[] { "TUR", "AG_DIREK" }, new[] { "TIP", "10I" }, new[] { "DURUM", "MEVCUT" },
                 new[] { "MALZEME", "G-L-50 × 1; Topraklama × 1" }, new[] { "ISLETME", "Merkez" },
             }));
+
+            // CBS'den al: direk dosyası şebeke nesnesi (sütunlar eş anlamlılarıyla), bina dosyası altlık; ikinci dosya
+            // pencerede "Altlık"tan "Bölge"ye çevrilir
+            var cbsKaynaklari = new List<CbsKaynagi>();
+            var cv1 = MifDosyasi.Oku("Version 300\nDelimiter \",\"\nCoordSys Earth Projection 8, 104, \"m\", 39, 0, 1, 500000, 0\nColumns 4\n  OBJECTID Integer\n  DIREK_NO Char(20)\n  DIREK_TIPI Char(40)\n  DURUMU Char(20)\nData\nPoint 519300 4282100\nPoint 519340 4282100\n",
+                                     "1,\"D-1\",\"9I\",\"İşletmede\"\n2,\"D-2\",\"G-K2\",\"Sökülecek\"\n");
+            var ck1 = new CbsKaynagi { Ad = "ENH_DIREKLER", Veri = cv1 };
+            CbsIceAktarim.Tani(ck1);
+            cbsKaynaklari.Add(ck1);
+            var cv2 = MifDosyasi.Oku("Version 300\nColumns 1\n  AD Char(20)\nData\nRegion 1\n  4\n519300 4282100\n519340 4282100\n519340 4282140\n519300 4282100\n", "\"Bina\"\n");
+            var ck2 = new CbsKaynagi { Ad = "BINALAR", Veri = cv2 };
+            CbsIceAktarim.Tani(ck2);
+            cbsKaynaklari.Add(ck2);
+            var cbsAyari = new CbsAlmaAyari { Hakedis = 1 };
+            Dene("29-cbs-al", () =>
+            {
+                Esit(true, Pencereler.CbsAl(o, cbsKaynaklari, cbsAyari), "cbs al: Al");
+                Esit("DIREK", ck1.Katman, "cbs al: direk dosyası direk olarak alınır");
+                Esit(1, ck1.Sutun("GIS_NO"), "cbs al: DIREK_NO sütunu GIS no");
+                Esit("BOLGE", ck2.Katman, "cbs al: bina dosyası pencerede bölgeye çevrildi");
+                Esit("MEVCUT", cbsAyari.VarsayilanDurum, "cbs al: varsayılan durum mevcut");
+            }, f =>
+            {
+                Esit("", ck2.Katman, "cbs al: tanınmayan alan dosyası altlık gelir");
+                var liste = Bul<IkiSatirListe>(f, x => true);
+                liste.SelectedIndex = 1;
+                var katman = Bul<KoyuAcilir>(f, x => x.Items.Count == CbsIceAktarim.Secenekler.Length);
+                katman.SelectedIndex = Array.FindIndex(CbsIceAktarim.Secenekler, x => x[0] == "BOLGE");
+                Resim(f, "bolge");
+            });
 
             // Harita altlığı: sağlayıcı, anahtar (yalnız bu bilgisayarda), alan, ayrıntı
             var altlik = new AltlikAyari();

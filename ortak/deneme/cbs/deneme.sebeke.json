@@ -1,0 +1,861 @@
+{
+ "bicim": "sebeke-hakedis.proje",
+ "surum": 1,
+ "olusturan": "CBS denemesi (elle hazırlandı, gerçek proje değil)",
+ "olusturma": "2026-10-31T00:00:00Z",
+ "proje": {
+  "ad": "Deneme Projesi & CBS <aktarım>",
+  "kaynak": "deneme",
+  "koordinat": {
+   "sistem": "TM",
+   "datum": "ITRF96",
+   "dom": 39
+  },
+  "aktifHakedis": 2,
+  "katmanOnEki": "SC",
+  "gisOnEki": "SC",
+  "kod": "DNM-2026"
+ },
+ "bolgeler": [
+  {
+   "id": "B1",
+   "ad": "Deneme Mahallesi AG",
+   "kod": "DNM-2026-01",
+   "grup": "24.38.01 (NA)",
+   "aciklama": "Ana \"kol\" · 1. etap",
+   "sinir": [
+    [
+     519280.0,
+     4282080.0
+    ],
+    [
+     519560.0,
+     4282080.0
+    ],
+    [
+     519560.0,
+     4282240.0
+    ],
+    [
+     519280.0,
+     4282240.0
+    ]
+   ]
+  },
+  {
+   "id": "B2",
+   "ad": "Deneme OG Hattı",
+   "kod": "",
+   "sinir": [
+    [
+     519580.0,
+     4282020.0
+    ],
+    [
+     519820.0,
+     4282020.0
+    ],
+    [
+     519820.0,
+     4282160.0
+    ],
+    [
+     519680.0,
+     4282190.0
+    ],
+    [
+     519580.0,
+     4282020.0
+    ]
+   ]
+  },
+  {
+   "id": "B3",
+   "ad": "Küçük",
+   "kod": "K-3",
+   "sinir": [
+    [
+     519900.0,
+     4282100.0
+    ],
+    [
+     519920.0,
+     4282100.0
+    ]
+   ]
+  }
+ ],
+ "noktalar": [
+  {
+   "id": "N1",
+   "ad": "GPS-1",
+   "kod": "KONTROL",
+   "saga": 519310.0,
+   "yukari": 4282110.0,
+   "kot": 1043.2555,
+   "hakedis": 1,
+   "bolge": "B1",
+   "ekMetinler": [
+    "RTK FIX",
+    "σ 0,012"
+   ]
+  },
+  {
+   "id": "N2",
+   "ad": "GPS-2",
+   "kod": "",
+   "saga": 519000.0,
+   "yukari": 4281800.0,
+   "kot": 0,
+   "hakedis": 2,
+   "bolge": ""
+  }
+ ],
+ "elemanlar": [
+  {
+   "id": "E1",
+   "tur": "AG_DIREK",
+   "gisId": "SC101",
+   "cins": "AG_BETON",
+   "tip": "9I",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519300.0,
+   "yukari": 4282100.0,
+   "kot": 1040.1235,
+   "aci": 0.5,
+   "kalemler": [
+    {
+     "cins": "AG_BETON",
+     "tanim": "9I ",
+     "durum": "M",
+     "miktar": 1,
+     "birim": "ad/kg",
+     "katsayi": 1,
+     "toplam": 1,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "NIT",
+     "ana": true
+    },
+    {
+     "cins": "TRAVERS",
+     "tanim": "Travers L-50",
+     "durum": "M",
+     "miktar": 2,
+     "birim": "ad/kg",
+     "katsayi": 1,
+     "toplam": 2,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    },
+    {
+     "cins": "KONSOL",
+     "tanim": "Konsol 1,5 m",
+     "durum": "M",
+     "miktar": 1.2345,
+     "birim": "mt/kg",
+     "katsayi": 1,
+     "toplam": 1.2345,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    },
+    {
+     "cins": "X",
+     "tanim": "Birimsiz",
+     "durum": "M",
+     "miktar": 3,
+     "birim": "",
+     "katsayi": 1,
+     "toplam": 3,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    }
+   ]
+  },
+  {
+   "id": "E2",
+   "tur": "MUSTEREK_DIREK",
+   "gisId": "SC102",
+   "cins": "MÜŞ_DEMİR_GLV",
+   "tip": "G-D-12",
+   "durum": "MEVCUT",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519340.0,
+   "yukari": 4282100.0,
+   "kot": 0,
+   "aci": -0.7853981633974483,
+   "kalemler": []
+  },
+  {
+   "id": "E3",
+   "tur": "AYD_DIREK",
+   "gisId": "",
+   "cins": "AYD_GLV_PLG",
+   "tip": "8 m",
+   "durum": "DM",
+   "dmDurum": "KESİK",
+   "hakedis": 2,
+   "bolge": "B1",
+   "saga": 519380.0,
+   "yukari": 4282100.0,
+   "kot": 0,
+   "aci": 0,
+   "kalemler": [
+    {
+     "cins": "AYD_GLV_PLG",
+     "tanim": "8 m Poligon",
+     "durum": "DM",
+     "miktar": 1,
+     "birim": "ad/kg",
+     "katsayi": 1,
+     "toplam": 1,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "NIT",
+     "ana": true
+    }
+   ]
+  },
+  {
+   "id": "E4",
+   "tur": "ENH_DIREK",
+   "gisId": "SC104",
+   "cins": "ENH_DEMİR_GLV",
+   "tip": "G-D-10 (sw)",
+   "durum": "DM+M",
+   "hakedis": 2,
+   "bolge": "B2",
+   "saga": 519600.0,
+   "yukari": 4282100.0,
+   "kot": 0,
+   "aci": 3.0,
+   "kalemler": [
+    {
+     "cins": "AG_MALZEME",
+     "tanim": "Uzun adlı bağlantı malzemesi 0 (galvaniz, \"özel\" tip)",
+     "durum": "M",
+     "miktar": 1.5,
+     "birim": "ad/kg",
+     "katsayi": 1,
+     "toplam": 1.5,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    },
+    {
+     "cins": "AG_MALZEME",
+     "tanim": "Uzun adlı bağlantı malzemesi 1 (galvaniz, \"özel\" tip)",
+     "durum": "M",
+     "miktar": 2.5,
+     "birim": "ad/kg",
+     "katsayi": 1,
+     "toplam": 2.5,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    },
+    {
+     "cins": "AG_MALZEME",
+     "tanim": "Uzun adlı bağlantı malzemesi 2 (galvaniz, \"özel\" tip)",
+     "durum": "M",
+     "miktar": 3.5,
+     "birim": "ad/kg",
+     "katsayi": 1,
+     "toplam": 3.5,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    },
+    {
+     "cins": "AG_MALZEME",
+     "tanim": "Uzun adlı bağlantı malzemesi 3 (galvaniz, \"özel\" tip)",
+     "durum": "M",
+     "miktar": 4.5,
+     "birim": "ad/kg",
+     "katsayi": 1,
+     "toplam": 4.5,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    },
+    {
+     "cins": "AG_MALZEME",
+     "tanim": "Uzun adlı bağlantı malzemesi 4 (galvaniz, \"özel\" tip)",
+     "durum": "M",
+     "miktar": 5.5,
+     "birim": "ad/kg",
+     "katsayi": 1,
+     "toplam": 5.5,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    },
+    {
+     "cins": "AG_MALZEME",
+     "tanim": "Uzun adlı bağlantı malzemesi 5 (galvaniz, \"özel\" tip)",
+     "durum": "M",
+     "miktar": 6.5,
+     "birim": "ad/kg",
+     "katsayi": 1,
+     "toplam": 6.5,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    },
+    {
+     "cins": "AG_MALZEME",
+     "tanim": "Uzun adlı bağlantı malzemesi 6 (galvaniz, \"özel\" tip)",
+     "durum": "M",
+     "miktar": 7.5,
+     "birim": "ad/kg",
+     "katsayi": 1,
+     "toplam": 7.5,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    },
+    {
+     "cins": "AG_MALZEME",
+     "tanim": "Uzun adlı bağlantı malzemesi 7 (galvaniz, \"özel\" tip)",
+     "durum": "M",
+     "miktar": 8.5,
+     "birim": "ad/kg",
+     "katsayi": 1,
+     "toplam": 8.5,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    }
+   ]
+  },
+  {
+   "id": "E5",
+   "tur": "TRAFO_DIREGI",
+   "gisId": "TR-1",
+   "cins": "TR_DİREK_GLV",
+   "tip": "250 kVA",
+   "durum": "M+M",
+   "hakedis": 1,
+   "bolge": "B2",
+   "saga": 519650.0,
+   "yukari": 4282100.0,
+   "kot": 0,
+   "aci": 0,
+   "kalemler": []
+  },
+  {
+   "id": "E6",
+   "tur": "TRAFO_MERKEZI",
+   "gisId": "TR-2",
+   "cins": "TRAFO_BİNASI",
+   "tip": "Bina",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B2",
+   "saga": 519700.0,
+   "yukari": 4282100.0,
+   "kot": 0,
+   "aci": 0,
+   "kalemler": []
+  },
+  {
+   "id": "E7",
+   "tur": "PANO",
+   "gisId": "P-1",
+   "cins": "PANO",
+   "tip": "AG Pano",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B2",
+   "saga": 519750.0,
+   "yukari": 4282100.0,
+   "kot": 0,
+   "aci": 0,
+   "kalemler": []
+  },
+  {
+   "id": "E8",
+   "tur": "BOX",
+   "gisId": "B-1",
+   "cins": "BOX",
+   "tip": "SDK 2'li",
+   "durum": "MEVCUT",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519420.0,
+   "yukari": 4282100.0,
+   "kot": 0,
+   "aci": 0,
+   "kalemler": []
+  },
+  {
+   "id": "E9",
+   "tur": "EK_MUFU",
+   "gisId": "M-1",
+   "cins": "MUF",
+   "tip": "Ek mufu",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519460.0,
+   "yukari": 4282100.0,
+   "kot": 0,
+   "aci": 0,
+   "kalemler": []
+  },
+  {
+   "id": "E10",
+   "tur": "KOFRE",
+   "gisId": "K-1",
+   "cins": "KOFRE",
+   "tip": "Kofre",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519500.0,
+   "yukari": 4282100.0,
+   "kot": -0.0004,
+   "aci": -1e-09,
+   "kalemler": [
+    {
+     "cins": "KOFRE",
+     "tanim": "Düzeltme kalemi",
+     "durum": "M",
+     "miktar": -0.0004,
+     "birim": "ad/ad",
+     "katsayi": 1,
+     "toplam": 0,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    }
+   ]
+  },
+  {
+   "id": "E11",
+   "tur": "DIGER",
+   "gisId": "A-1",
+   "cins": "ARMATÜR_LED",
+   "tip": "LED 60 W",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519380.0,
+   "yukari": 4282105.0,
+   "kot": 0,
+   "aci": 0,
+   "kalemler": []
+  },
+  {
+   "id": "E12",
+   "tur": "DIGER",
+   "gisId": "MH-1",
+   "cins": "MENHOL",
+   "tip": "Menhol",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "saga": 519440.0,
+   "yukari": 4282100.0,
+   "kot": 0,
+   "aci": 0,
+   "kalemler": []
+  },
+  {
+   "id": "E13",
+   "tur": "DIGER",
+   "gisId": "X-1",
+   "cins": "",
+   "tip": "",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B3",
+   "saga": 519910.0,
+   "yukari": 4282105.0,
+   "kot": 0,
+   "aci": 0,
+   "kalemler": []
+  },
+  {
+   "id": "E14",
+   "tur": "AG_DIREK",
+   "gisId": "SC199",
+   "cins": "AG_AĞAÇ",
+   "tip": "Özel \"çift\" tip, virgüllü",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "",
+   "saga": 519100.0,
+   "yukari": 4282000.0,
+   "kot": 0,
+   "aci": 0,
+   "kalemler": []
+  }
+ ],
+ "hatlar": [
+  {
+   "id": "H1",
+   "tur": "AG_HAVAI",
+   "anaKesit": "3P+R/P",
+   "etiket": "^ 3P+R/P",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "kose": [
+    [
+     519300.0,
+     4282100.0
+    ],
+    [
+     519340.0,
+     4282100.0
+    ],
+    [
+     519380.0,
+     4282100.0
+    ]
+   ],
+   "kalemler": [
+    {
+     "cins": "AL_İLETKENLER",
+     "tanim": "3P+R/P",
+     "durum": "M",
+     "miktar": 120.505,
+     "birim": "mt/kg",
+     "katsayi": 1,
+     "toplam": 120.505,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "HAT"
+    },
+    {
+     "cins": "AL_İLETKENLER",
+     "tanim": "P",
+     "durum": "M",
+     "miktar": 30,
+     "birim": "mt/kg",
+     "katsayi": 1,
+     "toplam": 30,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "HAT"
+    }
+   ]
+  },
+  {
+   "id": "H2",
+   "tur": "OG_HAVAI",
+   "anaKesit": "3x1/0 Swallow",
+   "etiket": "",
+   "durum": "MEVCUT",
+   "hakedis": 1,
+   "bolge": "B2",
+   "kose": [
+    [
+     519600.0,
+     4282100.0
+    ],
+    [
+     519650.0,
+     4282100.0
+    ],
+    [
+     519700.0,
+     4282110.5
+    ]
+   ],
+   "kalemler": []
+  },
+  {
+   "id": "H3",
+   "tur": "MUSTEREK",
+   "anaKesit": "",
+   "etiket": "",
+   "durum": "DM",
+   "hakedis": 2,
+   "bolge": "B1",
+   "kose": [
+    [
+     519300.0,
+     4282100.0
+    ],
+    [
+     519300.0,
+     4282140.0
+    ]
+   ],
+   "kalemler": []
+  },
+  {
+   "id": "H4",
+   "tur": "OG_YERALTI",
+   "anaKesit": "3x(1x240/25 XLPE Al)",
+   "etiket": "^ 3x(1x240/25 XLPE Al)",
+   "durum": "M+M",
+   "hakedis": 1,
+   "bolge": "B2",
+   "kose": [
+    [
+     519700.0,
+     4282100.0
+    ],
+    [
+     519750.0,
+     4282100.0
+    ]
+   ],
+   "kalemler": [
+    {
+     "cins": "XLPE",
+     "tanim": "1x240/25 XLPE Al",
+     "durum": "M",
+     "miktar": 150.0,
+     "birim": "mt/mt",
+     "katsayi": 1,
+     "toplam": 150.0,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "HAT"
+    }
+   ]
+  },
+  {
+   "id": "H5",
+   "tur": "AG_YERALTI",
+   "anaKesit": "4x50 NYY",
+   "etiket": "^ 4x50 NYY",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "kose": [
+    [
+     519420.0,
+     4282100.0
+    ],
+    [
+     519440.0,
+     4282100.0
+    ],
+    [
+     519460.0,
+     4282100.0
+    ],
+    [
+     519500.0,
+     4282100.0
+    ]
+   ],
+   "kalemler": []
+  },
+  {
+   "id": "H6",
+   "tur": "REKORTMAN",
+   "anaKesit": "2x16 NYY",
+   "etiket": "^ 2x16 NYY",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B1",
+   "kose": [
+    [
+     519340.0,
+     4282100.0
+    ],
+    [
+     519345.0,
+     4282120.0
+    ]
+   ],
+   "kalemler": []
+  },
+  {
+   "id": "H7",
+   "tur": "AYDINLATMA",
+   "anaKesit": "2x16 Alüminyum",
+   "etiket": "^ 2x16 ALÜMİNYUM",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "",
+   "kose": [
+    [
+     519100.0,
+     4282000.0
+    ],
+    [
+     519140.0,
+     4282000.0
+    ]
+   ],
+   "kalemler": []
+  }
+ ],
+ "kanallar": [
+  {
+   "id": "C1",
+   "kod": 12,
+   "zemin": "ASFALT",
+   "altGenislik": 40,
+   "ustGenislik": 60,
+   "derinlik": 120.5,
+   "basNo": "TR-2",
+   "bitNo": "P-1",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B2",
+   "kose": [
+    [
+     519700.0,
+     4282100.0
+    ],
+    [
+     519725.0,
+     4282105.0
+    ],
+    [
+     519750.0,
+     4282100.0
+    ]
+   ],
+   "kontrol": null,
+   "kalemler": [
+    {
+     "cins": "12",
+     "tanim": "ASFALT",
+     "durum": "M",
+     "miktar": 36.5,
+     "birim": "mt/m³",
+     "katsayi": 1,
+     "toplam": 36.5,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "NIT",
+     "ana": true
+    }
+   ]
+  },
+  {
+   "id": "C2",
+   "kod": 7,
+   "zemin": "TOPRAK",
+   "altGenislik": 0,
+   "ustGenislik": 0,
+   "derinlik": 0,
+   "basNo": "",
+   "bitNo": "",
+   "durum": "DM",
+   "hakedis": 2,
+   "bolge": "B1",
+   "kose": [
+    [
+     519420.0,
+     4282100.0
+    ],
+    [
+     519500.0,
+     4282100.0
+    ]
+   ],
+   "kontrol": null,
+   "kalemler": []
+  }
+ ],
+ "sondajlar": [
+  {
+   "id": "S1",
+   "tip": "Yatay sondaj Ø110 ",
+   "basNo": "TR-1",
+   "bitNo": "TR-2",
+   "durum": "M",
+   "hakedis": 1,
+   "bolge": "B2",
+   "kose": [
+    [
+     519650.0,
+     4282100.0
+    ],
+    [
+     519700.0,
+     4282100.0
+    ]
+   ],
+   "kontrol": null,
+   "kalemler": [
+    {
+     "cins": "YATAY_DELGİ",
+     "tanim": "Yatay sondaj Ø110",
+     "durum": "M",
+     "miktar": 18,
+     "birim": "mt/mt",
+     "katsayi": 1,
+     "toplam": 18,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "NIT",
+     "ana": true
+    }
+   ]
+  }
+ ]
+}

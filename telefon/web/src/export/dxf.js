@@ -6,6 +6,7 @@
 import SEMBOLLER from '../ortak/semboller.js';
 import STIL from '../ortak/cizim-stili.js';
 import SH from '../interop/sh-core.cjs';
+import { kanalModel } from '../grid/lines.js';
 const f = (v) => (Number.isFinite(v) ? (+v).toFixed(4) : '0.0');
 
 class W {
@@ -33,18 +34,63 @@ const poleLayer = (e) => (e.kind === 'lighting' || e.group === 'ayd' ? KAT('DIRE
  * Hattın ortak stil anahtarı: yer altında AG / OG kablo ayrı, müşterek hat kendi renginde (eklentideki hatKatmani ile
  * aynı); yalnız kanal / sondaj (kablosuz kazı) kablo gibi değil, kendi renginde ve çizgisinde (eklentideki KANAL / SONDAJ).
  */
-const lineKey = (l) => (l.channelOnly ? (l.cable && l.cable.method === 'sondaj' ? 'SONDAJ' : 'KANAL')
+export const lineKey = (l) => (l.channelOnly ? (l.cable && l.cable.method === 'sondaj' ? 'SONDAJ' : 'KANAL')
   : l.install === 'yeralti' ? (l.lineType === 'OG' ? 'KABLO_OG' : 'KABLO')
   : l.musterek ? 'HAT_MUSTEREK' : { AG: 'HAT_AG', OG: 'HAT_OG', AYD: 'HAT_AYD', ENH: 'HAT_ENH', ABONE: 'HAT_ABONE' }[l.lineType] || 'HAT_AG');
 const lineLayer = (l) => KAT(lineKey(l));
+/**
+ * Hat etiketi: "hat no kesit" — kesit duruma göre biçimlenir (mevcut "(kesit)", ileride "<kesit>"…) ve malzeme adı
+ * ortak yazımla (eklentideki MalzemeYazimi). Telefonun DXF'i ve haritası aynı yazıyı kullanır.
+ */
+export function hatYazisi(no, state, label, channelOnly) {
+  const tag = (STIL.etiketler.kesit[state] || '{t}').replace('{t}', channelOnly ? label || '' : SH.malzemeYazisi(label || ''));
+  return (no || '') + ' ' + tag;
+}
 // Direk rengi: mevcut / yeni / DMM (ortak stil)
 const POLE_ACI = STIL.direkRenkleri;
 const DEMONTAJ_ACI = STIL.direkRenkleri.demontaj;
 const stIdx = (st) => (st === 'YENI' ? 1 : st === 'DMM' ? 2 : 0);
 /** Hattın rengi (nesneye yazılır; yazıları da bu renkte): türünün rengi, demontajda sarı. */
 const lineAci = (l) => (l.state === 'DEMONTAJ' ? DEMONTAJ_ACI : STIL.katmanlar[lineKey(l)].aci);
+/**
+ * Kanal kenarlarının arası (m): yer altı hattının kazı kanalı (yalnız kanal ya da içinde kablo); genişlik kanalın
+ * genişliği, yoksa ortak stilin varsayılanı (eklentideki NesneYazici.KanalGenisligi). Yatay sondajda ve kazısız eski
+ * kayıtlarda (direk inişi, duvar geçişi) kenar yok: 0.
+ */
+export function kanalGenisligi(l) {
+  if (!l || l.install !== 'yeralti') return 0;
+  const km = kanalModel(l.cable);
+  if (km.kazisiz || km.method === 'sondaj') return 0;
+  const w = +(l.cable || {}).width || 0;
+  return w > 0 ? w : (STIL.katmanlar.KANAL.kenar || {}).varsayilanGenislik || 0.4;
+}
+/**
+ * Çizginin d kadar yanındaki eş çizgisi (noktalar {x, y}; d'nin işareti yanı seçer): köşede iki yanın kenarları
+ * kesiştirilir (gönye), çok sivri köşede uzama dört katla sınırlanır; enAz'dan yakın ardışık köşeler tek sayılır.
+ * Eklentide AutoCAD'in GetOffsetCurves'ü (CizimYazici.KenarlariYaz) aynı işi yapar.
+ */
+export function esCizgi(pts, d, enAz = 1e-6) {
+  const p = [];
+  for (const q of pts) if (!p.length || Math.hypot(q.x - p[p.length - 1].x, q.y - p[p.length - 1].y) > enAz) p.push(q);
+  const n = p.length, out = [];
+  if (n < 2) return out;
+  const nor = [];
+  for (let i = 0; i < n - 1; i++) {
+    const dx = p[i + 1].x - p[i].x, dy = p[i + 1].y - p[i].y, L = Math.hypot(dx, dy);
+    nor.push({ x: -dy / L, y: dx / L });
+  }
+  for (let i = 0; i < n; i++) {
+    const a = nor[Math.max(0, i - 1)], b = nor[Math.min(n - 2, i)];
+    let mx = a.x + b.x, my = a.y + b.y;
+    const ml = Math.hypot(mx, my);
+    if (ml < 1e-9) { mx = b.x; my = b.y; } else { mx /= ml; my /= ml; }
+    const k = d / Math.max(mx * b.x + my * b.y, 0.25);
+    out.push({ x: p[i].x + mx * k, y: p[i].y + my * k });
+  }
+  return out;
+}
 /** Metraj yazısında açıklık sınırı olmayan elemanlar: hattın üstündeki ara elemanlar (eklentideki Geometri.AciklikSiniri). */
-const ARA_ELEMAN = new Set(['manhole', 'luminaire']);
+export const ARA_ELEMAN = new Set(['manhole', 'luminaire']);
 
 /**
  * Açıklıklar: hat, üstünde eleman (direk, SDK, pano, trafo…) olan köşelerinden bölünür; elemansız kırılma köşeleri
@@ -81,6 +127,53 @@ export function yaziKonumu(a, b, dx, dy) {
   return { x: (a.E + b.E) / 2 + dx * c - dy * s, y: (a.N + b.N) / 2 + dx * s + dy * c, ang };
 }
 const YAZI = () => KAT('YAZI'), OLCU = () => KAT('OLCU');
+
+// Hat yazılarının düzeni (eklentideki YaziDuzeni ile aynı kural, aynı harf tablosu: cizim-stili.json › yazi): metraj ve
+// hat etiketi (kablo tipi) parçanın ortasına ortalı — metraj çizginin üst yanında taban çizgisi ortalı, etiket alt yanında
+// üst kenarı ortalı; ikisi aynı noktadan başlamaz, üst üste binmez. Parçaya sığmayan yazı önce daraltılır (genişlik
+// katsayısı en az 0,6), yetmezse küçülür (en az %60).
+const HARF = STIL.yazi.harfGenislikleri || {};
+const SIG = STIL.yazi.sigdirma || { pay: 0.9, enDarGenislik: 0.6, enKucukYukseklik: 0.6 };
+const r3 = (v) => Math.round(v * 1000) / 1000;
+/** Yazının yaklaşık uzunluğu (m): harf genişlikleri × yükseklik × genişlik katsayısı (YaziDuzeni.Genislik). */
+export function yaziGenisligi(metin, h, gk = 1) {
+  let t = 0;
+  for (const c of String(metin ?? '')) { const g = c.length === 1 ? HARF[c] : undefined; t += Number.isFinite(g) ? g : (HARF.varsayilan || 0.6); }
+  return t * h * gk;
+}
+/** Yazıyı uzunluğu L olan parçaya sığdırır: { h, gk } (YaziDuzeni.Sigdir). */
+export function yaziSigdir(metin, h, L) {
+  const yer = L * SIG.pay, w = yaziGenisligi(metin, h);
+  if (w <= yer || yer <= 0 || w <= 0) return { h, gk: 1 };
+  const gk = r3(Math.max(SIG.enDarGenislik, yer / w));
+  if (w * gk <= yer + 1e-9) return { h, gk };
+  return { h: r3(Math.max(SIG.enKucukYukseklik * h, h * yer / (w * gk))), gk };
+}
+/** Hat etiketinin parçası: çizginin en uzun parçası (YaziDuzeni.EnUzunParca). */
+export function enUzunParca(coords) {
+  let en = 0, enUzun = -1;
+  for (let i = 0; i + 1 < coords.length; i++) {
+    const d = Math.hypot(coords[i + 1].E - coords[i].E, coords[i + 1].N - coords[i].N);
+    if (d > enUzun + 1e-9) { enUzun = d; en = i; }
+  }
+  return en;
+}
+/**
+ * Boyutlar (proje.sebeke.boyutlar — AutoCAD dosyasıyla gelir, Dışa Aktarım › Çizim boyutları ile değişir; eklentide
+ * Çizim Ayarları › Görünüm): simge büyüklüğü (kat) ve yazı yükseklikleri (m).
+ * Projede yoksa ortak stilin ölçüleri; textH verilirse eski kullanım gibi bütün yazılar onunla orantılı.
+ */
+export function boyutlar(proje, textH) {
+  const b = (proje && (proje.boyutlar || (proje.sebeke && proje.sebeke.boyutlar))) || {};
+  const k = textH ? textH / STIL.yazi.yukseklik : 1;
+  const sayi = (v, d, en, cok) => (Number.isFinite(+v) && +v >= en && +v <= cok ? +v : d);
+  return {
+    simge: sayi(b.simgeOlcegi, 1, 0.1, 20),
+    etiket: sayi(b.etiketYuksekligi, STIL.yazi.yukseklik * k, 0.05, 50),
+    metraj: sayi(b.metrajYuksekligi, STIL.yazi.parcaMetraji * k, 0.05, 50),
+    eleman: sayi(b.elemanYaziYuksekligi, STIL.yazi.yukseklik * k, 0.05, 50)
+  };
+}
 
 /** Demontaj türünden (KESİK / SÖKÜK) demontaj varyantı: DM · KESIK · SOKUK (eklentideki Semboller.Varyant ile aynı). */
 export function dmVaryanti(dmDurum) {
@@ -175,11 +268,12 @@ function writeEnt(w, e) {
 export function buildDXF(model, opts = {}) {
   const w = new W();
   const cat = model.cat;
-  const th = opts.textH || STIL.yazi.yukseklik;
-  const thParca = th * (STIL.yazi.parcaMetraji / STIL.yazi.yukseklik), thKucuk = th * (STIL.yazi.aciYazisi / STIL.yazi.yukseklik);
-  const [pdx, pdy] = STIL.etiketler.parcaMetraji.kaydirma, [hdx, hdy] = STIL.etiketler.hat.kaydirma, [edx, edy] = STIL.etiketler.eleman.kaydirma, [adx, ady] = STIL.etiketler.aci.kaydirma;
+  const B = boyutlar(model.project, opts.textH);
+  const th = B.eleman;
+  const thParca = B.metraj, thKucuk = th * (STIL.yazi.aciYazisi / STIL.yazi.yukseklik);
+  const [, pdy] = STIL.etiketler.parcaMetraji.kaydirma, [, hdy] = STIL.etiketler.hat.kaydirma, [edx, edy] = STIL.etiketler.eleman.kaydirma, [adx, ady] = STIL.etiketler.aci.kaydirma;
   // Kanal / sondaj (yalnız kanal) metrajı: içindeki kablonun metrajıyla üst üste binmesin diye bir satır yukarıda
-  const [kdx, kdy] = (STIL.etiketler.kaziMetraji || STIL.etiketler.parcaMetraji).kaydirma;
+  const kdy = pdy + thParca + ((STIL.etiketler.kaziMetraji || {}).bosluk ?? 0.46);
   const allPts = model.points.filter((p) => p.E != null);
   const ext = allPts.reduce((a, p) => ({ x0: Math.min(a.x0, p.E), y0: Math.min(a.y0, p.N), x1: Math.max(a.x1, p.E), y1: Math.max(a.y1, p.N) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
   if (!Number.isFinite(ext.x0)) Object.assign(ext, { x0: 0, y0: 0, x1: 100, y1: 100 });
@@ -206,11 +300,25 @@ export function buildDXF(model, opts = {}) {
   // ENTITIES
   w.g(0, 'SECTION').g(2, 'ENTITIES');
   const text = (layer, x, y, z, s, h = th, rot = 0, color = null) => { w.g(0, 'TEXT').g(8, layer); if (color != null) w.g(62, color); w.g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(40, f(h)).g(1, s).g(50, f(rot)); };
-  const insert = (layer, block, x, y, z, color = null, rot = 0) => { w.g(0, 'INSERT').g(8, layer); if (color != null) w.g(62, color); w.g(2, block).g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(41, 1).g(42, 1).g(43, 1).g(50, f(rot)); };
-  const kesitFmt = STIL.etiketler.kesit;
+  /**
+   * Parçaya ortalı yazı: (x, y) hizalama noktası — üst: false → taban çizgisinin ortası (metraj), true → üst kenarın ortası
+   * (hat etiketi). 10/20 sol alt köşe (harf tablosuyla yaklaşık; hizalamayı okumayan programlar için), 11/21 hizalama
+   * noktası, 72 = 1 ortalı, 73 = 3 üstten; 41 genişlik katsayısı (sığdırma).
+   */
+  const ortaliText = (layer, x, y, s, h, rot, color, ust, gk) => {
+    const r = rot * Math.PI / 180, c = Math.cos(r), sn = Math.sin(r), yarim = yaziGenisligi(s, h, gk) / 2, asagi = ust ? h : 0;
+    const x0 = x - yarim * c + asagi * sn, y0 = y - yarim * sn - asagi * c;
+    w.g(0, 'TEXT').g(8, layer); if (color != null) w.g(62, color);
+    w.g(10, f(x0)).g(20, f(y0)).g(30, 0).g(40, f(h)).g(1, s).g(50, f(rot));
+    if (Math.abs(gk - 1) > 1e-9) w.g(41, f(gk));
+    w.g(72, 1).g(11, f(x)).g(21, f(y)).g(31, 0);
+    if (ust) w.g(73, 3);
+  };
+  const ol = B.simge;
+  const insert = (layer, block, x, y, z, color = null, rot = 0) => { w.g(0, 'INSERT').g(8, layer); if (color != null) w.g(62, color); w.g(2, block).g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(41, f(ol)).g(42, f(ol)).g(43, f(ol)).g(50, f(rot)); };
   // Açıklık sınırı olan elemanların noktaları (direk, SDK, pano, trafo…)
   const nodePts = new Set(model.equipment.filter((e) => e.pointId && !ARA_ELEMAN.has(e.kind)).map((e) => e.pointId));
-  let nLines = 0, nIns = 0, nTxt = 0;
+  let nLines = 0, nIns = 0, nTxt = 0, nKenar = 0;
   for (const l of model.lines) {
     if (l.coords.length < 2) continue;
     // Çizgi tipi katmandan; ileride yapılacak hat kesikli, yalnız kanal / sondaj kendi çizgisinde (katmanı kabloyla ortak)
@@ -220,19 +328,35 @@ export function buildDXF(model, opts = {}) {
       w.g(0, 'LINE').g(8, layer); if (lt) w.g(6, lt); w.g(62, aci);
       w.g(10, f(a.E)).g(20, f(a.N)).g(30, f(a.H || 0)).g(11, f(b.E)).g(21, f(b.N)).g(31, f(b.H || 0)); nLines++;
     }
-    // Metraj: her açıklığa bir yazı (iki direk / iki bağlantı elemanı arası), hattın renginde
-    if (opts.spanText !== false) {
-      const [mdx, mdy] = l.channelOnly ? [kdx, kdy] : [pdx, pdy];
-      for (const sp of spanTexts(l.coords, (c) => nodePts.has(c.id))) {
-        const k = yaziKonumu(l.coords[sp.seg], l.coords[sp.seg + 1], mdx, mdy);
-        text(YAZI(), k.x, k.y, 0, sp.length.toFixed(2), thParca, k.ang, aci); nTxt++;
+    // Kanal: eksenin iki yanında, genişliğin yarısı kadar uzakta kenar çizgileri (eklentideki KenarlariYaz): kanalın
+    // katmanında, sürekli çizgiyle, kanalın renginde (demontajda sarı)
+    const kw = kanalGenisligi(l);
+    if (kw > 0) {
+      const kenar = STIL.katmanlar.KANAL.kenar || {}, kk = KAT('KANAL');
+      const renk = l.state === 'DEMONTAJ' ? DEMONTAJ_ACI : kenar.aci || STIL.katmanlar.KANAL.aci;
+      const xy = l.coords.map((c) => ({ x: c.E, y: c.N }));
+      for (const yan of [kw / 2, -kw / 2]) {
+        const e = esCizgi(xy, yan);
+        if (e.length < 2) continue;
+        w.g(0, 'POLYLINE').g(8, kk).g(6, kenar.cizgi || 'CONTINUOUS').g(62, renk).g(66, 1).g(10, 0).g(20, 0).g(30, 0).g(70, 0);
+        for (const p of e) w.g(0, 'VERTEX').g(8, kk).g(10, f(p.x)).g(20, f(p.y)).g(30, 0);
+        w.g(0, 'SEQEND').g(8, kk); nKenar++;
       }
     }
-    const mid = Math.floor((l.coords.length - 1) / 2);
-    // Malzeme adı ortak yazımla (eklentideki MalzemeYazimi): "3x50/16 Xlpe Alm." → "3x50/16 XLPE Al"
-    const tag = (kesitFmt[l.state] || '{t}').replace('{t}', l.channelOnly ? l.label : SH.malzemeYazisi(l.label));
-    const k = yaziKonumu(l.coords[mid], l.coords[mid + 1], hdx, hdy);
-    text(YAZI(), k.x, k.y, 0, l.no + ' ' + tag, th, k.ang, aci); nTxt++;
+    // Metraj: her açıklığa bir yazı (iki direk / iki bağlantı elemanı arası), parçanın ortasına ortalı, hattın renginde
+    if (opts.spanText !== false) {
+      const mdy = l.channelOnly ? kdy : pdy;
+      for (const sp of spanTexts(l.coords, (c) => nodePts.has(c.id))) {
+        const a = l.coords[sp.seg], b = l.coords[sp.seg + 1], metin = sp.length.toFixed(2);
+        const k = yaziKonumu(a, b, 0, mdy), s = yaziSigdir(metin, thParca, Math.hypot(b.E - a.E, b.N - a.N));
+        ortaliText(YAZI(), k.x, k.y, metin, s.h, k.ang, aci, false, s.gk); nTxt++;
+      }
+    }
+    // Hat etiketi (kablo tipi; "hat no kesit", haritayla aynı yazı: hatYazisi): en uzun parçanın ortasına ortalı, üst
+    // kenarı çizginin alt yanında, parçaya sığdırılmış
+    const ep = enUzunParca(l.coords), ea = l.coords[ep], eb = l.coords[ep + 1], etiket = hatYazisi(l.no, l.state, l.label, l.channelOnly);
+    const k = yaziKonumu(ea, eb, 0, hdy), es = yaziSigdir(etiket, B.etiket, Math.hypot(eb.E - ea.E, eb.N - ea.N));
+    ortaliText(YAZI(), k.x, k.y, etiket, es.h, k.ang, aci, true, es.gk); nTxt++;
   }
   for (const e of model.equipment) {
     if (e.E == null) continue;
@@ -249,8 +373,9 @@ export function buildDXF(model, opts = {}) {
     else layer = YAZI();
     if (e.state === 'DEMONTAJ' || e.state === 'demontaj') color = DEMONTAJ_ACI;
     insert(layer, block, e.E, e.N, e.H, color); nIns++;
-    text(YAZI(), e.E + edx, e.N + edy, e.H, e.no + (e.typeName ? ' ' + e.typeName : ''), th, 0); nTxt++;
-    if (e.role === 'Z' && e.angle) { text(YAZI(), e.E + adx, e.N + ady, e.H, 'α=' + e.angle.toFixed(2) + '°', thKucuk); nTxt++; }
+    // Eleman yazısı simgenin sağ üstünde; yeri simgeyle büyür (simgenin dışında kalsın), yüksekliği ayrı ayarlanır
+    text(YAZI(), e.E + edx * ol, e.N + edy * ol, e.H, e.no + (e.typeName ? ' ' + e.typeName : ''), th, 0); nTxt++;
+    if (e.role === 'Z' && e.angle) { text(YAZI(), e.E + adx * ol, e.N + ady * ol, e.H, 'α=' + e.angle.toFixed(2) + '°', thKucuk); nTxt++; }
   }
   for (const p of model.points) {
     if (p.E == null) continue;
@@ -259,7 +384,7 @@ export function buildDXF(model, opts = {}) {
   }
   w.g(0, 'ENDSEC').g(0, 'EOF');
   const txt = w.text();
-  return { text: txt, stats: { layers: layers.length + 1, lines: nLines, inserts: nIns, texts: nTxt } };
+  return { text: txt, stats: { layers: layers.length + 1, lines: nLines, inserts: nIns, texts: nTxt, edges: nKenar } };
 }
 
 // Türkçe karakterler için Windows-1254 kodlaması (R12 DXF); tabloda olmayanlar AutoCAD \U+XXXX kaçışı ile

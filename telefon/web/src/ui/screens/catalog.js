@@ -6,6 +6,9 @@ import { roleLabel } from '../../grid/checks.js';
 import { JOB_LABEL } from '../../core/schema.js';
 import { listStandards, cloneStandard, updateStdTable, exportStandard } from '../../core/standards.js';
 import { Catalog } from '../../grid/catalog.js';
+import STIL from '../../ortak/cizim-stili.js';
+import { aciCSS } from '../../cad/aci.js';
+import { EKRAN, DEMONTAJ_RENGI, ekranDeseni } from '../cizim-gorunumu.js';
 
 export function PozScreen({ pickFor }) {
   const ps = app.ps, cat = ps.cat;
@@ -74,34 +77,44 @@ export function PozScreen({ pickFor }) {
       ${pickFor ? html`<button class="btn pri" onClick=${() => { app.bus.emit('poz:picked', { servis: selP.servis, pickFor }); app.nav.back(); }}>KAYDA EKLE · ${selP.servis}</button>` : null}</div>` : null}`;
 }
 
+// Lejantta hat türleri: ortak çizim stilinin anahtarları (haritada, DXF'te ve AutoCAD eklentisinde aynı renk ve çizgi)
+const HAT_LEJANTI = [['HAT_AG', 'A.G. havai hat', 2.5], ['HAT_OG', 'O.G. havai hat', 3.5], ['HAT_AYD', 'Aydınlatma hattı', 2.5], ['HAT_ENH', 'E.N.H. hattı', 4], ['HAT_MUSTEREK', 'Müşterek hat', 3.5], ['HAT_ABONE', 'Abone hattı', 1.6], ['KABLO', 'A.G. yeraltı kablosu', 2.5], ['KABLO_OG', 'O.G. yeraltı kablosu', 3.5], ['KANAL', 'Kablo kanalı (iki kenarlı)', 1.8], ['SONDAJ', 'Yatay sondaj', 2.5]];
+
 export function LayersScreen() {
   const cat = app.ps.cat;
   const L = cat.table('legend') || { layers: [] };
   const [, f] = useState(0);
   const lay = app.state.layers || {};
-  const t = (k) => { const n = Object.assign({ AG: true, OG: true, AYD: true, ENH: true, yeralti: true, trafo: true, mevcut: true, demontaj: true }, app.state.layers || {}); n[k] = !n[k]; app.state.layers = n; f((x) => x + 1); };
+  const t = (k) => { const n = Object.assign({ AG: true, OG: true, AYD: true, ENH: true, ABONE: true, yeralti: true, kanal: true, trafo: true, mevcut: true, demontaj: true }, app.state.layers || {}); n[k] = !n[k]; app.state.layers = n; f((x) => x + 1); };
   const on = (k) => lay[k] !== false;
-  const aciCol = { 1: '#ff0000', 2: '#ffff00', 3: '#00ff00', 4: '#00ffff', 5: '#4d6bff', 6: '#ff00ff', 7: '#ffffff', 10: '#ff0000', 16: '#d94a4a', 30: '#ff7f00', 32: '#a0522d', 84: '#1f7f00', 108: '#23a455', 120: '#00ffbf', 152: '#2f7fd6', 190: '#9b5cff' };
   const sym = (shape, fill, col, ground) => html`<svg width="56" height="34" viewBox="0 0 56 34"><path d="M3 15H20 M36 15H53" stroke=${col} stroke-width="1.2" />${shape === 'c' ? html`<circle cx="28" cy="15" r="7" fill=${fill === 'full' ? col : '#0b1326'} stroke=${col} stroke-width="1.6" />${fill === 'half' ? html`<path d="M28 8a7 7 0 0 0 0 14Z" fill=${col} />` : null}` : html`<rect x="21" y="8" width="14" height="14" fill=${fill === 'full' ? col : '#0b1326'} stroke=${col} stroke-width="1.6" />${fill === 'none' ? html`<path d="M21 8l14 14M35 8L21 22" stroke=${col} />` : null}${fill === 'half' ? html`<path d="M21 8L28 15L21 22ZM35 8L28 15L35 22Z" fill=${col} />` : null}`}${ground ? html`<path d="M28 22v5 M22 27h12 M23 31l2-4 M27 31l2-4 M31 31l2-4" stroke=${col} />` : null}</svg>`;
-  const PC = L.poleColors || {};
-  const rows = [['A.G. direği', 'c', 'AG', false, 'ACI 120 · 108 · 3'], ['A.G. kafes direk', 's', 'AG', false, 'ACI 120 · 108 · 3'], ['Müşterek / O.G. direk', 'c', 'OG', true, 'ACI 16 · 10 · 1'], ['Müşterek / O.G. kafes', 's', 'OG', true, 'ACI 16 · 10 · 1'], ['Aydınlatma direği', 'c', 'AYD', false, 'ACI 190 · 152 · 4'], ['E.N.H. / B.A.H.H. direk', 'c', 'ENH', true, 'ACI 6']];
-  return html`<${Title} title="Katmanlar ve Lejant" sub="Lejant.dxf · AG-OG şebeke işaretleri · 1/1000" />
+  // Hat örneği: haritadaki renk ve çizgi deseniyle (kanalda iki kenar)
+  const hatOrnegi = (k, lw) => { const st = STIL.katmanlar[k] || {}, col = EKRAN.hat[k] || EKRAN.diger, des = ekranDeseni(st.cizgi || 'CONTINUOUS', lw); return html`<svg width="64" height="14" viewBox="0 0 64 14" style="flex-shrink:0">${k === 'KANAL' ? html`<path d="M2 2H62 M2 12H62" stroke=${col} stroke-width="1.2" />` : null}<path d="M4 7H60" stroke=${col} stroke-width=${lw} stroke-linecap="round" stroke-dasharray=${des.length ? des.join(' ') : 'none'} /></svg>`; };
+  const DR = STIL.direkRenkleri;
+  const direkSatiri = (v) => ({ MEVCUT: EKRAN.direkMevcut[v], YENI: EKRAN.direk[v], DMM: aciCSS(DR[v][2]) });
+  const rows = [['A.G. direği', 'c', 'AG', false], ['A.G. kafes direk', 's', 'AG', false], ['Müşterek / O.G. direk', 'c', 'OG', true], ['Müşterek / O.G. kafes', 's', 'OG', true], ['Aydınlatma direği', 'c', 'AYD', false], ['E.N.H. / B.A.H.H. direk', 'c', 'ENH', true]];
+  const hatKatmanlari = new Set(HAT_LEJANTI.map(([k]) => k));
+  const ozel = Object.entries(STIL.katmanlar).filter(([k, x], i, a) => x.telefon && !hatKatmanlari.has(k) && a.findIndex(([, y]) => y.telefon === x.telefon) === i);
+  const H = EKRAN.hat;
+  return html`<${Title} title="Katmanlar ve Lejant" sub="Ortak çizim stili · harita, DXF ve AutoCAD eklentisi aynı · 1/1000" />
     <div class="sect">Harita katmanları</div>
-    <div class="grid2">${[['AG', 'A.G. şebeke', '#1f7f00'], ['OG', 'O.G. şebeke', '#ff0000'], ['AYD', 'Aydınlatma', '#00ffff'], ['ENH', 'E.N.H. / B.A.H.H.', '#ff00ff'], ['yeralti', 'Yeraltı kablosu', '#ff0000'], ['trafo', 'Trafo ve box', '#4d6bff'], ['mevcut', 'Mevcut elemanlar', '#00ffbf'], ['demontaj', 'Demontaj işareti', '#ffff00']].map(([k, l, c]) => html`<button class="card row" style="color:inherit;padding:10px" onClick=${() => t(k)}><span style=${'width:18px;height:3px;background:' + c}></span><span class="grow" style="font-size:13px;font-weight:600">${l}</span><${Icon} n=${on(k) ? 'check' : 'minus'} s=${16} c=${on(k) ? '#10b981' : '#475569'} /></button>`)}</div>
+    <div class="grid2">${[['AG', 'A.G. şebeke', H.HAT_AG], ['OG', 'O.G. şebeke', H.HAT_OG], ['AYD', 'Aydınlatma', H.HAT_AYD], ['ENH', 'E.N.H. / B.A.H.H.', H.HAT_ENH], ['ABONE', 'Abone', H.HAT_ABONE], ['yeralti', 'Yeraltı kablosu', H.KABLO], ['kanal', 'Kanal kenarı ve sondaj', H.KANAL], ['trafo', 'Trafo ve box', EKRAN.trafo], ['mevcut', 'Mevcut elemanlar', EKRAN.direkMevcut.AG], ['demontaj', 'Demontaj (sarı)', DEMONTAJ_RENGI]].map(([k, l, c]) => html`<button class="card row" style="color:inherit;padding:10px" onClick=${() => t(k)}><span style=${'width:18px;height:3px;background:' + c}></span><span class="grow" style="font-size:13px;font-weight:600">${l}</span><${Icon} n=${on(k) ? 'check' : 'minus'} s=${16} c=${on(k) ? '#10b981' : '#475569'} /></button>`)}</div>
     <div class="sect">İş tipi → sembol durumu</div>
-    <div class="card tight list">${[['Montaj', 'Yeni (dolu)', 'servis 0xx · yeni O.G. kafes', 'full'], ['DMM', 'Sökülüp tekrar dikilen (yarım dolu)', 'servis 2xx · BYSK', 'half'], ['Dokunulmayan', 'Mevcut (boş)', 'hakedişe girmez', 'none'], ['Demontaj', 'Mevcut + sarı çizgi', 'servis 1xx', 'none']].map(([j, s, n, m]) => html`<div class="li">${sym('s', m, m === 'none' ? '#d94a4a' : '#ff0000', true)}<div class="grow"><div><b>${j}</b> <span class="note">→ ${s}</span></div><div class="m">${n}</div></div></div>`)}</div>
+    <div class="card tight list">${[['Montaj', 'Yeni (dolu)', 'servis 0xx · yeni O.G. kafes', 'full'], ['DMM', 'Sökülüp tekrar dikilen (yarım dolu)', 'servis 2xx · BYSK', 'half'], ['Dokunulmayan', 'Mevcut (boş)', 'hakedişe girmez', 'none'], ['Demontaj', 'Mevcut + sarı çizgi', 'servis 1xx', 'none']].map(([j, s, n, m]) => html`<div class="li">${sym('s', m, m === 'none' ? EKRAN.direkMevcut.OG : EKRAN.direk.OG, true)}<div class="grow"><div><b>${j}</b> <span class="note">→ ${s}</span></div><div class="m">${n}</div></div></div>`)}</div>
     <div class="sect">Şebeke hatları · DXF katmanı</div>
-    <div class="card tight list">${L.layers.filter((x) => x.width).map((x) => html`<div class="li"><span style=${'width:60px;height:' + Math.max(2, x.width) + 'px;background:' + x.color + (x.lt === 'DASHED' ? ';background:repeating-linear-gradient(90deg,' + x.color + ' 0 8px,transparent 8px 12px)' : '')}></span><div class="grow"><b style="font-size:13px">${x.layer}</b><div class="m">${x.lt}</div></div><span class="mono note">ACI ${x.aci}</span></div>`)}</div>
+    <div class="card tight list">${HAT_LEJANTI.map(([k, ad, lw]) => { const st = STIL.katmanlar[k] || {}; return html`<div class="li">${hatOrnegi(k, lw)}<div class="grow"><b style="font-size:13px">${ad}</b><div class="m">${st.telefon || ''} · ${st.cizgi || 'CONTINUOUS'}</div></div><span class="mono note">ACI ${st.aci}</span></div>`; })}
+      <div class="li"><svg width="64" height="14" viewBox="0 0 64 14" style="flex-shrink:0"><path d="M4 7H60" stroke=${DEMONTAJ_RENGI} stroke-width="2.5" stroke-linecap="round" /></svg><div class="grow"><b style="font-size:13px">Demontaj hattı</b><div class="m">her türde sarı · ileride yapılacak hat kesikli</div></div><span class="mono note">ACI ${DR.demontaj}</span></div></div>
     <div class="sect">Direkler</div>
     <div class="card tight"><div class="row" style="padding:8px 12px"><span class="grow"></span><span class="lbl" style="width:56px;text-align:center">Mevcut</span><span class="lbl" style="width:56px;text-align:center">Yeni</span><span class="lbl" style="width:56px;text-align:center">BYSK</span></div>
-      ${rows.map(([n, sh, v, gr, aci]) => { const c = PC[v] || PC.OG || {}; return html`<div class="row" style="padding:6px 12px;border-top:1px solid #2d3449"><div class="grow"><b style="font-size:13px">${n}</b><div class="m">${aci}</div></div>${sym(sh, 'none', c.MEVCUT || '#fff', gr)}${sym(sh, 'full', c.YENI || '#fff', gr)}${sym(sh, 'half', c.DMM || '#fff', gr)}</div>`; })}</div>
+      ${rows.map(([n, sh, v, gr]) => { const c = direkSatiri(v); return html`<div class="row" style="padding:6px 12px;border-top:1px solid #2d3449"><div class="grow"><b style="font-size:13px">${n}</b><div class="m">ACI ${DR[v].join(' · ')}</div></div>${sym(sh, 'none', c.MEVCUT, gr)}${sym(sh, 'full', c.YENI, gr)}${sym(sh, 'half', c.DMM, gr)}</div>`; })}</div>
     <div class="sect">Özel katmanlar</div>
-    <div class="card tight list">${L.layers.filter((x) => !x.width).map((x) => html`<div class="li"><span style=${'width:14px;height:14px;border-radius:3px;background:' + (aciCol[x.aci] || '#ccc')}></span><b class="grow" style="font-size:13px">${x.layer}</b><span class="mono note">ACI ${x.aci}${x.aciNew ? ' · ' + x.aciNew + ' · ' + x.aciDmm : ''}</span></div>`)}</div>
+    <div class="card tight list">${ozel.map(([k, x]) => html`<div class="li"><span style=${'width:14px;height:14px;border-radius:3px;background:' + aciCSS(x.aci)}></span><b class="grow" style="font-size:13px">${x.telefon}</b><span class="mono note">ACI ${x.aci}${x.aciYeni ? ' · ' + x.aciYeni + ' · ' + x.aciDmm : ''}</span></div>`)}</div>
     <div class="sect">Sokak lambaları · B_CAD yazı tipi</div>
     <div class="card tight list">${(L.lamps || []).map((l) => html`<div class="li"><b class="grow" style="font-size:13px">${l.n}</b><span class="badge b-warn" style="height:28px;width:34px;justify-content:center;font-size:14px">${l.m}</span><span class="badge b-cy" style="height:28px;width:34px;justify-content:center;font-size:14px">${l.y}</span></div>`)}</div>
-    <div class="sect">Hat kesiti yazımı</div>
-    <div class="card tight list">${Object.entries(L.kesit || {}).map(([k, f]) => html`<div class="li"><b class="mono" style="width:120px;color:#00ff00">${f.replace('{t}', '3P+R/P')}</b><span class="grow" style="font-size:13px">${{ MEVCUT: 'Mevcut hat kesiti', YENI: 'Yeni hat kesiti', ILERIDE: 'İlerde hat kesiti', DMM: 'Sökülüp kullanılan (BYSK)' }[k] || k}</span></div>`)}</div>
-    <div class="alert info"><${Icon} n="info" s=${16} /><span>Şekil, dolgu ve ACI Lejant.dxf'ten; standart tablosunda (${cat.std.code}) saklanır. DXF çıktısında aynen kullanılır.</span></div>`;
+    <div class="sect">Hat etiketi ve metraj</div>
+    <div class="card tight list">${Object.entries(STIL.etiketler.kesit).map(([k, fm]) => html`<div class="li"><b class="mono" style=${'width:120px;color:' + (k === 'DEMONTAJ' ? DEMONTAJ_RENGI : H.HAT_AG)}>${'H1 ' + fm.replace('{t}', '3P+R/P')}</b><span class="grow" style="font-size:13px">${{ MEVCUT: 'Mevcut hat', YENI: 'Yeni hat', ILERIDE: 'İlerde yapılacak hat', DMM: 'Sökülüp kullanılan (BYSK)', DEMONTAJ: 'Demontaj hattı' }[k] || k}</span></div>`)}
+      <div class="li"><b class="mono" style=${'width:120px;color:' + H.HAT_AG}>32.50</b><span class="grow" style="font-size:13px">Açıklık metrajı: iki direk (yer altında iki bağlantı elemanı) arası, çizginin üst yanında; etiket alt yanında, hattın renginde</span></div></div>
+    <div class="alert info"><${Icon} n="info" s=${16} /><span>Renkler, çizgi tipleri ve yazı düzeni ortak çizim stilinden: haritada, DXF çıktısında ve AutoCAD eklentisinde aynıdır (ortak/katalog/cizim-stili.json).</span></div>`;
 }
 
 export function DefinitionsScreen({ eqId }) {

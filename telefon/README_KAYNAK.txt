@@ -145,7 +145,7 @@ Testler
 
 2.5.x değişiklikleri (Şebeke Hakediş deposuna birleşme · 17.10.2026)
 ====================================================================
-Depo: alpaslanbaygun/sebeke-hakedis › telefon/. Derleme GitHub Actions'ta (.github/workflows/telefon.yml): npm ci →
+Depo: Şebeke Hakediş deposu › telefon/. Derleme GitHub Actions'ta (.github/workflows/telefon.yml): npm ci →
 node --test → tools/setup_tools.sh → tools/build_apk.sh. Sürüm adı 2.5.N, sürüm kodu 1000+N (N = derleme sırası).
 İmza anahtarı aynı (keystore/voltsaha-release.jks): 2.1.0 ve sonrasının üzerine kurulur.
 
@@ -192,3 +192,30 @@ Düzeltme kaynakları (CORS / sabit istasyon · 25.10.2026)
 Testler: tests/gnss.test.mjs (7); android/test/NtripTest.java + mock_caster.py (JDK ile: VRS'in GGA beklemesi, v2 parça
 arası bekleme, doğrudan TCP, 1005, akış denemesi, kalıcı hata, kısa oturumlar, okumayan sunucu); tests/ui/gnss_ui.py
 (derlenmiş uygulamada Ayarlar › Düzeltme kaynağı; CI'da çalışır, ekran görüntüleri ci-sonuc-android(-dal) › ekran/).
+
+Eklentiyle eşitleme: çizim görünümü, Google Earth, CBS, altlıklar (31.10.2026)
+===============================================================================
+Kural (DEVIR.md › 1): eklenti güncellenince telefon da aynı güncellemeyi alır; eşitlik ortak denemelerle denetlenir.
+- ui/cizim-gorunumu.js: haritanın çizim görünümü ortak stilden (src/ortak/cizim-stili.js): hat rengi (hatRengi;
+  demontaj sarı), çizgi tipi (hatCizgisi → ekranDeseni: çizim deseni × 2 px, yuvarlak uçlar için boşluğa kalınlık
+  eklenir), kanal kenarı (kanalGenisligi, esCizgi), açıklık metrajı ve hat etiketi (dxf.js spanTexts / yaziKonumu /
+  hatYazisi; yazı boyu 9–16 px, kaydırma yazı boyuyla orantılı). map-engine.js bunları kullanır; Katmanlar'da yeni
+  "kanal" katmanı. Lejant ekranı (catalog.js › LayersScreen) ve hat seçim renkleri (map.js › GCOL) de ortak stilden.
+- export/dxf.js: kanal kenarları POLYLINE olarak (kanalın katmanında, CONTINUOUS, kanalın / demontajın rengi);
+  lineKey, ARA_ELEMAN, hatYazisi, kanalGenisligi, esCizgi dışa açıldı.
+- export/cbs.js: eklentideki CbsYapisi + KmlYazici + MifDosyasi (yazma) karşılığı. Girdi: SH.projeOku(sebekeYaz(ps))
+  (eklentinin okuduğu model). Sayılar .NET gibi yazılır (netSayi: 15 anlamlı basamak sonra yarım yukarı; yuvarla:
+  Math.Round yarımda çift). MIF: CRLF, Türkçe Windows (cp1254), CoordSys proje / seçilen sistemden (mifCoordSys).
+  exporter.js: 'kmz' (asıl içerik + gis.js › kml3BKlasoru, kapalı), 'mif' (zip), teslim paketinde HARITA/mif/.
+- ui/services.js: esri_k, bing_a, bing_h (meta veri: dev.virtualearth.net, APK'da /_tile vekiliyle), azure_s, azure_m
+  (subscription-key adreste); özel adreste {q}. geo/tiles.js › quadKey. Ayarlar'da esri / azure / bing anahtarları.
+- android/MainActivity.java: WebView ve karo vekili kimliği "SebekeM/<sürüm>".
+Testler: tests/cbs.test.mjs (ortak deneme ortak/deneme/cbs: eklentinin yazdığı beklenen KML ve MIF / MID ile
+birebir), tests/altlik.test.mjs (eklentinin altlık listesi HaritaAltligi.cs'den okunur; Preact kurulu değilse 2'si
+atlanır), tests/dxf.test.mjs D4 (kanal kenarları), tests/sebeke.test.mjs A20 (KMZ, MIF, UTM seçimi, teslim paketi).
+Gözden geçirme düzeltmeleri: başka koordinat sisteminde MIF'in SAGA / YUKARI, UZUNLUK ve ALAN sütunları da çevrilir
+(cbs.js › sistemeCevir); "ileride" nesneler ve konumsuzlar CBS'ye yazılmaz, Dışa Aktarım uyarır (exporter.js ›
+cbsUyarilari), 3B klasöründe de çizilmez; AutoCAD bölgesi olmayan projede uydurma sınır CBS'ye yazılmaz (eklentiModeli);
+Bing meta verisi ve Google oturumu aynı anda istenen karolar için tek istek, ret bir dakika saklanır; haritada görünen
+alanın dışındaki hatlar çizilmez, yazıları hesaplanmaz. Eklentide CbsYapisi.Yuvarla eksi sıfırı artı sıfıra çevirir
+(.NET 8 "-0", .NET Framework "0" yazıyordu; telefon "0"), ortak denemeye eksi sıfır değerleri eklendi.

@@ -101,6 +101,8 @@ namespace SebekeHakedis.Eklenti
     internal sealed class AktarimOzeti
     {
         public string Proje = "", Dosya = "";
+        /// <summary>Pencerenin başlığı ve simgesi (telefondan alma; CBS'den alma da aynı pencereyi kullanır).</summary>
+        public string Baslik = "Telefondan al", Simge = "telefon_al";
         /// <summary>Proje bu çizimden alınmamış görünüyor (her şey yeni eklenecek).</summary>
         public bool BaskaCizim;
         public int Degismeyen, CizimdeSilinmis;
@@ -837,12 +839,17 @@ namespace SebekeHakedis.Eklenti
             return en;
         }
 
-        public static HatSecimi Hat(OrtamVerisi o, HatSecimi onceki)
+        /// <summary>
+        /// Hat seçimi: tür, iletkenler (iki yuva), durum, hakediş. degisecek &gt; 0: Hat Değiştir (SH_HATDEGISTIR) — çizilmiş
+        /// o kadar hattın iletkeni değişir; pencere önceki (hattın şimdiki) seçimiyle açılır.
+        /// </summary>
+        public static HatSecimi Hat(OrtamVerisi o, HatSecimi onceki, int degisecek = 0)
         {
             Hazirla();
-            using (var f = new KoyuPencere("Hat çiz", 920, 660, Boya.Simge("hat_havai", KoyuRenk.Yesil, 20)))
+            bool degistir = degisecek > 0;
+            using (var f = new KoyuPencere(degistir ? "Hat değiştir" : "Hat çiz", 920, 660, Boya.Simge("hat_havai", KoyuRenk.Yesil, 20)))
             {
-                var alt = AltKur(f, "Çiz");
+                var alt = AltKur(f, degistir ? "Değiştir" : "Çiz");
                 int icSon = f.IcerikSonu - 16;
 
                 var tur = Koy(f, new SimgeListesi(), 16, 56, 196, icSon - 56);
@@ -871,7 +878,9 @@ namespace SebekeHakedis.Eklenti
                 Etiket(f, "Hakediş", 604, y);
                 var hak = Koy(f, new SayiKutusu(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis), 604, y + 20, 120, 30);
                 y += 62;
-                const string normal = "Hat her direkte, SDK'da biter, yeni parça başlar; her parçaya hat bilgisi yazılır.";
+                string normal = degistir
+                    ? "Seçilen " + degisecek + " hattın iletkeni (tip, cins), türü, durumu ve hakedişi değişir; çizgiler yerinde kalır, metraj korunur (tür değişirse yeni türün metrajı)."
+                    : "Hat her direkte, SDK'da biter, yeni parça başlar; her parçaya hat bilgisi yazılır.";
                 var bilgi = Koy(f, new BilgiCubugu(BilgiTuru.Bilgi, normal), 604, y, 300, Math.Max(52, icSon - y));
 
                 var suzgec = onceki != null ? onceki.Cinsler : new List<string>();
@@ -889,7 +898,7 @@ namespace SebekeHakedis.Eklenti
                 {
                     var t = seciliTur();
                     var hs = new HatSecimi { Iletkenleri = iletkenler() };
-                    alt.Ozet.Text = "Çizilecek: " + (t != null ? t.Ad : "?") + " · " + (hs.Iletkenleri.Count > 0 ? MalzemeYazimi.Duzelt(hs.IletkenYazisi) : "iletken seçin") + " · " + durum.Secili + " · " + (int)hak.Value + ". hakediş";
+                    alt.Ozet.Text = (degistir ? "Yeni: " : "Çizilecek: ") + (t != null ? t.Ad : "?") + " · " + (hs.Iletkenleri.Count > 0 ? MalzemeYazimi.Duzelt(hs.IletkenYazisi) : "iletken seçin") + " · " + durum.Secili + " · " + (int)hak.Value + ". hakediş";
                     alt.Ozet.Simge = t != null ? TurSimgesi(t.Kod, true, false, 18) : null;
                 };
                 var kilitDenetle = KilitBagla(o, hak, bilgi, alt.Tamam, normal);
@@ -2280,15 +2289,30 @@ namespace SebekeHakedis.Eklenti
                 (a.Koy ? koy : sehir).Checked = true;
                 Aciklama(tarife, "Yeni konan her kalemin tarifesi bu ayarla üretilir (karakteristik + unsur); var olan kalemler değişmez.", 0, 156, 600, 34);
 
-                // Görünüm
+                // Görünüm: simge ve yazı boyutları (telefon dosyasıyla da taşınır)
                 var gorunum = sayfa();
-                Aciklama(gorunum, "Simgeler her zaman uygulamanın simgeleridir (telefonla aynı, 1 ölçek, 1/1000 pafta).", 0, 0, 600, 20);
-                Etiket(gorunum, "Hat etiketi yüksekliği (m)", 0, 36);
-                var etiket = Koy(gorunum, new SayiKutusu(0.05m, 50, D(a.EtiketYuksekligi), 2, 0.1m), 0, 56, 120, 30);
-                Aciklama(gorunum, "Telefonun çizimiyle aynı: 1,8 m (parça metrajı 1,44 m).", 136, 64, 480, 20);
-                Etiket(gorunum, "Direğe yakalama (m)", 0, 98);
-                var yakala = Koy(gorunum, new SayiKutusu(0, 50, D(a.YakalamaMesafesi), 2, 0.5m), 0, 118, 120, 30);
-                Aciklama(gorunum, "Hat ve kanal çizerken elemanın simgesinin üstüne ya da en az bu mesafeye tıklanınca hat elemanın ortasına oturur ve orada parçalanır. 0: yakalama kapalı.", 136, 116, 480, 40);
+                Etiket(gorunum, "Simge ve yazı boyutları", 0, 0, 0, KoyuYazi.Kalin);
+                Aciklama(gorunum, "Yeni çizilenler bu ölçülerle çizilir. Kaydedince çizimde olanlara da uygulanması sorulur. Varsayılanlar telefonun çizimiyle aynıdır (1/1000 pafta).", 0, 22, 616, 34);
+                Etiket(gorunum, "Simge büyüklüğü (kat)", 0, 62);
+                var simge = Koy(gorunum, new SayiKutusu(0.1m, 20, D(a.SimgeOlcegi), 2, 0.1m) { Name = "simgeOlcegi" }, 0, 82, 140, 30);
+                Etiket(gorunum, "Eleman yazısı: GIS no, tip (m)", 316, 62);
+                var elemanYazi = Koy(gorunum, new SayiKutusu(0.05m, 50, D(a.ElemanYaziYuksekligi), 2, 0.1m) { Name = "elemanYaziYuksekligi" }, 316, 82, 140, 30);
+                Etiket(gorunum, "Hat etiketi: kablo tipi (m)", 0, 122);
+                var etiket = Koy(gorunum, new SayiKutusu(0.05m, 50, D(a.EtiketYuksekligi), 2, 0.1m) { Name = "etiketYuksekligi" }, 0, 142, 140, 30);
+                Etiket(gorunum, "Metraj yazısı (m)", 316, 122);
+                var metrajYazi = Koy(gorunum, new SayiKutusu(0.05m, 50, D(a.MetrajYuksekligi), 2, 0.1m) { Name = "metrajYuksekligi" }, 316, 142, 140, 30);
+                var varsayilan = Koy(gorunum, new KoyuDugme("Varsayılana dön", DugmeTuru.Ikincil, Boya.Simge("gorunum", KoyuRenk.Ikincil, 16)) { Name = "boyutVarsayilan" }, 0, 186, 170, 32);
+                Aciklama(gorunum, "Simge 1 kat · eleman yazısı 1,8 m · kablo tipi 1,8 m · metraj 1,44 m", 186, 192, 430, 20);
+                varsayilan.Click += (s, e) =>
+                {
+                    simge.Value = 1;
+                    elemanYazi.Value = D(CizimAyarlari.VarsayilanEtiket);
+                    etiket.Value = D(CizimAyarlari.VarsayilanEtiket);
+                    metrajYazi.Value = D(CizimAyarlari.VarsayilanMetraj);
+                };
+                Etiket(gorunum, "Direğe yakalama (m)", 0, 238);
+                var yakala = Koy(gorunum, new SayiKutusu(0, 50, D(a.YakalamaMesafesi), 2, 0.5m), 0, 258, 140, 30);
+                Aciklama(gorunum, "Hat ve kanal çizerken elemanın simgesinin üstüne ya da en az bu mesafeye tıklanınca hat elemanın ortasına oturur ve orada parçalanır. 0: yakalama kapalı.", 156, 256, 460, 40);
 
                 // Metraj
                 var metraj = sayfa();
@@ -2353,6 +2377,10 @@ namespace SebekeHakedis.Eklenti
                 var dom = domlar.Find(r => r.Checked);
                 a.Dom = dom != null ? (int)dom.Tag : 0;
                 a.EtiketYuksekligi = (double)etiket.Value;
+                a.SimgeOlcegi = (double)simge.Value;
+                a.ElemanYaziYuksekligi = (double)elemanYazi.Value;
+                a.MetrajYuksekligi = (double)metrajYazi.Value;
+                a.BoyutlariDuzelt();
                 a.YakalamaMesafesi = (double)yakala.Value;
                 a.YukariYuvarla = yukari.Checked;
                 foreach (var kv in paylar)
@@ -2372,6 +2400,142 @@ namespace SebekeHakedis.Eklenti
                 a.Firma = pFirma.Text.Trim();
                 var buz = buzlar.Find(r => r.Checked);
                 a.BuzBolgesi = buz != null ? (string)buz.Tag : "";
+                return true;
+            }
+        }
+
+        // ================= CBS'den al: dosyaların eşleştirilmesi =================
+
+        /// <summary>
+        /// CBS'den (MIF / MID) alınacak dosyalar: her dosyanın ne olduğu (direk, trafo, SDK, pano, diğer eleman, hat, kanal,
+        /// sondaj, bölge, GPS noktası, malzeme tablosu ya da yalnız altlık) ve sütunlarının hangi bilgi olduğu. Tanınan
+        /// dosyalar hazır gelir (Şebeke-M'in dosyası birebir, başka CBS'nin dosyası adından ve sütun adlarından); kullanıcı
+        /// değiştirebilir. Durumu yazılı olmayan nesnelerin durumu ve hakedişi de burada seçilir.
+        /// </summary>
+        public static bool CbsAl(OrtamVerisi o, List<CbsKaynagi> kaynaklar, CbsAlmaAyari ayar)
+        {
+            Hazirla();
+            using (var f = new KoyuPencere("CBS'den al", 980, 640, Boya.Simge("cbs_al", KoyuRenk.Yesil, 20)))
+            {
+                var alt = AltKur(f, "Al");
+                int icSon = f.IcerikSonu - 16;
+                Etiket(f, "Dosyalar", 16, 56, 300, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var liste = new IkiSatirListe();
+                Func<CbsKaynagi, string> geometriAdi = k =>
+                {
+                    switch (k.Geometri) { case "nokta": return "nokta"; case "cizgi": return "çizgi"; case "alan": return "alan"; default: return "haritada yeri yok"; }
+                };
+                liste.Baslik = x => ((CbsKaynagi)x).Ad;
+                liste.Alt = x =>
+                {
+                    var k = (CbsKaynagi)x;
+                    return (k.Veri != null ? k.Veri.Nesneler.Count : 0) + " " + geometriAdi(k) + " → " + CbsIceAktarim.SecenekAdi(k.Katman) + (k.SebekeM ? " · Şebeke-M" : "");
+                };
+                foreach (var k in kaynaklar) liste.Items.Add(k);
+                Koy(f, new Cerceve(liste), 16, 80, 300, icSon - 80);
+
+                Etiket(f, "Bu dosya ne?", 332, 56, 300, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var katman = Koy(f, new KoyuAcilir(), 332, 80, 330);
+                foreach (var sc in CbsIceAktarim.Secenekler) katman.Items.Add(sc[1]);
+                var bilgi = Koy(f, new BilgiCubugu(BilgiTuru.Bilgi, ""), 676, 76, 288, 52);
+                Etiket(f, "Sütunlar: hangi bilgi dosyanın hangi sütununda", 332, 134, 600, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var g = new DataGridView
+                {
+                    AllowUserToAddRows = false, AllowUserToDeleteRows = false, SelectionMode = DataGridViewSelectionMode.CellSelect, MultiSelect = false,
+                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, EditMode = DataGridViewEditMode.EditOnEnter,
+                };
+                KoyuTablo.Uygula(g);
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Bilgi", ReadOnly = true, FillWeight = 110 });
+                var cSutun = new DataGridViewComboBoxColumn { HeaderText = "Dosyadaki sütun", FillWeight = 120, FlatStyle = FlatStyle.Flat, DisplayStyle = DataGridViewComboBoxDisplayStyle.ComboBox };
+                g.Columns.Add(cSutun);
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "İlk nesnedeki değer", ReadOnly = true, FillWeight = 130 });
+                foreach (DataGridViewColumn c in g.Columns) c.SortMode = DataGridViewColumnSortMode.NotSortable;
+                g.DataError += (s, e) => { e.ThrowException = false; };
+                Koy(f, new Cerceve(g), 332, 158, 632, icSon - 158 - 56);
+
+                Etiket(f, "Durumu yazılı değilse", 332, icSon - 44, 160);
+                var durum = Koy(f, new KoyuAcilir(), 496, icSon - 48, 150);
+                foreach (var d in Turler.CizimDurumlari) durum.Items.Add(d);
+                durum.SelectedIndex = Math.Max(0, Array.IndexOf(Turler.CizimDurumlari, ayar.VarsayilanDurum));
+                Etiket(f, "Hakediş", 666, icSon - 44, 70);
+                var hak = Koy(f, new SayiKutusu(1, 999, Math.Max(1, ayar.Hakedis)), 736, icSon - 48, 90, 32);
+                const string Yok = "(yok)";
+
+                CbsKaynagi secili = null;
+                bool yukleniyor = false;
+                Action ozetYaz = () =>
+                {
+                    int nesne = 0, altlik = 0;
+                    foreach (var k in kaynaklar) if (k.Katman.Length == 0) altlik++; else nesne++;
+                    alt.Ozet.Text = nesne + " dosya şebeke nesnesi olarak alınacak" + (altlik > 0 ? ", " + altlik + " dosya altlık olarak çizilecek" : "") + ".";
+                    alt.Ozet.Simge = Boya.Simge("cbs_al", KoyuRenk.Ikincil, 16);
+                };
+                Action tabloyuDoldur = () =>
+                {
+                    yukleniyor = true;
+                    g.Rows.Clear();
+                    cSutun.Items.Clear();
+                    cSutun.Items.Add(Yok);
+                    if (secili != null && secili.Veri != null) foreach (var c in secili.Veri.Sutunlar) if (!cSutun.Items.Contains(c)) cSutun.Items.Add(c);
+                    var ilk = secili != null && secili.Veri != null && secili.Veri.Nesneler.Count > 0 ? secili.Veri.Nesneler[0].Degerler : new string[0];
+                    if (secili != null)
+                        foreach (var a in CbsIceAktarim.Alanlar(secili.Katman))
+                        {
+                            int i = secili.Sutun(a[0]);
+                            int r = g.Rows.Add();
+                            g.Rows[r].Cells[0].Value = a[1];
+                            g.Rows[r].Cells[1].Value = i >= 0 && i < secili.Veri.Sutunlar.Count ? secili.Veri.Sutunlar[i] : Yok;
+                            g.Rows[r].Cells[2].Value = i >= 0 && i < ilk.Length ? ilk[i] : "";
+                            g.Rows[r].Tag = a[0];
+                        }
+                    bool altlik = secili == null || secili.Katman.Length == 0;
+                    g.Enabled = !altlik;
+                    string geo = secili == null ? "" : geometriAdi(secili);
+                    bilgi.Text = secili == null ? "" : altlik
+                        ? "Altlık: nesneler CBS-" + secili.Ad + " katmanına çizilir; hakediş nesnesi olmaz."
+                        : secili.SebekeM ? "Şebeke-M'in dosyası: sütunlar birebir eşlendi" + (secili.Katman == "MALZEME" ? "; satırlar nesnelerine bağlanır." : "; malzemeler tablosundan gelir.")
+                        : "Başka CBS dosyası (" + geo + "): sütunları denetleyin. Tip ve iletken katalogda aranır.";
+                    yukleniyor = false;
+                };
+                liste.SelectedIndexChanged += (s, e) =>
+                {
+                    secili = liste.SelectedItem as CbsKaynagi;
+                    yukleniyor = true;
+                    katman.SelectedIndex = secili == null ? -1 : Array.FindIndex(CbsIceAktarim.Secenekler, x => x[0] == secili.Katman);
+                    yukleniyor = false;
+                    tabloyuDoldur();
+                };
+                katman.SelectedIndexChanged += (s, e) =>
+                {
+                    if (yukleniyor || secili == null || katman.SelectedIndex < 0) return;
+                    secili.Katman = CbsIceAktarim.Secenekler[katman.SelectedIndex][0];
+                    CbsIceAktarim.SutunlariEsle(secili);
+                    liste.Invalidate();
+                    tabloyuDoldur();
+                    ozetYaz();
+                };
+                g.CellValueChanged += (s, e) =>
+                {
+                    if (yukleniyor || secili == null || e.RowIndex < 0 || e.ColumnIndex != 1) return;
+                    string alan = g.Rows[e.RowIndex].Tag as string, sutun = g.Rows[e.RowIndex].Cells[1].Value as string;
+                    if (alan == null) return;
+                    secili.Sutunlar[alan] = sutun == null || sutun == Yok ? -1 : secili.Veri.Sutunlar.IndexOf(sutun);
+                    int i = secili.Sutun(alan);
+                    var ilk = secili.Veri.Nesneler.Count > 0 ? secili.Veri.Nesneler[0].Degerler : new string[0];
+                    g.Rows[e.RowIndex].Cells[2].Value = i >= 0 && i < ilk.Length ? ilk[i] : "";
+                };
+                g.CurrentCellDirtyStateChanged += (s, e) => { if (g.IsCurrentCellDirty) g.CommitEdit(DataGridViewDataErrorContexts.Commit); };
+                if (liste.Items.Count > 0) liste.SelectedIndex = 0;
+                ozetYaz();
+                alt.Tamam.Click += (s, e) =>
+                {
+                    g.EndEdit();
+                    if (o.Kilitli((int)hak.Value)) { Uyar(HakedisOnayi.KilitMesaji((int)hak.Value)); return; }
+                    f.DialogResult = DialogResult.OK;
+                };
+                if (Goster(f) != DialogResult.OK) return false;
+                ayar.VarsayilanDurum = durum.SelectedIndex >= 0 ? Turler.CizimDurumlari[durum.SelectedIndex] : "MEVCUT";
+                ayar.Hakedis = (int)hak.Value;
                 return true;
             }
         }
@@ -2433,7 +2597,7 @@ namespace SebekeHakedis.Eklenti
             }
             int ust = 82 + (oz.BaskaCizim ? 52 : 0);
             int boy = Math.Min(900, ust + 236 + 12 + toplam + 8 + 60);
-            using (var w = new KoyuPencere("Telefondan al", en, boy, Boya.Simge("telefon_al", KoyuRenk.MaviAcik, 20)))
+            using (var w = new KoyuPencere(oz.Baslik, en, boy, Boya.Simge(oz.Simge, KoyuRenk.MaviAcik, 20)))
             {
                 var alt = AltKur(w, "Çizime aktar", false, 140);
                 Etiket(w, "Proje: " + oz.Proje + "    ·    Dosya: " + oz.Dosya, 16, 54, en - 32, null, KoyuRenk.Ikincil);

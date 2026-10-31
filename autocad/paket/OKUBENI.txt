@@ -43,9 +43,10 @@ KOMUTLAR
  Düzenleme
   SH_MALZEME       Seçilen nesnenin malzemeleri
   SH_TOPLUMALZEME  Seçilen direklere aynı malzemeleri tek seferde ekler
+  SH_HATDEGISTIR   Çizilmiş hatların iletkenini (tip, cins) değiştirir
   SH_METRAJ        Metrajı çizim uzunluğundan yeniden hesaplar
   SH_GORUNUM       Çizimi telefon görünümüne çevirir
-  SH_AYARLAR       Çizim ayarları
+  SH_AYARLAR       Çizim ayarları (simge ve yazı boyutları dahil)
  Hakediş
   SH_HAKEDIS       Aktif hakediş
   SH_ONAY          Hakediş onayı (onaylanan hakediş kilitlenir)
@@ -56,8 +57,10 @@ KOMUTLAR
   SH_DETAY         Eksik malzeme bul
  CBS ve harita
   SH_KML           Google Earth dosyası (KMZ / KML)
-  SH_MIFVER        CBS'ye MapInfo MIF / MID dosyaları
-  SH_MIFAL         CBS'den MIF / MID alır (altlık olarak çizilir)
+  SH_MIFVER        CBS'ye MapInfo MIF / MID: şebeke elemanı başına dosya (DIREK, TRAFO, SDK, PANO, HAT…)
+                   bütün bilgileri ve malzeme tablosuyla
+  SH_MIFAL         CBS'den MIF / MID alır: direk, trafo, SDK, pano, hat, kanal… şebeke nesnesi olarak
+                   (bilgileri ve malzemeleriyle) ya da altlık olarak
   SH_CBSBILGI      CBS'den alınan nesnenin bilgileri
   SH_ALTLIK        Harita altlığı (uydu / harita; anahtarlılar kendi anahtarınızla)
  Telefon

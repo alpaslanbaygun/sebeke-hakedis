@@ -10,7 +10,7 @@
         "proje": {
           "ad": "Deneme Yayla ENH",
           "kod": "DNM-02",
-          "yapan": "Ayşe Nur Yılmaz",
+          "yapan": "Deneme Örnek Kullanıcı",
           "unvan": "Elektrik Mühendisi",
           "tarih": "2026-10-18",
           "buzBolgesi": "2"
@@ -183,7 +183,7 @@
         "proje": {
           "ad": "Deneme Vadi ENH",
           "kod": "DNM-03",
-          "yapan": "Mehmet Ali Kaya",
+          "yapan": "Örnek Sınama Mühendis",
           "unvan": "Elektrik Mühendisi",
           "buzBolgesi": "3"
         },

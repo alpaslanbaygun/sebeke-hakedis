@@ -171,7 +171,7 @@ Renk teması: **Koyu**). Simgeler açık temada da okunur.
    Seçimler hatırlanır (AutoCAD yeniden açılınca da).
 4. **Malzeme** bölümü: **Malzeme** (seçilen nesnenin malzemeleri), **Toplu Malzeme** (seçilen direklerin hepsine
    birden malzeme ekler) ve **Malzeme Hafızası** (açık / kapalı; bkz. aşağıda).
-5. **Düzenle**: Metraj, Telefon Görünümü, Çizim Ayarları.
+5. **Düzenle**: Hat Değiştir, Metraj, Telefon Görünümü, Çizim Ayarları.
 
 Çizerken: **Geri** son nesneyi kaldırır, **Ayarlar** seçimleri değiştirir, **Enter** bitirir. GIS numarası
 kendiliğinden artar. Her komut AutoCAD'in **U** (Geri Al) komutuyla tek seferde geri alınır.
@@ -288,6 +288,34 @@ onunla gider. Eklentinin bütün yazıları Tahoma'dır (yazı stili `SEBEKE-M`)
 Bu görünümden önce çizilmiş çizimleri bir kez **Telefon Görünümü** (`SH_GORUNUM`) ile çevirin: etiketler, metraj
 yazıları, renkler, kanal kenarları ve yazı tipi yenilenir.
 
+**Hat yazıları** (31.10.2026): metraj ve kablo tipi yazısı parçanın **ortasına ortalı** yazılır — metraj çizginin üst
+yanında, kablo tipi alt yanında (çizginin en uzun parçasında); ikisi aynı noktadan başlamaz, üst üste binmez. Kısa
+parçaya sığmayan yazı önce daraltılır, yetmezse biraz küçülür. Hattı AutoCAD'in komutlarıyla **silerseniz** metraj ve
+kablo tipi yazıları da silinir; taşır, uzatır, köşesini oynatır ya da kopyalarsanız yazılar yeni yerine gelir (Geri Al
+dahil). Telefonun DXF'i aynı kuralla yazar.
+
+**Simge ve yazı boyutları** (Çizim Ayarları › Görünüm): simge büyüklüğü (kat), eleman yazısı (GIS no, tip), kablo tipi
+ve metraj yazısının yüksekliği (m); **Varsayılana dön** telefonla aynı ölçülere (1 kat · 1,8 · 1,8 · 1,44 m) getirir.
+Yeni çizilenler hemen bu ölçülerle çizilir; kaydederken çizimdekilere de uygulanması sorulur (Telefon Görünümü).
+Boyutlar "Telefona Gönder" ile telefona gider, telefonun DXF'i de bunlarla çizer; telefonda Dışa Aktarım › Çizim
+boyutları'ndan da değiştirilebilir. Telefondan alırken çizimde boyut ayarlanmamışsa telefondakiler alınır.
+
+### Hat değiştir (iletkenin tipi ve cinsi)
+
+Çizilmiş bir hattın iletkeni sonradan değişebilir: **Hat Değiştir** (`SH_HATDEGISTIR`, şeritte Düzenle). Hatları
+seçin (ya da önce seçip düğmeye basın); Hat penceresi ilk hattın şimdiki iletkeniyle açılır. Yeni iletkeni (tip, cins;
+gerekirse ikinci iletken, adet), türü, durumu ve hakedişi seçip **Değiştir**. Seçilen bütün hatların iletken satırları
+yenilenir; diğer malzemeleri olduğu gibi kalır. Kablo tipi yazısı, katman ve renk güncellenir. Metraj korunur; tür
+değişirse (ör. havai → yer altı) yeni türün metrajı yazılır. Onaylı (kilitli) hakedişteki hatlar değişmez.
+
+**Katman adları Türkçe karaktersizdir** (31.10.2026): `AGDIR`, `MUSDIR`, `AYDDIR`, `ENHDIR`, `MUSTEREK_HAT`; katman
+öneki de (ör. `ŞÇ` → `SC`). Eski adlı (`AGDİR` …) çizimler okunur; eklenti bir katmana yazarken eski adını yenisine
+çevirir, Telefon Görünümü bütün şebeke katmanlarını bir kez çevirir (sizin kendi katmanlarınıza dokunmaz).
+**Cins kodlarındaki yazım hataları** da düzeltildi: `AG_ALÜMİNYUM_KABLO`, `OG_ALÜMİNYUM_KABLO`, `REKORTMAN_ALÜMİNYUM`,
+`ALÜMİNYUM_BAĞ_TELİ`, `TEÇHİZAT_MONTAJ_DEMİRİ`, `KOFRE`; menülerdeki cins adları düzgün Türkçe (ör. "Bakır bara",
+"Ayırıcı (dahili tip)"). Eski kodlu çizim ve telefon dosyaları okunurken yeni koda çevrilir; Telefon Görünümü kayıtları
+da yeni kodla yazar. Eski program bu yeni adları tanımayabilir (artık yalnız Şebeke-M kullanılıyor).
+
 Beton / ağaç direk daire, demir direk kare. Her durumun simgesi ayrıdır:
 
 | Durum | Simge |
@@ -299,7 +327,7 @@ Beton / ağaç direk daire, demir direk kare. Her durumun simgesi ayrıdır:
 | Demontaj, KESİK | boş + iki paralel çizgi `//` |
 | Demontaj, SÖKÜK | boş + çarpı `X` |
 
-Demontaj simgeleri sarı çizilir. Simgeler metre cinsindendir, 1 ölçekle konur. Eski bir çizimi bu görünüme çevirmek
+Demontaj simgeleri sarı çizilir. Simgeler metre cinsindendir, ayardaki büyüklükle konur (varsayılan 1 kat). Eski bir çizimi bu görünüme çevirmek
 için **Telefon Görünümü** (`SH_GORUNUM`); değişmeyen eski bloklara dokunulmaz. Eski programın simgeleri istenirse
 **Çizim Ayarları › Görünüm**.
 
@@ -320,11 +348,12 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 | Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 934 kalemlik katalog). Hatta iletken eklerseniz hattın ikinci iletkeni olur (metrajı hattın boyu). |
 | Toplu Malzeme | `SH_TOPLUMALZEME` | Seçilen bütün direklere (trafo, SDK…) aynı malzemeleri birden ekler. |
 | Malzeme Hafızası | — | Açıkken son elemanın malzemeleri aynı tipteki yeni elemana kendiliğinden eklenir; tıklayınca kapanır / açılır. |
+| Hat Değiştir | `SH_HATDEGISTIR` | Seçilen hatların iletkenini (tip, cins), türünü, durumunu, hakedişini değiştirir; kablo tipi yazısı ve katman güncellenir, metraj korunur. |
 | Metraj | `SH_METRAJ` | Seçilen hat / kanal / sondajın metrajını çizim uzunluğundan yeniden hesaplar (önce listeyi gösterip sorar). |
-| Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (simge, renk, etiket, metraj yazıları, kanal kenarları, Tahoma yazı tipi). |
+| Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (simge, renk, etiket, metraj yazıları, kanal kenarları, Tahoma yazı tipi); katman adlarını Türkçe karaktersiz, cins kodlarını yazım hatasız yapar. |
 | Aktif Hakediş | `SH_HAKEDIS` | Aktif hakediş: yeni çizilenler bu hakedişin katmanlarına (`SC_3.HAK.…`) konur. Eski programın aktif hakedişiyle ortaktır. |
 | Hakediş Onayı | `SH_ONAY` | Her hakediş için sırayla **Kontrol → Hakediş → GIS** onayı (eski programın onay kaydı; o program aynı işaretleri görür). **Hakediş onayı verilen hakediş kilitlenir**: o hakedişe yeni nesne çizilemez, malzeme satırları gri görünür ve değiştirilemez / silinemez, metraj güncellemesi o nesneleri atlar, telefondan gelen değişiklik o hakedişe dokunuyorsa aktarılmaz. Kilitli direğe açık hakedişte yeni malzeme eklemek serbesttir. |
-| Çizim Ayarları | `SH_AYARLAR` | Katman / GIS ön eki, koordinat dilimi, **tarife (şehir / köy-bakım ve karakteristik)**, sembol takımı, etiket yüksekliği, direğe yakalama mesafesi, metraj yuvarlama ve ek paylar, kanal varsayılanları, **proje bilgileri** (ad, kod, hesabı yapan, unvan, firma, buz bölgesi). Çizimin içinde saklanır. |
+| Çizim Ayarları | `SH_AYARLAR` | Katman / GIS ön eki, koordinat dilimi, **tarife (şehir / köy-bakım ve karakteristik)**, sembol takımı, **simge ve yazı boyutları**, direğe yakalama mesafesi, metraj yuvarlama ve ek paylar, kanal varsayılanları, **proje bilgileri** (ad, kod, hesabı yapan, unvan, firma, buz bölgesi). Çizimin içinde saklanır. |
 | Bölge | `SH_BOLGE` | Alt proje sınırı: köşeleri gösterin ya da **Nesne** deyip var olan kapalı çizgiyi seçin; ad, proje kodu ve **grup kodu**. Eski programın bölge listesine de kaydedilir. |
 | Nokta Al | `SH_NOKTAAL` | Ölçü noktalarını dosyadan alır (telefonun "Noktalar (CSV)" çıktısı ya da Ad, Y, X, Z, Kod dosyası). |
 | Telefondan Al | `SH_PROJEAL` | Bölüm 2. Üç dosya türü açılır: `.sebeke.json`, `.volt.json`, teslim paketi `.zip`. Teknik hesap kayıtları da alınır. |
@@ -349,18 +378,42 @@ Bu düğmeler çizimin gerçek koordinatını kullanır: **ITRF96, 3° TM**. Çi
 - **Google Earth** (`SH_KML`): çizimi `.kmz` (ya da `.kml`) olarak kaydeder. Her proje (bölge) bir klasördür:
   proje sınırı, elemanlar, hatlar, kanallar, sondajlar; GPS noktaları ayrı klasörde (kapalı gelir). Renkler
   telefon ekranındakiyle aynıdır; demontajlar yarı saydamdır. Bir nesneye tıklayınca GIS no, tip, durum, hakediş,
-  proje, metraj ve malzemeleri görünür.
-- **CBS'ye Aktar** (`SH_MIFVER`): MapInfo **MIF / MID** dosyaları. Verdiğiniz ada her nesne türü için ek gelir:
-  `ad_ELEMAN`, `ad_HAT`, `ad_KANAL`, `ad_SONDAJ`, `ad_BOLGE` (proje sınırı), `ad_NOKTA` (GPS noktası); her biri
-  `.mif` + `.mid`. Koordinatlar çizim koordinatıdır (dosyada dilim yazılıdır), harfler Türkçe Windows kod sayfasıdır.
-  Sütunlar: `KIMLIK`, `GIS_NO`, `TUR` / `TUR_ADI`, `CINS`, `TIP`, `DURUM`, `DM_DURUM`, `HAKEDIS`, `PROJE`,
-  `PROJE_KODU`, `MALZEME`, `SAGA`, `YUKARI`, `KOT`, `ACI` (eleman); hatta `KESIT`, `ETIKET`, `UZUNLUK`, `METRAJ`;
-  kanalda `KABLOLAR`, `ZEMIN`, `ALT_CM`, `UST_CM`, `DERIN_CM`, `BAS_NO`, `BIT_NO`.
-- **CBS'den Al** (`SH_MIFAL`): bir ya da birkaç `.mif` dosyası seçin (yanında aynı adlı `.mid`). Noktalar küçük
-  daire (adı / numarası yanında), çizgiler ve alanlar çoklu çizgi, yazılar yazı olarak **altlık** çizilir; her dosya
-  kendi katmanındadır (`CBS-dosya adı`). TM (başka dilim, UTM), enlem-boylam ve düz koordinat çizimin dilimine
-  çevrilir. Datum ITRF96 / WGS84 değilse (ör. ED50) uyarılırsınız (birkaç metre kayabilir). Bu nesneler hakediş
-  nesnesi değildir: rapora ve telefona girmez.
+  proje, metraj ve malzemeleri görünür. Telefon da aynı dosyayı üretir: **Dışa Aktar › Google Earth KMZ** (telefonda
+  ayrıca 3 boyutlu direk / tel klasörü vardır, kapalı gelir).
+- **CBS'ye Aktar** (`SH_MIFVER`): MapInfo **MIF / MID** dosyaları, **şebeke elemanı başına ayrı katman**.
+  Verdiğiniz ada her katman için ek gelir; her biri `.mif` + `.mid`:
+  - `ad_DIREK`, `ad_TRAFO`, `ad_SDK`, `ad_PANO`, `ad_ELEMAN` (diğer elemanlar: mufu, kofre…): nokta. Sütunlar
+    `KIMLIK`, `GIS_NO`, `TUR` / `TUR_ADI`, `CINS` / `CINS_ADI`, `TIP`, `DURUM`, `DM_DURUM`, `HAKEDIS`, `GUC` (trafo
+    kVA), `GERILIM`, `KONTROL`, `PROJE`, `PROJE_KODU`, `MALZEME` (özet), `MALZEME_SAYISI`, `SAGA`, `YUKARI`, `KOT`,
+    `ACI`, `TELEFON_ID`.
+  - `ad_HAT` (iletken / kablo): `KESIT`, iletkenler (`ILETKEN_CINS`, `ILETKEN`, `ILETKEN_ADET`; müşterek hatta ikinci
+    iletken `ILETKEN2_…`), `ETIKET`, `DURUM`, `HAKEDIS`, `KONTROL`, `BAS_NO` / `BIT_NO` (hattın iki ucundaki eleman),
+    `UZUNLUK`, `METRAJ`, `MALZEME_SAYISI`.
+  - `ad_KANAL` (`KABLOLAR`, `ZEMIN`, `ALT_CM`, `UST_CM`, `DERIN_CM`, `BAS_NO`, `BIT_NO`), `ad_SONDAJ`, `ad_BOLGE`
+    (proje sınırı), `ad_NOKTA` (GPS noktası).
+  - `ad_MALZEME`: haritada yeri olmayan tablo; her nesnenin **bütün malzeme satırları** (cins, tanım, durum, miktar,
+    birim, katsayı, hakediş, sıra, kontrol). `NESNE` sütunu malzemenin ait olduğu nesnenin `KIMLIK`'idir.
+
+  Koordinatlar çizim koordinatıdır (dosyada dilim yazılıdır), harfler Türkçe Windows kod sayfasıdır. Telefonda:
+  **Dışa Aktar › CBS MapInfo (MIF / MID)** aynı katman ve sütunları yazar (seçilen koordinat sisteminde; tek .zip).
+- **CBS'den Al** (`SH_MIFAL`): bir ya da birkaç `.mif` dosyası seçin (yanında aynı adlı `.mid`). **CBS'den al**
+  penceresi açılır:
+  - Solda seçtiğiniz dosyalar. Her dosya için **Bu dosya ne?**: direk, trafo, SDK, pano, diğer eleman, hat, kablo
+    kanalı, yatay sondaj, bölge, GPS noktası, malzeme tablosu ya da **altlık** (yalnız çizilir). Şebeke-M'in yazdığı
+    dosyalar adından kendiliğinden tanınır; başka bir CBS'nin dosyası sütun adlarından tahmin edilir.
+  - **Sütunlar**: her bilgi (GIS no, cins, tip, durum, hakediş, iletken…) dosyanın hangi sütununda; yanında ilk
+    nesnedeki değer görünür. Bulunamayan bilgi boş kalır, siz seçebilirsiniz.
+  - **Durumu yazılı değilse** (yeni / mevcut / demontaj…) ve **Hakediş**: dosyada yoksa nesnelere verilecek değer.
+  - **Al**: şebeke nesneleri **gerçek hakediş nesnesi** olarak çizilir (Telefondan Al gibi; önce özet penceresi):
+    direkler, trafolar, SDK'lar, panolar tipi ve malzemeleriyle; hatlar iletkeni, adedi ve metrajıyla, iki ucundaki
+    elemana bağlı; kanallar ölçüleriyle. Malzeme tablosu da seçildiyse malzemeler oradan gelir. Dosyada kimlik
+    sütunu varsa aynı dosyayı yeniden almak nesneleri çoğaltmaz, günceller; Şebeke-M'den çıkan dosya aynı çizime geri
+    alınınca nesneler kendisiyle eşleşir.
+  - Altlık seçilen dosyalar eskisi gibi: noktalar küçük daire, çizgiler ve alanlar çoklu çizgi, yazılar yazı;
+    her dosya kendi katmanında (`CBS-dosya adı`), hakediş nesnesi değildir (rapora ve telefona girmez).
+  - TM (başka dilim, UTM), enlem-boylam ve düz koordinat çizimin dilimine çevrilir. Datum ITRF96 / WGS84 değilse
+    (ör. ED50) uyarılırsınız (birkaç metre kayabilir). Telefonda MIF alma yoktur: CBS'den alınan nesneler çizimden
+    **Telefona Gönder** ile telefona geçer.
 - **CBS Bilgisi** (`SH_CBSBILGI`): CBS'den alınan nesneyi seçin; dosyadaki bütün bilgileri (MID satırı) gösterir.
 - **Harita Altlığı** (`SH_ALTLIK`): uydu görüntüsü ya da harita, çizime oturtulmuş resim olarak **ALTLIK** katmanına,
   nesnelerin altına konur; altına kaynağın atıf yazısı yazılır. Resim çizimin yanındaki `Altlik` klasörüne kaydedilir
@@ -396,8 +449,8 @@ Eklenti eski hakediş programının çizimde tuttuğu kayıtları da okur ve yaz
 
 ## 5. Teknik hesaplar (Hesap Merkezi)
 
-Hesap araçları Elektrik-Elektronik Mühendisi **Baki SONAY**'ın hazırladığı hesap sayfalarıdır; formülleri ve
-tabloları değiştirilmeden Şebeke-M'e eklenmiştir. Telefonda ve AutoCAD'de **aynı sayfalar** açılır; aradaki tek
+Hesap araçları bir elektrik-elektronik mühendisinin hazırladığı hesap sayfalarıdır; formülleri ve tabloları
+değiştirilmeden Şebeke-M'e eklenmiştir. Telefonda ve AutoCAD'de **aynı sayfalar** açılır; aradaki tek
 fark, bilgilerin nereden geldiğidir (telefonda projeden, AutoCAD'de çizimden).
 
 | Grup | Hesaplar |

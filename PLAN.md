@@ -43,7 +43,7 @@
 - **Şebeke-M** (19.10.2026): ürün adı ve logosu her yerde; eski programın ve dağıtım şirketinin adı kullanıcıya görünen
   hiçbir yerde geçmez. Harita altlıkları kullanım koşullarına göre (anahtarsız ücretsizler; anahtarlılar kullanıcı
   anahtarıyla).
-- **Hesap Merkezi** (19.10.2026): Baki SONAY'ın hesap araçları formülleri değiştirilmeden, ortak koyu temayla ve tek
+- **Hesap Merkezi** (19.10.2026): hesap araçları formülleri değiştirilmeden, ortak koyu temayla ve tek
   üst çubukla telefona ve AutoCAD'e bağlandı. Kural: projede olan bilgi hesaba kendiliğinden yazılır, olmayan tahminle
   doldurulmaz (turuncu çerçeve, elle giriş); karar yalnız girdiler tamken verilir, aksi "bilgi". Sonuç projeye /
   çizime kaydedilir, proje değişince "güncel değil". AutoCAD'de sayfalar yerel sunucudan Edge uygulama penceresinde
@@ -63,6 +63,7 @@
 | 10 | Arayüz: Google Stitch tasarımıyla şerit ve bütün pencereler, koyu tema | tamam (AutoCAD'de deneme bekliyor) |
 | 9 | eski programdan alınanlar ve şerit: tam katalog, durum kodları, tarife, telefonla aynı görünüm, dinamik şerit, parçalı hat, sayaç / hakediş / bölge kayıtları, eksik malzeme (DETAY), hakediş onayı ve kilit, pano / hücre verisinin korunması | tamam (AutoCAD'de ve sahada deneme bekliyor) |
 | 11 | Şebeke-M: marka (ad, logo, iki şerit sekmesi, Hakkında), harita altlıkları, **Hesap Merkezi** (14 hesap aracı + AG tek hat; telefon iframe köprüsü, AutoCAD yerel sunucu; bağlam / kayıt / güncellik; raporlarda HESAPLAR; proje dosyasıyla taşıma) | tamam (AutoCAD'de ve telefonda deneme bekliyor; hesap tablolarındaki şüpheli değerler aracın sahibiyle doğrulanacak) |
+| 12 | Eklentiyle eşitleme (kural: eklenti güncellenince telefon da güncellenir): haritada çizim görünümü (renk, çizgi, açıklık metrajı, hat etiketi, kanal kenarları), Google Earth ve CBS (MIF / MID) eklentiyle aynı (ortak deneme `ortak/deneme/cbs`), aynı altlık listesi (Esri ArcGIS, Bing, Azure) | tamam (telefonda deneme bekliyor) |
 
 ## Sahada / AutoCAD'de denenecekler
 

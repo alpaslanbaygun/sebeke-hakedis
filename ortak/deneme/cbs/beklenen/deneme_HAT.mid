@@ -1,0 +1,7 @@
+"H1","AG_HAVAI","AG Havai","3P+R/P","AL_İLETKENLER","3P+R/P",1,"AL_İLETKENLER","P",1,"^ 3P+R/P","M",1,"","SC101","","Deneme Mahallesi AG","DNM-2026-01",80,120.5,2,""
+"H2","OG_HAVAI","OG Havai","3x1/0 Swallow","","",0,"","",0,"","MEVCUT",1,"","SC104","","Deneme OG Hattı","",101.09,101.09,0,""
+"H3","MUSTEREK","Müşterek","","","",0,"","",0,"","DM",2,"","SC101","","Deneme Mahallesi AG","DNM-2026-01",40,40,0,""
+"H4","OG_YERALTI","OG Yeraltı","3x(1x240/25 XLPE Al)","XLPE","1x240/25 XLPE Al",1,"","",0,"^ 3x(1x240/25 XLPE Al)","M+M",1,"","TR-2","P-1","Deneme OG Hattı","",50,150,1,""
+"H5","AG_YERALTI","AG Yeraltı","4x50 NYY","","",0,"","",0,"^ 4x50 NYY","M",1,"","B-1","K-1","Deneme Mahallesi AG","DNM-2026-01",80,80,0,""
+"H6","REKORTMAN","Rekortman","2x16 NYY","","",0,"","",0,"^ 2x16 NYY","M",1,"","SC102","","Deneme Mahallesi AG","DNM-2026-01",20.62,20.62,0,""
+"H7","AYDINLATMA","Aydınlatma","2x16 Alüminyum","","",0,"","",0,"^ 2x16 ALÜMİNYUM","M",1,"","SC199","","","",40,40,0,""

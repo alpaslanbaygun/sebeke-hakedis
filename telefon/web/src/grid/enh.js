@@ -2,6 +2,8 @@
 // Değişik haller denklemi (parabolik), ideal (ruling) açıklık, buz/rüzgar yükleri, sehim, direk yükleri,
 // iletken yerden yükseklik (zemin açıklığı) kontrolü. Tüm katsayılar standart tablosundan (enh, clearances) gelir.
 
+import { autocadDevresi, circuitParts } from './lines.js';
+
 const G = 0.981; // 1 kg = 0.981 daN
 
 export function specificLoads(mech, kgPerKm, zone, enh) {
@@ -70,10 +72,13 @@ export function attachmentHeight(pole, heightM) {
 export function analyzeLine({ line, spans, poles, pointsById, roles, cat, zoneId, enh, clearances, landClass }) {
   const circ = (line.circuits || []).find((c) => c.role === 'OG' || c.role === 'ENH') || (line.circuits || [])[0];
   if (!circ) return { error: 'Hatta iletken tanımlı değil' };
-  const lt = cat.lineType(circ.key);
-  const part = lt ? lt.parts[0] : null;
+  // AutoCAD kataloğundaki çıplak iletken (4xSW, 3A+P+R…): tel açılımındaki faz iletkeni (en çok teli olan) hesaplanır
+  const ac = autocadDevresi(circ);
+  let part = null;
+  if (ac) { const cp = circuitParts(circ, cat); if (cp && cp.unit === 'kg') part = cp.parts.reduce((a, b) => (b.count > a.count ? b : a)); }
+  else { const lt = cat.lineType(circ.key); part = lt ? lt.parts[0] : null; }
   const cd = part ? cat.conductor(part.conductor) : null;
-  if (!cd || !cd.mech) return { error: 'İletken mekanik verisi yok (' + (circ.key || '?') + ') · yalnız çıplak ACSR/AAC için hesaplanır' };
+  if (!cd || !cd.mech) return { error: 'İletken mekanik verisi yok (' + (ac ? ac.tanim : circ.key || '?') + ') · yalnız çıplak ACSR/AAC için hesaplanır' };
   const zone = enh.zones.find((z) => z.id === zoneId) || enh.zones[1];
   const nCond = (part.count || 3) * (circ.count || 1);
   const ordered = spans.filter((s) => s.lineId === line.id).sort((a, b) => a.seq - b.seq);

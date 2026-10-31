@@ -40,7 +40,7 @@ ANA_TURLERI = OrderedDict([
     ("PANO", ["AG_PANO_HT", "AG_PANO_DT"]),
     ("BOX", ["BOX_PANO"]),
     ("EK_MUFU", ["EK_MUFU_AG_ALM", "EK_MUFU_AG_BAKIR", "EK_MUFU_OG_ALM", "EK_MUFU_OG_BAKIR"]),
-    ("KOFRE", ["KOFRA"]),
+    ("KOFRE", ["KOFRE"]),
     # Telefondaki armatür nesnesi (luminaire → DIGER / ARMATÜR); AutoCAD'de direğin malzemesidir, rolü malzeme kalır
     ("DIGER", ["ARMATÜR"]),
 ])
@@ -48,35 +48,75 @@ ANA_TURLERI = OrderedDict([
 # Hat türü → iletken / kablo cinsleri (Sayfa3 B sütunundaki hat cinsleri; sıra: en olağan önce).
 HAT_TURLERI = OrderedDict([
     ("AG_HAVAI", ["AG_İLETKEN", "ALPEK_KABLOLAR"]),
-    ("AG_YERALTI", ["AG_ALİMİNYUM_KABLO", "AG_BAKIR_KABLO"]),
+    ("AG_YERALTI", ["AG_ALÜMİNYUM_KABLO", "AG_BAKIR_KABLO"]),
     ("AYDINLATMA", ["AYDINLATMA_KABLO", "AG_İLETKEN", "ALPEK_KABLOLAR"]),
     ("OG_HAVAI", ["OG_İLETKEN"]),
-    ("OG_YERALTI", ["OG_ALİMİNYUM_KABLO", "OG_BAKIR_KABLO"]),
-    ("REKORTMAN", ["REKORTMAN_ALİMİNYUM", "REKORTMAN_BAKIR"]),
+    ("OG_YERALTI", ["OG_ALÜMİNYUM_KABLO", "OG_BAKIR_KABLO"]),
+    ("REKORTMAN", ["REKORTMAN_ALÜMİNYUM", "REKORTMAN_BAKIR"]),
     ("MUSTEREK", ["AG_İLETKEN", "ALPEK_KABLOLAR", "OG_İLETKEN"]),
 ])
-HAT_CINSLERI = ["AG_İLETKEN", "OG_İLETKEN", "ALPEK_KABLOLAR", "AG_ALİMİNYUM_KABLO", "AG_BAKIR_KABLO", "AYDINLATMA_KABLO",
-                "OG_ALİMİNYUM_KABLO", "OG_BAKIR_KABLO", "REKORTMAN_ALİMİNYUM", "REKORTMAN_BAKIR", "TOP_İLETKEN"]
+HAT_CINSLERI = ["AG_İLETKEN", "OG_İLETKEN", "ALPEK_KABLOLAR", "AG_ALÜMİNYUM_KABLO", "AG_BAKIR_KABLO", "AYDINLATMA_KABLO",
+                "OG_ALÜMİNYUM_KABLO", "OG_BAKIR_KABLO", "REKORTMAN_ALÜMİNYUM", "REKORTMAN_BAKIR", "TOP_İLETKEN"]
 KANAL_CINSI = "KABLO_KANALI"
 SONDAJ_CINSI = "YATAY_DELGİ"
 
-# Cins adının okunur karşılığı (menü ve listelerde). Listede olmayan cins alt çizgisiz yazılır.
+# Cins kodlarındaki yazım hataları (31.10.2026): eski kod → yeni kod. Listeden ve eski katalogdan okunan kod çevrilir;
+# çıktıya eskiCinsler olarak da yazılır (eklenti ve telefon eski kodu okurken yenisine çevirir).
+CINS_DUZELTME = OrderedDict([
+    ("AG_ALİMİNYUM_KABLO", "AG_ALÜMİNYUM_KABLO"),
+    ("OG_ALİMİNYUM_KABLO", "OG_ALÜMİNYUM_KABLO"),
+    ("REKORTMAN_ALİMİNYUM", "REKORTMAN_ALÜMİNYUM"),
+    ("ALİMİNYUM_BAĞ_TELİ", "ALÜMİNYUM_BAĞ_TELİ"),
+    ("TECHİZAT_MONTAJ_DEMİRİ", "TEÇHİZAT_MONTAJ_DEMİRİ"),
+    ("KOFRA", "KOFRE"),
+])
+
+# Cins adının okunur karşılığı (menü ve listelerde). Listede olmayan cins Türkçe kuralıyla küçük harfe çevrilir.
 CINS_ADLARI = {
-    "AG_DEMİR_GLV": "AG galvanizli demir direk", "AG_DEMİR": "AG demir direk", "AG_BETON": "AG beton direk", "AG_AĞAÇ": "AG ağaç direk",
-    "MÜŞ_DEMİR_GLV": "Müşterek galvanizli demir direk", "MÜŞ_DEMİR": "Müşterek demir direk", "MÜŞ_BETON": "Müşterek beton direk",
-    "ENH_DEMİR_GLV": "ENH galvanizli kaynaklı direk", "ENH_GLV_CVT": "ENH galvanizli cıvatalı direk", "ENH_DEMİR": "ENH demir direk", "ENH_BETON": "ENH beton direk",
-    "AYD_GLV_PLG": "Galvanizli poligon aydınlatma direği", "AYD_BETON": "Beton aydınlatma direği",
-    "TR_DİREK_GLV": "Galvanizli trafo direği", "TR_DİREK": "Trafo direği",
-    "BETON_KÖŞKLER": "Beton / prefabrik köşk", "TRAFO_BİNASI": "Trafo binası",
-    "AG_PANO_HT": "AG pano (harici tip)", "AG_PANO_DT": "AG pano (dahili tip)", "BOX_PANO": "Box / SDK",
-    "EK_MUFU_AG_ALM": "AG ek mufu (alüminyum)", "EK_MUFU_AG_BAKIR": "AG ek mufu (bakır)", "EK_MUFU_OG_ALM": "OG ek mufu (alüminyum)", "EK_MUFU_OG_BAKIR": "OG ek mufu (bakır)",
-    "KOFRA": "Kofre",
-    "AG_İLETKEN": "AG çıplak iletken", "OG_İLETKEN": "OG çıplak iletken", "ALPEK_KABLOLAR": "ALPEK (demetli) kablo",
-    "AG_ALİMİNYUM_KABLO": "AG alüminyum kablo", "AG_BAKIR_KABLO": "AG bakır kablo", "AYDINLATMA_KABLO": "Aydınlatma kablosu",
-    "OG_ALİMİNYUM_KABLO": "OG alüminyum kablo", "OG_BAKIR_KABLO": "OG bakır kablo",
-    "REKORTMAN_ALİMİNYUM": "Rekortman (alüminyum)", "REKORTMAN_BAKIR": "Rekortman (bakır)", "TOP_İLETKEN": "Topraklama iletkeni",
-    "KABLO_KANALI": "Kablo kanalı (zemin)", "YATAY_DELGİ": "Yatay sondaj (delgi)",
+    "AG_DEMİR_GLV": "AG galvanizli demir direk", "AG_DEMİR": "AG demir direk", "AG_BETON": "AG beton direk",
+    "AG_AĞAÇ": "AG ağaç direk", "MÜŞ_DEMİR_GLV": "Müşterek galvanizli demir direk", "MÜŞ_DEMİR": "Müşterek demir direk",
+    "MÜŞ_BETON": "Müşterek beton direk", "ENH_DEMİR_GLV": "ENH galvanizli kaynaklı direk", "ENH_GLV_CVT": "ENH galvanizli cıvatalı direk",
+    "ENH_DEMİR": "ENH demir direk", "ENH_BETON": "ENH beton direk", "AYD_GLV_PLG": "Galvanizli poligon aydınlatma direği",
+    "AYD_BETON": "Beton aydınlatma direği", "TR_DİREK_GLV": "Galvanizli trafo direği", "TR_DİREK": "Trafo direği",
+    "BETON_KÖŞKLER": "Beton / prefabrik köşk", "TRAFO_BİNASI": "Trafo binası", "AG_PANO_HT": "AG pano (harici tip)",
+    "AG_PANO_DT": "AG pano (dahili tip)", "BOX_PANO": "Box / SDK", "EK_MUFU_AG_ALM": "AG ek mufu (alüminyum)",
+    "EK_MUFU_AG_BAKIR": "AG ek mufu (bakır)", "EK_MUFU_OG_ALM": "OG ek mufu (alüminyum)", "EK_MUFU_OG_BAKIR": "OG ek mufu (bakır)",
+    "KOFRE": "Kofre", "ARMATÜR": "Armatür", "AG_İLETKEN": "AG çıplak iletken",
+    "OG_İLETKEN": "OG çıplak iletken", "ALPEK_KABLOLAR": "ALPEK (demetli) kablo", "AG_ALÜMİNYUM_KABLO": "AG alüminyum kablo",
+    "AG_BAKIR_KABLO": "AG bakır kablo", "AYDINLATMA_KABLO": "Aydınlatma kablosu", "OG_ALÜMİNYUM_KABLO": "OG alüminyum kablo",
+    "OG_BAKIR_KABLO": "OG bakır kablo", "REKORTMAN_ALÜMİNYUM": "Rekortman (alüminyum)", "REKORTMAN_BAKIR": "Rekortman (bakır)",
+    "TOP_İLETKEN": "Topraklama iletkeni", "KABLO_KANALI": "Kablo kanalı (zemin)", "YATAY_DELGİ": "Yatay sondaj (delgi)",
+    "BAKIR_BARA": "Bakır bara", "TRAVERS_VE_KONSOLLAR": "Travers ve konsollar", "TRAVERS_VE_KONSOLLAR_GLV": "Galvanizli travers ve konsollar",
+    "BAHH_DEMİR_TRAVERS": "BAHH demir travers", "BAHH_DEMİR_TRAVERS_GLV": "BAHH galvanizli demir travers", "AG_BETON_TRAVERS": "AG beton travers",
+    "BAHH_BETON_TRAVERS": "BAHH beton travers", "GALVANİZLİ_GAZ_BORUSU": "Galvanizli gaz borusu", "GALVANİZLİ_KABLO_TAVASI": "Galvanizli kablo tavası",
+    "AG_İZOLATÖR": "AG izolatör", "OG_İZOLATÖR": "OG izolatör", "KOMPOZİT_SİLİKON_ASKI_VE_GERGİ_İZOLATÖRLERİ": "Kompozit silikon askı ve gergi izolatörleri",
+    "KESİCİLER": "Kesiciler", "PARAFUDR": "Parafudr", "AYIRICI_DT": "Ayırıcı (dahili tip)",
+    "AYIRICI_HT": "Ayırıcı (harici tip)", "SİGORTA_BUŞONU": "Sigorta buşonu", "HÜCRELER_METAL": "Metal hücreler",
+    "AKÜ_REDRESÖR_GRUBU": "Akü redresör grubu", "TEHLİKE_LEVHASI": "Tehlike levhası", "TOPRAKLAMA": "Topraklama",
+    "AKIM_TRAFOLARI": "Akım trafoları", "GERİLİM_TRAFOLARI": "Gerilim trafoları", "TRAFO_GENLEŞME_TANKLI": "Trafo (genleşme tanklı)",
+    "TRAFO_HERMETİK": "Trafo (hermetik)", "TRAFO_KURU_TİP": "Trafo (kuru tip)", "OG_KABLO_BAŞLIK_HT_CU": "OG kablo başlığı (harici tip, bakır)",
+    "OG_KABLO_BAŞLIK_HT_ALM": "OG kablo başlığı (harici tip, alüminyum)", "OG_KABLO_BAŞLIK_DT_CU": "OG kablo başlığı (dahili tip, bakır)", "OG_KABLO_BAŞLIK_DT_ALM": "OG kablo başlığı (dahili tip, alüminyum)",
+    "AG_KABLO_BAŞLIK_CU": "AG kablo başlığı (bakır)", "AG_KABLO_BAŞLIK_ALM": "AG kablo başlığı (alüminyum)", "KABLO_MUHAFAZA_BORULARI": "Kablo muhafaza boruları",
+    "EK_YAPIM_İŞLERİ": "Ek yapım işleri", "TUTANAKLI_İŞLER": "Tutanaklı işler", "ENH_YAPIM_İŞLERİ": "ENH yapım işleri",
+    "KOMPANZASYON_SİSTEMİ": "Kompanzasyon sistemi", "İNDİRİCİ_VE_AYIRICI_MERKEZ_PANOLARI": "İndirici ve ayırıcı merkez panoları", "DİĞER_AMBAR_MALZEMELERİ": "Diğer ambar malzemeleri",
+    "OG_İZOLASYON_MALZEMELERİ": "OG izolasyon malzemeleri", "DEMİR_DİREK_VE_TRAVERS_BOYANMASI": "Demir direk ve travers boyanması", "YAĞMURLUK_BETONU_YAPILMASI": "Yağmurluk betonu yapılması",
+    "ALÜMİNYUM_BAĞ_TELİ": "Alüminyum bağ teli", "EK_MANŞONLARI": "Ek manşonları", "ALPEK_KABLO_AKSESUARLARI": "ALPEK kablo aksesuarları",
+    "ŞEFFAF_TÜP_AMPULLER": "Şeffaf tüp ampuller", "İZOLATÖR_DEMİRLERİ": "İzolatör demirleri", "ANAHTARLI_OTOMATİK_SİGORTA": "Anahtarlı otomatik sigorta",
+    "BAKLAVALI_SAC": "Baklavalı sac", "TEL_KAFESLİ_KAPI": "Tel kafesli kapı", "TEL_KAFESLİ_ÇİT": "Tel kafesli çit",
+    "TEÇHİZAT_MONTAJ_DEMİRİ": "Teçhizat montaj demiri", "YOL_KAPLAMASI_SÖKÜMÜ_VE_YAPIMI": "Yol kaplaması sökümü ve yapımı", "KİLOMETRİK_BAKIM_İŞLERİ": "Kilometrik bakım işleri",
 }
+
+
+def cins_kodu(c):
+    """Listeden ya da eski katalogdan okunan cins kodu: yazım hatası düzeltilmiş hâli."""
+    return CINS_DUZELTME.get(c, c)
+
+
+def okunur_ad(c):
+    """Listede adı olmayan cinsin okunur adı: alt çizgiler boşluk, ilk harf büyük, gerisi Türkçe kuralıyla küçük (İ → i, I → ı)."""
+    t = c.replace("_", " ").replace("İ", "i").replace("I", "ı").lower()
+    return t[:1].replace("i", "İ").replace("ı", "I").upper() + t[1:] if t else t
+
 
 
 
@@ -163,7 +203,7 @@ def ana_malzemeler(wb):
     cinsler = []
     for r in ws.iter_rows(values_only=True):
         if r[0] and r[0] != "ANA_MALZEMELER":
-            cinsler.append(temiz(r[0]))
+            cinsler.append(cins_kodu(temiz(r[0])))
     return cinsler
 
 
@@ -173,7 +213,7 @@ def malzeme_listesi(wb):
     kalemler = OrderedDict()
     cins_onem = OrderedDict()
     for r in satirlar[1:]:
-        cins = temiz(r[1])
+        cins = cins_kodu(temiz(r[1]))
         if not cins:
             continue
         if r[2] is None:
@@ -229,7 +269,7 @@ def eski_katalog(yol):
         return {}
     with open(yol, encoding="utf-8") as f:
         eski = json.load(f)
-    return OrderedDict(((it["cins"], it["tanim"]), it) for it in eski.get("kalemler", []))
+    return OrderedDict(((cins_kodu(it["cins"]), it["tanim"]), it) for it in eski.get("kalemler", []))
 
 
 def main():
@@ -277,7 +317,7 @@ def main():
         cinsler.setdefault(c, None)
     cins_kayitlari = []
     for c in cinsler:
-        ad = CINS_ADLARI.get(c) or c.replace("_", " ").capitalize()
+        ad = CINS_ADLARI.get(c) or okunur_ad(c)
         tipler = [k for (cc, _t), k in kalemler.items() if cc == c]
         kayit = OrderedDict([("cins", c), ("ad", ad), ("rol", rol_bul(c)), ("tip", len(tipler))])
         if c in cins_onem:
@@ -297,6 +337,8 @@ def main():
                          "onem: AutoCAD rapor sırası. kesit/guc: kablo kesiti, trafo gücü (kVA). temini: AutoCAD temin işareti (T). "
                          "nesneler/kullanim/durumlar: gerçek bir çizimde hangi nesnelerde kaç kez görüldü. "
                          "Üretici: araclar/katalog-aktar.py — elle düzenlenmez.")
+    cikti["eskiCinsler"] = OrderedDict([("aciklama", "Yazım hatası düzeltilen cins kodları (31.10.2026): eski kod → yeni kod. "
+                                         "Eklenti ve telefon eski kodu okurken yenisine çevirir; yazarken hep yenisini yazar.")] + list(CINS_DUZELTME.items()))
     cikti["durumlar"] = durumlar
     cikti["tarife"] = OrderedDict([
         ("aciklama", "Tarife = karakteristik + unsur. Katalogdaki 'tarife' şehir (yatırım) unsuruyla, 'unsurKoy' köy/bakım sütunuyla üretilir."),

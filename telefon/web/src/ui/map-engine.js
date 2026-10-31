@@ -3,10 +3,15 @@
 import { tileX, tileY, tileLL } from '../geo/tiles.js';
 import { aciCSS } from '../cad/aci.js';
 import { project as projLL, unproject } from '../geo/crs.js';
+import STIL from '../ortak/cizim-stili.js';
+import { spanTexts, yaziKonumu, enUzunParca } from '../export/dxf.js';
+import { EKRAN, hatAnahtari, hatRengi, hatCizgisi, ekranDeseni, kanalGenisligi, kenarRengi, sondajli, esCizgi, dugumMu, YAZI, KAYDIRMA, yaziOlcusu, ekrandaSigdir } from './cizim-gorunumu.js';
 
-const LCOL = { AG: '#7ee08a', OG: '#ff6b6b', AYD: '#7fffff', ENH: '#ff79ff', ABONE: '#fbbf24' };
+// Hat kalınlığı (px) türüne göre; renk, çizgi deseni, metraj ve etiket ortak çizim stilinden (cizim-gorunumu.js)
 const LW = { AG: 2.5, OG: 3.5, AYD: 2.5, ENH: 4, ABONE: 1.6 };
-const PCOL = { AG: { MEVCUT: '#00ffbf', YENI: '#23a455', DMM: '#00ff00', DEMONTAJ: '#00ffbf', ILERIDE: '#23a455' }, OG: { MEVCUT: '#d94a4a', YENI: '#ff2d2d', DMM: '#ff2d2d', DEMONTAJ: '#d94a4a', ILERIDE: '#ff2d2d' }, AYD: { MEVCUT: '#9b5cff', YENI: '#2f7fd6', DMM: '#00ffff', DEMONTAJ: '#9b5cff', ILERIDE: '#2f7fd6' } };
+const hatKalinligi = (l, anahtar) => (anahtar === 'KANAL' ? 1.8 : anahtar === 'SONDAJ' ? 2.5 : anahtar === 'HAT_MUSTEREK' ? LW.OG : LW[l.lineType] || 2);
+// Direk renkleri (ekran): yeni ve ileride ortak stilin "direk", mevcut ve demontaj "direkMevcut", sök-tak çizimdeki ACI'si
+const PCOL = Object.fromEntries(['AG', 'OG', 'AYD'].map((v) => [v, { MEVCUT: EKRAN.direkMevcut[v], YENI: EKRAN.direk[v], DMM: aciCSS(STIL.direkRenkleri[v][2]), DEMONTAJ: EKRAN.direkMevcut[v], ILERIDE: EKRAN.direk[v] }]));
 
 export class MapEngine {
   constructor(canvas, opts) {
@@ -16,12 +21,23 @@ export class MapEngine {
     this.dirty = true; this.pointers = new Map(); this.follow = false;
     // Görünür alan: üstte/altta panelin kapattığı pikseller. Görünüm merkezi (cE,cN) bu alanın ortasına düşer.
     this.pad = { top: 0, bottom: 0 };
-    this.layers = { basemap: true, grid: true, labels: true, spanText: true, AG: true, OG: true, AYD: true, ENH: true, ABONE: true, yeralti: true, trafo: true, mevcut: true, demontaj: true, points: true, hak: true, srcTags: true };
+    this.layers = { basemap: true, grid: true, labels: true, spanText: true, AG: true, OG: true, AYD: true, ENH: true, ABONE: true, yeralti: true, kanal: true, trafo: true, mevcut: true, demontaj: true, points: true, hak: true, srcTags: true };
     this.tiles = new Map(); this.tileQueue = new Set();
     this.measure = null; this.preview = null; this.dragNode = null; this.crosshair = false;
+    // Simge ve yazı büyüklüğü (Ayarlar › Harita görünümü; yalnız bu cihazda): 1 = varsayılan
+    this.olcek = { simge: 1, yazi: 1 };
     this.bind(); this.resize(); this.loop();
   }
   destroy() { this.dead = true; this.ro && this.ro.disconnect(); }
+  /** Simge ve yazı büyüklüğü: { simge, yazi } (0,5 … 3 kat). */
+  setOlcek(o) {
+    const k = (v) => (Number.isFinite(+v) && +v >= 0.5 && +v <= 3 ? +v : 1);
+    const n = { simge: k(o && o.simge), yazi: k(o && o.yazi) };
+    if (n.simge === this.olcek.simge && n.yazi === this.olcek.yazi) return;
+    this.olcek = n; this.dirty = true;
+  }
+  /** Ölçekli yazı tipi: '600 10px …' → büyüklük çarpanıyla. */
+  font(agirlik, px, aile = 'JetBrains Mono, monospace') { return agirlik + ' ' + (px * this.olcek.yazi).toFixed(1) + 'px ' + aile; }
   bind() {
     const c = this.c;
     c.addEventListener('pointerdown', (e) => this.down(e));
@@ -119,7 +135,8 @@ export class MapEngine {
   hitTest(x, y, pointsOnly) {
     const d = this.o.getData();
     let best = null;
-    for (const e of d.equipment) { const p = d.pointMap.get(e.pointId); if (!p || p.E == null) continue; const s = this.toScreen(p.E, p.N); const dd = Math.hypot(s.x - x, s.y - y); if (dd < 22 && (!best || dd < best.d)) best = { d: dd, kind: 'point', ref: p, eq: e }; }
+    const ks = Math.max(1, this.olcek.simge);
+    for (const e of d.equipment) { const p = d.pointMap.get(e.pointId); if (!p || p.E == null) continue; const s = this.toScreen(p.E, p.N); const dd = Math.hypot(s.x - x, s.y - y); if (dd < 22 * ks && (!best || dd < best.d)) best = { d: dd, kind: 'point', ref: p, eq: e }; }
     for (const p of d.points) { if (p.E == null) continue; const s = this.toScreen(p.E, p.N); const dd = Math.hypot(s.x - x, s.y - y); if (dd < 18 && (!best || dd < best.d - 2)) best = { d: dd, kind: 'point', ref: p, eq: (d.eqByPoint.get(p.id) || [])[0] || null }; }
     if (best || pointsOnly) return best;
     for (const l of d.lines) {
@@ -144,35 +161,76 @@ export class MapEngine {
     if (this.layers.cad !== false && d.cad && d.cad.length) this.drawCad(g, d.cad);
     const en = d.energy || null;     // enerji kontrolü açıksa: enerjili hat sarı parlar, enerjisiz hat gri kesik çizilir
     const sel = d.sel || {};
-    // Hatlar
+    // Hatlar: çizimdeki görünüm (ortak çizim stili) — türün rengi ve çizgi deseni, demontaj sarı, kanal iki kenarlı
+    const res = this.view.res, dm = this.layers.demontaj !== false, kanalAcik = this.layers.kanal !== false;
+    const metrajAcik = this.layers.spanText && res < 1.2, etiketAcik = this.layers.labels && res < 0.8 && d.lineTag;
+    const yazilar = []; // hatların üstünde kalsın diye hatlardan sonra yazılır
+    const metrajOlcu = yaziOlcusu(YAZI.metraj, res), etiketOlcu = yaziOlcusu(YAZI.etiket, res, 10, 16);
+    const ks = this.olcek.simge, ky = this.olcek.yazi;
+    // Görünen alan (yazılar taşabilsin diye 200 px paylı): dışındaki hat çizilmez, yazısı hesaplanmaz
+    const g0 = this.toWorld(-200, -200), g1 = this.toWorld(this.w + 200, this.h + 200);
     for (const l of d.lines) {
-      const key = l.install === 'yeralti' ? 'yeralti' : l.lineType;
       if (!this.layers[l.lineType] || (l.install === 'yeralti' && !this.layers.yeralti)) continue;
+      if (l.channelOnly && !kanalAcik) continue;
       if (l.state === 'MEVCUT' && !this.layers.mevcut) continue;
       const n = l.nodes.map((id) => d.pointMap.get(id)).filter((p) => p && p.E != null);
       if (n.length < 2) continue;
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const p of n) { if (p.E < x0) x0 = p.E; if (p.E > x1) x1 = p.E; if (p.N < y0) y0 = p.N; if (p.N > y1) y1 = p.N; }
+      if (x1 < g0.E || x0 > g1.E || y1 < g1.N || y0 > g0.N) continue;
       const on = sel.type === 'line' && sel.id === l.id;
+      const anahtar = hatAnahtari(l), lw = hatKalinligi(l, anahtar);
       g.lineCap = 'round'; g.lineJoin = 'round';
-      if (on) { g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = (LW[l.lineType] || 2) + 8; g.setLineDash([]); this.path(g, n); g.stroke(); }
+      if (on) { g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = lw + 8; g.setLineDash([]); this.path(g, n); g.stroke(); }
       // Hakediş görünümü: hattın altında durum renginde geniş bant
       const hc = this.layers.hak && d.hakColor ? d.hakColor(l) : null;
-      if (hc) { g.strokeStyle = hc; g.globalAlpha = 0.42; g.lineWidth = (LW[l.lineType] || 2) + 9; g.setLineDash([]); this.path(g, n); g.stroke(); g.globalAlpha = 1; }
+      if (hc) { g.strokeStyle = hc; g.globalAlpha = 0.42; g.lineWidth = lw + 9; g.setLineDash([]); this.path(g, n); g.stroke(); g.globalAlpha = 1; }
       const es = en ? en.lineState.get(l.id) : null;
-      if (es === 'on' || es === 'mixed') { g.strokeStyle = es === 'on' ? '#fde047' : '#fb923c'; g.globalAlpha = 0.5; g.lineWidth = (LW[l.lineType] || 2) + 9; g.setLineDash([]); this.path(g, n); g.stroke(); g.globalAlpha = 1; }
-      g.strokeStyle = es === 'off' || es === 'skip' ? '#64748b' : LCOL[l.lineType] || '#7ee08a'; g.lineWidth = LW[l.lineType] || 2;
-      g.setLineDash(es === 'off' || es === 'skip' ? [4, 7] : l.install === 'yeralti' ? [12, 6, 2, 6] : l.state === 'ILERIDE' ? [8, 6] : l.lineType === 'ABONE' ? [6, 3] : []);
+      if (es === 'on' || es === 'mixed') { g.strokeStyle = es === 'on' ? '#fde047' : '#fb923c'; g.globalAlpha = 0.5; g.lineWidth = lw + 9; g.setLineDash([]); this.path(g, n); g.stroke(); g.globalAlpha = 1; }
+      const enerjisiz = es === 'off' || es === 'skip';
+      const col = enerjisiz ? '#64748b' : hatRengi(l, dm);
       if (l.state === 'MEVCUT' && !es) g.globalAlpha = 0.6;
-      this.path(g, n); g.stroke(); g.globalAlpha = 1; g.setLineDash([]);
-      if (l.state === 'DEMONTAJ' && this.layers.demontaj) { g.strokeStyle = '#ffff00'; g.lineWidth = 1.5; g.setLineDash([3, 5]); this.path(g, n); g.stroke(); g.setLineDash([]); }
-      if (l.musterek && this.layers.AG) { g.strokeStyle = LCOL.AG; g.lineWidth = 1.5; this.path(g, n, 4); g.stroke(); }
-      if (this.layers.spanText && this.view.res < 1.2) {
-        g.font = '600 10px JetBrains Mono, monospace'; g.fillStyle = '#cbd5e1'; g.textAlign = 'center';
-        for (let i = 0; i < n.length - 1; i++) {
-          const a = this.toScreen(n[i].E, n[i].N), b = this.toScreen(n[i + 1].E, n[i + 1].N);
-          let ang = Math.atan2(b.y - a.y, b.x - a.x); if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
-          g.save(); g.translate((a.x + b.x) / 2, (a.y + b.y) / 2); g.rotate(ang); g.fillText(Math.hypot(n[i + 1].E - n[i].E, n[i + 1].N - n[i].N).toFixed(2), 0, -6); g.restore();
-        }
+      // Kanal kenarları: eksenden genişliğin yarısı kadar iki yanda (yalnız yakın ölçekte, çizgiden ayrı görünürken)
+      const kw = kanalAcik ? kanalGenisligi(l) : 0, yari = kw / 2 / res;
+      if (kw && yari >= lw / 2 + 2) {
+        const sp = n.map((p) => this.toScreen(p.E, p.N));
+        g.strokeStyle = kenarRengi(l, dm); g.lineWidth = 1.2; g.setLineDash([]);
+        for (const yan of [yari, -yari]) { const e = esCizgi(sp, yan); if (e.length < 2) continue; g.beginPath(); e.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.stroke(); }
       }
+      // Yatay sondajla geçen kablo: altında sondajın noktalı çizgisi (eklentide ayrı sondaj nesnesi)
+      if (kanalAcik && sondajli(l)) { const sw = lw + 3; g.strokeStyle = EKRAN.hat.SONDAJ; g.lineWidth = sw; g.setLineDash(ekranDeseni('DOT', sw)); this.path(g, n); g.stroke(); }
+      g.strokeStyle = col; g.lineWidth = lw;
+      g.setLineDash(enerjisiz ? [4, 7] : ekranDeseni(hatCizgisi(l), lw));
+      this.path(g, n); g.stroke(); g.globalAlpha = 1; g.setLineDash([]);
+      // Metraj: her açıklığa bir kez (iki direk / iki bağlantı elemanı arası), en uzun parçanın ortasına ortalı, çizginin
+      // üst yanında, hattın renginde; kanal ve sondaj metrajı bir satır yukarıda (içindeki kablonun metrajıyla üst üste
+      // binmesin). Yazı boyu Ayarlar › Harita görünümü'ndeki büyüklükle çarpılır; kaydırma da aynı oranda.
+      if (metrajAcik) {
+        const s = metrajOlcu.s * ky, dik = (l.channelOnly ? KAYDIRMA.kazi : KAYDIRMA.metraj) * s;
+        for (const a of spanTexts(n, (p) => dugumMu(d.eqByPoint.get(p.id)))) yazilar.push([a.length.toFixed(YAZI.hane), n[a.seg], n[a.seg + 1], dik, metrajOlcu.px * ky, col, false]);
+      }
+      // Hat etiketi "hat no kesit" (telefonun DXF'iyle aynı yazı): en uzun parçanın ortasına ortalı, üst kenarı çizginin
+      // alt yanında, hattın renginde
+      if (etiketAcik) {
+        const i = enUzunParca(n), s = etiketOlcu.s * ky;
+        yazilar.push([d.lineTag(l), n[i], n[i + 1], KAYDIRMA.etiket * s, etiketOlcu.px * ky, col, true]);
+      }
+    }
+    if (yazilar.length) {
+      // Yazı parçanın ortasına ortalı; parçaya sığmazsa daraltılır, yetmezse küçülür (eklentideki YaziDuzeni ile aynı kural)
+      g.textAlign = 'center'; g.lineJoin = 'round';
+      for (const [t, a, b, dik, px, col, ust] of yazilar) {
+        const k = yaziKonumu(a, b, 0, dik), s = this.toScreen(k.x, k.y);
+        if (!t || s.x < -400 || s.y < -60 || s.x > this.w + 400 || s.y > this.h + 60) continue;
+        g.font = '600 ' + px.toFixed(1) + 'px ' + YAZI.font;
+        const sg = ekrandaSigdir(g.measureText(t).width, px, Math.hypot(b.E - a.E, b.N - a.N) / res);
+        if (sg.px !== px) g.font = '600 ' + sg.px.toFixed(1) + 'px ' + YAZI.font;
+        g.save(); g.translate(s.x, s.y); g.rotate(-k.ang * Math.PI / 180); if (sg.gk !== 1) g.scale(sg.gk, 1);
+        g.textBaseline = ust ? 'top' : 'alphabetic';
+        g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.85)'; g.strokeText(t, 0, 0);
+        g.fillStyle = col; g.fillText(t, 0, 0); g.restore();
+      }
+      g.textBaseline = 'alphabetic'; g.textAlign = 'left';
     }
     // Aktif hat önizlemesi
     if (this.preview && this.preview.from && this.preview.to) {
@@ -187,15 +245,16 @@ export class MapEngine {
       if (s.x < -40 || s.y < -40 || s.x > this.w + 40 || s.y > this.h + 40) continue;
       const eqs = d.eqByPoint.get(p.id) || [];
       const isSel = sel.type === 'point' && sel.id === p.id;
-      if (isSel) { g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(s.x, s.y, 16, 0, Math.PI * 2); g.stroke(); }
+      if (isSel) { g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(s.x, s.y, 16 * ks, 0, Math.PI * 2); g.stroke(); }
       const si = d.srcInfo ? d.srcInfo(p) : null;
       if (!eqs.length) { if (this.layers.points) this.cross(g, s, si && !si.precise ? si.color : '#e2e8f0'); }
       // Hakediş görünümü: objenin çevresinde durum renginde halka
       // Uzak ölçekte halka küçülür; çok uzakta obje yalnız durum renginde nokta olarak çizilir (üst üste binmeyi önler)
-      const far = this.view.res > 2.5, hr = this.view.res < 0.8 ? 14 : this.view.res < 2.5 ? 10 : 5;
+      const far = this.view.res > 2.5, hr = (this.view.res < 0.8 ? 14 : this.view.res < 2.5 ? 10 : 5) * ks;
       const hc = this.layers.hak && d.hakColor && eqs.length ? d.hakColor(eqs[0]) : null;
       if (hc) { g.fillStyle = hc; g.globalAlpha = far ? 0.95 : 0.22; g.beginPath(); g.arc(s.x, s.y, hr, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; if (!far) { g.strokeStyle = hc; g.lineWidth = 2.5; g.beginPath(); g.arc(s.x, s.y, hr, 0, Math.PI * 2); g.stroke(); } }
-      if (!(far && hc)) for (const e of eqs) this.symbol(g, s, e, d);
+      // Simge büyüklüğü: simge kendi merkezinde ölçeklenir
+      if (!(far && hc)) for (const e of eqs) { if (ks !== 1) { g.save(); g.translate(s.x, s.y); g.scale(ks, ks); g.translate(-s.x, -s.y); } this.symbol(g, s, e, d); if (ks !== 1) g.restore(); }
       // Hassas olmayan kaynak (telefon · manuel · Excel · harita · FLOAT): sağ altta kaynak renginde küçük işaret (her ölçekte)
       if (this.layers.srcTags && si && !si.precise && eqs.length && !far) { g.fillStyle = si.color; g.strokeStyle = '#0b1326'; g.lineWidth = 1.5; g.beginPath(); g.arc(s.x + 8, s.y + 8, 3.5, 0, Math.PI * 2); g.fill(); g.stroke(); }
       // Enerji kontrolü: enerjisiz obje kırmızı çarpı, kaynak sarı halka
@@ -206,14 +265,15 @@ export class MapEngine {
       if (en && (en.sources.og.includes(p.id) || en.sources.ag.includes(p.id))) { g.strokeStyle = '#fde047'; g.lineWidth = 3; g.setLineDash([]); g.beginPath(); g.arc(s.x, s.y, 17, 0, Math.PI * 2); g.stroke(); g.fillStyle = '#fde047'; g.font = '800 13px JetBrains Mono, monospace'; g.textAlign = 'center'; g.fillText('ϟ', s.x, s.y - 20); g.textAlign = 'left'; }
       if (p.source === 'PHONE' && !far) { g.strokeStyle = '#38bdf8'; g.lineWidth = 1; g.setLineDash([2, 3]); g.beginPath(); g.arc(s.x, s.y, 18, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
       if (labels) {
-        g.font = '700 11px JetBrains Mono, monospace'; g.textAlign = 'left';
+        g.font = this.font('700', 11); g.textAlign = 'left';
         const t = (eqs[0] ? eqs[0].no : p.pointNo) || '';
+        const lx = s.x + 10 * ks;
         const col = eqs[0] && eqs[0].kind === 'pole' && d.groupVolt(eqs[0]) === 'OG' ? '#ff8a8a' : eqs[0] && eqs[0].kind === 'transformer' ? '#8ea2ff' : '#dae2fd';
-        g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.9)'; g.strokeText(t, s.x + 10, s.y - 9); g.fillStyle = col; g.fillText(t, s.x + 10, s.y - 9);
+        g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.9)'; g.strokeText(t, lx, s.y - 9 * ks); g.fillStyle = col; g.fillText(t, lx, s.y - 9 * ks);
         const ri = eqs[0] && d.roles.get(eqs[0].id);
-        if (ri && ri.role === 'Z' && ri.angle) { g.font = '600 10px JetBrains Mono, monospace'; g.fillStyle = '#fbbf24'; g.fillText('α ' + ri.angle.toFixed(1) + '°', s.x + 10, s.y + 16); }
+        if (ri && ri.role === 'Z' && ri.angle) { g.font = this.font('600', 10); g.fillStyle = '#fbbf24'; g.fillText('α ' + ri.angle.toFixed(1) + '°', lx, s.y + 6 * ks + 10 * ky); }
         // Veri kaynağı etiketi: hassas olmayanlar her zaman, RTK FIX yalnız yakın ölçekte
-        if (this.layers.srcTags && si && (si.precise ? this.view.res < 0.12 : this.view.res < 0.45)) { g.font = '700 9px JetBrains Mono, monospace'; g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.9)'; g.strokeText('[' + si.tag + ']', s.x + 10, s.y + 3); g.fillStyle = si.color; g.fillText('[' + si.tag + ']', s.x + 10, s.y + 3); }
+        if (this.layers.srcTags && si && (si.precise ? this.view.res < 0.12 : this.view.res < 0.45)) { g.font = this.font('700', 9); g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.9)'; g.strokeText('[' + si.tag + ']', lx, s.y + 3 * ks); g.fillStyle = si.color; g.fillText('[' + si.tag + ']', lx, s.y + 3 * ks); }
       }
     }
     // Sürükleme
@@ -266,7 +326,7 @@ export class MapEngine {
     const st = e.state || 'YENI';
     if (e.kind === 'luminaire') {
       // Armatür / sokak lambası: sarı ışık halkalı lamba (yeni dolu, mevcut içi boş)
-      const Y = st === 'MEVCUT' ? '#d4a017' : '#fde047';
+      const Y = st === 'MEVCUT' ? '#d4a017' : EKRAN.armatur;
       g.strokeStyle = Y; g.lineWidth = 1.6; g.beginPath();
       for (let k = 0; k < 8; k++) { const a = (k * Math.PI) / 4; g.moveTo(s.x + Math.cos(a) * 8, s.y + Math.sin(a) * 8); g.lineTo(s.x + Math.cos(a) * 12, s.y + Math.sin(a) * 12); }
       g.stroke();
@@ -297,7 +357,7 @@ export class MapEngine {
       return;
     }
     if (!this.layers.trafo && (e.kind === 'transformer' || e.kind === 'sdk' || e.kind === 'kiosk' || e.kind === 'substation' || e.kind === 'panel')) return;
-    const T = '#6b82ff';
+    const T = EKRAN.trafo;
     g.lineWidth = 2; g.strokeStyle = T;
     const full = st === 'yeni' || st === 'YENI';
     g.fillStyle = full ? T : '#0b1326';
@@ -310,7 +370,7 @@ export class MapEngine {
     } else if (e.kind === 'sdk') { g.rect(s.x - 9, s.y - 6, 18, 12); }
     else if (e.kind === 'manhole') { g.rect(s.x - 6, s.y - 6, 12, 12); }
     else if (e.kind === 'panel') { g.rect(s.x - 7, s.y - 9, 14, 18); }
-    else if (e.kind === 'other') { g.strokeStyle = '#cbd5e1'; g.fillStyle = full ? '#cbd5e1' : '#0b1326'; g.moveTo(s.x, s.y - 8); g.lineTo(s.x + 8, s.y); g.lineTo(s.x, s.y + 8); g.lineTo(s.x - 8, s.y); g.closePath(); }
+    else if (e.kind === 'other') { g.strokeStyle = EKRAN.diger; g.fillStyle = full ? EKRAN.diger : '#0b1326'; g.moveTo(s.x, s.y - 8); g.lineTo(s.x + 8, s.y); g.lineTo(s.x, s.y + 8); g.lineTo(s.x - 8, s.y); g.closePath(); }
     else { g.arc(s.x, s.y, 5, 0, Math.PI * 2); g.strokeStyle = '#fbbf24'; }
     g.fill(); g.stroke();
     if (e.kind === 'sdk') { g.beginPath(); g.moveTo(s.x - 9, s.y + 6); g.lineTo(s.x + 9, s.y - 6); g.stroke(); }

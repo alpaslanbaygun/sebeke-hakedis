@@ -5,7 +5,8 @@ import { measure } from '../services.js';
 import { renumberDialog } from './field.js';
 import { HakRow, HakHistory } from './team.js';
 import { STATUSES, HAK_STATUSES, HAK_ORDER, hakOf } from '../../core/schema.js';
-import { circuitLabel, lineLabelText, malzemeYazisi, CABLE_DEFAULTS, KAPLAMA, YONTEM, kanalModel } from '../../grid/lines.js';
+import { circuitLabel, circuitParts, autocadDevresi, lineLabelText, malzemeYazisi, CABLE_DEFAULTS, KAPLAMA, YONTEM, kanalModel } from '../../grid/lines.js';
+import { autocadSecenekleri, autocadCinsAdi } from '../../interop/sebeke.js';
 import { autoRecipeOn } from '../../grid/recipe.js';
 import { MaterialPicker } from './matpick.js';
 import { offsetPolyline, dms } from '../../geo/geom.js';
@@ -53,6 +54,31 @@ export function PointScreen({ id }) {
     <div class="card tight list">${(p.history || []).slice().reverse().map((h) => html`<div class="li"><div class="grow"><div class="s">${new Date(h.at).toLocaleString('tr-TR')} · ${h.by || ''}${h.manualMove ? ' · elle taşındı' : ''}</div><div class="m">${h.source} · Y ${fmt(h.E)} X ${fmt(h.N)} Z ${fmt(h.H)}</div></div><span class="m">Δ ${fmt(Math.hypot((h.E ?? 0) - p.E, (h.N ?? 0) - p.N))} m</span></div>`)}${!(p.history || []).length ? html`<div class="empty">İlk ölçüm · revizyon yok</div>` : null}</div>
     <div class="sect">GNSS gözlemleri</div>
     <div class="card tight list">${obs.map((o) => html`<div class="li"><div class="grow"><div class="s">${new Date(o.timestamp || o.createdAt).toLocaleString('tr-TR')} · ${o.receiver || o.source}${o.receiverSerial ? ' #' + o.receiverSerial : ''}</div><div class="m">${o.fix} · σH ${fmt(o.sigmaH)} · σV ${fmt(o.sigmaV)} · PDOP ${fmt(o.pdop, 1)} · ${o.sats ?? '—'} uydu · ${o.epochs} epok · ${fmt(o.duration, 1)} s · anten ${fmt(o.antennaHeight, 3)} m · ${o.mountpoint || o.correctionSource || ''}</div></div></div>`)}${!obs.length ? html`<div class="empty">Gözlem yok (elle / tasarım noktası)</div>` : null}</div>`;
+}
+
+/**
+ * Devrenin iletken / kablo seçenekleri: telefonun hat tipleri ve eklentinin (AutoCAD) kataloğundaki, telefonda karşılığı
+ * olmayan iletken / kablolar (4P+R, 2x4 NYY Al…). AutoCAD'den gelen ve listede olmayan iletken de seçili kalır.
+ */
+function devreSecenekleri(cat, c, install) {
+  const tel = cat.lineTypesFor(c.role === 'AYD' ? 'AG' : c.role, install).map((x) => [x.name, malzemeYazisi(x.name)]);
+  const ac = autocadSecenekleri(cat, c.role, install);
+  const hepsi = tel.concat(ac);
+  const simdiki = c.key && !hepsi.some((x) => x[0] === c.key) ? [[c.key, malzemeYazisi(circuitLabel(c, cat))]] : [];
+  if (!ac.length) return simdiki.concat(tel);
+  return simdiki.concat([{ group: 'Telefondaki tipler', options: tel }, { group: "AutoCAD'deki tipler", options: ac }]);
+}
+/** Seçili iletkenin kısa bilgisi: telefon tipinde teknik özellik ve poz, AutoCAD tipinde cinsi (ve çıplakta tel açılımı). */
+function devreNotu(cat, c) {
+  const ac = autocadDevresi(c);
+  if (ac) {
+    const cp = circuitParts(c, cat);
+    const teller = cp && cp.unit === 'kg' ? ' · ' + cp.parts.map((p) => p.count + '× ' + p.conductor).join(' + ') : '';
+    return "AutoCAD'deki tip · " + autocadCinsAdi(ac.cins) + teller;
+  }
+  const lt = cat.lineType(c.key);
+  const cd = lt ? cat.conductor(lt.parts[0].conductor) : null;
+  return cd ? (cd.tech || cd.family + ' · ' + (cd.kgPerKm ? cd.kgPerKm + ' kg/km' : '')) + (cd.yd ? ' · YD ' + cd.yd : '') : '';
 }
 
 export function LineScreen({ id }) {
@@ -119,8 +145,8 @@ export function LineScreen({ id }) {
     </div>
     <div class="sect">İletken / kablo devreleri <span class="r"><button class="btn xs" onClick=${() => set({ circuits: [...d.circuits, { role: roleOpts[0][0], key: cat.lineDefault(roleOpts[0][0], d.install), count: 1 }] })}>+ Devre</button></span></div>
     ${d.circuits.map((c, i) => html`<div class="card stack"><div class="row"><${Sel} value=${c.role} options=${roleOpts} onChange=${(v) => setC(i, { role: v })} /><select class="inp mono" style="width:70px" value=${c.count || 1} onChange=${(e) => setC(i, { count: +e.target.value })}>${[1, 2, 3, 4].map((n) => html`<option value=${n}>${n}×</option>`)}</select><button class="btn dang sm" aria-label="Sil" disabled=${d.circuits.length < 2} onClick=${() => set({ circuits: d.circuits.filter((_, j) => j !== i) })}><${Icon} n="x" s=${16} /></button></div>
-      ${c.custom ? html`<div class="mono note">Çıplak: ${malzemeYazisi(circuitLabel(c, cat))}</div>` : html`<${Sel} mono value=${c.key} options=${cat.lineTypesFor(c.role === 'AYD' ? 'AG' : c.role, d.install).map((x) => [x.name, malzemeYazisi(x.name)])} onChange=${(v) => setC(i, { key: v, custom: null })} />`}
-      <div class="note">${(() => { const lt = cat.lineType(c.key); const cd = lt ? cat.conductor(lt.parts[0].conductor) : null; return cd ? (cd.tech || cd.family + ' · ' + (cd.kgPerKm ? cd.kgPerKm + ' kg/km' : '')) + (cd.yd ? ' · YD ' + cd.yd : '') : ''; })()}</div></div>`)}
+      ${c.custom ? html`<div class="mono note">Çıplak: ${malzemeYazisi(circuitLabel(c, cat))}</div>` : html`<${Sel} mono value=${c.key} options=${devreSecenekleri(cat, c, d.install)} onChange=${(v) => setC(i, { key: v, custom: null })} />`}
+      <div class="note">${devreNotu(cat, c)}</div></div>`)}
     ${d.install === 'yeralti' ? (() => { const km = kanalModel(d.cable); const kn = li.cable && li.cable.kanal; const fld = ([k, l]) => html`<div class="fld"><label>${l}</label><input class="inp mono" type="number" step="0.05" value=${(d.cable || {})[k] ?? (k === 'joints' || k === 'depth' ? '' : cb[k])} onChange=${(e) => setCable({ [k]: e.target.value === '' ? null : +e.target.value })} /></div>`;
       return html`<div class="sect">Kanal</div><div class="card stack">
       ${!km.yeni && (km.eski === 'direk' || km.eski === 'duvar') ? html`<div class="alert warn" style="font-size:12px">Bu kayıt eski "${km.eski === 'direk' ? 'Direk inişi' : 'Duvar geçişi'}" türündeydi; bu tür kaldırıldı. Kaplama ve yöntemi seçip kaydedin.</div>` : null}
