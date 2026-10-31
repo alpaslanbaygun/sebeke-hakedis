@@ -43,7 +43,8 @@ namespace SebekeHakedis.Cekirdek
     }
 
     /// <summary>
-    /// MapInfo MIF / MID dosyaları (CBS). Yazma: her katman (ELEMAN, HAT, KANAL, SONDAJ, BOLGE, NOKTA) ayrı bir dosya çifti;
+    /// MapInfo MIF / MID dosyaları (CBS). Yazma: her katman (BOLGE, DIREK, TRAFO, SDK, PANO, ELEMAN, HAT, KANAL, SONDAJ, NOKTA,
+    /// MALZEME) ayrı bir dosya çifti;
     /// sütunlar CbsYapisi'ndeki adlarla, koordinatlar çizimin koordinatıyla (ITRF96 3° TM; CoordSys satırında dilim yazılı),
     /// Türkçe Windows kod sayfası (WindowsTurkish). Okuma: nokta, çizgi, çoklu çizgi, alan, dikdörtgen, elips, yazı ve
     /// çoklu nokta; koordinatlar (TM, coğrafi ya da düz) çizimin dilimine çevrilir.
@@ -72,7 +73,7 @@ namespace SebekeHakedis.Cekirdek
         // =========================== Yazma ===========================
 
         /// <summary>
-        /// Projeyi katman katman yazar: klasör/ad_ELEMAN.mif + .mid, ad_HAT..., boş katman yazılmaz. Yazılan MIF dosyalarının
+        /// Projeyi katman katman yazar: klasör/ad_DIREK.mif + .mid, ad_HAT..., boş katman yazılmaz. Yazılan MIF dosyalarının
         /// yolları döner.
         /// </summary>
         public static List<string> Yaz(Proje p, int dom, string klasor, string ad)
@@ -115,6 +116,9 @@ namespace SebekeHakedis.Cekirdek
                         m.Append("Point ").Append(K(n.Kose[0])).Append("\r\n");
                         m.Append("    Symbol (").Append(Simge(n).ToString(Inv)).Append(',').Append(renk.ToString(Inv)).Append(",10)\r\n");
                         break;
+                    case "yok": // haritada yeri olmayan satır (malzeme tablosu)
+                        m.Append("None\r\n");
+                        break;
                     case "cizgi":
                         m.Append("Pline ").Append(n.Kose.Count.ToString(Inv)).Append("\r\n");
                         foreach (var x in n.Kose) m.Append(K(x)).Append("\r\n");
@@ -139,7 +143,7 @@ namespace SebekeHakedis.Cekirdek
                         d.Append('"').Append(s.Replace("\"", "\"\"")).Append('"');
                     }
                     else if (a.Tur == 'I') d.Append(v == null ? "0" : Convert.ToInt64(v, Inv).ToString(Inv));
-                    else d.Append(v == null ? "0" : Convert.ToDouble(v, Inv).ToString("0.########", Inv));
+                    else d.Append(v == null ? "0" : (Convert.ToDouble(v, Inv) + 0.0).ToString("0.########", Inv)); // eksi sıfır "0"
                 }
                 d.Append("\r\n");
             }

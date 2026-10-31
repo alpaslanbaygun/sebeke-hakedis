@@ -145,7 +145,7 @@ Testler
 
 2.5.x değişiklikleri (Şebeke Hakediş deposuna birleşme · 17.10.2026)
 ====================================================================
-Depo: alpaslanbaygun/sebeke-hakedis › telefon/. Derleme GitHub Actions'ta (.github/workflows/telefon.yml): npm ci →
+Depo: Şebeke Hakediş deposu › telefon/. Derleme GitHub Actions'ta (.github/workflows/telefon.yml): npm ci →
 node --test → tools/setup_tools.sh → tools/build_apk.sh. Sürüm adı 2.5.N, sürüm kodu 1000+N (N = derleme sırası).
 İmza anahtarı aynı (keystore/voltsaha-release.jks): 2.1.0 ve sonrasının üzerine kurulur.
 

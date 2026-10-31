@@ -64,6 +64,7 @@ namespace SebekeHakedis.Cekirdek
             // Projeler (bölgeler) sırasıyla; bölgesi olmayan nesneler en sonda
             var projeler = new List<string>();
             foreach (var b in p.Bolgeler) if (!projeler.Contains(b.Ad ?? "")) projeler.Add(b.Ad ?? "");
+            nesneler.RemoveAll(n => n.Katman == CbsYapisi.Malzeme); // malzeme satırlarının haritada yeri yok (bilgileri nesnede)
             foreach (var n in nesneler) if (n.Katman != CbsYapisi.Nokta && !projeler.Contains(n.Proje)) projeler.Add(n.Proje);
             if (projeler.Remove("")) projeler.Add("");
             foreach (var pr in projeler)
@@ -77,7 +78,7 @@ namespace SebekeHakedis.Cekirdek
                 if (kod.Length > 0) govde.Append("<description>").Append(Kac("Proje kodu " + kod)).Append("</description>");
                 govde.Append('\n');
                 foreach (var n in bu.FindAll(x => x.Katman == CbsYapisi.Bolge)) Yer(govde, n, dom, bicimler);
-                foreach (var k in new[] { CbsYapisi.Eleman, CbsYapisi.Hat, CbsYapisi.Kanal, CbsYapisi.Sondaj })
+                foreach (var k in new[] { CbsYapisi.Direk, CbsYapisi.Trafo, CbsYapisi.Sdk, CbsYapisi.Pano, CbsYapisi.Eleman, CbsYapisi.Hat, CbsYapisi.Kanal, CbsYapisi.Sondaj })
                 {
                     var l = bu.FindAll(x => x.Katman == k);
                     if (l.Count == 0) continue;

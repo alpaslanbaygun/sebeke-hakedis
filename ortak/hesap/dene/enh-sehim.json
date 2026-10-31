@@ -10,7 +10,7 @@
         "proje": {
           "ad": "Deneme Köyü ENH",
           "kod": "DNM-01",
-          "yapan": "Ayşe Nur Yılmaz",
+          "yapan": "Deneme Örnek Kullanıcı",
           "unvan": "Elektrik Mühendisi",
           "firma": "Örnek Mühendislik",
           "tarih": "2026-10-18",
@@ -202,7 +202,7 @@
         "proje": {
           "ad": "Deneme Ova ENH",
           "kod": "DNM-05",
-          "yapan": "Mehmet Ali Kaya",
+          "yapan": "Örnek Sınama Mühendis",
           "unvan": "Elektrik-Elektronik Mühendisi",
           "buzBolgesi": "2"
         },
@@ -517,7 +517,7 @@
         "kaynak": "telefon",
         "proje": {
           "ad": "Deneme Köprü Geçişi",
-          "yapan": "Ayşe Nur Yılmaz",
+          "yapan": "Deneme Örnek Kullanıcı",
           "unvan": "Elektrik Mühendisi",
           "buzBolgesi": "3"
         },

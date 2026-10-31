@@ -78,7 +78,7 @@ namespace SebekeHakedis.Cekirdek
 
         private static readonly Dictionary<string, string> ElemanKatmanTuru = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            { "AG_DIREK", "AGDİR" }, { "MUSTEREK_DIREK", "MÜŞDİR" }, { "AYD_DIREK", "AYDDİR" }, { "ENH_DIREK", "ENHDİR" },
+            { "AG_DIREK", "AGDIR" }, { "MUSTEREK_DIREK", "MUSDIR" }, { "AYD_DIREK", "AYDDIR" }, { "ENH_DIREK", "ENHDIR" },
             { "TRAFO_DIREGI", "TRAFO" }, { "TRAFO_MERKEZI", "TRAFO" }, { "PANO", "PANO" }, { "BOX", "BOX" },
             { "EK_MUFU", "STANDART" }, { "KOFRE", "STANDART" }, { "DIGER", "STANDART" },
         };
@@ -86,12 +86,16 @@ namespace SebekeHakedis.Cekirdek
         private static readonly Dictionary<string, string> HatKatmanTuru = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             { "AG_HAVAI", "AG_HAV_HAT" }, { "AG_YERALTI", "AG_YER_HAT" }, { "AYDINLATMA", "AYD_HAT" }, { "OG_HAVAI", "OG_HAV_HAT" },
-            { "OG_YERALTI", "OG_YER_XLPE" }, { "REKORTMAN", "REKORTMAN" }, { "MUSTEREK", "MÜŞTEREK_HAT" },
+            { "OG_YERALTI", "OG_YER_XLPE" }, { "REKORTMAN", "REKORTMAN" }, { "MUSTEREK", "MUSTEREK_HAT" },
         };
 
-        /// <summary>AutoCAD katman adı: MEVCUT → önEk_MEVCUT, DM → önEk_DEMONTAJ, mufu/kofre → önEk_STANDART, diğerleri önEk_hakediş.HAK.tür</summary>
+        /// <summary>
+        /// AutoCAD katman adı: MEVCUT → önEk_MEVCUT, DM → önEk_DEMONTAJ, mufu/kofre → önEk_STANDART, diğerleri
+        /// önEk_hakediş.HAK.tür. Türkçe karaktersiz (KatmanAdlari): önekteki Türkçe harfler de çevrilir.
+        /// </summary>
         public static string ElemanKatmani(string onEk, string tur, string durum, int hakedis)
         {
+            onEk = KatmanAdlari.Ascii(onEk);
             if (durum == "MEVCUT") return onEk + "_MEVCUT";
             if (durum == "DM") return onEk + "_DEMONTAJ";
             string t;
@@ -102,6 +106,7 @@ namespace SebekeHakedis.Cekirdek
 
         public static string HatKatmani(string onEk, string tur, string durum, int hakedis)
         {
+            onEk = KatmanAdlari.Ascii(onEk);
             if (durum == "MEVCUT") return onEk + "_MEVCUT";
             if (durum == "DM") return onEk + "_DEMONTAJ";
             string t;
@@ -198,13 +203,13 @@ namespace SebekeHakedis.Cekirdek
             renk = 7; cizgiTipi = "";
             katman = katman ?? "";
             int i = katman.IndexOf(".HAK.", StringComparison.Ordinal);
-            string tur = i >= 0 ? katman.Substring(i + 5) : "";
+            string tur = i >= 0 ? KatmanAdlari.Tur(katman.Substring(i + 5)) : "";
             switch (tur)
             {
-                case "AGDİR": renk = 180; return;
-                case "AYDDİR": renk = 140; return;
-                case "ENHDİR": renk = 240; return;
-                case "MÜŞDİR": case "BOX": case "PANO": renk = 7; return;
+                case "AGDIR": renk = 180; return;
+                case "AYDDIR": renk = 140; return;
+                case "ENHDIR": renk = 240; return;
+                case "MUSDIR": case "BOX": case "PANO": renk = 7; return;
                 case "TRAFO": renk = 1; return;
                 case "AG_HAV_HAT": renk = 3; return;
                 case "AG_YER_HAT": renk = 3; cizgiTipi = "HIDDENX2"; return;
@@ -212,7 +217,7 @@ namespace SebekeHakedis.Cekirdek
                 case "OG_HAV_HAT": renk = 1; return;
                 case "OG_YER_XLPE": renk = 1; cizgiTipi = "HIDDENX2"; return;
                 case "REKORTMAN": renk = 140; cizgiTipi = "HIDDENX2"; return;
-                case "MÜŞTEREK_HAT": renk = 6; return;
+                case "MUSTEREK_HAT": renk = 6; return;
             }
             if (katman.EndsWith("_DEMONTAJ", StringComparison.Ordinal)) { renk = 9; cizgiTipi = "HIDDENX2"; }
             else if (katman.EndsWith("_MEVCUT", StringComparison.Ordinal)) renk = 8;
@@ -239,7 +244,7 @@ namespace SebekeHakedis.Cekirdek
             {
                 H = e.Id,
                 Tur = "INSERT",
-                Katman = string.IsNullOrEmpty(e.Katman) || !KatmanUyumlu(e.Katman, e.Durum) ? ElemanKatmani(onEk, e.Tur, e.Durum, e.Hakedis) : e.Katman,
+                Katman = string.IsNullOrEmpty(e.Katman) || !KatmanUyumlu(e.Katman, e.Durum) ? ElemanKatmani(onEk, e.Tur, e.Durum, e.Hakedis) : KatmanAdlari.Ascii(e.Katman),
                 Blok = blok,
                 X = e.Saga, Y = e.Yukari, Z = e.Kot, Aci = e.Aci,
             };
@@ -293,7 +298,7 @@ namespace SebekeHakedis.Cekirdek
             {
                 H = h.Id,
                 Tur = "LWPOLYLINE",
-                Katman = string.IsNullOrEmpty(h.Katman) || !KatmanUyumlu(h.Katman, h.Durum) ? HatKatmani(onEk, h.Tur, h.Durum, h.Hakedis) : h.Katman,
+                Katman = string.IsNullOrEmpty(h.Katman) || !KatmanUyumlu(h.Katman, h.Durum) ? HatKatmani(onEk, h.Tur, h.Durum, h.Hakedis) : KatmanAdlari.Ascii(h.Katman),
             };
             foreach (var k in h.Kose) v.Kose.Add(new[] { k[0], k[1] });
             v.ParcaMetraji = true;
@@ -367,7 +372,7 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Kanal: çoklu çizgi (önEk_KABLO_KANALI) + GIS (baş;bit;uzunluk;derinlik;alt;üst), KONTROL, NIT.</summary>
         public static CadVarlik Kanal(Kanal c, string onEk, string kimlik)
         {
-            var v = new CadVarlik { H = c.Id, Tur = "LWPOLYLINE", Katman = onEk + "_KABLO_KANALI" };
+            var v = new CadVarlik { H = c.Id, Tur = "LWPOLYLINE", Katman = KatmanAdlari.Ascii(onEk) + "_KABLO_KANALI" };
             foreach (var k in c.Kose) v.Kose.Add(new[] { k[0], k[1] });
             v.ParcaMetraji = true;
             v.KaziMetraji = true;
@@ -387,7 +392,7 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Yatay sondaj: çoklu çizgi (önEk_YATAY_SONDAJ) + GIS (baş;bit;uzunluk), KONTROL, NIT.</summary>
         public static CadVarlik Sondaj(Sondaj s, string onEk, string kimlik)
         {
-            var v = new CadVarlik { H = s.Id, Tur = "LWPOLYLINE", Katman = onEk + "_YATAY_SONDAJ" };
+            var v = new CadVarlik { H = s.Id, Tur = "LWPOLYLINE", Katman = KatmanAdlari.Ascii(onEk) + "_YATAY_SONDAJ" };
             foreach (var k in s.Kose) v.Kose.Add(new[] { k[0], k[1] });
             v.ParcaMetraji = true;
             v.KaziMetraji = true;
@@ -416,7 +421,7 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Bölge (alt proje): kapalı çoklu çizgi (önEk_PROJE) + FULLREG "ad;kod;".</summary>
         public static CadVarlik Bolge(Bolge b, string onEk, string kimlik)
         {
-            var v = new CadVarlik { H = b.Id, Tur = "LWPOLYLINE", Katman = onEk + "_PROJE", Kapali = true };
+            var v = new CadVarlik { H = b.Id, Tur = "LWPOLYLINE", Katman = KatmanAdlari.Ascii(onEk) + "_PROJE", Kapali = true };
             foreach (var k in b.Sinir) v.Kose.Add(new[] { k[0], k[1] });
             Stil(v, "PROJE", "");
             Ekle(v, "FULLREG", A(b.Ad) + ";" + A(b.Kod) + ";" + A(b.Grup));

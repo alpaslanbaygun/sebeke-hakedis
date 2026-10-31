@@ -9,10 +9,12 @@ using AcApp = Autodesk.AutoCAD.ApplicationServices.Application;
 namespace SebekeHakedis.Eklenti
 {
     /// <summary>
-    /// Kanal kenarlarını AutoCAD komutlarında kanalın ekseniyle birlikte tutar: eksen taşınınca, uzatılınca, köşesi
-    /// oynatılınca ya da kopyalanınca kenarlar yeniden çizilir; eksen silinince kenarları da silinir. Olay anında yalnız
-    /// not alınır (bildirim sırasında başka nesne değiştirilemez); iş komut bitince kendi işleminde yapılır
-    /// (ArmaturTakibi ile aynı düzen). Kenarları güncel olan eksene dokunulmaz (eklentinin kendi yazdıkları dâhil).
+    /// Hattın, kanalın ve sondajın süslerini AutoCAD komutlarında çizgiyle birlikte tutar (süs takibi): çizgi taşınınca,
+    /// uzatılınca, köşesi oynatılınca ya da kopyalanınca kanal kenarları yeniden çizilir, metraj yazıları yeniden yazılır,
+    /// hat etiketi çizginin yeni ortasına gelir (kopyaya kendi yazıları); çizgi silinince (ERASE, kes…) kenarları, metraj
+    /// yazıları ve etiketi de silinir. Olay anında yalnız not alınır (bildirim sırasında başka nesne değiştirilemez); iş
+    /// komut bitince kendi işleminde yapılır (ArmaturTakibi ile aynı düzen). Süsleri güncel olan çizgiye dokunulmaz
+    /// (eklentinin kendi yazdıkları dâhil). Geri Al / Yinele çizgiyle süslerini birlikte geri getirir.
     /// </summary>
     internal static class KenarTakibi
     {
@@ -55,15 +57,14 @@ namespace SebekeHakedis.Eklenti
             lock (_kilit) _kuyruk.Remove(d.Database);
         }
 
-        /// <summary>Kenarı olan kanal ekseni değiştiyse not alınır.</summary>
+        /// <summary>Süslü çizgi (kenarı, metraj yazısı ya da etiketi olan) değiştiyse not alınır.</summary>
         private static void Kaydet(DBObject o)
         {
             if (_calisiyor) return;
             try
             {
                 if (!(o is Curve)) return;
-                using (var rb = o.GetXDataForApplication(NesneYazici.KenarUygulamasi))
-                    if (rb == null) return;
+                if (!SuslerVar(o)) return;
                 var db = o.Database;
                 if (db == null) return;
                 lock (_kilit)
@@ -149,7 +150,9 @@ namespace SebekeHakedis.Eklenti
                 using (d.LockDocument())
                 {
                     var ms = SymbolUtilityServices.GetBlockModelSpaceId(db);
-                    foreach (var id in eksenler) Dene(db, t => EksenIsle(t, ms, id));
+                    CizimAyarlari ayar;
+                    try { ayar = AyarDeposu.Oku(db); } catch { ayar = new CizimAyarlari(); }
+                    foreach (var id in eksenler) Dene(db, t => EksenIsle(t, ms, id, ayar));
                 }
                 _hataSayisi = 0;
             }
@@ -180,20 +183,32 @@ namespace SebekeHakedis.Eklenti
             catch (Exception ex) { HataKaydi(ex); }
         }
 
-        private static void EksenIsle(Transaction t, ObjectId ms, ObjectId id)
+        private static void EksenIsle(Transaction t, ObjectId ms, ObjectId id, CizimAyarlari ayar)
         {
             if (id.IsNull || !id.IsValid) return;
             var eksen = t.GetObject(id, OpenMode.ForRead, true) as Curve;
             if (eksen == null || eksen.OwnerId != ms) return; // blok tanımındaki nesnelere dokunulmaz
             var y = new CizimYazici(eksen.Database, t);
+            y.BoyutlariAl(ayar);
             if (eksen.IsErased)
             {
-                y.KenarlariSil(eksen); // yalnız kendi kenarları
+                y.SusleriSil(eksen); // yalnız kendi etiketi, metraj yazıları ve kenarları
                 return;
             }
-            double genislik = Genislik(eksen);
-            if (y.KenarlarGuncel(eksen, genislik)) return;
-            y.KenarlariYaz(eksen, genislik);
+            using (var rb = eksen.GetXDataForApplication(NesneYazici.KenarUygulamasi))
+                if (rb != null)
+                {
+                    double genislik = Genislik(eksen);
+                    if (!y.KenarlarGuncel(eksen, genislik)) y.KenarlariYaz(eksen, genislik);
+                }
+            y.YazilariGuncelle(eksen, KaziCizgisi(eksen));
+        }
+
+        /// <summary>Kanal ya da sondaj çizgisi mi (metrajı kazı metrajı: bir satır yukarıda).</summary>
+        private static bool KaziCizgisi(Entity e)
+        {
+            string katman = e.Layer ?? "";
+            return katman.EndsWith("_KABLO_KANALI", StringComparison.OrdinalIgnoreCase) || katman.EndsWith("_YATAY_SONDAJ", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>Kenarlar arası: kanalın GIS verisindeki üst genişlik, yoksa alt genişlik (cm), o da yoksa varsayılan.</summary>
@@ -208,6 +223,15 @@ namespace SebekeHakedis.Eklenti
                 if (f.Length > 5) k.UstGenislik = SayiCoz.Coz(f[5]);
             }
             return NesneYazici.KanalGenisligi(k);
+        }
+
+        /// <summary>Çizginin süsü var mı: kanal kenarı (SH_KENAR), metraj yazısı (SH_PARCA) ya da hat etiketi (ETK).</summary>
+        private static bool SuslerVar(DBObject o)
+        {
+            foreach (var app in new[] { NesneYazici.KenarUygulamasi, NesneYazici.ParcaUygulamasi, "ETK" })
+                using (var rb = o.GetXDataForApplication(app))
+                    if (rb != null) return true;
+            return false;
         }
 
         private static void HataKaydi(Exception ex)

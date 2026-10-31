@@ -44,7 +44,7 @@ test('C2 · ortak deneme: telefonun KML ve MIF / MID metinleri eklentininkiyle b
   const f = ilkFark(beklenen('deneme.kml'), kml);
   assert.equal(f, null, 'deneme.kml farklı: ' + f);
   const dosyalar = mifDosyalari(p, 'deneme', { coordSys: mifCoordSys(tm39) });
-  assert.equal(dosyalar.length, 12, 'altı katman × (MIF + MID)');
+  assert.equal(dosyalar.length, 2 * KATMANLAR.length, 'bütün katmanlar (' + KATMANLAR.length + ') × (MIF + MID)');
   for (const d of dosyalar) {
     const fk = ilkFark(beklenen(d.name), d.text);
     assert.equal(fk, null, d.name + ' farklı: ' + fk);
@@ -58,7 +58,11 @@ test('C3 · nesneler: katmanlar, bölgesiz nesne, kısa sınır, Türkçe kod sa
   const p = proje();
   const n = cbsNesneleri(p);
   const say = (k) => n.filter((x) => x.katman === k).length;
-  assert.deepEqual(KATMANLAR.map((k) => [k.ad, say(k)]), [['BOLGE', 2], ['ELEMAN', 14], ['HAT', 7], ['KANAL', 2], ['SONDAJ', 1], ['NOKTA', 2]], 'iki köşeli bölge sınırı yazılmaz');
+  assert.deepEqual(KATMANLAR.map((k) => [k.ad, say(k)]), [['BOLGE', 2], ['DIREK', 5], ['TRAFO', 2], ['SDK', 1], ['PANO', 1], ['ELEMAN', 5], ['HAT', 7], ['KANAL', 2], ['SONDAJ', 1], ['NOKTA', 2], ['MALZEME', say(KATMANLAR[10])]],
+    'eleman türü bazında katmanlar (31.10.2026); iki köşeli bölge sınırı yazılmaz');
+  const pr = proje();
+  const satir = pr.elemanlar.reduce((t, e) => t + (e.kalemler || []).length, 0) + ['hatlar', 'kanallar', 'sondajlar'].reduce((t, ad) => t + pr[ad].filter((x) => (x.kose || []).length >= 2).reduce((u, x) => u + (x.kalemler || []).length, 0), 0);
+  assert.equal(say(KATMANLAR[10]), satir, 'bütün malzeme satırları MALZEME tablosunda');
   const b2 = n.find((x) => x.degerler[0] === 'B2');
   assert.equal(b2.kose.length, 4, 'kapanış köşesi tekrarlanmaz');
   assert.equal(n.find((x) => x.degerler[0] === 'E14').proje, '', 'bölgesiz eleman');
@@ -79,13 +83,15 @@ test('C5 · başka koordinat sistemine çevirme: köşeler, SAGA / YUKARI, çizi
   const n = cbsNesneleri(proje());
   const kay = (k) => [k[0] + 1000, k[1] * 2];
   const c = sistemeCevir(n, kay);
+  const s = (x, ad) => x.degerler[x.katman.alanlar.findIndex((a) => a.ad === ad)];
   const e = c.find((x) => x.degerler[0] === 'E1'), e0 = n.find((x) => x.degerler[0] === 'E1');
   assert.deepEqual(e.kose[0], kay(e0.kose[0]));
-  assert.deepEqual([e.degerler[12], e.degerler[13]], [yuvarla(e0.kose[0][0] + 1000, 3), yuvarla(e0.kose[0][1] * 2, 3)], 'SAGA / YUKARI');
-  const h = c.find((x) => x.degerler[0] === 'H3'), h0 = n.find((x) => x.degerler[0] === 'H3');
-  assert.equal(h.degerler[9], 80, 'dik hat 40 m → 80 m (çizim uzunluğu yeni sistemde)');
-  assert.equal(h.degerler[10], h0.degerler[10], 'metraj değişmez');
-  const b = c.find((x) => x.degerler[0] === 'B1');
-  assert.equal(b.degerler[5], 2 * n.find((x) => x.degerler[0] === 'B1').degerler[5], 'alan yeni sistemde');
-  assert.notEqual(n.find((x) => x.degerler[0] === 'E1').degerler[12], e.degerler[12], 'asıl nesneler değişmez');
+  assert.deepEqual([s(e, 'SAGA'), s(e, 'YUKARI')], [yuvarla(e0.kose[0][0] + 1000, 3), yuvarla(e0.kose[0][1] * 2, 3)], 'SAGA / YUKARI');
+  const h = c.find((x) => x.katman.ad === 'HAT' && x.degerler[0] === 'H3'), h0 = n.find((x) => x.katman.ad === 'HAT' && x.degerler[0] === 'H3');
+  assert.equal(s(h, 'UZUNLUK'), 80, 'dik hat 40 m → 80 m (çizim uzunluğu yeni sistemde)');
+  assert.equal(s(h, 'METRAJ'), s(h0, 'METRAJ'), 'metraj değişmez');
+  const b = c.find((x) => x.katman.ad === 'BOLGE' && x.degerler[0] === 'B1'), b0 = n.find((x) => x.katman.ad === 'BOLGE' && x.degerler[0] === 'B1');
+  assert.equal(s(b, 'ALAN'), 2 * s(b0, 'ALAN'), 'alan yeni sistemde');
+  assert.notEqual(s(e0, 'SAGA'), s(e, 'SAGA'), 'asıl nesneler değişmez');
+  assert.ok(c.filter((x) => x.katman.ad === 'MALZEME').every((x) => x.kose.length === 0), 'malzeme satırlarının yeri yok');
 });

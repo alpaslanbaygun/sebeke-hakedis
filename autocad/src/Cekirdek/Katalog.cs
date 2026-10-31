@@ -199,6 +199,7 @@ namespace SebekeHakedis.Cekirdek
         private KatalogCinsi CinsEkle(string cins, string ad, string rol)
         {
             if (string.IsNullOrEmpty(cins)) return null;
+            cins = CinsKodu.Duzelt(cins);
             KatalogCinsi c;
             if (!_cins.TryGetValue(cins, out c))
             {
@@ -213,6 +214,7 @@ namespace SebekeHakedis.Cekirdek
         public KatalogKalemi Ekle(string cins, string tanim, string birim, double katsayi, string tarife, string rol, IEnumerable<string> nesneler, int kullanim)
         {
             if (string.IsNullOrEmpty(cins) || string.IsNullOrEmpty(tanim)) return null;
+            cins = CinsKodu.Duzelt(cins);
             string key = cins + "|" + tanim;
             KatalogKalemi v;
             if (!_anahtar.TryGetValue(key, out v))
@@ -257,6 +259,7 @@ namespace SebekeHakedis.Cekirdek
 
         public KatalogKalemi Bul(string cins, string tanim)
         {
+            cins = CinsKodu.Duzelt(cins);
             KatalogKalemi v;
             if (_anahtar.TryGetValue((cins ?? "") + "|" + (tanim ?? ""), out v)) return v;
             return _sade.TryGetValue((cins ?? "") + "|" + KatalogKalemi.Sade(tanim), out v) ? v : null;
@@ -265,7 +268,7 @@ namespace SebekeHakedis.Cekirdek
         public KatalogCinsi Cins(string cins)
         {
             KatalogCinsi c;
-            return _cins.TryGetValue(cins ?? "", out c) ? c : null;
+            return _cins.TryGetValue(CinsKodu.Duzelt(cins) ?? "", out c) ? c : null;
         }
 
         public string CinsAdi(string cins)

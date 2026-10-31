@@ -172,7 +172,7 @@ namespace SebekeHakedis.Cekirdek
             e.Durum = ana.Durum;
             e.DmDurum = ana.DmDurum;
             e.Hakedis = ana.Hakedis > 0 ? ana.Hakedis : katmanHakedis;
-            if (string.IsNullOrEmpty(e.Cins)) { e.Cins = Alan(gis, 2); e.Tip = Alan(gis, 3); e.Durum = Alan(gis, 4); }
+            if (string.IsNullOrEmpty(e.Cins)) { e.Cins = CinsKodu.Duzelt(Alan(gis, 2)); e.Tip = Alan(gis, 3); e.Durum = Alan(gis, 4); }
             e.Tur = ElemanTuru(e.Cins);
             return e;
         }
@@ -319,7 +319,7 @@ namespace SebekeHakedis.Cekirdek
         {
             var k = new Kalem
             {
-                Cins = Alan(f, 0).Trim(),
+                Cins = CinsKodu.Duzelt(Alan(f, 0).Trim()), // yazım hatası düzeltilmiş kod (AG_ALİMİNYUM… → AG_ALÜMİNYUM…)
                 Tanim = Alan(f, tanimAlani),
                 Durum = Alan(f, 2).Trim(),
                 Miktar = SayiCoz.Coz(Alan(f, 4)),
@@ -364,7 +364,7 @@ namespace SebekeHakedis.Cekirdek
             if (Bas(cins, "AG_PANO")) return "PANO";
             if (Bas(cins, "BOX_PANO")) return "BOX";
             if (Bas(cins, "EK_MUFU")) return "EK_MUFU";
-            if (Bas(cins, "KOFRA")) return "KOFRE";
+            if (Bas(cins, "KOFRE") || Bas(cins, "KOFRA")) return "KOFRE";
             return "DIGER";
         }
 
@@ -378,14 +378,14 @@ namespace SebekeHakedis.Cekirdek
                 case "OG_HAV_HAT": return "OG_HAVAI";
                 case "OG_YER_XLPE": return "OG_YERALTI";
                 case "REKORTMAN": return "REKORTMAN";
-                case "MÜŞTEREK_HAT": return "MUSTEREK";
+                case "MUSTEREK_HAT": case "MÜŞTEREK_HAT": return "MUSTEREK";
             }
             cins = cins ?? "";
             if (Bas(cins, "ALPEK") || Bas(cins, "AG_İLETKEN")) return "AG_HAVAI";
-            if (Bas(cins, "AG_ALİMİNYUM_KABLO") || Bas(cins, "AG_BAKIR_KABLO")) return "AG_YERALTI";
+            if (Bas(cins, "AG_ALÜMİNYUM_KABLO") || Bas(cins, "AG_ALİMİNYUM_KABLO") || Bas(cins, "AG_BAKIR_KABLO")) return "AG_YERALTI";
             if (Bas(cins, "AYDINLATMA")) return "AYDINLATMA";
             if (Bas(cins, "OG_İLETKEN")) return "OG_HAVAI";
-            if (Bas(cins, "OG_ALİMİNYUM_KABLO")) return "OG_YERALTI";
+            if (Bas(cins, "OG_ALÜMİNYUM_KABLO") || Bas(cins, "OG_ALİMİNYUM_KABLO")) return "OG_YERALTI";
             if (Bas(cins, "REKORTMAN")) return "REKORTMAN";
             return "DIGER";
         }

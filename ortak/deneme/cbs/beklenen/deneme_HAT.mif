@@ -2,18 +2,29 @@ Version 300
 Charset "WindowsTurkish"
 Delimiter ","
 CoordSys Earth Projection 8, 104, "m", 39, 0, 1, 500000, 0 Bounds (0, 3000000) (1000000, 5000000)
-Columns 11
+Columns 22
   KIMLIK Char(20)
   TUR Char(20)
   TUR_ADI Char(40)
   KESIT Char(80)
+  ILETKEN_CINS Char(40)
+  ILETKEN Char(80)
+  ILETKEN_ADET Integer
+  ILETKEN2_CINS Char(40)
+  ILETKEN2 Char(80)
+  ILETKEN2_ADET Integer
   ETIKET Char(80)
   DURUM Char(10)
   HAKEDIS Integer
+  KONTROL Char(10)
+  BAS_NO Char(20)
+  BIT_NO Char(20)
   PROJE Char(120)
   PROJE_KODU Char(40)
   UZUNLUK Float
   METRAJ Float
+  MALZEME_SAYISI Integer
+  TELEFON_ID Char(40)
 Data
 
 Pline 3

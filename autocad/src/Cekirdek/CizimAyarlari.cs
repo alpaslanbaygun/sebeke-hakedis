@@ -49,8 +49,21 @@ namespace SebekeHakedis.Cekirdek
         public int AktifHakedis;
         public int Dom;
         public double SembolOlcegi;
-        /// <summary>Hat etiketi ve eleman yazısı yüksekliği (m); telefonun DXF'iyle aynı: 1.8.</summary>
+        /// <summary>Hat etiketi (kablo tipi) yazısının yüksekliği (m); telefonun DXF'iyle aynı: 1.8.</summary>
         public double EtiketYuksekligi = 1.8;
+        /// <summary>
+        /// Boyutlar (31.10.2026; Çizim Ayarları › Görünüm, telefon dosyasında da taşınır): uygulamanın simgelerinin
+        /// büyüklüğü (çarpan; 1 = telefonla aynı, 1/1000 pafta), metraj yazısı ve eleman yazısının (GIS no, tip)
+        /// yüksekliği (m). Yeni çizilenlere hemen, var olanlara Telefon Görünümü ile uygulanır.
+        /// </summary>
+        public double SimgeOlcegi = 1, MetrajYuksekligi = 1.44, ElemanYaziYuksekligi = 1.8;
+
+        /// <summary>Boyutların varsayılanları (ortak çizim stili).</summary>
+        public static double VarsayilanEtiket => CizimStili.Yuklu ? CizimStili.YaziYuksekligi : 1.8;
+        public static double VarsayilanMetraj => CizimStili.Yuklu ? CizimStili.ParcaMetraji : 1.44;
+
+        /// <summary>Boyutlar varsayılandan farklı mı (telefon dosyasına yalnız farklıysa yazılır).</summary>
+        public bool BoyutlarDegisik => !BoyutlariVer().Varsayilan;
         public double YakalamaMesafesi = 1.0;
         public bool YukariYuvarla = true;
         public readonly Dictionary<string, double> EkPay = new Dictionary<string, double>(StringComparer.Ordinal);
@@ -67,6 +80,30 @@ namespace SebekeHakedis.Cekirdek
 
         /// <summary>Son seçimler (tür, tip, kesit, durum...): bir sonraki komutta hazır gelir.</summary>
         public readonly Dictionary<string, string> Son = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        /// <summary>Boyutlar makul aralıkta (simge 0,1–20 kat; yazılar 0,05–50 m); bozuk değer varsayılana döner.</summary>
+        public void BoyutlariDuzelt() => BoyutlariKoy(BoyutlariVer());
+
+        /// <summary>Boyutlar (proje dosyasına yazılan biçim).</summary>
+        public Boyutlar BoyutlariVer() => new Boyutlar
+        {
+            SimgeOlcegi = SimgeOlcegi, EtiketYuksekligi = EtiketYuksekligi, MetrajYuksekligi = MetrajYuksekligi,
+            ElemanYaziYuksekligi = ElemanYaziYuksekligi,
+        }.Duzelt();
+
+        public void BoyutlariKoy(Boyutlar b)
+        {
+            if (b == null) return;
+            b = new Boyutlar
+            {
+                SimgeOlcegi = b.SimgeOlcegi, EtiketYuksekligi = b.EtiketYuksekligi, MetrajYuksekligi = b.MetrajYuksekligi,
+                ElemanYaziYuksekligi = b.ElemanYaziYuksekligi,
+            }.Duzelt();
+            SimgeOlcegi = b.SimgeOlcegi;
+            EtiketYuksekligi = b.EtiketYuksekligi;
+            MetrajYuksekligi = b.MetrajYuksekligi;
+            ElemanYaziYuksekligi = b.ElemanYaziYuksekligi;
+        }
 
         public double EkPayi(string hatTuru)
         {
@@ -100,6 +137,9 @@ namespace SebekeHakedis.Cekirdek
                 new KeyValuePair<string, string>("dom", Dom.ToString(CultureInfo.InvariantCulture)),
                 new KeyValuePair<string, string>("sembolOlcegi", S(SembolOlcegi)),
                 new KeyValuePair<string, string>("etiketYuksekligi", S(EtiketYuksekligi)),
+                new KeyValuePair<string, string>("simgeOlcegi", S(SimgeOlcegi)),
+                new KeyValuePair<string, string>("metrajYuksekligi", S(MetrajYuksekligi)),
+                new KeyValuePair<string, string>("elemanYaziYuksekligi", S(ElemanYaziYuksekligi)),
                 new KeyValuePair<string, string>("yakalamaMesafesi", S(YakalamaMesafesi)),
                 new KeyValuePair<string, string>("yukariYuvarla", YukariYuvarla ? "1" : "0"),
                 new KeyValuePair<string, string>("kanalAlt", S(KanalAlt)),
@@ -139,6 +179,9 @@ namespace SebekeHakedis.Cekirdek
                     case "dom": a.Dom = SayiCoz.Tam(v); break;
                     case "sembolOlcegi": a.SembolOlcegi = SayiCoz.Coz(v); break;
                     case "etiketYuksekligi": a.EtiketYuksekligi = SayiCoz.Coz(v, 1.8); break;
+                    case "simgeOlcegi": a.SimgeOlcegi = SayiCoz.Coz(v, 1); break;
+                    case "metrajYuksekligi": a.MetrajYuksekligi = SayiCoz.Coz(v, 1.44); break;
+                    case "elemanYaziYuksekligi": a.ElemanYaziYuksekligi = SayiCoz.Coz(v, 1.8); break;
                     case "yakalamaMesafesi": a.YakalamaMesafesi = SayiCoz.Coz(v, 1.0); break;
                     case "yukariYuvarla": a.YukariYuvarla = v != "0"; break;
                     case "kanalAlt": a.KanalAlt = SayiCoz.Coz(v, 40); break;
@@ -158,6 +201,7 @@ namespace SebekeHakedis.Cekirdek
             // Sürüm 1 ayarlarında varsayılan 0,5 m idi (AutoCAD görünümü); telefon stiliyle 1,8 m
             if (a.EtiketYuksekligi <= 0 || (surum < 2 && Math.Abs(a.EtiketYuksekligi - 0.5) < 1e-9)) a.EtiketYuksekligi = 1.8;
             if (a.YakalamaMesafesi < 0) a.YakalamaMesafesi = 1.0;
+            a.BoyutlariDuzelt();
             return a;
         }
     }

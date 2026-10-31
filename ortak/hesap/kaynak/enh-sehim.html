@@ -129,7 +129,6 @@ svg{max-width:100%}
     <h1>ENH Sehim Hesabı Simülatörü</h1>
     <div class="sub">Hal değişim denklemi ile sıcaklığa bağlı çekme kuvveti ve sehim tablosu</div>
   </div>
-  <div class="badge"><b>Baki SONAY</b><span>Elektrik-Elektronik Mühendisi</span></div>
 </header>
 
 <div class="card">
@@ -151,8 +150,8 @@ svg{max-width:100%}
       <select id="pBY"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></div>
   </div>
   <div class="g5">
-    <div><label>Projeyi yapan — adı</label><input id="pAdi" class="in" value="BAKİ"></div>
-    <div><label>Soyadı</label><input id="pSoy" class="in" value="SONAY"></div>
+    <div><label>Projeyi yapan — adı</label><input id="pAdi" class="in" value=""></div>
+    <div><label>Soyadı</label><input id="pSoy" class="in" value=""></div>
     <div><label>Unvanı</label><input id="pUnv" class="in" value="ELEKTRİK-ELEKTRONİK MÜH."></div>
     <div><label>Hat uzunluğu L <span class="hint">(m, otomatik)</span></label><input id="pL" readonly></div>
     <div><label>Gerilme bölümü sayısı</label><input id="pNB" readonly></div>
@@ -613,10 +612,10 @@ function apply(d){
   halUygula();
   return true;
 }
-var ESKI_AD=["MEHMET EMİN","LÜTFİ","MEHMET EMIN","LUTFI",""];
+var ESKI_AD=[];
 function kunyeDuzelt(){
   var a=($("pAdi").value||"").trim();
-  if(ESKI_AD.indexOf(a)>=0){ $("pAdi").value="BAKİ"; $("pSoy").value="SONAY"; }
+  if(ESKI_AD.indexOf(a)>=0){ $("pAdi").value=""; $("pSoy").value=""; }
   var u=($("pUnv").value||"").trim();
   if(!u || /^ELK/i.test(u)) $("pUnv").value="ELEKTRİK-ELEKTRONİK MÜH.";
 }
@@ -665,7 +664,7 @@ function buildPrint(){
   var d=document.createElement("div"); d.className="pp";
   var head='<div class="h"><div><h1>SEHİM TABLOSU</h1>'
     +'<div class="s">'+esc($("pAd").value||"—")+'</div></div>'
-    +'<div class="k"><b>Baki SONAY</b><br>Elektrik-Elektronik Mühendisi</div></div>';
+    +'<div class="k"><b>'+esc((($("pAdi").value||"")+" "+($("pSoy").value||"")).trim())+'</b><br>'+esc($("pUnv").value||"")+'</div></div>';
   var blk='<div class="blk">'
     +'<table><tr><th colspan="2">İLETKENİN</th></tr>'
       +'<tr><td>Cinsi</td><td class="n">'+esc(c.ad)+'</td></tr>'

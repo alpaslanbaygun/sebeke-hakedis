@@ -94,7 +94,7 @@ Deneme ortamı notları: sayfa Edge yoksa varsayılan tarayıcıda (Chrome) aç�
 AutoCAD'in dosya pencerelerine yazı yazılamıyor, `FILEDIA 0` ile komut satırından yol verildi (sonra 1'e alındı).
 
 19.10 (`sebeke-m` dalı; geri dönüş: `onceki-main-sebeke-m-oncesi` dalı): Şebeke-M markası, harita altlıkları ve
-**Hesap Merkezi**: Baki SONAY'ın 14 HTML hesap aracı (`ortak/hesap/kaynak`, formüller değiştirilmedi; yapılan
+**Hesap Merkezi**: 14 HTML hesap aracı (`ortak/hesap/kaynak`, formüller değiştirilmedi; yapılan
 temizlik `kaynak/DEGISIKLIKLER.md`) ortak köprü (`kopru-bas.js`, `kopru.js`), koyu tema (`tema.css`) ve hesap
 başına uyarlama (`uyarlama/<id>.js|css`) ile telefona (iframe, postMessage) ve AutoCAD'e (yerel HTTP sunucu
 `HesapSunucu`, Edge uygulama penceresi, `HesapMerkezi.cs`) bağlandı. Bağlam / kayıt / güncellik sözleşmesi
@@ -224,7 +224,7 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
   programda sorun çıkarmadığı (kenarlar kanal katmanında, yalnız SH_SAHIP verili) denetlenmeli.
 0. **Gerçek telefonda deneme** (AutoCAD tarafı 25.10'da canlı doğrulandı, yukarıda): AutoCAD'den gelen hesap
    kaydının telefonda görünmesi ve "güncel" kalması (telefon koduyla kapta denendi; rekortman kolu düzeltmesi A10),
-   telefonda bir hesabı kaydedip Telefondan Al ile çizime gelmesi. Hesap sahibi (Baki SONAY) ile ⓘ panellerindeki
+   telefonda bir hesabı kaydedip Telefondan Al ile çizime gelmesi. Hesap araçlarının sahibiyle ⓘ panellerindeki
    doğrulanacak tablo değerleri görüşülmeli (ör. tepe kuvveti AER yer tutucu değerleri: SC108'de "1,0 kg").
    Eski program çiziminde telefon kataloğunda karşılığı olmayan hat tipleri (`4P+R`, `5R`, `R`, `3R`, `3A+P+R`):
    metraj korunuyor; katalog kaydı için poz / birim fiyat bilgisi gerekir.

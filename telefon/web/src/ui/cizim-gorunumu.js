@@ -72,11 +72,29 @@ export const YAZI = {
   font: (STIL.yazi.font || 'Tahoma') + ', "DejaVu Sans", Roboto, Inter, sans-serif',
   hane: ((STIL.etiketler.parcaMetraji.bicim || '0.00').split('.')[1] || '').length
 };
+/**
+ * Yazının çizgiye dik uzaklığı (m, çizimde; artı: üst yanı): metrajda taban çizgisinin, kablo tipinde (hat etiketi) üst
+ * kenarın yeri; yazılar parçanın ortasına ortalıdır. Kazı (kanal / sondaj) metrajı bir satır yukarıda: metrajınki +
+ * metraj yazısı + boşluk (eklentideki CizimYazici.ParcaMetrajlariYaz ile aynı).
+ */
 export const KAYDIRMA = {
-  metraj: STIL.etiketler.parcaMetraji.kaydirma,
-  kazi: (STIL.etiketler.kaziMetraji || STIL.etiketler.parcaMetraji).kaydirma,
-  etiket: STIL.etiketler.hat.kaydirma
+  metraj: STIL.etiketler.parcaMetraji.kaydirma[1],
+  kazi: STIL.etiketler.parcaMetraji.kaydirma[1] + STIL.yazi.parcaMetraji + ((STIL.etiketler.kaziMetraji || {}).bosluk ?? 0.46),
+  etiket: STIL.etiketler.hat.kaydirma[1]
 };
+/**
+ * Ekranda yazıyı parçaya sığdırma (eklentideki YaziDuzeni.Sigdir, DXF'teki yaziSigdir ile aynı kural; genişlik ekranda
+ * ölçülür): w yazının genişliği, px boyu, Lpx parçanın boyu (px). Sığmazsa önce daraltılır (gk en az 0,6), yetmezse
+ * küçülür (en az %60). { px, gk }
+ */
+export function ekrandaSigdir(w, px, Lpx) {
+  const S = STIL.yazi.sigdirma || { pay: 0.9, enDarGenislik: 0.6, enKucukYukseklik: 0.6 };
+  const yer = Lpx * S.pay;
+  if (w <= yer || yer <= 0 || w <= 0) return { px, gk: 1 };
+  const gk = Math.max(S.enDarGenislik, yer / w);
+  if (w * gk <= yer + 1e-9) return { px, gk };
+  return { px: Math.max(S.enKucukYukseklik * px, px * yer / (w * gk)), gk };
+}
 /**
  * Ekrandaki yazı boyu (px): çizimdeki boy (m) ÷ ölçek (m/px), okunur aralıkta tutulur. s: çizimdeki kaydırmaların
  * çarpanı — yazı sınıra takılınca kaydırma da aynı oranda değişir, yazı çizgiye göre çizimdeki yerinde kalır.

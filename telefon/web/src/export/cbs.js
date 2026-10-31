@@ -5,6 +5,7 @@
 // Ortak deneme: ortak/deneme/cbs — eklentinin CekirdekTest'i ve telefonun tests/cbs.test.mjs'i aynı girdiden aynı
 // beklenen dosyaları üretmek zorundadır (eklenti değişince telefon da değişmeli; bkz. DEVIR.md çalışma kuralları).
 import STIL from '../ortak/cizim-stili.js';
+import KALEMLER from '../ortak/kalemler.js';
 import SH from '../interop/sh-core.cjs';
 
 // ---------------------------------------------------------------- Sayı yazımı (.NET ile aynı)
@@ -54,15 +55,26 @@ const T = (ad, baslik) => ({ ad, baslik, tur: 'I', uzunluk: 0 });
 const O = (ad, baslik) => ({ ad, baslik, tur: 'F', uzunluk: 0 });
 const katman = (ad, baslik, geometri, alanlar) => ({ ad, baslik, geometri, alanlar });
 
-export const ELEMAN = katman('ELEMAN', 'Elemanlar', 'nokta', [
-  K('KIMLIK', 'Kimlik', 20), K('GIS_NO', 'GIS no', 20), K('TUR', 'Tür kodu', 20), K('TUR_ADI', 'Tür', 40), K('CINS', 'Cins', 40),
-  K('TIP', 'Tip', 80), K('DURUM', 'Durum', 10), K('DM_DURUM', 'Demontaj', 10), T('HAKEDIS', 'Hakediş'), K('PROJE', 'Proje', 120),
-  K('PROJE_KODU', 'Proje kodu', 40), K('MALZEME', 'Malzemeler', 254), O('SAGA', 'Sağa (Y)'), O('YUKARI', 'Yukarı (X)'),
-  O('KOT', 'Kot'), O('ACI', 'Açı (derece)')]);
-export const HAT = katman('HAT', 'Hatlar', 'cizgi', [
-  K('KIMLIK', 'Kimlik', 20), K('TUR', 'Tür kodu', 20), K('TUR_ADI', 'Tür', 40), K('KESIT', 'Kesit', 80), K('ETIKET', 'Etiket', 80),
-  K('DURUM', 'Durum', 10), T('HAKEDIS', 'Hakediş'), K('PROJE', 'Proje', 120), K('PROJE_KODU', 'Proje kodu', 40),
-  O('UZUNLUK', 'Çizim uzunluğu (m)'), O('METRAJ', 'Metraj (m)')]);
+/** Eleman katmanlarının (DIREK, TRAFO, SDK, PANO, ELEMAN) ortak sütunları (eklentideki CbsYapisi.ElemanAlanlari). */
+const elemanAlanlari = () => [
+  K('KIMLIK', 'Kimlik', 20), K('GIS_NO', 'GIS no', 20), K('TUR', 'Tür kodu', 20), K('TUR_ADI', 'Tür', 40), K('CINS', 'Cins kodu', 40),
+  K('CINS_ADI', 'Cins', 80), K('TIP', 'Tip', 80), K('DURUM', 'Durum', 10), K('DM_DURUM', 'Demontaj', 10), T('HAKEDIS', 'Hakediş'),
+  K('GUC', 'Güç', 20), K('GERILIM', 'Gerilim', 20), K('KONTROL', 'Kontrol', 10), K('PROJE', 'Proje', 120), K('PROJE_KODU', 'Proje kodu', 40),
+  K('MALZEME', 'Malzemeler', 254), T('MALZEME_SAYISI', 'Malzeme satırı'), O('SAGA', 'Sağa (Y)'), O('YUKARI', 'Yukarı (X)'), O('KOT', 'Kot'),
+  O('ACI', 'Açı (derece)'), K('TELEFON_ID', 'Telefon kimliği', 40)];
+export const DIREK = katman('DIREK', 'Direkler', 'nokta', elemanAlanlari());
+export const TRAFO = katman('TRAFO', 'Trafolar', 'nokta', elemanAlanlari());
+export const SDK = katman('SDK', 'Saha dağıtım kutuları (SDK)', 'nokta', elemanAlanlari());
+export const PANO = katman('PANO', 'Panolar', 'nokta', elemanAlanlari());
+/** Diğer elemanlar (mufu, kofre, diğer); eski (31.10.2026 öncesi) dosyalarda bütün elemanlar bu katmandaydı. */
+export const ELEMAN = katman('ELEMAN', 'Diğer elemanlar', 'nokta', elemanAlanlari());
+export const HAT = katman('HAT', 'Hatlar (iletken / kablo)', 'cizgi', [
+  K('KIMLIK', 'Kimlik', 20), K('TUR', 'Tür kodu', 20), K('TUR_ADI', 'Tür', 40), K('KESIT', 'Kesit', 80),
+  K('ILETKEN_CINS', 'İletken cinsi', 40), K('ILETKEN', 'İletken', 80), T('ILETKEN_ADET', 'İletken adedi'),
+  K('ILETKEN2_CINS', '2. iletken cinsi', 40), K('ILETKEN2', '2. iletken', 80), T('ILETKEN2_ADET', '2. iletken adedi'),
+  K('ETIKET', 'Etiket', 80), K('DURUM', 'Durum', 10), T('HAKEDIS', 'Hakediş'), K('KONTROL', 'Kontrol', 10),
+  K('BAS_NO', 'Baş eleman', 20), K('BIT_NO', 'Bit eleman', 20), K('PROJE', 'Proje', 120), K('PROJE_KODU', 'Proje kodu', 40),
+  O('UZUNLUK', 'Çizim uzunluğu (m)'), O('METRAJ', 'Metraj (m)'), T('MALZEME_SAYISI', 'Malzeme satırı'), K('TELEFON_ID', 'Telefon kimliği', 40)]);
 export const KANAL = katman('KANAL', 'Kanallar', 'cizgi', [
   K('KIMLIK', 'Kimlik', 20), K('KABLOLAR', 'Kablolar', 20), K('ZEMIN', 'Zemin', 40), O('ALT_CM', 'Alt genişlik (cm)'),
   O('UST_CM', 'Üst genişlik (cm)'), O('DERIN_CM', 'Derinlik (cm)'), K('BAS_NO', 'Baş no', 20), K('BIT_NO', 'Bit no', 20),
@@ -78,7 +90,47 @@ export const BOLGE = katman('BOLGE', 'Proje sınırları', 'alan', [
 export const NOKTA = katman('NOKTA', 'GPS noktaları', 'nokta', [
   K('KIMLIK', 'Kimlik', 20), K('AD', 'Ad', 30), K('KOD', 'Kod', 30), O('KOT', 'Kot'), T('HAKEDIS', 'Hakediş'),
   K('PROJE', 'Proje', 120), K('EK', 'Ek bilgi', 120)]);
-export const KATMANLAR = [BOLGE, ELEMAN, HAT, KANAL, SONDAJ, NOKTA];
+/** Malzeme satırları: haritada yeri yok (MIF'te "None"), her satır NESNE sütunundaki kimlikle nesnesine bağlı. */
+export const MALZEME = katman('MALZEME', 'Malzemeler', 'yok', [
+  K('NESNE', 'Nesne kimliği', 20), K('KATMAN', 'Nesnenin katmanı', 10), K('GIS_NO', 'GIS no', 20), K('SIRA', 'Sıra no', 20),
+  K('CINS', 'Cins kodu', 40), K('TANIM', 'Tanım', 120), K('ACIKLAMA', 'Tam yazım', 120), K('DURUM', 'Durum', 10),
+  K('DM_DURUM', 'Demontaj', 10), O('MIKTAR', 'Miktar'), K('BIRIM', 'Birim', 20), O('KATSAYI', 'Katsayı'), O('TOPLAM', 'Toplam'),
+  T('HAKEDIS', 'Hakediş'), K('TARIFE', 'Tarife', 10), K('KAYNAK', 'Kaynak', 10), K('ANA', 'Ana kalem', 5), K('KONTROL', 'Kontrol', 10)]);
+export const KATMANLAR = [BOLGE, DIREK, TRAFO, SDK, PANO, ELEMAN, HAT, KANAL, SONDAJ, NOKTA, MALZEME];
+/** Haritada yeri olan eleman katmanları (KML klasör sırası). */
+export const ELEMAN_KATMANLARI = [DIREK, TRAFO, SDK, PANO, ELEMAN];
+/** Eleman türünün katmanı: direkler DIREK, trafo direği ve merkezi TRAFO, box SDK, pano PANO, ötekiler ELEMAN. */
+export function elemanKatmani(tur) {
+  switch (tur || '') {
+    case 'AG_DIREK': case 'MUSTEREK_DIREK': case 'AYD_DIREK': case 'ENH_DIREK': return DIREK;
+    case 'TRAFO_DIREGI': case 'TRAFO_MERKEZI': return TRAFO;
+    case 'BOX': return SDK;
+    case 'PANO': return PANO;
+    default: return ELEMAN;
+  }
+}
+/** Kontrol işareti: EVET, HAYIR, boş (belirtilmemiş). */
+export const kontrolYazisi = (k) => (k === true ? 'EVET' : k === false ? 'HAYIR' : '');
+/** Hattın ucundaki elemanın GIS numarası (0,5 m içindeki en yakın eleman); yoksa "" (eklentideki CbsYapisi.UctakiEleman). */
+export function uctakiEleman(elemanlar, uc) {
+  let en = null, enKisa = 0.5;
+  for (const e of elemanlar || []) {
+    const dx = (+e.saga || 0) - uc[0], dy = (+e.yukari || 0) - uc[1], d = Math.sqrt(dx * dx + dy * dy);
+    if (d <= enKisa + 1e-9 && (en === null || d < enKisa)) { en = e; enKisa = d; }
+  }
+  return en ? metin(en.gisId) : '';
+}
+/** Kalemin adedi: tam yazımdaki "3x(…)" ön ekinden (eklentideki Iletkenler.Adet); yoksa 1. */
+export function iletkenAdedi(k) {
+  for (const y of [k && k.aciklama, k && k.tanim]) {
+    const m = /^\s*(\d+)\s*[xX×]\s*\((.+)\)\s*$/.exec(metin(y));
+    if (m && +m[1] >= 1) return +m[1];
+  }
+  return 1;
+}
+// Cins adları ortak katalogdan (eklentide Katalog.CinsAdi: katalogda yoksa kodun "_" yerine boşluklu yazımı)
+const CINS_ADLARI = new Map((KALEMLER.cinsler || []).map((c) => [c.cins, c.ad]));
+export const cinsAdi = (c) => (c ? CINS_ADLARI.get(SH.cinsDuzelt(c)) ?? metin(c).replace(/_/g, ' ') : '');
 
 /** Bölgesi olmayan nesnelerin klasörü (eklentideki ProjeOzeti.ProjesizAdi). */
 export const PROJESIZ = 'Projesi olmayanlar';
@@ -143,14 +195,25 @@ export function malzemeler(kalemler) {
   return s.length > 254 ? s.slice(0, 253) + '…' : s;
 }
 
-/** Projenin bütün nesneleri CBS katmanlarına (çizim koordinatıyla): {katman, degerler, kose, proje, ad, renk, durum}. */
+/**
+ * Projenin bütün nesneleri CBS katmanlarına (çizim koordinatıyla): {katman, degerler, kose, proje, ad, renk, durum};
+ * malzeme satırları en sonda (eklentideki CbsYapisi.Nesneler).
+ */
 export function cbsNesneleri(p) {
-  const l = [];
-  const bolgeler = p.bolgeler || [];
+  const l = [], malzemeSatirlari = [];
+  const bolgeler = p.bolgeler || [], elemanlar = p.elemanlar || [];
   const bul = (id) => bolgeler.find((b) => b.id === id) || null;
   const ad = (id) => { const b = bul(id); return b ? metin(b.ad) : ''; };
   const kod = (id) => { const b = bul(id); return b ? metin(b.kod) : ''; };
   const yeni = (k, proje, isim, renk, durum = '') => ({ katman: k, proje, ad: isim, renk, durum, degerler: [], kose: [] });
+  const malzemeEkle = (kimlik, katmanAdi, gisNo, proje, kalemler) => {
+    for (const k of kalemler || []) {
+      const n = yeni(MALZEME, proje, metin(k.tanim).trim(), '', k.durum);
+      n.degerler = [kimlik, katmanAdi, gisNo, k.sira, k.cins, metin(k.tanim).trim(), k.aciklama, k.durum, k.dmDurum, SH.temiz(+k.miktar || 0, 6), k.birim,
+        SH.temiz(+(k.katsayi ?? 1), 6), SH.temiz(+k.toplam || 0, 6), k.hakedis, k.tarife, k.kaynak, k.ana ? 'EVET' : '', kontrolYazisi(k.kontrol)];
+      malzemeSatirlari.push(n);
+    }
+  };
   for (const b of bolgeler) {
     const sinir = b.sinir || [];
     if (sinir.length < 3) continue;
@@ -160,25 +223,36 @@ export function cbsNesneleri(p) {
     if (n.kose.length > 3 && ayni(n.kose[0], n.kose[n.kose.length - 1])) n.kose.pop();
     l.push(n);
   }
-  for (const e of p.elemanlar || []) {
-    const ana = (e.kalemler || []).find((k) => k.ana) || null;
-    const n = yeni(ELEMAN, ad(e.bolge), e.gisId ? e.gisId : elemanAdi(e.tur), ekranElemanRengi(e.tur, e.cins, e.durum === 'MEVCUT'), e.durum);
-    n.degerler = [e.id, e.gisId, e.tur, elemanAdi(e.tur), ana ? ana.cins : e.cins, metin(ana ? ana.tanim : e.tip).trim(), e.durum, e.dmDurum,
-      e.hakedis, ad(e.bolge), kod(e.bolge), malzemeler(e.kalemler), yuvarla(+e.saga || 0, 3), yuvarla(+e.yukari || 0, 3), yuvarla(+e.kot || 0, 3),
-      yuvarla((+e.aci || 0) * 180 / Math.PI, 4)];
+  for (const e of elemanlar) {
+    const kalemler = e.kalemler || [];
+    const ana = kalemler.find((k) => k.ana) || null;
+    const k = elemanKatmani(e.tur), cins = ana ? ana.cins : e.cins;
+    const n = yeni(k, ad(e.bolge), e.gisId ? e.gisId : elemanAdi(e.tur), ekranElemanRengi(e.tur, e.cins, e.durum === 'MEVCUT'), e.durum);
+    n.degerler = [e.id, e.gisId, e.tur, elemanAdi(e.tur), cins, cinsAdi(cins), metin(ana ? ana.tanim : e.tip).trim(), e.durum, e.dmDurum,
+      e.hakedis, e.guc, e.gerilim, kontrolYazisi(e.kontrol), ad(e.bolge), kod(e.bolge), malzemeler(kalemler), kalemler.length,
+      yuvarla(+e.saga || 0, 3), yuvarla(+e.yukari || 0, 3), yuvarla(+e.kot || 0, 3), yuvarla((+e.aci || 0) * 180 / Math.PI, 4), e.telefonId];
     n.kose = [[+e.saga || 0, +e.yukari || 0]];
     l.push(n);
+    malzemeEkle(e.id, k.ad, e.gisId, n.proje, kalemler);
   }
   for (const h of p.hatlar || []) {
     const kose = h.kose || [];
     if (kose.length < 2) continue;
+    const hk = (h.kalemler || []).filter((k) => k.kaynak === 'HAT');
     let metraj = 0;
-    for (const k of h.kalemler || []) if (k.kaynak === 'HAT') metraj = Math.max(metraj, +k.miktar || 0);
+    for (const k of hk) metraj = Math.max(metraj, +k.miktar || 0);
+    const i1 = hk[0] || null, i2 = hk[1] || null;
     const cu = uzunluk(kose);
     const n = yeni(HAT, ad(h.bolge), h.etiket ? h.etiket : h.anaKesit ? h.anaKesit : hatAdi(h.tur), ekranHatRengi(h.tur), h.durum);
-    n.degerler = [h.id, h.tur, hatAdi(h.tur), h.anaKesit, h.etiket, h.durum, h.hakedis, ad(h.bolge), kod(h.bolge), yuvarla(cu, 2), yuvarla(metraj > 0 ? metraj : cu, 2)];
+    n.degerler = [h.id, h.tur, hatAdi(h.tur), h.anaKesit,
+      i1 ? i1.cins : '', i1 ? metin(i1.tanim).trim() : '', i1 ? iletkenAdedi(i1) : 0,
+      i2 ? i2.cins : '', i2 ? metin(i2.tanim).trim() : '', i2 ? iletkenAdedi(i2) : 0,
+      h.etiket, h.durum, h.hakedis, kontrolYazisi(h.kontrol ?? (i1 ? i1.kontrol : null)),
+      uctakiEleman(elemanlar, kose[0]), uctakiEleman(elemanlar, kose[kose.length - 1]), ad(h.bolge), kod(h.bolge),
+      yuvarla(cu, 2), yuvarla(metraj > 0 ? metraj : cu, 2), (h.kalemler || []).length, h.telefonId];
     n.kose = kose.map((k) => [k[0], k[1]]);
     l.push(n);
+    malzemeEkle(h.id, HAT.ad, '', n.proje, h.kalemler);
   }
   for (const c of p.kanallar || []) {
     const kose = c.kose || [];
@@ -191,6 +265,7 @@ export function cbsNesneleri(p) {
       ad(c.bolge), kod(c.bolge), yuvarla(cu, 2), yuvarla(ana && ana.miktar > 0 ? ana.miktar : cu, 2)];
     n.kose = kose.map((k) => [k[0], k[1]]);
     l.push(n);
+    malzemeEkle(c.id, KANAL.ad, '', n.proje, c.kalemler);
   }
   for (const s of p.sondajlar || []) {
     const kose = s.kose || [];
@@ -202,6 +277,7 @@ export function cbsNesneleri(p) {
       yuvarla(ana && ana.miktar > 0 ? ana.miktar : cu, 2)];
     n.kose = kose.map((k) => [k[0], k[1]]);
     l.push(n);
+    malzemeEkle(s.id, SONDAJ.ad, '', n.proje, s.kalemler);
   }
   for (const t of p.noktalar || []) {
     const n = yeni(NOKTA, ad(t.bolge), metin(t.ad), ekranRengi('nokta', '#e2e8f0'));
@@ -209,7 +285,7 @@ export function cbsNesneleri(p) {
     n.kose = [[+t.saga || 0, +t.yukari || 0]];
     l.push(n);
   }
-  return l;
+  return l.concat(malzemeSatirlari);
 }
 /** Değerin yazımı (KML ve MID): sayılar noktalı ondalık (en çok 8 basamak), tam sayılar tam, metin olduğu gibi. */
 export function deger(alan, v) {
@@ -286,7 +362,7 @@ function yerIsareti(n, konum, bicimler, gorunur = true) {
  * eklenecek KML (telefonun 3B direk ve iletken klasörü).
  */
 export function kmlMetni(p, o) {
-  const nesneler = cbsNesneleri(p);
+  const nesneler = cbsNesneleri(p).filter((n) => n.katman !== MALZEME); // malzeme satırlarının haritada yeri yok
   const konum = (k) => { const [lon, lat] = o.donustur(k[0], k[1]); return netSayi(lon, 8) + ',' + netSayi(lat, 8) + ',0'; };
   const bicimler = new Map();
   let govde = '';
@@ -303,7 +379,7 @@ export function kmlMetni(p, o) {
     const kod = bolge ? metin(bolge.kod) : '';
     govde += '<Folder><name>' + kac(pr.length > 0 ? pr : PROJESIZ) + '</name>' + (kod.length > 0 ? '<description>' + kac('Proje kodu ' + kod) + '</description>' : '') + '\n';
     for (const n of bu.filter((x) => x.katman === BOLGE)) govde += yerIsareti(n, konum, bicimler);
-    for (const k of [ELEMAN, HAT, KANAL, SONDAJ]) {
+    for (const k of [DIREK, TRAFO, SDK, PANO, ELEMAN, HAT, KANAL, SONDAJ]) {
       const l = bu.filter((x) => x.katman === k);
       if (!l.length) continue;
       govde += '<Folder><name>' + kac(k.baslik + ' (' + l.length + ')') + '</name>\n';
@@ -365,7 +441,9 @@ export function mifKatmani(k, nesneler, o = {}) {
   let d = '';
   for (const n of nesneler) {
     const renk = rgb(n.renk);
-    if (k.geometri === 'nokta') {
+    if (k.geometri === 'yok') {
+      m += 'None\r\n'; // haritada yeri olmayan satır (malzeme tablosu)
+    } else if (k.geometri === 'nokta') {
       m += 'Point ' + K2(n.kose[0]) + '\r\n    Symbol (' + mifSimgesi(n) + ',' + renk + ',10)\r\n';
     } else if (k.geometri === 'cizgi') {
       m += 'Pline ' + n.kose.length + '\r\n';
@@ -392,16 +470,17 @@ export function mifKatmani(k, nesneler, o = {}) {
 }
 /**
  * Nesneleri başka koordinat sistemine çevirir (telefonda Dışa Aktarım'daki seçim; eklentide yok, çizim hep kendi
- * sisteminde): köşeler, elemanın SAGA / YUKARI sütunları, çizim uzunluğu (UZUNLUK) ve sınırın alanı (ALAN) yeni sistemde;
+ * sisteminde): köşeler, elemanların SAGA / YUKARI sütunları, çizim uzunluğu (UZUNLUK) ve sınırın alanı (ALAN) yeni sistemde;
  * metraj (gerçek miktar) değişmez. koordinat([x, y]) → [x, y]; cografi: hedef enlem / boylam (uzunluk, alan çevrilmez).
  */
 export function sistemeCevir(nesneler, koordinat, cografi = false) {
   return nesneler.map((n) => {
     const m = Object.assign({}, n, { kose: n.kose.map((k) => koordinat(k)), degerler: n.degerler.slice() });
     const sira = (ad) => n.katman.alanlar.findIndex((a) => a.ad === ad);
-    if (n.katman === ELEMAN) { m.degerler[sira('SAGA')] = yuvarla(m.kose[0][0], cografi ? 8 : 3); m.degerler[sira('YUKARI')] = yuvarla(m.kose[0][1], cografi ? 8 : 3); }
-    if (!cografi && (n.katman === HAT || n.katman === KANAL || n.katman === SONDAJ)) m.degerler[sira('UZUNLUK')] = yuvarla(uzunluk(m.kose), 2);
-    if (!cografi && n.katman === BOLGE) m.degerler[sira('ALAN')] = yuvarla(alan(m.kose), 2);
+    const sg = sira('SAGA'), yk = sira('YUKARI'), uz = sira('UZUNLUK'), al = sira('ALAN');
+    if (sg >= 0 && yk >= 0 && m.kose.length) { m.degerler[sg] = yuvarla(m.kose[0][0], cografi ? 8 : 3); m.degerler[yk] = yuvarla(m.kose[0][1], cografi ? 8 : 3); }
+    if (!cografi && uz >= 0 && m.kose.length >= 2) m.degerler[uz] = yuvarla(uzunluk(m.kose), 2);
+    if (!cografi && al >= 0 && m.kose.length >= 3) m.degerler[al] = yuvarla(alan(m.kose), 2);
     return m;
   });
 }

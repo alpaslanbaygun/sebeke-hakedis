@@ -122,6 +122,9 @@ export function sebekeModel(ps, opts = {}) {
   sp.proje.kaynak = sb.kaynak || 'telefon';
   sp.proje.koordinat.datum = datum;
   sp.proje.kod = project.code || '';
+  // Simge ve yazı boyutları (eklentide Çizim Ayarları › Görünüm; telefonda Dışa Aktarım › Çizim boyutları)
+  const by = SH.boyutlarOku(sb.boyutlar);
+  if (by) sp.proje.boyutlar = by;
   const onaylar = onaylariHazirla(sb.onaylar, data.periods);
   if (onaylar.length) sp.proje.onaylar = onaylar;
   const act = (a) => (a || []).filter((x) => x.status !== 'deleted');
@@ -481,7 +484,7 @@ function malzemeKalemi(m, tanim, hak, job, cat) {
   const kategori = (pz && pz.category) || '';
   if (!cins) {
     const v = tanim.voltaj || 'AG';
-    cins = ESLESME.kategoriler[kategori + '|' + v] || ESLESME.kategoriler[kategori] || (m.tag === 'armatur' ? 'ARMATÜR' : m.tag === 'top' ? 'TOPRAKLAMA' : m.tag === 'kofre' ? 'KOFRA' : m.tag === 'trafo' ? 'TRAFO_GENLEŞME_TANKLI' : m.tag === 'hucre' ? 'HÜCRELER_METAL' : m.tag === 'pano' ? 'AG_PANO_HT' : 'DİĞER_AMBAR_MALZEMELERİ');
+    cins = ESLESME.kategoriler[kategori + '|' + v] || ESLESME.kategoriler[kategori] || (m.tag === 'armatur' ? 'ARMATÜR' : m.tag === 'top' ? 'TOPRAKLAMA' : m.tag === 'kofre' ? 'KOFRE' : m.tag === 'trafo' ? 'TRAFO_GENLEŞME_TANKLI' : m.tag === 'hucre' ? 'HÜCRELER_METAL' : m.tag === 'pano' ? 'AG_PANO_HT' : 'DİĞER_AMBAR_MALZEMELERİ');
   }
   if (!ad) ad = m.name || m.conductor || servis || '';
   const kat = katalogKalemi(cins, ad);
@@ -646,6 +649,9 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     await ps.open(project.id);
   }
   const sebeke = Object.assign({}, project.sebeke || {}, { katmanOnEki: pj.katmanOnEki || (project.sebeke || {}).katmanOnEki || 'SC', gisOnEki: pj.gisOnEki || pj.katmanOnEki || 'SC', kaynak: pj.kaynak || '', dom, olusturan: sp.olusturan || '', bolgeler: (sp.bolgeler || []).map((b) => Object.assign({ id: b.id, ad: b.ad, kod: b.kod, aciklama: b.aciklama || '', sinir: b.sinir }, b.grup ? { grup: b.grup } : {})), onaylar: onaylariHazirla(pj.onaylar, null), alinma: new Date().toISOString() });
+  // Boyutlar: AutoCAD'de ayarlanmışsa onlar alınır; dosyada yoksa (varsayılan) telefondaki kalır
+  const by = SH.boyutlarOku(pj.boyutlar);
+  if (by) sebeke.boyutlar = by;
   await ps.updateProject({ sebeke, autoRecipe: project.autoRecipe === true }, 'AutoCAD dosyası alındı');
   if (opts.dry) return ozet;
 

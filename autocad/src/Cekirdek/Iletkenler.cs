@@ -69,7 +69,7 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Kalemin etiketteki yazımı: tam yazım (adetli olabilir), yoksa tanım.</summary>
         public static string Yazi(Kalem k) => k == null ? "" : !string.IsNullOrEmpty(k.Aciklama) ? k.Aciklama : k.Tanim ?? "";
 
-        /// <summary>OG iletken / kablo mu (cinsi OG_ ile başlar: OG_İLETKEN, OG_ALİMİNYUM_KABLO, OG_BAKIR_KABLO).</summary>
+        /// <summary>OG iletken / kablo mu (cinsi OG_ ile başlar: OG_İLETKEN, OG_ALÜMİNYUM_KABLO, OG_BAKIR_KABLO).</summary>
         public static bool OgMu(string cins) => (cins ?? "").StartsWith("OG_", StringComparison.Ordinal);
 
         /// <summary>Hattın iletken / kablo (HAT) satırları, sırasıyla.</summary>
@@ -138,6 +138,45 @@ namespace SebekeHakedis.Cekirdek
         {
             string sa = KatalogKalemi.Sade(a), sb = KatalogKalemi.Sade(b);
             return sb.Length > 0 && sa.IndexOf(sb, StringComparison.Ordinal) >= 0;
+        }
+
+        /// <summary>
+        /// Çizilmiş hattın iletkenini (tip, cins), türünü, durumunu ve hakedişini değiştirir (Hat Değiştir, SH_HATDEGISTIR):
+        /// eski HAT satırları yerine seçilen iletkenlerin satırları gelir (aynı yerde; eski sıra numaraları yeniden
+        /// kullanılır), diğer malzemelere dokunulmaz. Metraj korunur; tür değiştiyse yeni türün metrajı (çizim uzunluğu +
+        /// türün payı, metrajVer) yazılır. Tür değiştiyse katman yeniden belirlenir (Katman boşaltılır). Hattın yeni
+        /// güzergâh metrajı döner.
+        /// </summary>
+        public static double Degistir(Hat h, string tur, IList<HatIletkeni> iletkenler, string durum, int hakedis,
+                                      Func<string, double> metrajVer, Func<string> sira, string karakteristik, bool koy)
+        {
+            if (h == null) throw new ArgumentNullException(nameof(h));
+            bool turDegisti = !string.Equals(h.Tur ?? "", tur ?? "", StringComparison.Ordinal);
+            double guzergah = GuzergahMetraji(h);
+            if (turDegisti || guzergah <= 0) guzergah = metrajVer != null ? metrajVer(tur) : guzergah;
+            // Eski HAT satırlarının yeri ve sıra numaraları
+            int yer = -1;
+            var siralar = new Queue<string>();
+            for (int i = 0; i < h.Kalemler.Count; i++)
+            {
+                var k = h.Kalemler[i];
+                if (k.Kaynak != "HAT") continue;
+                if (yer < 0) yer = i;
+                if (!string.IsNullOrEmpty(k.Sira)) siralar.Enqueue(k.Sira);
+            }
+            var kontrol = HatKalemleri(h).Count > 0 ? HatKalemleri(h)[0].Kontrol : null;
+            h.Kalemler.RemoveAll(k => k.Kaynak == "HAT");
+            if (yer < 0 || yer > h.Kalemler.Count) yer = 0;
+            Func<string> siraVer = () => siralar.Count > 0 ? siralar.Dequeue() : (sira != null ? sira() : "");
+            var yeni = Kalemler(iletkenler, guzergah, durum, hakedis, siraVer, karakteristik, koy);
+            foreach (var k in yeni) if (kontrol != null) k.Kontrol = kontrol;
+            h.Kalemler.InsertRange(yer, yeni);
+            h.Tur = tur;
+            h.AnaKesit = AnaKesit(iletkenler);
+            h.Durum = durum;
+            h.Hakedis = hakedis;
+            if (turDegisti) h.Katman = "";
+            return guzergah;
         }
 
         /// <summary>

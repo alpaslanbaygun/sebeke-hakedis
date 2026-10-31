@@ -121,7 +121,7 @@ namespace SebekeHakedis.Cekirdek
         public static void HesapSayfasi(XlsxYazici.Sayfa s, Proje p, ProjeBilgisi bilgi)
         {
             s.UstBilgi.Add("TEKNİK HESAPLAR — " + p.Ad);
-            s.UstBilgi.Add("Hesap araçları: Elektrik-Elektronik Mühendisi Baki SONAY (formüller değiştirilmeden Şebeke-M'e eklenmiştir). Güncellik: hesap kaydedildikten sonra hesabın kullandığı bir proje bilgisi değiştiyse \"GÜNCEL DEĞİL\".");
+            s.UstBilgi.Add("Hesap araçlarının formülleri değiştirilmeden Şebeke-M'e eklenmiştir. Güncellik: hesap kaydedildikten sonra hesabın kullandığı bir proje bilgisi değiştiyse \"GÜNCEL DEĞİL\".");
             s.Basliklar.AddRange(new[] { "HESAP", "HEDEF", "HEDEF NO", "SONUÇ", "DURUM", "GÜNCELLİK", "GİRDİLER", "DEĞERLER", "UYARILAR", "TARİH", "KAYNAK", "YAPAN", "KİMLİK" });
             var sirali = new List<HesapKaydi>(p.Hesaplar);
             sirali.Sort((a, b) => string.CompareOrdinal(b.Tarih, a.Tarih));

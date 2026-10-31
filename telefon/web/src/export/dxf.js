@@ -128,6 +128,53 @@ export function yaziKonumu(a, b, dx, dy) {
 }
 const YAZI = () => KAT('YAZI'), OLCU = () => KAT('OLCU');
 
+// Hat yazılarının düzeni (eklentideki YaziDuzeni ile aynı kural, aynı harf tablosu: cizim-stili.json › yazi): metraj ve
+// hat etiketi (kablo tipi) parçanın ortasına ortalı — metraj çizginin üst yanında taban çizgisi ortalı, etiket alt yanında
+// üst kenarı ortalı; ikisi aynı noktadan başlamaz, üst üste binmez. Parçaya sığmayan yazı önce daraltılır (genişlik
+// katsayısı en az 0,6), yetmezse küçülür (en az %60).
+const HARF = STIL.yazi.harfGenislikleri || {};
+const SIG = STIL.yazi.sigdirma || { pay: 0.9, enDarGenislik: 0.6, enKucukYukseklik: 0.6 };
+const r3 = (v) => Math.round(v * 1000) / 1000;
+/** Yazının yaklaşık uzunluğu (m): harf genişlikleri × yükseklik × genişlik katsayısı (YaziDuzeni.Genislik). */
+export function yaziGenisligi(metin, h, gk = 1) {
+  let t = 0;
+  for (const c of String(metin ?? '')) { const g = c.length === 1 ? HARF[c] : undefined; t += Number.isFinite(g) ? g : (HARF.varsayilan || 0.6); }
+  return t * h * gk;
+}
+/** Yazıyı uzunluğu L olan parçaya sığdırır: { h, gk } (YaziDuzeni.Sigdir). */
+export function yaziSigdir(metin, h, L) {
+  const yer = L * SIG.pay, w = yaziGenisligi(metin, h);
+  if (w <= yer || yer <= 0 || w <= 0) return { h, gk: 1 };
+  const gk = r3(Math.max(SIG.enDarGenislik, yer / w));
+  if (w * gk <= yer + 1e-9) return { h, gk };
+  return { h: r3(Math.max(SIG.enKucukYukseklik * h, h * yer / (w * gk))), gk };
+}
+/** Hat etiketinin parçası: çizginin en uzun parçası (YaziDuzeni.EnUzunParca). */
+export function enUzunParca(coords) {
+  let en = 0, enUzun = -1;
+  for (let i = 0; i + 1 < coords.length; i++) {
+    const d = Math.hypot(coords[i + 1].E - coords[i].E, coords[i + 1].N - coords[i].N);
+    if (d > enUzun + 1e-9) { enUzun = d; en = i; }
+  }
+  return en;
+}
+/**
+ * Boyutlar (proje.sebeke.boyutlar — AutoCAD dosyasıyla gelir, Dışa Aktarım › Çizim boyutları ile değişir; eklentide
+ * Çizim Ayarları › Görünüm): simge büyüklüğü (kat) ve yazı yükseklikleri (m).
+ * Projede yoksa ortak stilin ölçüleri; textH verilirse eski kullanım gibi bütün yazılar onunla orantılı.
+ */
+export function boyutlar(proje, textH) {
+  const b = (proje && (proje.boyutlar || (proje.sebeke && proje.sebeke.boyutlar))) || {};
+  const k = textH ? textH / STIL.yazi.yukseklik : 1;
+  const sayi = (v, d, en, cok) => (Number.isFinite(+v) && +v >= en && +v <= cok ? +v : d);
+  return {
+    simge: sayi(b.simgeOlcegi, 1, 0.1, 20),
+    etiket: sayi(b.etiketYuksekligi, STIL.yazi.yukseklik * k, 0.05, 50),
+    metraj: sayi(b.metrajYuksekligi, STIL.yazi.parcaMetraji * k, 0.05, 50),
+    eleman: sayi(b.elemanYaziYuksekligi, STIL.yazi.yukseklik * k, 0.05, 50)
+  };
+}
+
 /** Demontaj türünden (KESİK / SÖKÜK) demontaj varyantı: DM · KESIK · SOKUK (eklentideki Semboller.Varyant ile aynı). */
 export function dmVaryanti(dmDurum) {
   const d = String(dmDurum || '').trim().toLocaleUpperCase('tr').replace(/İ/g, 'I').replace(/Ö/g, 'O').replace(/Ü/g, 'U');
@@ -221,11 +268,12 @@ function writeEnt(w, e) {
 export function buildDXF(model, opts = {}) {
   const w = new W();
   const cat = model.cat;
-  const th = opts.textH || STIL.yazi.yukseklik;
-  const thParca = th * (STIL.yazi.parcaMetraji / STIL.yazi.yukseklik), thKucuk = th * (STIL.yazi.aciYazisi / STIL.yazi.yukseklik);
-  const [pdx, pdy] = STIL.etiketler.parcaMetraji.kaydirma, [hdx, hdy] = STIL.etiketler.hat.kaydirma, [edx, edy] = STIL.etiketler.eleman.kaydirma, [adx, ady] = STIL.etiketler.aci.kaydirma;
+  const B = boyutlar(model.project, opts.textH);
+  const th = B.eleman;
+  const thParca = B.metraj, thKucuk = th * (STIL.yazi.aciYazisi / STIL.yazi.yukseklik);
+  const [, pdy] = STIL.etiketler.parcaMetraji.kaydirma, [, hdy] = STIL.etiketler.hat.kaydirma, [edx, edy] = STIL.etiketler.eleman.kaydirma, [adx, ady] = STIL.etiketler.aci.kaydirma;
   // Kanal / sondaj (yalnız kanal) metrajı: içindeki kablonun metrajıyla üst üste binmesin diye bir satır yukarıda
-  const [kdx, kdy] = (STIL.etiketler.kaziMetraji || STIL.etiketler.parcaMetraji).kaydirma;
+  const kdy = pdy + thParca + ((STIL.etiketler.kaziMetraji || {}).bosluk ?? 0.46);
   const allPts = model.points.filter((p) => p.E != null);
   const ext = allPts.reduce((a, p) => ({ x0: Math.min(a.x0, p.E), y0: Math.min(a.y0, p.N), x1: Math.max(a.x1, p.E), y1: Math.max(a.y1, p.N) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
   if (!Number.isFinite(ext.x0)) Object.assign(ext, { x0: 0, y0: 0, x1: 100, y1: 100 });
@@ -252,7 +300,22 @@ export function buildDXF(model, opts = {}) {
   // ENTITIES
   w.g(0, 'SECTION').g(2, 'ENTITIES');
   const text = (layer, x, y, z, s, h = th, rot = 0, color = null) => { w.g(0, 'TEXT').g(8, layer); if (color != null) w.g(62, color); w.g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(40, f(h)).g(1, s).g(50, f(rot)); };
-  const insert = (layer, block, x, y, z, color = null, rot = 0) => { w.g(0, 'INSERT').g(8, layer); if (color != null) w.g(62, color); w.g(2, block).g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(41, 1).g(42, 1).g(43, 1).g(50, f(rot)); };
+  /**
+   * Parçaya ortalı yazı: (x, y) hizalama noktası — üst: false → taban çizgisinin ortası (metraj), true → üst kenarın ortası
+   * (hat etiketi). 10/20 sol alt köşe (harf tablosuyla yaklaşık; hizalamayı okumayan programlar için), 11/21 hizalama
+   * noktası, 72 = 1 ortalı, 73 = 3 üstten; 41 genişlik katsayısı (sığdırma).
+   */
+  const ortaliText = (layer, x, y, s, h, rot, color, ust, gk) => {
+    const r = rot * Math.PI / 180, c = Math.cos(r), sn = Math.sin(r), yarim = yaziGenisligi(s, h, gk) / 2, asagi = ust ? h : 0;
+    const x0 = x - yarim * c + asagi * sn, y0 = y - yarim * sn - asagi * c;
+    w.g(0, 'TEXT').g(8, layer); if (color != null) w.g(62, color);
+    w.g(10, f(x0)).g(20, f(y0)).g(30, 0).g(40, f(h)).g(1, s).g(50, f(rot));
+    if (Math.abs(gk - 1) > 1e-9) w.g(41, f(gk));
+    w.g(72, 1).g(11, f(x)).g(21, f(y)).g(31, 0);
+    if (ust) w.g(73, 3);
+  };
+  const ol = B.simge;
+  const insert = (layer, block, x, y, z, color = null, rot = 0) => { w.g(0, 'INSERT').g(8, layer); if (color != null) w.g(62, color); w.g(2, block).g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(41, f(ol)).g(42, f(ol)).g(43, f(ol)).g(50, f(rot)); };
   // Açıklık sınırı olan elemanların noktaları (direk, SDK, pano, trafo…)
   const nodePts = new Set(model.equipment.filter((e) => e.pointId && !ARA_ELEMAN.has(e.kind)).map((e) => e.pointId));
   let nLines = 0, nIns = 0, nTxt = 0, nKenar = 0;
@@ -280,18 +343,20 @@ export function buildDXF(model, opts = {}) {
         w.g(0, 'SEQEND').g(8, kk); nKenar++;
       }
     }
-    // Metraj: her açıklığa bir yazı (iki direk / iki bağlantı elemanı arası), hattın renginde
+    // Metraj: her açıklığa bir yazı (iki direk / iki bağlantı elemanı arası), parçanın ortasına ortalı, hattın renginde
     if (opts.spanText !== false) {
-      const [mdx, mdy] = l.channelOnly ? [kdx, kdy] : [pdx, pdy];
+      const mdy = l.channelOnly ? kdy : pdy;
       for (const sp of spanTexts(l.coords, (c) => nodePts.has(c.id))) {
-        const k = yaziKonumu(l.coords[sp.seg], l.coords[sp.seg + 1], mdx, mdy);
-        text(YAZI(), k.x, k.y, 0, sp.length.toFixed(2), thParca, k.ang, aci); nTxt++;
+        const a = l.coords[sp.seg], b = l.coords[sp.seg + 1], metin = sp.length.toFixed(2);
+        const k = yaziKonumu(a, b, 0, mdy), s = yaziSigdir(metin, thParca, Math.hypot(b.E - a.E, b.N - a.N));
+        ortaliText(YAZI(), k.x, k.y, metin, s.h, k.ang, aci, false, s.gk); nTxt++;
       }
     }
-    const mid = Math.floor((l.coords.length - 1) / 2);
-    // Malzeme adı ortak yazımla (eklentideki MalzemeYazimi): "3x50/16 Xlpe Alm." → "3x50/16 XLPE Al"
-    const k = yaziKonumu(l.coords[mid], l.coords[mid + 1], hdx, hdy);
-    text(YAZI(), k.x, k.y, 0, hatYazisi(l.no, l.state, l.label, l.channelOnly), th, k.ang, aci); nTxt++;
+    // Hat etiketi (kablo tipi; "hat no kesit", haritayla aynı yazı: hatYazisi): en uzun parçanın ortasına ortalı, üst
+    // kenarı çizginin alt yanında, parçaya sığdırılmış
+    const ep = enUzunParca(l.coords), ea = l.coords[ep], eb = l.coords[ep + 1], etiket = hatYazisi(l.no, l.state, l.label, l.channelOnly);
+    const k = yaziKonumu(ea, eb, 0, hdy), es = yaziSigdir(etiket, B.etiket, Math.hypot(eb.E - ea.E, eb.N - ea.N));
+    ortaliText(YAZI(), k.x, k.y, etiket, es.h, k.ang, aci, true, es.gk); nTxt++;
   }
   for (const e of model.equipment) {
     if (e.E == null) continue;
@@ -308,8 +373,9 @@ export function buildDXF(model, opts = {}) {
     else layer = YAZI();
     if (e.state === 'DEMONTAJ' || e.state === 'demontaj') color = DEMONTAJ_ACI;
     insert(layer, block, e.E, e.N, e.H, color); nIns++;
-    text(YAZI(), e.E + edx, e.N + edy, e.H, e.no + (e.typeName ? ' ' + e.typeName : ''), th, 0); nTxt++;
-    if (e.role === 'Z' && e.angle) { text(YAZI(), e.E + adx, e.N + ady, e.H, 'α=' + e.angle.toFixed(2) + '°', thKucuk); nTxt++; }
+    // Eleman yazısı simgenin sağ üstünde; yeri simgeyle büyür (simgenin dışında kalsın), yüksekliği ayrı ayarlanır
+    text(YAZI(), e.E + edx * ol, e.N + edy * ol, e.H, e.no + (e.typeName ? ' ' + e.typeName : ''), th, 0); nTxt++;
+    if (e.role === 'Z' && e.angle) { text(YAZI(), e.E + adx * ol, e.N + ady * ol, e.H, 'α=' + e.angle.toFixed(2) + '°', thKucuk); nTxt++; }
   }
   for (const p of model.points) {
     if (p.E == null) continue;

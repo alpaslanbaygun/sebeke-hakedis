@@ -10,7 +10,7 @@
         "proje": {
           "ad": "Deneme Köyü ENH Projesi",
           "kod": "D-101",
-          "yapan": "Ayşe Deneme",
+          "yapan": "Deneme Hazırlayan",
           "unvan": "Elektrik Mühendisi",
           "firma": "Deneme Mühendislik",
           "tarih": "2026-10-18",
@@ -194,7 +194,7 @@
         "kaynak": "autocad",
         "proje": {
           "ad": "Deneme OSB Besleme Hattı",
-          "yapan": "Mehmet Örnek",
+          "yapan": "Sınama Mühendis",
           "unvan": "Elektrik Mühendisi",
           "buzBolgesi": "3"
         },
@@ -319,7 +319,7 @@
         "kaynak": "autocad",
         "proje": {
           "ad": "Deneme Mahallesi Deplase",
-          "yapan": "Mehmet Örnek",
+          "yapan": "Sınama Mühendis",
           "unvan": "Elektrik Mühendisi",
           "buzBolgesi": "1"
         },

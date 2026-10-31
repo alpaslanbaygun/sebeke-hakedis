@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -168,8 +169,12 @@ namespace SebekeHakedis.Eklenti
             if (y.Uyarilar.Count > 10) ed.WriteMessage("\n… ve " + (y.Uyarilar.Count - 10) + " uyarı daha.");
         }
 
-        private static CizimYazici Yazici(Ortam o, Transaction tr) =>
-            new CizimYazici(o.Db, tr) { EtiketYuksekligi = o.Ayar.EtiketYuksekligi };
+        private static CizimYazici Yazici(Ortam o, Transaction tr)
+        {
+            var y = new CizimYazici(o.Db, tr);
+            y.BoyutlariAl(o.Ayar);
+            return y;
+        }
 
         // ================= SH_ELEMAN =================
 
@@ -362,6 +367,92 @@ namespace SebekeHakedis.Eklenti
                 o.AyarKaydet();
                 HatDongusu(o, secim, null);
             });
+        }
+
+        // ================= SH_HATDEGISTIR: çizilmiş hattın iletkeni =================
+
+        /// <summary>
+        /// Çizilmiş hatların iletkenini (tip, cins), türünü, durumunu ve hakedişini değiştirir: hatlar seçilir (önceden
+        /// seçilmişse onlar), Hat penceresi ilk hattın şimdiki bilgisiyle açılır; HAT satırları yeni iletkenle yeniden
+        /// yazılır, katman, renk, kablo tipi yazısı ve metraj yazıları güncellenir. Diğer malzemelere dokunulmaz.
+        /// </summary>
+        [CommandMethod("SH_HATDEGISTIR", CommandFlags.Modal | CommandFlags.UsePickSet)]
+        public void HatDegistir()
+        {
+            var belge = AcApp.DocumentManager.MdiActiveDocument;
+            if (belge == null) return;
+            Komutlar.Calistir("Hat değiştirme", () =>
+            {
+                var o = Ortam.Hazirla(belge);
+                var ed = o.Ed;
+                ObjectId[] idler = null;
+                var onceden = ed.SelectImplied();
+                if (onceden.Status == PromptStatus.OK && onceden.Value != null) idler = onceden.Value.GetObjectIds();
+                if (idler == null || idler.Length == 0)
+                {
+                    var pso = new PromptSelectionOptions { MessageForAdding = "\nİletkeni değişecek hatları seçin: " };
+                    var filtre = new SelectionFilter(new[] { new TypedValue((int)DxfCode.Start, "LWPOLYLINE,POLYLINE,LINE") });
+                    var r = ed.GetSelection(pso, filtre);
+                    if (r.Status != PromptStatus.OK) return;
+                    idler = r.Value.GetObjectIds();
+                }
+                var secilen = new List<KeyValuePair<ObjectId, Hat>>();
+                int kilitli = 0;
+                foreach (var id in idler)
+                {
+                    var h = o.Proje.Hatlar.Find(x => string.Equals(x.Id, id.Handle.ToString(), StringComparison.OrdinalIgnoreCase));
+                    if (h == null) continue;
+                    if (o.Kilitli(h.Hakedis)) { kilitli++; continue; }
+                    secilen.Add(new KeyValuePair<ObjectId, Hat>(id, h));
+                }
+                if (kilitli > 0) ed.WriteMessage("\n" + kilitli + " hat onaylı (kilitli) hakedişte; değiştirilmez.");
+                if (secilen.Count == 0) { ed.WriteMessage("\nSeçimde değiştirilecek şebeke hattı yok (kanal ve sondaj için Malzeme komutunu kullanın)."); return; }
+                var secim = Pencereler.Hat(o, SimdikiSecim(o, secilen[0].Value), secilen.Count);
+                if (secim == null) return;
+                o.AyarKaydet();
+                int yazilan = 0;
+                using (var tr = o.Db.TransactionManager.StartTransaction())
+                {
+                    var y = Yazici(o, tr);
+                    foreach (var kv in secilen)
+                    {
+                        var h = kv.Value;
+                        string eskiDurum = h.Durum, eskiEtiket = NesneYazici.HatEtiketi(h);
+                        int eskiHakedis = h.Hakedis;
+                        var yedek = h.Kalemler.ConvertAll(k => k.Kopya());
+                        string eskiTur = h.Tur, eskiKesit = h.AnaKesit, eskiKatman = h.Katman;
+                        try
+                        {
+                            double L = h.CizimUzunlugu > 0 ? h.CizimUzunlugu : Uzunluk(h.Kose.ConvertAll(k => new Point3d(k[0], k[1], 0)));
+                            double m = Iletkenler.Degistir(h, secim.Tur, secim.Iletkenleri, secim.Durum, secim.Hakedis,
+                                                           tur => o.Ayar.HatMetraji(L, tur), o.YeniSira, o.Ayar.Karakteristik, o.Ayar.Koy);
+                            NesneyiYaz(o, y, kv.Key, h, eskiDurum, eskiHakedis);
+                            yazilan++;
+                            ed.WriteMessage("\n" + eskiEtiket + "  →  " + NesneYazici.HatEtiketi(h) + "  (metraj " + Metraj.Yazi(m) + " m)");
+                        }
+                        catch (System.Exception ex)
+                        {
+                            h.Kalemler = yedek; h.Tur = eskiTur; h.AnaKesit = eskiKesit; h.Durum = eskiDurum; h.Hakedis = eskiHakedis; h.Katman = eskiKatman;
+                            y.Uyarilar.Add(eskiEtiket + " değiştirilemedi (katmanı kilitli olabilir): " + ex.Message);
+                        }
+                    }
+                    tr.Commit();
+                    UyarilariYaz(ed, y);
+                }
+                ed.WriteMessage("\n" + yazilan + " hattın iletkeni değiştirildi. Metrajı değiştirmek için: Metraj (SH_METRAJ).");
+            });
+        }
+
+        /// <summary>Hattın şimdiki seçimi (Hat Değiştir penceresi bununla açılır): tür, HAT satırlarının iletkenleri ve adetleri, durum, hakediş.</summary>
+        private static HatSecimi SimdikiSecim(Ortam o, Hat h)
+        {
+            var s = new HatSecimi { Tur = h.Tur, Durum = string.IsNullOrEmpty(h.Durum) ? "M" : h.Durum, Hakedis = h.Hakedis > 0 ? h.Hakedis : o.Hakedis };
+            foreach (var k in Iletkenler.HatKalemleri(h))
+            {
+                var kk = o.Katalog.Bul(k.Cins, k.Tanim);
+                if (kk != null && s.Iletkenleri.Count < 2) s.Iletkenleri.Add(new HatIletkeni(kk, Iletkenler.Adet(k)));
+            }
+            return s;
         }
 
         /// <summary>
@@ -709,8 +800,9 @@ namespace SebekeHakedis.Eklenti
         // ================= SH_GORUNUM: çizimi telefon görünümüne çevir =================
 
         /// <summary>
-        /// Çizimdeki şebeke nesnelerini ortak çizim stiline (telefonun görünümü) çevirir: simgeler, renkler, çizgi tipleri,
-        /// hat etiketleri (1,8 m, orta parçada) ve her parçanın uzunluk yazısı. Veriye (XDATA, metraj) dokunmaz.
+        /// Çizimdeki şebeke nesnelerini ortak çizim stiline (telefonun görünümü) çevirir: simgeler (ayardaki büyüklükte),
+        /// renkler, çizgi tipleri, eleman yazıları, hat etiketleri (kablo tipi: en uzun parçanın ortasına ortalı) ve her
+        /// açıklığın metraj yazısı (Çizim Ayarları › Görünüm'deki boyutlarla). Veriye (XDATA, metraj) dokunmaz.
         /// Bütün elemanlar uygulamanın simgesine çevrilir (adsız bloklar hariç).
         /// </summary>
         [CommandMethod("SH_GORUNUM", CommandFlags.Modal)]
@@ -721,47 +813,57 @@ namespace SebekeHakedis.Eklenti
             Komutlar.Calistir("Görünüm yenileme", () =>
             {
                 var o = Ortam.Hazirla(belge);
-                var ed = o.Ed;
                 var p = o.Proje;
                 int toplam = p.Elemanlar.Count + p.Hatlar.Count + p.Kanallar.Count + p.Sondajlar.Count + p.Bolgeler.Count;
-                if (toplam == 0) { ed.WriteMessage("\nÇizimde şebeke nesnesi yok."); return; }
+                if (toplam == 0) { o.Ed.WriteMessage("\nÇizimde şebeke nesnesi yok."); return; }
                 var pko = new PromptKeywordOptions("\n" + toplam + " nesne uygulamanın görünümüne çevrilecek. Devam edilsin mi? [Evet/Vazgec]", "Evet Vazgec")
                 {
                     AllowNone = true,
                 };
                 pko.Keywords.Default = "Evet";
-                var r = ed.GetKeywords(pko);
+                var r = o.Ed.GetKeywords(pko);
                 if (r.Status != PromptStatus.OK && r.Status != PromptStatus.None) return;
                 if (r.Status == PromptStatus.OK && r.StringResult == "Vazgec") return;
-                int yenilenen = 0;
-                using (var tr = o.Db.TransactionManager.StartTransaction())
-                {
-                    var y = Yazici(o, tr);
-                    y.EtiketleriYenile = true;
-                    Func<string, ObjectId> bul = h => { ObjectId id; return Toplayici.TaniticiylaBul(o.Db, h, out id) ? id : ObjectId.Null; };
-                    Action<string, CadVarlik, string> yaz = (h, v, etiket) =>
-                    {
-                        var id = bul(h);
-                        if (id.IsNull) return;
-                        try { y.Guncelle(id, v, etiket); yenilenen++; }
-                        catch (System.Exception ex) { y.Uyarilar.Add(h + " yenilenemedi (katmanı kilitli olabilir): " + ex.Message); }
-                    };
-                    foreach (var e in p.Elemanlar)
-                    {
-                        string blok = NesneYazici.BlokSec(p.Elemanlar, e);
-                        if (!y.BlokKullanilabilir(blok)) blok = e.Blok;
-                        yaz(e.Id, NesneYazici.Eleman(e, o.OnEk, blok, string.IsNullOrEmpty(e.TelefonId) ? null : e.TelefonId), null);
-                    }
-                    foreach (var h in p.Hatlar) yaz(h.Id, NesneYazici.Hat(h, o.OnEk, string.IsNullOrEmpty(h.TelefonId) ? null : h.TelefonId), NesneYazici.HatEtiketi(h));
-                    foreach (var c in p.Kanallar) yaz(c.Id, NesneYazici.Kanal(c, o.OnEk, string.IsNullOrEmpty(c.TelefonId) ? null : c.TelefonId), null);
-                    foreach (var s in p.Sondajlar) yaz(s.Id, NesneYazici.Sondaj(s, o.OnEk, string.IsNullOrEmpty(s.TelefonId) ? null : s.TelefonId), null);
-                    foreach (var b in p.Bolgeler) yaz(b.Id, NesneYazici.Bolge(b, o.OnEk, null), null);
-                    tr.Commit();
-                    UyarilariYaz(ed, y);
-                }
-                ed.WriteMessage("\n" + yenilenen + " nesne uygulamanın görünümüne çevrildi.");
-                ed.Regen();
+                GorunumuUygula(o);
             });
+        }
+
+        /// <summary>Telefon Görünümü'nü çizimin bütün şebeke nesnelerine uygular (SH_GORUNUM; boyutlar değişince Ayarlar da çağırır).</summary>
+        internal static void GorunumuUygula(Ortam o)
+        {
+            var ed = o.Ed;
+            var p = o.Proje;
+            int yenilenen = 0, cevrilen = 0;
+            using (var tr = o.Db.TransactionManager.StartTransaction())
+            {
+                var y = Yazici(o, tr);
+                y.EtiketleriYenile = true;
+                // Şebeke katmanlarının adları Türkçe karaktersiz (AGDİR → AGDIR …; bkz. KatmanAdlari)
+                cevrilen = y.KatmanlariCevir();
+                Func<string, ObjectId> bul = h => { ObjectId id; return Toplayici.TaniticiylaBul(o.Db, h, out id) ? id : ObjectId.Null; };
+                Action<string, CadVarlik, string> yaz = (h, v, etiket) =>
+                {
+                    var id = bul(h);
+                    if (id.IsNull) return;
+                    try { y.Guncelle(id, v, etiket); yenilenen++; }
+                    catch (System.Exception ex) { y.Uyarilar.Add(h + " yenilenemedi (katmanı kilitli olabilir): " + ex.Message); }
+                };
+                foreach (var e in p.Elemanlar)
+                {
+                    string blok = NesneYazici.BlokSec(p.Elemanlar, e);
+                    if (!y.BlokKullanilabilir(blok)) blok = e.Blok;
+                    yaz(e.Id, NesneYazici.Eleman(e, o.OnEk, blok, string.IsNullOrEmpty(e.TelefonId) ? null : e.TelefonId), null);
+                }
+                foreach (var h in p.Hatlar) yaz(h.Id, NesneYazici.Hat(h, o.OnEk, string.IsNullOrEmpty(h.TelefonId) ? null : h.TelefonId), NesneYazici.HatEtiketi(h));
+                foreach (var c in p.Kanallar) yaz(c.Id, NesneYazici.Kanal(c, o.OnEk, string.IsNullOrEmpty(c.TelefonId) ? null : c.TelefonId), null);
+                foreach (var s in p.Sondajlar) yaz(s.Id, NesneYazici.Sondaj(s, o.OnEk, string.IsNullOrEmpty(s.TelefonId) ? null : s.TelefonId), null);
+                foreach (var b in p.Bolgeler) yaz(b.Id, NesneYazici.Bolge(b, o.OnEk, null), null);
+                tr.Commit();
+                UyarilariYaz(ed, y);
+            }
+            ed.WriteMessage("\n" + yenilenen + " nesne uygulamanın görünümüne çevrildi." +
+                            (cevrilen > 0 ? " " + cevrilen + " katmanın adı Türkçe karaktersiz yapıldı." : ""));
+            ed.Regen();
         }
 
         // ================= SH_BOLGE =================
@@ -1207,11 +1309,22 @@ namespace SebekeHakedis.Eklenti
             Komutlar.Calistir("Ayarlar", () =>
             {
                 var o = Ortam.Hazirla(belge);
+                var a = o.Ayar;
+                string onceki = Boyutlar(a);
                 if (!Pencereler.Ayarlar(o)) return;
                 o.AyarKaydet();
                 o.Ed.WriteMessage("\nAyarlar bu çizime kaydedildi.");
+                // Simge / yazı boyutları değiştiyse çizimde olanlara da uygulanabilir (Telefon Görünümü)
+                int nesne = o.Proje.Elemanlar.Count + o.Proje.Hatlar.Count + o.Proje.Kanallar.Count + o.Proje.Sondajlar.Count;
+                if (Boyutlar(a) != onceki && nesne > 0 &&
+                    Pencereler.Onay("Simge ve yazı boyutları değişti. Çizimdeki " + nesne + " nesnenin simge ve yazıları da yeni boyutlara getirilsin mi?\n\n(Telefon Görünümü: simgeler, renkler, hat etiketleri ve metraj yazıları yeniden düzenlenir; veriye dokunulmaz.)"))
+                    GorunumuUygula(o);
             });
         }
+
+        private static string Boyutlar(CizimAyarlari a) =>
+            string.Join(";", new[] { a.SimgeOlcegi, a.EtiketYuksekligi, a.MetrajYuksekligi, a.ElemanYaziYuksekligi }
+                .Select(d => d.ToString("0.###", CultureInfo.InvariantCulture)));
 
         [CommandMethod("SH_HAKEDIS", CommandFlags.Modal)]
         public void Hakedis()
@@ -1327,6 +1440,20 @@ namespace SebekeHakedis.Eklenti
                                      "Koordinatlar uyuşmayabilir. Yine de aktarılsın mı?", false))
                     return;
 
+                // Simge ve yazı boyutları: çizimde ayarlanmamışsa (varsayılan) telefondakiler alınır (aktarım onaylanınca);
+                // ikisi de ayarlıysa çizimdeki kalır (değiştirmek için Çizim Ayarları › Görünüm)
+                bool boyutAl = tel.Boyutlar != null && !tel.Boyutlar.Ayni(o.Ayar.BoyutlariVer()) && !o.Ayar.BoyutlarDegisik;
+                if (tel.Boyutlar != null && !tel.Boyutlar.Ayni(o.Ayar.BoyutlariVer()) && !boyutAl)
+                    ed.WriteMessage("\nNot: telefondaki boyutlar (" + tel.Boyutlar + ") bu çizimdekinden farklı; çizimdeki kullanılacak.");
+                bool boyutlariUygula = boyutAl && o.Proje.Elemanlar.Count + o.Proje.Hatlar.Count + o.Proje.Kanallar.Count + o.Proje.Sondajlar.Count > 0;
+                Action boyutlariAl = () =>
+                {
+                    if (!boyutAl) return;
+                    o.Ayar.BoyutlariKoy(tel.Boyutlar);
+                    o.AyarKaydet();
+                    ed.WriteMessage("\nTelefondaki simge ve yazı boyutları alındı: " + tel.Boyutlar + ".");
+                };
+
                 ed.WriteMessage("\nKarşılaştırılıyor...");
                 var plan = Aktarim.Planla(o.Varliklar, tel, o.OnEk, o.Proje.Onaylar);
                 // Telefonda onaylanan hakedişler (dönem onayı): aktarımdan sonra çizimin onay kaydına da eklenir
@@ -1354,6 +1481,8 @@ namespace SebekeHakedis.Eklenti
                                      (plan.Kilitliler.Count + plan.KilitliSilinenler.Count > 0
                                          ? "\n\nOnaylı (kilitli) hakedişe dokunduğu için aktarılmayan: " + (plan.Kilitliler.Count + plan.KilitliSilinenler.Count) + " değişiklik."
                                          : ""));
+                    boyutlariAl();
+                    BoyutlariUygulaSor(belge, boyutlariUygula);
                     return;
                 }
 
@@ -1378,6 +1507,7 @@ namespace SebekeHakedis.Eklenti
                     oz.Onaylar.Add(n + ". hakediş → " + HakedisOnayi.Metin(birlesikOnay[n]) + (HakedisOnayi.Kilitli(birlesikOnay, n) ? " (kilitlenecek)" : ""));
                 for (int i = 0; i < plan.Uyarilar.Count && i < 8; i++) oz.Uyarilar.Add(plan.Uyarilar[i]);
                 if (!Pencereler.AktarimOnayi(oz)) return;
+                boyutlariAl();
 
                 bool sil = false;
                 if (plan.Silinenler.Count > 0)
@@ -1395,65 +1525,10 @@ namespace SebekeHakedis.Eklenti
                     yenidenEkle = Pencereler.Onay(cizimdeSilinmis + " nesne bu çizimden alınmıştı ama çizimde artık yok (bilgisayarda silinmiş olabilir).\n" +
                                                   "Telefondaki hâlleriyle yeniden eklensin mi?", false);
 
-                int eklenen = 0, guncellenen = 0, silinen = 0;
+                int eklenen, guncellenen, silinen;
                 var kapsam = new Extents3d();
                 bool kapsamVar = false;
-                using (var tr = o.Db.TransactionManager.StartTransaction())
-                {
-                    var y = Yazici(o, tr);
-                    foreach (var a in plan.Adimlar)
-                    {
-                        var v = a.Varlik;
-                        try
-                        {
-                            if (a.Islem == "yeni")
-                            {
-                                if (a.CizimdeSilinmis && !yenidenEkle) continue;
-                                double olcek = 1;
-                                if (a.Nesne == "eleman")
-                                {
-                                    v.Blok = y.KullanilabilirBlok(v.Blok, a.ElemanTuru, v.OzDeger("CİNS"), v.OzDeger("DURUM"), NitDmDurumu(v), o.Proje.Elemanlar);
-                                    olcek = o.Olcek(v.Blok);
-                                }
-                                var yeniId = y.Ekle(v, a.Etiket, olcek);
-                                if (a.Nesne == "bolge" && !yeniId.IsNull) CizimSozlugu.BolgeEkle(o.Db, tr, yeniId.Handle.ToString());
-                                eklenen++;
-                                Kapsa(ref kapsam, ref kapsamVar, v);
-                            }
-                            else
-                            {
-                                ObjectId id;
-                                if (!Toplayici.TaniticiylaBul(o.Db, a.Hedef, out id)) { y.Uyarilar.Add("Nesne bulunamadı: " + a.Hedef + " " + a.Ad); continue; }
-                                if (a.Nesne == "eleman" && !y.BlokKullanilabilir(v.Blok)) v.Blok = "";
-                                y.Guncelle(id, v, a.Etiket);
-                                if (a.Nesne == "bolge") CizimSozlugu.BolgeEkle(o.Db, tr, id.Handle.ToString());
-                                guncellenen++;
-                            }
-                        }
-                        catch (System.Exception ex)
-                        {
-                            y.Uyarilar.Add(a.Ad + " aktarılamadı (katmanı kilitli olabilir): " + ex.Message);
-                        }
-                    }
-                    if (sil)
-                        foreach (var h in plan.Silinenler.Keys)
-                        {
-                            ObjectId id;
-                            if (!Toplayici.TaniticiylaBul(o.Db, h, out id)) continue;
-                            try
-                            {
-                                y.Sil(id);
-                                CizimSozlugu.BolgeCikar(o.Db, tr, h);
-                                silinen++;
-                            }
-                            catch (System.Exception ex)
-                            {
-                                y.Uyarilar.Add(plan.Silinenler[h] + " silinemedi (katmanı kilitli olabilir): " + ex.Message);
-                            }
-                        }
-                    tr.Commit();
-                    UyarilariYaz(ed, y);
-                }
+                PlaniYaz(o, plan, sil, yenidenEkle, out eklenen, out guncellenen, out silinen, ref kapsam, ref kapsamVar);
                 // Telefonda verilen sıra numaraları AutoCAD sayacında da ilerlesin
                 CizimSozlugu.SayacYaz(o.Db, Math.Max(o.Sira, Numara.EnBuyukSira(tel)));
                 // Telefonda onaylanan hakedişler çizimin onay kaydına (AutoCAD HAK_ONAY) eklenir
@@ -1487,7 +1562,84 @@ namespace SebekeHakedis.Eklenti
                 Pencereler.Bilgi("Aktarım tamamlandı.\n\nEklenen: " + eklenen + "\nGüncellenen: " + guncellenen + (sil ? "\nSilinen: " + silinen : "") +
                                  (hesapYeni + hesapGuncel > 0 ? "\nTeknik hesap kaydı: " + hesapYeni + " yeni, " + hesapGuncel + " güncellendi" : "") +
                                  "\n\nBeğenmezseniz AutoCAD'in Geri Al (U) komutu aktarımın tamamını geri alır.");
+                BoyutlariUygulaSor(belge, boyutlariUygula);
             });
+        }
+
+        /// <summary>
+        /// Aktarım planını çizime yazar (telefondan alma ve CBS'den alma): yeni nesneler eklenir (elemana uygun simge),
+        /// eşleşenler güncellenir, sil ise telefonda silinmişler silinir. yenidenEkle: bilgisayarda silinmiş nesneler yeniden
+        /// eklensin mi. Uyarılar komut satırına yazılır.
+        /// </summary>
+        internal static void PlaniYaz(Ortam o, AktarimPlani plan, bool sil, bool yenidenEkle, out int eklenen, out int guncellenen, out int silinen,
+                                      ref Extents3d kapsam, ref bool kapsamVar)
+        {
+            eklenen = 0; guncellenen = 0; silinen = 0;
+            using (var tr = o.Db.TransactionManager.StartTransaction())
+            {
+                var y = Yazici(o, tr);
+                foreach (var a in plan.Adimlar)
+                {
+                    var v = a.Varlik;
+                    try
+                    {
+                        if (a.Islem == "yeni")
+                        {
+                            if (a.CizimdeSilinmis && !yenidenEkle) continue;
+                            double olcek = 1;
+                            if (a.Nesne == "eleman")
+                            {
+                                v.Blok = y.KullanilabilirBlok(v.Blok, a.ElemanTuru, v.OzDeger("CİNS"), v.OzDeger("DURUM"), NitDmDurumu(v), o.Proje.Elemanlar);
+                                olcek = o.Olcek(v.Blok);
+                            }
+                            var yeniId = y.Ekle(v, a.Etiket, olcek);
+                            if (a.Nesne == "bolge" && !yeniId.IsNull) CizimSozlugu.BolgeEkle(o.Db, tr, yeniId.Handle.ToString());
+                            eklenen++;
+                            Kapsa(ref kapsam, ref kapsamVar, v);
+                        }
+                        else
+                        {
+                            ObjectId id;
+                            if (!Toplayici.TaniticiylaBul(o.Db, a.Hedef, out id)) { y.Uyarilar.Add("Nesne bulunamadı: " + a.Hedef + " " + a.Ad); continue; }
+                            if (a.Nesne == "eleman" && !y.BlokKullanilabilir(v.Blok)) v.Blok = "";
+                            y.Guncelle(id, v, a.Etiket);
+                            if (a.Nesne == "bolge") CizimSozlugu.BolgeEkle(o.Db, tr, id.Handle.ToString());
+                            guncellenen++;
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        y.Uyarilar.Add(a.Ad + " aktarılamadı (katmanı kilitli olabilir): " + ex.Message);
+                    }
+                }
+                if (sil)
+                    foreach (var h in plan.Silinenler.Keys)
+                    {
+                        ObjectId id;
+                        if (!Toplayici.TaniticiylaBul(o.Db, h, out id)) continue;
+                        try
+                        {
+                            y.Sil(id);
+                            CizimSozlugu.BolgeCikar(o.Db, tr, h);
+                            silinen++;
+                        }
+                        catch (System.Exception ex)
+                        {
+                            y.Uyarilar.Add(plan.Silinenler[h] + " silinemedi (katmanı kilitli olabilir): " + ex.Message);
+                        }
+                    }
+                tr.Commit();
+                UyarilariYaz(o.Ed, y);
+            }
+        }
+
+        /// <summary>Telefondan yeni boyutlar alındıysa çizimde önceden olan nesnelere de uygulanması sorulur (Telefon Görünümü).</summary>
+        private static void BoyutlariUygulaSor(Document belge, bool sor)
+        {
+            if (!sor) return;
+            if (!Pencereler.Onay("Telefondaki simge ve yazı boyutları bu çizime alındı. Çizimde önceden olan nesnelerin simge ve yazıları da bu boyutlara getirilsin mi?\n\n(Telefon Görünümü; veriye dokunulmaz.)"))
+                return;
+            GorunumuUygula(Ortam.Hazirla(belge));
         }
 
         // ================= Yardımcılar =================

@@ -96,7 +96,7 @@ test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Dur
   const ag = sp.hatlar.find((h) => h.tur === 'AG_HAVAI');
   assert.equal(ag.anaKesit, '3X70/16+95 ALPEK'); assert.equal(ag.kalemler[0].cins, 'ALPEK_KABLOLAR'); assert.equal(ag.kalemler[0].tarife, '0107');
   const yer = sp.hatlar.find((h) => h.tur === 'AG_YERALTI');
-  assert.equal(yer.anaKesit, '3x95+50 Nyy Alm.'); assert.equal(yer.kalemler[0].cins, 'AG_ALİMİNYUM_KABLO');
+  assert.equal(yer.anaKesit, '3x95+50 Nyy Alm.'); assert.equal(yer.kalemler[0].cins, 'AG_ALÜMİNYUM_KABLO', 'cins kodu yazım hatası düzeltilmiş');
   assert.equal(sp.kanallar.length, 1);
   const kn = sp.kanallar[0];
   assert.equal(kn.kod, 4); assert.equal(kn.zemin, 'ASFALT'); assert.equal(kn.altGenislik, 40); assert.equal(kn.derinlik, 80);
@@ -439,15 +439,15 @@ test('A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef
   assert.equal(bh.hat.acikliklar.length, 2); assert.equal(Math.round(bh.hat.toplamUzunluk), 80);
   // Kayıt: trafo hedefi + çıkış (hatId); aynı hedefte yeniden kaydetmek üzerine yazar
   const hedef = { tur: 'trafo', id: tr.id, no: tr.no, hatId: agHat.id };
-  const id1 = await hesapKaydet(ps, { modul: 'ag-gd', modulAdi: 'AG Gerilim Düşümü', hedef, ozet: '%1,5', durum: 'uygun', ayrinti: { girdiler: [{ ad: 'Güç', deger: 160, birim: 'kVA' }], degerler: [], uyarilar: [] }, modulDurumu: { a: 1 }, kullanilan: { 'trafo.gucKVA': 160, 'hat.acikliklar[0].uzunluk': bh.hat.acikliklar[0].uzunluk } }, 'Ayşe');
-  const id2 = await hesapKaydet(ps, { modul: 'ag-gd', hedef, ozet: '%1,6', durum: 'uygun', kayitId: '', kullanilan: { 'trafo.gucKVA': 160 } }, 'Ayşe');
+  const id1 = await hesapKaydet(ps, { modul: 'ag-gd', modulAdi: 'AG Gerilim Düşümü', hedef, ozet: '%1,5', durum: 'uygun', ayrinti: { girdiler: [{ ad: 'Güç', deger: 160, birim: 'kVA' }], degerler: [], uyarilar: [] }, modulDurumu: { a: 1 }, kullanilan: { 'trafo.gucKVA': 160, 'hat.acikliklar[0].uzunluk': bh.hat.acikliklar[0].uzunluk } }, 'Deneme Kişisi');
+  const id2 = await hesapKaydet(ps, { modul: 'ag-gd', hedef, ozet: '%1,6', durum: 'uygun', kayitId: '', kullanilan: { 'trafo.gucKVA': 160 } }, 'Deneme Kişisi');
   assert.equal(id1, id2, 'aynı trafo ve çıkış: tek kayıt');
-  await hesapKaydet(ps, { modul: 'ag-gd', hedef: { tur: 'trafo', id: tr.id, no: tr.no }, ozet: 'çıkışsız', durum: 'bilgi', kullanilan: {} }, 'Ayşe');
-  await hesapKaydet(ps, { modul: 'amax', hedef: { tur: 'direk', id: agPts[1].id, no: agPts[1].no }, ozet: 'amax 120 m', durum: 'bilgi', kullanilan: { 'direk.kollar[0].aciklik': 40 } }, 'Ayşe');
+  await hesapKaydet(ps, { modul: 'ag-gd', hedef: { tur: 'trafo', id: tr.id, no: tr.no }, ozet: 'çıkışsız', durum: 'bilgi', kullanilan: {} }, 'Deneme Kişisi');
+  await hesapKaydet(ps, { modul: 'amax', hedef: { tur: 'direk', id: agPts[1].id, no: agPts[1].no }, ozet: 'amax 120 m', durum: 'bilgi', kullanilan: { 'direk.kollar[0].aciklik': 40 } }, 'Deneme Kişisi');
   assert.equal(hesapKayitlari(ps).length, 3, 'trafo (çıkışlı), trafo (çıkışsız), direk');
   assert.ok(kayitBul(ps, 'ag-gd', hedef) && kayitBul(ps, 'ag-gd', hedef).ozet === '%1,6');
   assert.ok(kayitBul(ps, 'ag-gd', { tur: 'trafo', id: tr.id, no: tr.no }).ozet === 'çıkışsız', 'çıkışsız kayıt ayrı');
-  const g = guncellik(ps, kayitBul(ps, 'ag-gd', hedef), 'Ayşe');
+  const g = guncellik(ps, kayitBul(ps, 'ag-gd', hedef), 'Deneme Kişisi');
   assert.equal(g.farklar.length, 0, 'kayıt güncel');
   // Dosyaya: hedef kimlikleri dosyadaki kimliklere, çıkış ilk parçaya; telefonId taşınır
   const sp = sebekeModel(ps);
@@ -456,7 +456,7 @@ test('A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef
   const trEl = sp.elemanlar.find((e) => e.telefonId === tr.id);
   assert.equal(hk.hedef.id, trEl.id, 'trafo hedefi dosyadaki eleman kimliğiyle');
   assert.ok(sp.hatlar.some((h) => h.id === hk.hedef.hatId && h.telefonId === agHat.id), 'çıkış hattı dosyadaki parça kimliğiyle');
-  assert.equal(hk.telefonId, id1); assert.equal(hk.kaynak, 'telefon'); assert.equal(hk.yapan, 'Ayşe');
+  assert.equal(hk.telefonId, id1); assert.equal(hk.kaynak, 'telefon'); assert.equal(hk.yapan, 'Deneme Kişisi');
   const dk = sp.hesaplar.find((h) => h.modul === 'amax');
   assert.equal(dk.hedef.id, sp.elemanlar.find((e) => e.telefonId === agPts[1].id).id);
   const metin = SH.projeYaz(sp);
@@ -527,40 +527,47 @@ test('A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosya
   assert.match(kml, /<Folder><name>3B direk ve iletken \(telefon\)<\/name><visibility>0<\/visibility>/, '3B klasörü başta kapalı');
   assert.ok(!kml.includes('<name>' + ileride.no + '</name>'), 'ileride direk ne asıl klasörlerde ne 3B klasöründe');
   assert.ok(kml.includes('<Folder><name>' + ps.p.name + '</name>'), 'proje yine klasör adı');
-  assert.equal((asil.match(/<Placemark>/g) || []).length, nesneler.length, 'her CBS nesnesi bir yer işareti');
-  const direk = nesneler.find((n) => n.katman.ad === 'ELEMAN' && n.ad === poles[0].no);
+  assert.equal((asil.match(/<Placemark>/g) || []).length, nesneler.filter((n) => n.katman.ad !== 'MALZEME').length, 'her CBS nesnesi bir yer işareti (malzeme satırları hariç)');
+  const direk = nesneler.find((n) => n.katman.ad === 'DIREK' && n.ad === poles[0].no);
   assert.ok(direk && kml.includes('<name>' + poles[0].no + '</name><styleUrl>#placemark_circle_'), 'direk adı GIS no, simgesi daire');
   assert.ok(kml.includes('<Data name="TIP"><displayName>Tip</displayName><value>G-D-10 (sw)</value></Data>'), 'tipi öznitelikte');
   // MIF / MID: dolu katmanlar, Türkçe Windows kod sayfası, proje sisteminin CoordSys satırı
   const [z] = await exportFormat(ps, 'mif');
   const files = await unzip(z.data);
-  const base = Object.keys(files).find((n) => n.endsWith('_ELEMAN.mif')).replace('_ELEMAN.mif', '');
-  for (const k of ['ELEMAN', 'HAT', 'KANAL']) assert.ok(files[base + '_' + k + '.mif'] && files[base + '_' + k + '.mid'], k);
+  const base = Object.keys(files).find((n) => n.endsWith('_DIREK.mif')).replace('_DIREK.mif', '');
+  for (const k of ['DIREK', 'HAT', 'KANAL', 'MALZEME']) assert.ok(files[base + '_' + k + '.mif'] && files[base + '_' + k + '.mid'], k);
   assert.ok(!files[base + '_BOLGE.mif'], 'uydurma proje sınırı MIF\'e yazılmaz');
   const metin1254 = (u8) => { const t = new TextDecoder('windows-1254').decode(u8); return t; };
-  const mif = metin1254(files[base + '_ELEMAN.mif']), mid = metin1254(files[base + '_ELEMAN.mid']);
+  const mif = metin1254(files[base + '_DIREK.mif']), mid = metin1254(files[base + '_DIREK.mid']);
   assert.ok(mif.includes('Charset "WindowsTurkish"\r\n') && mif.includes(mifCoordSys(crs) + '\r\n'));
   assert.ok(mid.includes('"ENH_DEMİR_GLV"'), 'Türkçe harfler 1254 kod sayfasında doğru');
-  const beklenen = mifDosyalari(sp, base, { coordSys: mifCoordSys(crs) }).find((d) => d.name === base + '_ELEMAN.mid').text;
+  const beklenen = mifDosyalari(sp, base, { coordSys: mifCoordSys(crs) }).find((d) => d.name === base + '_DIREK.mid').text;
   assert.equal(mid, beklenen, 'MID metni eklentinin yapısıyla aynı');
   // Başka koordinat sistemi (Dışa Aktarım'daki seçim): köşeler çevrilir, CoordSys ona göre
   const utm = makeCrs({ datum: 'WGS84', projection: 'UTM', zone: 37 });
   const [zu] = await exportFormat(ps, 'mif', { crs: utm });
   const fu = await unzip(zu.data);
-  const mifU = metin1254(fu[base + '_ELEMAN.mif']);
+  const mifU = metin1254(fu[base + '_DIREK.mif']);
   assert.ok(mifU.includes('CoordSys Earth Projection 8, 104, "m", 39, 0, 0.9996, 500000, 0'), 'UTM CoordSys');
   const ilk = (t) => t.match(/Point ([\d.]+) ([\d.]+)/).slice(1).map(Number);
   const [e1, n1] = ilk(mif), [e2, n2] = ilk(mifU);
   assert.ok(Math.abs(e2 - (500000 + (e1 - 500000) * 0.9996)) < 0.01 && Math.abs(n2 - n1 * 0.9996) < 0.01, 'UTM köşesi TM köşesinin 0,9996 katı (aynı orta meridyen)');
   // Öznitelikteki SAGA / YUKARI da yeni sistemde (geometriyle aynı)
-  // (sayı sütunları satırın sonunda: ELEMAN … SAGA, YUKARI, KOT, ACI · HAT … UZUNLUK, METRAJ; tırnaklı metindeki virgül sayılmaz)
-  const sondan = (u8, i) => { const r = metin1254(u8).split('\r\n')[0].split(','); return r[r.length - i]; };
-  const sagaU = +sondan(fu[base + '_ELEMAN.mid'], 4), yukariU = +sondan(fu[base + '_ELEMAN.mid'], 3);
+  // Sütunlar MIF'in Columns bölümünden, ilk satırın değerleri MID'den (tırnaklı metindeki virgül ayırıcı sayılmaz)
+  const sutun = (fs, k, ad) => {
+    const ki = metin1254(fs[base + '_' + k + '.mif']).split('\r\n').filter((x) => /^  [A-Z]/.test(x)).map((x) => x.trim().split(' ')[0]).indexOf(ad);
+    const satir = metin1254(fs[base + '_' + k + '.mid']).split('\r\n')[0], d = [];
+    let cur = '', q = false;
+    for (let i = 0; i < satir.length; i++) { const c = satir[i]; if (q) { if (c === '"' && satir[i + 1] === '"') { cur += '"'; i++; } else if (c === '"') q = false; else cur += c; } else if (c === '"') q = true; else if (c === ',') { d.push(cur); cur = ''; } else cur += c; }
+    d.push(cur);
+    return d[ki];
+  };
+  const sagaU = +sutun(fu, 'DIREK', 'SAGA'), yukariU = +sutun(fu, 'DIREK', 'YUKARI');
   assert.ok(Math.abs(sagaU - e2) < 0.0011 && Math.abs(yukariU - n2) < 0.0011, 'UTM: SAGA / YUKARI sütunları geometriyle aynı: ' + sagaU + ' ' + yukariU + ' ↔ ' + e2 + ' ' + n2);
-  const uzU = +sondan(fu[base + '_HAT.mid'], 2), uz0 = +sondan(files[base + '_HAT.mid'], 2);
-  assert.ok(Math.abs(uzU - uz0 * 0.9996) < 0.02 && sondan(fu[base + '_HAT.mid'], 1) === sondan(files[base + '_HAT.mid'], 1), 'UTM: çizim uzunluğu yeni sistemde, metraj değişmez');
+  const uzU = +sutun(fu, 'HAT', 'UZUNLUK'), uz0 = +sutun(files, 'HAT', 'UZUNLUK');
+  assert.ok(uz0 > 0 && Math.abs(uzU - uz0 * 0.9996) < 0.02 && sutun(fu, 'HAT', 'METRAJ') === sutun(files, 'HAT', 'METRAJ'), 'UTM: çizim uzunluğu yeni sistemde, metraj değişmez: ' + uz0 + ' → ' + uzU);
   // Teslim paketi: HARITA klasöründe KMZ ve MIF/MID
   const [pk] = await exportFormat(ps, 'package');
   const pf = Object.keys(await unzip(pk.data));
-  assert.ok(pf.some((n) => /\/HARITA\/.*\.kmz$/.test(n)) && pf.some((n) => /\/HARITA\/mif\/.*_ELEMAN\.mif$/.test(n)), 'paket: KMZ ve MIF');
+  assert.ok(pf.some((n) => /\/HARITA\/.*\.kmz$/.test(n)) && pf.some((n) => /\/HARITA\/mif\/.*_DIREK\.mif$/.test(n)), 'paket: KMZ ve MIF');
 });

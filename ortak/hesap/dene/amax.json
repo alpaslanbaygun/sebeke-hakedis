@@ -9,7 +9,7 @@
         "kaynak": "telefon",
         "proje": {
           "ad": "Deneme Köyü ENH Projesi",
-          "yapan": "Ayşe Deneme",
+          "yapan": "Deneme Hazırlayan",
           "unvan": "Elektrik Mühendisi",
           "buzBolgesi": "2"
         },
@@ -139,7 +139,7 @@
         "kaynak": "autocad",
         "proje": {
           "ad": "Deneme Mahallesi Deplase",
-          "yapan": "Mehmet Örnek",
+          "yapan": "Sınama Mühendis",
           "unvan": "Elektrik Mühendisi",
           "buzBolgesi": "3"
         },
@@ -328,7 +328,7 @@
         "kaynak": "telefon",
         "proje": {
           "ad": "Deneme Çift Devre",
-          "yapan": "Ayşe Deneme",
+          "yapan": "Deneme Hazırlayan",
           "unvan": "Elektrik Mühendisi",
           "buzBolgesi": "4"
         },
@@ -404,7 +404,7 @@
         "kaynak": "telefon",
         "proje": {
           "ad": "Deneme",
-          "yapan": "Ayşe Deneme",
+          "yapan": "Deneme Hazırlayan",
           "unvan": "Elektrik Mühendisi",
           "buzBolgesi": "2"
         },
