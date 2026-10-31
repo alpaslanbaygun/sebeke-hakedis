@@ -48,6 +48,9 @@ deneme `ortak/deneme/cbs`: eklenti (`CbsOrtakDeneme`) ve telefon (`tests/cbs.tes
 dosyaları üretir; eklentinin KML / MIF yazımı değişirse önce eklenti denemesi bozulur, beklenenler `CekirdekTest cbs
 <klasör>` ile yeniden yazılır, telefon da aynı değişikliği alır. **Altlıklar**: Esri (ArcGIS anahtarı), Bing (kurumsal
 anahtar, meta veriyle), Azure Maps (uydu, yol); özel adreste `{q}`. WebView kimliği `SebekeM/<sürüm>`.
+Aynı gün eklenti oturumunun `cbs-uyum` dalı (CBS eleman türüne göre katmanlar + malzeme tablosu, CBS'den şebeke nesnesi
+alma, hat yazıları ortalı / sığdırılmış, simge ve yazı boyutları, Hat Değiştir) bu dala katıldı (`5de1b9b`): `main`'e
+alınırken ikisi birlikte gider; `cbs-uyum`'da sonradan yapılanlar için önce bu dal oraya katılır.
 
 29.10 (`cizim-duzeltmeleri` dalı; kullanıcının 13 maddelik listesi): çizimde yazılar hattın renginde ve **Tahoma**;
 metraj yalnız açıklık başına (iki direk / iki SDK arası; elemansız kırılma köşesinde bölünmez), etikette metraj ve
