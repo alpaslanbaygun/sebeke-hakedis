@@ -913,7 +913,8 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
  */
 async function ilkMetrajlariSakla(ps, hatIdleri) {
   if (!hatIdleri.length) return;
-  const sp = sebekeModel(ps);
+  let sp;
+  try { sp = sebekeModel(ps); } catch (e) { return; } // hesaplanamazsa hatlar telefonun metrajıyla döner (eski davranış)
   const parcalar = new Map();
   for (const h of sp.hatlar) {
     if (!h.telefonId) continue;
