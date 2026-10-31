@@ -146,6 +146,18 @@ namespace SebekeHakedis.PencereTest
                 Resim(f, "sonra");
             });
 
+            // Hat Değiştir: pencere hattın şimdiki iletkeniyle açılır, başlık ve düğme "değiştir"
+            Dene("03d-hat-degistir", () =>
+            {
+                var simdiki = o.Katalog.HatKesitleri("AG_HAVAI").Find(x => x.Tanim == "3X50/16+70 ALPEK");
+                var s = Pencereler.Hat(o, new HatSecimi { Tur = "AG_HAVAI", Durum = "M", Hakedis = 1, Iletkenleri = { new HatIletkeni(simdiki) } }, 3);
+                Esit("3X50/16+70 ALPEK", s?.Kesit?.Tanim, "hat değiştir: hattın şimdiki iletkeniyle açılır");
+            }, f =>
+            {
+                Esit("Hat değiştir", f.Text, "hat değiştir: pencere başlığı");
+                Esit(true, Bul<KoyuDugme>(f, d => d.Text == "Değiştir") != null, "hat değiştir: Değiştir düğmesi");
+            });
+
             // Müşterek hat: OG ve AG iletken birlikte gelir
             Dene("03b-hat-musterek", () =>
             {

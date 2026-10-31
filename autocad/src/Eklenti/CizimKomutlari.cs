@@ -369,6 +369,92 @@ namespace SebekeHakedis.Eklenti
             });
         }
 
+        // ================= SH_HATDEGISTIR: çizilmiş hattın iletkeni =================
+
+        /// <summary>
+        /// Çizilmiş hatların iletkenini (tip, cins), türünü, durumunu ve hakedişini değiştirir: hatlar seçilir (önceden
+        /// seçilmişse onlar), Hat penceresi ilk hattın şimdiki bilgisiyle açılır; HAT satırları yeni iletkenle yeniden
+        /// yazılır, katman, renk, kablo tipi yazısı ve metraj yazıları güncellenir. Diğer malzemelere dokunulmaz.
+        /// </summary>
+        [CommandMethod("SH_HATDEGISTIR", CommandFlags.Modal | CommandFlags.UsePickSet)]
+        public void HatDegistir()
+        {
+            var belge = AcApp.DocumentManager.MdiActiveDocument;
+            if (belge == null) return;
+            Komutlar.Calistir("Hat değiştirme", () =>
+            {
+                var o = Ortam.Hazirla(belge);
+                var ed = o.Ed;
+                ObjectId[] idler = null;
+                var onceden = ed.SelectImplied();
+                if (onceden.Status == PromptStatus.OK && onceden.Value != null) idler = onceden.Value.GetObjectIds();
+                if (idler == null || idler.Length == 0)
+                {
+                    var pso = new PromptSelectionOptions { MessageForAdding = "\nİletkeni değişecek hatları seçin: " };
+                    var filtre = new SelectionFilter(new[] { new TypedValue((int)DxfCode.Start, "LWPOLYLINE,POLYLINE,LINE") });
+                    var r = ed.GetSelection(pso, filtre);
+                    if (r.Status != PromptStatus.OK) return;
+                    idler = r.Value.GetObjectIds();
+                }
+                var secilen = new List<KeyValuePair<ObjectId, Hat>>();
+                int kilitli = 0;
+                foreach (var id in idler)
+                {
+                    var h = o.Proje.Hatlar.Find(x => string.Equals(x.Id, id.Handle.ToString(), StringComparison.OrdinalIgnoreCase));
+                    if (h == null) continue;
+                    if (o.Kilitli(h.Hakedis)) { kilitli++; continue; }
+                    secilen.Add(new KeyValuePair<ObjectId, Hat>(id, h));
+                }
+                if (kilitli > 0) ed.WriteMessage("\n" + kilitli + " hat onaylı (kilitli) hakedişte; değiştirilmez.");
+                if (secilen.Count == 0) { ed.WriteMessage("\nSeçimde değiştirilecek şebeke hattı yok (kanal ve sondaj için Malzeme komutunu kullanın)."); return; }
+                var secim = Pencereler.Hat(o, SimdikiSecim(o, secilen[0].Value), secilen.Count);
+                if (secim == null) return;
+                o.AyarKaydet();
+                int yazilan = 0;
+                using (var tr = o.Db.TransactionManager.StartTransaction())
+                {
+                    var y = Yazici(o, tr);
+                    foreach (var kv in secilen)
+                    {
+                        var h = kv.Value;
+                        string eskiDurum = h.Durum, eskiEtiket = NesneYazici.HatEtiketi(h);
+                        int eskiHakedis = h.Hakedis;
+                        var yedek = h.Kalemler.ConvertAll(k => k.Kopya());
+                        string eskiTur = h.Tur, eskiKesit = h.AnaKesit, eskiKatman = h.Katman;
+                        try
+                        {
+                            double L = h.CizimUzunlugu > 0 ? h.CizimUzunlugu : Uzunluk(h.Kose.ConvertAll(k => new Point3d(k[0], k[1], 0)));
+                            double m = Iletkenler.Degistir(h, secim.Tur, secim.Iletkenleri, secim.Durum, secim.Hakedis,
+                                                           tur => o.Ayar.HatMetraji(L, tur), o.YeniSira, o.Ayar.Karakteristik, o.Ayar.Koy);
+                            NesneyiYaz(o, y, kv.Key, h, eskiDurum, eskiHakedis);
+                            yazilan++;
+                            ed.WriteMessage("\n" + eskiEtiket + "  →  " + NesneYazici.HatEtiketi(h) + "  (metraj " + Metraj.Yazi(m) + " m)");
+                        }
+                        catch (System.Exception ex)
+                        {
+                            h.Kalemler = yedek; h.Tur = eskiTur; h.AnaKesit = eskiKesit; h.Durum = eskiDurum; h.Hakedis = eskiHakedis; h.Katman = eskiKatman;
+                            y.Uyarilar.Add(eskiEtiket + " değiştirilemedi (katmanı kilitli olabilir): " + ex.Message);
+                        }
+                    }
+                    tr.Commit();
+                    UyarilariYaz(ed, y);
+                }
+                ed.WriteMessage("\n" + yazilan + " hattın iletkeni değiştirildi. Metrajı değiştirmek için: Metraj (SH_METRAJ).");
+            });
+        }
+
+        /// <summary>Hattın şimdiki seçimi (Hat Değiştir penceresi bununla açılır): tür, HAT satırlarının iletkenleri ve adetleri, durum, hakediş.</summary>
+        private static HatSecimi SimdikiSecim(Ortam o, Hat h)
+        {
+            var s = new HatSecimi { Tur = h.Tur, Durum = string.IsNullOrEmpty(h.Durum) ? "M" : h.Durum, Hakedis = h.Hakedis > 0 ? h.Hakedis : o.Hakedis };
+            foreach (var k in Iletkenler.HatKalemleri(h))
+            {
+                var kk = o.Katalog.Bul(k.Cins, k.Tanim);
+                if (kk != null && s.Iletkenleri.Count < 2) s.Iletkenleri.Add(new HatIletkeni(kk, Iletkenler.Adet(k)));
+            }
+            return s;
+        }
+
         /// <summary>
         /// Hat çizme döngüsü — parçalı hat (node-to-node): hat her direkte / SDK'da biter ve yeniden başlar; her parça ayrı
         /// nesne, metrajı ve etiketi kendine ait. Direksiz köşe noktaları parçanın içinde kalır.

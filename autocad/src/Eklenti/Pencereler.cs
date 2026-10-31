@@ -837,12 +837,17 @@ namespace SebekeHakedis.Eklenti
             return en;
         }
 
-        public static HatSecimi Hat(OrtamVerisi o, HatSecimi onceki)
+        /// <summary>
+        /// Hat seçimi: tür, iletkenler (iki yuva), durum, hakediş. degisecek &gt; 0: Hat Değiştir (SH_HATDEGISTIR) — çizilmiş
+        /// o kadar hattın iletkeni değişir; pencere önceki (hattın şimdiki) seçimiyle açılır.
+        /// </summary>
+        public static HatSecimi Hat(OrtamVerisi o, HatSecimi onceki, int degisecek = 0)
         {
             Hazirla();
-            using (var f = new KoyuPencere("Hat çiz", 920, 660, Boya.Simge("hat_havai", KoyuRenk.Yesil, 20)))
+            bool degistir = degisecek > 0;
+            using (var f = new KoyuPencere(degistir ? "Hat değiştir" : "Hat çiz", 920, 660, Boya.Simge("hat_havai", KoyuRenk.Yesil, 20)))
             {
-                var alt = AltKur(f, "Çiz");
+                var alt = AltKur(f, degistir ? "Değiştir" : "Çiz");
                 int icSon = f.IcerikSonu - 16;
 
                 var tur = Koy(f, new SimgeListesi(), 16, 56, 196, icSon - 56);
@@ -871,7 +876,9 @@ namespace SebekeHakedis.Eklenti
                 Etiket(f, "Hakediş", 604, y);
                 var hak = Koy(f, new SayiKutusu(1, 999, onceki != null ? onceki.Hakedis : o.Hakedis), 604, y + 20, 120, 30);
                 y += 62;
-                const string normal = "Hat her direkte, SDK'da biter, yeni parça başlar; her parçaya hat bilgisi yazılır.";
+                string normal = degistir
+                    ? "Seçilen " + degisecek + " hattın iletkeni (tip, cins), türü, durumu ve hakedişi değişir; çizgiler yerinde kalır, metraj korunur (tür değişirse yeni türün metrajı)."
+                    : "Hat her direkte, SDK'da biter, yeni parça başlar; her parçaya hat bilgisi yazılır.";
                 var bilgi = Koy(f, new BilgiCubugu(BilgiTuru.Bilgi, normal), 604, y, 300, Math.Max(52, icSon - y));
 
                 var suzgec = onceki != null ? onceki.Cinsler : new List<string>();
@@ -889,7 +896,7 @@ namespace SebekeHakedis.Eklenti
                 {
                     var t = seciliTur();
                     var hs = new HatSecimi { Iletkenleri = iletkenler() };
-                    alt.Ozet.Text = "Çizilecek: " + (t != null ? t.Ad : "?") + " · " + (hs.Iletkenleri.Count > 0 ? MalzemeYazimi.Duzelt(hs.IletkenYazisi) : "iletken seçin") + " · " + durum.Secili + " · " + (int)hak.Value + ". hakediş";
+                    alt.Ozet.Text = (degistir ? "Yeni: " : "Çizilecek: ") + (t != null ? t.Ad : "?") + " · " + (hs.Iletkenleri.Count > 0 ? MalzemeYazimi.Duzelt(hs.IletkenYazisi) : "iletken seçin") + " · " + durum.Secili + " · " + (int)hak.Value + ". hakediş";
                     alt.Ozet.Simge = t != null ? TurSimgesi(t.Kod, true, false, 18) : null;
                 };
                 var kilitDenetle = KilitBagla(o, hak, bilgi, alt.Tamam, normal);

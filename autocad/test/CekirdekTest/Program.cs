@@ -1218,8 +1218,40 @@ namespace SebekeHakedis.Test
                  "eski proje dosyasındaki kodlar yeni kodla okunur");
             int sira = 7000;
             Func<string> yeniSira = () => (++sira).ToString(CultureInfo.InvariantCulture);
+
             var arm = k.Bul("ARMATÜR", "70W Sodyum Arm.");
             Esit(true, arm != null, "katalog: armatür kalemi");
+
+            // Hat Değiştir (SH_HATDEGISTIR): çizilmiş hattın iletkeni değişir, diğer malzemeler ve metraj korunur
+            var alpek50 = k.HatKesitleri("AG_HAVAI").Find(x => x.Tanim.Contains("50/16+70") && x.Tanim.ToUpperInvariant().Contains("ALPEK"));
+            var alpek70 = k.HatKesitleri("AG_HAVAI").Find(x => x.Tanim.Contains("70/16+95") && x.Tanim.ToUpperInvariant().Contains("ALPEK"));
+            var nyy = k.Bul("AG_ALÜMİNYUM_KABLO", "3x95+50 Nyy Alm.");
+            Esit(true, alpek50 != null && alpek70 != null && nyy != null, "katalog: ALPEK 3x50, 3x70 ve NYY kabloları");
+            var dh = new Hat { Id = "HD1", Tur = "AG_HAVAI", Durum = "M", Hakedis = 1, Katman = "SC_1.HAK.AG_HAT", CizimUzunlugu = 40 };
+            dh.Kose.Add(new[] { 0.0, 0.0 }); dh.Kose.Add(new[] { 40.0, 0.0 });
+            dh.Kalemler.Add(Katalog.KalemYap(arm, 2, "M", 1, false, "MALZEME", "6990"));
+            dh.Kalemler.AddRange(Iletkenler.Kalemler(new[] { new HatIletkeni(alpek50) }, 42, "M", 1, () => "6991", "", false));
+            dh.Kalemler.Add(Katalog.KalemYap(arm, 1, "M", 1, false, "MALZEME", "6992"));
+            dh.Kalemler[1].Miktar = 45; // elle düzeltilmiş metraj
+            dh.AnaKesit = alpek50.Tanim;
+            double dm = Iletkenler.Degistir(dh, "AG_HAVAI", new[] { new HatIletkeni(alpek70) }, "M", 1, t => 99, yeniSira, "", false);
+            Esit(45.0, dm, "hat değiştir: aynı türde metraj korunur");
+            Esit(3, dh.Kalemler.Count, "hat değiştir: satır sayısı aynı, diğer malzemelere dokunulmaz");
+            Esit(alpek70.Tanim + "|HAT|6991|45", dh.Kalemler[1].Tanim + "|" + dh.Kalemler[1].Kaynak + "|" + dh.Kalemler[1].Sira + "|" + dh.Kalemler[1].Miktar,
+                 "hat değiştir: yeni iletken eski satırın yerinde, sıra numarası korunur");
+            Esit(alpek70.Tanim, dh.AnaKesit, "hat değiştir: ana kesit");
+            Esit("SC_1.HAK.AG_HAT", dh.Katman, "hat değiştir: tür aynıysa katman korunur");
+            Esit(true, NesneYazici.HatEtiketi(dh).Contains("70/16+95"), "hat değiştir: kablo tipi yazısı yeni iletkenle (" + NesneYazici.HatEtiketi(dh) + ")");
+            dm = Iletkenler.Degistir(dh, "AG_YERALTI", new[] { new HatIletkeni(nyy, 2) }, "DM+M", 2, t => t == "AG_YERALTI" ? 43 : 0, yeniSira, "", false);
+            Esit("43|86|2x(3x95+50 Nyy Alm.)|DM+M|2", dm + "|" + dh.Kalemler[1].Miktar + "|" + dh.Kalemler[1].Aciklama + "|" + dh.Kalemler[1].Durum + "|" + dh.Kalemler[1].Hakedis,
+                 "hat değiştir: tür değişince yeni türün metrajı; adet × metraj, durum, hakediş");
+            Esit("|AG_YERALTI|DM+M|2", dh.Katman + "|" + dh.Tur + "|" + dh.Durum + "|" + dh.Hakedis, "hat değiştir: tür değişince katman yeniden belirlenir");
+            Esit(true, NesneYazici.Hat(dh, "SC", null).Katman.Contains("1.HAK") == false, "hat değiştir: yeni katman yeni hakedişte (" + NesneYazici.Hat(dh, "SC", null).Katman + ")");
+            dm = Iletkenler.Degistir(dh, "AG_YERALTI", new[] { new HatIletkeni(alpek50), new HatIletkeni(nyy) }, "M", 2, null, yeniSira, "", false);
+            Esit("4|HAT|HAT|MALZEME", dh.Kalemler.Count + "|" + dh.Kalemler[1].Kaynak + "|" + dh.Kalemler[2].Kaynak + "|" + dh.Kalemler[3].Kaynak,
+                 "hat değiştir: iki iletken iki satır (eski sıra, sonra yeni sıra numarası)");
+            Esit(true, dh.Kalemler[2].Sira == "7001" || dh.Kalemler[2].Sira == "7002", "hat değiştir: fazla satıra yeni sıra numarası (" + dh.Kalemler[2].Sira + ")");
+
             var adirek = new Eleman { Id = "D5", Tur = "AG_DIREK", Cins = "AG_BETON", Tip = "9,3/2", Durum = "M", Hakedis = 1 };
             adirek.Kalemler.Add(new Kalem { Cins = "AG_BETON", Tanim = "9,3/2", Durum = "M", Ana = true, Kaynak = "NIT", Miktar = 1 });
             Esit("", NesneYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null).Armatur, "armatür: malzemesi yoksa simge yok");
