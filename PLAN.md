@@ -43,7 +43,7 @@
 - **Şebeke-M** (19.10.2026): ürün adı ve logosu her yerde; eski programın ve dağıtım şirketinin adı kullanıcıya görünen
   hiçbir yerde geçmez. Harita altlıkları kullanım koşullarına göre (anahtarsız ücretsizler; anahtarlılar kullanıcı
   anahtarıyla).
-- **Hesap Merkezi** (19.10.2026): Baki SONAY'ın hesap araçları formülleri değiştirilmeden, ortak koyu temayla ve tek
+- **Hesap Merkezi** (19.10.2026): hesap araçları formülleri değiştirilmeden, ortak koyu temayla ve tek
   üst çubukla telefona ve AutoCAD'e bağlandı. Kural: projede olan bilgi hesaba kendiliğinden yazılır, olmayan tahminle
   doldurulmaz (turuncu çerçeve, elle giriş); karar yalnız girdiler tamken verilir, aksi "bilgi". Sonuç projeye /
   çizime kaydedilir, proje değişince "güncel değil". AutoCAD'de sayfalar yerel sunucudan Edge uygulama penceresinde

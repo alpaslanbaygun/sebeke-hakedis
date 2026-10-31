@@ -1,7 +1,7 @@
 > **Not (17.10.2026):** Bu dosya Şebeke-M telefon uygulamasının eski deposundan geldi; tarihçe, kararlar ve açık işler için
 > saklanır. Uygulama artık **Şebeke Hakediş** deposunun `telefon/` klasöründedir; güncel durum ve kurallar depo
 > kökündeki `DEVIR.md`'de, AutoCAD ile birlikte kullanım `KULLANIM.md`'de. Aşağıdaki "yeni hesapta başlarken"
-> adımları ve `alpaslanbaygun/volt-edas-saha` deposu artık geçerli değil.
+> adımları ve eski telefon deposu artık geçerli değil.
 
 # Şebeke-M — Devam notu (yeni Claude hesabı için)
 
@@ -12,7 +12,7 @@ Son durum: **sürüm 2.4.0** (6 Ekim 2026). Telefon uygulaması (APK) 2.4.0; ofi
 ## Yeni hesapta başlarken
 
 1. Yeni Claude hesabında bir proje açın (ör. "EDŞ-GNSS") ve bu dosyayı projeye belge olarak ekleyin.
-2. GitHub bağlantısını açın ve `alpaslanbaygun/volt-edas-saha` deposunu oturuma tanıtın. Kod, sürüm geçmişi ve bu not oradadır.
+2. GitHub bağlantısını açın ve uygulamanın deposunu oturuma tanıtın. Kod, sürüm geçmişi ve bu not oradadır.
 3. Google Drive bağlantısını açın. Kurulum dosyaları ve kılavuz: Drive › Claude Çalışmaları › 07 Şebeke-M Uygulaması.
 4. Claude'a şunu yazmanız yeterli: "DEVAM-NOTU.md dosyasını oku, Şebeke-M projesine kaldığımız yerden devam edelim."
 
@@ -24,7 +24,7 @@ Eski hesapta kalanlar (yeni hesaptan erişilemez, kopyaları buraya alındı):
 
 ## Kullanıcı ve çalışma kuralları
 
-- Kullanıcı: Alpaslan, Elazığ; elektrik mühendisliği alanında çalışıyor. Yazılım bilgisi yok: açıklamalar Türkçe, kısa, teknik terimsiz, adım adım.
+- Kullanıcı elektrik mühendisliği alanında çalışıyor. Yazılım bilgisi yok: açıklamalar Türkçe, kısa, teknik terimsiz, adım adım.
 - İngilizce metinlerin Türkçesi de verilmeli (ör. yabancı firmaya e-posta).
 - Çalışan mevcut özellikleri ve hesapları bozma. Büyük değişiklikten önce geri dönüş noktası (git etiketi + önceki APK) bırak.
 - Kullanıcının ilgisi olmayan bir firmanın adı/markası hiçbir çıktıda, belgede, kayıt anahtarında geçmemeli. Adı bu dosyaya bile yazılmadı; yeni hesapta ilk iş kullanıcıya sorup Claude hafızasına kaydettirin.

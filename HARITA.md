@@ -1,7 +1,7 @@
 # Kod haritası
 
 Otomatik üretilir, elle düzenlenmez: `python3 araclar/kod-haritasi/kod_haritasi.py` (307 dosya · 31 AutoCAD komutu ·
-1.277 bağ). Dosya, komut ya da konu ararken önce burada arayın (`grep -i "kelime" HARITA.md`).
+1.278 bağ). Dosya, komut ya da konu ararken önce burada arayın (`grep -i "kelime" HARITA.md`).
 Bağlar dosyaların içinden çıkarılır: içe aktarma, tür kullanımı, komut tanımı, belge bağlantısı, dosya / tür adı
 anma. Ad anmasına dayanan birkaç bağ yanlış olabilir; bir dosyayı değiştirmeden önce kendisini okuyun.
 
@@ -38,7 +38,7 @@ değiştirin ve iki tarafın denemelerini çalıştırın (`CekirdekTest`, `tele
 
 ## 2. Değişince en çok yeri etkileyenler
 
-Kod (bağ sayısı): `autocad/src/Eklenti/Serit.cs` 44, `autocad/src/Eklenti/CizimKomutlari.cs` 43, `autocad/test/CekirdekTest/Program.cs` 42, `autocad/src/Cekirdek/Model.cs` 36, `autocad/src/Cekirdek/KomutRehberi.cs` 34, `autocad/src/Cekirdek/Turler.cs` 33, `autocad/src/Eklenti/Komutlar.cs` 30, `autocad/src/Eklenti/Pencereler.cs` 29, `telefon/web/src/core/schema.js` 27, `autocad/test/PencereTest/Program.cs` 26, `autocad/src/Cekirdek/SayiCoz.cs` 24, `autocad/src/Eklenti/OrtamVerisi.cs` 23.
+Kod (bağ sayısı): `autocad/src/Eklenti/Serit.cs` 44, `autocad/src/Eklenti/CizimKomutlari.cs` 43, `autocad/test/CekirdekTest/Program.cs` 42, `autocad/src/Cekirdek/Model.cs` 36, `autocad/src/Cekirdek/Turler.cs` 34, `autocad/src/Cekirdek/KomutRehberi.cs` 34, `autocad/src/Eklenti/Komutlar.cs` 30, `autocad/src/Eklenti/Pencereler.cs` 29, `telefon/web/src/core/schema.js` 27, `autocad/test/PencereTest/Program.cs` 26, `autocad/src/Cekirdek/SayiCoz.cs` 24, `autocad/src/Eklenti/OrtamVerisi.cs` 23.
 
 Belgeler (kodu en çok anan; kod değişince bakılır): `DEVIR.md` 74, `README.md` 36, `KULLANIM.md` 35, `autocad/paket/OKUBENI.txt` 32, `ortak/VERI-MODELI.md` 22.
 
@@ -98,7 +98,7 @@ dosyada geçmez (Android ayarları gibi bazıları yine de kullanılır).
 - `autocad/src/Cekirdek/CadVarlik.cs` — AutoCAD çiziminden toplanan tek bir nesnenin yalın hâli. Eklenti çizimi bu biçime çevirir; çekirdek… · 238 satır · 13 bağ · Json.cs, Program.cs, NesneYazici.cs
 - `autocad/src/Cekirdek/CbsYapisi.cs` — CBS dosyasındaki bir sütun (öznitelik). · 236 satır · 10 bağ · KmlYazici.cs, Model.cs, Turler.cs
 - `autocad/src/Cekirdek/CizimAyarlari.cs` — Metraj ve hacim kuralları (telefondaki hatMetraji / kanalHacmi ile aynı). · 164 satır · 12 bağ · Program.cs, Model.cs, CizimKomutlari.cs
-- `autocad/src/Cekirdek/CizimStili.cs` — Bir katman anahtarının stili (ortak/katalog/cizim-stili.json › katmanlar). · 317 satır · 15 bağ · CizimYazici.cs, Program.cs, Json.cs
+- `autocad/src/Cekirdek/CizimStili.cs` — Bir katman anahtarının stili (ortak/katalog/cizim-stili.json › katmanlar). · 317 satır · 16 bağ · CizimYazici.cs, Program.cs, Json.cs
 - `autocad/src/Cekirdek/DetaySorgu.cs` — Eksik malzeme sorgusunun süzgeçleri. Boş alan: hepsi. · 132 satır · 11 bağ · Model.cs, Pencereler.cs, Program.cs
 - `autocad/src/Cekirdek/DurumTespit.cs` — DURUM TESPİT sayfasının bir satırı (AutoCAD raporuyla aynı sütunlar). · 204 satır · 11 bağ · Model.cs, Program.cs, SayiCoz.cs
 - `autocad/src/Cekirdek/Geometri.cs` — Çizginin uzunluğunun yarısındaki nokta. · 229 satır · 17 bağ · Model.cs, dxf.js, Program.cs
@@ -120,7 +120,7 @@ dosyada geçmez (Android ayarları gibi bazıları yine de kullanılır).
 - `autocad/src/Cekirdek/MifDosyasi.cs` — MIF dosyasından okunan bir nesne (geometri, stil rengi, MID satırı). · 696 satır · 7 bağ · CbsKomutlari.cs, CbsYapisi.cs, Program.cs
 - `autocad/src/Cekirdek/Model.cs` — Bir poz satırı: bir nesneye bağlı malzeme ya da iş kalemi. · 192 satır · 36 bağ · Aktarim.cs, CbsYapisi.cs, CizimKomutlari.cs
 - `autocad/src/Cekirdek/NesneOkuyucu.cs` — AutoCAD eklentisiyle hazırlanmış bir çizimi ortak proje modeline çevirir. AutoCAD veriyi nesnelerin… · 417 satır · 19 bağ · Model.cs, Geometri.cs, CadVarlik.cs
-- `autocad/src/Cekirdek/NesneYazici.cs` — Proje modelinden çizim nesnelerinin tarifini (CadVarlik) üretir: katman, blok, öznitelikler, köşele… · 452 satır · 22 bağ · Model.cs, Program.cs, CizimKomutlari.cs
+- `autocad/src/Cekirdek/NesneYazici.cs` — Proje modelinden çizim nesnelerinin tarifini (CadVarlik) üretir: katman, blok, öznitelikler, köşele… · 457 satır · 22 bağ · Model.cs, Program.cs, CizimKomutlari.cs
 - `autocad/src/Cekirdek/NoktaDosyasi.cs` — Ölçü noktası dosyası okuyucu (CSV / TXT). Telefonun "Noktalar (CSV)" çıktısını ve yaygın "Ad, Y, X,… · 151 satır · 4 bağ · SayiCoz.cs, Model.cs, CizimKomutlari.cs
 - `autocad/src/Cekirdek/Numara.cs` — GIS numarası ve kalem sırası (telefondaki sonrakiGis / enBuyukSira ile aynı kurallar). · 56 satır · 6 bağ · Model.cs, Program.cs, CizimKomutlari.cs
 - `autocad/src/Cekirdek/ProjeDosyasi.cs` — Ortak proje dosyası (.sebeke.json). Telefon ve bilgisayar bu dosyayı okuyup yazar. Biçimin açıklama… · 378 satır · 14 bağ · Json.cs, Model.cs, Program.cs
@@ -128,7 +128,7 @@ dosyada geçmez (Android ayarları gibi bazıları yine de kullanılır).
 - `autocad/src/Cekirdek/RaporYazici.cs` — Durum Tespit raporunu Excel dosyası olarak yazar (AutoCAD raporuyla aynı sayfa ve sütunlar). · 205 satır · 13 bağ · Model.cs, DetaySorgu.cs, Hesaplar.cs
 - `autocad/src/Cekirdek/SayiCoz.cs` — AutoCAD verisindeki sayılar Türkçe biçimde yazılır ("16,8", ",00") ama bazı alanlarda nokta da görü… · 42 satır · 24 bağ · CizimAyarlari.cs, NesneOkuyucu.cs, Program.cs
 - `autocad/src/Cekirdek/Semboller.cs` — Sembol geometrisinin bir parçası (ortak/katalog/semboller.json ilkelleri). · 246 satır · 18 bağ · Program.cs, CizimYazici.cs, NesneYazici.cs
-- `autocad/src/Cekirdek/Turler.cs` — Eleman ya da hat türü: kod (veri), ad (ekranda), GIS numarası biçimi. · 93 satır · 33 bağ · Pencereler.cs, CizimKomutlari.cs, CbsYapisi.cs
+- `autocad/src/Cekirdek/Turler.cs` — Eleman ya da hat türü: kod (veri), ad (ekranda), GIS numarası biçimi. · 93 satır · 34 bağ · Pencereler.cs, CizimKomutlari.cs, CbsYapisi.cs
 - `autocad/src/Cekirdek/XlsxYazici.cs` — Excel (.xlsx) dosyası yazan küçük, bağımlılıksız yazıcı. Bilgisayarda Excel kurulu olması gerekmez.… · 307 satır · 3 bağ · RaporYazici.cs, ProjeOzeti.cs, DEVIR.md
 
 ### AutoCAD eklentisi — `autocad/src/Eklenti`
@@ -137,9 +137,9 @@ dosyada geçmez (Android ayarları gibi bazıları yine de kullanılır).
 - `autocad/src/Eklenti/ArayuzSimgeleri.cs` — Arayüz simgeleri (şerit ve pencereler): 24×24 birimlik ince çizgi simgeleri, istenen renkte. "dolu"… · 291 satır · 5 bağ · SeritSimgeleri.cs, KoyuTema.cs, PencereTest.csproj
 - `autocad/src/Eklenti/ArmaturTakibi.cs` — Direk ile armatür simgesi arasındaki bağ (SH_ARM genişletilmiş verisi): direkte [simgenin tanıtıcıs… · 478 satır · 5 bağ · Komutlar.cs, CizimYazici.cs, NesneYazici.cs
 - `autocad/src/Eklenti/CbsKomutlari.cs` — Çizimi başka programlara aktarma: Google Earth (KML / KMZ) ve CBS (MapInfo MIF / MID). Koordinatlar… · 409 satır · 17 bağ · Komutlar.cs, MifDosyasi.cs, Turler.cs
-- `autocad/src/Eklenti/CizimKomutlari.cs` — Çizim araçları: eleman, hat, kanal, sondaj, bölge, nokta alma, malzeme düzenleme, metraj, ayarlar v… · 1.600 satır · 43 bağ · Model.cs, Pencereler.cs, Turler.cs
+- `autocad/src/Eklenti/CizimKomutlari.cs` — Çizim araçları: eleman, hat, kanal, sondaj, bölge, nokta alma, malzeme düzenleme, metraj, ayarlar v… · 1.603 satır · 43 bağ · Model.cs, Pencereler.cs, Turler.cs
 - `autocad/src/Eklenti/CizimSozlugu.cs` — AutoCAD'in çizim sözlüğündeki kayıtlar (Named Objects Dictionary → sözlük → Xrecord, metin değerler… · 183 satır · 4 bağ · CizimKomutlari.cs, Ortam.cs, Komutlar.cs
-- `autocad/src/Eklenti/CizimYazici.cs` — Çekirdeğin ürettiği tarifleri (CadVarlik) çizime yazar: katman, blok, öznitelik, köşe, genişletilmi… · 1.303 satır · 20 bağ · CizimStili.cs, Semboller.cs, NesneYazici.cs
+- `autocad/src/Eklenti/CizimYazici.cs` — Çekirdeğin ürettiği tarifleri (CadVarlik) çizime yazar: katman, blok, öznitelik, köşe, genişletilmi… · 1.391 satır · 20 bağ · CizimStili.cs, Semboller.cs, NesneYazici.cs
 - `autocad/src/Eklenti/Eklenti.csproj` · 74 satır · 3 bağ · autocad.yml, hesap-paketle.mjs, marka-uret.py
 - `autocad/src/Eklenti/HesapMerkezi.cs` — Hesap kayıtlarının çizimde saklanması: Named Objects Dictionary → SEBEKE_HAKEDIS → HESAPLAR → kayıt… · 968 satır · 21 bağ · HesapBaglami.cs, Json.cs, Komutlar.cs
 - `autocad/src/Eklenti/HizliSecim.cs` — Şeritteki hızlı çizimin seçimi: kategori, etkin öğe (ör. AG Havai › AG Direk), öğe başına cins ve t… · 607 satır · 21 bağ · Katalog.cs, Kategoriler.cs, Turler.cs
@@ -195,24 +195,24 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 
 | id | Hesap | Satır: kaynak · uyarlama js / css · dene |
 | --- | --- | --- |
-| `ag-gd` | AG Gerilim Düşümü ve Güç Kaybı Hesabı | 533 · 316 / 64 · 339 |
+| `ag-gd` | AG Gerilim Düşümü ve Güç Kaybı Hesabı | 532 · 316 / 64 · 339 |
 | `ag-kd` | AG Kısa Devre Hesabı Simülatörü | 978 · 294 / 59 · 137 |
-| `amax` | Amax Hesabı — Travers Düzenleri (DfDs0-9) | 702 · 289 / 35 · 471 |
+| `amax` | Amax Hesabı — Travers Düzenleri (DfDs0-9) | 701 · 289 / 35 · 471 |
 | `cu-al` | Bakır Kablo Kesitine Eşdeğer Alüminyum Kablo Kesiti | 275 · 84 / 24 · 31 |
-| `enh-agaw` | ENH ag-aw Bağıntısı Kontrolü | 493 · 428 / 65 · 521 |
-| `enh-sehim` | ENH Sehim Hesabı Simülatörü | 776 · 358 / 78 · 622 |
-| `kanal` | Kanal Planı | 1.745 · 300 / 31 · 48 |
-| `kopma` | İki Misli Buz Yükü — İletken Kopma Hesabı Simülatörü | 548 · 209 / 69 · 462 |
+| `enh-agaw` | ENH ag-aw Bağıntısı Kontrolü | 492 · 428 / 65 · 521 |
+| `enh-sehim` | ENH Sehim Hesabı Simülatörü | 775 · 358 / 78 · 622 |
+| `kanal` | Kanal Planı | 1.744 · 300 / 31 · 48 |
+| `kopma` | İki Misli Buz Yükü — İletken Kopma Hesabı Simülatörü | 543 · 209 / 69 · 462 |
 | `kosk` | Beton Köşk 3B Yerleşim Simülatörü (Monoblok + Prefabrik) | 8.836 · 366 / 68 · 510 |
-| `og-gd` | OG Gerilim Düşümü ve Güç Kaybı Hesabı – TEDAŞ | 469 · 338 / 69 · 416 |
+| `og-gd` | OG Gerilim Düşümü ve Güç Kaybı Hesabı – TEDAŞ | 468 · 338 / 69 · 416 |
 | `og-kd` | OG Kısa Devre Simülatörü v23 | 1.067 · 288 / 54 · 125 |
 | `tepe-tedas` | Tepe Kuvveti Hesabı (TEDAŞ) | 491 · 428 / 44 · 407 |
-| `tepe-vektor` | Cer Vektör Çizimi — Tepe Kuvveti Hesabı | 819 · 370 / 53 · 384 |
-| `uplift` | ENH Uplift Kontrol Simülatörü | 891 · 400 / 109 · 697 |
+| `tepe-vektor` | Cer Vektör Çizimi — Tepe Kuvveti Hesabı | 818 · 370 / 53 · 384 |
+| `uplift` | ENH Uplift Kontrol Simülatörü | 890 · 400 / 109 · 697 |
 
 ### Hesap araçları (özgün) — `ortak/hesap/kaynak`
 
-- `ortak/hesap/kaynak/DEGISIKLIKLER.md` — Hesap araçlarının kaynak kopyalarındaki değişiklikler — Araçlar Elektrik-Elektronik Mühendisi Baki… · 26 satır · 1 bağ · hesap-paketle.mjs
+- `ortak/hesap/kaynak/DEGISIKLIKLER.md` — Hesap araçlarının kaynak kopyalarındaki değişiklikler — Araçlar bir elektrik-elektronik mühendisini… · 26 satır · 1 bağ · hesap-paketle.mjs
 
 ### Ortak katalog ve tablolar — `ortak/katalog`
 
@@ -254,7 +254,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 ### Telefon belgeleri — `telefon/docs`
 
 - `telefon/docs/GNSS-BAGLANTI.md` — GNSS bağlantısı: dosyalar, düzeltme kaynakları, sabit istasyon — Telefon uygulamasının (Şebeke-M) G… · 108 satır · 16 bağ · AndroidManifest.xml, NtripClient.java, NtripTest.java
-- `telefon/docs/KULLANIM-KILAVUZU.md` — Şebeke-M Kullanım Kılavuzu — 6 Ekim 2026 · Alpaslan · 951 satır · 4 bağ · KULLANIM.md, README.md, GNSS-BAGLANTI.md
+- `telefon/docs/KULLANIM-KILAVUZU.md` — Şebeke-M Kullanım Kılavuzu — 6 Ekim 2026 · 951 satır · 4 bağ · KULLANIM.md, README.md, GNSS-BAGLANTI.md
 
 ### Telefon — `telefon/seed`
 
@@ -451,7 +451,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 ### Proje belgeleri — `kök`
 
 - `.gitattributes` · 10 satır · bağsız
-- `DEVIR.md` — Devir notu — Bu proje başka bir hesaba (GitHub ya da Claude) geçerken sohbet geçmişi taşınmaz. Deva… · 244 satır · 74 bağ · HesapMerkezi.cs, HesapSunucu.cs, baglam.js
+- `DEVIR.md` — Devir notu — Bu proje başka bir hesaba (GitHub ya da Claude) geçerken sohbet geçmişi taşınmaz. Deva… · 245 satır · 74 bağ · HesapMerkezi.cs, HesapSunucu.cs, baglam.js
 - `KULLANIM.md` — Şebeke-M — Kullanım Kılavuzu — İki araç var, ikisi aynı proje dosyasını (`.sebeke.json`) kullanır: · 491 satır · 35 bağ · cizim-stili.json, KALDIR.bat, KUR.bat
 - `PLAN.md` — Plan — telefon uygulaması bırakıldı, geri dönüş: `telefon-eski-0.2.3` dalı). Kataloğu TEDAŞ pozları… · 111 satır · 16 bağ · ArayuzSimgeleri.cs, cizim-stili.json, kategoriler.json
 - `README.md` — Şebeke-M — Elektrik dağıtım şebekesi yapım işlerinde saha ölçümü, metraj, hakediş, Durum Tespit rap… · 78 satır · 36 bağ · hesap-dene.py, hesap-paketle.mjs, ortak-tablolar.mjs

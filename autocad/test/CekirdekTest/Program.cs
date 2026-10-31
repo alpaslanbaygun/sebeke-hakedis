@@ -704,7 +704,7 @@ namespace SebekeHakedis.Test
             var k = new HesapKaydi
             {
                 Id = HesapKaydi.YeniKimlik(), Modul = "ag-gd", ModulAdi = "AG Gerilim Düşümü", ModulSurumu = "abc123", HedefTur = "trafo", HedefId = "D1", HedefNo = "SCTR01",
-                HedefHatId = "H14", Ozet = "%1,57 · uygun", Durum = "uygun", ModulDurumu = "{\"kols\":[1,2]}", Tarih = HesapKaydi.Simdi(), Kaynak = "autocad", Yapan = "Ayşe", TelefonId = "tel-1",
+                HedefHatId = "H14", Ozet = "%1,57 · uygun", Durum = "uygun", ModulDurumu = "{\"kols\":[1,2]}", Tarih = HesapKaydi.Simdi(), Kaynak = "autocad", Yapan = "Deneme Kişisi", TelefonId = "tel-1",
             };
             k.HedefParcalar.AddRange(new[] { "H14", "H15" });
             k.Kullanilan["trafo.gucKVA"] = 160.0;
@@ -736,7 +736,7 @@ namespace SebekeHakedis.Test
             Esit(1, volt.Hesaplar.Count, "telefon dosyası (.volt.json): hesap kaydı taşınır");
 
             // Bağlam: telefon projesindeki AG hattı, direk ve trafo
-            var bilgi = new ProjeBilgisi { Ad = "Deneme", Yapan = "Ayşe", BuzBolgesi = "3" };
+            var bilgi = new ProjeBilgisi { Ad = "Deneme", Yapan = "Deneme Kişisi", BuzBolgesi = "3" };
             var direkHedefi = new HesapHedefi { Tur = "direk", Id = "D6" };
             var bd = HesapBaglami.Kur(tp, direkHedefi, bilgi);
             Esit("SC104", direkHedefi.No, "bağlam: direk numarası hedefe yazılır");

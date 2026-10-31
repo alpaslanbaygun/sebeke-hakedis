@@ -439,15 +439,15 @@ test('A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef
   assert.equal(bh.hat.acikliklar.length, 2); assert.equal(Math.round(bh.hat.toplamUzunluk), 80);
   // Kayıt: trafo hedefi + çıkış (hatId); aynı hedefte yeniden kaydetmek üzerine yazar
   const hedef = { tur: 'trafo', id: tr.id, no: tr.no, hatId: agHat.id };
-  const id1 = await hesapKaydet(ps, { modul: 'ag-gd', modulAdi: 'AG Gerilim Düşümü', hedef, ozet: '%1,5', durum: 'uygun', ayrinti: { girdiler: [{ ad: 'Güç', deger: 160, birim: 'kVA' }], degerler: [], uyarilar: [] }, modulDurumu: { a: 1 }, kullanilan: { 'trafo.gucKVA': 160, 'hat.acikliklar[0].uzunluk': bh.hat.acikliklar[0].uzunluk } }, 'Ayşe');
-  const id2 = await hesapKaydet(ps, { modul: 'ag-gd', hedef, ozet: '%1,6', durum: 'uygun', kayitId: '', kullanilan: { 'trafo.gucKVA': 160 } }, 'Ayşe');
+  const id1 = await hesapKaydet(ps, { modul: 'ag-gd', modulAdi: 'AG Gerilim Düşümü', hedef, ozet: '%1,5', durum: 'uygun', ayrinti: { girdiler: [{ ad: 'Güç', deger: 160, birim: 'kVA' }], degerler: [], uyarilar: [] }, modulDurumu: { a: 1 }, kullanilan: { 'trafo.gucKVA': 160, 'hat.acikliklar[0].uzunluk': bh.hat.acikliklar[0].uzunluk } }, 'Deneme Kişisi');
+  const id2 = await hesapKaydet(ps, { modul: 'ag-gd', hedef, ozet: '%1,6', durum: 'uygun', kayitId: '', kullanilan: { 'trafo.gucKVA': 160 } }, 'Deneme Kişisi');
   assert.equal(id1, id2, 'aynı trafo ve çıkış: tek kayıt');
-  await hesapKaydet(ps, { modul: 'ag-gd', hedef: { tur: 'trafo', id: tr.id, no: tr.no }, ozet: 'çıkışsız', durum: 'bilgi', kullanilan: {} }, 'Ayşe');
-  await hesapKaydet(ps, { modul: 'amax', hedef: { tur: 'direk', id: agPts[1].id, no: agPts[1].no }, ozet: 'amax 120 m', durum: 'bilgi', kullanilan: { 'direk.kollar[0].aciklik': 40 } }, 'Ayşe');
+  await hesapKaydet(ps, { modul: 'ag-gd', hedef: { tur: 'trafo', id: tr.id, no: tr.no }, ozet: 'çıkışsız', durum: 'bilgi', kullanilan: {} }, 'Deneme Kişisi');
+  await hesapKaydet(ps, { modul: 'amax', hedef: { tur: 'direk', id: agPts[1].id, no: agPts[1].no }, ozet: 'amax 120 m', durum: 'bilgi', kullanilan: { 'direk.kollar[0].aciklik': 40 } }, 'Deneme Kişisi');
   assert.equal(hesapKayitlari(ps).length, 3, 'trafo (çıkışlı), trafo (çıkışsız), direk');
   assert.ok(kayitBul(ps, 'ag-gd', hedef) && kayitBul(ps, 'ag-gd', hedef).ozet === '%1,6');
   assert.ok(kayitBul(ps, 'ag-gd', { tur: 'trafo', id: tr.id, no: tr.no }).ozet === 'çıkışsız', 'çıkışsız kayıt ayrı');
-  const g = guncellik(ps, kayitBul(ps, 'ag-gd', hedef), 'Ayşe');
+  const g = guncellik(ps, kayitBul(ps, 'ag-gd', hedef), 'Deneme Kişisi');
   assert.equal(g.farklar.length, 0, 'kayıt güncel');
   // Dosyaya: hedef kimlikleri dosyadaki kimliklere, çıkış ilk parçaya; telefonId taşınır
   const sp = sebekeModel(ps);
@@ -456,7 +456,7 @@ test('A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef
   const trEl = sp.elemanlar.find((e) => e.telefonId === tr.id);
   assert.equal(hk.hedef.id, trEl.id, 'trafo hedefi dosyadaki eleman kimliğiyle');
   assert.ok(sp.hatlar.some((h) => h.id === hk.hedef.hatId && h.telefonId === agHat.id), 'çıkış hattı dosyadaki parça kimliğiyle');
-  assert.equal(hk.telefonId, id1); assert.equal(hk.kaynak, 'telefon'); assert.equal(hk.yapan, 'Ayşe');
+  assert.equal(hk.telefonId, id1); assert.equal(hk.kaynak, 'telefon'); assert.equal(hk.yapan, 'Deneme Kişisi');
   const dk = sp.hesaplar.find((h) => h.modul === 'amax');
   assert.equal(dk.hedef.id, sp.elemanlar.find((e) => e.telefonId === agPts[1].id).id);
   const metin = SH.projeYaz(sp);

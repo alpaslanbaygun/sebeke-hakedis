@@ -72,7 +72,7 @@ export function HesapMerkeziScreen({ hedef }) {
         <span class="grow" style="min-width:0"><b style="display:block">${m.ad || k.modulAdi}</b><span class="mono" style="font-size:12px;color:#ff8a8a">${(HEDEF_ADI[(k.hedef || {}).tur] || '') + ((k.hedef || {}).no ? ' ' + k.hedef.no : '') + ((k.hedef || {}).hatId ? ' · çıkış ' + (((ps.lineById(k.hedef.hatId) || {}).lineNo) || '?') : '')}</span>
         <span class="note" style="display:block">${k.ozet}</span><span class="note" style="display:block">${tarihYaz(k.tarih)} · ${k.kaynak === 'autocad' ? 'AutoCAD' : 'telefon'}${k.yapan ? ' · ' + k.yapan : ''}</span></span>
         <${KayitRozeti} k=${k} /></button>`; })}</div></div>` : html`<${Empty}>Henüz kayıtlı hesap yok. Bir hesabı açıp üstteki <b>Kaydet</b> ile projeye kaydedin.</${Empty}>`}
-    <div class="note" style="margin:12px 2px">Hesap araçları: Elektrik-Elektronik Mühendisi Baki SONAY. Formüller ve tablolar değiştirilmeden Şebeke-M'e eklenmiştir; her hesabın içindeki ⓘ düğmesi kaynak ve bilinen sınırları gösterir.</div>`;
+    <div class="note" style="margin:12px 2px">Hesap araçlarının formülleri ve tabloları değiştirilmeden Şebeke-M'e eklenmiştir; her hesabın içindeki ⓘ düğmesi kaynak ve bilinen sınırları gösterir.</div>`;
 }
 HesapMerkeziScreen.compactHud = true;
 

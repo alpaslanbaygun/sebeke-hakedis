@@ -279,11 +279,11 @@ test('V12 · Hakediş onay akışı: saha tamamlar → kontrol onaylar → haked
   assert.ok(!JSON.stringify(ps.p.members).includes('9999'), 'şifre düz yazıyla saklanmaz');
   // sıkı kip: kontrol edilmemiş işler hakediş toplamına girmez
   assert.equal(refsDone(), 0, 'onay açılınca kontrol edilmemiş iş sayılmaz');
-  const saha = await ps.addMember({ name: 'Ali Saha', role: 'saha', pin: '1111' });
-  const kon = await ps.addMember({ name: 'Ayşe Kontrol', role: 'kontrol', pin: '2222' });
-  const hak = await ps.addMember({ name: 'Hakan Hakediş', role: 'hakedis', pin: '3333' });
-  const ona = await ps.addMember({ name: 'Oya Onay', role: 'onay', pin: '4444' });
-  await assert.rejects(() => ps.addMember({ name: 'ali saha', role: 'saha', pin: '1111' }), /var/);
+  const saha = await ps.addMember({ name: 'Saha Kişisi', role: 'saha', pin: '1111' });
+  const kon = await ps.addMember({ name: 'Kontrol Kişisi', role: 'kontrol', pin: '2222' });
+  const hak = await ps.addMember({ name: 'Hakediş Kişisi', role: 'hakedis', pin: '3333' });
+  const ona = await ps.addMember({ name: 'Onay Kişisi', role: 'onay', pin: '4444' });
+  await assert.rejects(() => ps.addMember({ name: 'saha kişisi', role: 'saha', pin: '1111' }), /var/);
   // oturum kapalı: değişiklik yok
   ps.logout();
   assert.equal(ps.member, null);
@@ -295,7 +295,7 @@ test('V12 · Hakediş onay akışı: saha tamamlar → kontrol onaylar → haked
   // saha operatörü (başka kullanıcının sayacı ayrı)
   ps._tries.clear();
   ps.login(saha.id, '1111');
-  assert.equal(ps.ds.user.name, 'Ali Saha', 'denetim kaydına ad yazılır');
+  assert.equal(ps.ds.user.name, 'Saha Kişisi', 'denetim kaydına ad yazılır');
   await ps.setHak('equipment', poles[1].id, 'BASLANDI', 'düzeltme');
   await ps.setHak('equipment', poles[1].id, 'TAMAMLANDI');
   await assert.rejects(() => ps.setHak('equipment', poles[1].id, 'KONTROL'), /Kontrol mühendisi/);
@@ -311,7 +311,7 @@ test('V12 · Hakediş onay akışı: saha tamamlar → kontrol onaylar → haked
   assert.equal(m.changed, 3);
   assert.ok(refsDone() > 0 && refsDone() < before + 5, 'yalnız kontrol edilenler sayılır');
   const log = ps.eqById(poles[1].id).hakLog;
-  assert.deepEqual(log.map((x) => [x.by, x.role, x.to]), [['Ali Saha', 'saha', 'BASLANDI'], ['Ali Saha', 'saha', 'TAMAMLANDI'], ['Ayşe Kontrol', 'kontrol', 'KONTROL']]);
+  assert.deepEqual(log.map((x) => [x.by, x.role, x.to]), [['Saha Kişisi', 'saha', 'BASLANDI'], ['Saha Kişisi', 'saha', 'TAMAMLANDI'], ['Kontrol Kişisi', 'kontrol', 'KONTROL']]);
   // kontrol edilmiş kayıt kilitli (saha değiştiremez), not serbest
   ps.login(saha.id, '1111');
   const t2 = ps.cat.poleTypeByName('bahh', 'GT-12 (3 AWG)');
@@ -336,7 +336,7 @@ test('V12 · Hakediş onay akışı: saha tamamlar → kontrol onaylar → haked
   ps.login(ona.id, '4444');
   await ps.approvePeriod(per.id);
   assert.equal(ps.eqById(poles[0].id).hak, 'ONAYLI');
-  assert.equal(ps.data.periods.find((x) => x.id === per.id).approvedBy, 'Oya Onay');
+  assert.equal(ps.data.periods.find((x) => x.id === per.id).approvedBy, 'Onay Kişisi');
   assert.equal(ps.eqById(poles[0].id).hakLog.at(-1).role, 'onay');
   // yönetim: yalnız yönetici; son yönetici kapatılamaz
   await assert.rejects(() => ps.updateMember(saha.id, { role: 'kontrol' }), /Yönetici/);
@@ -357,5 +357,5 @@ test('V12 · Hakediş onay akışı: saha tamamlar → kontrol onaylar → haked
   await ps.setHak('equipment', poles[2].id, 'ONAYLI');
   assert.ok(ps.eqById(poles[0].id).hakLog.length >= 3);
   const audit = await ps.ds.list('audit', ps.p.id);
-  assert.ok(audit.some((a) => /Kullanıcı eklendi: Ayşe Kontrol/.test(a.reason || '')) && audit.some((a) => a.user === 'Ayşe Kontrol'));
+  assert.ok(audit.some((a) => /Kullanıcı eklendi: Kontrol Kişisi/.test(a.reason || '')) && audit.some((a) => a.user === 'Kontrol Kişisi'));
 });

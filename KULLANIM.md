@@ -396,8 +396,8 @@ Eklenti eski hakediş programının çizimde tuttuğu kayıtları da okur ve yaz
 
 ## 5. Teknik hesaplar (Hesap Merkezi)
 
-Hesap araçları Elektrik-Elektronik Mühendisi **Baki SONAY**'ın hazırladığı hesap sayfalarıdır; formülleri ve
-tabloları değiştirilmeden Şebeke-M'e eklenmiştir. Telefonda ve AutoCAD'de **aynı sayfalar** açılır; aradaki tek
+Hesap araçları bir elektrik-elektronik mühendisinin hazırladığı hesap sayfalarıdır; formülleri ve tabloları
+değiştirilmeden Şebeke-M'e eklenmiştir. Telefonda ve AutoCAD'de **aynı sayfalar** açılır; aradaki tek
 fark, bilgilerin nereden geldiğidir (telefonda projeden, AutoCAD'de çizimden).
 
 | Grup | Hesaplar |

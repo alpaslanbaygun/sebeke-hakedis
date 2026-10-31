@@ -234,7 +234,7 @@
       panel.appendChild(h('ul', { class: 'sm-liste' }, U.notlar.map(function (x) { return h('li', { text: x }); })));
     }
     panel.appendChild(h('h3', { text: 'Kaynak' }));
-    panel.appendChild(h('p', { class: 'sm-not', text: (SM.kaynak || 'Hesap aracı: Elektrik-Elektronik Mühendisi Baki SONAY.') + ' Hesap formülleri ve tabloları değiştirilmeden Şebeke-M\'e eklenmiştir' + (SM.surum ? ' (paket ' + SM.surum + ')' : '') + '.' }));
+    panel.appendChild(h('p', { class: 'sm-not', text: (SM.kaynak ? SM.kaynak + '.' : 'Hesap aracı.') + ' Hesap formülleri ve tabloları değiştirilmeden Şebeke-M\'e eklenmiştir' + (SM.surum ? ' (paket ' + SM.surum + ')' : '') + '.' }));
   }
 
   function tarihYazi(t) {

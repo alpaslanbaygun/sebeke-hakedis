@@ -1,6 +1,6 @@
 # Şebeke-M Kullanım Kılavuzu
 
-6 Ekim 2026 · Alpaslan
+6 Ekim 2026
 
 Bu kılavuz, Şebeke-M telefon uygulamasının (eski adıyla VOLT-EDAŞ Saha) 2.4.0 ve sonraki (2.5.x) sürümlerini sahada kullanacak kişiler içindir. Uygulama Android telefonda çalışır; internet olmadan da kayıt alır.
 
@@ -554,7 +554,7 @@ Tolerans varsayılan olarak 0,02 metredir; Ayarlar › "Hassasiyet eşikleri · 
 
 ## Teknik hesaplar (Hesap Merkezi)
 
-Elektrik-Elektronik Mühendisi **Baki SONAY**'ın hesap sayfaları uygulamaya formülleri değiştirilmeden eklenmiştir;
+Hesap sayfaları uygulamaya formülleri değiştirilmeden eklenmiştir;
 AutoCAD eklentisinde de aynı sayfalar açılır. Hesaplar üç gruptur:
 
 | Grup | Hesaplar |
