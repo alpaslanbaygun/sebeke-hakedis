@@ -378,13 +378,15 @@ Bu düğmeler çizimin gerçek koordinatını kullanır: **ITRF96, 3° TM**. Çi
 - **Google Earth** (`SH_KML`): çizimi `.kmz` (ya da `.kml`) olarak kaydeder. Her proje (bölge) bir klasördür:
   proje sınırı, elemanlar, hatlar, kanallar, sondajlar; GPS noktaları ayrı klasörde (kapalı gelir). Renkler
   telefon ekranındakiyle aynıdır; demontajlar yarı saydamdır. Bir nesneye tıklayınca GIS no, tip, durum, hakediş,
-  proje, metraj ve malzemeleri görünür.
+  proje, metraj ve malzemeleri görünür. Telefon da aynı dosyayı üretir: **Dışa Aktar › Google Earth KMZ** (telefonda
+  ayrıca 3 boyutlu direk / tel klasörü vardır, kapalı gelir).
 - **CBS'ye Aktar** (`SH_MIFVER`): MapInfo **MIF / MID** dosyaları. Verdiğiniz ada her nesne türü için ek gelir:
   `ad_ELEMAN`, `ad_HAT`, `ad_KANAL`, `ad_SONDAJ`, `ad_BOLGE` (proje sınırı), `ad_NOKTA` (GPS noktası); her biri
   `.mif` + `.mid`. Koordinatlar çizim koordinatıdır (dosyada dilim yazılıdır), harfler Türkçe Windows kod sayfasıdır.
   Sütunlar: `KIMLIK`, `GIS_NO`, `TUR` / `TUR_ADI`, `CINS`, `TIP`, `DURUM`, `DM_DURUM`, `HAKEDIS`, `PROJE`,
   `PROJE_KODU`, `MALZEME`, `SAGA`, `YUKARI`, `KOT`, `ACI` (eleman); hatta `KESIT`, `ETIKET`, `UZUNLUK`, `METRAJ`;
-  kanalda `KABLOLAR`, `ZEMIN`, `ALT_CM`, `UST_CM`, `DERIN_CM`, `BAS_NO`, `BIT_NO`.
+  kanalda `KABLOLAR`, `ZEMIN`, `ALT_CM`, `UST_CM`, `DERIN_CM`, `BAS_NO`, `BIT_NO`. Telefonda: **Dışa Aktar › CBS
+  MapInfo (MIF / MID)** aynı katman ve sütunları yazar (seçilen koordinat sisteminde; tek .zip).
 - **CBS'den Al** (`SH_MIFAL`): bir ya da birkaç `.mif` dosyası seçin (yanında aynı adlı `.mid`). Noktalar küçük
   daire (adı / numarası yanında), çizgiler ve alanlar çoklu çizgi, yazılar yazı olarak **altlık** çizilir; her dosya
   kendi katmanındadır (`CBS-dosya adı`). TM (başka dilim, UTM), enlem-boylam ve düz koordinat çizimin dilimine

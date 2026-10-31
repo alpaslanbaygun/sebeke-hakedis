@@ -34,7 +34,8 @@ namespace SebekeHakedis.Cekirdek
     /// Harita altlığı: seçilen alanın karoları indirilir, birleştirilir ve çizimin koordinat sistemine (ITRF96 3° TM)
     /// çevrilerek tek bir resim olarak çizime konur. Bu sınıf AutoCAD'den ve resim kütüphanesinden bağımsızdır: sağlayıcılar,
     /// karo hesabı (Web Mercator / elipsoidal Mercator), plan (zoom, karo aralığı, çözünürlük) ve resmin TM'ye çevrilmesi
-    /// (renkler ARGB tamsayı dizisi). Telefondaki altlık listesiyle aynı sağlayıcılar (ui/services.js) ve Bing / Azure.
+    /// (renkler ARGB tamsayı dizisi). Telefondaki altlık listesiyle aynı sağlayıcılar (telefon/web/src/ui/services.js;
+    /// telefon/web/tests/altlik.test.mjs bu listeyi okuyup telefonda eksiksiz olduğunu denetler).
     /// </summary>
     public static class HaritaAltligi
     {

@@ -67,6 +67,8 @@ namespace SebekeHakedis.Cekirdek
     /// CBS dışa aktarımlarının ortak yapısı: KML öznitelikleri ve MIF/MID sütunları aynı adlarla yazılır. Katmanlar:
     /// ELEMAN (nokta), HAT, KANAL, SONDAJ (çizgi), BOLGE (alan: proje sınırı), NOKTA (GPS noktası). MIF içe aktarımı da bu
     /// adları tanır: Şebeke-M'in yazdığı dosya geri okunduğunda nesneler türüyle, tipiyle, durumuyla gelir.
+    /// Telefondaki karşılığı telefon/web/src/export/cbs.js (KML ve MIF / MID de); iki tarafın çıktısı ortak denemeyle
+    /// (ortak/deneme/cbs, CekirdekTest › CbsOrtakDeneme) birebir karşılaştırılır.
     /// </summary>
     public static class CbsYapisi
     {

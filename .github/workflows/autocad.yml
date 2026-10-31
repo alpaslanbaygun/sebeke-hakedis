@@ -6,7 +6,7 @@ name: AutoCAD eklentisi
 
 on:
   push:
-    branches: [main, hat-malzeme-simge, sebeke-m, imzalama]
+    branches: [main, hat-malzeme-simge, sebeke-m, imzalama, telefon-esitleme]
     paths:
       - 'autocad/**'
       - 'ortak/**'

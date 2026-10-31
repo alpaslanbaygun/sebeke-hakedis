@@ -1,5 +1,5 @@
-// GeoJSON (RFC 7946 WGS84 veya proje CRS), KML/KMZ (gerçek koordinat + 3B direk/iletken), Netcad NCN.
-import { zip } from './zip.js';
+// GeoJSON (RFC 7946 WGS84 veya proje CRS), Google Earth'ün 3B ek klasörü (direk / iletken), Netcad NCN.
+// Google Earth dosyasının asıl içeriği eklentiyle aynıdır: export/cbs.js.
 
 const r9 = (v) => Math.round(v * 1e9) / 1e9, r3 = (v) => (v == null ? null : Math.round(v * 1000) / 1000);
 
@@ -16,39 +16,32 @@ export function buildGeoJSON(model, opts = {}) {
   return JSON.stringify(fc, null, 1);
 }
 
-const kmlColor = (hex, a = 'ff') => { const h = hex.replace('#', ''); return a + h.slice(4, 6) + h.slice(2, 4) + h.slice(0, 2); };
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-export function buildKML(model) {
-  const LC = { AG: '#1f7f00', OG: '#ff0000', AYD: '#00ffff', ENH: '#ff00ff', ABONE: '#fbbf24' };
-  const styles = Object.entries(LC).map(([k, c]) => '<Style id="hat' + k + '"><LineStyle><color>' + kmlColor(c) + '</color><width>' + (k === 'OG' || k === 'ENH' ? 4 : 2) + '</width></LineStyle></Style>').join('') +
-    '<Style id="direk"><IconStyle><scale>0.8</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon></IconStyle><LineStyle><color>ff9ca3af</color><width>3</width></LineStyle></Style>' +
-    '<Style id="trafo"><IconStyle><color>ffff6b4d</color><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/triangle.png</href></Icon></IconStyle></Style>' +
-    '<Style id="nokta"><IconStyle><scale>0.6</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/cross-hairs.png</href></Icon></IconStyle></Style>';
+/**
+ * Google Earth dosyasının telefona özgü ek klasörü (başta kapalı): direkler gerçek yükseklikleriyle dikey çizgi, havai
+ * iletkenler direk tepelerinden (mutlak yükseklik). Asıl içerik eklentiyle aynıdır (export/cbs.js › kmlMetni); bu klasör
+ * belgenin sonuna eklenir.
+ */
+export function kml3BKlasoru(model) {
+  const styles = '<Style id="t3b_direk"><IconStyle><scale>0.6</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon></IconStyle><LineStyle><color>ff9ca3af</color><width>3</width></LineStyle></Style>' +
+    '<Style id="t3b_hat"><LineStyle><color>ff8ae07e</color><width>2</width></LineStyle></Style>';
   const eqById = new Map(model.equipment.map((e) => [e.pointId, e]));
   const att = (e) => (e && e.heightM ? e.heightM - (e.heightM / 10 + 0.6) - 0.6 : 0);
-  let body = '<Folder><name>Ekipman</name>';
+  let body = '';
   for (const e of model.equipment) {
-    if (e.lat == null) continue;
-    const top = e.heightM ? e.heightM - (e.heightM / 10 + 0.6) : 0;
-    const desc = '<![CDATA[' + [e.kindLabel, e.typeName, e.stateLabel, e.role ? 'Rol ' + e.role : '', e.angle ? 'α=' + e.angle.toFixed(2) + '°' : '', 'Y=' + (e.E ?? 0).toFixed(3) + ' X=' + (e.N ?? 0).toFixed(3) + ' Z=' + (e.H ?? 0).toFixed(3)].filter(Boolean).join('<br>') + ']]>';
-    body += '<Placemark><name>' + esc(e.no) + '</name><description>' + desc + '</description><styleUrl>#' + (e.kind === 'transformer' ? 'trafo' : 'direk') + '</styleUrl>';
-    if (top > 0 && e.H != null) body += '<MultiGeometry><Point><altitudeMode>absolute</altitudeMode><coordinates>' + r9(e.lon) + ',' + r9(e.lat) + ',' + (e.H + top).toFixed(3) + '</coordinates></Point><LineString><altitudeMode>absolute</altitudeMode><coordinates>' + r9(e.lon) + ',' + r9(e.lat) + ',' + e.H.toFixed(3) + ' ' + r9(e.lon) + ',' + r9(e.lat) + ',' + (e.H + top).toFixed(3) + '</coordinates></LineString></MultiGeometry>';
-    else body += '<Point><coordinates>' + r9(e.lon) + ',' + r9(e.lat) + ',0</coordinates></Point>';
-    body += '</Placemark>';
+    if (e.lat == null || e.H == null || !e.heightM) continue;
+    const top = e.heightM - (e.heightM / 10 + 0.6);
+    if (top <= 0) continue;
+    body += '<Placemark><name>' + esc(e.no) + '</name><styleUrl>#t3b_direk</styleUrl><MultiGeometry><Point><altitudeMode>absolute</altitudeMode><coordinates>' + r9(e.lon) + ',' + r9(e.lat) + ',' + (e.H + top).toFixed(3) + '</coordinates></Point><LineString><altitudeMode>absolute</altitudeMode><coordinates>' + r9(e.lon) + ',' + r9(e.lat) + ',' + e.H.toFixed(3) + ' ' + r9(e.lon) + ',' + r9(e.lat) + ',' + (e.H + top).toFixed(3) + '</coordinates></LineString></MultiGeometry></Placemark>\n';
   }
-  body += '</Folder><Folder><name>Hatlar</name>';
   for (const l of model.lines) {
-    if (l.coords.length < 2) continue;
-    const abs = l.install === 'havai' && l.coords.every((c) => c.H != null && eqById.get(c.id));
-    const coords = l.coords.map((c) => { const e = eqById.get(c.id); return r9(c.lon) + ',' + r9(c.lat) + ',' + (abs ? ((c.H || 0) + att(e)).toFixed(3) : '0'); }).join(' ');
-    body += '<Placemark><name>' + esc(l.no + ' ' + l.label) + '</name><description>' + esc(l.lineType + ' · ' + l.install + ' · ' + l.state + ' · ' + l.length3D.toFixed(2) + ' m') + '</description><styleUrl>#hat' + l.lineType + '</styleUrl><LineString><tessellate>1</tessellate><altitudeMode>' + (abs ? 'absolute' : 'clampToGround') + '</altitudeMode><coordinates>' + coords + '</coordinates></LineString></Placemark>';
+    if (l.coords.length < 2 || l.install !== 'havai' || !l.coords.every((c) => c.H != null && eqById.get(c.id))) continue;
+    const coords = l.coords.map((c) => r9(c.lon) + ',' + r9(c.lat) + ',' + ((c.H || 0) + att(eqById.get(c.id))).toFixed(3)).join(' ');
+    body += '<Placemark><name>' + esc(l.no + ' ' + l.label) + '</name><styleUrl>#t3b_hat</styleUrl><LineString><altitudeMode>absolute</altitudeMode><coordinates>' + coords + '</coordinates></LineString></Placemark>\n';
   }
-  body += '</Folder><Folder><name>Ölçü noktaları</name>';
-  for (const p of model.points) if (p.lat != null && !eqById.get(p.id)) body += '<Placemark><name>' + esc(p.no) + '</name><styleUrl>#nokta</styleUrl><description>' + esc((p.source || '') + ' ' + (p.fix || '')) + '</description><Point><coordinates>' + r9(p.lon) + ',' + r9(p.lat) + ',0</coordinates></Point></Placemark>';
-  body += '</Folder>';
-  return '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>' + esc(model.project.name) + '</name><description>' + esc(model.crs.label + ' kaynaklı · WGS84') + '</description>' + styles + body + '</Document></kml>';
+  if (!body) return '';
+  return '<Folder><name>3B direk ve iletken (telefon)</name><visibility>0</visibility><description>Direkler gerçek yükseklikleriyle, havai iletkenler direk tepelerinden; açmak için işaretleyin.</description>\n' + styles + '\n' + body + '</Folder>\n';
 }
-export async function buildKMZ(model) { return zip([{ name: 'doc.kml', data: buildKML(model) }]); }
 
 // Netcad NCN (ASCII nokta dosyası): Nokta_Adı  Y(Sağa)  X(Yukarı)  Z  Kod
 export function buildNCN(model) {

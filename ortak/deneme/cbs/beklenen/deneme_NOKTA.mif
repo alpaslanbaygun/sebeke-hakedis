@@ -1,0 +1,18 @@
+Version 300
+Charset "WindowsTurkish"
+Delimiter ","
+CoordSys Earth Projection 8, 104, "m", 39, 0, 1, 500000, 0 Bounds (0, 3000000) (1000000, 5000000)
+Columns 7
+  KIMLIK Char(20)
+  AD Char(30)
+  KOD Char(30)
+  KOT Float
+  HAKEDIS Integer
+  PROJE Char(120)
+  EK Char(120)
+Data
+
+Point 519310.000 4282110.000
+    Symbol (38,14870768,10)
+Point 519000.000 4281800.000
+    Symbol (38,14870768,10)

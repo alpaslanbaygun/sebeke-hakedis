@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using SebekeHakedis.Cekirdek;
 
 namespace SebekeHakedis.Test
@@ -14,6 +15,7 @@ namespace SebekeHakedis.Test
     ///   katsayilar hedef.json         : ortak katsayı dosyasını üretir
     ///   gidisdonus proje.sebeke.json  : projeyi çizim nesnelerine yazıp geri okur, raporları karşılaştırır
     ///   semboller [dokum.txt]         : simge takımı denetimleri ve ilkel dökümü (telefonun tablosuyla karşılaştırma)
+    ///   cbs klasor/                   : telefonla ortak CBS denemesinin beklenen dosyalarını yazar (ortak/deneme/cbs/beklenen)
     /// </summary>
     public static class Program
     {
@@ -36,6 +38,7 @@ namespace SebekeHakedis.Test
                     case "bosaaktar": BosaAktar(args[1]); break;
                     case "katsayilar": File.WriteAllText(args[1], Json.Yaz(Katsayilar.Varsayilan.JsonYap()) + "\n", new UTF8Encoding(false)); Console.WriteLine("yazıldı: " + args[1]); break;
                     case "semboller": SembolleriYukle(); Semboller_(); SembolDokumu(args.Length > 1 ? args[1] : null); break;
+                    case "cbs": CbsBeklenenYaz(args[1]); break;
                     default: Console.WriteLine("Bilinmeyen komut: " + komut); return 2;
                 }
             }
@@ -282,6 +285,7 @@ namespace SebekeHakedis.Test
             OnayAkisi(varliklar);
             HesapMerkezi_(tp);
             CizimGorunumu(); // ortak çizim stilini yükler: en sonda (önceki denetimler stilsiz yazımı dener)
+            CbsOrtakDeneme(); // telefonla aynı CBS dosyaları (stil yüklü olmalı: renkler ortak stilden)
         }
 
         /// <summary>Çizim görünümü: ortak stil (renkler, yazı tipi, kanal kenarı), açıklık metrajı, hat etiketi.</summary>
@@ -343,6 +347,84 @@ namespace SebekeHakedis.Test
                 Esit(false, wb.Contains("PROJE BAZINDA"), "proje özeti: tek projede proje bazında sayfası yok");
             }
             try { File.Delete(yol); } catch { }
+        }
+
+        // ---------------- Telefonla ortak CBS denemesi (ortak/deneme/cbs) ----------------
+
+        /// <summary>
+        /// Ortak denemenin çıktıları: aynı proje dosyasından (deneme.sebeke.json) eklentinin yazdığı Google Earth dosyası
+        /// (üretim tarihi "TARIH" yazılır) ve her katmanın MIF / MID metni. Telefon (telefon/web/src/export/cbs.js) aynı
+        /// girdiden aynı metinleri üretmek zorundadır: telefon/web/tests/cbs.test.mjs aynı beklenen dosyalarla karşılaştırır.
+        /// </summary>
+        private static SortedDictionary<string, string> CbsCiktilari(Proje p)
+        {
+            var d = new SortedDictionary<string, string>(StringComparer.Ordinal);
+            string kml = KmlYazici.Metin(p, p.Dom, "test");
+            d["deneme.kml"] = Regex.Replace(kml, "(<description>Şebeke-M test · [^<]*? → WGS84 · )[^<]*(</description>)", "${1}TARIH${2}");
+            var hepsi = CbsYapisi.Nesneler(p);
+            foreach (var k in CbsYapisi.Katmanlar)
+            {
+                var l = hepsi.FindAll(n => n.Katman == k);
+                if (l.Count == 0) continue;
+                string mif, mid;
+                MifDosyasi.KatmanYaz(k, l, p.Dom, out mif, out mid);
+                d["deneme_" + k.Ad + ".mif"] = mif;
+                d["deneme_" + k.Ad + ".mid"] = mid;
+            }
+            return d;
+        }
+
+        private static Proje CbsDenemeProjesi()
+        {
+            SembolleriYukle();
+            if (!CizimStili.Yuklu) CizimStili.Yukle(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "cizim-stili.json"), Encoding.UTF8));
+            return ProjeDosyasi.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "cbs", "deneme.sebeke.json"), Encoding.UTF8));
+        }
+
+        /// <summary>
+        /// Eklentinin CBS çıktısı ortak beklenen dosyalarla birebir aynı mı. Eklentinin KML / MIF yazımı değişirse bu denetim
+        /// bozulur: beklenenler `cbs` komutuyla yeniden yazılır ve telefon da aynı değişikliği alır (DEVIR.md çalışma kuralı).
+        /// </summary>
+        private static void CbsOrtakDeneme()
+        {
+            Console.WriteLine("CBS: telefonla ortak deneme (ortak/deneme/cbs)");
+            var p = CbsDenemeProjesi();
+            string klasor = Path.Combine(AppContext.BaseDirectory, "cbs", "beklenen");
+            var ciktilar = CbsCiktilari(p);
+            Esit(13, ciktilar.Count, "CBS ortak: KML ve altı katmanın MIF / MID'i");
+            foreach (var kv in ciktilar)
+            {
+                string yol = Path.Combine(klasor, kv.Key);
+                string beklenen = File.Exists(yol) ? File.ReadAllText(yol, new UTF8Encoding(false)) : null;
+                string fark = beklenen == null ? " — beklenen dosya yok" : IlkFark(beklenen, kv.Value);
+                Esit(true, fark.Length == 0, "CBS ortak: " + kv.Key + fark);
+            }
+        }
+
+        /// <summary>İki metnin ilk farkı (satır no ve iki satır); aynıysa boş.</summary>
+        private static string IlkFark(string a, string b)
+        {
+            if (a == b) return "";
+            var x = a.Split('\n');
+            var y = b.Split('\n');
+            for (int i = 0; i < Math.Max(x.Length, y.Length); i++)
+            {
+                string s = i < x.Length ? x[i] : "(yok)", t = i < y.Length ? y[i] : "(yok)";
+                if (s != t) return " — " + (i + 1) + ". satır farklı:\n      beklenen: " + s.TrimEnd('\r') + "\n      eklenti : " + t.TrimEnd('\r');
+            }
+            return " — satır sonları farklı";
+        }
+
+        /// <summary>Ortak denemenin beklenen dosyalarını yazar (eklentinin çıktısı esastır).</summary>
+        private static void CbsBeklenenYaz(string klasor)
+        {
+            var p = CbsDenemeProjesi();
+            Directory.CreateDirectory(klasor);
+            foreach (var kv in CbsCiktilari(p))
+            {
+                File.WriteAllText(Path.Combine(klasor, kv.Key), kv.Value, new UTF8Encoding(false));
+                Console.WriteLine("yazıldı: " + Path.Combine(klasor, kv.Key));
+            }
         }
 
         /// <summary>TM ↔ enlem-boylam (telefondaki geo/crs.js ile aynı sonuç) ve Google Earth dosyası (KML / KMZ).</summary>

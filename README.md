@@ -33,10 +33,11 @@ GitHub › **Releases**:
 | Metraj, Yeşil Defter, hakediş dönemi ve onay | ✓ (Excel; onaylı dönem AutoCAD'e onay olarak gider) | `SH_OZET`, `SH_ONAY` (Kontrol → Hakediş → GIS, onaylı hakediş kilitli) |
 | Durum Tespit raporu (Excel, eski programın biçimi) | telefondan gelen dosyayla eklentide | `SH_RAPOR`, `SH_PROJERAPOR` |
 | Eksik malzeme (DETAY sorgusu) | — | `SH_DETAY` |
-| DXF, KMZ, SHP, GeoJSON, teslim paketi | ✓ (DXF simgeleri eklentiyle aynı) | — |
+| DXF, Google Earth (KMZ), CBS (MIF / MID), SHP, GeoJSON, teslim paketi | ✓ (DXF simgeleri, Google Earth ve MIF / MID eklentiyle aynı) | `SH_KML`, `SH_MIFVER` (ve `SH_MIFAL` ile CBS'den alma) |
 
 Telefon tarafı: her marka Bluetooth GNSS alıcısı (NMEA) + NTRIP (TUSAGA-Aktif, sabit istasyon profilleri) ya da
-telefonun konumu; açık sokak haritası ve anahtarla uydu / diğer altlıklar; çevrimdışı çalışır.
+telefonun konumu; açık sokak haritası ve anahtarla uydu / diğer altlıklar (eklentiyle aynı liste); harita çizimdeki
+renk, çizgi ve yazılarla görünür; çevrimdışı çalışır.
 
 ## Klasörler
 
