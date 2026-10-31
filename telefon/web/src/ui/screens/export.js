@@ -1,5 +1,5 @@
 // 05 · Dışa Aktarım — gerçek dosya üretimi (DXF, NCN, KMZ, SHP, GeoJSON, XLSX, rapor, teslim paketi)
-import { html, useState, useBus, Icon, Chip, Badge, Title, fmt, trn } from '../kit.js';
+import { html, useState, useEffect, useBus, Icon, Chip, Badge, Title, fmt, trn } from '../kit.js';
 import { app } from '../ctx.js';
 import { FORMATS, exportFormat } from '../../export/exporter.js';
 import { makeCrs, crsSummary, zoneForLon } from '../../geo/crs.js';
@@ -10,6 +10,9 @@ export function ExportScreen() {
   const [sel, setSel] = useState(app.state.expSel || { sebeke: true, dxf: true, ncn: true, xlsx: true, package: true });
   const [busy, setBusy] = useState(null);
   const [crsKey, setCrsKey] = useState('proje');
+  // Programın sürümü Google Earth dosyasının açıklamasına yazılır (eklentideki gibi "Şebeke-M <sürüm>")
+  const [ver, setVer] = useState(app.state.appVer || null);
+  useEffect(() => { if (!ver) app.bridge.info().then((i) => { app.state.appVer = (i && i.version) || null; setVer(app.state.appVer); }).catch(() => {}); }, []);
   const n = Object.values(sel).filter(Boolean).length;
   const errs = ps.result.issues.filter((i) => i.severity === 'error').length;
   const jobs = ps.data.exportJobs.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 6);
@@ -22,7 +25,7 @@ export function ExportScreen() {
     setBusy('Hazırlanıyor…');
     const files = [];
     try {
-      for (const k of keys) { setBusy(FORMATS[k].label + '…'); const out = await exportFormat(ps, k, { crs: crsKey === 'proje' ? null : crsAlt[crsKey] }); files.push(...out); }
+      for (const k of keys) { setBusy(FORMATS[k].label + '…'); const out = await exportFormat(ps, k, { crs: crsKey === 'proje' ? null : crsAlt[crsKey], surum: app.web ? 'web' : 'telefon' + (ver ? ' ' + ver : '') }); files.push(...out); }
     } catch (e) { app.toast('Dışa aktarım hatası: ' + e.message, 'err', 6000); setBusy(null); return; }
     const saved = [];
     // Web: birden çok çıktı tek zip olarak indirilir (her dosyaya ayrı onay sorulmasın)

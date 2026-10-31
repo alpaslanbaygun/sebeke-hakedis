@@ -502,3 +502,49 @@ test('A10 · katalogda olmayan AutoCAD hattı (rekortman): hesap bağlamında il
   const kullanilan = { ['direk.kollar[' + i + '].iletkenler[0].ad']: '4x16 Nyy Alm.', ['direk.kollar[' + i + '].iletkenler[0].adet']: 1 };
   assert.equal(farklar(kullanilan, b, { platformlarArasi: true }).length, 0);
 });
+
+test('A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosyasıyla aynı içerik, Türkçe kod sayfası, koordinat seçimi', async () => {
+  const { unzip } = await import('../src/export/zip.js');
+  const { kmlMetni, cbsNesneleri, mifDosyalari, mifCoordSys } = await import('../src/export/cbs.js');
+  const { makeCrs, unproject } = await import('../src/geo/crs.js');
+  const { ps, poles } = await ornekProje();
+  const sp = SH.projeOku(sebekeYaz(ps));
+  const nesneler = cbsNesneleri(sp);
+  // KMZ: içinde doc.kml; asıl içerik eklentinin yazacağıyla aynı (aynı proje modelinden), sonda 3B klasörü (kapalı)
+  const [kmz] = await exportFormat(ps, 'kmz', { surum: 'telefon 9.9.9' });
+  const kml = new TextDecoder().decode((await unzip(kmz.data))['doc.kml']);
+  const crs = ps.p.crs;
+  const asil = kmlMetni(sp, { donustur: (E, N) => { const g = unproject(E, N, crs); return [g.lon, g.lat]; }, surum: 'telefon 9.9.9', sistem: 'ITRF96 / TM 39 (3°)', tarih: 'T' });
+  const govde = (s) => s.replace(/<description>Şebeke-M [^<]*<\/description>/, '').replace(/<Folder><name>3B direk[\s\S]*?<\/Folder>\n/, '');
+  assert.equal(govde(kml), govde(asil), 'KMZ içeriği eklentinin yapısıyla aynı');
+  assert.match(kml, /<description>Şebeke-M telefon 9\.9\.9 · ITRF96 \/ TM 39 \(3°\) → WGS84 · \d\d\.\d\d\.\d{4} \d\d:\d\d<\/description>/);
+  assert.match(kml, /<Folder><name>3B direk ve iletken \(telefon\)<\/name><visibility>0<\/visibility>/, '3B klasörü başta kapalı');
+  assert.equal((asil.match(/<Placemark>/g) || []).length, nesneler.length, 'her CBS nesnesi bir yer işareti');
+  const direk = nesneler.find((n) => n.katman.ad === 'ELEMAN' && n.ad === poles[0].no);
+  assert.ok(direk && kml.includes('<name>' + poles[0].no + '</name><styleUrl>#placemark_circle_'), 'direk adı GIS no, simgesi daire');
+  assert.ok(kml.includes('<Data name="TIP"><displayName>Tip</displayName><value>G-D-10 (sw)</value></Data>'), 'tipi öznitelikte');
+  // MIF / MID: dolu katmanlar, Türkçe Windows kod sayfası, proje sisteminin CoordSys satırı
+  const [z] = await exportFormat(ps, 'mif');
+  const files = await unzip(z.data);
+  const base = Object.keys(files).find((n) => n.endsWith('_ELEMAN.mif')).replace('_ELEMAN.mif', '');
+  for (const k of ['BOLGE', 'ELEMAN', 'HAT', 'KANAL']) assert.ok(files[base + '_' + k + '.mif'] && files[base + '_' + k + '.mid'], k);
+  const metin1254 = (u8) => { const t = new TextDecoder('windows-1254').decode(u8); return t; };
+  const mif = metin1254(files[base + '_ELEMAN.mif']), mid = metin1254(files[base + '_ELEMAN.mid']);
+  assert.ok(mif.includes('Charset "WindowsTurkish"\r\n') && mif.includes(mifCoordSys(crs) + '\r\n'));
+  assert.ok(mid.includes('"ENH_DEMİR_GLV"'), 'Türkçe harfler 1254 kod sayfasında doğru');
+  const beklenen = mifDosyalari(sp, base, { coordSys: mifCoordSys(crs) }).find((d) => d.name === base + '_ELEMAN.mid').text;
+  assert.equal(mid, beklenen, 'MID metni eklentinin yapısıyla aynı');
+  // Başka koordinat sistemi (Dışa Aktarım'daki seçim): köşeler çevrilir, CoordSys ona göre
+  const utm = makeCrs({ datum: 'WGS84', projection: 'UTM', zone: 37 });
+  const [zu] = await exportFormat(ps, 'mif', { crs: utm });
+  const fu = await unzip(zu.data);
+  const mifU = metin1254(fu[base + '_ELEMAN.mif']);
+  assert.ok(mifU.includes('CoordSys Earth Projection 8, 104, "m", 39, 0, 0.9996, 500000, 0'), 'UTM CoordSys');
+  const ilk = (t) => t.match(/Point ([\d.]+) ([\d.]+)/).slice(1).map(Number);
+  const [e1, n1] = ilk(mif), [e2, n2] = ilk(mifU);
+  assert.ok(Math.abs(e2 - (500000 + (e1 - 500000) * 0.9996)) < 0.01 && Math.abs(n2 - n1 * 0.9996) < 0.01, 'UTM köşesi TM köşesinin 0,9996 katı (aynı orta meridyen)');
+  // Teslim paketi: HARITA klasöründe KMZ ve MIF/MID
+  const [pk] = await exportFormat(ps, 'package');
+  const pf = Object.keys(await unzip(pk.data));
+  assert.ok(pf.some((n) => /\/HARITA\/.*\.kmz$/.test(n)) && pf.some((n) => /\/HARITA\/mif\/.*_ELEMAN\.mif$/.test(n)), 'paket: KMZ ve MIF');
+});

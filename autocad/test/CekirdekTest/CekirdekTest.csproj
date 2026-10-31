@@ -22,6 +22,8 @@
     <None Include="..\..\..\ortak\katalog\kategoriler.json" Link="kategoriler.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\katalog\cizim-stili.json" Link="cizim-stili.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\deneme\malzeme-yazimi.json" Link="malzeme-yazimi.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Telefonla ortak CBS denemesi: girdi ve beklenen KML / MIF / MID (telefon/web/tests/cbs.test.mjs de okur) -->
+    <None Include="..\..\..\ortak\deneme\cbs\**\*" LinkBase="cbs" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
