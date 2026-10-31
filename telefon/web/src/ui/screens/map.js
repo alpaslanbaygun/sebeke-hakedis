@@ -2,6 +2,7 @@
 import { html, useState, useEffect, useRef, useBus, Icon, Chip, Seg, Toggle, Sel, Badge, fmt, trn, FIXCOL } from '../kit.js';
 import { app } from '../ctx.js';
 import { MapEngine } from '../map-engine.js';
+import { TUR_RENGI, hatRengi, hatEtiketi, EKRAN, DEMONTAJ_RENGI } from '../cizim-gorunumu.js';
 import { measure, recent, favorites, loadTile, BASEMAPS, ALTLIK_GRUPLARI, basemapById, basemapReady, basemapAttr, tileErrors } from '../services.js';
 import { dist2, bearing, polygonArea, polylineLength, dms, segProject } from '../../geo/geom.js';
 import { STATUSES, TRAFO_STATUSES, HAK_STATUSES, HAK_ORDER, EQUIPMENT_KINDS, hakOf } from '../../core/schema.js';
@@ -18,7 +19,8 @@ import { energize, levelsOf } from '../../grid/energize.js';
 import { cadDocs, importCad, visibleCad, setCad, removeCad, cadModel, snapCad, cadArms } from '../../services/cad-service.js';
 
 const GEN = { AG: ['sehir', 'beton', 'agac'], OG: ['bahh', 'civ', 'beton562', 'agac'], MUS: ['mus', 'beton', 'agac'], AYD: ['ayd'] };
-const GCOL = { AG: '#7ee08a', OG: '#ff8a8a', MUS: '#ff8a8a', AYD: '#7fffff', ENH: '#ff9aff', ABONE: '#fbbf24' };
+// Hat türü / direk grubu renkleri ortak çizim stilinden (haritadaki ve AutoCAD şeridindeki renklerle aynı)
+const GCOL = TUR_RENGI;
 const ST_COL = { YENI: '#10b981', MEVCUT: '#cbd5e1', DMM: '#f59e0b', DEMONTAJ: '#ffff00', ILERIDE: '#94a3b8' };
 
 // Enerji kontrolü sonucu: veri ya da ayar değişmedikçe yeniden hesaplanmaz
@@ -46,7 +48,8 @@ export function mapData() {
     cad: app.state.cadLayers || [], energy: energyState(),
     gnss: g.E != null ? g : null, gnssColor: g.source === 'phone' ? '#38bdf8' : FIXCOL[g.fix] || '#475569',
     groupVolt: (e) => { if (e.kind === 'lighting' || e.group === 'ayd') return 'AYD'; const gr = ps.cat.poleGroup(e.group); return gr && gr.og ? 'OG' : 'AG'; },
-    groupSymbol: (e) => { const gr = ps.cat.poleGroup(e.group); return gr ? gr.symbol : 'c'; }
+    groupSymbol: (e) => { const gr = ps.cat.poleGroup(e.group); return gr ? gr.symbol : 'c'; },
+    lineTag: (l) => hatEtiketi(l, ps.cat)
   };
 }
 
@@ -170,7 +173,7 @@ export function MapScreen() {
   if (eng.current) {
     const g = app.gnss.state;
     const last = active && active.nodes.length ? ps.pointById(active.nodes[active.nodes.length - 1]) : null;
-    eng.current.preview = last && g.E != null && toLine ? { from: last, to: g, color: GCOL[active.lineType] } : null;
+    eng.current.preview = last && g.E != null && toLine ? { from: last, to: g, color: hatRengi(active) } : null;
     eng.current.invalidate();
   }
 
@@ -253,7 +256,7 @@ export function MapScreen() {
       ${app.web ? null : html`<button class=${'loc' + (follow ? ' on' : '')} aria-label="Konumuma git" onClick=${locate}><${Icon} n="locate" s=${24} /></button>`}
     </div>
     <div class="maptag coord" hidden=${!!app.web && g.E == null} style=${'left:12px;bottom:' + (padB + 10) + 'px'}>Y ${g.E != null ? g.E.toFixed(3) : '—'}  X ${g.N != null ? g.N.toFixed(3) : '—'}  Z ${g.H != null ? g.H.toFixed(3) : '—'}</div>
-    ${active ? html`<button class="maptag" style=${'left:12px;top:124px;color:#dae2fd;border-color:' + (GCOL[active.lineType] || '#334155')} onClick=${() => setPanel('line')}>${active.lineNo} çiziliyor · ${toLine ? 'alınanlar hatta eklenir' : 'otomatik ekleme kapalı'}</button>` : null}
+    ${active ? html`<button class="maptag" style=${'left:12px;top:124px;color:#dae2fd;border-color:' + hatRengi(active)} onClick=${() => setPanel('line')}>${active.lineNo} çiziliyor · ${toLine ? 'alınanlar hatta eklenir' : 'otomatik ekleme kapalı'}</button>` : null}
     ${tool === 'edit' ? html`<div class="maptag" style=${'left:12px;top:' + (active ? 156 : 124) + 'px;color:#fbbf24'}>Düğüm düzenleme: noktayı sürükleyin</div>` : null}
     ${tool === 'measure' || tool === 'area' ? html`<div class="maptag" style=${'left:12px;top:' + (active ? 156 : 124) + 'px;color:#22d3ee'}>${tool === 'area' ? 'Alan ölçümü' : 'Mesafe ölçümü'}: haritaya dokunun</div>` : null}
     ${layersOpen ? html`<${LayerPop} eng=${eng.current} close=${() => setLayersOpen(false)} />` : null}
@@ -269,7 +272,7 @@ export function MapScreen() {
                 <span class="grow"><b>${cur.title}</b><small>${cur.sub}</small></span>
                 <${Icon} n="up" s=${18} c="#94a3b8" />
               </button>
-              <button class=${'lchip' + (active ? ' on' : '')} style=${active ? '--c:' + (GCOL[active.lineType] || '#10b981') : ''} aria-label="Hat" onClick=${() => setPanel('line')}>
+              <button class=${'lchip' + (active ? ' on' : '')} style=${active ? '--c:' + hatRengi(active) : ''} aria-label="Hat" onClick=${() => setPanel('line')}>
                 ${active ? html`<b>${active.lineNo} · ${active.lineType}</b><small>${active.nodes.length} düğüm · ${trn(li.length3D || 0, 0)} m</small>` : html`<b>+ HAT</b><small>başlat / devam</small>`}
               </button>
             </div>
@@ -326,7 +329,8 @@ function LayerPop({ eng, close }) {
   const [, f] = useState(0);
   const L = eng.layers;
   const t = (k) => { L[k] = !L[k]; app.state.layers = Object.assign({}, L); eng.invalidate(); f((x) => x + 1); };
-  const items = [['AG', 'A.G. şebeke', '#7ee08a'], ['OG', 'O.G. şebeke', '#ff6b6b'], ['AYD', 'Aydınlatma', '#7fffff'], ['ENH', 'E.N.H.', '#ff79ff'], ['ABONE', 'Abone', '#fbbf24'], ['yeralti', 'Yeraltı kablo', '#ff6b6b'], ['trafo', 'Trafo ve box', '#6b82ff'], ['mevcut', 'Mevcut elemanlar', '#00ffbf'], ['demontaj', 'Demontaj işareti', '#ffff00'], ['hak', 'Hakediş durumu (renkler)', '#fbbf24'], ['srcTags', 'Veri kaynağı etiketleri', '#10b981'], ['points', 'Ölçü noktaları', '#e2e8f0'], ['labels', 'Etiketler', '#94a3b8'], ['spanText', 'Açıklık yazıları', '#94a3b8'], ['grid', 'Koordinat ızgarası', '#94a3b8'], ['basemap', 'Altlık harita', '#94a3b8'], ['cad', 'CAD çizimi', '#fde047']];
+  const H = EKRAN.hat;
+  const items = [['AG', 'A.G. şebeke', H.HAT_AG], ['OG', 'O.G. şebeke', H.HAT_OG], ['AYD', 'Aydınlatma', H.HAT_AYD], ['ENH', 'E.N.H.', H.HAT_ENH], ['ABONE', 'Abone', H.HAT_ABONE], ['yeralti', 'Yeraltı kablo', H.KABLO], ['kanal', 'Kanal kenarı ve sondaj', H.KANAL], ['trafo', 'Trafo ve box', EKRAN.trafo], ['mevcut', 'Mevcut elemanlar', EKRAN.direkMevcut.AG], ['demontaj', 'Demontaj (sarı)', DEMONTAJ_RENGI], ['hak', 'Hakediş durumu (renkler)', '#fbbf24'], ['srcTags', 'Veri kaynağı etiketleri', '#10b981'], ['points', 'Ölçü noktaları', EKRAN.nokta], ['labels', 'Etiketler (eleman, hat)', '#94a3b8'], ['spanText', 'Açıklık metrajı', '#94a3b8'], ['grid', 'Koordinat ızgarası', '#94a3b8'], ['basemap', 'Altlık harita', '#94a3b8'], ['cad', 'CAD çizimi', '#fde047']];
   if (L.cad === undefined) L.cad = true;
   return html`<div class="card" style="position:absolute;right:68px;top:12px;z-index:6;width:230px;padding:6px;max-height:60%;overflow:auto">
     ${items.map(([k, l, c]) => html`<button class="li" style="min-height:40px;padding:6px 8px" onClick=${() => t(k)}><span style=${'width:18px;height:3px;background:' + c}></span><span class="grow" style="font-size:13px">${l}</span><${Icon} n=${L[k] ? 'check' : 'minus'} s=${16} c=${L[k] ? '#10b981' : '#475569'} /></button>`)}
@@ -445,7 +449,7 @@ function SelectionPanel({ sel, select, eng, openLine }) {
     const li = ps.result.lineInfo.get(l.id) || {};
     const act = app.state.activeLineId === l.id;
     return html`<div class="body">
-      <div class="row"><span style=${'width:22px;height:4px;background:' + (GCOL[l.lineType] || '#fff')}></span><b class="grow" style="font-size:16px">${l.lineNo} · ${l.lineType} ${l.install}</b><button class="btn xs" onClick=${() => select(null)}><${Icon} n="x" s=${16} /></button></div>
+      <div class="row"><span style=${'width:22px;height:4px;background:' + hatRengi(l)}></span><b class="grow" style="font-size:16px">${l.lineNo} · ${l.lineType} ${l.install}</b><button class="btn xs" onClick=${() => select(null)}><${Icon} n="x" s=${16} /></button></div>
       <div class="mono" style="font-size:13px">${lineLabelText(l, ps.cat) || 'iletken tanımsız'}</div>
       ${app.state.energyCfg && (app.state.energyCfg.og || app.state.energyCfg.ag) ? (() => { const es = (energyState() || { lineState: new Map() }).lineState.get(l.id); return html`<div class="row"><${Badge} k=${es === 'on' ? 'ok' : es === 'off' ? 'err' : es === 'mixed' ? 'warn' : 'mut'}>${{ on: 'ENERJİLİ', off: 'ENERJİSİZ', mixed: 'KISMEN ENERJİLİ', skip: 'DEVRE DIŞI', na: 'KAPSAM DIŞI' }[es] || '—'}</${Badge}><span class="grow"></span><button class=${'btn xs' + (l.energyOpen ? ' warn' : '')} onClick=${async () => { await ps.updateLine(l.id, { energyOpen: !l.energyOpen }, l.lineNo + (l.energyOpen ? ' kapatıldı (enerji geçer)' : ' açıldı (enerji geçmez)')); app.bus.emit('ui:sel'); }}>${l.energyOpen ? 'Hat AÇIK · kapat' : 'Hattı aç (ayır)'}</button></div>`; })() : null}
       <div class="grid3"><div class="stat"><b>2B</b><span>${trn(li.length2D, 2)}</span><small>m</small></div><div class="stat"><b>3B</b><span>${trn(li.length3D, 2)}</span><small>m</small></div><div class="stat"><b>Açıklık</b><span>${li.spans || 0}</span></div></div>
@@ -659,7 +663,7 @@ function LineSheet({ active, close, rerender }) {
     const last = active.nodes.length ? ps.pointById(active.nodes[active.nodes.length - 1]) : null;
     const toLine = app.state.toLine !== false;
     return wrap(html`
-      <div class="card" style=${'border-color:' + (GCOL[active.lineType] || '#334155')}>
+      <div class="card" style=${'border-color:' + hatRengi(active)}>
         <div class="row"><b class="grow" style="font-size:16px">${active.lineNo} · ${active.lineType} · ${active.install}</b><${Badge} k="ok">ÇİZİLİYOR</${Badge}></div>
         <div class="mono" style="font-size:12px;margin:4px 0">${lineLabelText(active, cat) || 'iletken tanımsız'}</div>
         <div class="note">${active.nodes.length} düğüm · ${trn(li.length3D || 0, 2)} m (3B)${last ? ' · son: ' + last.pointNo : ''}</div>
@@ -716,7 +720,7 @@ function LineSheet({ active, close, rerender }) {
         <div class="note">${meth === 'sondaj' ? 'Yatay sondaj: metraja sondaj boyu (m) gelir; kazı hacmi hesaplanmaz.' : 'Kanal hesabı: uzunluk × genişlik × derinlik = m³, seçilen kaplamanın kalemine yazılır.' + (meth === 'borulu' ? ' Borulu geçişte boru metrajı da gelir.' : '')}</div>` : null}` : null}
     <div class="note">Hattı başlattıktan sonra direkleri sırayla al; her direk otomatik bağlanır, köşe ve rol kendiliğinden hesaplanır. İletken bilgisi sonradan Hat kaydından değişir.</div>
     ${others.length ? html`<div class="lbl" style="margin-top:4px">Mevcut hatta devam et</div>
-      <div class="card tight list">${others.map((l) => html`<button class="li" onClick=${() => { app.state.activeLineId = l.id; app.state.toLine = true; app.state.lineStartPoint = null; app.bus.emit('ui:sel'); app.toast(l.lineNo + ' çizime açıldı'); close(); }}><span style=${'width:18px;height:4px;flex-shrink:0;background:' + (GCOL[l.lineType] || '#fff')}></span><span class="grow"><span class="t">${l.lineNo} · ${l.lineType} · ${l.install}</span><div class="m">${l.nodes.length} düğüm · ${lineLabelText(l, cat) || ''}</div></span><${Icon} n="next" s=${18} c="#94a3b8" /></button>`)}</div>` : null}`,
+      <div class="card tight list">${others.map((l) => html`<button class="li" onClick=${() => { app.state.activeLineId = l.id; app.state.toLine = true; app.state.lineStartPoint = null; app.bus.emit('ui:sel'); app.toast(l.lineNo + ' çizime açıldı'); close(); }}><span style=${'width:18px;height:4px;flex-shrink:0;background:' + hatRengi(l)}></span><span class="grow"><span class="t">${l.lineNo} · ${l.lineType} · ${l.install}</span><div class="m">${l.nodes.length} düğüm · ${lineLabelText(l, cat) || ''}</div></span><${Icon} n="next" s=${18} c="#94a3b8" /></button>`)}</div>` : null}`,
     html`<button class="btn grow" style="height:52px;flex:0 0 30%" onClick=${() => { app.state.lineStartPoint = null; close(); }}>Vazgeç</button><button class="btn pri grow" style="height:52px;font-size:16px" onClick=${start}><${Icon} n="plus" s=${20} c="#0b1326" />HAT BAŞLAT</button>`);
 }
 

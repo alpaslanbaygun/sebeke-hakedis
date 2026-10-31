@@ -97,3 +97,41 @@ test('D3 · yazı yeri parçanın ekseninde: dik hatta metraj bir yanda, etiket 
   assert.deepEqual(yer(kanalMetraj), [500000 - STIL.etiketler.kaziMetraji.kaydirma[1], 4400025, 90], 'kanal metrajı kablonunkinin bir satır ötesinde');
   assert.ok(STIL.etiketler.kaziMetraji.kaydirma[1] >= STIL.etiketler.parcaMetraji.kaydirma[1] + STIL.yazi.parcaMetraji, 'iki metraj üst üste binmez');
 });
+
+test('D4 · kanal kenarları: eksenin iki yanında genişliğin yarısı kadar, sürekli çizgi, kanalın renginde; sondajda ve havai hatta yok', async () => {
+  // Eklentideki karşılığı: NesneYazici.KanalGenisligi (genişlik yoksa 0,4 m) + CizimYazici.KenarlariYaz
+  const { kanalGenisligi, esCizgi } = await import('../src/export/dxf.js');
+  assert.equal(kanalGenisligi({ install: 'havai' }), 0, 'havai hatta kanal yok');
+  assert.equal(kanalGenisligi({ install: 'yeralti', cable: { surface: 'toprak', method: 'sondaj' } }), 0, 'yatay sondajda kenar yok');
+  assert.equal(kanalGenisligi({ install: 'yeralti', cable: { channelType: 'direk' } }), 0, 'kazısız eski kayıt (direk inişi)');
+  assert.equal(kanalGenisligi({ install: 'yeralti', cable: { surface: 'asfalt', method: 'acik', width: 0.6 } }), 0.6);
+  assert.equal(kanalGenisligi({ install: 'yeralti', cable: { surface: 'toprak', method: 'acik' } }), STIL.katmanlar.KANAL.kenar.varsayilanGenislik, 'genişlik yoksa stilin varsayılanı');
+  // Gönye: L köşede kenar köşesi iki kenarın kesişiminde
+  const e = esCizgi([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }], 0.5);
+  assert.deepEqual(e.map((p) => [+p.x.toFixed(6), +p.y.toFixed(6)]), [[0, 0.5], [9.5, 0.5], [9.5, 10]]);
+
+  const points = [{ id: 'p1', no: '1', E: 500000, N: 4400000, H: 0 }, { id: 'p2', no: '2', E: 500040, N: 4400000, H: 0 }];
+  const coords = points.map((p) => ({ id: p.id, E: p.E, N: p.N, H: p.H }));
+  const model = {
+    project: { name: 'Deneme' }, crs: { label: 'TM30' }, cat: null, points,
+    equipment: points.map((p, i) => ({ id: 'e' + i, no: 'B' + (i + 1), kind: 'sdk', pointId: p.id, E: p.E, N: p.N, H: 0, state: 'YENI', attrs: {} })),
+    lines: [
+      { id: 'l1', no: 'K1', lineType: 'AG', install: 'yeralti', state: 'YENI', channelOnly: true, label: 'Kanal', cable: { surface: 'toprak', method: 'acik', width: 0.5 }, coords },
+      { id: 'l2', no: 'S1', lineType: 'OG', install: 'yeralti', state: 'YENI', channelOnly: true, label: 'Sondaj', cable: { surface: 'toprak', method: 'sondaj' }, coords },
+      { id: 'l3', no: 'H1', lineType: 'AG', install: 'havai', state: 'DEMONTAJ', label: '3P+R', coords },
+      { id: 'l4', no: 'K2', lineType: 'AG', install: 'yeralti', state: 'DEMONTAJ', label: '4x50 Nyy', cable: { surface: 'asfalt', method: 'borulu', width: 0.4 }, coords },
+    ],
+  };
+  const d = buildDXF(model);
+  const v = varliklar(d.text);
+  // Bloklardaki POLYLINE'lar katman 0'da; kenarlar kanalın katmanında
+  const kenarlar = v.filter((x) => x.tur === 'POLYLINE' && x.g['8'][0] === STIL.katmanlar.KANAL.telefon);
+  assert.equal(kenarlar.length, 4, 'iki kanal × iki kenar (sondaj ve havai hatta yok)');
+  assert.equal(d.stats.edges, 4);
+  assert.ok(kenarlar.every((x) => x.g['6'][0] === STIL.katmanlar.KANAL.kenar.cizgi), 'kenar sürekli çizgi (katmanın kesikli çizgisi değil)');
+  assert.deepEqual(kenarlar.map((x) => +x.g['62'][0]), [STIL.katmanlar.KANAL.kenar.aci, STIL.katmanlar.KANAL.kenar.aci, STIL.direkRenkleri.demontaj, STIL.direkRenkleri.demontaj], 'kanalın renginde, demontajda sarı');
+  // İlk kenarın köşeleri: eksenden 0,25 m yukarıda
+  const i = v.indexOf(kenarlar[0]);
+  const koseler = v.slice(i + 1, i + 3).map((x) => [+x.g['10'][0], +x.g['20'][0]]);
+  assert.deepEqual(koseler, [[500000, 4400000.25], [500040, 4400000.25]]);
+});

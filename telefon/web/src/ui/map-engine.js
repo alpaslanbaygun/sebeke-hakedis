@@ -3,10 +3,15 @@
 import { tileX, tileY, tileLL } from '../geo/tiles.js';
 import { aciCSS } from '../cad/aci.js';
 import { project as projLL, unproject } from '../geo/crs.js';
+import STIL from '../ortak/cizim-stili.js';
+import { spanTexts, yaziKonumu } from '../export/dxf.js';
+import { EKRAN, hatAnahtari, hatRengi, hatCizgisi, ekranDeseni, kanalGenisligi, kenarRengi, sondajli, esCizgi, dugumMu, YAZI, KAYDIRMA, yaziOlcusu } from './cizim-gorunumu.js';
 
-const LCOL = { AG: '#7ee08a', OG: '#ff6b6b', AYD: '#7fffff', ENH: '#ff79ff', ABONE: '#fbbf24' };
+// Hat kalınlığı (px) türüne göre; renk, çizgi deseni, metraj ve etiket ortak çizim stilinden (cizim-gorunumu.js)
 const LW = { AG: 2.5, OG: 3.5, AYD: 2.5, ENH: 4, ABONE: 1.6 };
-const PCOL = { AG: { MEVCUT: '#00ffbf', YENI: '#23a455', DMM: '#00ff00', DEMONTAJ: '#00ffbf', ILERIDE: '#23a455' }, OG: { MEVCUT: '#d94a4a', YENI: '#ff2d2d', DMM: '#ff2d2d', DEMONTAJ: '#d94a4a', ILERIDE: '#ff2d2d' }, AYD: { MEVCUT: '#9b5cff', YENI: '#2f7fd6', DMM: '#00ffff', DEMONTAJ: '#9b5cff', ILERIDE: '#2f7fd6' } };
+const hatKalinligi = (l, anahtar) => (anahtar === 'KANAL' ? 1.8 : anahtar === 'SONDAJ' ? 2.5 : anahtar === 'HAT_MUSTEREK' ? LW.OG : LW[l.lineType] || 2);
+// Direk renkleri (ekran): yeni ve ileride ortak stilin "direk", mevcut ve demontaj "direkMevcut", sök-tak çizimdeki ACI'si
+const PCOL = Object.fromEntries(['AG', 'OG', 'AYD'].map((v) => [v, { MEVCUT: EKRAN.direkMevcut[v], YENI: EKRAN.direk[v], DMM: aciCSS(STIL.direkRenkleri[v][2]), DEMONTAJ: EKRAN.direkMevcut[v], ILERIDE: EKRAN.direk[v] }]));
 
 export class MapEngine {
   constructor(canvas, opts) {
@@ -16,7 +21,7 @@ export class MapEngine {
     this.dirty = true; this.pointers = new Map(); this.follow = false;
     // Görünür alan: üstte/altta panelin kapattığı pikseller. Görünüm merkezi (cE,cN) bu alanın ortasına düşer.
     this.pad = { top: 0, bottom: 0 };
-    this.layers = { basemap: true, grid: true, labels: true, spanText: true, AG: true, OG: true, AYD: true, ENH: true, ABONE: true, yeralti: true, trafo: true, mevcut: true, demontaj: true, points: true, hak: true, srcTags: true };
+    this.layers = { basemap: true, grid: true, labels: true, spanText: true, AG: true, OG: true, AYD: true, ENH: true, ABONE: true, yeralti: true, kanal: true, trafo: true, mevcut: true, demontaj: true, points: true, hak: true, srcTags: true };
     this.tiles = new Map(); this.tileQueue = new Set();
     this.measure = null; this.preview = null; this.dragNode = null; this.crosshair = false;
     this.bind(); this.resize(); this.loop();
@@ -144,34 +149,62 @@ export class MapEngine {
     if (this.layers.cad !== false && d.cad && d.cad.length) this.drawCad(g, d.cad);
     const en = d.energy || null;     // enerji kontrolü açıksa: enerjili hat sarı parlar, enerjisiz hat gri kesik çizilir
     const sel = d.sel || {};
-    // Hatlar
+    // Hatlar: çizimdeki görünüm (ortak çizim stili) — türün rengi ve çizgi deseni, demontaj sarı, kanal iki kenarlı
+    const res = this.view.res, dm = this.layers.demontaj !== false, kanalAcik = this.layers.kanal !== false;
+    const metrajAcik = this.layers.spanText && res < 1.2, etiketAcik = this.layers.labels && res < 0.8 && d.lineTag;
+    const yazilar = []; // hatların üstünde kalsın diye hatlardan sonra yazılır
+    const metrajOlcu = yaziOlcusu(YAZI.metraj, res), etiketOlcu = yaziOlcusu(YAZI.etiket, res, 10, 16);
     for (const l of d.lines) {
-      const key = l.install === 'yeralti' ? 'yeralti' : l.lineType;
       if (!this.layers[l.lineType] || (l.install === 'yeralti' && !this.layers.yeralti)) continue;
+      if (l.channelOnly && !kanalAcik) continue;
       if (l.state === 'MEVCUT' && !this.layers.mevcut) continue;
       const n = l.nodes.map((id) => d.pointMap.get(id)).filter((p) => p && p.E != null);
       if (n.length < 2) continue;
       const on = sel.type === 'line' && sel.id === l.id;
+      const anahtar = hatAnahtari(l), lw = hatKalinligi(l, anahtar);
       g.lineCap = 'round'; g.lineJoin = 'round';
-      if (on) { g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = (LW[l.lineType] || 2) + 8; g.setLineDash([]); this.path(g, n); g.stroke(); }
+      if (on) { g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = lw + 8; g.setLineDash([]); this.path(g, n); g.stroke(); }
       // Hakediş görünümü: hattın altında durum renginde geniş bant
       const hc = this.layers.hak && d.hakColor ? d.hakColor(l) : null;
-      if (hc) { g.strokeStyle = hc; g.globalAlpha = 0.42; g.lineWidth = (LW[l.lineType] || 2) + 9; g.setLineDash([]); this.path(g, n); g.stroke(); g.globalAlpha = 1; }
+      if (hc) { g.strokeStyle = hc; g.globalAlpha = 0.42; g.lineWidth = lw + 9; g.setLineDash([]); this.path(g, n); g.stroke(); g.globalAlpha = 1; }
       const es = en ? en.lineState.get(l.id) : null;
-      if (es === 'on' || es === 'mixed') { g.strokeStyle = es === 'on' ? '#fde047' : '#fb923c'; g.globalAlpha = 0.5; g.lineWidth = (LW[l.lineType] || 2) + 9; g.setLineDash([]); this.path(g, n); g.stroke(); g.globalAlpha = 1; }
-      g.strokeStyle = es === 'off' || es === 'skip' ? '#64748b' : LCOL[l.lineType] || '#7ee08a'; g.lineWidth = LW[l.lineType] || 2;
-      g.setLineDash(es === 'off' || es === 'skip' ? [4, 7] : l.install === 'yeralti' ? [12, 6, 2, 6] : l.state === 'ILERIDE' ? [8, 6] : l.lineType === 'ABONE' ? [6, 3] : []);
+      if (es === 'on' || es === 'mixed') { g.strokeStyle = es === 'on' ? '#fde047' : '#fb923c'; g.globalAlpha = 0.5; g.lineWidth = lw + 9; g.setLineDash([]); this.path(g, n); g.stroke(); g.globalAlpha = 1; }
+      const enerjisiz = es === 'off' || es === 'skip';
+      const col = enerjisiz ? '#64748b' : hatRengi(l, dm);
       if (l.state === 'MEVCUT' && !es) g.globalAlpha = 0.6;
+      // Kanal kenarları: eksenden genişliğin yarısı kadar iki yanda (yalnız yakın ölçekte, çizgiden ayrı görünürken)
+      const kw = kanalAcik ? kanalGenisligi(l) : 0, yari = kw / 2 / res;
+      if (kw && yari >= lw / 2 + 2) {
+        const sp = n.map((p) => this.toScreen(p.E, p.N));
+        g.strokeStyle = kenarRengi(l, dm); g.lineWidth = 1.2; g.setLineDash([]);
+        for (const yan of [yari, -yari]) { const e = esCizgi(sp, yan); if (e.length < 2) continue; g.beginPath(); e.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.stroke(); }
+      }
+      // Yatay sondajla geçen kablo: altında sondajın noktalı çizgisi (eklentide ayrı sondaj nesnesi)
+      if (kanalAcik && sondajli(l)) { const sw = lw + 3; g.strokeStyle = EKRAN.hat.SONDAJ; g.lineWidth = sw; g.setLineDash(ekranDeseni('DOT', sw)); this.path(g, n); g.stroke(); }
+      g.strokeStyle = col; g.lineWidth = lw;
+      g.setLineDash(enerjisiz ? [4, 7] : ekranDeseni(hatCizgisi(l), lw));
       this.path(g, n); g.stroke(); g.globalAlpha = 1; g.setLineDash([]);
-      if (l.state === 'DEMONTAJ' && this.layers.demontaj) { g.strokeStyle = '#ffff00'; g.lineWidth = 1.5; g.setLineDash([3, 5]); this.path(g, n); g.stroke(); g.setLineDash([]); }
-      if (l.musterek && this.layers.AG) { g.strokeStyle = LCOL.AG; g.lineWidth = 1.5; this.path(g, n, 4); g.stroke(); }
-      if (this.layers.spanText && this.view.res < 1.2) {
-        g.font = '600 10px JetBrains Mono, monospace'; g.fillStyle = '#cbd5e1'; g.textAlign = 'center';
-        for (let i = 0; i < n.length - 1; i++) {
-          const a = this.toScreen(n[i].E, n[i].N), b = this.toScreen(n[i + 1].E, n[i + 1].N);
-          let ang = Math.atan2(b.y - a.y, b.x - a.x); if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
-          g.save(); g.translate((a.x + b.x) / 2, (a.y + b.y) / 2); g.rotate(ang); g.fillText(Math.hypot(n[i + 1].E - n[i].E, n[i + 1].N - n[i].N).toFixed(2), 0, -6); g.restore();
-        }
+      // Metraj: her açıklığa bir kez (iki direk / iki bağlantı elemanı arası), en uzun parçanın üst yanında, hattın renginde;
+      // kanal ve sondaj metrajı bir satır yukarıda (içindeki kablonun metrajıyla üst üste binmesin)
+      if (metrajAcik) {
+        const [kx, ky] = l.channelOnly ? KAYDIRMA.kazi : KAYDIRMA.metraj, s = metrajOlcu.s;
+        for (const a of spanTexts(n, (p) => dugumMu(d.eqByPoint.get(p.id)))) yazilar.push([a.length.toFixed(YAZI.hane), yaziKonumu(n[a.seg], n[a.seg + 1], kx * s, ky * s), metrajOlcu.px, col]);
+      }
+      // Hat etiketi "hat no kesit": orta parçanın alt yanında, hattın renginde (telefonun DXF'iyle aynı yazı)
+      if (etiketAcik) {
+        const mid = Math.floor((n.length - 1) / 2), s = etiketOlcu.s;
+        yazilar.push([d.lineTag(l), yaziKonumu(n[mid], n[mid + 1], KAYDIRMA.etiket[0] * s, KAYDIRMA.etiket[1] * s), etiketOlcu.px, col]);
+      }
+    }
+    if (yazilar.length) {
+      g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.lineJoin = 'round';
+      for (const [t, k, px, col] of yazilar) {
+        const s = this.toScreen(k.x, k.y);
+        if (!t || s.x < -400 || s.y < -60 || s.x > this.w + 60 || s.y > this.h + 60) continue;
+        g.save(); g.translate(s.x, s.y); g.rotate(-k.ang * Math.PI / 180);
+        g.font = '600 ' + px.toFixed(1) + 'px ' + YAZI.font;
+        g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.85)'; g.strokeText(t, 0, 0);
+        g.fillStyle = col; g.fillText(t, 0, 0); g.restore();
       }
     }
     // Aktif hat önizlemesi
@@ -266,7 +299,7 @@ export class MapEngine {
     const st = e.state || 'YENI';
     if (e.kind === 'luminaire') {
       // Armatür / sokak lambası: sarı ışık halkalı lamba (yeni dolu, mevcut içi boş)
-      const Y = st === 'MEVCUT' ? '#d4a017' : '#fde047';
+      const Y = st === 'MEVCUT' ? '#d4a017' : EKRAN.armatur;
       g.strokeStyle = Y; g.lineWidth = 1.6; g.beginPath();
       for (let k = 0; k < 8; k++) { const a = (k * Math.PI) / 4; g.moveTo(s.x + Math.cos(a) * 8, s.y + Math.sin(a) * 8); g.lineTo(s.x + Math.cos(a) * 12, s.y + Math.sin(a) * 12); }
       g.stroke();
@@ -297,7 +330,7 @@ export class MapEngine {
       return;
     }
     if (!this.layers.trafo && (e.kind === 'transformer' || e.kind === 'sdk' || e.kind === 'kiosk' || e.kind === 'substation' || e.kind === 'panel')) return;
-    const T = '#6b82ff';
+    const T = EKRAN.trafo;
     g.lineWidth = 2; g.strokeStyle = T;
     const full = st === 'yeni' || st === 'YENI';
     g.fillStyle = full ? T : '#0b1326';
@@ -310,7 +343,7 @@ export class MapEngine {
     } else if (e.kind === 'sdk') { g.rect(s.x - 9, s.y - 6, 18, 12); }
     else if (e.kind === 'manhole') { g.rect(s.x - 6, s.y - 6, 12, 12); }
     else if (e.kind === 'panel') { g.rect(s.x - 7, s.y - 9, 14, 18); }
-    else if (e.kind === 'other') { g.strokeStyle = '#cbd5e1'; g.fillStyle = full ? '#cbd5e1' : '#0b1326'; g.moveTo(s.x, s.y - 8); g.lineTo(s.x + 8, s.y); g.lineTo(s.x, s.y + 8); g.lineTo(s.x - 8, s.y); g.closePath(); }
+    else if (e.kind === 'other') { g.strokeStyle = EKRAN.diger; g.fillStyle = full ? EKRAN.diger : '#0b1326'; g.moveTo(s.x, s.y - 8); g.lineTo(s.x + 8, s.y); g.lineTo(s.x, s.y + 8); g.lineTo(s.x - 8, s.y); g.closePath(); }
     else { g.arc(s.x, s.y, 5, 0, Math.PI * 2); g.strokeStyle = '#fbbf24'; }
     g.fill(); g.stroke();
     if (e.kind === 'sdk') { g.beginPath(); g.moveTo(s.x - 9, s.y + 6); g.lineTo(s.x + 9, s.y - 6); g.stroke(); }
