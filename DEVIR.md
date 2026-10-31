@@ -36,6 +36,24 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 | AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
 
+31.10 (`cbs-uyum` dalı, `telefon-esitleme` dalını da içerir; geri dönüş: `onceki-main-cbs-uyum-oncesi` dalı ve
+Releases'teki eklenti 0.1.66 / telefon 2.5.44): kullanıcının 30.10 listesi. **KVKK**: kişisel bilgiler temizlendi (hesap
+sayfalarındaki yazar adı ve imzası, deneme verilerindeki gerçek gibi görünen adlar, belgelerdeki kullanıcı adı ve
+şehri); git geçmişinde eskileri durur. **Katman adları** Türkçe karaktersiz
+(`KatmanAdlari` ↔ sh-core `katmanAscii`; eski çizimler `SH_GORUNUM` ile), **cins kodlarının yazım hataları**
+düzeltildi (`CinsKodu` ↔ sh-core `cinsDuzelt`; eski kodlu dosyalar okunurken çevrilir). **Hat yazıları**: kablo tipi
+yazısı da metraj gibi açıklığın ortasında, parçaya sığmazsa önce daralır sonra küçülür (`YaziDuzeni` ↔ dxf.js
+`yaziSigdir`, harf genişlikleri ortak çizim stilinde); hat silinince metraj ve tip yazıları da silinir. **Hat
+Değiştir** (`SH_HATDEGISTIR`): çizilmiş hattın iletkeni (tip, cins, adet), türü, durumu sonradan değişir; yazılar
+yenilenir. **Simge ve yazı boyutları** ayarlanır (Çizim Ayarları › Görünüm; proje dosyasında `proje.boyutlar`,
+telefonda Ayarlar › Harita görünümü). **CBS şebeke elemanı bazında**: `SH_MIFVER` DIREK / TRAFO / SDK / PANO /
+ELEMAN / HAT / KANAL / SONDAJ / BOLGE / NOKTA katmanları ve MALZEME tablosu, bütün öznitelikleriyle (telefon aynı);
+`SH_MIFAL` dosyaları **CBS'den al** penceresinde tanıyıp (sütun eşleme) şebeke nesnesi olarak çizer
+(`CbsIceAktarim`, telefondan alma yolu `Aktarim.Planla` ile). **Masaüstü ↔ telefon eşlemesi**: eklentinin kataloğundaki
+342 iletken / kablonun hepsi telefonda devre olur (telefonda karşılığı olmayanlar "AutoCAD'deki tip"; hat kaydında
+ayrı grupta seçilir), bakır / alüminyum XLPE doğru eşlenir, telefonda dokunulmayan hat eklentinin metrajıyla döner
+(`sebeke.js` › `ilkMetraj`), `OG_BAKIR_KABLO` iki tarafta OG yeraltı.
+
 31.10 (`telefon-esitleme` dalı; geri dönüş: `onceki-main-telefon-esitleme-oncesi` dalı ve Releases'teki telefon
 2.5.40): eklentinin 29.10 işleri telefona taşındı. **Harita çizimdeki gibi**: hat renkleri ve çizgi tipleri ortak
 stilden (abone turuncu kesik, müşterek mor, AG kablo mavi, OG kablo pembe kesik-nokta, kanal gri eksen, sondaj noktalı,
@@ -213,6 +231,15 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
+- **31.10 `cbs-uyum` işlerinin denemesi**: AutoCAD'de `SH_HATDEGISTIR`, Çizim Ayarları › Görünüm (boyutlar),
+  `SH_MIFVER` dosyalarının MapInfo / QGIS'te açılması, `SH_MIFAL` ile kullanıcının kendi CBS örnek dosyası (Drive'da
+  `Sebeke-M-deneme`; depoya konmaz — sütun adları farklıysa `CbsIceAktarim.Esanlamlar`'a eklenir); telefonda hat
+  kaydından AutoCAD tipi seçme ve Ayarlar › Harita görünümü. Eski programın yeni katman adlarını ve düzeltilmiş cins
+  kodlarını tanıyıp tanımadığı denenmeli (eski adlar eklentide okunmaya devam eder).
+- **Telefonda MIF alma yok** (eklentide `SH_MIFAL` var; §1 kuralı gereği not): dosya seçme ve sütun eşleme ekranı
+  gerektirir; şimdilik CBS verisi eklentide alınıp **Telefona Gönder** ile telefona geçer. İstenirse `MifDosyasi.Oku`
+  + `CbsIceAktarim` telefona taşınır, ortak denemeye `ortak/deneme/cbs/beklenen` dosyalarının iki tarafta aynı projeye
+  dönüştüğü eklenir.
 - **31.10 telefon işlerinin denemesi** (telefonda): haritada hat renkleri / çizgileri, açıklık metrajı, hat etiketi,
   kanal kenarları (yakınlaşınca), Katmanlar › "Kanal kenarı ve sondaj"; Dışa Aktarım › Google Earth KMZ'nin Google
   Earth'te, CBS MapInfo (MIF / MID) dosyalarının QGIS / MapInfo'da açılması; yeni altlıklar kullanıcının anahtarıyla
@@ -226,8 +253,9 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
    kaydının telefonda görünmesi ve "güncel" kalması (telefon koduyla kapta denendi; rekortman kolu düzeltmesi A10),
    telefonda bir hesabı kaydedip Telefondan Al ile çizime gelmesi. Hesap araçlarının sahibiyle ⓘ panellerindeki
    doğrulanacak tablo değerleri görüşülmeli (ör. tepe kuvveti AER yer tutucu değerleri: SC108'de "1,0 kg").
-   Eski program çiziminde telefon kataloğunda karşılığı olmayan hat tipleri (`4P+R`, `5R`, `R`, `3R`, `3A+P+R`):
-   metraj korunuyor; katalog kaydı için poz / birim fiyat bilgisi gerekir.
+   Eski program çiziminde telefon kataloğunda karşılığı olmayan hat tipleri (`4P+R`, `5R`, `R`, `3R`, `3A+P+R` …)
+   31.10'dan beri telefonda "AutoCAD'deki tip" olarak düzenlenir ve aynı kalemle döner; telefonun kendi hakediş
+   raporunda fiyatlanmaları için poz / birim fiyat bilgisi gerekir.
 1. **AutoCAD'de ilk deneme** (kullanıcı yapacak): koyu şerit ve pencereler (kategori → öğe → çizim, Ara kutusu,
    yüksek DPI'da pencereler), yeni görünüm, parçalı hat; 18.10 akşam işleri: direğe / SDK'ya tıklayınca yakalama,
    cins seçimi, iki iletken / adet / müşterek, malzeme hafızası, toplu malzeme, armatür (taşı / kopyala / sil / geri al),
@@ -239,8 +267,9 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
    uzaklığı, doğrudan IP; alıcı bağlanınca kendiliğinden bağlanma). Sabit istasyon kurulunca bilgileri "Sabit istasyon"
    profiline girilir (gereksinimler `telefon/docs/GNSS-BAGLANTI.md` › 4).
 3. **Bulut eşitleme** (Faz 7): dosyayı Drive'a elle taşımadan eşitleme. Yöntem kullanıcıyla konuşulmalı.
-4. İstenirse: pano çıkış şeması / hücre düzenleme penceresi, sondaj metrajının telefonda AutoCAD değeriyle korunması
-   (şimdi telefon geometriden hesaplar), eski program parolaları ve `HAK_YETKİ`.
+4. İstenirse: pano çıkış şeması / hücre düzenleme penceresi, kanal ve sondaj metrajının telefonda AutoCAD değeriyle
+   korunması (hatlarda 31.10'da yapıldı; kanal / sondaj telefonda geometriden hesaplanır), eski program parolaları ve
+   `HAK_YETKİ`.
 5. Telefonun ofis (web) sürümü 2.3.0'da kaldı; istenirse yeni hesapta yeniden yayınlanır (`telefon/DEVAM-NOTU.md`).
 6. Açık sorular PLAN.md'de (birim fiyat, malzeme eşlemesinin inceltilmesi, "ileride" objeler).
 7. **Tek ortak malzeme listesi** (telefon ve AutoCAD aynı liste; kullanıcı isteği 18.10): başlandı, 25.10'da kullanıcı

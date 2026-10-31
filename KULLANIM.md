@@ -380,18 +380,40 @@ Bu düğmeler çizimin gerçek koordinatını kullanır: **ITRF96, 3° TM**. Çi
   telefon ekranındakiyle aynıdır; demontajlar yarı saydamdır. Bir nesneye tıklayınca GIS no, tip, durum, hakediş,
   proje, metraj ve malzemeleri görünür. Telefon da aynı dosyayı üretir: **Dışa Aktar › Google Earth KMZ** (telefonda
   ayrıca 3 boyutlu direk / tel klasörü vardır, kapalı gelir).
-- **CBS'ye Aktar** (`SH_MIFVER`): MapInfo **MIF / MID** dosyaları. Verdiğiniz ada her nesne türü için ek gelir:
-  `ad_ELEMAN`, `ad_HAT`, `ad_KANAL`, `ad_SONDAJ`, `ad_BOLGE` (proje sınırı), `ad_NOKTA` (GPS noktası); her biri
-  `.mif` + `.mid`. Koordinatlar çizim koordinatıdır (dosyada dilim yazılıdır), harfler Türkçe Windows kod sayfasıdır.
-  Sütunlar: `KIMLIK`, `GIS_NO`, `TUR` / `TUR_ADI`, `CINS`, `TIP`, `DURUM`, `DM_DURUM`, `HAKEDIS`, `PROJE`,
-  `PROJE_KODU`, `MALZEME`, `SAGA`, `YUKARI`, `KOT`, `ACI` (eleman); hatta `KESIT`, `ETIKET`, `UZUNLUK`, `METRAJ`;
-  kanalda `KABLOLAR`, `ZEMIN`, `ALT_CM`, `UST_CM`, `DERIN_CM`, `BAS_NO`, `BIT_NO`. Telefonda: **Dışa Aktar › CBS
-  MapInfo (MIF / MID)** aynı katman ve sütunları yazar (seçilen koordinat sisteminde; tek .zip).
-- **CBS'den Al** (`SH_MIFAL`): bir ya da birkaç `.mif` dosyası seçin (yanında aynı adlı `.mid`). Noktalar küçük
-  daire (adı / numarası yanında), çizgiler ve alanlar çoklu çizgi, yazılar yazı olarak **altlık** çizilir; her dosya
-  kendi katmanındadır (`CBS-dosya adı`). TM (başka dilim, UTM), enlem-boylam ve düz koordinat çizimin dilimine
-  çevrilir. Datum ITRF96 / WGS84 değilse (ör. ED50) uyarılırsınız (birkaç metre kayabilir). Bu nesneler hakediş
-  nesnesi değildir: rapora ve telefona girmez.
+- **CBS'ye Aktar** (`SH_MIFVER`): MapInfo **MIF / MID** dosyaları, **şebeke elemanı başına ayrı katman**.
+  Verdiğiniz ada her katman için ek gelir; her biri `.mif` + `.mid`:
+  - `ad_DIREK`, `ad_TRAFO`, `ad_SDK`, `ad_PANO`, `ad_ELEMAN` (diğer elemanlar: mufu, kofre…): nokta. Sütunlar
+    `KIMLIK`, `GIS_NO`, `TUR` / `TUR_ADI`, `CINS` / `CINS_ADI`, `TIP`, `DURUM`, `DM_DURUM`, `HAKEDIS`, `GUC` (trafo
+    kVA), `GERILIM`, `KONTROL`, `PROJE`, `PROJE_KODU`, `MALZEME` (özet), `MALZEME_SAYISI`, `SAGA`, `YUKARI`, `KOT`,
+    `ACI`, `TELEFON_ID`.
+  - `ad_HAT` (iletken / kablo): `KESIT`, iletkenler (`ILETKEN_CINS`, `ILETKEN`, `ILETKEN_ADET`; müşterek hatta ikinci
+    iletken `ILETKEN2_…`), `ETIKET`, `DURUM`, `HAKEDIS`, `KONTROL`, `BAS_NO` / `BIT_NO` (hattın iki ucundaki eleman),
+    `UZUNLUK`, `METRAJ`, `MALZEME_SAYISI`.
+  - `ad_KANAL` (`KABLOLAR`, `ZEMIN`, `ALT_CM`, `UST_CM`, `DERIN_CM`, `BAS_NO`, `BIT_NO`), `ad_SONDAJ`, `ad_BOLGE`
+    (proje sınırı), `ad_NOKTA` (GPS noktası).
+  - `ad_MALZEME`: haritada yeri olmayan tablo; her nesnenin **bütün malzeme satırları** (cins, tanım, durum, miktar,
+    birim, katsayı, hakediş, sıra, kontrol). `NESNE` sütunu malzemenin ait olduğu nesnenin `KIMLIK`'idir.
+
+  Koordinatlar çizim koordinatıdır (dosyada dilim yazılıdır), harfler Türkçe Windows kod sayfasıdır. Telefonda:
+  **Dışa Aktar › CBS MapInfo (MIF / MID)** aynı katman ve sütunları yazar (seçilen koordinat sisteminde; tek .zip).
+- **CBS'den Al** (`SH_MIFAL`): bir ya da birkaç `.mif` dosyası seçin (yanında aynı adlı `.mid`). **CBS'den al**
+  penceresi açılır:
+  - Solda seçtiğiniz dosyalar. Her dosya için **Bu dosya ne?**: direk, trafo, SDK, pano, diğer eleman, hat, kablo
+    kanalı, yatay sondaj, bölge, GPS noktası, malzeme tablosu ya da **altlık** (yalnız çizilir). Şebeke-M'in yazdığı
+    dosyalar adından kendiliğinden tanınır; başka bir CBS'nin dosyası sütun adlarından tahmin edilir.
+  - **Sütunlar**: her bilgi (GIS no, cins, tip, durum, hakediş, iletken…) dosyanın hangi sütununda; yanında ilk
+    nesnedeki değer görünür. Bulunamayan bilgi boş kalır, siz seçebilirsiniz.
+  - **Durumu yazılı değilse** (yeni / mevcut / demontaj…) ve **Hakediş**: dosyada yoksa nesnelere verilecek değer.
+  - **Al**: şebeke nesneleri **gerçek hakediş nesnesi** olarak çizilir (Telefondan Al gibi; önce özet penceresi):
+    direkler, trafolar, SDK'lar, panolar tipi ve malzemeleriyle; hatlar iletkeni, adedi ve metrajıyla, iki ucundaki
+    elemana bağlı; kanallar ölçüleriyle. Malzeme tablosu da seçildiyse malzemeler oradan gelir. Dosyada kimlik
+    sütunu varsa aynı dosyayı yeniden almak nesneleri çoğaltmaz, günceller; Şebeke-M'den çıkan dosya aynı çizime geri
+    alınınca nesneler kendisiyle eşleşir.
+  - Altlık seçilen dosyalar eskisi gibi: noktalar küçük daire, çizgiler ve alanlar çoklu çizgi, yazılar yazı;
+    her dosya kendi katmanında (`CBS-dosya adı`), hakediş nesnesi değildir (rapora ve telefona girmez).
+  - TM (başka dilim, UTM), enlem-boylam ve düz koordinat çizimin dilimine çevrilir. Datum ITRF96 / WGS84 değilse
+    (ör. ED50) uyarılırsınız (birkaç metre kayabilir). Telefonda MIF alma yoktur: CBS'den alınan nesneler çizimden
+    **Telefona Gönder** ile telefona geçer.
 - **CBS Bilgisi** (`SH_CBSBILGI`): CBS'den alınan nesneyi seçin; dosyadaki bütün bilgileri (MID satırı) gösterir.
 - **Harita Altlığı** (`SH_ALTLIK`): uydu görüntüsü ya da harita, çizime oturtulmuş resim olarak **ALTLIK** katmanına,
   nesnelerin altına konur; altına kaynağın atıf yazısı yazılır. Resim çizimin yanındaki `Altlik` klasörüne kaydedilir

@@ -57,8 +57,10 @@ KOMUTLAR
   SH_DETAY         Eksik malzeme bul
  CBS ve harita
   SH_KML           Google Earth dosyası (KMZ / KML)
-  SH_MIFVER        CBS'ye MapInfo MIF / MID dosyaları
-  SH_MIFAL         CBS'den MIF / MID alır (altlık olarak çizilir)
+  SH_MIFVER        CBS'ye MapInfo MIF / MID: şebeke elemanı başına dosya (DIREK, TRAFO, SDK, PANO, HAT…)
+                   bütün bilgileri ve malzeme tablosuyla
+  SH_MIFAL         CBS'den MIF / MID alır: direk, trafo, SDK, pano, hat, kanal… şebeke nesnesi olarak
+                   (bilgileri ve malzemeleriyle) ya da altlık olarak
   SH_CBSBILGI      CBS'den alınan nesnenin bilgileri
   SH_ALTLIK        Harita altlığı (uydu / harita; anahtarlılar kendi anahtarınızla)
  Telefon
