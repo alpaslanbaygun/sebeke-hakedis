@@ -843,7 +843,7 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 | AutoCAD DXF | .dxf | Katmanlar, semboller (eklentiyle aynı bloklar), yazılar; 1/1000 |
 | Netcad NCN | .ncn | Nokta adı, Y, X, Z, kod. Netcad'e DXF ile birlikte alınır |
 | Google Earth KMZ | .kmz | AutoCAD eklentisinin Google Earth dosyasıyla aynı: her proje bir klasör (sınır, elemanlar, hatlar, kanallar, sondajlar), GPS noktaları; nesneye dokununca bilgileri (GIS no, tür, tip, durum, hakediş, proje, malzemeler, metraj). Ayrı klasörde (başta kapalı) gerçek yükseklikte 3 boyutlu direk ve tel |
-| CBS MapInfo (MIF / MID) | .zip | AutoCAD eklentisinin CBS dosyalarıyla aynı katman ve sütunlar: ELEMAN, HAT, KANAL, SONDAJ, BOLGE (proje sınırı), NOKTA (GPS noktası); her katman bir `.mif` + `.mid` çifti, Türkçe karakterler Windows kod sayfasında. Seçilen koordinat sisteminde yazılır; QGIS ve MapInfo açar |
+| CBS MapInfo (MIF / MID) | .zip | AutoCAD eklentisinin CBS dosyalarıyla aynı katman ve sütunlar, şebeke elemanı bazında: DIREK, TRAFO, SDK, PANO, ELEMAN (diğer elemanlar), HAT (iletkenleri, adetleri, baş ve bit elemanıyla), KANAL, SONDAJ, BOLGE (proje sınırı), NOKTA (GPS noktası) ve MALZEME (her nesnenin bütün malzeme satırları; haritada yeri olmayan tablo); bütün öznitelikler (GIS no, tür, cins, tip, durum, hakediş, güç, gerilim, kontrol…); her katman bir `.mif` + `.mid` çifti, Türkçe karakterler Windows kod sayfasında. Seçilen koordinat sisteminde yazılır; QGIS ve MapInfo açar |
 | CBS Shapefile | .zip | Ekipman, hat, açıklık ve ölçü katmanları |
 | GeoJSON | .geojson | CBS yazılımları için |
 | Excel | .xlsx | Metraj, Yeşil Defter ve hakediş sayfaları |

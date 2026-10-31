@@ -44,7 +44,7 @@ test('C2 · ortak deneme: telefonun KML ve MIF / MID metinleri eklentininkiyle b
   const f = ilkFark(beklenen('deneme.kml'), kml);
   assert.equal(f, null, 'deneme.kml farklı: ' + f);
   const dosyalar = mifDosyalari(p, 'deneme', { coordSys: mifCoordSys(tm39) });
-  assert.equal(dosyalar.length, 12, 'altı katman × (MIF + MID)');
+  assert.equal(dosyalar.length, 2 * KATMANLAR.length, 'bütün katmanlar (' + KATMANLAR.length + ') × (MIF + MID)');
   for (const d of dosyalar) {
     const fk = ilkFark(beklenen(d.name), d.text);
     assert.equal(fk, null, d.name + ' farklı: ' + fk);
@@ -58,7 +58,11 @@ test('C3 · nesneler: katmanlar, bölgesiz nesne, kısa sınır, Türkçe kod sa
   const p = proje();
   const n = cbsNesneleri(p);
   const say = (k) => n.filter((x) => x.katman === k).length;
-  assert.deepEqual(KATMANLAR.map((k) => [k.ad, say(k)]), [['BOLGE', 2], ['ELEMAN', 14], ['HAT', 7], ['KANAL', 2], ['SONDAJ', 1], ['NOKTA', 2]], 'iki köşeli bölge sınırı yazılmaz');
+  assert.deepEqual(KATMANLAR.map((k) => [k.ad, say(k)]), [['BOLGE', 2], ['DIREK', 5], ['TRAFO', 2], ['SDK', 1], ['PANO', 1], ['ELEMAN', 5], ['HAT', 7], ['KANAL', 2], ['SONDAJ', 1], ['NOKTA', 2], ['MALZEME', say(KATMANLAR[10])]],
+    'eleman türü bazında katmanlar (31.10.2026); iki köşeli bölge sınırı yazılmaz');
+  const pr = proje();
+  const satir = pr.elemanlar.reduce((t, e) => t + (e.kalemler || []).length, 0) + ['hatlar', 'kanallar', 'sondajlar'].reduce((t, ad) => t + pr[ad].filter((x) => (x.kose || []).length >= 2).reduce((u, x) => u + (x.kalemler || []).length, 0), 0);
+  assert.equal(say(KATMANLAR[10]), satir, 'bütün malzeme satırları MALZEME tablosunda');
   const b2 = n.find((x) => x.degerler[0] === 'B2');
   assert.equal(b2.kose.length, 4, 'kapanış köşesi tekrarlanmaz');
   assert.equal(n.find((x) => x.degerler[0] === 'E14').proje, '', 'bölgesiz eleman');

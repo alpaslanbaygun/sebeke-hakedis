@@ -378,6 +378,8 @@ namespace SebekeHakedis.Test
         {
             SembolleriYukle();
             if (!CizimStili.Yuklu) CizimStili.Yukle(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "cizim-stili.json"), Encoding.UTF8));
+            // Cins adları katalogdan (eklentide çizimin kataloğu; telefonda ortak/katalog/kalemler.json)
+            CbsYapisi.CinsAdlari = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null).CinsAdi;
             return ProjeDosyasi.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "cbs", "deneme.sebeke.json"), Encoding.UTF8));
         }
 
@@ -391,7 +393,7 @@ namespace SebekeHakedis.Test
             var p = CbsDenemeProjesi();
             string klasor = Path.Combine(AppContext.BaseDirectory, "cbs", "beklenen");
             var ciktilar = CbsCiktilari(p);
-            Esit(13, ciktilar.Count, "CBS ortak: KML ve altı katmanın MIF / MID'i");
+            Esit(1 + 2 * CbsYapisi.Katmanlar.Length, ciktilar.Count, "CBS ortak: KML ve bütün katmanların MIF / MID'i (" + CbsYapisi.Katmanlar.Length + " katman)");
             foreach (var kv in ciktilar)
             {
                 string yol = Path.Combine(klasor, kv.Key);
@@ -452,8 +454,15 @@ namespace SebekeHakedis.Test
             var ns = new System.Xml.XmlNamespaceManager(x.NameTable);
             ns.AddNamespace("k", "http://www.opengis.net/kml/2.2");
             var nesneler = CbsYapisi.Nesneler(p);
-            Esit(nesneler.Count, okundu ? x.SelectNodes("//k:Placemark", ns).Count : -1, "KML: her nesne bir yer işareti");
-            Esit(p.Elemanlar.Count, nesneler.FindAll(n => n.Katman == CbsYapisi.Eleman).Count, "KML: bütün elemanlar");
+            Esit(nesneler.FindAll(n => n.Katman != CbsYapisi.Malzeme).Count, okundu ? x.SelectNodes("//k:Placemark", ns).Count : -1, "KML: her nesne bir yer işareti (malzeme satırları hariç)");
+            Esit(p.Elemanlar.Count, nesneler.FindAll(n => Array.IndexOf(CbsYapisi.ElemanKatmanlari, n.Katman) >= 0).Count, "KML: bütün elemanlar (direk, trafo, SDK, pano, diğer)");
+            Esit(p.Elemanlar.FindAll(e => e.Tur.EndsWith("DIREK", StringComparison.Ordinal)).Count, nesneler.FindAll(n => n.Katman == CbsYapisi.Direk).Count, "CBS: direkler DIREK katmanında");
+            int satir = 0;
+            foreach (var e in p.Elemanlar) satir += e.Kalemler.Count;
+            foreach (var h in p.Hatlar) if (h.Kose.Count >= 2) satir += h.Kalemler.Count;
+            foreach (var c in p.Kanallar) if (c.Kose.Count >= 2) satir += c.Kalemler.Count;
+            foreach (var so in p.Sondajlar) if (so.Kose.Count >= 2) satir += so.Kalemler.Count;
+            Esit(satir, nesneler.FindAll(n => n.Katman == CbsYapisi.Malzeme).Count, "CBS: bütün malzeme satırları MALZEME tablosunda");
             Esit(true, okundu && x.SelectNodes("//k:Folder/k:name", ns).Count >= p.Bolgeler.Count, "KML: her proje bir klasör");
             var direk = p.Elemanlar.Find(e => e.GisId == "SC77");
             var gis = okundu ? x.SelectSingleNode("//k:Placemark[k:name='SC77']/k:ExtendedData/k:Data[@name='TIP']/k:value", ns) : null;
@@ -495,6 +504,7 @@ namespace SebekeHakedis.Test
                 var bayt = MifDosyasi.Turkce.GetBytes(mif);
                 var v = MifDosyasi.Oku(MifDosyasi.DosyaMetni(bayt), MifDosyasi.DosyaMetni(MifDosyasi.Turkce.GetBytes(mid)));
                 Esit(l.Count, v.Nesneler.Count, "MIF " + k.Ad + ": nesne sayısı");
+                if (k.Geometri == "yok") Esit(true, v.Nesneler.TrueForAll(z => z.Tur == "yok"), "MIF " + k.Ad + ": haritada yeri yok (None)");
                 Esit(k.Alanlar.Length, v.Sutunlar.Count, "MIF " + k.Ad + ": sütunlar");
                 Esit("tm", v.Sistem, "MIF " + k.Ad + ": TM koordinat sistemi");
                 Esit(0, v.Uyarilar.Count, "MIF " + k.Ad + ": uyarı yok");

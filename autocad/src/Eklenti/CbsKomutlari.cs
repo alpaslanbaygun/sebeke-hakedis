@@ -40,6 +40,7 @@ namespace SebekeHakedis.Eklenti
                 string yol = Komutlar.KayitYeriSor("Google Earth dosyasını kaydet", "Google Earth KMZ (*.kmz)|*.kmz|Google Earth KML (*.kml)|*.kml",
                     Komutlar.Ad(belge) + ".kmz", Komutlar.Klasor(belge));
                 if (yol == null) return;
+                CbsYapisi.CinsAdlari = o.Katalog.CinsAdi;
                 KmlYazici.Yaz(p, dom, yol, Uygulama.Surum);
                 int sayi = CbsYapisi.Nesneler(p).Count;
                 Uygulama.Yaz("Google Earth dosyası hazır: " + yol + " (" + sayi + " nesne, " + Koordinat.DilimAdi(dom) + ").");
@@ -48,8 +49,10 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>
-        /// CBS'ye MIF / MID: her nesne türü ayrı dosya çifti (ad_ELEMAN, ad_HAT, ad_KANAL, ad_SONDAJ, ad_BOLGE, ad_NOKTA);
-        /// koordinatlar çizim koordinatı (ITRF96 3° TM), sütunlar GIS no, tür, tip, durum, hakediş, proje, metraj...
+        /// CBS'ye MIF / MID: her şebeke elemanı türü ayrı dosya çifti (ad_DIREK, ad_TRAFO, ad_SDK, ad_PANO, ad_ELEMAN, ad_HAT,
+        /// ad_KANAL, ad_SONDAJ, ad_BOLGE, ad_NOKTA) ve malzeme tablosu (ad_MALZEME: her nesnenin bütün malzeme satırları);
+        /// koordinatlar çizim koordinatı (ITRF96 3° TM), sütunlar bütün öznitelikler (GIS no, tür, cins, tip, durum, hakediş,
+        /// güç, gerilim, iletkenler, metraj, proje...).
         /// </summary>
         [CommandMethod("SH_MIFVER", CommandFlags.Modal)]
         public void MifVer()
@@ -64,7 +67,7 @@ namespace SebekeHakedis.Eklenti
                 int dom = DilimIste(o, "CBS (MIF) dosyası");
                 if (dom == 0) return;
                 if (!KoordinatUygun(p)) return;
-                string yol = Komutlar.KayitYeriSor("CBS dosyalarının adı (her nesne türü ayrı dosya: ad_ELEMAN.mif, ad_HAT.mif …)", "MapInfo MIF (*.mif)|*.mif",
+                string yol = Komutlar.KayitYeriSor("CBS dosyalarının adı (her eleman türü ayrı dosya: ad_DIREK.mif, ad_HAT.mif …)", "MapInfo MIF (*.mif)|*.mif",
                     Komutlar.Ad(belge) + ".mif", Komutlar.Klasor(belge));
                 if (yol == null) return;
                 string klasor = Path.GetDirectoryName(yol), ad = Path.GetFileNameWithoutExtension(yol);
@@ -78,6 +81,7 @@ namespace SebekeHakedis.Eklenti
                     if (File.Exists(f) || File.Exists(Path.ChangeExtension(f, ".mid"))) var_.Add(Path.GetFileName(f));
                 }
                 if (var_.Count > 0 && !Pencereler.Onay("Bu klasörde aynı adlı CBS dosyaları var:\n" + string.Join(", ", var_.ToArray()) + "\n\nÜzerlerine yazılsın mı?", false)) return;
+                CbsYapisi.CinsAdlari = o.Katalog.CinsAdi;
                 var yazilan = MifDosyasi.Yaz(p, dom, klasor, ad);
                 var adlar = yazilan.ConvertAll(Path.GetFileNameWithoutExtension);
                 Uygulama.Yaz("CBS dosyaları yazıldı (" + Koordinat.DilimAdi(dom) + "): " + string.Join(", ", adlar.ToArray()) + " (.mif + .mid) → " + klasor);

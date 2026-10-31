@@ -1,0 +1,33 @@
+Version 300
+Charset "WindowsTurkish"
+Delimiter ","
+CoordSys Earth Projection 8, 104, "m", 39, 0, 1, 500000, 0 Bounds (0, 3000000) (1000000, 5000000)
+Columns 22
+  KIMLIK Char(20)
+  GIS_NO Char(20)
+  TUR Char(20)
+  TUR_ADI Char(40)
+  CINS Char(40)
+  CINS_ADI Char(80)
+  TIP Char(80)
+  DURUM Char(10)
+  DM_DURUM Char(10)
+  HAKEDIS Integer
+  GUC Char(20)
+  GERILIM Char(20)
+  KONTROL Char(10)
+  PROJE Char(120)
+  PROJE_KODU Char(40)
+  MALZEME Char(254)
+  MALZEME_SAYISI Integer
+  SAGA Float
+  YUKARI Float
+  KOT Float
+  ACI Float
+  TELEFON_ID Char(40)
+Data
+
+Point 519650.000 4282100.000
+    Symbol (36,7045887,10)
+Point 519700.000 4282100.000
+    Symbol (36,7045887,10)

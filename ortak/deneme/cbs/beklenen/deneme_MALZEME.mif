@@ -1,0 +1,43 @@
+Version 300
+Charset "WindowsTurkish"
+Delimiter ","
+CoordSys Earth Projection 8, 104, "m", 39, 0, 1, 500000, 0 Bounds (0, 3000000) (1000000, 5000000)
+Columns 18
+  NESNE Char(20)
+  KATMAN Char(10)
+  GIS_NO Char(20)
+  SIRA Char(20)
+  CINS Char(40)
+  TANIM Char(120)
+  ACIKLAMA Char(120)
+  DURUM Char(10)
+  DM_DURUM Char(10)
+  MIKTAR Float
+  BIRIM Char(20)
+  KATSAYI Float
+  TOPLAM Float
+  HAKEDIS Integer
+  TARIFE Char(10)
+  KAYNAK Char(10)
+  ANA Char(5)
+  KONTROL Char(10)
+Data
+
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None

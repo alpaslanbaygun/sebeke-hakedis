@@ -519,26 +519,26 @@ test('A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosya
   assert.equal(govde(kml), govde(asil), 'KMZ içeriği eklentinin yapısıyla aynı');
   assert.match(kml, /<description>Şebeke-M telefon 9\.9\.9 · ITRF96 \/ TM 39 \(3°\) → WGS84 · \d\d\.\d\d\.\d{4} \d\d:\d\d<\/description>/);
   assert.match(kml, /<Folder><name>3B direk ve iletken \(telefon\)<\/name><visibility>0<\/visibility>/, '3B klasörü başta kapalı');
-  assert.equal((asil.match(/<Placemark>/g) || []).length, nesneler.length, 'her CBS nesnesi bir yer işareti');
-  const direk = nesneler.find((n) => n.katman.ad === 'ELEMAN' && n.ad === poles[0].no);
+  assert.equal((asil.match(/<Placemark>/g) || []).length, nesneler.filter((n) => n.katman.ad !== 'MALZEME').length, 'her CBS nesnesi bir yer işareti (malzeme satırları hariç)');
+  const direk = nesneler.find((n) => n.katman.ad === 'DIREK' && n.ad === poles[0].no);
   assert.ok(direk && kml.includes('<name>' + poles[0].no + '</name><styleUrl>#placemark_circle_'), 'direk adı GIS no, simgesi daire');
   assert.ok(kml.includes('<Data name="TIP"><displayName>Tip</displayName><value>G-D-10 (sw)</value></Data>'), 'tipi öznitelikte');
   // MIF / MID: dolu katmanlar, Türkçe Windows kod sayfası, proje sisteminin CoordSys satırı
   const [z] = await exportFormat(ps, 'mif');
   const files = await unzip(z.data);
-  const base = Object.keys(files).find((n) => n.endsWith('_ELEMAN.mif')).replace('_ELEMAN.mif', '');
-  for (const k of ['BOLGE', 'ELEMAN', 'HAT', 'KANAL']) assert.ok(files[base + '_' + k + '.mif'] && files[base + '_' + k + '.mid'], k);
+  const base = Object.keys(files).find((n) => n.endsWith('_DIREK.mif')).replace('_DIREK.mif', '');
+  for (const k of ['BOLGE', 'DIREK', 'HAT', 'KANAL', 'MALZEME']) assert.ok(files[base + '_' + k + '.mif'] && files[base + '_' + k + '.mid'], k);
   const metin1254 = (u8) => { const t = new TextDecoder('windows-1254').decode(u8); return t; };
-  const mif = metin1254(files[base + '_ELEMAN.mif']), mid = metin1254(files[base + '_ELEMAN.mid']);
+  const mif = metin1254(files[base + '_DIREK.mif']), mid = metin1254(files[base + '_DIREK.mid']);
   assert.ok(mif.includes('Charset "WindowsTurkish"\r\n') && mif.includes(mifCoordSys(crs) + '\r\n'));
   assert.ok(mid.includes('"ENH_DEMİR_GLV"'), 'Türkçe harfler 1254 kod sayfasında doğru');
-  const beklenen = mifDosyalari(sp, base, { coordSys: mifCoordSys(crs) }).find((d) => d.name === base + '_ELEMAN.mid').text;
+  const beklenen = mifDosyalari(sp, base, { coordSys: mifCoordSys(crs) }).find((d) => d.name === base + '_DIREK.mid').text;
   assert.equal(mid, beklenen, 'MID metni eklentinin yapısıyla aynı');
   // Başka koordinat sistemi (Dışa Aktarım'daki seçim): köşeler çevrilir, CoordSys ona göre
   const utm = makeCrs({ datum: 'WGS84', projection: 'UTM', zone: 37 });
   const [zu] = await exportFormat(ps, 'mif', { crs: utm });
   const fu = await unzip(zu.data);
-  const mifU = metin1254(fu[base + '_ELEMAN.mif']);
+  const mifU = metin1254(fu[base + '_DIREK.mif']);
   assert.ok(mifU.includes('CoordSys Earth Projection 8, 104, "m", 39, 0, 0.9996, 500000, 0'), 'UTM CoordSys');
   const ilk = (t) => t.match(/Point ([\d.]+) ([\d.]+)/).slice(1).map(Number);
   const [e1, n1] = ilk(mif), [e2, n2] = ilk(mifU);
@@ -546,5 +546,5 @@ test('A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosya
   // Teslim paketi: HARITA klasöründe KMZ ve MIF/MID
   const [pk] = await exportFormat(ps, 'package');
   const pf = Object.keys(await unzip(pk.data));
-  assert.ok(pf.some((n) => /\/HARITA\/.*\.kmz$/.test(n)) && pf.some((n) => /\/HARITA\/mif\/.*_ELEMAN\.mif$/.test(n)), 'paket: KMZ ve MIF');
+  assert.ok(pf.some((n) => /\/HARITA\/.*\.kmz$/.test(n)) && pf.some((n) => /\/HARITA\/mif\/.*_DIREK\.mif$/.test(n)), 'paket: KMZ ve MIF');
 });
