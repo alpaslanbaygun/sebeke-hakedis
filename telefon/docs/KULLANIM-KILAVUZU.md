@@ -851,6 +851,7 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 | Teslim paketi | .zip | Proje klasörü: saha alımı, hakediş, GNSS kayıtları, fotoğraflar, harita, rapor |
 
 - Kontrol listesinde hata varken de çıktı alınabilir; uygulama önce sorar ve hatayı teslim paketine yazar.
+- Google Earth ve CBS (MIF / MID) dosyaları AutoCAD eklentisinin dosyalarıyla aynıdır: "ileride" durumundaki nesneler (eklentide olmadıkları için) bu dosyalara yazılmaz, dışa aktarımda uyarı çıkar. Projede AutoCAD'den gelen bölge yoksa proje sınırı yazılmaz; proje adı klasörün adıdır. MIF'te koordinatlar ve `SAGA` / `YUKARI` sütunları seçilen koordinat sistemindedir.
 - Veri değişince önceki çıktılar "Son üretilenler" listesinde `ESKİDİ` olarak işaretlenir; yeniden üretin.
 
 ### AutoCAD eklentisiyle çalışma (Şebeke-M)

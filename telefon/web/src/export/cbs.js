@@ -353,12 +353,12 @@ function mifSimgesi(n) {
 }
 /**
  * Bir katmanın MIF ve MID metinleri (satır sonu CRLF). o.coordSys: CoordSys satırı (varsayılan eklentinin TM satırı,
- * o.dom ile); o.koordinat(k): köşeyi yazılacak sisteme çevirir (varsayılan olduğu gibi); o.hane: koordinat basamağı.
+ * o.dom ile); o.hane: koordinat basamağı (eklentide 3). Başka sisteme çevirmek için önce sistemeCevir.
  */
 export function mifKatmani(k, nesneler, o = {}) {
   const cs = o.coordSys || mifCoordSys({ cm: o.dom || 39 });
-  const cev = o.koordinat || ((x) => x), hane = o.hane ?? 3;
-  const K2 = (x) => { const q = cev(x); return netSayi(q[0], hane) + ' ' + netSayi(q[1], hane); };
+  const hane = o.hane ?? 3;
+  const K2 = (q) => netSayi(q[0], hane) + ' ' + netSayi(q[1], hane);
   let m = 'Version 300\r\nCharset "WindowsTurkish"\r\nDelimiter ","\r\n' + cs + '\r\nColumns ' + k.alanlar.length + '\r\n';
   for (const a of k.alanlar) m += '  ' + a.ad + ' ' + (a.tur === 'I' ? 'Integer' : a.tur === 'F' ? 'Float' : 'Char(' + a.uzunluk + ')') + '\r\n';
   m += 'Data\r\n\r\n';
@@ -390,9 +390,29 @@ export function mifKatmani(k, nesneler, o = {}) {
   }
   return { mif: m, mid: d };
 }
-/** Projenin MIF/MID dosyaları: her dolu katman ad_KATMAN.mif + .mid (eklentideki MifDosyasi.Yaz). Metinler; kodlama ayrı. */
+/**
+ * Nesneleri başka koordinat sistemine çevirir (telefonda Dışa Aktarım'daki seçim; eklentide yok, çizim hep kendi
+ * sisteminde): köşeler, elemanın SAGA / YUKARI sütunları, çizim uzunluğu (UZUNLUK) ve sınırın alanı (ALAN) yeni sistemde;
+ * metraj (gerçek miktar) değişmez. koordinat([x, y]) → [x, y]; cografi: hedef enlem / boylam (uzunluk, alan çevrilmez).
+ */
+export function sistemeCevir(nesneler, koordinat, cografi = false) {
+  return nesneler.map((n) => {
+    const m = Object.assign({}, n, { kose: n.kose.map((k) => koordinat(k)), degerler: n.degerler.slice() });
+    const sira = (ad) => n.katman.alanlar.findIndex((a) => a.ad === ad);
+    if (n.katman === ELEMAN) { m.degerler[sira('SAGA')] = yuvarla(m.kose[0][0], cografi ? 8 : 3); m.degerler[sira('YUKARI')] = yuvarla(m.kose[0][1], cografi ? 8 : 3); }
+    if (!cografi && (n.katman === HAT || n.katman === KANAL || n.katman === SONDAJ)) m.degerler[sira('UZUNLUK')] = yuvarla(uzunluk(m.kose), 2);
+    if (!cografi && n.katman === BOLGE) m.degerler[sira('ALAN')] = yuvarla(alan(m.kose), 2);
+    return m;
+  });
+}
+/**
+ * Projenin MIF/MID dosyaları: her dolu katman ad_KATMAN.mif + .mid (eklentideki MifDosyasi.Yaz). Metinler; kodlama ayrı.
+ * o.koordinat verilirse nesneler o sisteme çevrilir (sistemeCevir; o.hane 8 ise hedef coğrafi).
+ */
 export function mifDosyalari(p, ad, o = {}) {
-  const hepsi = cbsNesneleri(p), out = [];
+  let hepsi = cbsNesneleri(p);
+  if (o.koordinat) hepsi = sistemeCevir(hepsi, o.koordinat, (o.hane ?? 3) > 3);
+  const out = [];
   for (const k of KATMANLAR) {
     const l = hepsi.filter((n) => n.katman === k);
     if (!l.length) continue;

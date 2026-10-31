@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import SH from '../src/interop/sh-core.cjs';
-import { cbsNesneleri, kmlMetni, mifDosyalari, mifCoordSys, netSayi, yuvarla, cp1254, KATMANLAR } from '../src/export/cbs.js';
+import { cbsNesneleri, kmlMetni, mifDosyalari, mifCoordSys, netSayi, yuvarla, cp1254, KATMANLAR, sistemeCevir } from '../src/export/cbs.js';
 import { makeCrs, unproject } from '../src/geo/crs.js';
 
 const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../ortak/deneme/cbs');
@@ -73,4 +73,19 @@ test('C4 · CoordSys: UTM, ED50, coğrafi ve yerel sistem', () => {
   assert.equal(mifCoordSys(makeCrs({ datum: 'ED50', projection: 'TM3', cm: 36 })), 'CoordSys Earth Projection 8, 28, "m", 36, 0, 1, 500000, 0 Bounds (0, 3000000) (1000000, 5000000)');
   assert.equal(mifCoordSys(makeCrs({ datum: 'WGS84', projection: 'GEO' })), 'CoordSys Earth Projection 1, 104');
   assert.match(mifCoordSys(Object.assign(makeCrs({ projection: 'TM3', cm: 39 }), { local: { a: 1, b: 0, tx: 0, ty: 0 } })), /^CoordSys NonEarth Units "m"/);
+});
+
+test('C5 · başka koordinat sistemine çevirme: köşeler, SAGA / YUKARI, çizim uzunluğu ve alan yeni sistemde; metraj aynı', () => {
+  const n = cbsNesneleri(proje());
+  const kay = (k) => [k[0] + 1000, k[1] * 2];
+  const c = sistemeCevir(n, kay);
+  const e = c.find((x) => x.degerler[0] === 'E1'), e0 = n.find((x) => x.degerler[0] === 'E1');
+  assert.deepEqual(e.kose[0], kay(e0.kose[0]));
+  assert.deepEqual([e.degerler[12], e.degerler[13]], [yuvarla(e0.kose[0][0] + 1000, 3), yuvarla(e0.kose[0][1] * 2, 3)], 'SAGA / YUKARI');
+  const h = c.find((x) => x.degerler[0] === 'H3'), h0 = n.find((x) => x.degerler[0] === 'H3');
+  assert.equal(h.degerler[9], 80, 'dik hat 40 m → 80 m (çizim uzunluğu yeni sistemde)');
+  assert.equal(h.degerler[10], h0.degerler[10], 'metraj değişmez');
+  const b = c.find((x) => x.degerler[0] === 'B1');
+  assert.equal(b.degerler[5], 2 * n.find((x) => x.degerler[0] === 'B1').degerler[5], 'alan yeni sistemde');
+  assert.notEqual(n.find((x) => x.degerler[0] === 'E1').degerler[12], e.degerler[12], 'asıl nesneler değişmez');
 });

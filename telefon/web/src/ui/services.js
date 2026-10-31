@@ -161,11 +161,20 @@ const httpNeden = (st) => (st === 401 || st === 403 ? 'erişim reddedildi (' + s
   : st === 429 ? 'kota ya da hız sınırı aşıldı (429)' : st === 504 || st === 502 ? 'sunucuya ulaşılamadı (' + st + ')' : 'sunucu hatası (' + st + ')');
 
 // Google Map Tiles (resmî): harita türü başına oturum belirteci alınır, süresi dolana kadar saklanır
-const gSessions = new Map();
+const gSessions = new Map(), gBekleyen = new Map(), gHata = new Map();
 async function googleSession(bm, key) {
   const k = bm.gType + '|' + key;
   const cur = gSessions.get(k);
   if (cur && cur.expiry > Date.now() / 1000 + 60) return cur.session;
+  // Anahtar reddedildiyse bir dakika yeniden sorulmaz; aynı anda istenen karolar tek oturum isteğini bekler
+  const h = gHata.get(k);
+  if (h && h.until > Date.now()) throw h.e;
+  if (gBekleyen.has(k)) return gBekleyen.get(k);
+  const p = googleSessionAl(bm, key, k);
+  gBekleyen.set(k, p);
+  try { return await p; } catch (e) { gHata.set(k, { e, until: Date.now() + 60000 }); throw e; } finally { gBekleyen.delete(k); }
+}
+async function googleSessionAl(bm, key, k) {
   const body = bm.gType === 'hybrid' ? { mapType: 'satellite', layerTypes: ['layerRoadmap'], language: 'tr', region: 'TR' } : { mapType: bm.gType, language: 'tr', region: 'TR' };
   const r = await fetch('https://tile.googleapis.com/v1/createSession?key=' + encodeURIComponent(key), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   if (!r.ok) { const e = new Error('Google anahtarı kabul edilmedi (' + r.status + ')'); e.durum = r.status; throw e; }
@@ -173,20 +182,26 @@ async function googleSession(bm, key) {
   gSessions.set(k, { session: j.session, expiry: +j.expiry || Date.now() / 1000 + 3600 });
   return j.session;
 }
-// Bing Maps (kurumsal anahtar): görüntü kümesinin karo adresi şablonu meta veriden alınır (eklentideki gibi), saklanır
+// Bing Maps (kurumsal anahtar): görüntü kümesinin karo adresi şablonu meta veriden alınır (eklentideki gibi). İstek bir
+// kez yapılır: aynı anda istenen karolar aynı isteği bekler (her meta veri isteği Bing'de ücretli işlem sayılır);
+// anahtar reddedilirse sonuç bir dakika saklanır, her karo için yeniden sorulmaz.
 const bingMetas = new Map();
-async function bingMeta(bm, key) {
+function bingMeta(bm, key) {
   const k = bm.set + '|' + key;
-  if (bingMetas.has(k)) return bingMetas.get(k);
-  const u = 'https://dev.virtualearth.net/REST/v1/Imagery/Metadata/' + bm.set + '?key=' + encodeURIComponent(key) + '&uriScheme=https&output=json';
-  const r = await fetch(app.bridge && app.bridge.isNative() ? '/_tile?u=' + encodeURIComponent(u) : u);
-  if (!r.ok) { const e = new Error('Bing Maps anahtarı kabul edilmedi (' + r.status + ')'); e.durum = r.status; throw e; }
-  const j = await r.json();
-  const res = (((j.resourceSets || [])[0] || {}).resources || [])[0] || {};
-  if (!res.imageUrl) throw new Error('Bing Maps karo adresi alınamadı');
-  const m = { url: res.imageUrl, alt: res.imageUrlSubdomains || [] };
-  bingMetas.set(k, m);
-  return m;
+  let p = bingMetas.get(k);
+  if (p) return p;
+  p = (async () => {
+    const u = 'https://dev.virtualearth.net/REST/v1/Imagery/Metadata/' + bm.set + '?key=' + encodeURIComponent(key) + '&uriScheme=https&output=json';
+    const r = await fetch(app.bridge && app.bridge.isNative() ? '/_tile?u=' + encodeURIComponent(u) : u);
+    if (!r.ok) { const e = new Error('Bing Maps anahtarı kabul edilmedi (' + r.status + ')'); e.durum = r.status; throw e; }
+    const j = await r.json();
+    const res = (((j.resourceSets || [])[0] || {}).resources || [])[0] || {};
+    if (!res.imageUrl) throw new Error('Bing Maps karo adresi alınamadı');
+    return { url: res.imageUrl, alt: res.imageUrlSubdomains || [] };
+  })();
+  bingMetas.set(k, p);
+  p.catch(() => setTimeout(() => { if (bingMetas.get(k) === p) bingMetas.delete(k); }, 60000));
+  return p;
 }
 /** Karo adresi. Anahtar isteyen altlıkta anahtar yoksa hata (anahtarsız genel adres denenmez). */
 export async function tileUrl(bm, z, x, y, keys) {

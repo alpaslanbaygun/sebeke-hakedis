@@ -154,12 +154,17 @@ export class MapEngine {
     const metrajAcik = this.layers.spanText && res < 1.2, etiketAcik = this.layers.labels && res < 0.8 && d.lineTag;
     const yazilar = []; // hatların üstünde kalsın diye hatlardan sonra yazılır
     const metrajOlcu = yaziOlcusu(YAZI.metraj, res), etiketOlcu = yaziOlcusu(YAZI.etiket, res, 10, 16);
+    // Görünen alan (yazılar taşabilsin diye 200 px paylı): dışındaki hat çizilmez, yazısı hesaplanmaz
+    const g0 = this.toWorld(-200, -200), g1 = this.toWorld(this.w + 200, this.h + 200);
     for (const l of d.lines) {
       if (!this.layers[l.lineType] || (l.install === 'yeralti' && !this.layers.yeralti)) continue;
       if (l.channelOnly && !kanalAcik) continue;
       if (l.state === 'MEVCUT' && !this.layers.mevcut) continue;
       const n = l.nodes.map((id) => d.pointMap.get(id)).filter((p) => p && p.E != null);
       if (n.length < 2) continue;
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const p of n) { if (p.E < x0) x0 = p.E; if (p.E > x1) x1 = p.E; if (p.N < y0) y0 = p.N; if (p.N > y1) y1 = p.N; }
+      if (x1 < g0.E || x0 > g1.E || y1 < g1.N || y0 > g0.N) continue;
       const on = sel.type === 'line' && sel.id === l.id;
       const anahtar = hatAnahtari(l), lw = hatKalinligi(l, anahtar);
       g.lineCap = 'round'; g.lineJoin = 'round';

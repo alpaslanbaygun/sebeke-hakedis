@@ -507,11 +507,17 @@ test('A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosya
   const { unzip } = await import('../src/export/zip.js');
   const { kmlMetni, cbsNesneleri, mifDosyalari, mifCoordSys } = await import('../src/export/cbs.js');
   const { makeCrs, unproject } = await import('../src/geo/crs.js');
+  const { eklentiModeli } = await import('../src/export/exporter.js');
   const { ps, poles } = await ornekProje();
-  const sp = SH.projeOku(sebekeYaz(ps));
+  // "İleride" durumundaki direk: eklentinin dosyasına girmez, CBS'ye de yazılmaz; dışa aktarım uyarır
+  const ileride = await ps.addEquipment('pole', { group: 'sehir', typeId: ps.cat.poleTypeByName('sehir', 'G-K2').id, state: 'ILERIDE' }, { obs: rtkObs(519600, 4282450, 1056) });
+  const sp = eklentiModeli(ps);
+  assert.ok(sp.bolgeler.length === 1 && sp.bolgeler[0].sinir.length === 0, 'AutoCAD bölgesi yok: uydurma proje sınırı CBS modelinde yok');
   const nesneler = cbsNesneleri(sp);
+  assert.ok(!nesneler.some((n) => n.katman.ad === 'BOLGE'), 'uydurma sınır yazılmaz');
   // KMZ: içinde doc.kml; asıl içerik eklentinin yazacağıyla aynı (aynı proje modelinden), sonda 3B klasörü (kapalı)
   const [kmz] = await exportFormat(ps, 'kmz', { surum: 'telefon 9.9.9' });
+  assert.ok(kmz.uyarilar.length === 1 && kmz.uyarilar[0].startsWith(ileride.no + ': "ileride"') && kmz.uyarilar[0].includes('Google Earth / CBS'), 'ileride direk uyarısı: ' + kmz.uyarilar);
   const kml = new TextDecoder().decode((await unzip(kmz.data))['doc.kml']);
   const crs = ps.p.crs;
   const asil = kmlMetni(sp, { donustur: (E, N) => { const g = unproject(E, N, crs); return [g.lon, g.lat]; }, surum: 'telefon 9.9.9', sistem: 'ITRF96 / TM 39 (3°)', tarih: 'T' });
@@ -519,6 +525,8 @@ test('A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosya
   assert.equal(govde(kml), govde(asil), 'KMZ içeriği eklentinin yapısıyla aynı');
   assert.match(kml, /<description>Şebeke-M telefon 9\.9\.9 · ITRF96 \/ TM 39 \(3°\) → WGS84 · \d\d\.\d\d\.\d{4} \d\d:\d\d<\/description>/);
   assert.match(kml, /<Folder><name>3B direk ve iletken \(telefon\)<\/name><visibility>0<\/visibility>/, '3B klasörü başta kapalı');
+  assert.ok(!kml.includes('<name>' + ileride.no + '</name>'), 'ileride direk ne asıl klasörlerde ne 3B klasöründe');
+  assert.ok(kml.includes('<Folder><name>' + ps.p.name + '</name>'), 'proje yine klasör adı');
   assert.equal((asil.match(/<Placemark>/g) || []).length, nesneler.length, 'her CBS nesnesi bir yer işareti');
   const direk = nesneler.find((n) => n.katman.ad === 'ELEMAN' && n.ad === poles[0].no);
   assert.ok(direk && kml.includes('<name>' + poles[0].no + '</name><styleUrl>#placemark_circle_'), 'direk adı GIS no, simgesi daire');
@@ -527,7 +535,8 @@ test('A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosya
   const [z] = await exportFormat(ps, 'mif');
   const files = await unzip(z.data);
   const base = Object.keys(files).find((n) => n.endsWith('_ELEMAN.mif')).replace('_ELEMAN.mif', '');
-  for (const k of ['BOLGE', 'ELEMAN', 'HAT', 'KANAL']) assert.ok(files[base + '_' + k + '.mif'] && files[base + '_' + k + '.mid'], k);
+  for (const k of ['ELEMAN', 'HAT', 'KANAL']) assert.ok(files[base + '_' + k + '.mif'] && files[base + '_' + k + '.mid'], k);
+  assert.ok(!files[base + '_BOLGE.mif'], 'uydurma proje sınırı MIF\'e yazılmaz');
   const metin1254 = (u8) => { const t = new TextDecoder('windows-1254').decode(u8); return t; };
   const mif = metin1254(files[base + '_ELEMAN.mif']), mid = metin1254(files[base + '_ELEMAN.mid']);
   assert.ok(mif.includes('Charset "WindowsTurkish"\r\n') && mif.includes(mifCoordSys(crs) + '\r\n'));
@@ -543,6 +552,13 @@ test('A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosya
   const ilk = (t) => t.match(/Point ([\d.]+) ([\d.]+)/).slice(1).map(Number);
   const [e1, n1] = ilk(mif), [e2, n2] = ilk(mifU);
   assert.ok(Math.abs(e2 - (500000 + (e1 - 500000) * 0.9996)) < 0.01 && Math.abs(n2 - n1 * 0.9996) < 0.01, 'UTM köşesi TM köşesinin 0,9996 katı (aynı orta meridyen)');
+  // Öznitelikteki SAGA / YUKARI da yeni sistemde (geometriyle aynı)
+  // (sayı sütunları satırın sonunda: ELEMAN … SAGA, YUKARI, KOT, ACI · HAT … UZUNLUK, METRAJ; tırnaklı metindeki virgül sayılmaz)
+  const sondan = (u8, i) => { const r = metin1254(u8).split('\r\n')[0].split(','); return r[r.length - i]; };
+  const sagaU = +sondan(fu[base + '_ELEMAN.mid'], 4), yukariU = +sondan(fu[base + '_ELEMAN.mid'], 3);
+  assert.ok(Math.abs(sagaU - e2) < 0.0011 && Math.abs(yukariU - n2) < 0.0011, 'UTM: SAGA / YUKARI sütunları geometriyle aynı: ' + sagaU + ' ' + yukariU + ' ↔ ' + e2 + ' ' + n2);
+  const uzU = +sondan(fu[base + '_HAT.mid'], 2), uz0 = +sondan(files[base + '_HAT.mid'], 2);
+  assert.ok(Math.abs(uzU - uz0 * 0.9996) < 0.02 && sondan(fu[base + '_HAT.mid'], 1) === sondan(files[base + '_HAT.mid'], 1), 'UTM: çizim uzunluğu yeni sistemde, metraj değişmez');
   // Teslim paketi: HARITA klasöründe KMZ ve MIF/MID
   const [pk] = await exportFormat(ps, 'package');
   const pf = Object.keys(await unzip(pk.data));
