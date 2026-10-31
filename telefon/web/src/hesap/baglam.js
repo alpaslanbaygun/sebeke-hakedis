@@ -3,6 +3,7 @@
 // (hesap sayfası onu "eksik" diye işaretler, kullanıcı girer). Sayılar yuvarlanır (uzunluk ve kot 0,01 m, açı 0,01°)
 // ki aynı proje her açılışta aynı bağlamı versin ve "güncel değil" uyarısı yalnız gerçek değişiklikte çıksın.
 import { circuitParts } from '../grid/lines.js';
+import ESLESME from '../ortak/volt-eslesme.js';
 import { ruling } from '../../../../ortak/hesap/kurallar.mjs';
 
 const r2 = (v) => (v == null || !Number.isFinite(+v) ? null : Math.round(+v * 100) / 100);
@@ -26,8 +27,17 @@ function eslesmeyenAutocadHatti(l) {
   return !(l.circuits || []).length && !!(l.sebeke && !l.sebeke.kanal && (l.sebeke.tur || (l.sebeke.kalemler || []).length));
 }
 
+/** Hattın AutoCAD dosyasına yazılan türü (interop/sebeke.js › hatTuruSec ile aynı eşleme). */
+function aktarimTuru(l) {
+  if (l.musterek && l.install !== 'yeralti' && l.lineType === 'AG') return 'MUSTEREK';
+  const h = ESLESME.hatlar[(l.lineType || 'AG') + ':' + (l.install === 'yeralti' ? 'yeralti' : 'havai')] || ESLESME.hatlar['AG:havai'];
+  return h.tur;
+}
+
 function hatTuru(l) {
   if (eslesmeyenAutocadHatti(l) && l.sebeke.tur) return l.sebeke.tur; // ör. REKORTMAN: AutoCAD bağlamıyla aynı
+  // AutoCAD'den gelen ve türü telefonda değişmeyen hat (ör. rekortman, yeraltı aydınlatma): AutoCAD'deki tür
+  if (l.sebeke && l.sebeke.tur && !l.sebeke.kanal && aktarimTuru(l) === l.sebeke.tur) return l.sebeke.tur;
   const roller = new Set((l.circuits || []).map((c) => (c.role === 'ENH' ? 'OG' : c.role)));
   const yer = l.install === 'yeralti';
   if (l.lineType === 'AYD') return yer ? 'AG_YERALTI' : 'AYDINLATMA';

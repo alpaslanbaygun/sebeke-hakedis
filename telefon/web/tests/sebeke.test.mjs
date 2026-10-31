@@ -4,7 +4,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { setup, newProject, buildPoleLine, rtkObs, route } from './helpers.mjs';
-import { sebekeYaz, sebekeModel, sebekeIceAl, voltProjeYaz, voltProjeOku, cizimTip, voltTip, cizimKesit, hatTipiEsle, direkEsle, SH } from '../src/interop/sebeke.js';
+import { sebekeYaz, sebekeModel, sebekeIceAl, voltProjeYaz, voltProjeOku, cizimTip, voltTip, cizimKesit, hatTipiEsle, direkEsle, autocadSecenekleri, SH } from '../src/interop/sebeke.js';
+import { lineLabel, circuitParts, autocadAnahtari } from '../src/grid/lines.js';
+import KALEMLER from '../src/ortak/kalemler.js';
 import KATSAYILAR from '../src/ortak/katsayilar.js';
 import { exportFormat } from '../src/export/exporter.js';
 
@@ -233,8 +235,9 @@ test('A4 · AutoCAD örnek dosyası telefona alınır: direk tipleri katalogdan 
   const og = ps.data.lines.find((l) => l.lineType === 'OG');
   assert.equal(og.install, 'havai'); assert.deepEqual(og.circuits.map((c) => c.key), ['3xSwallow']);
   const ag = ps.data.lines.find((l) => l.lineType === 'AG' && l.install === 'havai');
-  assert.equal(ag.circuits.length, 0, '3A+P+R telefon kataloğunda yok → kalemler saklanır');
+  assert.deepEqual(ag.circuits.map((c) => c.key), ['@AG_İLETKEN|3A+P+R'], '3A+P+R telefon kataloğunda yok → AutoCAD kataloğundaki iletken olarak gelir');
   assert.equal(ag.sebeke.anaKesit, '3A+P+R');
+  assert.equal(lineLabel(ag, ps.cat), '3A+P+R', 'telefondaki yazı AutoCAD tanımı');
   const kanal = ps.data.lines.find((l) => l.channelOnly && l.cable.method === 'acik');
   assert.ok(kanal); assert.equal(kanal.cable.surface, 'toprak'); assert.equal(kanal.cable.width, 0.4); assert.equal(kanal.cable.depth, 1);
   const sondaj = ps.data.lines.find((l) => l.channelOnly && l.cable.method === 'sondaj');
@@ -251,7 +254,11 @@ test('A4 · AutoCAD örnek dosyası telefona alınır: direk tipleri katalogdan 
   assert.equal(e7.durum, 'DM'); assert.equal(e7.cins, 'AG_DEMİR'); assert.equal(e7.tip, '10I', 'eklentiden gelen cins ve tip korunur');
   assert.equal(geri.bolgeler.length, 2);
   const h1 = geri.hatlar.find((h) => h.tur === 'AG_HAVAI');
-  assert.equal(h1.anaKesit, '3A+P+R'); assert.equal(h1.kalemler[0].cins, 'AG_İLETKEN'); assert.equal(h1.kalemler[0].miktar, 100);
+  assert.equal(h1.anaKesit, '3A+P+R'); assert.equal(h1.kalemler[0].cins, 'AG_İLETKEN'); assert.equal(h1.kalemler[0].tanim, '3A+P+R');
+  // Telefonda dokunulmayan hat: eklentinin metrajı aynen döner (telefonun hesabı 98,99 m → 99; dosyada 100 yazılı)
+  assert.equal(h1.kalemler[0].miktar, 100);
+  assert.equal(h1.kalemler[0].sira, '14', 'kalemin INDEX sırası korunur');
+  assert.equal(h1.kalemler[0].kontrol, false, 'miktar değişmediği için KONTROL işareti de korunur');
   const h2 = geri.hatlar.find((h) => h.tur === 'OG_HAVAI');
   assert.equal(h2.anaKesit, '3xSW'); assert.equal(h2.kalemler[0].cins, 'OG_İLETKEN');
   assert.equal(geri.kanallar.length, 1); assert.equal(geri.kanallar[0].kod, 12); assert.equal(geri.kanallar[0].zemin, 'TOPRAK');
@@ -336,7 +343,9 @@ test('A6 · katalog eşleme yardımcıları', async () => {
   assert.equal(hatTipiEsle(ps.cat, '3xSW', 'OG', 'havai').name, '3xSwallow');
   assert.equal(hatTipiEsle(ps.cat, '3x1\\0', 'OG', 'havai').name, '3xRaven');
   assert.equal(hatTipiEsle(ps.cat, '3X50/16+70 ALPEK', 'AG', 'havai').name, '3x50/16+70 AER');
-  assert.equal(hatTipiEsle(ps.cat, '1x150/25 Xlpe Alm.', 'OG', 'yeralti').name, '3x(1x150/25) YE3SV');
+  assert.equal(hatTipiEsle(ps.cat, '1x150/25 Xlpe Alm.', 'OG', 'yeralti').name, '3x(1x150/25) NA2XSY', 'alüminyum XLPE → NA2XSY');
+  assert.equal(hatTipiEsle(ps.cat, '1x150/25 Xlpe', 'OG', 'yeralti').name, '3x(1x150/25) YE3SV', 'bakır XLPE (eklentide "Alm." yok) → YE3SV');
+  assert.deepEqual(cizimKesit('3x(1x95/16) YE3SV', 'OG', 'yeralti'), { tanim: '1x95/16 Xlpe', aciklama: '3(1x95/16) Xlpe' });
   assert.equal(hatTipiEsle(ps.cat, '3x95+50 Nyy Alm.', 'AG', 'yeralti').name, 'NAYY 3x95+50');
   assert.equal(hatTipiEsle(ps.cat, '4x16 Nyy Alm.', 'AG', 'yeralti').name, 'NAYY 4x16');
   assert.equal(hatTipiEsle(ps.cat, '3P+R', 'AG', 'havai').name, '3P+R');
@@ -408,7 +417,8 @@ test('A8 · çok iletkenli hat: müşterekte OG + AG iki kalem ve birleşik ana 
   const geri = sebekeModel(ps2);
   const ozet = (p) => p.hatlar.map((h) => h.tur + ' ' + h.anaKesit + ' ' + h.kalemler.filter((k) => k.kaynak === 'HAT').map((k) => k.cins + ':' + k.tanim + ':' + (k.aciklama || '') + ':' + k.miktar).join(',')).sort();
   assert.deepEqual(ozet(geri), ozet(sp));
-  // Eklentide çizilmiş, telefonda karşılığı olmayan iletkenli (4P+R) müşterek hat: kalemler aynen korunur ve geri döner
+  // Eklentide çizilmiş, telefon kataloğunda karşılığı olmayan iletkenli (4P+R) müşterek hat: AG devresi AutoCAD kataloğundaki
+  // iletkenle açılır (telefonda düzenlenebilir), geri yazınca aynı kalemler döner
   const dosya = SH.projeOku(SH.projeYaz(sp));
   const cad = dosya.hatlar.find((h) => h.tur === 'MUSTEREK');
   dosya.hatlar = [cad]; dosya.kanallar = [];
@@ -416,12 +426,65 @@ test('A8 · çok iletkenli hat: müşterekte OG + AG iki kalem ve birleşik ana 
   const ag = cad.kalemler.find((k) => k.cins === 'AG_İLETKEN'); ag.tanim = '4P+R';
   cad.anaKesit = '3xSW / 4P+R';
   const { ps: ps3 } = await setup();
-  await sebekeIceAl(ps3, dosya, { name: 'eklenti' });
+  const oz3 = await sebekeIceAl(ps3, dosya, { name: 'eklenti' });
+  assert.equal(oz3.eslesmeyen.length, 0, JSON.stringify(oz3.eslesmeyen));
   const l3 = ps3.data.lines.find((l) => l.musterek);
-  assert.equal(l3.circuits.length, 0, 'eşleşmeyen iletken: devre açılmaz');
+  assert.deepEqual(l3.circuits.map((c) => c.role + ' ' + c.key + ' ' + c.count), ['OG 3xSwallow 1', 'AG @AG_İLETKEN|4P+R 1']);
   const h3 = sebekeModel(ps3).hatlar.find((h) => h.tur === 'MUSTEREK');
   assert.equal(h3.anaKesit, '3xSW / 4P+R');
   assert.deepEqual(h3.kalemler.filter((k) => k.kaynak === 'HAT').map((k) => k.cins + ' ' + k.tanim), ['OG_İLETKEN 3xSW', 'AG_İLETKEN 4P+R']);
+  assert.equal(h3.kalemler.find((k) => k.tanim === '4P+R').miktar, cad.kalemler.find((k) => k.tanim === '4P+R').miktar, 'aynı güzergâh: aynı metraj');
+});
+
+test('A8b · eklentinin kataloğundaki her iletken / kablo telefonda bir devre olur; dokunulmayan hat aynı kalem ve metrajla, telefonda değişen hat yeni metrajla döner', async () => {
+  const gruplar = KALEMLER.gruplar.hatlar;
+  const turu = (cins) => Object.keys(gruplar).find((t) => t !== 'MUSTEREK' && gruplar[t].includes(cins)) || 'AG_YERALTI';
+  const kalemler = KALEMLER.kalemler.filter((k) => k.rol === 'hat');
+  assert.ok(kalemler.length > 300, 'katalogda ' + kalemler.length + ' iletken / kablo');
+  const sp = SH.yeniProje({ ad: 'İletkenler', dom: 39, hakedis: 1 });
+  kalemler.forEach((k, i) => {
+    const x = 519000 + (i % 20) * 100, y = 4282000 + Math.floor(i / 20) * 30;
+    // Eklentideki metraj = çizim boyu (50 m) + ek pay (2 m)
+    sp.hatlar.push({ id: 'H' + (i + 1), tur: turu(k.cins), anaKesit: k.tanim, durum: 'M', hakedis: 1, bolge: '', etiket: '', kontrol: true, katman: '', kose: [[x, y], [x + 50, y]], kalemler: [Object.assign(SH.kalemYap(k, { miktar: 52, durum: 'M', hakedis: 1, kaynak: 'HAT', sira: String(i + 1) }), { kontrol: true })] });
+  });
+  const { ps } = await setup();
+  const oz = await sebekeIceAl(ps, SH.projeOku(SH.projeYaz(sp)), { name: 'iletkenler' });
+  assert.equal(oz.eslesmeyen.length, 0, JSON.stringify(oz.eslesmeyen.slice(0, 5)));
+  assert.equal(oz.yeniHat, kalemler.length);
+  const hatlar = ps.data.lines.filter((l) => l.status !== 'deleted');
+  let autocadTipi = 0;
+  for (const l of hatlar) {
+    const k = kalemler[+l.sebekeId.slice(1) - 1];
+    assert.equal(l.circuits.length, 1, k.cins + ' ' + k.tanim + ': telefonda devre açılır');
+    const c = l.circuits[0];
+    assert.ok(circuitParts(c, ps.cat), k.tanim + ': parçaları bulunur');
+    if (c.key.startsWith('@')) {
+      autocadTipi++;
+      assert.equal(c.key, autocadAnahtari(k.cins, k.tanim));
+      // Hat ekranındaki listede de var (hattın türüne uyan cinslerde)
+      if (gruplar[l.sebeke.tur] && gruplar[l.sebeke.tur].includes(k.cins)) assert.ok(autocadSecenekleri(ps.cat, c.role, l.install).some((x) => x[0] === c.key), k.tanim + ': hat ekranında seçilebilir');
+    }
+  }
+  assert.ok(autocadTipi > 200, autocadTipi + ' iletken AutoCAD tipiyle geldi');
+  // Dokunmadan geri yaz: aynı tür, cins, tanım, metraj; KONTROL işareti korunur
+  const satir = (h) => h.kalemler.filter((k) => k.kaynak === 'HAT').map((k) => [k.cins, k.tanim, k.miktar, k.kontrol, k.sira].join(' · '));
+  const geri = new Map(sebekeModel(ps).hatlar.map((h) => [h.id, h]));
+  for (const h of sp.hatlar) {
+    const g = geri.get(h.id);
+    assert.ok(g, h.id + ' geri yazıldı');
+    assert.equal(g.tur, h.tur, h.anaKesit + ': tür');
+    assert.deepEqual(satir(g), satir(h), h.anaKesit + ': HAT kalemi');
+  }
+  // Telefonda boyu değişen hat: telefonun metrajıyla döner (AutoCAD'deki ek pay yeni boya taşınmaz)
+  const l0 = hatlar.find((l) => l.circuits[0].key === '@AG_İLETKEN|4P+R');
+  assert.ok(l0, '4P+R hattı');
+  const son = ps.pointById(l0.nodes[l0.nodes.length - 1]);
+  await ps.ds.update('points', son.id, { E: son.E + 10 }, { reason: 'deneme: nokta taşındı' });
+  await ps.reload('points'); await ps.recompute('nokta taşındı');
+  const g2 = sebekeModel(ps).hatlar.find((h) => h.telefonId === l0.id);
+  const k2 = g2.kalemler.find((k) => k.kaynak === 'HAT');
+  assert.equal(k2.miktar, 60, '60 m: telefonun hesabı');
+  assert.equal(k2.kontrol, null, 'miktar değişti: KONTROL işareti düşer');
 });
 
 test('A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef kimlikleri, trafo çıkışı, daha yeni kayıt kazanır', async () => {

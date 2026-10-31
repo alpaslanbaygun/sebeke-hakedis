@@ -385,7 +385,7 @@ namespace SebekeHakedis.Cekirdek
             if (Bas(cins, "AG_ALÜMİNYUM_KABLO") || Bas(cins, "AG_ALİMİNYUM_KABLO") || Bas(cins, "AG_BAKIR_KABLO")) return "AG_YERALTI";
             if (Bas(cins, "AYDINLATMA")) return "AYDINLATMA";
             if (Bas(cins, "OG_İLETKEN")) return "OG_HAVAI";
-            if (Bas(cins, "OG_ALÜMİNYUM_KABLO") || Bas(cins, "OG_ALİMİNYUM_KABLO")) return "OG_YERALTI";
+            if (Bas(cins, "OG_ALÜMİNYUM_KABLO") || Bas(cins, "OG_ALİMİNYUM_KABLO") || Bas(cins, "OG_BAKIR_KABLO")) return "OG_YERALTI";
             if (Bas(cins, "REKORTMAN")) return "REKORTMAN";
             return "DIGER";
         }

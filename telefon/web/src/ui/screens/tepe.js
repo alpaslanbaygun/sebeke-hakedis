@@ -4,6 +4,7 @@
 import { html, useState, useEffect, Icon, Chip, Seg, Sel, Badge, Title, trn } from '../kit.js';
 import { app } from '../ctx.js';
 import { TABLES, tertipler, hesapT, hesapKT, hesapD, hesapKD, hesapN, hesapG, gorevOner } from '../../calc/tepe.js';
+import { devreYazisi } from '../../grid/lines.js';
 
 const GOREV = { T: 'Taşıyıcı', KT: 'Köşede taşıyıcı', D: 'Durdurucu', KD: 'Köşede durdurucu', N: 'Nihayet', G: 'Branşman / tevzi' };
 const up = (s) => String(s || '').toLocaleUpperCase('tr-TR').replace(/İ/g, 'I');
@@ -23,9 +24,9 @@ export function tertipTahmin(name, agKeys) {
 }
 // Uygulamadaki hat devrelerinden tertip (OG iletkeni adı / AER kesiti)
 export function tertipFromLine(line, agKeys) {
-  const names = (line.circuits || []).map((c) => (c.key || '') + ' ' + (c.role || '')).join(' | ');
-  const og = (line.circuits || []).filter((c) => c.role === 'OG' || c.role === 'ENH').map((c) => c.key || '').join(' ');
-  const ag = (line.circuits || []).filter((c) => c.role !== 'OG' && c.role !== 'ENH').map((c) => c.key || '').join(' ');
+  const names = (line.circuits || []).map((c) => devreYazisi(c) + ' ' + (c.role || '')).join(' | ');
+  const og = (line.circuits || []).filter((c) => c.role === 'OG' || c.role === 'ENH').map(devreYazisi).join(' ');
+  const ag = (line.circuits || []).filter((c) => c.role !== 'OG' && c.role !== 'ENH').map(devreYazisi).join(' ');
   return { yg: tertipTahmin(og, agKeys).yg, ag: tertipTahmin(ag, agKeys).ag, names };
 }
 

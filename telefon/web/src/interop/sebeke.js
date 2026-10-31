@@ -11,7 +11,7 @@ import { hesapKayitlari } from '../hesap/kayitlar.js';
 import SH from './sh-core.cjs';
 import ESLESME from '../ortak/volt-eslesme.js';
 import KALEMLER from '../ortak/kalemler.js';
-import { lineLabel, circuitParts, kanalModel } from '../grid/lines.js';
+import { lineLabel, circuitLabel, circuitParts, kanalModel, autocadDevresi, autocadAnahtari, autocadGrubu } from '../grid/lines.js';
 import { jobOf } from '../grid/recipe.js';
 import { makeCrs } from '../geo/crs.js';
 import { hakOf } from '../core/schema.js';
@@ -96,7 +96,8 @@ export function cizimKesit(label, lineType, install) {
   if (!s) return { tanim: '', aciklama: '' };
   if (install === 'yeralti') {
     const m = /^(\d+)x\((1x[\d/.,]+)\)\s*(YE3SV|NA2XSY|XLPE)?/i.exec(s);
-    if (m) return { tanim: m[2] + ' Xlpe Alm.', aciklama: m[1] + '(' + m[2] + ') Xlpe Alm.' };
+    // YE3SV bakır: eklentide "… Xlpe" (OG_BAKIR_KABLO); NA2XSY alüminyum: "… Xlpe Alm."
+    if (m) { const ek = /^YE3SV$/i.test(m[3] || '') ? ' Xlpe' : ' Xlpe Alm.'; return { tanim: m[2] + ek, aciklama: m[1] + '(' + m[2] + ')' + ek }; }
     const n = /^(NA?YY)\s+(.+)$/i.exec(s);
     if (n) return { tanim: n[2] + ' Nyy ' + (n[1].toUpperCase() === 'NYY' ? 'Cu' : 'Alm.'), aciklama: '' };
     return { tanim: s, aciklama: '' };
@@ -200,7 +201,9 @@ export function sebekeModel(ps, opts = {}) {
     // Hattın tamamı için kalemler; parçalara uzunluk payıyla bölünür (son parça kalanı alır → toplam değişmez)
     let hatKalemleri = [], manuel = [];
     const etiketTam = sb.anaKesit && !(l.circuits || []).length ? sb.anaKesit : lineLabel(l, cat);
-    const kesit = cizimKesit(etiketTam, l.lineType, l.install);
+    // Tek devreli hatta AutoCAD kataloğundaki iletken: ana kesit eklentideki tanımın kendisi (telefon adı çevirisi yok)
+    const tekDevre = (l.circuits || []).length === 1 ? l.circuits[0] : null;
+    const kesit = tekDevre && autocadDevresi(tekDevre) ? { tanim: circuitLabel(tekDevre, cat), aciklama: '' } : cizimKesit(etiketTam, l.lineType, l.install);
     if (kablolu) {
       hatKalemleri = iletkenKalemleri(l, li, iletkenler, hatTuru, kesit, durum, hak, cat);
       if (!hatKalemleri.length && Array.isArray(sb.kalemler)) hatKalemleri = sb.kalemler.map((k) => Object.assign({}, k, { hakedis: hak }));
@@ -229,6 +232,8 @@ export function sebekeModel(ps, opts = {}) {
         // İletken / kablo (HAT) kalemleri parçalara uzunlukla bölünür; hattın malzemeleri (ek mufu, boru dışı malzeme…) ilk parçada
         for (const kl of hatKalemleri) { if (kl.kaynak === 'HAT') hat.kalemler.push(kalemPayi(kl, pay, son, paylar, k)); else if (k === 0) hat.kalemler.push(Object.assign({}, kl)); }
         if (k === 0) hat.kalemler.push(...manuel); // elle eklenen malzemeler ilk parçaya
+        // Telefonda metrajı değişmeyen AutoCAD hattı: eklentinin metrajı döner (ek pay, elle düzeltme korunur)
+        autocadMetraji(hat.kalemler, sb.ilkMetraj && sb.ilkMetraj[kimlik], kayitliBilgi(sb, kimlik));
         kalemBilgisiUygula(hat.kalemler, kayitliBilgi(sb, kimlik));
         const ana = hat.kalemler.find((x) => x.kaynak === 'HAT') || hat.kalemler[0];
         // Etiket: durum işaretiyle iletken (metraj açıklık yazısındadır); tek iletkende adetli tam yazım
@@ -536,13 +541,16 @@ function iletkenKalemleri(l, li, items, hatTuru, kesit, durum, hak, cat) {
   const yeralti = l.install === 'yeralti';
   for (const c of circuits) {
     const cp = circuitParts(c, cat);
+    // AutoCAD kataloğundaki iletken ("@CİNS|tanım"): cins ve tanım olduğu gibi döner (eklentideki kalemin kendisi)
+    const ac = autocadDevresi(c);
     const ciplak = !yeralti && (c.custom || (cp && cp.unit === 'kg'));
-    const label = c.custom ? cp.label : c.key;
+    const label = c.custom || ac ? cp.label : c.key;
     const n = c.count || 1;
-    const ks = cizimKesit(label, l.lineType, l.install);
+    const ks = ac ? { tanim: ac.tanim, aciklama: '' } : cizimKesit(label, l.lineType, l.install);
     // Müşterek hatta OG devresi OG iletkenidir (eklentideki gibi); ana kesitteki "OG / AG" ayrımı ve geri alım buna bakar
     const ogDevre = hatTuru.tur === 'MUSTEREK' && (c.role === 'OG' || c.role === 'ENH');
-    const cins = yeralti ? hatTuru.kablo : ogDevre ? ESLESME.hatlar['OG:havai'].ciplak : ciplak ? hatTuru.ciplak : hatTuru.demetli;
+    // Telefon tipinde cins: tanımın hattın türü grubunda bulunduğu cins (NYY Cu → AG_BAKIR_KABLO); yoksa türün varsayılanı
+    const cins = ac ? ac.cins : iletkenCinsi(ks.tanim, c.role, l.install) || (yeralti ? hatTuru.kablo : ogDevre ? ESLESME.hatlar['OG:havai'].ciplak : ciplak ? hatTuru.ciplak : hatTuru.demetli);
     const parca = items.filter((x) => x.role === c.role && (x.conductor === c.key || x.conductor === label || (cp && cp.parts.some((p) => p.conductor === x.conductor))));
     // Metre: yeraltında tüm damarların toplamı (3(1x150/25) = 3 kablo), havai demetlide hattın boyu (pay dahil),
     // çıplakta hattın boyu (rapor tel tel açar). AutoCAD gibi tam metreye yukarı yuvarlanır.
@@ -608,7 +616,15 @@ export function hatTipiEsle(cat, anaKesit, lineType, install) {
     const ters = Object.fromEntries(Object.entries(ESLESME.iletkenler).map(([ad, kisa]) => [adNormal(kisa), ad]));
     const m = /^(\d+)x(.+)$/.exec(n);
     if (m && ters[m[2]]) lt = adaylar.find((x) => adNormal(x.name) === adNormal(m[1] + 'x' + ters[m[2]]));
-    if (!lt && install === 'yeralti') { const x = /^(1x[\d/.]+)xlpe/.exec(n); if (x) lt = adaylar.find((y) => adNormal(y.name).startsWith('3x(' + x[1] + ')')); }
+    // Tek damarlı XLPE: "… Xlpe Alm." alüminyum (NA2XSY), yalnız "… Xlpe" bakır (YE3SV; eklentideki OG_BAKIR_KABLO)
+    if (!lt && install === 'yeralti') {
+      const x = /^(1x[\d/.]+)xlpe/.exec(n);
+      if (x) {
+        const al = /al(m|ü|u)/i.test(String(anaKesit));
+        const l = adaylar.filter((y) => adNormal(y.name).startsWith('3x(' + x[1] + ')'));
+        lt = l.find((y) => { const c = cat.conductor(y.parts[0].conductor); return c && c.material === (al ? 'Al' : 'Cu'); }) || l[0];
+      }
+    }
     if (!lt && install === 'yeralti') { const x = /^([\d/.+x]+)nyy(cu|alm)?/.exec(n); if (x) lt = adaylar.find((y) => adNormal(y.name) === (x[2] === 'cu' ? 'nyy' : 'nayy') + x[1]) || adaylar.find((y) => adNormal(y.name) === 'nyy' + x[1]); }
   }
   if (lt) { const c = cat.conductor(lt.parts[0].conductor); const kind = c ? c.kind : null; if (install === 'yeralti' && kind !== 'KABLO') return null; }
@@ -626,11 +642,79 @@ function hatDevreleri(cat, h, ht) {
   for (const k of satirlar) {
     const og = String(k.cins || '').startsWith('OG_');
     const tur = og ? 'OG' : ht.lineType === 'OG' ? 'AG' : ht.lineType;
-    const lt = hatTipiEsle(cat, k.tanim, tur, ht.install);
-    if (!lt) return null;
-    out.push({ role: ht.lineType === 'ABONE' ? 'ABONE' : tur, key: lt.name, count: iletkenAdedi(k) });
+    const role = ht.lineType === 'ABONE' ? 'ABONE' : tur;
+    const lt = iletkenEsle(cat, k, role, ht.install);
+    const key = lt ? lt.name : autocadIletkeni(k);
+    if (!key) return null;
+    out.push({ role, key, count: iletkenAdedi(k) });
   }
   return out;
+}
+
+/**
+ * AutoCAD HAT kaleminin telefon hat tipi: yalnız geri yazınca aynı kaleme dönen tip kabul edilir (bakır / alüminyum,
+ * tanım ve cins korunur; ör. "1x150/25 Xlpe Cu" telefonun alüminyum tipine düşmez). Dönmeyen kalem AutoCAD kataloğundaki
+ * iletken olarak alınır (null). Katalogda olmayan kalemde eski kural (yalnız tanım benzerliği).
+ */
+export function iletkenEsle(cat, k, role, install) {
+  if (!k) return null;
+  const lt = hatTipiEsle(cat, k.tanim, role === 'ABONE' ? 'AG' : role, install);
+  if (!lt) return null;
+  const asil = katalogKalemi(SH.cinsDuzelt(k.cins || ''), k.tanim || '');
+  if (!asil) return lt;
+  const ks = cizimKesit(lt.name, role, install);
+  const cins = iletkenCinsi(ks.tanim, role, install);
+  return cins && katalogKalemi(cins, ks.tanim) === asil ? lt : null;
+}
+/** Telefon tipinin eklentideki cinsi: tanım, hattın türünün cins grubunda aranır (Cu / Al kablo, rekortman, ALPEK…). */
+function iletkenCinsi(tanim, role, install) {
+  const g = autocadGrubu(role, install) || [], k = katalog();
+  // Önce birebir ad (bakır "1x150/25 Xlpe" ile alüminyum "1x150/25 Xlpe Alm." sadeleşince aynı görünür), sonra sadeleştirilmiş ad
+  for (const cins of g) if (k.anahtar.has(cins + '|' + tanim)) return cins;
+  for (const cins of g) if (k.normal.has(cins + '|' + adNormal(tanim))) return cins;
+  return null;
+}
+
+/**
+ * Hat ekranındaki devre seçeneklerine eklentinin kataloğundaki iletken / kablolar: hattın türüne uyan cinsler (eklentideki
+ * Katalog.HatCinsListesi gibi; kalemler.json › gruplar.hatlar), telefonun kendi hat tipiyle karşılanan tanımlar hariç.
+ * [[anahtar, yazı]] — devrenin rolü (AG / OG / AYD / ENH / ABONE) ve tesis (havai / yeralti) başına bir kez kurulur.
+ */
+const secenekBellegi = new WeakMap();
+export function autocadSecenekleri(cat, role, install) {
+  const r = ESLESME.hatlar[(role || 'AG') + ':' + (install === 'yeralti' ? 'yeralti' : 'havai')] ? role || 'AG' : 'AG';
+  const yer = install === 'yeralti' ? 'yeralti' : 'havai';
+  let b = secenekBellegi.get(cat);
+  if (!b) secenekBellegi.set(cat, (b = new Map()));
+  const a = r + ':' + yer;
+  if (b.has(a)) return b.get(a);
+  const cinsler = autocadGrubu(r, yer) || [];
+  // Telefonun bu devre için listelediği tiplerle karşılanan tanımlar AutoCAD listesine ayrıca konmaz (içe alımda da o tip seçilir)
+  const tel = new Set(cat.lineTypesFor(r === 'AYD' ? 'AG' : r, yer).map((x) => x.name));
+  const out = [];
+  for (const cins of cinsler) {
+    for (const k of KALEMLER.kalemler || []) {
+      if (k.cins !== cins || k.rol !== 'hat') continue;
+      const lt = iletkenEsle(cat, k, r, yer);
+      if (lt && tel.has(lt.name)) continue;
+      out.push([autocadAnahtari(k.cins, k.tanim), SH.malzemeYazisi(k.tanim) + ' · ' + autocadCinsAdi(k.cins)]);
+    }
+  }
+  b.set(a, out);
+  return out;
+}
+const CINS_ADLARI = new Map((KALEMLER.cinsler || []).map((c) => [c.cins, c.ad]));
+/** Cinsin adı (ortak katalogdaki ad; yoksa kodun "_" yerine boşluklu yazımı — eklentideki Katalog.CinsAdi). */
+export const autocadCinsAdi = (c) => (c ? CINS_ADLARI.get(SH.cinsDuzelt(c)) ?? String(c).replace(/_/g, ' ') : '');
+
+/**
+ * Telefon kataloğunda karşılığı olmayan HAT kalemi eklentinin kataloğundaysa AutoCAD devresi anahtarı ("@CİNS|tanım");
+ * telefon iletkeni bu adla taşır, dışa aktarımda aynı kalem döner. Katalogda da yoksa null (kalemler korunur).
+ */
+export function autocadIletkeni(k) {
+  if (!k || !k.cins || !k.tanim) return null;
+  const kat = katalogKalemi(SH.cinsDuzelt(k.cins), k.tanim);
+  return kat && kat.rol === 'hat' ? autocadAnahtari(kat.cins, kat.tanim) : null;
 }
 
 /**
@@ -721,12 +805,22 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
   // Parçalı hatlar (direkten direğe ayrı nesneler) telefonda tek hat olur: aynı telefon kimliğiyle gelenler ve
   // uç uca eklenen aynı tanımlı parçalar zincirlenir; parça kimlikleri saklanır, dışa aktarımda aynen döner.
   const kullanilanHat = new Set();
+  const alinanHatlar = [];
   const hatlarById = new Map((sp.hatlar || []).map((x) => [x.id, x]));
   for (const h of hatlariBirlestir(sp.hatlar || [])) {
     const ht = ESLESME.hatTurleriTers[h.tur] || ESLESME.hatTurleriTers.AG_HAVAI;
     // Çok iletkenli hat (müşterek OG + AG, 3 adet ALPEK): her iletken satırı bir devre; eşleşmeyen varsa kalemler korunur
-    const devreler = hatDevreleri(ps.cat, h, ht);
-    const lt = devreler ? null : hatTipiEsle(ps.cat, h.anaKesit, ht.lineType, ht.install);
+    let devreler = hatDevreleri(ps.cat, h, ht);
+    let lt = null;
+    if (!devreler) {
+      const ilk = (h.kalemler || []).find((k) => k.kaynak === 'HAT');
+      const rol = ht.lineType === 'ABONE' ? 'ABONE' : ht.lineType;
+      lt = ilk ? iletkenEsle(ps.cat, ilk, rol, ht.install) : null;
+      // Katalogda olmayan (ya da HAT satırı olmayan) hat: ana kesitin adıyla eski kural
+      if (!lt && !(ilk && autocadIletkeni(ilk))) lt = hatTipiEsle(ps.cat, h.anaKesit, ht.lineType, ht.install);
+      // Telefon kataloğunda karşılığı yok ama eklentinin kataloğunda var (4P+R, 2x4 NYY Al, 1x150/25 Xlpe Cu…): AutoCAD devresi
+      if (!lt && ilk) { const key = autocadIletkeni(ilk); if (key) devreler = [{ role: rol, key, count: iletkenAdedi(ilk) }]; }
+    }
     const nodes = [];
     const koseNoktalari = [];
     for (let i = 0; i < h.kose.length; i++) {
@@ -768,6 +862,7 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     let rec;
     if (mevcut) { kullanilanHat.add(mevcut.id); rec = await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi'); ozet.guncellenenHat++; }
     else { rec = await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı' }); ozet.yeniHat++; }
+    alinanHatlar.push(rec.id);
     // Boru kalemi kanal ayarına (borulu geçiş, boru sayısı) çevrildi; malzeme olarak ayrıca yazılmaz (telefon kendisi hesaplar)
     await malzemeleriYaz(ps, 'line', rec.id, (h.kalemler || []).filter((k) => !k.ana && k.kaynak !== 'HAT' && !(boruKalemi && k.cins === boruKalemi.cins && k.tanim === boruKalemi.tanim)), opts);
   }
@@ -805,9 +900,51 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     await hesaplariIceAl(ps, sp, eq2, ln2, ozet);
   }
   await ps.recompute('AutoCAD dosyası alındı');
+  await ilkMetrajlariSakla(ps, alinanHatlar);
   ozet.uyarilar.push(...(sp.uyarilar || []));
   ozet.projectId = ps.p.id;
   return ozet;
+}
+
+/**
+ * Alınan hatların telefonda hesaplanan iletken metrajı (parça parça HAT satırları), alındığı anda. Dışa aktarımda
+ * telefonun hesabı bununla aynıysa (hat telefonda boyu, iletkeni, payları, uçları değişmeden duruyor) eklentinin
+ * metrajı aynen döner: eklentinin ek payı ya da AutoCAD'de elle düzeltilen metraj kaybolmaz, KONTROL işareti korunur.
+ */
+async function ilkMetrajlariSakla(ps, hatIdleri) {
+  if (!hatIdleri.length) return;
+  const sp = sebekeModel(ps);
+  const parcalar = new Map();
+  for (const h of sp.hatlar) {
+    if (!h.telefonId) continue;
+    if (!parcalar.has(h.telefonId)) parcalar.set(h.telefonId, {});
+    parcalar.get(h.telefonId)[h.id] = hatSatirlari(h.kalemler);
+  }
+  for (const id of new Set(hatIdleri)) {
+    const l = ps.lineById(id);
+    const ilk = parcalar.get(id);
+    if (!l || !l.sebeke || !ilk) continue;
+    await ps.ds.update('lines', id, { sebeke: Object.assign({}, l.sebeke, { ilkMetraj: ilk }) }, { reason: 'AutoCAD metrajı', silent: true });
+  }
+  await ps.reload('lines');
+}
+/** Parçanın HAT satırlarının karşılaştırma özeti: [cins, tanım, tam yazım, miktar]. */
+const hatSatirlari = (kalemler) => (kalemler || []).filter((k) => k.kaynak === 'HAT').map((k) => [k.cins || '', k.tanim || '', k.aciklama || '', +k.miktar || 0]);
+/**
+ * Telefonun hesabı alındığı andakiyle aynıysa HAT satırlarına eklentideki miktarlar konur (cins, tanım ve adet
+ * eşleşen satıra; toplam katsayıyla yeniden hesaplanır).
+ */
+function autocadMetraji(kalemler, ilk, bilgi) {
+  if (!Array.isArray(ilk) || !Array.isArray(bilgi) || JSON.stringify(hatSatirlari(kalemler)) !== JSON.stringify(ilk)) return;
+  const kalan = bilgi.filter((b) => b.kaynak === 'HAT' && b.miktar > 0);
+  for (const k of kalemler) {
+    if (k.kaynak !== 'HAT') continue;
+    const i = kalan.findIndex((b) => b.cins === (k.cins || '') && b.tanim === (k.tanim || '') && (b.adet || 1) === iletkenAdedi(k));
+    if (i < 0) continue;
+    const b = kalan.splice(i, 1)[0];
+    k.miktar = b.miktar;
+    k.toplam = Math.round(b.miktar * (Number(k.katsayi) || 1) * 1e6) / 1e6;
+  }
 }
 
 /**
@@ -816,7 +953,7 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
  * yalnız miktar değişmediyse). Böylece değişmeyen nesne AutoCAD'e "değişmiş" gitmez, onaylı hakediş kilidi bozulmaz.
  */
 function kalemBilgisi(kalemler) {
-  return (kalemler || []).map((k) => ({ cins: k.cins || '', tanim: k.tanim || '', kaynak: k.kaynak || '', ana: !!k.ana, sira: k.sira || '', hakedis: +k.hakedis || 0, kontrol: k.kontrol === undefined ? null : k.kontrol, miktar: +k.miktar || 0 }));
+  return (kalemler || []).map((k) => Object.assign({ cins: k.cins || '', tanim: k.tanim || '', kaynak: k.kaynak || '', ana: !!k.ana, sira: k.sira || '', hakedis: +k.hakedis || 0, kontrol: k.kontrol === undefined ? null : k.kontrol, miktar: +k.miktar || 0 }, k.kaynak === 'HAT' && iletkenAdedi(k) > 1 ? { adet: iletkenAdedi(k) } : {}));
 }
 const kayitliBilgi = (sb, id) => (sb && sb.kalemBilgisi && id && sb.kalemBilgisi[id]) || null;
 function kalemBilgisiUygula(kalemler, bilgi) {

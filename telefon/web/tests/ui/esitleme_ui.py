@@ -119,6 +119,22 @@ async def main():
             lej = await pg.locator('body').inner_text()
             kontrol(all(x in lej for x in ['Müşterek hat', 'O.G. yeraltı kablosu', 'Kablo kanalı (iki kenarlı)', 'Yatay sondaj', 'Demontaj hattı']), 'lejant: ortak stilin hat türleri')
 
+            # Hat kaydı: iletken listesinde AutoCAD'deki tipler de var (telefonda karşılığı olmayan 4P+R vb.); seçilip kaydedilir
+            lid = await pg.evaluate("() => { const ps = window.__app.ps; const l = ps.data.lines.find((x) => x.lineType === 'AG' && x.install === 'havai' && x.state === 'YENI' && !x.musterek); window.__app.nav.go('line', { id: l.id }); return l.id; }")
+            await pg.wait_for_timeout(900)
+            # Devre kartında ilk seçim adet (1×…4×), ikincisi iletken / kablo tipi
+            sec = pg.locator('.sect', has_text='İletken / kablo devreleri').locator('xpath=following-sibling::div[1]').locator('select.mono').nth(1)
+            gruplar = await sec.evaluate("(s) => [...s.querySelectorAll('optgroup')].map((g) => [g.label, g.children.length])")
+            kontrol(len(gruplar) == 2 and gruplar[1][0] == "AutoCAD'deki tipler" and gruplar[1][1] > 5, 'hat kaydı: iletken listesi telefondaki ve AutoCAD\'deki tipler: ' + json.dumps(gruplar, ensure_ascii=False))
+            await sec.select_option('@AG_İLETKEN|4P+R'); await pg.wait_for_timeout(400)
+            not_ = await pg.locator('.sect', has_text='İletken / kablo devreleri').locator('xpath=following-sibling::div[1]').locator('.note').first.inner_text()
+            kontrol("AutoCAD'deki tip" in not_ and 'Pansy' in not_, 'seçili AutoCAD tipinin notu (tel açılımı): ' + not_)
+            await sec.scroll_into_view_if_needed(); await pg.screenshot(path=f'{OUT}/esitleme_04c_hat_autocad_tipi.png')
+            await pg.get_by_role('button', name='KAYDET', exact=False).click(); await pg.wait_for_timeout(700)
+            yeni = await pg.evaluate("(id) => { const ps = window.__app.ps; const l = ps.lineById(id); const li = ps.result.lineInfo.get(id); return [l.circuits[0].key, (li.items || []).filter((x) => x.unit === 'Kg').length]; }", lid)
+            kontrol(yeni[0] == '@AG_İLETKEN|4P+R' and yeni[1] == 2, 'kaydedildi; metraj tel tel (kg): ' + json.dumps(yeni, ensure_ascii=False))
+            await pg.evaluate("() => window.__app.nav.back()"); await pg.wait_for_timeout(400)
+
             # Ayarlar › Harita altlığı: yeni anahtar kutuları
             await pg.evaluate("() => window.__app.nav.tab('settings')"); await pg.wait_for_timeout(700)
             alt = pg.locator('.sect', has_text='Harita altlığı').locator('xpath=following-sibling::div[1]')

@@ -106,7 +106,7 @@
     if (b('AG_ALÜMİNYUM_KABLO') || b('AG_ALİMİNYUM_KABLO') || b('AG_BAKIR_KABLO')) return 'AG_YERALTI';
     if (b('AYDINLATMA')) return 'AYDINLATMA';
     if (b('OG_İLETKEN')) return 'OG_HAVAI';
-    if (b('OG_ALÜMİNYUM_KABLO') || b('OG_ALİMİNYUM_KABLO')) return 'OG_YERALTI';
+    if (b('OG_ALÜMİNYUM_KABLO') || b('OG_ALİMİNYUM_KABLO') || b('OG_BAKIR_KABLO')) return 'OG_YERALTI';
     if (b('REKORTMAN')) return 'REKORTMAN';
     return 'DIGER';
   }
