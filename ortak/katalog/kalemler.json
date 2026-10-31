@@ -3,6 +3,15 @@
  "surum": 2,
  "kaynak": "Ortak malzeme listesi (2021, tam) + gerçek bir çizimdeki kullanım sayıları",
  "aciklama": "cins+tanim+birim başına bir kalem. katsayi: giriş biriminden rapor birimine çarpan (ör. kg/m, kg/ad). rol: ana (nesnenin kendi pozu), malzeme, hat, kanal, sondaj. tarife: karakteristik (2 hane) + şehir/yatırım unsuru (2 hane); unsurKoy: köy/bakım unsuru (çizim ayarı 'köy' ise tarife = karakteristik + unsurKoy). pozNo: TEDAŞ poz numarası. onem: AutoCAD rapor sırası. kesit/guc: kablo kesiti, trafo gücü (kVA). temini: AutoCAD temin işareti (T). nesneler/kullanim/durumlar: gerçek bir çizimde hangi nesnelerde kaç kez görüldü. Üretici: araclar/katalog-aktar.py — elle düzenlenmez.",
+ "eskiCinsler": {
+  "aciklama": "Yazım hatası düzeltilen cins kodları (31.10.2026): eski kod → yeni kod. Eklenti ve telefon eski kodu okurken yenisine çevirir; yazarken hep yenisini yazar.",
+  "AG_ALİMİNYUM_KABLO": "AG_ALÜMİNYUM_KABLO",
+  "OG_ALİMİNYUM_KABLO": "OG_ALÜMİNYUM_KABLO",
+  "REKORTMAN_ALİMİNYUM": "REKORTMAN_ALÜMİNYUM",
+  "ALİMİNYUM_BAĞ_TELİ": "ALÜMİNYUM_BAĞ_TELİ",
+  "TECHİZAT_MONTAJ_DEMİRİ": "TEÇHİZAT_MONTAJ_DEMİRİ",
+  "KOFRA": "KOFRE"
+ },
  "durumlar": {
   "M+M": "",
   "M": "",
@@ -88,7 +97,7 @@
     "EK_MUFU_OG_BAKIR"
    ],
    "KOFRE": [
-    "KOFRA"
+    "KOFRE"
    ],
    "DIGER": [
     "ARMATÜR"
@@ -100,7 +109,7 @@
     "ALPEK_KABLOLAR"
    ],
    "AG_YERALTI": [
-    "AG_ALİMİNYUM_KABLO",
+    "AG_ALÜMİNYUM_KABLO",
     "AG_BAKIR_KABLO"
    ],
    "AYDINLATMA": [
@@ -112,11 +121,11 @@
     "OG_İLETKEN"
    ],
    "OG_YERALTI": [
-    "OG_ALİMİNYUM_KABLO",
+    "OG_ALÜMİNYUM_KABLO",
     "OG_BAKIR_KABLO"
    ],
    "REKORTMAN": [
-    "REKORTMAN_ALİMİNYUM",
+    "REKORTMAN_ALÜMİNYUM",
     "REKORTMAN_BAKIR"
    ],
    "MUSTEREK": [
@@ -302,7 +311,7 @@
    "onem": 1888
   },
   {
-   "cins": "KOFRA",
+   "cins": "KOFRE",
    "ad": "Kofre",
    "rol": "ana",
    "tip": 5,
@@ -330,7 +339,7 @@
    "onem": 1152
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "ad": "AG alüminyum kablo",
    "rol": "hat",
    "tip": 23,
@@ -358,7 +367,7 @@
    "onem": 1132
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "ad": "OG alüminyum kablo",
    "rol": "hat",
    "tip": 36,
@@ -372,7 +381,7 @@
    "onem": 1702
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "ad": "Rekortman (alüminyum)",
    "rol": "hat",
    "tip": 22,
@@ -401,7 +410,7 @@
   },
   {
    "cins": "BAKIR_BARA",
-   "ad": "Bakir bara",
+   "ad": "Bakır bara",
    "rol": "malzeme",
    "tip": 13,
    "onem": 1
@@ -415,77 +424,77 @@
   },
   {
    "cins": "TRAVERS_VE_KONSOLLAR_GLV",
-   "ad": "Travers ve konsollar glv",
+   "ad": "Galvanizli travers ve konsollar",
    "rol": "malzeme",
    "tip": 10,
    "onem": 27
   },
   {
    "cins": "BAHH_DEMİR_TRAVERS",
-   "ad": "Bahh demi̇r travers",
+   "ad": "BAHH demir travers",
    "rol": "malzeme",
    "tip": 39,
    "onem": 39
   },
   {
    "cins": "BAHH_DEMİR_TRAVERS_GLV",
-   "ad": "Bahh demi̇r travers glv",
+   "ad": "BAHH galvanizli demir travers",
    "rol": "malzeme",
    "tip": 39,
    "onem": 80
   },
   {
    "cins": "AG_BETON_TRAVERS",
-   "ad": "Ag beton travers",
+   "ad": "AG beton travers",
    "rol": "malzeme",
    "tip": 17,
    "onem": 580
   },
   {
    "cins": "BAHH_BETON_TRAVERS",
-   "ad": "Bahh beton travers",
+   "ad": "BAHH beton travers",
    "rol": "malzeme",
    "tip": 645,
    "onem": 589
   },
   {
    "cins": "GALVANİZLİ_GAZ_BORUSU",
-   "ad": "Galvani̇zli̇ gaz borusu",
+   "ad": "Galvanizli gaz borusu",
    "rol": "malzeme",
    "tip": 7,
    "onem": 1096
   },
   {
    "cins": "GALVANİZLİ_KABLO_TAVASI",
-   "ad": "Galvani̇zli̇ kablo tavasi",
+   "ad": "Galvanizli kablo tavası",
    "rol": "malzeme",
    "tip": 1,
    "onem": 1105
   },
   {
    "cins": "AG_İZOLATÖR",
-   "ad": "Ag i̇zolatör",
+   "ad": "AG izolatör",
    "rol": "malzeme",
    "tip": 3,
    "onem": 1172
   },
   {
    "cins": "OG_İZOLATÖR",
-   "ad": "Og i̇zolatör",
+   "ad": "OG izolatör",
    "rol": "malzeme",
    "tip": 21,
    "onem": 1177
   },
   {
    "cins": "KOMPOZİT_SİLİKON_ASKI_VE_GERGİ_İZOLATÖRLERİ",
-   "ad": "Kompozi̇t si̇li̇kon aski ve gergi̇ i̇zolatörleri̇",
+   "ad": "Kompozit silikon askı ve gergi izolatörleri",
    "rol": "malzeme",
    "tip": 3,
    "onem": 1199
   },
   {
    "cins": "KESİCİLER",
-   "ad": "Kesi̇ci̇ler",
+   "ad": "Kesiciler",
    "rol": "malzeme",
    "tip": 10,
    "onem": 1203
@@ -499,28 +508,28 @@
   },
   {
    "cins": "AYIRICI_DT",
-   "ad": "Ayirici dt",
+   "ad": "Ayırıcı (dahili tip)",
    "rol": "malzeme",
    "tip": 11,
    "onem": 1223
   },
   {
    "cins": "AYIRICI_HT",
-   "ad": "Ayirici ht",
+   "ad": "Ayırıcı (harici tip)",
    "rol": "malzeme",
    "tip": 8,
    "onem": 1236
   },
   {
    "cins": "SİGORTA_BUŞONU",
-   "ad": "Si̇gorta buşonu",
+   "ad": "Sigorta buşonu",
    "rol": "malzeme",
    "tip": 1,
    "onem": 1246
   },
   {
    "cins": "HÜCRELER_METAL",
-   "ad": "Hücreler metal",
+   "ad": "Metal hücreler",
    "rol": "malzeme",
    "tip": 34,
    "onem": 1257
@@ -534,7 +543,7 @@
   },
   {
    "cins": "TEHLİKE_LEVHASI",
-   "ad": "Tehli̇ke levhasi",
+   "ad": "Tehlike levhası",
    "rol": "malzeme",
    "tip": 1,
    "onem": 1314
@@ -555,165 +564,165 @@
   },
   {
    "cins": "AKIM_TRAFOLARI",
-   "ad": "Akim trafolari",
+   "ad": "Akım trafoları",
    "rol": "malzeme",
    "tip": 19,
    "onem": 1330
   },
   {
    "cins": "GERİLİM_TRAFOLARI",
-   "ad": "Geri̇li̇m trafolari",
+   "ad": "Gerilim trafoları",
    "rol": "malzeme",
    "tip": 2,
    "onem": 1350
   },
   {
    "cins": "TRAFO_GENLEŞME_TANKLI",
-   "ad": "Trafo genleşme tankli",
+   "ad": "Trafo (genleşme tanklı)",
    "rol": "malzeme",
    "tip": 52,
    "onem": 1354
   },
   {
    "cins": "TRAFO_HERMETİK",
-   "ad": "Trafo hermeti̇k",
+   "ad": "Trafo (hermetik)",
    "rol": "malzeme",
    "tip": 31,
    "onem": 1399
   },
   {
    "cins": "TRAFO_KURU_TİP",
-   "ad": "Trafo kuru ti̇p",
+   "ad": "Trafo (kuru tip)",
    "rol": "malzeme",
    "tip": 14,
    "onem": 1431
   },
   {
    "cins": "OG_KABLO_BAŞLIK_HT_CU",
-   "ad": "Og kablo başlik ht cu",
+   "ad": "OG kablo başlığı (harici tip, bakır)",
    "rol": "malzeme",
    "tip": 8,
    "onem": 1776
   },
   {
    "cins": "OG_KABLO_BAŞLIK_HT_ALM",
-   "ad": "Og kablo başlik ht alm",
+   "ad": "OG kablo başlığı (harici tip, alüminyum)",
    "rol": "malzeme",
    "tip": 9,
    "onem": 1786
   },
   {
    "cins": "OG_KABLO_BAŞLIK_DT_CU",
-   "ad": "Og kablo başlik dt cu",
+   "ad": "OG kablo başlığı (dahili tip, bakır)",
    "rol": "malzeme",
    "tip": 10,
    "onem": 1797
   },
   {
    "cins": "OG_KABLO_BAŞLIK_DT_ALM",
-   "ad": "Og kablo başlik dt alm",
+   "ad": "OG kablo başlığı (dahili tip, alüminyum)",
    "rol": "malzeme",
    "tip": 9,
    "onem": 1808
   },
   {
    "cins": "AG_KABLO_BAŞLIK_CU",
-   "ad": "Ag kablo başlik cu",
+   "ad": "AG kablo başlığı (bakır)",
    "rol": "malzeme",
    "tip": 22,
    "onem": 1819
   },
   {
    "cins": "AG_KABLO_BAŞLIK_ALM",
-   "ad": "Ag kablo başlik alm",
+   "ad": "AG kablo başlığı (alüminyum)",
    "rol": "malzeme",
    "tip": 11,
    "onem": 1843
   },
   {
    "cins": "KABLO_MUHAFAZA_BORULARI",
-   "ad": "Kablo muhafaza borulari",
+   "ad": "Kablo muhafaza boruları",
    "rol": "malzeme",
    "tip": 10,
    "onem": 1928
   },
   {
    "cins": "EK_YAPIM_İŞLERİ",
-   "ad": "Ek yapim i̇şleri̇",
+   "ad": "Ek yapım işleri",
    "rol": "malzeme",
    "tip": 8,
    "onem": 1966
   },
   {
    "cins": "TUTANAKLI_İŞLER",
-   "ad": "Tutanakli i̇şler",
+   "ad": "Tutanaklı işler",
    "rol": "malzeme",
    "tip": 27,
    "onem": 1976
   },
   {
    "cins": "ENH_YAPIM_İŞLERİ",
-   "ad": "Enh yapim i̇şleri̇",
+   "ad": "ENH yapım işleri",
    "rol": "malzeme",
    "tip": 1,
    "onem": 1997
   },
   {
    "cins": "KOMPANZASYON_SİSTEMİ",
-   "ad": "Kompanzasyon si̇stemi̇",
+   "ad": "Kompanzasyon sistemi",
    "rol": "malzeme",
    "tip": 5,
    "onem": 2004
   },
   {
    "cins": "İNDİRİCİ_VE_AYIRICI_MERKEZ_PANOLARI",
-   "ad": "İndi̇ri̇ci̇ ve ayirici merkez panolari",
+   "ad": "İndirici ve ayırıcı merkez panoları",
    "rol": "malzeme",
    "tip": 2,
    "onem": 2011
   },
   {
    "cins": "DİĞER_AMBAR_MALZEMELERİ",
-   "ad": "Di̇ğer ambar malzemeleri̇",
+   "ad": "Diğer ambar malzemeleri",
    "rol": "malzeme",
    "tip": 80,
    "onem": 2015
   },
   {
    "cins": "OG_İZOLASYON_MALZEMELERİ",
-   "ad": "Og i̇zolasyon malzemeleri̇",
+   "ad": "OG izolasyon malzemeleri",
    "rol": "malzeme",
    "tip": 15,
    "onem": 0
   },
   {
    "cins": "DEMİR_DİREK_VE_TRAVERS_BOYANMASI",
-   "ad": "Demi̇r di̇rek ve travers boyanmasi",
+   "ad": "Demir direk ve travers boyanması",
    "rol": "malzeme",
    "tip": 2,
    "onem": 0
   },
   {
    "cins": "YAĞMURLUK_BETONU_YAPILMASI",
-   "ad": "Yağmurluk betonu yapilmasi",
+   "ad": "Yağmurluk betonu yapılması",
    "rol": "malzeme",
    "tip": 1
   },
   {
-   "cins": "ALİMİNYUM_BAĞ_TELİ",
-   "ad": "Ali̇mi̇nyum bağ teli̇",
+   "cins": "ALÜMİNYUM_BAĞ_TELİ",
+   "ad": "Alüminyum bağ teli",
    "rol": "malzeme",
    "tip": 3
   },
   {
    "cins": "EK_MANŞONLARI",
-   "ad": "Ek manşonlari",
+   "ad": "Ek manşonları",
    "rol": "malzeme",
    "tip": 8
   },
   {
    "cins": "ALPEK_KABLO_AKSESUARLARI",
-   "ad": "Alpek kablo aksesuarlari",
+   "ad": "ALPEK kablo aksesuarları",
    "rol": "malzeme",
    "tip": 27
   },
@@ -725,49 +734,49 @@
   },
   {
    "cins": "İZOLATÖR_DEMİRLERİ",
-   "ad": "İzolatör demi̇rleri̇",
+   "ad": "İzolatör demirleri",
    "rol": "malzeme",
    "tip": 4
   },
   {
    "cins": "ANAHTARLI_OTOMATİK_SİGORTA",
-   "ad": "Anahtarli otomati̇k si̇gorta",
+   "ad": "Anahtarlı otomatik sigorta",
    "rol": "malzeme",
    "tip": 1
   },
   {
    "cins": "BAKLAVALI_SAC",
-   "ad": "Baklavali sac",
+   "ad": "Baklavalı sac",
    "rol": "malzeme",
    "tip": 1
   },
   {
    "cins": "TEL_KAFESLİ_KAPI",
-   "ad": "Tel kafesli̇ kapi",
+   "ad": "Tel kafesli kapı",
    "rol": "malzeme",
    "tip": 1
   },
   {
    "cins": "TEL_KAFESLİ_ÇİT",
-   "ad": "Tel kafesli̇ çi̇t",
+   "ad": "Tel kafesli çit",
    "rol": "malzeme",
    "tip": 2
   },
   {
-   "cins": "TECHİZAT_MONTAJ_DEMİRİ",
-   "ad": "Techi̇zat montaj demi̇ri̇",
+   "cins": "TEÇHİZAT_MONTAJ_DEMİRİ",
+   "ad": "Teçhizat montaj demiri",
    "rol": "malzeme",
    "tip": 9
   },
   {
    "cins": "YOL_KAPLAMASI_SÖKÜMÜ_VE_YAPIMI",
-   "ad": "Yol kaplamasi sökümü ve yapimi",
+   "ad": "Yol kaplaması sökümü ve yapımı",
    "rol": "malzeme",
    "tip": 4
   },
   {
    "cins": "KİLOMETRİK_BAKIM_İŞLERİ",
-   "ad": "Ki̇lometri̇k bakim i̇şleri̇",
+   "ad": "Kilometrik bakım işleri",
    "rol": "malzeme",
    "tip": 3
   }
@@ -15133,7 +15142,7 @@
    "rol": "ana"
   },
   {
-   "cins": "KOFRA",
+   "cins": "KOFRE",
    "tanim": "KOFRA TIP-1",
    "birim": "ad/ad",
    "katsayi": 1.0,
@@ -15150,7 +15159,7 @@
    "kullanim": 161
   },
   {
-   "cins": "KOFRA",
+   "cins": "KOFRE",
    "tanim": "KOFRA TIP-2",
    "birim": "ad/ad",
    "katsayi": 1.0,
@@ -15160,7 +15169,7 @@
    "rol": "ana"
   },
   {
-   "cins": "KOFRA",
+   "cins": "KOFRE",
    "tanim": "KOFRA TIP-3",
    "birim": "ad/ad",
    "katsayi": 1.0,
@@ -15170,7 +15179,7 @@
    "rol": "ana"
   },
   {
-   "cins": "KOFRA",
+   "cins": "KOFRE",
    "tanim": "KOFRA TIP-4",
    "birim": "ad/ad",
    "katsayi": 1.0,
@@ -15180,7 +15189,7 @@
    "rol": "ana"
   },
   {
-   "cins": "KOFRA",
+   "cins": "KOFRE",
    "tanim": "KOFRA TIP-5",
    "birim": "ad/ad",
    "katsayi": 1.0,
@@ -15969,7 +15978,7 @@
    "kullanim": 16
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "2x4 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -15980,7 +15989,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "1X16+25 ALPEK",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -15991,7 +16000,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "2x6 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16002,7 +16011,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "2x10 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16013,7 +16022,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "2x16 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16024,7 +16033,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "2x25 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16035,7 +16044,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "4x10 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16046,7 +16055,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "4x16 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16064,7 +16073,7 @@
    "kullanim": 1
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "3x16+10 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16075,7 +16084,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "3x25+16 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16086,7 +16095,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "3x35+16 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16097,7 +16106,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "3x50+25 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16121,7 +16130,7 @@
    "kullanim": 118
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "3x70+35 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16132,7 +16141,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "3x95+50 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16159,7 +16168,7 @@
    "kullanim": 384
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "3x120+70 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16170,7 +16179,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "3x150+70 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16196,7 +16205,7 @@
    "kullanim": 67
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "3x185+95 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16207,7 +16216,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "3x240+120 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -16218,7 +16227,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "2(3x50+35) Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 2.0,
@@ -16229,7 +16238,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "2(3x70+35) Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 2.0,
@@ -16240,7 +16249,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "2(3x95+50) Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 2.0,
@@ -16251,7 +16260,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "2(3x120+70) Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 2.0,
@@ -16262,7 +16271,7 @@
    "rol": "hat"
   },
   {
-   "cins": "AG_ALİMİNYUM_KABLO",
+   "cins": "AG_ALÜMİNYUM_KABLO",
    "tanim": "2(3x150+70) Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 2.0,
@@ -17683,7 +17692,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3x35/16 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -17695,7 +17704,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3x50/16 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -17707,7 +17716,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3x70/16 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -17719,7 +17728,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3x95/16 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -17731,7 +17740,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3x120/16 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -17743,7 +17752,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3x150/25 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -17755,7 +17764,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3x185/25 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -17767,7 +17776,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3x240/25 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -17779,7 +17788,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3x400/25 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -17791,7 +17800,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3(1x35/16) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 3.0,
@@ -17802,7 +17811,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3(1x50/16) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 3.0,
@@ -17813,7 +17822,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3(1x70/16) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 3.0,
@@ -17824,7 +17833,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3(1x95/16) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 3.0,
@@ -17835,7 +17844,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3(1x120/16) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 3.0,
@@ -17846,7 +17855,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3(1x150/25) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 3.0,
@@ -17857,7 +17866,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3(1x185/25) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 3.0,
@@ -17868,7 +17877,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3(1x240/25) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 3.0,
@@ -17879,7 +17888,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "3(1x400/25) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 3.0,
@@ -17890,7 +17899,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "6(1x35/16) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 6.0,
@@ -17901,7 +17910,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "6(1x50/16) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 6.0,
@@ -17912,7 +17921,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "6(1x70/16) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 6.0,
@@ -17923,7 +17932,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "6(1x95/16) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 6.0,
@@ -17934,7 +17943,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "6(1x120/16) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 6.0,
@@ -17945,7 +17954,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "6(1x150/25) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 6.0,
@@ -17956,7 +17965,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "6(1x185/25) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 6.0,
@@ -17967,7 +17976,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "6(1x240/25) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 6.0,
@@ -17978,7 +17987,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "6(1x400/25) Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 6.0,
@@ -17989,7 +17998,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "1x35/16 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18001,7 +18010,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "1x50/16 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18021,7 +18030,7 @@
    "kullanim": 3
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "1x70/16 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18033,7 +18042,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "1x95/16 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18045,7 +18054,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "1x120/16 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18057,7 +18066,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "1x150/25 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18083,7 +18092,7 @@
    "kullanim": 143
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "1x185/25 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18095,7 +18104,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "1x240/25 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18107,7 +18116,7 @@
    "rol": "hat"
   },
   {
-   "cins": "OG_ALİMİNYUM_KABLO",
+   "cins": "OG_ALÜMİNYUM_KABLO",
    "tanim": "1x400/25 Xlpe Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18510,7 +18519,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "1X16+25 ALPEK",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18521,7 +18530,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "2x4 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18532,7 +18541,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "2x6 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18543,7 +18552,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "2x10 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18554,7 +18563,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "2x16 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18576,7 +18585,7 @@
    "kullanim": 122
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "2x25 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18587,7 +18596,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "4x10 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18598,7 +18607,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "4x16 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18621,7 +18630,7 @@
    "kullanim": 518
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "3x25+16 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18632,7 +18641,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "3x35+16 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18643,7 +18652,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "3x50+25 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18664,7 +18673,7 @@
    "kullanim": 42
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "3x70+35 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18675,7 +18684,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "3x95+50 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18694,7 +18703,7 @@
    "kullanim": 4
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "3x120+70 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18705,7 +18714,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "3x150+70 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18725,7 +18734,7 @@
    "kullanim": 4
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "3x185+95 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18736,7 +18745,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "3x240+120 Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 1.0,
@@ -18747,7 +18756,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "2(3x50+35) Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 2.0,
@@ -18758,7 +18767,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "2(3x70+35) Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 2.0,
@@ -18769,7 +18778,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "2(3x95+50) Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 2.0,
@@ -18780,7 +18789,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "2(3x120+70) Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 2.0,
@@ -18791,7 +18800,7 @@
    "rol": "hat"
   },
   {
-   "cins": "REKORTMAN_ALİMİNYUM",
+   "cins": "REKORTMAN_ALÜMİNYUM",
    "tanim": "2(3x150+70) Nyy Alm.",
    "birim": "mt/mt",
    "katsayi": 2.0,
@@ -34319,7 +34328,7 @@
    "rol": "malzeme"
   },
   {
-   "cins": "ALİMİNYUM_BAĞ_TELİ",
+   "cins": "ALÜMİNYUM_BAĞ_TELİ",
    "tanim": "3.58 MM ÇAPLI",
    "birim": "mt/kg",
    "katsayi": 0.02721,
@@ -34330,7 +34339,7 @@
    "rol": "malzeme"
   },
   {
-   "cins": "ALİMİNYUM_BAĞ_TELİ",
+   "cins": "ALÜMİNYUM_BAĞ_TELİ",
    "tanim": "4.25 MM ÇAPLI",
    "birim": "mt/kg",
    "katsayi": 0.03835,
@@ -34341,7 +34350,7 @@
    "rol": "malzeme"
   },
   {
-   "cins": "ALİMİNYUM_BAĞ_TELİ",
+   "cins": "ALÜMİNYUM_BAĞ_TELİ",
    "tanim": "5.65 MM ÇAPLI",
    "birim": "mt/kg",
    "katsayi": 0.06777,
@@ -34848,7 +34857,7 @@
    "rol": "malzeme"
   },
   {
-   "cins": "TECHİZAT_MONTAJ_DEMİRİ",
+   "cins": "TEÇHİZAT_MONTAJ_DEMİRİ",
    "tanim": "L-40 TMD",
    "birim": "mt/kg",
    "katsayi": 2.42,
@@ -34859,7 +34868,7 @@
    "rol": "malzeme"
   },
   {
-   "cins": "TECHİZAT_MONTAJ_DEMİRİ",
+   "cins": "TEÇHİZAT_MONTAJ_DEMİRİ",
    "tanim": "L-50 TMD",
    "birim": "mt/kg",
    "katsayi": 3.77,
@@ -34870,7 +34879,7 @@
    "rol": "malzeme"
   },
   {
-   "cins": "TECHİZAT_MONTAJ_DEMİRİ",
+   "cins": "TEÇHİZAT_MONTAJ_DEMİRİ",
    "tanim": "L-60 TMD",
    "birim": "mt/kg",
    "katsayi": 5.24,
@@ -34881,7 +34890,7 @@
    "rol": "malzeme"
   },
   {
-   "cins": "TECHİZAT_MONTAJ_DEMİRİ",
+   "cins": "TEÇHİZAT_MONTAJ_DEMİRİ",
    "tanim": "L-65 TMD",
    "birim": "mt/kg",
    "katsayi": 6.83,
@@ -34892,7 +34901,7 @@
    "rol": "malzeme"
   },
   {
-   "cins": "TECHİZAT_MONTAJ_DEMİRİ",
+   "cins": "TEÇHİZAT_MONTAJ_DEMİRİ",
    "tanim": "L-80 TMD",
    "birim": "mt/kg",
    "katsayi": 9.66,
@@ -34903,7 +34912,7 @@
    "rol": "malzeme"
   },
   {
-   "cins": "TECHİZAT_MONTAJ_DEMİRİ",
+   "cins": "TEÇHİZAT_MONTAJ_DEMİRİ",
    "tanim": "6,5 U TMD",
    "birim": "mt/kg",
    "katsayi": 7.09,
@@ -34914,7 +34923,7 @@
    "rol": "malzeme"
   },
   {
-   "cins": "TECHİZAT_MONTAJ_DEMİRİ",
+   "cins": "TEÇHİZAT_MONTAJ_DEMİRİ",
    "tanim": "8 U TMD",
    "birim": "mt/kg",
    "katsayi": 8.64,
@@ -34925,7 +34934,7 @@
    "rol": "malzeme"
   },
   {
-   "cins": "TECHİZAT_MONTAJ_DEMİRİ",
+   "cins": "TEÇHİZAT_MONTAJ_DEMİRİ",
    "tanim": "60X10 LAMA TMD",
    "birim": "mt/kg",
    "katsayi": 4.17,
@@ -34936,7 +34945,7 @@
    "rol": "malzeme"
   },
   {
-   "cins": "TECHİZAT_MONTAJ_DEMİRİ",
+   "cins": "TEÇHİZAT_MONTAJ_DEMİRİ",
    "tanim": "80X10 LAMA TMD",
    "birim": "mt/kg",
    "katsayi": 8.28,

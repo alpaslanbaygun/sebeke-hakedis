@@ -69,7 +69,7 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Kalemin etiketteki yazımı: tam yazım (adetli olabilir), yoksa tanım.</summary>
         public static string Yazi(Kalem k) => k == null ? "" : !string.IsNullOrEmpty(k.Aciklama) ? k.Aciklama : k.Tanim ?? "";
 
-        /// <summary>OG iletken / kablo mu (cinsi OG_ ile başlar: OG_İLETKEN, OG_ALİMİNYUM_KABLO, OG_BAKIR_KABLO).</summary>
+        /// <summary>OG iletken / kablo mu (cinsi OG_ ile başlar: OG_İLETKEN, OG_ALÜMİNYUM_KABLO, OG_BAKIR_KABLO).</summary>
         public static bool OgMu(string cins) => (cins ?? "").StartsWith("OG_", StringComparison.Ordinal);
 
         /// <summary>Hattın iletken / kablo (HAT) satırları, sırasıyla.</summary>

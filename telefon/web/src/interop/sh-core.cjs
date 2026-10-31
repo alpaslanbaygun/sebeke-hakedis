@@ -28,10 +28,10 @@
 
   /** Eleman türleri. katman: AutoCAD katman adındaki tür; gis: GIS numarası biçimi. */
   const ELEMAN_TURLERI = [
-    { kod: 'AG_DIREK', ad: 'AG Direk', kisa: 'AG', katman: 'AGDİR', sekil: 'daire', gis: 'direk' },
-    { kod: 'MUSTEREK_DIREK', ad: 'Müşterek Direk', kisa: 'Müşterek', katman: 'MÜŞDİR', sekil: 'daire', gis: 'direk' },
-    { kod: 'AYD_DIREK', ad: 'Aydınlatma Direği', kisa: 'Aydınlatma', katman: 'AYDDİR', sekil: 'daire', gis: 'direk' },
-    { kod: 'ENH_DIREK', ad: 'ENH Direği', kisa: 'ENH', katman: 'ENHDİR', sekil: 'daire', gis: 'direk' },
+    { kod: 'AG_DIREK', ad: 'AG Direk', kisa: 'AG', katman: 'AGDIR', sekil: 'daire', gis: 'direk' },
+    { kod: 'MUSTEREK_DIREK', ad: 'Müşterek Direk', kisa: 'Müşterek', katman: 'MUSDIR', sekil: 'daire', gis: 'direk' },
+    { kod: 'AYD_DIREK', ad: 'Aydınlatma Direği', kisa: 'Aydınlatma', katman: 'AYDDIR', sekil: 'daire', gis: 'direk' },
+    { kod: 'ENH_DIREK', ad: 'ENH Direği', kisa: 'ENH', katman: 'ENHDIR', sekil: 'daire', gis: 'direk' },
     { kod: 'TRAFO_DIREGI', ad: 'Trafo Direği', kisa: 'Trafo Dir.', katman: 'TRAFO', sekil: 'ucgen', gis: 'TR' },
     { kod: 'TRAFO_MERKEZI', ad: 'Trafo Merkezi', kisa: 'Köşk', katman: 'TRAFO', sekil: 'kare', gis: 'TR' },
     { kod: 'PANO', ad: 'Pano', kisa: 'Pano', katman: 'PANO', sekil: 'kare', gis: 'P' },
@@ -48,7 +48,7 @@
     { kod: 'OG_HAVAI', ad: 'OG Havai', katman: 'OG_HAV_HAT' },
     { kod: 'OG_YERALTI', ad: 'OG Yeraltı', katman: 'OG_YER_XLPE' },
     { kod: 'REKORTMAN', ad: 'Rekortman', katman: 'REKORTMAN' },
-    { kod: 'MUSTEREK', ad: 'Müşterek', katman: 'MÜŞTEREK_HAT' }
+    { kod: 'MUSTEREK', ad: 'Müşterek', katman: 'MUSTEREK_HAT' }
   ];
 
   const ZEMINLER = ['TOPRAK', 'TOPRAK (BARİYERLİ)', 'TUVENAN', 'TUVENAN (BARİYERLİ)', 'PARKE TOPRAK', 'PARKE TUVENAN',
@@ -64,6 +64,23 @@
   function elemanTuru(kod) { return ELEMAN_TURLERI.find(t => t.kod === kod) || ELEMAN_TURLERI[ELEMAN_TURLERI.length - 1]; }
   function hatTuru(kod) { return HAT_TURLERI.find(t => t.kod === kod) || { kod, ad: kod || 'Hat', katman: '' }; }
 
+  /**
+   * Cins kodlarındaki yazım hataları (31.10.2026): eski kod → yeni kod. Okurken çevrilir, yazarken hep yeni kod
+   * yazılır. Eklentideki CinsKodu ile aynı tablo (ortak/katalog/kalemler.json › eskiCinsler).
+   */
+  const ESKI_CINSLER = {
+    AG_ALİMİNYUM_KABLO: 'AG_ALÜMİNYUM_KABLO', OG_ALİMİNYUM_KABLO: 'OG_ALÜMİNYUM_KABLO', REKORTMAN_ALİMİNYUM: 'REKORTMAN_ALÜMİNYUM',
+    ALİMİNYUM_BAĞ_TELİ: 'ALÜMİNYUM_BAĞ_TELİ', TECHİZAT_MONTAJ_DEMİRİ: 'TEÇHİZAT_MONTAJ_DEMİRİ', KOFRA: 'KOFRE'
+  };
+  function cinsDuzelt(cins) { return cins && Object.prototype.hasOwnProperty.call(ESKI_CINSLER, cins) ? ESKI_CINSLER[cins] : cins; }
+
+  /**
+   * Katman adı Türkçe karaktersiz (31.10.2026): ç ğ ı İ ö ş ü → c g i I o s u (AGDİR → AGDIR, MÜŞTEREK_HAT →
+   * MUSTEREK_HAT). Eklentideki KatmanAdlari.Ascii ile aynı.
+   */
+  const TR_ASCII = { ç: 'c', Ç: 'C', ğ: 'g', Ğ: 'G', ı: 'i', İ: 'I', ö: 'o', Ö: 'O', ş: 's', Ş: 'S', ü: 'u', Ü: 'U', â: 'a', Â: 'A', î: 'i', Î: 'I', û: 'u', Û: 'U' };
+  function katmanAscii(ad) { return String(ad == null ? '' : ad).replace(/[çÇğĞıİöÖşŞüÜâÂîÎûÛ]/g, (c) => TR_ASCII[c]); }
+
   /** Malzeme cinsinden eleman türü (NesneOkuyucu.ElemanTuru ile aynı). */
   function cinstenElemanTuru(cins) {
     const c = cins || '';
@@ -77,7 +94,7 @@
     if (b('AG_PANO')) return 'PANO';
     if (b('BOX_PANO')) return 'BOX';
     if (b('EK_MUFU')) return 'EK_MUFU';
-    if (b('KOFRA')) return 'KOFRE';
+    if (b('KOFRE') || b('KOFRA')) return 'KOFRE';
     return 'DIGER';
   }
 
@@ -86,10 +103,10 @@
     const c = cins || '';
     const b = p => c.startsWith(p);
     if (b('ALPEK') || b('AG_İLETKEN')) return 'AG_HAVAI';
-    if (b('AG_ALİMİNYUM_KABLO') || b('AG_BAKIR_KABLO')) return 'AG_YERALTI';
+    if (b('AG_ALÜMİNYUM_KABLO') || b('AG_ALİMİNYUM_KABLO') || b('AG_BAKIR_KABLO')) return 'AG_YERALTI';
     if (b('AYDINLATMA')) return 'AYDINLATMA';
     if (b('OG_İLETKEN')) return 'OG_HAVAI';
-    if (b('OG_ALİMİNYUM_KABLO')) return 'OG_YERALTI';
+    if (b('OG_ALÜMİNYUM_KABLO') || b('OG_ALİMİNYUM_KABLO')) return 'OG_YERALTI';
     if (b('REKORTMAN')) return 'REKORTMAN';
     return 'DIGER';
   }
@@ -669,7 +686,7 @@
 
   function kalemOku(o) {
     const k = {
-      cins: str(o.cins), tanim: str(o.tanim), durum: str(o.durum), miktar: num(o.miktar), birim: str(o.birim),
+      cins: cinsDuzelt(str(o.cins)), tanim: str(o.tanim), durum: str(o.durum), miktar: num(o.miktar), birim: str(o.birim),
       katsayi: num(o.katsayi, 1), toplam: num(o.toplam), birimFiyat: num(o.birimFiyat), hakedis: Math.round(num(o.hakedis)),
       tarife: str(o.tarife), sira: str(o.sira), kontrol: mantik(o.kontrol), kaynak: str(o.kaynak)
     };
@@ -725,7 +742,7 @@
     s = new Set();
     for (const o of dizi('elemanlar')) {
       p.elemanlar.push(Object.assign({}, o, {
-        id: kimlik(o, s), tur: str(o.tur) || cinstenElemanTuru(o.cins), gisId: str(o.gisId), cins: str(o.cins), tip: str(o.tip),
+        id: kimlik(o, s), tur: str(o.tur) || cinstenElemanTuru(o.cins), gisId: str(o.gisId), cins: cinsDuzelt(str(o.cins)), tip: str(o.tip),
         durum: str(o.durum), hakedis: Math.round(num(o.hakedis)), bolge: str(o.bolge), saga: num(o.saga), yukari: num(o.yukari),
         kot: num(o.kot), aci: num(o.aci), kontrol: mantik(o.kontrol), katman: str(o.katman), blok: str(o.blok),
         kalemler: (o.kalemler || []).map(kalemOku)
@@ -795,7 +812,7 @@
   const kYaz = kose => (kose || []).map(q => [r4(q[0]), r4(q[1])]);
 
   function kalemYaz(x) {
-    const o = { cins: x.cins, tanim: x.tanim };
+    const o = { cins: cinsDuzelt(x.cins), tanim: x.tanim };
     if (x.aciklama) o.aciklama = x.aciklama;
     Object.assign(o, {
       durum: x.durum, miktar: x.miktar, birim: x.birim, katsayi: x.katsayi, toplam: x.toplam, birimFiyat: x.birimFiyat || 0,
@@ -828,18 +845,18 @@
       bicim: BICIM, surum: SURUM, olusturan: olusturan || p.olusturan || 'Şebeke-M (telefon)', olusturma: zaman(),
       proje: sirala(pj, [['ad', pj.ad], ['kaynak', pj.kaynak],
         ['koordinat', Object.assign({ sistem: 'TM', datum: 'ITRF96', dom: 0 }, pj.koordinat, { eksenler: 'saga = doğu (CAD X), yukari = kuzey (CAD Y)' })],
-        ['aktifHakedis', pj.aktifHakedis], ['katmanOnEki', pj.katmanOnEki], ['gisOnEki', pj.gisOnEki]]),
+        ['aktifHakedis', pj.aktifHakedis], ['katmanOnEki', katmanAscii(pj.katmanOnEki)], ['gisOnEki', pj.gisOnEki]]),
       bolgeler: p.bolgeler.map(b => sirala(b, [['id', b.id], ['ad', b.ad], ['kod', b.kod], ['grup', b.grup || undefined], ['aciklama', b.aciklama || undefined], ['sinir', kYaz(b.sinir)]])),
       noktalar: p.noktalar.map(n => sirala(n, [['id', n.id], ['ad', n.ad], ['kod', n.kod], ['saga', r4(n.saga)], ['yukari', r4(n.yukari)],
         ['kot', r4(n.kot)], ['hakedis', n.hakedis], ['bolge', n.bolge], ['ekMetinler', n.ekMetinler && n.ekMetinler.length ? n.ekMetinler : undefined]])),
-      elemanlar: p.elemanlar.map(e => sirala(e, [['id', e.id], ['tur', e.tur], ['gisId', e.gisId], ['cins', e.cins], ['tip', e.tip],
+      elemanlar: p.elemanlar.map(e => sirala(e, [['id', e.id], ['tur', e.tur], ['gisId', e.gisId], ['cins', cinsDuzelt(e.cins)], ['tip', e.tip],
         ['durum', e.durum], ['hakedis', e.hakedis], ['bolge', e.bolge], ['saga', r4(e.saga)], ['yukari', r4(e.yukari)],
         ['kot', e.kot ? r4(e.kot) : undefined], ['aci', temiz(e.aci || 0, 6)], ['guc', e.guc || undefined], ['gerilim', e.gerilim || undefined],
-        ['dmDurum', e.dmDurum || undefined], ['kontrol', e.kontrol === undefined ? null : e.kontrol], ['katman', e.katman || ''],
+        ['dmDurum', e.dmDurum || undefined], ['kontrol', e.kontrol === undefined ? null : e.kontrol], ['katman', katmanAscii(e.katman)],
         ['blok', e.blok || ''], ['kalemler', (e.kalemler || []).map(kalemYaz)]])),
       hatlar: p.hatlar.map(h => sirala(h, [['id', h.id], ['tur', h.tur], ['anaKesit', h.anaKesit], ['durum', h.durum], ['hakedis', h.hakedis],
         ['bolge', h.bolge], ['cizimUzunlugu', temiz(uzunluk(h.kose), 3)], ['etiket', h.etiket || undefined],
-        ['kontrol', h.kontrol === undefined ? null : h.kontrol], ['katman', h.katman || ''], ['kose', kYaz(h.kose)],
+        ['kontrol', h.kontrol === undefined ? null : h.kontrol], ['katman', katmanAscii(h.katman)], ['kose', kYaz(h.kose)],
         ['kalemler', (h.kalemler || []).map(kalemYaz)]])),
       kanallar: p.kanallar.map(c => sirala(c, [['id', c.id], ['kod', c.kod], ['kablolar', kanalKablolari(c.kod)], ['zemin', c.zemin],
         ['altGenislik', c.altGenislik], ['ustGenislik', c.ustGenislik], ['derinlik', c.derinlik], ['basNo', c.basNo || ''],
@@ -1010,7 +1027,7 @@
 
   return {
     BICIM, SURUM, DURUMLAR, DURUM_ADI, ELEMAN_TURLERI, HAT_TURLERI, ZEMINLER, KANAL, DOMLAR, KOLEKSIYONLAR,
-    elemanTuru, hatTuru, cinstenElemanTuru, cinstenHatTuru,
+    elemanTuru, hatTuru, cinstenElemanTuru, cinstenHatTuru, cinsDuzelt, katmanAscii, ESKI_CINSLER,
     temiz, sayi, tr, ordinal, siraKarsilastir,
     tmIleri, tmGeri, domBoylamdan, domTahmin,
     mesafe, uzunluk, ortaNokta, icinde, alan, dogruParcasinaMesafe, cokgeneMesafe, bolgeSec, kutu, projeKutusu,

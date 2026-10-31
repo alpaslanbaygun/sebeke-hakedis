@@ -96,7 +96,7 @@ test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Dur
   const ag = sp.hatlar.find((h) => h.tur === 'AG_HAVAI');
   assert.equal(ag.anaKesit, '3X70/16+95 ALPEK'); assert.equal(ag.kalemler[0].cins, 'ALPEK_KABLOLAR'); assert.equal(ag.kalemler[0].tarife, '0107');
   const yer = sp.hatlar.find((h) => h.tur === 'AG_YERALTI');
-  assert.equal(yer.anaKesit, '3x95+50 Nyy Alm.'); assert.equal(yer.kalemler[0].cins, 'AG_ALİMİNYUM_KABLO');
+  assert.equal(yer.anaKesit, '3x95+50 Nyy Alm.'); assert.equal(yer.kalemler[0].cins, 'AG_ALÜMİNYUM_KABLO', 'cins kodu yazım hatası düzeltilmiş');
   assert.equal(sp.kanallar.length, 1);
   const kn = sp.kanallar[0];
   assert.equal(kn.kod, 4); assert.equal(kn.zemin, 'ASFALT'); assert.equal(kn.altGenislik, 40); assert.equal(kn.derinlik, 80);

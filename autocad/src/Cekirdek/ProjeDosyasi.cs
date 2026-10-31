@@ -244,7 +244,7 @@ namespace SebekeHakedis.Cekirdek
             {
                 var e = new Eleman
                 {
-                    Id = o.Metin("id"), Tur = o.Metin("tur"), GisId = o.Metin("gisId"), Cins = o.Metin("cins"), Tip = o.Metin("tip"),
+                    Id = o.Metin("id"), Tur = o.Metin("tur"), GisId = o.Metin("gisId"), Cins = CinsKodu.Duzelt(o.Metin("cins")), Tip = o.Metin("tip"),
                     Durum = o.Metin("durum"), Hakedis = o.Tam("hakedis"), Bolge = o.Metin("bolge"),
                     Saga = o.Ondalik("saga"), Yukari = o.Ondalik("yukari"), Kot = o.Ondalik("kot"), Aci = o.Ondalik("aci"),
                     Guc = o.Metin("guc"), Gerilim = o.Metin("gerilim"), DmDurum = o.Metin("dmDurum"), Kontrol = o.Mantik("kontrol"),
@@ -339,7 +339,7 @@ namespace SebekeHakedis.Cekirdek
                 if (o == null) continue;
                 l.Add(new Kalem
                 {
-                    Cins = o.Metin("cins"), Tanim = o.Metin("tanim"), Aciklama = o.Metin("aciklama"), Durum = o.Metin("durum"),
+                    Cins = CinsKodu.Duzelt(o.Metin("cins")), Tanim = o.Metin("tanim"), Aciklama = o.Metin("aciklama"), Durum = o.Metin("durum"),
                     Miktar = o.Ondalik("miktar"), Birim = o.Metin("birim"), Katsayi = o.Ondalik("katsayi", 1), Toplam = o.Ondalik("toplam"),
                     BirimFiyat = o.Ondalik("birimFiyat"), Hakedis = o.Tam("hakedis"), Tarife = o.Metin("tarife"),
                     DmDurum = o.Metin("dmDurum"), Sira = o.Metin("sira"), Kontrol = o.Mantik("kontrol"),

@@ -257,7 +257,19 @@ namespace SebekeHakedis.Test
             Esit(true, vdt.Satirlar.Exists(r => r.Cins == "AL_İLETKENLER" && r.Tip == "SWALLOW"), "telefon dosyası: OG hattı tel tel açılır");
             Esit(true, vdt.Satirlar.Exists(r => r.Cins == "KABLO_KANALI" && r.Tip == "ASFALT"), "telefon dosyası: kanal paylaştırılır");
             BosaAktar(voltYol);
-            Esit("SC_1.HAK.AGDİR", NesneYazici.ElemanKatmani("SC", "AG_DIREK", "M", 1), "katman: hakediş");
+            Esit("SC_1.HAK.AGDIR", NesneYazici.ElemanKatmani("SC", "AG_DIREK", "M", 1), "katman: hakediş (Türkçe karaktersiz)");
+            Esit("SC_2.HAK.MUSDIR", NesneYazici.ElemanKatmani("SC", "MUSTEREK_DIREK", "M", 2), "katman: müşterek direk MUSDIR");
+            Esit("SC_1.HAK.MUSTEREK_HAT", NesneYazici.HatKatmani("SC", "MUSTEREK", "M", 1), "katman: müşterek hat MUSTEREK_HAT");
+            Esit("SC_1.HAK.AYDDIR", NesneYazici.ElemanKatmani("ŞÇ", "AYD_DIREK", "M", 1), "katman: önekteki Türkçe harf de çevrilir");
+            Esit("SC_1.HAK.AGDIR", NesneYazici.Eleman(new Eleman { Id = "A1", Tur = "AG_DIREK", Durum = "M", Hakedis = 1, Katman = "SC_1.HAK.AGDİR" }, "SC", "SH_X", null).Katman,
+                 "katman: çizimdeki eski adlı katman yeni adıyla yazılır");
+            Esit("SC_1.HAK.MUSDIR", KatmanAdlari.Ascii("SC_1.HAK.MÜŞDİR"), "katman adı: ASCII çevirisi");
+            Esit("MUSTEREK_HAT", KatmanAdlari.Tur("MÜŞTEREK_HAT"), "katman türü: eski ad yeni ada");
+            Esit(true, KatmanAdlari.SebekeKatmani("SC_3.HAK.ENHDİR") && KatmanAdlari.SebekeKatmani("SÇ_MEVCUT") && KatmanAdlari.SebekeKatmani("CBS-Ölçü"),
+                 "şebeke katmanı: hakediş, özel ve CBS katmanları çevrilir");
+            Esit(false, KatmanAdlari.SebekeKatmani("Benim çizgilerim"), "kullanıcının kendi katmanına dokunulmaz");
+            Esit("MUSTEREK", NesneOkuyucu.HatTuru("MÜŞTEREK_HAT", "") + "|" + NesneOkuyucu.HatTuru("MUSTEREK_HAT", "") == "MUSTEREK|MUSTEREK" ? "MUSTEREK" : "?",
+                 "eski ve yeni müşterek hat katmanı aynı türde okunur");
             Esit("SC_DEMONTAJ", NesneYazici.ElemanKatmani("SC", "AG_DIREK", "DM", 3), "katman: demontaj");
             Esit("SC_STANDART", NesneYazici.ElemanKatmani("SC", "KOFRE", "M+M", 2), "katman: kofre");
             Esit("SC_2.HAK.OG_YER_XLPE", NesneYazici.HatKatmani("SC", "OG_YERALTI", "DM+M", 2), "katman: OG yeraltı");
@@ -1119,8 +1131,35 @@ namespace SebekeHakedis.Test
             Esit("SH_KAFES_AG_DMM", NesneYazici.BlokSec(new List<Eleman>(), new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_DEMİR_GLV", Durum = "DM+M", Blok = "SH_KAFES_AG_YENI" }), "simge: duruma göre yeniden seçilir");
             Esit("SH_DIREK_AG_YENI", NesneYazici.BlokSec(cizimEl, new Eleman { Id = "9", Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "M", Blok = "SH_DIREK_AG_YENI" }), "simge: SH_ bloğu korunur");
             // Katalog (eklentiye gömülen dosya), sıra üreteci, armatürlü direk (önceki sürümde ayrı blokta tanımlıydı)
-            var k = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            string katalogMetni = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8);
+            var k = Katalog.Oku(katalogMetni, null);
             Esit(true, k.Kalemler.Count > 2500, "katalog okundu (tam liste)");
+
+            // Cins kodlarındaki yazım hataları (31.10.2026): katalogda yalnız yeni kodlar; eski kod okunurken çevrilir
+            var eskiCinsler = ((JsonNesne)Json.Oku(katalogMetni)).Nesne("eskiCinsler");
+            int eslesen = 0;
+            foreach (var kv in eskiCinsler)
+            {
+                if (kv.Key == "aciklama") continue;
+                Esit(Convert.ToString(kv.Value, CultureInfo.InvariantCulture), CinsKodu.Duzelt(kv.Key), "cins kodu: " + kv.Key + " katalogdaki gibi çevrilir");
+                eslesen++;
+            }
+            Esit(CinsKodu.Eski.Count, eslesen, "cins kodu: eklentinin tablosu katalogdaki eskiCinsler ile aynı");
+            Esit(0, k.Kalemler.FindAll(x => CinsKodu.Eski.ContainsKey(x.Cins)).Count, "katalogda eski (yazım hatalı) cins kodu yok");
+            Esit(0, k.Cinsler.FindAll(x => x.Ad.Contains("̇") || x.Ad != x.Ad.Trim()).Count, "cins adlarında bozuk harf yok (i̇)");
+            Esit("Bakır bara", k.CinsAdi("BAKIR_BARA"), "cins adı Türkçe yazımla");
+            Esit("Rekortman (alüminyum)", k.CinsAdi("REKORTMAN_ALİMİNYUM"), "cins adı: eski kodla da bulunur");
+            Esit(true, k.Bul("AG_ALİMİNYUM_KABLO", "3x95+50 Nyy Alm.") != null && k.Bul("AG_ALİMİNYUM_KABLO", "3x95+50 Nyy Alm.").Cins == "AG_ALÜMİNYUM_KABLO",
+                 "katalog: eski kodla aranan kalem yeni koduyla gelir");
+            Esit("AG_ALÜMİNYUM_KABLO", NesneOkuyucu.HatKalemiOku("AG_ALİMİNYUM_KABLO;;3x95+50 Nyy Alm.;M;0;10;mt/mt;1;10;0,00;1;0105;7001;").Cins,
+                 "çizimdeki eski kodlu hat kalemi yeni kodla okunur");
+            Esit("KOFRE", NesneOkuyucu.MalzemeOku("KOFRA;KOFRE TIP-1;M+M;0;1;ad/ad;1;1;0,00;1;0113;7002;").Cins, "çizimdeki KOFRA malzemesi KOFRE okunur");
+            Esit("KOFRE", NesneOkuyucu.ElemanTuru("KOFRE") + "|" + NesneOkuyucu.ElemanTuru("KOFRA") == "KOFRE|KOFRE" ? "KOFRE" : "?", "eleman türü: eski ve yeni kofre kodu");
+            Esit("AG_YERALTI", NesneOkuyucu.HatTuru("", "AG_ALÜMİNYUM_KABLO"), "hat türü: yeni alüminyum kablo kodu");
+            var eskiDosya = ProjeDosyasi.Oku("{\"bicim\":\"sebeke-hakedis.proje\",\"surum\":1,\"proje\":{\"ad\":\"D\"},\"elemanlar\":[{\"id\":\"E1\",\"tur\":\"KOFRE\",\"cins\":\"KOFRA\",\"tip\":\"KOFRE TIP-1\",\"kalemler\":[{\"cins\":\"KOFRA\",\"tanim\":\"KOFRE TIP-1\",\"ana\":true}]}]," +
+                                             "\"hatlar\":[{\"id\":\"H1\",\"tur\":\"AG_YERALTI\",\"kalemler\":[{\"cins\":\"AG_ALİMİNYUM_KABLO\",\"tanim\":\"3x95+50 Nyy Alm.\",\"kaynak\":\"HAT\"}]}]}");
+            Esit("KOFRE|KOFRE|AG_ALÜMİNYUM_KABLO", eskiDosya.Elemanlar[0].Cins + "|" + eskiDosya.Elemanlar[0].Kalemler[0].Cins + "|" + eskiDosya.Hatlar[0].Kalemler[0].Cins,
+                 "eski proje dosyasındaki kodlar yeni kodla okunur");
             int sira = 7000;
             Func<string> yeniSira = () => (++sira).ToString(CultureInfo.InvariantCulture);
             var arm = k.Bul("ARMATÜR", "70W Sodyum Arm.");
@@ -1271,7 +1310,7 @@ namespace SebekeHakedis.Test
             Esit(true, plan.Silinenler.ContainsKey(silinen), "değişen proje: telefonda silinen kanal sorulur");
             var yeniAdim = plan.Adimlar.Find(x => x.Kimlik == "Tk1");
             Esit("Tk1", yeniAdim.Varlik.XdIlk(NesneYazici.KimlikUygulamasi), "yeni nesneye telefon kimliği yazılır");
-            Esit("SC_2.HAK.AGDİR", yeniAdim.Varlik.Katman, "yeni direk hakediş katmanında");
+            Esit("SC_2.HAK.AGDIR", yeniAdim.Varlik.Katman, "yeni direk hakediş katmanında");
             var dmAdim = plan.Adimlar.Find(x => x.Hedef == dm.Id);
             Esit("SC_DEMONTAJ", dmAdim.Varlik.Katman, "demontaja çevrilen direk demontaj katmanına geçer");
             Esit(dm.Blok, dmAdim.Varlik.Blok, "adsız bloklu direğin bloğu korunur");

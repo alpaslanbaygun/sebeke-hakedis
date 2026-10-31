@@ -91,12 +91,20 @@ namespace SebekeHakedis.Eklenti
         public ObjectId Katman(string ad)
         {
             if (string.IsNullOrWhiteSpace(ad)) return _db.LayerZero;
+            // Katman adları Türkçe karaktersiz (KatmanAdlari): eski adlı katman (AGDİR…) ilk kullanılışta yeni adına çevrilir
+            ad = KatmanAdlari.Ascii(ad);
             ObjectId id;
             if (_katmanlar.TryGetValue(ad, out id)) return id;
             var lt = (LayerTable)_tr.GetObject(_db.LayerTableId, OpenMode.ForRead);
             if (lt.Has(ad))
             {
                 id = lt[ad];
+            }
+            else if (!(id = EskiAdliKatman(lt, ad)).IsNull)
+            {
+                var eski = (LayerTableRecord)_tr.GetObject(id, OpenMode.ForWrite);
+                eski.Name = ad;
+                _turkceKatmanlar.Remove(ad);
             }
             else
             {
@@ -196,6 +204,86 @@ namespace SebekeHakedis.Eklenti
         {
             string s = SahibiOku(sus);
             return s == null || string.Equals(s, sahip, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Türkçe karakterli eski katmanlar: Türkçe karaktersiz adı → katman (ilk aramada bir kez okunur).</summary>
+        private Dictionary<string, ObjectId> _turkceKatmanlar;
+
+        /// <summary>Türkçe karaktersiz adı verilen adla aynı olan eski (Türkçe karakterli) katman; yoksa boş.</summary>
+        private ObjectId EskiAdliKatman(LayerTable lt, string asciiAd)
+        {
+            if (_turkceKatmanlar == null)
+            {
+                _turkceKatmanlar = new Dictionary<string, ObjectId>(StringComparer.OrdinalIgnoreCase);
+                foreach (ObjectId lid in lt)
+                {
+                    var r = _tr.GetObject(lid, OpenMode.ForRead) as LayerTableRecord;
+                    if (r == null || r.IsErased || r.IsDependent || !KatmanAdlari.TurkceVar(r.Name)) continue;
+                    string a = KatmanAdlari.Ascii(r.Name);
+                    if (!_turkceKatmanlar.ContainsKey(a)) _turkceKatmanlar[a] = lid;
+                }
+            }
+            ObjectId id;
+            return _turkceKatmanlar.TryGetValue(asciiAd, out id) ? id : ObjectId.Null;
+        }
+
+        /// <summary>
+        /// Şebeke katmanlarının adlarını Türkçe karaktersiz yapar (Telefon Görünümü; bkz. KatmanAdlari): yeni adda katman
+        /// yoksa katmanın adı değişir; varsa nesneleri yeni katmana taşınır, eski katman silinir. Kullanıcının kendi
+        /// katmanlarına dokunulmaz. Çevrilen katman sayısı döner.
+        /// </summary>
+        public int KatmanlariCevir()
+        {
+            var lt = (LayerTable)_tr.GetObject(_db.LayerTableId, OpenMode.ForRead);
+            var cevrilecek = new List<ObjectId>();
+            foreach (ObjectId lid in lt)
+            {
+                var r = _tr.GetObject(lid, OpenMode.ForRead) as LayerTableRecord;
+                if (r == null || r.IsErased || r.IsDependent) continue;
+                if (KatmanAdlari.TurkceVar(r.Name) && KatmanAdlari.SebekeKatmani(r.Name)) cevrilecek.Add(lid);
+            }
+            if (cevrilecek.Count == 0) return 0;
+            var tasinacak = new Dictionary<ObjectId, ObjectId>();
+            foreach (var lid in cevrilecek)
+            {
+                var r = (LayerTableRecord)_tr.GetObject(lid, OpenMode.ForWrite);
+                string yeni = KatmanAdlari.Ascii(r.Name);
+                if (!lt.Has(yeni)) { r.Name = yeni; continue; }
+                tasinacak[lid] = lt[yeni];
+            }
+            if (tasinacak.Count > 0)
+            {
+                // Aynı adın Türkçe karaktersizi zaten var: nesneler oraya taşınır (çizim, kâğıt alanları ve blok tanımları)
+                int tasinamayan = 0;
+                foreach (ObjectId bid in (BlockTable)_tr.GetObject(_db.BlockTableId, OpenMode.ForRead))
+                {
+                    var kayit = _tr.GetObject(bid, OpenMode.ForRead) as BlockTableRecord;
+                    if (kayit == null || kayit.IsFromExternalReference || kayit.IsDependent) continue;
+                    foreach (ObjectId eid in kayit)
+                    {
+                        var e = _tr.GetObject(eid, OpenMode.ForRead, false) as Entity;
+                        ObjectId hedef;
+                        if (e == null || e.IsErased || !tasinacak.TryGetValue(e.LayerId, out hedef)) continue;
+                        try
+                        {
+                            e.UpgradeOpen();
+                            e.LayerId = hedef;
+                        }
+                        catch { tasinamayan++; } // kilitli katmandaki nesne
+                    }
+                }
+                if (tasinamayan > 0) Uyarilar.Add(tasinamayan + " nesne eski adlı katmanda kaldı (katman kilitli olabilir).");
+                var etkin = _db.Clayer;
+                foreach (var kv in tasinacak)
+                {
+                    if (kv.Key == etkin) _db.Clayer = kv.Value;
+                    try { _tr.GetObject(kv.Key, OpenMode.ForWrite).Erase(); }
+                    catch (Exception ex) { Uyarilar.Add("Eski katman silinemedi: " + ex.Message); }
+                }
+            }
+            _turkceKatmanlar = null;
+            _katmanlar.Clear();
+            return cevrilecek.Count;
         }
 
         /// <summary>Yazıların katmanı: nesnenin ön ekiyle &lt;önek&gt;_YAZI (telefondaki ELEKTRIK-YAZI karşılığı).</summary>

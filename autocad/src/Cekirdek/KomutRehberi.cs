@@ -17,7 +17,7 @@ namespace SebekeHakedis.Cekirdek
             new[] { "Düzenleme", "SH_MALZEME", "Seçilen nesnenin malzemelerini düzenler (direğe armatür: simgesi direğin yanında)" },
             new[] { "Düzenleme", "SH_TOPLUMALZEME", "Seçilen direklere / elemanlara aynı malzemeleri tek seferde ekler" },
             new[] { "Düzenleme", "SH_METRAJ", "Hat / kanal metrajını çizim uzunluğundan yeniden hesaplar" },
-            new[] { "Düzenleme", "SH_GORUNUM", "Çizimi telefon görünümüne çevirir (simge, renk, etiket, parça metrajı)" },
+            new[] { "Düzenleme", "SH_GORUNUM", "Çizimi telefon görünümüne çevirir (simge, renk, etiket, parça metrajı); katman adları Türkçe karaktersiz, cins kodları yazım hatasız" },
             new[] { "Düzenleme", "SH_AYARLAR", "Çizim ayarları (ön ek, tarife, simge takımı, etiket, metraj payı)" },
             new[] { "Hakediş", "SH_HAKEDIS", "Aktif hakedişi değiştirir" },
             new[] { "Hakediş", "SH_ONAY", "Hakediş onayı (Kontrol → Hakediş → GIS); onaylanan hakediş kilitlenir" },

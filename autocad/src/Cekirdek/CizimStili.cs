@@ -184,9 +184,9 @@ namespace SebekeHakedis.Cekirdek
         public static KatmanStil KatmanTuruStili(string katman)
         {
             Denetle();
-            katman = katman ?? "";
+            katman = KatmanAdlari.Ascii(katman ?? ""); // eski (Türkçe karakterli) adlar da tanınır: AGDİR → AGDIR
             int i = katman.IndexOf(".HAK.", StringComparison.Ordinal);
-            string tur = i >= 0 ? katman.Substring(i + 5) : "";
+            string tur = i >= 0 ? KatmanAdlari.Tur(katman.Substring(i + 5)) : "";
             KatmanStil k;
             if (tur.Length > 0 && _katmanTuru.TryGetValue(tur, out k)) return k;
             foreach (var kv in _katmanTuru)

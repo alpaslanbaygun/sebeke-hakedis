@@ -481,7 +481,7 @@ function malzemeKalemi(m, tanim, hak, job, cat) {
   const kategori = (pz && pz.category) || '';
   if (!cins) {
     const v = tanim.voltaj || 'AG';
-    cins = ESLESME.kategoriler[kategori + '|' + v] || ESLESME.kategoriler[kategori] || (m.tag === 'armatur' ? 'ARMATÜR' : m.tag === 'top' ? 'TOPRAKLAMA' : m.tag === 'kofre' ? 'KOFRA' : m.tag === 'trafo' ? 'TRAFO_GENLEŞME_TANKLI' : m.tag === 'hucre' ? 'HÜCRELER_METAL' : m.tag === 'pano' ? 'AG_PANO_HT' : 'DİĞER_AMBAR_MALZEMELERİ');
+    cins = ESLESME.kategoriler[kategori + '|' + v] || ESLESME.kategoriler[kategori] || (m.tag === 'armatur' ? 'ARMATÜR' : m.tag === 'top' ? 'TOPRAKLAMA' : m.tag === 'kofre' ? 'KOFRE' : m.tag === 'trafo' ? 'TRAFO_GENLEŞME_TANKLI' : m.tag === 'hucre' ? 'HÜCRELER_METAL' : m.tag === 'pano' ? 'AG_PANO_HT' : 'DİĞER_AMBAR_MALZEMELERİ');
   }
   if (!ad) ad = m.name || m.conductor || servis || '';
   const kat = katalogKalemi(cins, ad);

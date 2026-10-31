@@ -733,11 +733,13 @@ namespace SebekeHakedis.Eklenti
                 var r = ed.GetKeywords(pko);
                 if (r.Status != PromptStatus.OK && r.Status != PromptStatus.None) return;
                 if (r.Status == PromptStatus.OK && r.StringResult == "Vazgec") return;
-                int yenilenen = 0;
+                int yenilenen = 0, cevrilen = 0;
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
                     var y = Yazici(o, tr);
                     y.EtiketleriYenile = true;
+                    // Şebeke katmanlarının adları Türkçe karaktersiz (AGDİR → AGDIR …; bkz. KatmanAdlari)
+                    cevrilen = y.KatmanlariCevir();
                     Func<string, ObjectId> bul = h => { ObjectId id; return Toplayici.TaniticiylaBul(o.Db, h, out id) ? id : ObjectId.Null; };
                     Action<string, CadVarlik, string> yaz = (h, v, etiket) =>
                     {
@@ -759,7 +761,8 @@ namespace SebekeHakedis.Eklenti
                     tr.Commit();
                     UyarilariYaz(ed, y);
                 }
-                ed.WriteMessage("\n" + yenilenen + " nesne uygulamanın görünümüne çevrildi.");
+                ed.WriteMessage("\n" + yenilenen + " nesne uygulamanın görünümüne çevrildi." +
+                                (cevrilen > 0 ? " " + cevrilen + " katmanın adı Türkçe karaktersiz yapıldı." : ""));
                 ed.Regen();
             });
         }

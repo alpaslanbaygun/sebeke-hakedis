@@ -356,11 +356,11 @@ namespace SebekeHakedis.Eklenti
             return Color.FromRgb((byte)((rgb >> 16) & 0xFF), (byte)((rgb >> 8) & 0xFF), (byte)(rgb & 0xFF));
         }
 
-        /// <summary>Altlık katmanı (yoksa açık gri, sürekli çizgi).</summary>
+        /// <summary>Altlık katmanı (yoksa açık gri, sürekli çizgi); adı Türkçe karaktersiz (KatmanAdlari).</summary>
         private ObjectId Katman(string ad)
         {
             var temiz = new System.Text.StringBuilder();
-            foreach (char c in ad) temiz.Append("<>/\\\":;?*|,=`".IndexOf(c) >= 0 ? '_' : c);
+            foreach (char c in KatmanAdlari.Ascii(ad)) temiz.Append("<>/\\\":;?*|,=`".IndexOf(c) >= 0 ? '_' : c);
             ad = temiz.ToString();
             if (ad.Length > 250) ad = ad.Substring(0, 250);
             var lt = (LayerTable)_tr.GetObject(_db.LayerTableId, OpenMode.ForRead);

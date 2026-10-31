@@ -148,7 +148,7 @@ namespace SebekeHakedis.Cekirdek
                         if (x == null || string.IsNullOrEmpty(x.Metin("cins"))) continue;
                         k.Kalemler.Add(new HafizaKalemi
                         {
-                            Cins = x.Metin("cins"), Tanim = x.Metin("tanim"), Birim = x.Metin("birim", "ad/ad"), Katsayi = x.Ondalik("katsayi", 1),
+                            Cins = CinsKodu.Duzelt(x.Metin("cins")), Tanim = x.Metin("tanim"), Birim = x.Metin("birim", "ad/ad"), Katsayi = x.Ondalik("katsayi", 1),
                             Tarife = x.Metin("tarife"), Durum = x.Metin("durum"), Miktar = x.Ondalik("miktar", 1), ElemanDurumunda = x.Mantik("elemanDurumunda") ?? true,
                         });
                     }

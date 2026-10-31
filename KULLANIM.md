@@ -288,6 +288,14 @@ onunla gider. Eklentinin bütün yazıları Tahoma'dır (yazı stili `SEBEKE-M`)
 Bu görünümden önce çizilmiş çizimleri bir kez **Telefon Görünümü** (`SH_GORUNUM`) ile çevirin: etiketler, metraj
 yazıları, renkler, kanal kenarları ve yazı tipi yenilenir.
 
+**Katman adları Türkçe karaktersizdir** (31.10.2026): `AGDIR`, `MUSDIR`, `AYDDIR`, `ENHDIR`, `MUSTEREK_HAT`; katman
+öneki de (ör. `ŞÇ` → `SC`). Eski adlı (`AGDİR` …) çizimler okunur; eklenti bir katmana yazarken eski adını yenisine
+çevirir, Telefon Görünümü bütün şebeke katmanlarını bir kez çevirir (sizin kendi katmanlarınıza dokunmaz).
+**Cins kodlarındaki yazım hataları** da düzeltildi: `AG_ALÜMİNYUM_KABLO`, `OG_ALÜMİNYUM_KABLO`, `REKORTMAN_ALÜMİNYUM`,
+`ALÜMİNYUM_BAĞ_TELİ`, `TEÇHİZAT_MONTAJ_DEMİRİ`, `KOFRE`; menülerdeki cins adları düzgün Türkçe (ör. "Bakır bara",
+"Ayırıcı (dahili tip)"). Eski kodlu çizim ve telefon dosyaları okunurken yeni koda çevrilir; Telefon Görünümü kayıtları
+da yeni kodla yazar. Eski program bu yeni adları tanımayabilir (artık yalnız Şebeke-M kullanılıyor).
+
 Beton / ağaç direk daire, demir direk kare. Her durumun simgesi ayrıdır:
 
 | Durum | Simge |
@@ -321,7 +329,7 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 | Toplu Malzeme | `SH_TOPLUMALZEME` | Seçilen bütün direklere (trafo, SDK…) aynı malzemeleri birden ekler. |
 | Malzeme Hafızası | — | Açıkken son elemanın malzemeleri aynı tipteki yeni elemana kendiliğinden eklenir; tıklayınca kapanır / açılır. |
 | Metraj | `SH_METRAJ` | Seçilen hat / kanal / sondajın metrajını çizim uzunluğundan yeniden hesaplar (önce listeyi gösterip sorar). |
-| Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (simge, renk, etiket, metraj yazıları, kanal kenarları, Tahoma yazı tipi). |
+| Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (simge, renk, etiket, metraj yazıları, kanal kenarları, Tahoma yazı tipi); katman adlarını Türkçe karaktersiz, cins kodlarını yazım hatasız yapar. |
 | Aktif Hakediş | `SH_HAKEDIS` | Aktif hakediş: yeni çizilenler bu hakedişin katmanlarına (`SC_3.HAK.…`) konur. Eski programın aktif hakedişiyle ortaktır. |
 | Hakediş Onayı | `SH_ONAY` | Her hakediş için sırayla **Kontrol → Hakediş → GIS** onayı (eski programın onay kaydı; o program aynı işaretleri görür). **Hakediş onayı verilen hakediş kilitlenir**: o hakedişe yeni nesne çizilemez, malzeme satırları gri görünür ve değiştirilemez / silinemez, metraj güncellemesi o nesneleri atlar, telefondan gelen değişiklik o hakedişe dokunuyorsa aktarılmaz. Kilitli direğe açık hakedişte yeni malzeme eklemek serbesttir. |
 | Çizim Ayarları | `SH_AYARLAR` | Katman / GIS ön eki, koordinat dilimi, **tarife (şehir / köy-bakım ve karakteristik)**, sembol takımı, etiket yüksekliği, direğe yakalama mesafesi, metraj yuvarlama ve ek paylar, kanal varsayılanları, **proje bilgileri** (ad, kod, hesabı yapan, unvan, firma, buz bölgesi). Çizimin içinde saklanır. |
