@@ -143,7 +143,7 @@ namespace SebekeHakedis.Cekirdek
                         d.Append('"').Append(s.Replace("\"", "\"\"")).Append('"');
                     }
                     else if (a.Tur == 'I') d.Append(v == null ? "0" : Convert.ToInt64(v, Inv).ToString(Inv));
-                    else d.Append(v == null ? "0" : Convert.ToDouble(v, Inv).ToString("0.########", Inv));
+                    else d.Append(v == null ? "0" : (Convert.ToDouble(v, Inv) + 0.0).ToString("0.########", Inv)); // eksi sıfır "0"
                 }
                 d.Append("\r\n");
             }

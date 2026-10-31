@@ -11,6 +11,7 @@
 "E4","DIREK","SC104","","AG_MALZEME","Uzun adlı bağlantı malzemesi 5 (galvaniz, ""özel"" tip)","","M","",6.5,"ad/kg",1,6.5,1,"0106","MALZEME","",""
 "E4","DIREK","SC104","","AG_MALZEME","Uzun adlı bağlantı malzemesi 6 (galvaniz, ""özel"" tip)","","M","",7.5,"ad/kg",1,7.5,1,"0106","MALZEME","",""
 "E4","DIREK","SC104","","AG_MALZEME","Uzun adlı bağlantı malzemesi 7 (galvaniz, ""özel"" tip)","","M","",8.5,"ad/kg",1,8.5,1,"0106","MALZEME","",""
+"E10","ELEMAN","K-1","","KOFRE","Düzeltme kalemi","","M","",-0.0004,"ad/ad",1,0,1,"0106","MALZEME","",""
 "H1","HAT","","","AL_İLETKENLER","3P+R/P","","M","",120.505,"mt/kg",1,120.505,1,"0106","HAT","",""
 "H1","HAT","","","AL_İLETKENLER","P","","M","",30,"mt/kg",1,30,1,"0106","HAT","",""
 "H4","HAT","","","XLPE","1x240/25 XLPE Al","","M","",150,"mt/mt",1,150,1,"0106","HAT","",""

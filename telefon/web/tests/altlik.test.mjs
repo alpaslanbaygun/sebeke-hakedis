@@ -50,5 +50,15 @@ test('L3 · karo adresleri: ArcGIS anahtarı, Azure anahtarı, Bing meta verisi,
     assert.equal(istek, 1, 'meta veri saklanır');
     assert.ok(adres.startsWith('https://dev.virtualearth.net/REST/v1/Imagery/Metadata/Aerial?key=BING-K'), 'meta veri adresi');
   } finally { globalThis.fetch = eski; }
+  // Aynı anda istenen karolar tek meta veri isteğini bekler; reddedilen anahtar her karo için yeniden sorulmaz
+  globalThis.fetch = async (u) => { istek++; return u.includes('RED') ? { ok: false, status: 401, json: async () => ({}) } : { ok: true, status: 200, json: async () => ({ resourceSets: [{ resources: [{ imageUrl: 'https://ecn.{subdomain}.t/a{quadkey}', imageUrlSubdomains: ['t0'] }] }] }) }; };
+  try {
+    istek = 0;
+    await Promise.all([0, 1, 2, 3, 4].map((i) => S.tileUrl(bul('bing_h'), 5, i, 7, { bing: 'YENI-K' })));
+    assert.equal(istek, 1, 'beş karo, bir meta veri isteği');
+    istek = 0;
+    for (let i = 0; i < 3; i++) await assert.rejects(() => S.tileUrl(bul('bing_a'), 5, i, 7, { bing: 'RED-K' }), (e) => e.durum === 401);
+    assert.equal(istek, 1, 'reddedilen anahtar bir kez soruldu');
+  } finally { globalThis.fetch = eski; }
   await assert.rejects(() => S.tileUrl(bul('azure_m'), 1, 0, 0, {}), (e) => e.anahtar === true, 'anahtarsız denenmez');
 });

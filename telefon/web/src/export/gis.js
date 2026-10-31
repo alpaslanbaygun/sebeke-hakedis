@@ -28,14 +28,16 @@ export function kml3BKlasoru(model) {
   const eqById = new Map(model.equipment.map((e) => [e.pointId, e]));
   const att = (e) => (e && e.heightM ? e.heightM - (e.heightM / 10 + 0.6) - 0.6 : 0);
   let body = '';
+  // "İleride" durumundakiler asıl klasörlerde yoktur (eklentinin dosyasında da yok): burada da çizilmez
+  const ileride = (s) => String(s || '').toUpperCase() === 'ILERIDE';
   for (const e of model.equipment) {
-    if (e.lat == null || e.H == null || !e.heightM) continue;
+    if (e.lat == null || e.H == null || !e.heightM || ileride(e.state)) continue;
     const top = e.heightM - (e.heightM / 10 + 0.6);
     if (top <= 0) continue;
     body += '<Placemark><name>' + esc(e.no) + '</name><styleUrl>#t3b_direk</styleUrl><MultiGeometry><Point><altitudeMode>absolute</altitudeMode><coordinates>' + r9(e.lon) + ',' + r9(e.lat) + ',' + (e.H + top).toFixed(3) + '</coordinates></Point><LineString><altitudeMode>absolute</altitudeMode><coordinates>' + r9(e.lon) + ',' + r9(e.lat) + ',' + e.H.toFixed(3) + ' ' + r9(e.lon) + ',' + r9(e.lat) + ',' + (e.H + top).toFixed(3) + '</coordinates></LineString></MultiGeometry></Placemark>\n';
   }
   for (const l of model.lines) {
-    if (l.coords.length < 2 || l.install !== 'havai' || !l.coords.every((c) => c.H != null && eqById.get(c.id))) continue;
+    if (l.coords.length < 2 || l.install !== 'havai' || ileride(l.state) || !l.coords.every((c) => c.H != null && eqById.get(c.id))) continue;
     const coords = l.coords.map((c) => r9(c.lon) + ',' + r9(c.lat) + ',' + ((c.H || 0) + att(eqById.get(c.id))).toFixed(3)).join(' ');
     body += '<Placemark><name>' + esc(l.no + ' ' + l.label) + '</name><styleUrl>#t3b_hat</styleUrl><LineString><altitudeMode>absolute</altitudeMode><coordinates>' + coords + '</coordinates></LineString></Placemark>\n';
   }

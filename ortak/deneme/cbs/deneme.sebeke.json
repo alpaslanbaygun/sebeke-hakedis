@@ -459,9 +459,25 @@
    "bolge": "B1",
    "saga": 519500.0,
    "yukari": 4282100.0,
-   "kot": 0,
-   "aci": 0,
-   "kalemler": []
+   "kot": -0.0004,
+   "aci": -1e-09,
+   "kalemler": [
+    {
+     "cins": "KOFRE",
+     "tanim": "Düzeltme kalemi",
+     "durum": "M",
+     "miktar": -0.0004,
+     "birim": "ad/ad",
+     "katsayi": 1,
+     "toplam": 0,
+     "birimFiyat": 0,
+     "hakedis": 1,
+     "tarife": "0106",
+     "sira": "",
+     "kontrol": null,
+     "kaynak": "MALZEME"
+    }
+   ]
   },
   {
    "id": "E11",

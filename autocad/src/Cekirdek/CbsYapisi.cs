@@ -301,7 +301,7 @@ namespace SebekeHakedis.Cekirdek
             {
                 if (k.Ana) continue;
                 string[] b = (k.Birim ?? "").Split('/');
-                string parca = (k.Tanim ?? "").Trim() + " × " + SayiCoz.Temiz(k.Miktar, 3).ToString("0.###", Tr) + (b.Length > 0 && b[0].Length > 0 ? " " + b[0] : "");
+                string parca = (k.Tanim ?? "").Trim() + " × " + (SayiCoz.Temiz(k.Miktar, 3) + 0.0).ToString("0.###", Tr) + (b.Length > 0 && b[0].Length > 0 ? " " + b[0] : "");
                 if (sb.Length > 0) sb.Append("; ");
                 sb.Append(parca);
             }
@@ -312,13 +312,17 @@ namespace SebekeHakedis.Cekirdek
         public static string Yazi(object d)
         {
             if (d == null) return "";
-            if (d is double x) return x.ToString("0.########", CultureInfo.InvariantCulture);
+            if (d is double x) return (x + 0.0).ToString("0.########", CultureInfo.InvariantCulture); // + 0.0: eksi sıfır "0" yazılsın (.NET 8 "-0" yazar)
             if (d is int i) return i.ToString(CultureInfo.InvariantCulture);
             return Convert.ToString(d, CultureInfo.InvariantCulture) ?? "";
         }
 
         private static readonly CultureInfo Tr = CultureInfo.GetCultureInfo("tr-TR");
-        private static double Yuvarla(double d, int hane) => Math.Round(d, hane);
+        /// <summary>
+        /// Math.Round; eksi sıfır artı sıfıra çevrilir (+ 0.0): .NET 8 "-0", .NET Framework "0" yazar; iki eklenti derlemesi
+        /// ve telefon (telefon/web/src/export/cbs.js) aynı yazsın.
+        /// </summary>
+        private static double Yuvarla(double d, int hane) => Math.Round(d, hane) + 0.0;
         private static bool Ayni(double[] a, double[] b) => Math.Abs(a[0] - b[0]) < 1e-6 && Math.Abs(a[1] - b[1]) < 1e-6;
     }
 }

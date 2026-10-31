@@ -213,3 +213,9 @@ Kural (DEVIR.md › 1): eklenti güncellenince telefon da aynı güncellemeyi al
 Testler: tests/cbs.test.mjs (ortak deneme ortak/deneme/cbs: eklentinin yazdığı beklenen KML ve MIF / MID ile
 birebir), tests/altlik.test.mjs (eklentinin altlık listesi HaritaAltligi.cs'den okunur; Preact kurulu değilse 2'si
 atlanır), tests/dxf.test.mjs D4 (kanal kenarları), tests/sebeke.test.mjs A20 (KMZ, MIF, UTM seçimi, teslim paketi).
+Gözden geçirme düzeltmeleri: başka koordinat sisteminde MIF'in SAGA / YUKARI, UZUNLUK ve ALAN sütunları da çevrilir
+(cbs.js › sistemeCevir); "ileride" nesneler ve konumsuzlar CBS'ye yazılmaz, Dışa Aktarım uyarır (exporter.js ›
+cbsUyarilari), 3B klasöründe de çizilmez; AutoCAD bölgesi olmayan projede uydurma sınır CBS'ye yazılmaz (eklentiModeli);
+Bing meta verisi ve Google oturumu aynı anda istenen karolar için tek istek, ret bir dakika saklanır; haritada görünen
+alanın dışındaki hatlar çizilmez, yazıları hesaplanmaz. Eklentide CbsYapisi.Yuvarla eksi sıfırı artı sıfıra çevirir
+(.NET 8 "-0", .NET Framework "0" yazıyordu; telefon "0"), ortak denemeye eksi sıfır değerleri eklendi.

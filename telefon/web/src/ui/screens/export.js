@@ -49,6 +49,9 @@ export function ExportScreen() {
     try {
       for (const k of keys) { setBusy(FORMATS[k].label + '…'); const out = await exportFormat(ps, k, { crs: crsKey === 'proje' ? null : crsAlt[crsKey], surum: app.web ? 'web' : 'telefon' + (ver ? ' ' + ver : '') }); files.push(...out); }
     } catch (e) { app.toast('Dışa aktarım hatası: ' + e.message, 'err', 6000); setBusy(null); return; }
+    // Google Earth / CBS dosyasına yazılamayanlar ("ileride" durumundakiler, konumu olmayanlar): eklentinin dosyasında da yoklar
+    const uy = [...new Set(files.flatMap((f) => f.uyarilar || []))];
+    if (uy.length) app.toast(uy.length + ' nesne Google Earth / CBS dosyasına yazılmadı: ' + uy.slice(0, 3).join(' · ') + (uy.length > 3 ? ' …' : ''), 'warn', 9000);
     const saved = [];
     // Web: birden çok çıktı tek zip olarak indirilir (her dosyaya ayrı onay sorulmasın)
     if (app.web && files.length > 1) {
