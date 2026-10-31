@@ -286,6 +286,7 @@ namespace SebekeHakedis.Test
             HesapMerkezi_(tp);
             CizimGorunumu(); // ortak çizim stilini yükler: en sonda (önceki denetimler stilsiz yazımı dener)
             CbsOrtakDeneme(); // telefonla aynı CBS dosyaları (stil yüklü olmalı: renkler ortak stilden)
+            CbsIceAktarimDene(); // CBS'den şebeke nesnesi olarak alma
         }
 
         /// <summary>Çizim görünümü: ortak stil (renkler, yazı tipi, kanal kenarı), açıklık metrajı, hat etiketi.</summary>
@@ -401,6 +402,88 @@ namespace SebekeHakedis.Test
                 string fark = beklenen == null ? " — beklenen dosya yok" : IlkFark(beklenen, kv.Value);
                 Esit(true, fark.Length == 0, "CBS ortak: " + kv.Key + fark);
             }
+        }
+
+        /// <summary>
+        /// CBS'den (MIF / MID) şebeke nesnesi olarak alma: Şebeke-M'in kendi dosyaları geri okununca aynı nesneler (tür, GIS no,
+        /// durum, malzemeler); aynı çizime alınınca tanıtıcıyla eşleşir; başka CBS'nin dosyası adından, sütun adlarından tanınır.
+        /// </summary>
+        private static void CbsIceAktarimDene()
+        {
+            Console.WriteLine("CBS'den alma (MIF → şebeke nesnesi):");
+            var p = CbsDenemeProjesi();
+            var katalog = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            var kaynaklar = new List<CbsKaynagi>();
+            var hepsi = CbsYapisi.Nesneler(p);
+            foreach (var k in CbsYapisi.Katmanlar)
+            {
+                var l = hepsi.FindAll(n => n.Katman == k);
+                if (l.Count == 0) continue;
+                string mif, mid;
+                MifDosyasi.KatmanYaz(k, l, p.Dom, out mif, out mid);
+                var v = MifDosyasi.Oku(MifDosyasi.DosyaMetni(MifDosyasi.Turkce.GetBytes(mif)), MifDosyasi.DosyaMetni(MifDosyasi.Turkce.GetBytes(mid)));
+                MifDosyasi.CizimeCevir(v, p.Dom);
+                var kay = new CbsKaynagi { Ad = "deneme_" + k.Ad, Veri = v };
+                CbsIceAktarim.Tani(kay);
+                Esit(k.Ad + " Şebeke-M", kay.Katman + (kay.SebekeM ? " Şebeke-M" : ""), "CBS al: " + k.Ad + " dosyası tanınır");
+                kaynaklar.Add(kay);
+            }
+            int sira = 9000;
+            var ayar = new CbsAlmaAyari { Sira = () => (++sira).ToString(CultureInfo.InvariantCulture), HatMetraji = (L, t) => Math.Ceiling(L) };
+            var uyarilar = new List<string>();
+            var bos = CbsIceAktarim.ProjeyeCevir(kaynaklar, katalog, new Proje(), ayar, uyarilar);
+            Esit(p.Elemanlar.Count + "|" + p.Hatlar.Count + "|" + p.Kanallar.Count + "|" + p.Sondajlar.Count + "|" + p.Bolgeler.FindAll(b => b.Sinir.Count >= 3).Count + "|" + p.Noktalar.Count,
+                 bos.Elemanlar.Count + "|" + bos.Hatlar.Count + "|" + bos.Kanallar.Count + "|" + bos.Sondajlar.Count + "|" + bos.Bolgeler.Count + "|" + bos.Noktalar.Count,
+                 "CBS al: bütün nesneler geri gelir (eleman, hat, kanal, sondaj, bölge, nokta)");
+            bool ayni = true;
+            foreach (var e in p.Elemanlar)
+            {
+                var g = bos.Elemanlar.Find(x => x.Id == "CBS:" + e.Id);
+                if (g == null || g.Tur != e.Tur || (g.GisId ?? "") != (e.GisId ?? "") || g.Durum != e.Durum || g.Hakedis != e.Hakedis || g.Kalemler.Count != e.Kalemler.Count ||
+                    Math.Abs(g.Saga - e.Saga) > 0.001 || Math.Abs(g.Yukari - e.Yukari) > 0.001 || (g.Guc ?? "") != (e.Guc ?? "") || g.Kontrol != e.Kontrol)
+                {
+                    ayni = false;
+                    Console.WriteLine("    fark: " + e.Id + " " + e.GisId + (g == null ? " yok" : " tür " + g.Tur + "/" + e.Tur + " durum " + g.Durum + "/" + e.Durum + " hak " + g.Hakedis + "/" + e.Hakedis +
+                                      " kalem " + g.Kalemler.Count + "/" + e.Kalemler.Count + " güç '" + g.Guc + "'/'" + e.Guc + "' kontrol " + g.Kontrol + "/" + e.Kontrol));
+                }
+            }
+            Esit(true, ayni, "CBS al: elemanların türü, GIS no, durumu, hakedişi, yeri, gücü ve malzeme satırları aynı");
+            var h0 = p.Hatlar[0];
+            var hg = bos.Hatlar.Find(x => x.Id == "CBS:" + h0.Id);
+            Esit(h0.Tur + "|" + h0.Kalemler.Count + "|" + Iletkenler.HatKalemleri(h0)[0].Tanim, hg.Tur + "|" + hg.Kalemler.Count + "|" + Iletkenler.HatKalemleri(hg)[0].Tanim,
+                 "CBS al: hattın türü, malzemeleri ve iletkeni aynı (malzeme tablosundan)");
+            Esit(0, RaporFarki(p, bos), "CBS al: Durum Tespit raporu aynı (malzeme satırları, miktarlar)");
+            // Aynı çizime geri alınınca tanıtıcısıyla eşleşir: nesne çift olmaz
+            var ayniCizim = CbsIceAktarim.ProjeyeCevir(kaynaklar, katalog, p, ayar, new List<string>());
+            Esit(true, ayniCizim.Elemanlar.TrueForAll(x => p.Elemanlar.Exists(e => e.Id == x.Id)), "CBS al: aynı çizime geri alınca elemanlar tanıtıcısıyla eşleşir");
+
+            // Başka bir CBS'nin dosyası: adından direk, sütunları eş anlamlılarıyla; durum ve tür tahmini
+            string dmif = "Version 300\nCharset \"WindowsTurkish\"\nDelimiter \",\"\nCoordSys Earth Projection 8, 104, \"m\", 39, 0, 1, 500000, 0\nColumns 5\n  OBJECTID Integer\n" +
+                          "  DIREK_NO Char(20)\n  DIREK_TIPI Char(40)\n  DURUMU Char(20)\n  GERILIM Char(10)\nData\n\nPoint 519300 4282100\nPoint 519340 4282100\n";
+            string dmid = "17,\"D-101\",\"9I\",\"İşletmede\",\"0,4 kV\"\n18,\"D-102\",\"G-K2\",\"Sökülecek\",\"34,5 kV\"\n";
+            var dv = MifDosyasi.Oku(dmif, dmid);
+            MifDosyasi.CizimeCevir(dv, 39);
+            var dk = new CbsKaynagi { Ad = "ENH_DIREKLER", Veri = dv };
+            CbsIceAktarim.Tani(dk);
+            Esit("DIREK|False|0|1|2|3", dk.Katman + "|" + dk.SebekeM + "|" + dk.Sutun("KIMLIK") + "|" + dk.Sutun("GIS_NO") + "|" + dk.Sutun("TIP") + "|" + dk.Sutun("DURUM"),
+                 "CBS al (dış): adından direk dosyası; OBJECTID, DIREK_NO, DIREK_TIPI, DURUMU sütunları eşlenir");
+            var dp = CbsIceAktarim.ProjeyeCevir(new[] { dk }, katalog, new Proje(), ayar, new List<string>());
+            Esit("D-101|AG_DIREK|MEVCUT|CBS:ENH_DIREKLER:17", dp.Elemanlar[0].GisId + "|" + dp.Elemanlar[0].Tur + "|" + dp.Elemanlar[0].Durum + "|" + dp.Elemanlar[0].Id,
+                 "CBS al (dış): GIS no, tür, durum (işletmede → mevcut), kalıcı kimlik");
+            Esit("ENH_DIREK|DM", dp.Elemanlar[1].Tur + "|" + dp.Elemanlar[1].Durum, "CBS al (dış): 34,5 kV direk ENH direği, sökülecek → demontaj");
+            Esit(true, dp.Elemanlar[0].Kalemler.Count == 1 && dp.Elemanlar[0].Kalemler[0].Ana, "CBS al (dış): direğin kendi malzemesi (katalogdan ya da tipinden)");
+            // Hat dosyası: kablo tipi katalogdan, türü cinsinden
+            string hmif = "Version 300\nDelimiter \",\"\nCoordSys Earth Projection 8, 104, \"m\", 39, 0, 1, 500000, 0\nColumns 2\n  ID Integer\n  KABLO_TIPI Char(40)\nData\n\nPline 2\n519300 4282000\n519340 4282000\n";
+            var hv = MifDosyasi.Oku(hmif, "5,\"3x95+50 NYY ALM.\"\n");
+            MifDosyasi.CizimeCevir(hv, 39);
+            var hk = new CbsKaynagi { Ad = "AG_KABLO_HATLARI", Veri = hv };
+            CbsIceAktarim.Tani(hk);
+            var hp = CbsIceAktarim.ProjeyeCevir(new[] { hk }, katalog, new Proje(), ayar, new List<string>());
+            Esit("HAT|AG_YERALTI|3x95+50 Nyy Alm.|40", hk.Katman + "|" + hp.Hatlar[0].Tur + "|" + Iletkenler.HatKalemleri(hp.Hatlar[0])[0].Tanim + "|" + Iletkenler.HatKalemleri(hp.Hatlar[0])[0].Miktar,
+                 "CBS al (dış): kablo hattı katalogdaki kabloyla, yer altı AG, metraj çizim uzunluğundan");
+            Esit("M|M+M|DM+M|MEVCUT|DM|X", CbsIceAktarim.DurumKodu("yeni", "X") + "|" + CbsIceAktarim.DurumKodu("m+m", "X") + "|" + CbsIceAktarim.DurumKodu("Değişecek", "X") + "|" +
+                 CbsIceAktarim.DurumKodu("Mevcut", "X") + "|" + CbsIceAktarim.DurumKodu("DEMONTAJ", "X") + "|" + CbsIceAktarim.DurumKodu("?", "X"), "CBS al: durum yazıları");
+            Esit(KanalKodu.OG | KanalKodu.AG, CbsIceAktarim.KanalKoduOku("OG/AG"), "CBS al: kanal kablo yazısı → kod");
         }
 
         /// <summary>İki metnin ilk farkı (satır no ve iki satır); aynıysa boş.</summary>

@@ -487,6 +487,36 @@ namespace SebekeHakedis.PencereTest
                 new[] { "MALZEME", "G-L-50 × 1; Topraklama × 1" }, new[] { "ISLETME", "Merkez" },
             }));
 
+            // CBS'den al: direk dosyası şebeke nesnesi (sütunlar eş anlamlılarıyla), bina dosyası altlık; ikinci dosya
+            // pencerede "Altlık"tan "Bölge"ye çevrilir
+            var cbsKaynaklari = new List<CbsKaynagi>();
+            var cv1 = MifDosyasi.Oku("Version 300\nCoordSys Earth Projection 8, 104, \"m\", 39, 0, 1, 500000, 0\nColumns 4\n  OBJECTID Integer\n  DIREK_NO Char(20)\n  DIREK_TIPI Char(40)\n  DURUMU Char(20)\nData\nPoint 519300 4282100\nPoint 519340 4282100\n",
+                                     "1,\"D-1\",\"9I\",\"İşletmede\"\n2,\"D-2\",\"G-K2\",\"Sökülecek\"\n");
+            var ck1 = new CbsKaynagi { Ad = "ENH_DIREKLER", Veri = cv1 };
+            CbsIceAktarim.Tani(ck1);
+            cbsKaynaklari.Add(ck1);
+            var cv2 = MifDosyasi.Oku("Version 300\nColumns 1\n  AD Char(20)\nData\nRegion 1\n  4\n519300 4282100\n519340 4282100\n519340 4282140\n519300 4282100\n", "\"Bina\"\n");
+            var ck2 = new CbsKaynagi { Ad = "BINALAR", Veri = cv2 };
+            CbsIceAktarim.Tani(ck2);
+            cbsKaynaklari.Add(ck2);
+            var cbsAyari = new CbsAlmaAyari { Hakedis = 1 };
+            Dene("29-cbs-al", () =>
+            {
+                Esit(true, Pencereler.CbsAl(o, cbsKaynaklari, cbsAyari), "cbs al: Al");
+                Esit("DIREK", ck1.Katman, "cbs al: direk dosyası direk olarak alınır");
+                Esit(1, ck1.Sutun("GIS_NO"), "cbs al: DIREK_NO sütunu GIS no");
+                Esit("BOLGE", ck2.Katman, "cbs al: bina dosyası pencerede bölgeye çevrildi");
+                Esit("MEVCUT", cbsAyari.VarsayilanDurum, "cbs al: varsayılan durum mevcut");
+            }, f =>
+            {
+                Esit("", ck2.Katman, "cbs al: tanınmayan alan dosyası altlık gelir");
+                var liste = Bul<IkiSatirListe>(f, x => true);
+                liste.SelectedIndex = 1;
+                var katman = Bul<KoyuAcilir>(f, x => x.Items.Count == CbsIceAktarim.Secenekler.Length);
+                katman.SelectedIndex = Array.FindIndex(CbsIceAktarim.Secenekler, x => x[0] == "BOLGE");
+                Resim(f, "bolge");
+            });
+
             // Harita altlığı: sağlayıcı, anahtar (yalnız bu bilgisayarda), alan, ayrıntı
             var altlik = new AltlikAyari();
             Dene("28-harita-altligi", () =>

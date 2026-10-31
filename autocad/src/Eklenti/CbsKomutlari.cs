@@ -95,9 +95,11 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>
-        /// CBS'den MIF / MID: seçilen dosyalardaki noktalar, çizgiler, alanlar ve yazılar çizime altlık olarak çizilir (her dosya
-        /// "CBS-dosya adı" katmanına). Koordinatlar çizimin dilimine çevrilir. Bilgileri nesnede saklanır (SH_CBSBILGI ile
-        /// görülür). Altlık nesneleri hakediş nesnesi değildir: rapora ve telefona girmez.
+        /// CBS'den MIF / MID: seçilen dosyalar tanınır ve bir pencerede eşleştirilir (31.10.2026). Şebeke elemanı dosyaları
+        /// (direk, trafo, SDK, pano, diğer eleman, hat, kanal, sondaj, bölge, GPS noktası; malzeme tablosu) şebeke nesnesi
+        /// olarak bütün öznitelikleri ve malzemeleriyle çizime yazılır (telefondan alma gibi: eşleşen nesne güncellenir).
+        /// Öteki dosyalardaki noktalar, çizgiler, alanlar ve yazılar altlık olarak çizilir (her dosya "CBS-dosya adı"
+        /// katmanına; bilgileri SH_CBSBILGI ile görülür, rapora ve telefona girmez). Koordinatlar çizimin dilimine çevrilir.
         /// </summary>
         [CommandMethod("SH_MIFAL", CommandFlags.Modal | CommandFlags.Redraw)]
         public void MifAl()
@@ -151,28 +153,76 @@ namespace SebekeHakedis.Eklenti
                 }
                 foreach (var kv in veriler) MifDosyasi.CizimeCevir(kv.Value, dom);
 
-                int cizilen = 0, atlanan = 0;
+                // Dosyalar tanınır (Şebeke-M'in dosyası birebir, başka CBS'ninki adından ve sütunlarından); pencerede
+                // her dosyanın ne olduğu ve sütunları denetlenir: şebeke nesnesi olarak alınacaklar ve altlık olanlar
+                var kaynaklar = veriler.ConvertAll(kv => { var k = new CbsKaynagi { Ad = kv.Key, Veri = kv.Value }; CbsIceAktarim.Tani(k); return k; });
+                var ayar = new CbsAlmaAyari
+                {
+                    Hakedis = o.Hakedis, Sira = o.YeniSira, HatMetraji = (L, tur) => o.Ayar.HatMetraji(L, tur), Karakteristik = o.Ayar.Karakteristik, Koy = o.Ayar.Koy,
+                };
+                if (!Pencereler.CbsAl(o, kaynaklar, ayar)) return;
+                var ed = belge.Editor;
                 var kapsam = new Extents3d();
                 bool kapsamVar = false;
-                using (var tr = o.Db.TransactionManager.StartTransaction())
+
+                // 1) Şebeke nesneleri: proje olarak kurulup telefondan alma gibi çizime yazılır (eşleşenler güncellenir)
+                var nesneDosyalari = kaynaklar.FindAll(k => k.Katman.Length > 0);
+                int eklenen = 0, guncellenen = 0;
+                if (nesneDosyalari.Count > 0)
                 {
-                    var c = new CbsCizici(o.Db, tr);
-                    foreach (var kv in veriler)
+                    var uyarilar = new List<string>();
+                    var proje = CbsIceAktarim.ProjeyeCevir(nesneDosyalari, o.Katalog, o.Proje, ayar, uyarilar);
+                    var plan = Aktarim.Planla(o.Varliklar, proje, o.OnEk, o.Proje.Onaylar);
+                    var oz = new AktarimOzeti
                     {
-                        cizilen += c.Ciz(kv.Key, kv.Value);
-                        atlanan += kv.Value.Atlanan;
+                        Baslik = "CBS'den al", Simge = "cbs_al", Proje = "CBS (MapInfo)", Degismeyen = plan.Ayni,
+                        Dosya = string.Join(", ", nesneDosyalari.ConvertAll(k => k.Ad).ToArray()),
+                    };
+                    foreach (var a in plan.Adimlar)
+                    {
+                        if (a.Islem == "yeni") oz.Yeniler.Add(new[] { a.Ad, a.Nesne });
+                        else oz.Guncellenenler.Add(new[] { a.Ad, string.IsNullOrEmpty(a.Fark) ? a.Nesne : a.Fark });
                     }
-                    if (c.KapsamVar) { kapsam = c.Kapsam; kapsamVar = true; }
-                    tr.Commit();
+                    foreach (var a in plan.Kilitliler) oz.Kilitliler.Add(a.Ad + (a.Islem == "yeni" ? " (yeni)" : ""));
+                    for (int i = 0; i < uyarilar.Count && i < 8; i++) oz.Uyarilar.Add(uyarilar[i]);
+                    for (int i = 0; i < plan.Uyarilar.Count && i < 8; i++) oz.Uyarilar.Add(plan.Uyarilar[i]);
+                    if (plan.Adimlar.Count == 0)
+                        Pencereler.Bilgi("CBS dosyalarındaki nesneler bu çizimde zaten aynı; aktarılacak değişiklik yok.\n(" + plan.Ayni + " nesne karşılaştırıldı.)");
+                    else if (Pencereler.AktarimOnayi(oz))
+                    {
+                        int silinen;
+                        CizimKomutlari.PlaniYaz(o, plan, false, true, out eklenen, out guncellenen, out silinen, ref kapsam, ref kapsamVar);
+                    }
+                    foreach (var u in uyarilar) ed.WriteMessage("\n   Uyarı: " + u);
                 }
-                var ed = belge.Editor;
-                foreach (var kv in veriler)
+
+                // 2) Altlık dosyaları: nesneler CBS-dosya katmanına çizilir (hakediş nesnesi değildir)
+                int cizilen = 0, atlanan = 0;
+                var altliklar = kaynaklar.FindAll(k => k.Katman.Length == 0);
+                if (altliklar.Count > 0)
+                    using (var tr = o.Db.TransactionManager.StartTransaction())
+                    {
+                        var c = new CbsCizici(o.Db, tr);
+                        foreach (var k in altliklar)
+                        {
+                            cizilen += c.Ciz(k.Ad, k.Veri);
+                            atlanan += k.Veri.Atlanan;
+                        }
+                        if (c.KapsamVar)
+                        {
+                            if (kapsamVar) kapsam.AddExtents(c.Kapsam); else kapsam = c.Kapsam;
+                            kapsamVar = true;
+                        }
+                        tr.Commit();
+                    }
+                foreach (var k in kaynaklar)
                 {
-                    var v = kv.Value;
-                    ed.WriteMessage("\n" + kv.Key + ": " + v.Nesneler.Count + " nesne (" + SistemAdi(v) + ")" + (v.Atlanan > 0 ? ", " + v.Atlanan + " okunamadı" : ""));
+                    var v = k.Veri;
+                    ed.WriteMessage("\n" + k.Ad + ": " + v.Nesneler.Count + " nesne (" + SistemAdi(v) + ") → " + CbsIceAktarim.SecenekAdi(k.Katman) + (v.Atlanan > 0 ? ", " + v.Atlanan + " okunamadı" : ""));
                     foreach (var u in v.Uyarilar) ed.WriteMessage("\n   Uyarı: " + u);
                 }
-                Uygulama.Yaz("CBS'den alındı: " + cizilen + " nesne çizildi (katmanlar CBS-…). Bilgileri görmek için SH_CBSBILGI ile nesneyi seçin.");
+                Uygulama.Yaz("CBS'den alındı: " + (eklenen + guncellenen > 0 ? eklenen + " şebeke nesnesi eklendi, " + guncellenen + " güncellendi" : "şebeke nesnesi yok") +
+                             (altliklar.Count > 0 ? "; altlık olarak " + cizilen + " nesne çizildi (katmanlar CBS-…; bilgileri için SH_CBSBILGI)" : "") + ".");
                 if (kapsamVar) CizimKomutlari.Yakinlas(ed, kapsam);
             });
         }

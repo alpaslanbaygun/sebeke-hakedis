@@ -1525,65 +1525,10 @@ namespace SebekeHakedis.Eklenti
                     yenidenEkle = Pencereler.Onay(cizimdeSilinmis + " nesne bu çizimden alınmıştı ama çizimde artık yok (bilgisayarda silinmiş olabilir).\n" +
                                                   "Telefondaki hâlleriyle yeniden eklensin mi?", false);
 
-                int eklenen = 0, guncellenen = 0, silinen = 0;
+                int eklenen, guncellenen, silinen;
                 var kapsam = new Extents3d();
                 bool kapsamVar = false;
-                using (var tr = o.Db.TransactionManager.StartTransaction())
-                {
-                    var y = Yazici(o, tr);
-                    foreach (var a in plan.Adimlar)
-                    {
-                        var v = a.Varlik;
-                        try
-                        {
-                            if (a.Islem == "yeni")
-                            {
-                                if (a.CizimdeSilinmis && !yenidenEkle) continue;
-                                double olcek = 1;
-                                if (a.Nesne == "eleman")
-                                {
-                                    v.Blok = y.KullanilabilirBlok(v.Blok, a.ElemanTuru, v.OzDeger("CİNS"), v.OzDeger("DURUM"), NitDmDurumu(v), o.Proje.Elemanlar);
-                                    olcek = o.Olcek(v.Blok);
-                                }
-                                var yeniId = y.Ekle(v, a.Etiket, olcek);
-                                if (a.Nesne == "bolge" && !yeniId.IsNull) CizimSozlugu.BolgeEkle(o.Db, tr, yeniId.Handle.ToString());
-                                eklenen++;
-                                Kapsa(ref kapsam, ref kapsamVar, v);
-                            }
-                            else
-                            {
-                                ObjectId id;
-                                if (!Toplayici.TaniticiylaBul(o.Db, a.Hedef, out id)) { y.Uyarilar.Add("Nesne bulunamadı: " + a.Hedef + " " + a.Ad); continue; }
-                                if (a.Nesne == "eleman" && !y.BlokKullanilabilir(v.Blok)) v.Blok = "";
-                                y.Guncelle(id, v, a.Etiket);
-                                if (a.Nesne == "bolge") CizimSozlugu.BolgeEkle(o.Db, tr, id.Handle.ToString());
-                                guncellenen++;
-                            }
-                        }
-                        catch (System.Exception ex)
-                        {
-                            y.Uyarilar.Add(a.Ad + " aktarılamadı (katmanı kilitli olabilir): " + ex.Message);
-                        }
-                    }
-                    if (sil)
-                        foreach (var h in plan.Silinenler.Keys)
-                        {
-                            ObjectId id;
-                            if (!Toplayici.TaniticiylaBul(o.Db, h, out id)) continue;
-                            try
-                            {
-                                y.Sil(id);
-                                CizimSozlugu.BolgeCikar(o.Db, tr, h);
-                                silinen++;
-                            }
-                            catch (System.Exception ex)
-                            {
-                                y.Uyarilar.Add(plan.Silinenler[h] + " silinemedi (katmanı kilitli olabilir): " + ex.Message);
-                            }
-                        }
-                    tr.Commit();
-                    UyarilariYaz(ed, y);
-                }
+                PlaniYaz(o, plan, sil, yenidenEkle, out eklenen, out guncellenen, out silinen, ref kapsam, ref kapsamVar);
                 // Telefonda verilen sıra numaraları AutoCAD sayacında da ilerlesin
                 CizimSozlugu.SayacYaz(o.Db, Math.Max(o.Sira, Numara.EnBuyukSira(tel)));
                 // Telefonda onaylanan hakedişler çizimin onay kaydına (AutoCAD HAK_ONAY) eklenir
@@ -1619,6 +1564,73 @@ namespace SebekeHakedis.Eklenti
                                  "\n\nBeğenmezseniz AutoCAD'in Geri Al (U) komutu aktarımın tamamını geri alır.");
                 BoyutlariUygulaSor(belge, boyutlariUygula);
             });
+        }
+
+        /// <summary>
+        /// Aktarım planını çizime yazar (telefondan alma ve CBS'den alma): yeni nesneler eklenir (elemana uygun simge),
+        /// eşleşenler güncellenir, sil ise telefonda silinmişler silinir. yenidenEkle: bilgisayarda silinmiş nesneler yeniden
+        /// eklensin mi. Uyarılar komut satırına yazılır.
+        /// </summary>
+        internal static void PlaniYaz(Ortam o, AktarimPlani plan, bool sil, bool yenidenEkle, out int eklenen, out int guncellenen, out int silinen,
+                                      ref Extents3d kapsam, ref bool kapsamVar)
+        {
+            eklenen = 0; guncellenen = 0; silinen = 0;
+            using (var tr = o.Db.TransactionManager.StartTransaction())
+            {
+                var y = Yazici(o, tr);
+                foreach (var a in plan.Adimlar)
+                {
+                    var v = a.Varlik;
+                    try
+                    {
+                        if (a.Islem == "yeni")
+                        {
+                            if (a.CizimdeSilinmis && !yenidenEkle) continue;
+                            double olcek = 1;
+                            if (a.Nesne == "eleman")
+                            {
+                                v.Blok = y.KullanilabilirBlok(v.Blok, a.ElemanTuru, v.OzDeger("CİNS"), v.OzDeger("DURUM"), NitDmDurumu(v), o.Proje.Elemanlar);
+                                olcek = o.Olcek(v.Blok);
+                            }
+                            var yeniId = y.Ekle(v, a.Etiket, olcek);
+                            if (a.Nesne == "bolge" && !yeniId.IsNull) CizimSozlugu.BolgeEkle(o.Db, tr, yeniId.Handle.ToString());
+                            eklenen++;
+                            Kapsa(ref kapsam, ref kapsamVar, v);
+                        }
+                        else
+                        {
+                            ObjectId id;
+                            if (!Toplayici.TaniticiylaBul(o.Db, a.Hedef, out id)) { y.Uyarilar.Add("Nesne bulunamadı: " + a.Hedef + " " + a.Ad); continue; }
+                            if (a.Nesne == "eleman" && !y.BlokKullanilabilir(v.Blok)) v.Blok = "";
+                            y.Guncelle(id, v, a.Etiket);
+                            if (a.Nesne == "bolge") CizimSozlugu.BolgeEkle(o.Db, tr, id.Handle.ToString());
+                            guncellenen++;
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        y.Uyarilar.Add(a.Ad + " aktarılamadı (katmanı kilitli olabilir): " + ex.Message);
+                    }
+                }
+                if (sil)
+                    foreach (var h in plan.Silinenler.Keys)
+                    {
+                        ObjectId id;
+                        if (!Toplayici.TaniticiylaBul(o.Db, h, out id)) continue;
+                        try
+                        {
+                            y.Sil(id);
+                            CizimSozlugu.BolgeCikar(o.Db, tr, h);
+                            silinen++;
+                        }
+                        catch (System.Exception ex)
+                        {
+                            y.Uyarilar.Add(plan.Silinenler[h] + " silinemedi (katmanı kilitli olabilir): " + ex.Message);
+                        }
+                    }
+                tr.Commit();
+                UyarilariYaz(o.Ed, y);
+            }
         }
 
         /// <summary>Telefondan yeni boyutlar alındıysa çizimde önceden olan nesnelere de uygulanması sorulur (Telefon Görünümü).</summary>
