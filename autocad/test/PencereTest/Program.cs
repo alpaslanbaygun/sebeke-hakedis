@@ -490,7 +490,7 @@ namespace SebekeHakedis.PencereTest
             // CBS'den al: direk dosyası şebeke nesnesi (sütunlar eş anlamlılarıyla), bina dosyası altlık; ikinci dosya
             // pencerede "Altlık"tan "Bölge"ye çevrilir
             var cbsKaynaklari = new List<CbsKaynagi>();
-            var cv1 = MifDosyasi.Oku("Version 300\nCoordSys Earth Projection 8, 104, \"m\", 39, 0, 1, 500000, 0\nColumns 4\n  OBJECTID Integer\n  DIREK_NO Char(20)\n  DIREK_TIPI Char(40)\n  DURUMU Char(20)\nData\nPoint 519300 4282100\nPoint 519340 4282100\n",
+            var cv1 = MifDosyasi.Oku("Version 300\nDelimiter \",\"\nCoordSys Earth Projection 8, 104, \"m\", 39, 0, 1, 500000, 0\nColumns 4\n  OBJECTID Integer\n  DIREK_NO Char(20)\n  DIREK_TIPI Char(40)\n  DURUMU Char(20)\nData\nPoint 519300 4282100\nPoint 519340 4282100\n",
                                      "1,\"D-1\",\"9I\",\"İşletmede\"\n2,\"D-2\",\"G-K2\",\"Sökülecek\"\n");
             var ck1 = new CbsKaynagi { Ad = "ENH_DIREKLER", Veri = cv1 };
             CbsIceAktarim.Tani(ck1);

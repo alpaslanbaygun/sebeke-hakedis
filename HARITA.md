@@ -160,7 +160,7 @@ dosyada geçmez (Android ayarları gibi bazıları yine de kullanılır).
 - `autocad/src/Cekirdek/Koordinat.cs` — Çizim koordinatı ile enlem-boylam arasında çeviri. Çizim: ITRF96 / TUREF, 3° TM (dilim orta meridye… · 105 satır · 6 bağ · Program.cs, MifDosyasi.cs, CbsKomutlari.cs
 - `autocad/src/Cekirdek/MalzemeHafizasi.cs` — Malzeme hafızasındaki bir satır (elemana bağlı malzeme: travers, izolatör, armatür …). · 171 satır · 14 bağ · Model.cs, Turler.cs, Json.cs
 - `autocad/src/Cekirdek/MalzemeYazimi.cs` — Malzeme adlarının görünen yazımı: katalogdaki adlar eski programdan geldiği gibi karışık yazılmıştı… · 138 satır · 11 bağ · Pencereler.cs, sh-core.cjs, lines.js
-- `autocad/src/Cekirdek/MifDosyasi.cs` — MIF dosyasından okunan bir nesne (geometri, stil rengi, MID satırı). · 700 satır · 12 bağ · CbsKomutlari.cs, CbsYapisi.cs, Program.cs
+- `autocad/src/Cekirdek/MifDosyasi.cs` — MIF dosyasından okunan bir nesne (geometri, stil rengi, MID satırı). · 708 satır · 12 bağ · CbsKomutlari.cs, CbsYapisi.cs, Program.cs
 - `autocad/src/Cekirdek/Model.cs` — Bir poz satırı: bir nesneye bağlı malzeme ya da iş kalemi. · 233 satır · 38 bağ · Aktarim.cs, CbsIceAktarim.cs, CbsYapisi.cs
 - `autocad/src/Cekirdek/NesneOkuyucu.cs` — AutoCAD eklentisiyle hazırlanmış bir çizimi ortak proje modeline çevirir. AutoCAD veriyi nesnelerin… · 417 satır · 21 bağ · Model.cs, Program.cs, Geometri.cs
 - `autocad/src/Cekirdek/NesneYazici.cs` — Proje modelinden çizim nesnelerinin tarifini (CadVarlik) üretir: katman, blok, öznitelikler, köşele… · 457 satır · 26 bağ · Model.cs, Program.cs, CizimKomutlari.cs
@@ -201,7 +201,7 @@ dosyada geçmez (Android ayarları gibi bazıları yine de kullanılır).
 ### AutoCAD çekirdek denemesi — `autocad/test/CekirdekTest`
 
 - `autocad/test/CekirdekTest/CekirdekTest.csproj` · 29 satır · 10 bağ · autocad.yml, cbs.test.mjs, cizim-stili.json
-- `autocad/test/CekirdekTest/Program.cs` — Çekirdek testleri. ornek : depodaki örnek dökümle birim testleri (CI'da çalışır) dogrula dokum.json… · 1.867 satır · 54 bağ · CbsIceAktarim.cs, DetaySorgu.cs, HesapBaglami.cs
+- `autocad/test/CekirdekTest/Program.cs` — Çekirdek testleri. ornek : depodaki örnek dökümle birim testleri (CI'da çalışır) dogrula dokum.json… · 1.872 satır · 54 bağ · CbsIceAktarim.cs, DetaySorgu.cs, HesapBaglami.cs
 - `autocad/test/CekirdekTest/ornek-dokum.json` · 47 satır · 4 bağ · CekirdekTest.csproj, PencereTest.csproj, Program.cs
 - `autocad/test/CekirdekTest/telefon-proje.sebeke.json` · 1 satır · 4 bağ · CekirdekTest.csproj, PencereTest.csproj, Program.cs
 - `autocad/test/CekirdekTest/volt-telefon.sebeke.json` · 718 satır · 2 bağ · CekirdekTest.csproj, Program.cs

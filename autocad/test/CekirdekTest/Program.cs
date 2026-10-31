@@ -411,6 +411,11 @@ namespace SebekeHakedis.Test
         private static void CbsIceAktarimDene()
         {
             Console.WriteLine("CBS'den alma (MIF → şebeke nesnesi):");
+            // Ayırıcısı yazılmamış MIF: MID virgülle ayrılmışsa virgül alınır (MapInfo'ya göre varsayılan sekme)
+            var vv = MifDosyasi.Oku("Version 300\nColumns 3\n  NO Integer\n  TIP Char(20)\n  DURUM Char(20)\nData\nPoint 1 2\n", "1,\"G-K2\",\"Yeni\"\n");
+            Esit("1|G-K2|Yeni", string.Join("|", vv.Nesneler[0].Degerler), "CBS al: ayırıcısı yazılmamış MIF'te virgüllü MID");
+            var vs = MifDosyasi.Oku("Version 300\nColumns 2\n  NO Integer\n  TIP Char(20)\nData\nPoint 1 2\n", "1\t\"9,3/3\"\n");
+            Esit("1|9,3/3", string.Join("|", vs.Nesneler[0].Degerler), "CBS al: ayırıcısı yazılmamış MIF'te sekmeli MID (değerde virgül)");
             var p = CbsDenemeProjesi();
             var katalog = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
             var kaynaklar = new List<CbsKaynagi>();

@@ -219,7 +219,7 @@ namespace SebekeHakedis.Cekirdek
             var v = new MifVerisi();
             var satirlar = (mif ?? "").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
             int i = 0;
-            bool veri = false;
+            bool veri = false, ayiriciYazili = false;
             for (; i < satirlar.Length; i++)
             {
                 string s = satirlar[i].Trim();
@@ -227,7 +227,7 @@ namespace SebekeHakedis.Cekirdek
                 string ilk = IlkKelime(s).ToUpperInvariant();
                 if (ilk == "DATA") { veri = true; i++; break; }
                 if (ilk == "CHARSET") v.Karakter = Tirnakli(s);
-                else if (ilk == "DELIMITER") { string a = Tirnakli(s); if (a.Length > 0) v.Ayirici = a[0]; }
+                else if (ilk == "DELIMITER") { string a = Tirnakli(s); if (a.Length > 0) { v.Ayirici = a[0]; ayiriciYazili = true; } }
                 else if (ilk == "COORDSYS") CoordSysOku(v, s);
                 else if (ilk == "COLUMNS")
                 {
@@ -251,6 +251,14 @@ namespace SebekeHakedis.Cekirdek
 
             if (mid != null)
             {
+                // Ayırıcı yazılı değilse MapInfo'ya göre sekmedir; bazı programlar yazmadan virgül kullanır: MID'de sekme yoksa
+                // ve ilk satır virgülle tam sütun sayısına bölünüyorsa virgül alınır
+                if (!ayiriciYazili && v.Sutunlar.Count > 1 && mid.IndexOf('\t') < 0)
+                {
+                    int son = mid.IndexOf('\n');
+                    var ilkSatir = MidSatirlari(son >= 0 ? mid.Substring(0, son + 1) : mid + "\n", ',');
+                    if (ilkSatir.Count == 1 && ilkSatir[0].Length == v.Sutunlar.Count) v.Ayirici = ',';
+                }
                 var satir = MidSatirlari(mid, v.Ayirici);
                 if (satir.Count != v.Nesneler.Count)
                     v.Uyarilar.Add("MID dosyasındaki satır sayısı (" + satir.Count + ") nesne sayısından (" + v.Nesneler.Count + ") farklı; bilgiler sırayla eşlendi.");
