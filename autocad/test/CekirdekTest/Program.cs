@@ -664,15 +664,53 @@ namespace SebekeHakedis.Test
             Geometri.YaziKonumu(new[] { 0.0, 0.0 }, new[] { 0.0, 10.0 }, new[] { 0.0, 0.8 }, out x, out y, out aci);
             Esit("-0,800 5,000 90,0", Konum(x, y, aci), "yazı yeri: dik hatta metraj çizginin solunda");
             Geometri.YaziKonumu(new[] { 0.0, 0.0 }, new[] { 0.0, 10.0 }, CizimStili.HatKaydirma, out x, out y, out aci);
-            Esit("2,500 5,000 90,0", Konum(x, y, aci), "yazı yeri: dik hatta etiket çizginin sağında");
+            Esit("0,700 5,000 90,0", Konum(x, y, aci), "yazı yeri: dik hatta etiket çizginin sağında (üst kenarı 0,7 m ötede)");
             Geometri.YaziKonumu(new[] { 0.0, 0.0 }, new[] { 10.0, 10.0 }, new[] { 1.0, 0.0 }, out x, out y, out aci);
             Esit("5,707 5,707 45,0", Konum(x, y, aci), "yazı yeri: boyunca kaydırma parça doğrultusunda");
             // Kanal / sondaj metrajı kablonun metrajından bir satır yukarıda: iki yazı üst üste binmez
-            Esit(true, CizimStili.KaziKaydirma[1] >= CizimStili.ParcaKaydirma[1] + CizimStili.ParcaMetraji, "kazı metrajı kablo metrajının üstünde (" + CizimStili.KaziKaydirma[1] + " m)");
+            Esit(0.46, CizimStili.KaziBosluk, "kazı metrajı ile kablo metrajı arası boşluk");
+            Esit(true, CizimStili.ParcaKaydirma[1] > 0 && CizimStili.HatKaydirma[1] < 0, "metraj çizginin üst yanında, etiket alt yanında");
+
+            // Yazılar parçanın ortasına ortalı, parçaya sığdırılmış (YaziDuzeni; telefondaki dxf.js yaziSigdir ile aynı)
+            Esit(true, Math.Abs(YaziDuzeni.Genislik("12.34", 1.44) - (0.57 * 4 + 0.36) * 1.44) < 1e-9, "yazı genişliği harf tablosundan");
+            double h, gk;
+            YaziDuzeni.Sigdir("12.34", 1.44, 30, out h, out gk);
+            Esit("1,440 1,000", Konum2(h, gk), "sığan yazı olduğu gibi kalır");
+            string uzun = "^ 3x95+50 NYY Al";
+            double w = YaziDuzeni.Genislik(uzun, 1.8);
+            YaziDuzeni.Sigdir(uzun, 1.8, w / 0.9 * 0.8, out h, out gk);
+            Esit("1,800 0,800", Konum2(h, gk), "biraz uzun yazı daraltılır (genişlik katsayısı 0,8)");
+            YaziDuzeni.Sigdir(uzun, 1.8, w / 0.9 * 0.3, out h, out gk);
+            Esit("1,080 0,600", Konum2(h, gk), "çok uzun yazı en dar (0,6) ve en küçük (%60) ölçüde");
+            YaziDuzeni.Sigdir(uzun, 1.8, w / 0.9 * 0.48, out h, out gk);
+            Esit("1,440 0,600", Konum2(h, gk), "daraltma yetmezse yükseklik küçülür (0,48 = 0,6 × 0,8)");
+            Esit(1, YaziDuzeni.EnUzunParca(kose), "etiket en uzun parçada (30→40)");
+            YaziDuzeni.Yerlestir(new[] { 0.0, 0.0 }, new[] { 0.0, 50.0 }, CizimStili.HatKaydirma[1], uzun, 1.8, out x, out y, out aci, out h, out gk);
+            Esit("0,700 25,000 90,0", Konum(x, y, aci), "dik hatta etiket ortalı: parçanın ortası, çizginin sağında");
+            // Harf tablosu ortak stildekiyle aynı (telefon oradan okur)
+            var stilJson = Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "cizim-stili.json"), Encoding.UTF8)) as JsonNesne;
+            var harfler = stilJson.Nesne("yazi").Nesne("harfGenislikleri");
+            int harfSayisi = 0, harfFarki = 0;
+            foreach (var kv in harfler)
+            {
+                if (kv.Key == "aciklama") continue;
+                harfSayisi++;
+                double g = kv.Key == "varsayilan" ? YaziDuzeni.Varsayilan : YaziDuzeni.Genislik(kv.Key, 1);
+                if (kv.Key.Length != 1 && kv.Key != "varsayilan") harfFarki++;
+                else if (Math.Abs(g - Convert.ToDouble(kv.Value, CultureInfo.InvariantCulture)) > 1e-9) harfFarki++;
+            }
+            Esit(YaziDuzeni.HarfSayisi + 1, harfSayisi, "harf tablosu: ortak stilde de aynı sayıda harf");
+            Esit(0, harfFarki, "harf tablosu: ortak stildeki genişliklerle aynı");
+            var sigdir = stilJson.Nesne("yazi").Nesne("sigdirma");
+            Esit(YaziDuzeni.Pay + " " + YaziDuzeni.EnDarGenislik + " " + YaziDuzeni.EnKucukYukseklik,
+                 sigdir.Ondalik("pay") + " " + sigdir.Ondalik("enDarGenislik") + " " + sigdir.Ondalik("enKucukYukseklik"), "sığdırma sınırları ortak stildekiyle aynı");
             Esit(true, NesneYazici.Kanal(kanal, "SC", null).KaziMetraji, "kanal metrajı kazı metrajı");
             Esit(true, NesneYazici.Sondaj(new Sondaj { Id = "S1", Durum = "M", Kose = { new[] { 0.0, 0.0 }, new[] { 8.0, 0.0 } } }, "SC", null).KaziMetraji, "sondaj metrajı kazı metrajı");
             Esit(false, NesneYazici.Hat(new Hat { Id = "H2", Tur = "AG_YERALTI", Durum = "M", Kose = { new[] { 0.0, 0.0 }, new[] { 5.0, 0.0 } } }, "SC", null).KaziMetraji, "hat metrajı kazı metrajı değil");
         }
+
+        private static string Konum2(double a, double b) =>
+            a.ToString("0.000", CultureInfo.GetCultureInfo("tr-TR")) + " " + b.ToString("0.000", CultureInfo.GetCultureInfo("tr-TR"));
 
         private static string Konum(double x, double y, double aci) =>
             x.ToString("0.000", CultureInfo.GetCultureInfo("tr-TR")) + " " + y.ToString("0.000", CultureInfo.GetCultureInfo("tr-TR")) + " " +

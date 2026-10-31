@@ -206,12 +206,23 @@ namespace SebekeHakedis.PencereTest
                 bool ok = Pencereler.Ayarlar(o);
                 Esit(true, ok, "ayarlar: Tamam");
                 Esit(39, o.Ayar.Dom, "ayarlar: DOM seçildi");
+                Esit(1.0, o.Ayar.SimgeOlcegi, "ayarlar: Varsayılana dön simgeyi 1 kata getirdi");
+                Esit(2.5, o.Ayar.ElemanYaziYuksekligi, "ayarlar: eleman yazısı yüksekliği");
+                Esit(2.0, o.Ayar.EtiketYuksekligi, "ayarlar: hat etiketi (kablo tipi) yüksekliği");
+                Esit(1.2, o.Ayar.MetrajYuksekligi, "ayarlar: metraj yazısı yüksekliği");
             }, f =>
             {
                 var dom = Bul<KoyuSecim>(f, r => r.Text == "39°");
                 dom.Checked = true;
                 var sekme = Bul<Sekmeler>(f, x => true);
-                string[] adlar = { "genel", "tarife", "gorunum", "metraj" };
+                // Boyutlar (Görünüm sekmesi açıkken: gizli düğmeye basılamaz): simge 3 kat → Varsayılana dön → 1; yazılar elle
+                sekme.Secili = 3;
+                Bul<SayiKutusu>(f, k => k.Name == "simgeOlcegi").Value = 3;
+                Bul<KoyuDugme>(f, d => d.Name == "boyutVarsayilan").PerformClick();
+                Bul<SayiKutusu>(f, k => k.Name == "elemanYaziYuksekligi").Value = 2.5m;
+                Bul<SayiKutusu>(f, k => k.Name == "etiketYuksekligi").Value = 2.0m;
+                Bul<SayiKutusu>(f, k => k.Name == "metrajYuksekligi").Value = 1.2m;
+                string[] adlar = { "genel", "proje", "tarife", "gorunum", "metraj" };
                 for (int i = 1; i < adlar.Length; i++)
                 {
                     sekme.Secili = i;

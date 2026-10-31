@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -168,8 +169,12 @@ namespace SebekeHakedis.Eklenti
             if (y.Uyarilar.Count > 10) ed.WriteMessage("\n… ve " + (y.Uyarilar.Count - 10) + " uyarı daha.");
         }
 
-        private static CizimYazici Yazici(Ortam o, Transaction tr) =>
-            new CizimYazici(o.Db, tr) { EtiketYuksekligi = o.Ayar.EtiketYuksekligi };
+        private static CizimYazici Yazici(Ortam o, Transaction tr)
+        {
+            var y = new CizimYazici(o.Db, tr);
+            y.BoyutlariAl(o.Ayar);
+            return y;
+        }
 
         // ================= SH_ELEMAN =================
 
@@ -709,8 +714,9 @@ namespace SebekeHakedis.Eklenti
         // ================= SH_GORUNUM: çizimi telefon görünümüne çevir =================
 
         /// <summary>
-        /// Çizimdeki şebeke nesnelerini ortak çizim stiline (telefonun görünümü) çevirir: simgeler, renkler, çizgi tipleri,
-        /// hat etiketleri (1,8 m, orta parçada) ve her parçanın uzunluk yazısı. Veriye (XDATA, metraj) dokunmaz.
+        /// Çizimdeki şebeke nesnelerini ortak çizim stiline (telefonun görünümü) çevirir: simgeler (ayardaki büyüklükte),
+        /// renkler, çizgi tipleri, eleman yazıları, hat etiketleri (kablo tipi: en uzun parçanın ortasına ortalı) ve her
+        /// açıklığın metraj yazısı (Çizim Ayarları › Görünüm'deki boyutlarla). Veriye (XDATA, metraj) dokunmaz.
         /// Bütün elemanlar uygulamanın simgesine çevrilir (adsız bloklar hariç).
         /// </summary>
         [CommandMethod("SH_GORUNUM", CommandFlags.Modal)]
@@ -721,50 +727,57 @@ namespace SebekeHakedis.Eklenti
             Komutlar.Calistir("Görünüm yenileme", () =>
             {
                 var o = Ortam.Hazirla(belge);
-                var ed = o.Ed;
                 var p = o.Proje;
                 int toplam = p.Elemanlar.Count + p.Hatlar.Count + p.Kanallar.Count + p.Sondajlar.Count + p.Bolgeler.Count;
-                if (toplam == 0) { ed.WriteMessage("\nÇizimde şebeke nesnesi yok."); return; }
+                if (toplam == 0) { o.Ed.WriteMessage("\nÇizimde şebeke nesnesi yok."); return; }
                 var pko = new PromptKeywordOptions("\n" + toplam + " nesne uygulamanın görünümüne çevrilecek. Devam edilsin mi? [Evet/Vazgec]", "Evet Vazgec")
                 {
                     AllowNone = true,
                 };
                 pko.Keywords.Default = "Evet";
-                var r = ed.GetKeywords(pko);
+                var r = o.Ed.GetKeywords(pko);
                 if (r.Status != PromptStatus.OK && r.Status != PromptStatus.None) return;
                 if (r.Status == PromptStatus.OK && r.StringResult == "Vazgec") return;
-                int yenilenen = 0, cevrilen = 0;
-                using (var tr = o.Db.TransactionManager.StartTransaction())
-                {
-                    var y = Yazici(o, tr);
-                    y.EtiketleriYenile = true;
-                    // Şebeke katmanlarının adları Türkçe karaktersiz (AGDİR → AGDIR …; bkz. KatmanAdlari)
-                    cevrilen = y.KatmanlariCevir();
-                    Func<string, ObjectId> bul = h => { ObjectId id; return Toplayici.TaniticiylaBul(o.Db, h, out id) ? id : ObjectId.Null; };
-                    Action<string, CadVarlik, string> yaz = (h, v, etiket) =>
-                    {
-                        var id = bul(h);
-                        if (id.IsNull) return;
-                        try { y.Guncelle(id, v, etiket); yenilenen++; }
-                        catch (System.Exception ex) { y.Uyarilar.Add(h + " yenilenemedi (katmanı kilitli olabilir): " + ex.Message); }
-                    };
-                    foreach (var e in p.Elemanlar)
-                    {
-                        string blok = NesneYazici.BlokSec(p.Elemanlar, e);
-                        if (!y.BlokKullanilabilir(blok)) blok = e.Blok;
-                        yaz(e.Id, NesneYazici.Eleman(e, o.OnEk, blok, string.IsNullOrEmpty(e.TelefonId) ? null : e.TelefonId), null);
-                    }
-                    foreach (var h in p.Hatlar) yaz(h.Id, NesneYazici.Hat(h, o.OnEk, string.IsNullOrEmpty(h.TelefonId) ? null : h.TelefonId), NesneYazici.HatEtiketi(h));
-                    foreach (var c in p.Kanallar) yaz(c.Id, NesneYazici.Kanal(c, o.OnEk, string.IsNullOrEmpty(c.TelefonId) ? null : c.TelefonId), null);
-                    foreach (var s in p.Sondajlar) yaz(s.Id, NesneYazici.Sondaj(s, o.OnEk, string.IsNullOrEmpty(s.TelefonId) ? null : s.TelefonId), null);
-                    foreach (var b in p.Bolgeler) yaz(b.Id, NesneYazici.Bolge(b, o.OnEk, null), null);
-                    tr.Commit();
-                    UyarilariYaz(ed, y);
-                }
-                ed.WriteMessage("\n" + yenilenen + " nesne uygulamanın görünümüne çevrildi." +
-                                (cevrilen > 0 ? " " + cevrilen + " katmanın adı Türkçe karaktersiz yapıldı." : ""));
-                ed.Regen();
+                GorunumuUygula(o);
             });
+        }
+
+        /// <summary>Telefon Görünümü'nü çizimin bütün şebeke nesnelerine uygular (SH_GORUNUM; boyutlar değişince Ayarlar da çağırır).</summary>
+        internal static void GorunumuUygula(Ortam o)
+        {
+            var ed = o.Ed;
+            var p = o.Proje;
+            int yenilenen = 0, cevrilen = 0;
+            using (var tr = o.Db.TransactionManager.StartTransaction())
+            {
+                var y = Yazici(o, tr);
+                y.EtiketleriYenile = true;
+                // Şebeke katmanlarının adları Türkçe karaktersiz (AGDİR → AGDIR …; bkz. KatmanAdlari)
+                cevrilen = y.KatmanlariCevir();
+                Func<string, ObjectId> bul = h => { ObjectId id; return Toplayici.TaniticiylaBul(o.Db, h, out id) ? id : ObjectId.Null; };
+                Action<string, CadVarlik, string> yaz = (h, v, etiket) =>
+                {
+                    var id = bul(h);
+                    if (id.IsNull) return;
+                    try { y.Guncelle(id, v, etiket); yenilenen++; }
+                    catch (System.Exception ex) { y.Uyarilar.Add(h + " yenilenemedi (katmanı kilitli olabilir): " + ex.Message); }
+                };
+                foreach (var e in p.Elemanlar)
+                {
+                    string blok = NesneYazici.BlokSec(p.Elemanlar, e);
+                    if (!y.BlokKullanilabilir(blok)) blok = e.Blok;
+                    yaz(e.Id, NesneYazici.Eleman(e, o.OnEk, blok, string.IsNullOrEmpty(e.TelefonId) ? null : e.TelefonId), null);
+                }
+                foreach (var h in p.Hatlar) yaz(h.Id, NesneYazici.Hat(h, o.OnEk, string.IsNullOrEmpty(h.TelefonId) ? null : h.TelefonId), NesneYazici.HatEtiketi(h));
+                foreach (var c in p.Kanallar) yaz(c.Id, NesneYazici.Kanal(c, o.OnEk, string.IsNullOrEmpty(c.TelefonId) ? null : c.TelefonId), null);
+                foreach (var s in p.Sondajlar) yaz(s.Id, NesneYazici.Sondaj(s, o.OnEk, string.IsNullOrEmpty(s.TelefonId) ? null : s.TelefonId), null);
+                foreach (var b in p.Bolgeler) yaz(b.Id, NesneYazici.Bolge(b, o.OnEk, null), null);
+                tr.Commit();
+                UyarilariYaz(ed, y);
+            }
+            ed.WriteMessage("\n" + yenilenen + " nesne uygulamanın görünümüne çevrildi." +
+                            (cevrilen > 0 ? " " + cevrilen + " katmanın adı Türkçe karaktersiz yapıldı." : ""));
+            ed.Regen();
         }
 
         // ================= SH_BOLGE =================
@@ -1210,11 +1223,22 @@ namespace SebekeHakedis.Eklenti
             Komutlar.Calistir("Ayarlar", () =>
             {
                 var o = Ortam.Hazirla(belge);
+                var a = o.Ayar;
+                string onceki = Boyutlar(a);
                 if (!Pencereler.Ayarlar(o)) return;
                 o.AyarKaydet();
                 o.Ed.WriteMessage("\nAyarlar bu çizime kaydedildi.");
+                // Simge / yazı boyutları değiştiyse çizimde olanlara da uygulanabilir (Telefon Görünümü)
+                int nesne = o.Proje.Elemanlar.Count + o.Proje.Hatlar.Count + o.Proje.Kanallar.Count + o.Proje.Sondajlar.Count;
+                if (Boyutlar(a) != onceki && nesne > 0 &&
+                    Pencereler.Onay("Simge ve yazı boyutları değişti. Çizimdeki " + nesne + " nesnenin simge ve yazıları da yeni boyutlara getirilsin mi?\n\n(Telefon Görünümü: simgeler, renkler, hat etiketleri ve metraj yazıları yeniden düzenlenir; veriye dokunulmaz.)"))
+                    GorunumuUygula(o);
             });
         }
+
+        private static string Boyutlar(CizimAyarlari a) =>
+            string.Join(";", new[] { a.SimgeOlcegi, a.EtiketYuksekligi, a.MetrajYuksekligi, a.ElemanYaziYuksekligi }
+                .Select(d => d.ToString("0.###", CultureInfo.InvariantCulture)));
 
         [CommandMethod("SH_HAKEDIS", CommandFlags.Modal)]
         public void Hakedis()

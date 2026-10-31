@@ -2280,15 +2280,30 @@ namespace SebekeHakedis.Eklenti
                 (a.Koy ? koy : sehir).Checked = true;
                 Aciklama(tarife, "Yeni konan her kalemin tarifesi bu ayarla üretilir (karakteristik + unsur); var olan kalemler değişmez.", 0, 156, 600, 34);
 
-                // Görünüm
+                // Görünüm: simge ve yazı boyutları (telefon dosyasıyla da taşınır)
                 var gorunum = sayfa();
-                Aciklama(gorunum, "Simgeler her zaman uygulamanın simgeleridir (telefonla aynı, 1 ölçek, 1/1000 pafta).", 0, 0, 600, 20);
-                Etiket(gorunum, "Hat etiketi yüksekliği (m)", 0, 36);
-                var etiket = Koy(gorunum, new SayiKutusu(0.05m, 50, D(a.EtiketYuksekligi), 2, 0.1m), 0, 56, 120, 30);
-                Aciklama(gorunum, "Telefonun çizimiyle aynı: 1,8 m (parça metrajı 1,44 m).", 136, 64, 480, 20);
-                Etiket(gorunum, "Direğe yakalama (m)", 0, 98);
-                var yakala = Koy(gorunum, new SayiKutusu(0, 50, D(a.YakalamaMesafesi), 2, 0.5m), 0, 118, 120, 30);
-                Aciklama(gorunum, "Hat ve kanal çizerken elemanın simgesinin üstüne ya da en az bu mesafeye tıklanınca hat elemanın ortasına oturur ve orada parçalanır. 0: yakalama kapalı.", 136, 116, 480, 40);
+                Etiket(gorunum, "Simge ve yazı boyutları", 0, 0, 0, KoyuYazi.Kalin);
+                Aciklama(gorunum, "Yeni çizilenler bu ölçülerle çizilir. Kaydedince çizimde olanlara da uygulanması sorulur. Varsayılanlar telefonun çizimiyle aynıdır (1/1000 pafta).", 0, 22, 616, 34);
+                Etiket(gorunum, "Simge büyüklüğü (kat)", 0, 62);
+                var simge = Koy(gorunum, new SayiKutusu(0.1m, 20, D(a.SimgeOlcegi), 2, 0.1m) { Name = "simgeOlcegi" }, 0, 82, 140, 30);
+                Etiket(gorunum, "Eleman yazısı: GIS no, tip (m)", 316, 62);
+                var elemanYazi = Koy(gorunum, new SayiKutusu(0.05m, 50, D(a.ElemanYaziYuksekligi), 2, 0.1m) { Name = "elemanYaziYuksekligi" }, 316, 82, 140, 30);
+                Etiket(gorunum, "Hat etiketi: kablo tipi (m)", 0, 122);
+                var etiket = Koy(gorunum, new SayiKutusu(0.05m, 50, D(a.EtiketYuksekligi), 2, 0.1m) { Name = "etiketYuksekligi" }, 0, 142, 140, 30);
+                Etiket(gorunum, "Metraj yazısı (m)", 316, 122);
+                var metrajYazi = Koy(gorunum, new SayiKutusu(0.05m, 50, D(a.MetrajYuksekligi), 2, 0.1m) { Name = "metrajYuksekligi" }, 316, 142, 140, 30);
+                var varsayilan = Koy(gorunum, new KoyuDugme("Varsayılana dön", DugmeTuru.Ikincil, Boya.Simge("gorunum", KoyuRenk.Ikincil, 16)) { Name = "boyutVarsayilan" }, 0, 186, 170, 32);
+                Aciklama(gorunum, "Simge 1 kat · eleman yazısı 1,8 m · kablo tipi 1,8 m · metraj 1,44 m", 186, 192, 430, 20);
+                varsayilan.Click += (s, e) =>
+                {
+                    simge.Value = 1;
+                    elemanYazi.Value = D(CizimAyarlari.VarsayilanEtiket);
+                    etiket.Value = D(CizimAyarlari.VarsayilanEtiket);
+                    metrajYazi.Value = D(CizimAyarlari.VarsayilanMetraj);
+                };
+                Etiket(gorunum, "Direğe yakalama (m)", 0, 238);
+                var yakala = Koy(gorunum, new SayiKutusu(0, 50, D(a.YakalamaMesafesi), 2, 0.5m), 0, 258, 140, 30);
+                Aciklama(gorunum, "Hat ve kanal çizerken elemanın simgesinin üstüne ya da en az bu mesafeye tıklanınca hat elemanın ortasına oturur ve orada parçalanır. 0: yakalama kapalı.", 156, 256, 460, 40);
 
                 // Metraj
                 var metraj = sayfa();
@@ -2353,6 +2368,10 @@ namespace SebekeHakedis.Eklenti
                 var dom = domlar.Find(r => r.Checked);
                 a.Dom = dom != null ? (int)dom.Tag : 0;
                 a.EtiketYuksekligi = (double)etiket.Value;
+                a.SimgeOlcegi = (double)simge.Value;
+                a.ElemanYaziYuksekligi = (double)elemanYazi.Value;
+                a.MetrajYuksekligi = (double)metrajYazi.Value;
+                a.BoyutlariDuzelt();
                 a.YakalamaMesafesi = (double)yakala.Value;
                 a.YukariYuvarla = yukari.Checked;
                 foreach (var kv in paylar)

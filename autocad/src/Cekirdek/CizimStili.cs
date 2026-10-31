@@ -41,10 +41,13 @@ namespace SebekeHakedis.Cekirdek
         public static double BlokOlcegi = 1;
         public static double YaziYuksekligi = 1.8, ParcaMetraji = 1.44, AciYazisi = 1.26, NoktaYazisi = 1.26;
         /// <summary>
-        /// Yazı kaydırmaları (m). Parça metrajı, kazı (kanal / sondaj) metrajı ve hat etiketi parçanın kendi ekseninde
-        /// (boyunca, dik; Geometri.YaziKonumu); eleman ve açı yazısı dünya ekseninde (sağa, yukarı).
+        /// Yazı kaydırmaları (m). Parça metrajı ve hat etiketi parçanın kendi ekseninde (boyunca, dik; Geometri.YaziKonumu),
+        /// parçanın ortasına ortalı (YaziDuzeni): metrajda taban çizgisinin ortası çizginin 0,8 m üst yanında, hat
+        /// etiketinde üst kenarın ortası 0,7 m alt yanında. Eleman ve açı yazısı dünya ekseninde (sağa, yukarı).
         /// </summary>
-        public static double[] ParcaKaydirma = { 0, 0.8 }, KaziKaydirma = { 0, 2.7 }, HatKaydirma = { 0, -2.5 }, ElemanKaydirma = { 3.5, 3.0 }, AciKaydirma = { 3.5, 0.6 };
+        public static double[] ParcaKaydirma = { 0, 0.8 }, HatKaydirma = { 0, -0.7 }, ElemanKaydirma = { 3.5, 3.0 }, AciKaydirma = { 3.5, 0.6 };
+        /// <summary>Kazı (kanal / sondaj) metrajı içindeki kablonun metrajının bir satır üstünde: aradaki boşluk (m).</summary>
+        public static double KaziBosluk = 0.46;
         public static double SatirArasi = 2.2;
         public static string ParcaBicimi = "0.00";
         /// <summary>Yazı tipi (TrueType), dosyası ve eklentinin yazı stili adı.</summary>
@@ -90,7 +93,8 @@ namespace SebekeHakedis.Cekirdek
             if (et != null)
             {
                 ParcaKaydirma = Cift(et.Nesne("parcaMetraji"), ParcaKaydirma);
-                KaziKaydirma = Cift(et.Nesne("kaziMetraji"), KaziKaydirma);
+                var kz = et.Nesne("kaziMetraji");
+                if (kz != null) KaziBosluk = kz.Ondalik("bosluk", KaziBosluk);
                 HatKaydirma = Cift(et.Nesne("hat"), HatKaydirma);
                 ElemanKaydirma = Cift(et.Nesne("eleman"), ElemanKaydirma);
                 AciKaydirma = Cift(et.Nesne("aci"), AciKaydirma);

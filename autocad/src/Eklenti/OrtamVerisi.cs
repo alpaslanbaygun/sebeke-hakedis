@@ -58,10 +58,14 @@ namespace SebekeHakedis.Eklenti
         protected virtual void SiraVerildi(long sira) { }
 
         /// <summary>
-        /// Yeni elemanın blok ölçeği: eklentinin SH_ simgeleri metre cinsindendir, her zaman 1 ölçekle konur (telefonla
-        /// aynı boyut); AutoCAD bloklarında ayardaki ölçek, yoksa çizimdekilerle aynı (AutoCAD: 4).
+        /// Yeni elemanın blok ölçeği: eklentinin SH_ simgeleri metre cinsindendir, ayardaki simge büyüklüğüyle konur
+        /// (Çizim Ayarları › Görünüm; 1 = telefonla aynı boyut); AutoCAD bloklarında ayardaki ölçek, yoksa çizimdekilerle
+        /// aynı (AutoCAD: 4).
         /// </summary>
-        public double Olcek(string blok) => Semboller.EklentininBlogu(blok) ? 1 : Ayar.SembolOlcegi > 0 ? Ayar.SembolOlcegi : NesneYazici.OlcekOner(Varliklar, blok, 4);
+        public double Olcek(string blok) => Semboller.EklentininBlogu(blok) ? SimgeOlcegi : Ayar.SembolOlcegi > 0 ? Ayar.SembolOlcegi : NesneYazici.OlcekOner(Varliklar, blok, 4);
+
+        /// <summary>Uygulamanın simgelerinin büyüklüğü (çarpan; bozuk değerde 1).</summary>
+        public double SimgeOlcegi => Ayar.SimgeOlcegi >= 0.1 && Ayar.SimgeOlcegi <= 20 ? Ayar.SimgeOlcegi : 1;
 
         /// <summary>
         /// Noktanın yapıştığı eleman: simgesinin üstüne ya da mesafe içine tıklanan elemanlardan merkezi en yakın olan; yoksa null.
@@ -70,7 +74,7 @@ namespace SebekeHakedis.Eklenti
         public Eleman YakinEleman(double x, double y, double mesafe, double ekran = 0)
         {
             KatalogKaynagi.SembolleriYukle();
-            return Geometri.YakinEleman(Proje.Elemanlar, x, y, mesafe, ekran);
+            return Geometri.YakinEleman(Proje.Elemanlar, x, y, mesafe, ekran, SimgeOlcegi);
         }
     }
 
