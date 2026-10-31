@@ -63,9 +63,7 @@ namespace SebekeHakedis.Cekirdek
         public static double VarsayilanMetraj => CizimStili.Yuklu ? CizimStili.ParcaMetraji : 1.44;
 
         /// <summary>Boyutlar varsayılandan farklı mı (telefon dosyasına yalnız farklıysa yazılır).</summary>
-        public bool BoyutlarDegisik =>
-            Math.Abs(SimgeOlcegi - 1) > 1e-9 || Math.Abs(EtiketYuksekligi - 1.8) > 1e-9 || Math.Abs(MetrajYuksekligi - 1.44) > 1e-9 ||
-            Math.Abs(ElemanYaziYuksekligi - 1.8) > 1e-9;
+        public bool BoyutlarDegisik => !BoyutlariVer().Varsayilan;
         public double YakalamaMesafesi = 1.0;
         public bool YukariYuvarla = true;
         public readonly Dictionary<string, double> EkPay = new Dictionary<string, double>(StringComparer.Ordinal);
@@ -83,13 +81,28 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Son seçimler (tür, tip, kesit, durum...): bir sonraki komutta hazır gelir.</summary>
         public readonly Dictionary<string, string> Son = new Dictionary<string, string>(StringComparer.Ordinal);
 
-        /// <summary>Boyutlar makul aralıkta (simge 0,1–20 kat; yazılar 0,1–50 m); bozuk değer varsayılana döner.</summary>
-        public void BoyutlariDuzelt()
+        /// <summary>Boyutlar makul aralıkta (simge 0,1–20 kat; yazılar 0,05–50 m); bozuk değer varsayılana döner.</summary>
+        public void BoyutlariDuzelt() => BoyutlariKoy(BoyutlariVer());
+
+        /// <summary>Boyutlar (proje dosyasına yazılan biçim).</summary>
+        public Boyutlar BoyutlariVer() => new Boyutlar
         {
-            if (!(SimgeOlcegi >= 0.1 && SimgeOlcegi <= 20)) SimgeOlcegi = 1;
-            if (!(EtiketYuksekligi >= 0.05 && EtiketYuksekligi <= 50)) EtiketYuksekligi = 1.8;
-            if (!(MetrajYuksekligi >= 0.05 && MetrajYuksekligi <= 50)) MetrajYuksekligi = 1.44;
-            if (!(ElemanYaziYuksekligi >= 0.05 && ElemanYaziYuksekligi <= 50)) ElemanYaziYuksekligi = 1.8;
+            SimgeOlcegi = SimgeOlcegi, EtiketYuksekligi = EtiketYuksekligi, MetrajYuksekligi = MetrajYuksekligi,
+            ElemanYaziYuksekligi = ElemanYaziYuksekligi,
+        }.Duzelt();
+
+        public void BoyutlariKoy(Boyutlar b)
+        {
+            if (b == null) return;
+            b = new Boyutlar
+            {
+                SimgeOlcegi = b.SimgeOlcegi, EtiketYuksekligi = b.EtiketYuksekligi, MetrajYuksekligi = b.MetrajYuksekligi,
+                ElemanYaziYuksekligi = b.ElemanYaziYuksekligi,
+            }.Duzelt();
+            SimgeOlcegi = b.SimgeOlcegi;
+            EtiketYuksekligi = b.EtiketYuksekligi;
+            MetrajYuksekligi = b.MetrajYuksekligi;
+            ElemanYaziYuksekligi = b.ElemanYaziYuksekligi;
         }
 
         public double EkPayi(string hatTuru)

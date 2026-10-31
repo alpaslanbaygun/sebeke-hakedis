@@ -61,6 +61,15 @@ namespace SebekeHakedis.Cekirdek
             pj["aktifHakedis"] = p.AktifHakedis;
             pj["katmanOnEki"] = p.KatmanOnEki;
             if (!string.IsNullOrEmpty(p.GisOnEki)) pj["gisOnEki"] = p.GisOnEki;
+            if (p.Boyutlar != null && !p.Boyutlar.Varsayilan)
+            {
+                var b = new JsonNesne();
+                b["simgeOlcegi"] = p.Boyutlar.SimgeOlcegi;
+                b["etiketYuksekligi"] = p.Boyutlar.EtiketYuksekligi;
+                b["metrajYuksekligi"] = p.Boyutlar.MetrajYuksekligi;
+                b["elemanYaziYuksekligi"] = p.Boyutlar.ElemanYaziYuksekligi;
+                pj["boyutlar"] = b;
+            }
             var onaylar = new List<object>();
             foreach (var kv in p.Onaylar)
             {
@@ -220,6 +229,15 @@ namespace SebekeHakedis.Cekirdek
             p.AktifHakedis = pj.Tam("aktifHakedis", 1);
             p.KatmanOnEki = pj.Metin("katmanOnEki");
             p.GisOnEki = pj.Metin("gisOnEki");
+            var by = pj.Nesne("boyutlar");
+            if (by != null)
+                p.Boyutlar = new Boyutlar
+                {
+                    SimgeOlcegi = by.Ondalik("simgeOlcegi", Boyutlar.VarsayilanSimge),
+                    EtiketYuksekligi = by.Ondalik("etiketYuksekligi", Boyutlar.VarsayilanEtiket),
+                    MetrajYuksekligi = by.Ondalik("metrajYuksekligi", Boyutlar.VarsayilanMetraj),
+                    ElemanYaziYuksekligi = by.Ondalik("elemanYaziYuksekligi", Boyutlar.VarsayilanEleman),
+                }.Duzelt();
             foreach (var o in Nesneler(pj, "onaylar"))
             {
                 int no = o.Tam("no");

@@ -657,6 +657,23 @@
 
   // ---------------------------------------------------------------- Proje dosyası
 
+  /**
+   * Simge ve yazı boyutları (proje.boyutlar; eklentideki Boyutlar, Çizim Ayarları › Görünüm): simge büyüklüğü (kat;
+   * 1 = 1/1000 pafta), hat etiketi (kablo tipi), metraj ve eleman yazısı yüksekliği (m). Bozuk değer varsayılana döner;
+   * hepsi varsayılansa null (dosyaya yazılmaz).
+   */
+  const BOYUT_VARSAYILAN = { simgeOlcegi: 1, etiketYuksekligi: 1.8, metrajYuksekligi: 1.44, elemanYaziYuksekligi: 1.8 };
+  function boyutlarOku(b) {
+    if (!b || typeof b !== 'object') return null;
+    const r = {};
+    for (const [k, d] of Object.entries(BOYUT_VARSAYILAN)) {
+      const v = typeof b[k] === 'number' ? b[k] : sayi(b[k]);
+      const [en, cok] = k === 'simgeOlcegi' ? [0.1, 20] : [0.05, 50];
+      r[k] = Number.isFinite(v) && v >= en && v <= cok ? v : d;
+    }
+    return Object.keys(r).every((k) => Math.abs(r[k] - BOYUT_VARSAYILAN[k]) < 1e-9) ? null : r;
+  }
+
   function yeniProje(o) {
     const a = o || {};
     return {
@@ -723,6 +740,8 @@
       bolgeler: [], noktalar: [], elemanlar: [], hatlar: [], kanallar: [], sondajlar: []
     };
     if (!p.proje.gisOnEki) p.proje.gisOnEki = p.proje.katmanOnEki || 'SC';
+    const by = boyutlarOku(pj.boyutlar);
+    if (by) p.proje.boyutlar = by; else delete p.proje.boyutlar;
     const kimlik = (o, set) => {
       let id = str(o.id);
       if (!id || set.has(id)) id = yeniId();
@@ -845,7 +864,8 @@
       bicim: BICIM, surum: SURUM, olusturan: olusturan || p.olusturan || 'Şebeke-M (telefon)', olusturma: zaman(),
       proje: sirala(pj, [['ad', pj.ad], ['kaynak', pj.kaynak],
         ['koordinat', Object.assign({ sistem: 'TM', datum: 'ITRF96', dom: 0 }, pj.koordinat, { eksenler: 'saga = doğu (CAD X), yukari = kuzey (CAD Y)' })],
-        ['aktifHakedis', pj.aktifHakedis], ['katmanOnEki', katmanAscii(pj.katmanOnEki)], ['gisOnEki', pj.gisOnEki]]),
+        ['aktifHakedis', pj.aktifHakedis], ['katmanOnEki', katmanAscii(pj.katmanOnEki)], ['gisOnEki', pj.gisOnEki],
+        ['boyutlar', boyutlarOku(pj.boyutlar) || undefined]]),
       bolgeler: p.bolgeler.map(b => sirala(b, [['id', b.id], ['ad', b.ad], ['kod', b.kod], ['grup', b.grup || undefined], ['aciklama', b.aciklama || undefined], ['sinir', kYaz(b.sinir)]])),
       noktalar: p.noktalar.map(n => sirala(n, [['id', n.id], ['ad', n.ad], ['kod', n.kod], ['saga', r4(n.saga)], ['yukari', r4(n.yukari)],
         ['kot', r4(n.kot)], ['hakedis', n.hakedis], ['bolge', n.bolge], ['ekMetinler', n.ekMetinler && n.ekMetinler.length ? n.ekMetinler : undefined]])),
@@ -1027,7 +1047,7 @@
 
   return {
     BICIM, SURUM, DURUMLAR, DURUM_ADI, ELEMAN_TURLERI, HAT_TURLERI, ZEMINLER, KANAL, DOMLAR, KOLEKSIYONLAR,
-    elemanTuru, hatTuru, cinstenElemanTuru, cinstenHatTuru, cinsDuzelt, katmanAscii, ESKI_CINSLER,
+    elemanTuru, hatTuru, cinstenElemanTuru, cinstenHatTuru, cinsDuzelt, katmanAscii, ESKI_CINSLER, boyutlarOku, BOYUT_VARSAYILAN,
     temiz, sayi, tr, ordinal, siraKarsilastir,
     tmIleri, tmGeri, domBoylamdan, domTahmin,
     mesafe, uzunluk, ortaNokta, icinde, alan, dogruParcasinaMesafe, cokgeneMesafe, bolgeSec, kutu, projeKutusu,

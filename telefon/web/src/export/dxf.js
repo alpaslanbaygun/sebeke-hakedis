@@ -113,11 +113,12 @@ export function enUzunParca(coords) {
   return en;
 }
 /**
- * Boyutlar (proje.boyutlar; eklentide Çizim Ayarları › Görünüm): simge büyüklüğü (kat) ve yazı yükseklikleri (m).
+ * Boyutlar (proje.sebeke.boyutlar — AutoCAD dosyasıyla gelir, Dışa Aktarım › Çizim boyutları ile değişir; eklentide
+ * Çizim Ayarları › Görünüm): simge büyüklüğü (kat) ve yazı yükseklikleri (m).
  * Projede yoksa ortak stilin ölçüleri; textH verilirse eski kullanım gibi bütün yazılar onunla orantılı.
  */
 export function boyutlar(proje, textH) {
-  const b = (proje && proje.boyutlar) || {};
+  const b = (proje && (proje.boyutlar || (proje.sebeke && proje.sebeke.boyutlar))) || {};
   const k = textH ? textH / STIL.yazi.yukseklik : 1;
   const sayi = (v, d, en, cok) => (Number.isFinite(+v) && +v >= en && +v <= cok ? +v : d);
   return {

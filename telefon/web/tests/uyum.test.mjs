@@ -52,3 +52,31 @@ test('U2 · katman adları Türkçe karaktersiz; eski kodlu / eski katmanlı dos
   assert.equal(geri.hatlar[0].kalemler[0].cins, 'AG_ALÜMİNYUM_KABLO', 'yazarken hep yeni kod');
   assert.ok(!/ALİMİNYUM|"KOFRA"|[ÇŞÜ]_|MÜŞ/.test(JSON.stringify({ e: geri.elemanlar, h: geri.hatlar }).replace(/"tanim":"[^"]*"/g, '')), 'yazılan dosyada eski kod ve Türkçe karakterli katman yok');
 });
+
+test('U3 · simge ve yazı boyutları proje dosyasında (proje.boyutlar): eklentiyle aynı alanlar, varsayılan yazılmaz', () => {
+  // Eklentideki ProjeDosyasi aynı alan adlarını yazar ve okur
+  const cs = fs.readFileSync(path.join(KOK, 'autocad/src/Cekirdek/ProjeDosyasi.cs'), 'utf8');
+  for (const k of Object.keys(SH.BOYUT_VARSAYILAN)) assert.ok(cs.includes('"' + k + '"'), 'eklenti de yazıyor: ' + k);
+  assert.ok(cs.includes('pj["boyutlar"]') && cs.includes('pj.Nesne("boyutlar")'), 'eklentide proje.boyutlar');
+  const model = fs.readFileSync(path.join(KOK, 'autocad/src/Cekirdek/Model.cs'), 'utf8');
+  const v = SH.BOYUT_VARSAYILAN;
+  assert.ok(model.includes('VarsayilanSimge = ' + v.simgeOlcegi + ',') && model.includes('VarsayilanEtiket = ' + v.etiketYuksekligi + ',') &&
+    model.includes('VarsayilanMetraj = ' + v.metrajYuksekligi + ',') && model.includes('VarsayilanEleman = ' + v.elemanYaziYuksekligi + ';'), 'varsayılanlar iki tarafta aynı');
+
+  assert.equal(SH.boyutlarOku(null), null);
+  assert.equal(SH.boyutlarOku(Object.assign({}, v)), null, 'hepsi varsayılansa yazılmaz');
+  assert.deepEqual(SH.boyutlarOku({ simgeOlcegi: 2, etiketYuksekligi: '2,5' }), { simgeOlcegi: 2, etiketYuksekligi: 2.5, metrajYuksekligi: 1.44, elemanYaziYuksekligi: 1.8 }, 'eksik alan varsayılan, virgüllü sayı okunur');
+  assert.deepEqual(SH.boyutlarOku({ simgeOlcegi: 99, metrajYuksekligi: -1, elemanYaziYuksekligi: 3 }), { simgeOlcegi: 1, etiketYuksekligi: 1.8, metrajYuksekligi: 1.44, elemanYaziYuksekligi: 3 }, 'aralık dışı değer varsayılana döner');
+
+  const dosya = { bicim: SH.BICIM, surum: 1, proje: { ad: 'Deneme', katmanOnEki: 'SC', koordinat: { dom: 39 }, boyutlar: { simgeOlcegi: 1.5, etiketYuksekligi: 2, metrajYuksekligi: 1.6, elemanYaziYuksekligi: 2.2 } } };
+  const p = SH.projeOku(JSON.stringify(dosya));
+  assert.deepEqual(p.proje.boyutlar, dosya.proje.boyutlar, 'okunur');
+  const geri = JSON.parse(SH.projeYaz(p));
+  assert.deepEqual(geri.proje.boyutlar, dosya.proje.boyutlar, 'yazılır');
+  const anahtarlar = Object.keys(geri.proje);
+  assert.equal(anahtarlar.indexOf('boyutlar'), anahtarlar.indexOf('gisOnEki') + 1, 'eklentideki sırayla: gisOnEki ardından');
+  p.proje.boyutlar = Object.assign({}, v);
+  assert.equal(JSON.parse(SH.projeYaz(p)).proje.boyutlar, undefined, 'varsayılan boyutlar yazılmaz');
+  const bos = SH.projeOku(JSON.stringify({ bicim: SH.BICIM, surum: 1, proje: { ad: 'X', boyutlar: { simgeOlcegi: 1 } } }));
+  assert.equal(bos.proje.boyutlar, undefined, 'varsayılan boyutlar okununca da düşer');
+});

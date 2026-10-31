@@ -1105,6 +1105,24 @@ namespace SebekeHakedis.Test
             try { ProjeDosyasi.Oku("{\"format\":\"volt-project/2\",\"project\":{},\"data\":{}}"); }
             catch (FormatException ex) { hata = ex.Message; }
             Esit(true, hata.Contains("AutoCAD bölümü"), "eski telefon dosyasında anlaşılır hata");
+
+            // Simge ve yazı boyutları (proje.boyutlar): varsayılansa yazılmaz; telefonla aynı alan adları (uyum.test.mjs U3)
+            Esit(false, yazilan.Contains("\"boyutlar\""), "varsayılan boyutlar dosyaya yazılmaz");
+            kopya.Boyutlar = new Boyutlar { SimgeOlcegi = 1.5, EtiketYuksekligi = 2, MetrajYuksekligi = 1.6, ElemanYaziYuksekligi = 2.2 };
+            string boyutlu = ProjeDosyasi.Yaz(kopya, "test");
+            var bg = ProjeDosyasi.Oku(boyutlu).Boyutlar;
+            Esit(true, bg != null && bg.Ayni(kopya.Boyutlar), "boyutlar dosyadan okunur (" + bg + ")");
+            Esit(true, ProjeDosyasi.Oku(ProjeDosyasi.VoltYaz(kopya, "test")).Boyutlar.Ayni(kopya.Boyutlar), "boyutlar telefon dosyasında da");
+            var bozuk = ProjeDosyasi.Oku("{\"bicim\":\"sebeke-hakedis.proje\",\"surum\":1,\"proje\":{\"ad\":\"D\",\"boyutlar\":{\"simgeOlcegi\":99,\"etiketYuksekligi\":2.5}}}").Boyutlar;
+            Esit("1 2,5 1,44 1,8", bozuk.SimgeOlcegi.ToString(CultureInfo.GetCultureInfo("tr-TR")) + " " + bozuk.EtiketYuksekligi.ToString(CultureInfo.GetCultureInfo("tr-TR")) + " " +
+                 bozuk.MetrajYuksekligi.ToString(CultureInfo.GetCultureInfo("tr-TR")) + " " + bozuk.ElemanYaziYuksekligi.ToString(CultureInfo.GetCultureInfo("tr-TR")),
+                 "aralık dışı boyut varsayılana döner, eksik alan varsayılan");
+            var ayar = new CizimAyarlari();
+            Esit(false, ayar.BoyutlarDegisik, "yeni çizimde boyutlar varsayılan");
+            ayar.BoyutlariKoy(kopya.Boyutlar);
+            Esit(true, ayar.BoyutlarDegisik && ayar.BoyutlariVer().Ayni(kopya.Boyutlar), "ayarlara alınan boyutlar");
+            var ayar2 = CizimAyarlari.Ciftlerden(ayar.Ciftler());
+            Esit(true, ayar2.BoyutlariVer().Ayni(kopya.Boyutlar), "boyutlar çizimin ayarlarında saklanır");
         }
 
         /// <summary>İki projenin Durum Tespit satır sayısı ve kg toplamı farkı (0 = aynı).</summary>

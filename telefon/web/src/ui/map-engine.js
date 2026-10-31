@@ -19,9 +19,20 @@ export class MapEngine {
     this.layers = { basemap: true, grid: true, labels: true, spanText: true, AG: true, OG: true, AYD: true, ENH: true, ABONE: true, yeralti: true, trafo: true, mevcut: true, demontaj: true, points: true, hak: true, srcTags: true };
     this.tiles = new Map(); this.tileQueue = new Set();
     this.measure = null; this.preview = null; this.dragNode = null; this.crosshair = false;
+    // Simge ve yazı büyüklüğü (Ayarlar › Harita görünümü; yalnız bu cihazda): 1 = varsayılan
+    this.olcek = { simge: 1, yazi: 1 };
     this.bind(); this.resize(); this.loop();
   }
   destroy() { this.dead = true; this.ro && this.ro.disconnect(); }
+  /** Simge ve yazı büyüklüğü: { simge, yazi } (0,5 … 3 kat). */
+  setOlcek(o) {
+    const k = (v) => (Number.isFinite(+v) && +v >= 0.5 && +v <= 3 ? +v : 1);
+    const n = { simge: k(o && o.simge), yazi: k(o && o.yazi) };
+    if (n.simge === this.olcek.simge && n.yazi === this.olcek.yazi) return;
+    this.olcek = n; this.dirty = true;
+  }
+  /** Ölçekli yazı tipi: '600 10px …' → büyüklük çarpanıyla. */
+  font(agirlik, px, aile = 'JetBrains Mono, monospace') { return agirlik + ' ' + (px * this.olcek.yazi).toFixed(1) + 'px ' + aile; }
   bind() {
     const c = this.c;
     c.addEventListener('pointerdown', (e) => this.down(e));
@@ -119,7 +130,8 @@ export class MapEngine {
   hitTest(x, y, pointsOnly) {
     const d = this.o.getData();
     let best = null;
-    for (const e of d.equipment) { const p = d.pointMap.get(e.pointId); if (!p || p.E == null) continue; const s = this.toScreen(p.E, p.N); const dd = Math.hypot(s.x - x, s.y - y); if (dd < 22 && (!best || dd < best.d)) best = { d: dd, kind: 'point', ref: p, eq: e }; }
+    const ks = Math.max(1, this.olcek.simge);
+    for (const e of d.equipment) { const p = d.pointMap.get(e.pointId); if (!p || p.E == null) continue; const s = this.toScreen(p.E, p.N); const dd = Math.hypot(s.x - x, s.y - y); if (dd < 22 * ks && (!best || dd < best.d)) best = { d: dd, kind: 'point', ref: p, eq: e }; }
     for (const p of d.points) { if (p.E == null) continue; const s = this.toScreen(p.E, p.N); const dd = Math.hypot(s.x - x, s.y - y); if (dd < 18 && (!best || dd < best.d - 2)) best = { d: dd, kind: 'point', ref: p, eq: (d.eqByPoint.get(p.id) || [])[0] || null }; }
     if (best || pointsOnly) return best;
     for (const l of d.lines) {
@@ -166,11 +178,11 @@ export class MapEngine {
       if (l.state === 'DEMONTAJ' && this.layers.demontaj) { g.strokeStyle = '#ffff00'; g.lineWidth = 1.5; g.setLineDash([3, 5]); this.path(g, n); g.stroke(); g.setLineDash([]); }
       if (l.musterek && this.layers.AG) { g.strokeStyle = LCOL.AG; g.lineWidth = 1.5; this.path(g, n, 4); g.stroke(); }
       if (this.layers.spanText && this.view.res < 1.2) {
-        g.font = '600 10px JetBrains Mono, monospace'; g.fillStyle = '#cbd5e1'; g.textAlign = 'center';
+        g.font = this.font('600', 10); g.fillStyle = '#cbd5e1'; g.textAlign = 'center';
         for (let i = 0; i < n.length - 1; i++) {
           const a = this.toScreen(n[i].E, n[i].N), b = this.toScreen(n[i + 1].E, n[i + 1].N);
           let ang = Math.atan2(b.y - a.y, b.x - a.x); if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
-          g.save(); g.translate((a.x + b.x) / 2, (a.y + b.y) / 2); g.rotate(ang); g.fillText(Math.hypot(n[i + 1].E - n[i].E, n[i + 1].N - n[i].N).toFixed(2), 0, -6); g.restore();
+          g.save(); g.translate((a.x + b.x) / 2, (a.y + b.y) / 2); g.rotate(ang); g.fillText(Math.hypot(n[i + 1].E - n[i].E, n[i + 1].N - n[i].N).toFixed(2), 0, -6 * this.olcek.yazi); g.restore();
         }
       }
     }
@@ -181,21 +193,23 @@ export class MapEngine {
     }
     // Noktalar ve ekipman
     const labels = this.layers.labels && this.view.res < 2;
+    const ks = this.olcek.simge, ky = this.olcek.yazi;
     for (const p of d.points) {
       if (p.E == null) continue;
       const s = this.toScreen(p.E, p.N);
       if (s.x < -40 || s.y < -40 || s.x > this.w + 40 || s.y > this.h + 40) continue;
       const eqs = d.eqByPoint.get(p.id) || [];
       const isSel = sel.type === 'point' && sel.id === p.id;
-      if (isSel) { g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(s.x, s.y, 16, 0, Math.PI * 2); g.stroke(); }
+      if (isSel) { g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(s.x, s.y, 16 * ks, 0, Math.PI * 2); g.stroke(); }
       const si = d.srcInfo ? d.srcInfo(p) : null;
       if (!eqs.length) { if (this.layers.points) this.cross(g, s, si && !si.precise ? si.color : '#e2e8f0'); }
       // Hakediş görünümü: objenin çevresinde durum renginde halka
       // Uzak ölçekte halka küçülür; çok uzakta obje yalnız durum renginde nokta olarak çizilir (üst üste binmeyi önler)
-      const far = this.view.res > 2.5, hr = this.view.res < 0.8 ? 14 : this.view.res < 2.5 ? 10 : 5;
+      const far = this.view.res > 2.5, hr = (this.view.res < 0.8 ? 14 : this.view.res < 2.5 ? 10 : 5) * ks;
       const hc = this.layers.hak && d.hakColor && eqs.length ? d.hakColor(eqs[0]) : null;
       if (hc) { g.fillStyle = hc; g.globalAlpha = far ? 0.95 : 0.22; g.beginPath(); g.arc(s.x, s.y, hr, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; if (!far) { g.strokeStyle = hc; g.lineWidth = 2.5; g.beginPath(); g.arc(s.x, s.y, hr, 0, Math.PI * 2); g.stroke(); } }
-      if (!(far && hc)) for (const e of eqs) this.symbol(g, s, e, d);
+      // Simge büyüklüğü: simge kendi merkezinde ölçeklenir
+      if (!(far && hc)) for (const e of eqs) { if (ks !== 1) { g.save(); g.translate(s.x, s.y); g.scale(ks, ks); g.translate(-s.x, -s.y); } this.symbol(g, s, e, d); if (ks !== 1) g.restore(); }
       // Hassas olmayan kaynak (telefon · manuel · Excel · harita · FLOAT): sağ altta kaynak renginde küçük işaret (her ölçekte)
       if (this.layers.srcTags && si && !si.precise && eqs.length && !far) { g.fillStyle = si.color; g.strokeStyle = '#0b1326'; g.lineWidth = 1.5; g.beginPath(); g.arc(s.x + 8, s.y + 8, 3.5, 0, Math.PI * 2); g.fill(); g.stroke(); }
       // Enerji kontrolü: enerjisiz obje kırmızı çarpı, kaynak sarı halka
@@ -206,14 +220,15 @@ export class MapEngine {
       if (en && (en.sources.og.includes(p.id) || en.sources.ag.includes(p.id))) { g.strokeStyle = '#fde047'; g.lineWidth = 3; g.setLineDash([]); g.beginPath(); g.arc(s.x, s.y, 17, 0, Math.PI * 2); g.stroke(); g.fillStyle = '#fde047'; g.font = '800 13px JetBrains Mono, monospace'; g.textAlign = 'center'; g.fillText('ϟ', s.x, s.y - 20); g.textAlign = 'left'; }
       if (p.source === 'PHONE' && !far) { g.strokeStyle = '#38bdf8'; g.lineWidth = 1; g.setLineDash([2, 3]); g.beginPath(); g.arc(s.x, s.y, 18, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
       if (labels) {
-        g.font = '700 11px JetBrains Mono, monospace'; g.textAlign = 'left';
+        g.font = this.font('700', 11); g.textAlign = 'left';
         const t = (eqs[0] ? eqs[0].no : p.pointNo) || '';
+        const lx = s.x + 10 * ks;
         const col = eqs[0] && eqs[0].kind === 'pole' && d.groupVolt(eqs[0]) === 'OG' ? '#ff8a8a' : eqs[0] && eqs[0].kind === 'transformer' ? '#8ea2ff' : '#dae2fd';
-        g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.9)'; g.strokeText(t, s.x + 10, s.y - 9); g.fillStyle = col; g.fillText(t, s.x + 10, s.y - 9);
+        g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.9)'; g.strokeText(t, lx, s.y - 9 * ks); g.fillStyle = col; g.fillText(t, lx, s.y - 9 * ks);
         const ri = eqs[0] && d.roles.get(eqs[0].id);
-        if (ri && ri.role === 'Z' && ri.angle) { g.font = '600 10px JetBrains Mono, monospace'; g.fillStyle = '#fbbf24'; g.fillText('α ' + ri.angle.toFixed(1) + '°', s.x + 10, s.y + 16); }
+        if (ri && ri.role === 'Z' && ri.angle) { g.font = this.font('600', 10); g.fillStyle = '#fbbf24'; g.fillText('α ' + ri.angle.toFixed(1) + '°', lx, s.y + 6 * ks + 10 * ky); }
         // Veri kaynağı etiketi: hassas olmayanlar her zaman, RTK FIX yalnız yakın ölçekte
-        if (this.layers.srcTags && si && (si.precise ? this.view.res < 0.12 : this.view.res < 0.45)) { g.font = '700 9px JetBrains Mono, monospace'; g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.9)'; g.strokeText('[' + si.tag + ']', s.x + 10, s.y + 3); g.fillStyle = si.color; g.fillText('[' + si.tag + ']', s.x + 10, s.y + 3); }
+        if (this.layers.srcTags && si && (si.precise ? this.view.res < 0.12 : this.view.res < 0.45)) { g.font = this.font('700', 9); g.lineWidth = 3; g.strokeStyle = 'rgba(10,17,34,.9)'; g.strokeText('[' + si.tag + ']', lx, s.y + 3 * ks); g.fillStyle = si.color; g.fillText('[' + si.tag + ']', lx, s.y + 3 * ks); }
       }
     }
     // Sürükleme

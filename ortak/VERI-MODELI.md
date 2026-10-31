@@ -21,7 +21,7 @@ Karışıklık olmasın diye eksenler açık adla tutulur:
 ```
 {
   "bicim": "sebeke-hakedis.proje", "surum": 1,
-  "proje":    { ad, kaynak, koordinat{sistem, datum, dom}, aktifHakedis, katmanOnEki, gisOnEki, onaylar[] },
+  "proje":    { ad, kaynak, koordinat{sistem, datum, dom}, aktifHakedis, katmanOnEki, gisOnEki, boyutlar{}, onaylar[] },
   "bolgeler": [ { id, ad, kod, grup, sinir[[saga,yukari]...] } ],           alt projeler (eski program: BÖLGE)
   "noktalar": [ { id, ad, kod, saga, yukari, kot, hakedis, bolge } ],          saha ölçüm noktaları (NOKTA AL)
   "elemanlar":[ { id, tur, gisId, cins, tip, durum, hakedis, bolge, saga, yukari, aci, guc, gerilim, dmDurum, kontrol, kalemler[], ekVeri{} } ],
@@ -40,6 +40,10 @@ Karışıklık olmasın diye eksenler açık adla tutulur:
   tarafta da varsa daha yeni `tarih` kazanır. Eklentide kayıtlar çizimin sözlüğünde (`SEBEKE_HAKEDIS › HESAPLAR`),
   telefonda `documents` tablosunda (`kind: 'HESAP'`) durur.
 
+- `proje.boyutlar`: çizimin simge ve yazı boyutları `{ simgeOlcegi, etiketYuksekligi, metrajYuksekligi, elemanYaziYuksekligi }`
+  (simge kat; yazılar metre). Eklentide Çizim Ayarları › Görünüm, telefonda Dışa Aktarım › Çizim boyutları; telefonun DXF'i
+  bunlarla çizer. Hepsi varsayılansa (1 kat · 1,8 · 1,44 · 1,8 m) yazılmaz. Alırken ayarlanmış olan kazanır: çizimde
+  varsayılansa telefondakiler alınır, ikisi de ayarlıysa çizimdeki kalır (telefon da AutoCAD'den gelenleri alır).
 - `proje.onaylar`: hakediş onayları `[{ no, kontrol, hakedis, gis }]` (eski program `HAK_ONAY`; sıra kontrol → hakediş → GIS).
   Hakediş onayı olan hakediş eklentide kilitlidir. Telefonda onaylanan dönem `kontrol + hakedis` olarak yazılır;
   eklenti telefondan gelen onayları çizimdekilere ekler (onay geri alınmaz).

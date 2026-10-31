@@ -1354,6 +1354,20 @@ namespace SebekeHakedis.Eklenti
                                      "Koordinatlar uyuşmayabilir. Yine de aktarılsın mı?", false))
                     return;
 
+                // Simge ve yazı boyutları: çizimde ayarlanmamışsa (varsayılan) telefondakiler alınır (aktarım onaylanınca);
+                // ikisi de ayarlıysa çizimdeki kalır (değiştirmek için Çizim Ayarları › Görünüm)
+                bool boyutAl = tel.Boyutlar != null && !tel.Boyutlar.Ayni(o.Ayar.BoyutlariVer()) && !o.Ayar.BoyutlarDegisik;
+                if (tel.Boyutlar != null && !tel.Boyutlar.Ayni(o.Ayar.BoyutlariVer()) && !boyutAl)
+                    ed.WriteMessage("\nNot: telefondaki boyutlar (" + tel.Boyutlar + ") bu çizimdekinden farklı; çizimdeki kullanılacak.");
+                bool boyutlariUygula = boyutAl && o.Proje.Elemanlar.Count + o.Proje.Hatlar.Count + o.Proje.Kanallar.Count + o.Proje.Sondajlar.Count > 0;
+                Action boyutlariAl = () =>
+                {
+                    if (!boyutAl) return;
+                    o.Ayar.BoyutlariKoy(tel.Boyutlar);
+                    o.AyarKaydet();
+                    ed.WriteMessage("\nTelefondaki simge ve yazı boyutları alındı: " + tel.Boyutlar + ".");
+                };
+
                 ed.WriteMessage("\nKarşılaştırılıyor...");
                 var plan = Aktarim.Planla(o.Varliklar, tel, o.OnEk, o.Proje.Onaylar);
                 // Telefonda onaylanan hakedişler (dönem onayı): aktarımdan sonra çizimin onay kaydına da eklenir
@@ -1381,6 +1395,8 @@ namespace SebekeHakedis.Eklenti
                                      (plan.Kilitliler.Count + plan.KilitliSilinenler.Count > 0
                                          ? "\n\nOnaylı (kilitli) hakedişe dokunduğu için aktarılmayan: " + (plan.Kilitliler.Count + plan.KilitliSilinenler.Count) + " değişiklik."
                                          : ""));
+                    boyutlariAl();
+                    BoyutlariUygulaSor(belge, boyutlariUygula);
                     return;
                 }
 
@@ -1405,6 +1421,7 @@ namespace SebekeHakedis.Eklenti
                     oz.Onaylar.Add(n + ". hakediş → " + HakedisOnayi.Metin(birlesikOnay[n]) + (HakedisOnayi.Kilitli(birlesikOnay, n) ? " (kilitlenecek)" : ""));
                 for (int i = 0; i < plan.Uyarilar.Count && i < 8; i++) oz.Uyarilar.Add(plan.Uyarilar[i]);
                 if (!Pencereler.AktarimOnayi(oz)) return;
+                boyutlariAl();
 
                 bool sil = false;
                 if (plan.Silinenler.Count > 0)
@@ -1514,7 +1531,17 @@ namespace SebekeHakedis.Eklenti
                 Pencereler.Bilgi("Aktarım tamamlandı.\n\nEklenen: " + eklenen + "\nGüncellenen: " + guncellenen + (sil ? "\nSilinen: " + silinen : "") +
                                  (hesapYeni + hesapGuncel > 0 ? "\nTeknik hesap kaydı: " + hesapYeni + " yeni, " + hesapGuncel + " güncellendi" : "") +
                                  "\n\nBeğenmezseniz AutoCAD'in Geri Al (U) komutu aktarımın tamamını geri alır.");
+                BoyutlariUygulaSor(belge, boyutlariUygula);
             });
+        }
+
+        /// <summary>Telefondan yeni boyutlar alındıysa çizimde önceden olan nesnelere de uygulanması sorulur (Telefon Görünümü).</summary>
+        private static void BoyutlariUygulaSor(Document belge, bool sor)
+        {
+            if (!sor) return;
+            if (!Pencereler.Onay("Telefondaki simge ve yazı boyutları bu çizime alındı. Çizimde önceden olan nesnelerin simge ve yazıları da bu boyutlara getirilsin mi?\n\n(Telefon Görünümü; veriye dokunulmaz.)"))
+                return;
+            GorunumuUygula(Ortam.Hazirla(belge));
         }
 
         // ================= Yardımcılar =================

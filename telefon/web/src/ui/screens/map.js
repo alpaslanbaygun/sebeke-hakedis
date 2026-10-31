@@ -96,13 +96,15 @@ export function MapScreen() {
     else if (app.state.view) e.center(app.state.view.cE, app.state.view.cN, app.state.view.res);
     else if (!e.fit(ps.data.points)) { if (G0.E != null) e.center(G0.E, G0.N, 0.4); else e.center(500000, 4280000, 50); }
     if (app.state.layers) Object.assign(e.layers, app.state.layers);
+    e.setOlcek(app.state.haritaOlcek);
+    const off6 = app.bus.on('settings:change', () => e.setOlcek(app.state.haritaOlcek));
     let first = !app.state.view && !ps.data.points.length;
     const off1 = app.bus.on('gnss:state', () => { const G = app.gnss.state; if (G.E != null && (app.state.follow || first)) { e.center(G.E, G.N, first ? 0.4 : undefined); first = false; } e.invalidate(); });
     const off5 = app.bus.on('data:change', (c) => { if (c.store === 'points' && c.op === 'create' && c.after && c.after.E != null && !e.inView(c.after.E, c.after.N, 30)) e.center(c.after.E, c.after.N); });
     const off2 = app.bus.on('project:computed', () => e.invalidate());
     const off3 = app.bus.on('ui:measuring', (m) => setMeasuring(m));
     const off4 = app.bus.on('ui:measureProgress', (p) => setMeasuring((m) => (m ? Object.assign({}, m, p) : m)));
-    return () => { off1(); off2(); off3(); off4(); off5(); if (ro) ro.disconnect(); if (app.web) window.removeEventListener('resize', syncPad); e.destroy(); };
+    return () => { off1(); off2(); off3(); off4(); off5(); off6(); if (ro) ro.disconnect(); if (app.web) window.removeEventListener('resize', syncPad); e.destroy(); };
   }, []);
   // v2.4: otomatik reçete artık proje ayarı (varsayılan kapalı). Önceki sürümde oluşturulmuş, içinde kayıt olan projede bir kez sorulur;
   // kullanıcı seçene kadar hesap eski düzende (açık) kalır → metraj sessizce değişmez.
