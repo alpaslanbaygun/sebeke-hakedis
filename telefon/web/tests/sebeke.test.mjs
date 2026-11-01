@@ -10,7 +10,7 @@ import { lineLabel, circuitParts, autocadAnahtari } from '../src/grid/lines.js';
 import KALEMLER from '../src/ortak/kalemler.js';
 import KATSAYILAR from '../src/ortak/katsayilar.js';
 import { exportFormat } from '../src/export/exporter.js';
-import { makeCrs, project as projLL, unproject as unprojLL } from '../src/geo/crs.js';
+import { makeCrs, project as projLL } from '../src/geo/crs.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(here, 'out/'); fs.mkdirSync(OUT, { recursive: true });
@@ -738,7 +738,6 @@ test('A31 · (hata 2) ED50 dosyası yeni proje olarak alınınca datum korunur; 
 
 test('A32 · (hata 7) yeniden içe alma: var olan elemanın kotu ve bağımsız noktanın konumu / kotu dosyadan güncellenir, kopya üretilmez, kilitli kayıt korunur', async () => {
   const { ps } = await setup();
-  const tr = makeCrs({ datum: 'TUREF', projection: 'TM3', cm: 39 });
   const sp = SH.yeniProje({ ad: 'Düzeltme denemesi', dom: 39 });
   sp.elemanlar.push({ id: 'E1', tur: 'ENH_DIREK', gisId: 'SC1', cins: 'ENH_DEMİR_GLV', tip: 'G-D-10 (sw)', durum: 'M', hakedis: 1, bolge: 'B1', saga: 519000, yukari: 4282000, kot: 100, aci: 0, kalemler: [] });
   sp.elemanlar.push({ id: 'E2', tur: 'ENH_DIREK', gisId: 'SC2', cins: 'ENH_DEMİR_GLV', tip: 'G-D-10 (sw)', durum: 'M', hakedis: 1, bolge: 'B1', saga: 519080, yukari: 4282000, kot: 100, aci: 0, kalemler: [] });
