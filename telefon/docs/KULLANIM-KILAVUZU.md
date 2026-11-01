@@ -2,7 +2,7 @@
 
 6 Ekim 2026
 
-Bu kılavuz, Şebeke-M telefon uygulamasının (eski adıyla VOLT-EDAŞ Saha) 2.4.0 ve sonraki (2.5.x) sürümlerini sahada kullanacak kişiler içindir. Uygulama Android telefonda çalışır; internet olmadan da kayıt alır.
+Bu kılavuz, Şebeke-M telefon uygulamasının 2.4.0 ve sonraki (2.5.x) sürümlerini sahada kullanacak kişiler içindir. Uygulama Android telefonda çalışır; internet olmadan da kayıt alır.
 
 ## Uygulama ne işe yarar
 
@@ -383,7 +383,7 @@ Abone ve "Diğer" türü objeler hatta kendiliğinden bağlanmaz.
 
 ### Yeraltı kablosu ve kanal
 
-Yeraltı hattında önce `Kaplama` (`Toprak`, `Tüvenan`, `Asfalt`, `Beton`, `Parke taşı`), sonra `Yöntem` seçilir. `Derinlik (m)` zorunludur; girilmeden hat başlamaz.
+Yeraltı hattında önce `Kaplama` (`Toprak`, `Tuvenan`, `Asfalt`, `Beton`, `Parke taşı`), sonra `Yöntem` seçilir. `Derinlik (m)` zorunludur; girilmeden hat başlamaz.
 
 | Yöntem | Uygulamanın hesapladığı |
 | --- | --- |
@@ -475,7 +475,7 @@ Haritanın görünümü sağ üstteki Katmanlar düğmesinden ayarlanır; proje 
 
 Katmanlar penceresinin altındaki `Altlık` listesinden seçilir. Üç grup vardır:
 
-- **Ücretsiz (anahtarsız)**: `OpenStreetMap`, `OpenTopoMap (topoğrafik)`, `Esri uydu görüntüsü`. Her zaman kullanılabilir.
+- **Ücretsiz (anahtarsız)**: `OpenStreetMap`, `OpenTopoMap (topografik)`, `Esri uydu görüntüsü`. Her zaman kullanılabilir.
 - **Anahtarlı (ücretsiz katmanı olan)**: `MapTiler sokak`, `MapTiler uydu`, `Esri uydu (ArcGIS anahtarı)`, `Google harita`, `Google uydu`, `Google uydu + yol adları`, `Bing uydu`, `Bing uydu + yol adları`, `Azure Maps uydu`, `Azure Maps yol haritası`, `Yandex harita`. Kendi anahtarınızı Ayarlar › Harita › "Harita altlığı" bölümüne yazın; anahtar girilmemişse o altlık listede kapalı görünür ve denenmez (anahtarsız genel adresler kaldırıldı; sağlayıcı koşullarına uymuyordu). Bing yalnız kurumsal (Enterprise) anahtarla çalışır; yeni anahtar alacaksanız Azure Maps'i seçin. Liste AutoCAD eklentisinin altlık listesiyle aynıdır.
 - **Özel**: kendi karo sunucunuz (XYZ adresi: `{z}`, `{x}`, `{y}` ya da Bing tipi `{q}`).
 
@@ -795,7 +795,7 @@ Onay mekanizması başlangıçta kapalıdır; kapalıyken durumu herkes değişt
 
 ### Roller ve adımlar
 
-*(Çizim: hakediş onay akışı · 6 durum, 4 rol — Drive\'daki PDF kılavuzda görülür.)*
+*(Çizim: hakediş onay akışı · 6 durum, 4 rol — Drive'daki PDF kılavuzda görülür.)*
 
 Geri çevirme her zaman gerekçe ister. Kimin, ne zaman, hangi adımı attığı objenin kayıt ekranındaki "Onay geçmişi"nde ve Denetim kaydında görünür.
 
@@ -872,7 +872,7 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 
 Büroda eski program çizimleriyle çalışan Şebeke-M AutoCAD eklentisi aynı proje dosyasını kullanır:
 
-1. AutoCAD'de **ŞEBEKE HAKEDİŞ › Telefona Gönder** ile yazılan dosyayı Drive'a koyun.
+1. AutoCAD'de **ŞEBEKE-M ARAÇLAR › Telefon › Telefona Gönder** ile yazılan dosyayı Drive'a koyun.
 2. Telefonda **Projeler › AutoCAD dosyasından proje al** (ya da açık projede **Proje merkezi › AutoCAD dosyasını bu
    projeye al**) ile seçin. Direkler, hatlar, kanallar, bölgeler ve malzemeler gelir; telefon kataloğunda bulunamayan
    kalemler Poz Kataloğu'nda "AutoCAD" kategorisinde DOĞRULANACAK olarak görünür.

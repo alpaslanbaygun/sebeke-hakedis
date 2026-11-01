@@ -485,7 +485,9 @@
     ['HERM.', 'HERMETİK'], ['ARM.', 'ARMATÜR'], ['K.B.', 'KABLO BAŞLIĞI'], ['K.B', 'KABLO BAŞLIĞI'], ['SİGOR.', 'SİGORTALI'],
     ['TOPR.', 'TOPRAKLAMALI'], ['KÖŞEB.', 'KÖŞEBENT'], ['KÖŞEBNT', 'KÖŞEBENT'], ['TRAV.', 'TRAVERS'], ['HÜC.', 'HÜCRESİ'], ['PLMR', 'POLİMER'],
     ['PN.', 'PANO'], ['D.T.', 'DT'], ['D.T', 'DT'], ['H.T.', 'HT'], ['H.T', 'HT'], ['ALM.', 'Al'],
-    ['TUTANAGI', 'TUTANAĞI'], ['SÜKÜLMESİ', 'SÖKÜLMESİ'], ['İZOLATOR', 'İZOLATÖR'], ['KANCASİ', 'KANCASI'], ['PARAFUDUR', 'PARAFUDR'], ['MAŞON', 'MANŞON']
+    ['TUTANAGI', 'TUTANAĞI'], ['SÜKÜLMESİ', 'SÖKÜLMESİ'], ['İZOLATOR', 'İZOLATÖR'], ['KANCASİ', 'KANCASI'], ['PARAFUDUR', 'PARAFUDR'], ['MAŞON', 'MANŞON'],
+    // 1.11.2026: katalog tanımlarındaki yazım hataları (kayıt aynı kalır; yalnız görünen yazı) — MalzemeYazimi.cs ile aynı sıra
+    ['ALİMİNYUM', 'ALÜMİNYUM'], ['İZALASYON', 'İZOLASYON'], ['KUBLAJ', 'KUPLAJ'], ['KURTGÖZU', 'KURTGÖZÜ'], ['OTAMATİK', 'OTOMATİK'], ['SECTİONALİSER', 'SECTIONALISER'], ['PIEGON', 'PIGEON'], ['PIGON', 'PIGEON'], ['YAGLI', 'YAĞLI'], ['KOFRA', 'KOFRE'], ['TIP', 'TİP'], ['CİVATA', 'CIVATA'], ['CİVA', 'CIVA'], ['MAGNETİK', 'MANYETİK'], ['COORS', 'CORS'], ['ÖZENGİ', 'ÜZENGİ'], ['FLAMANLI', 'FİLAMANLI'], ['PAPUÇ', 'PABUÇ'], ['ETÜD', 'ETÜT'], ['BUSHİNG', 'BUŞİNG'], ['DOUBE', 'DOUBLE'], ['KAPLAMAS', 'KAPLAMASI']
   ];
   const YZ_BIRIM = [['KVAR', 'kVAr'], ['MVAR', 'MVAr'], ['KVA', 'kVA'], ['KV', 'kV'], ['KA', 'kA'], ['KN', 'kN'], ['KW', 'kW'], ['HZ', 'Hz'], ['MM²', 'mm²'], ['MM', 'mm'], ['CM', 'cm']];
   const YZ_METAL = [['CU', 'Cu'], ['AL', 'Al']];

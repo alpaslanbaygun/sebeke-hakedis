@@ -60,14 +60,14 @@ const EVA_TABAN = [
   ['F', 'YÜK AYIRICILI SİG. TRAFO KORUMA HÜCRESİ', 750, 500],
   ['DS', 'YÜK AYIRICILI BARA BÖLME HÜCRESİ', 1000, 800],
   ['B', 'GAZ AYIRICILI KESİCİLİ GİRİŞ-ÇIKIŞ HÜCRESİ', 1000, 800],
-  ['Otop', 'OTOPRODUKTOR HÜCRESİ', 1400, 900],
-  ['CB', 'ÇİFT GAZ AYIRICILI - KESİCİLİ BARA BAĞLAMA (KUBLAJ) HÜCRESİ', 1500, 1000],
+  ['Otop', 'OTOPRODÜKTÖR HÜCRESİ', 1400, 900],
+  ['CB', 'ÇİFT GAZ AYIRICILI - KESİCİLİ BARA BAĞLAMA (KUPLAJ) HÜCRESİ', 1500, 1000],
   ['CR', 'KABLO BAĞLANTI HÜCRESİ', 750, 500],
   ['McvL', 'YÜK AYIRICILI AKIM-GERİLİM ÖLÇÜ HÜCRESİ', 1000, 800],
   ['McvR', 'AYIRICISIZ AKIM-GERİLİM ÖLÇÜ HÜCRESİ', 1000, 800],
-  ['Mvi', 'GAZ AYIRICILI HÜCRESİ', 750, 500],
+  ['Mvi', 'GAZ AYIRICILI HÜCRE', 750, 500],
   ['McvS', 'GAZ AYIRICILI AKIM-GERİLİM ÖLÇÜ HÜCRESİ', 1000, 800],
-  ['Mv', 'GAZ AYIRICILI HÜCRESİ', 750, 500],
+  ['Mv', 'GAZ AYIRICILI HÜCRE', 750, 500],
   ['DB', 'KESİCİLİ BARA BÖLME HÜCRESİ', 1750, 1200],
   ['BR', 'BARA YÜKSELTME HÜCRESİ', 750, 500],
 ];
@@ -787,8 +787,8 @@ export function kontroller(cabin) {
       } else if (H.length) add('warn', 'Hücre listesinde trafo koruma hücresi yok', 'Her trafo için bir koruma hücresi ekleyin (≤1250 kVA: sigortalı YA veya kesicili · 1600 kVA+: kesicili)');
     }
     add('ok', `Bölüm dağılımı: ${L.kok ? `hücre salonu <b>${L.ygLen}</b> mm (bölmesiz)` : `YG <b>${L.ygLen}</b>${L.trB.map((tb) => ` · TR <b>${tb[1] - tb[0]}</b>`).join('')} mm`} (iç)`,
-      L.kok ? `KÖK: iç uzunluğun tamamı (${L.icBoy} mm) tek hücre mahalidir · duvar ${DUVAR} mm`
-        : `${P.ad} fabrika tipi sabit yerleşim · betopan bölme ${BOLME_D} mm · duvar ${DUVAR} mm${P.hizala === 'orta' ? ' · hücre grubu YG mahalinde ortalanır (AG pano köşesi hizası, DXF)' : ''}`);
+      L.kok ? `KÖK: iç uzunluğun tamamı (${L.icBoy} mm) tek hücre mahallidir · duvar ${DUVAR} mm`
+        : `${P.ad} fabrika tipi sabit yerleşim · betopan bölme ${BOLME_D} mm · duvar ${DUVAR} mm${P.hizala === 'orta' ? ' · hücre grubu YG mahallinde ortalanır (AG pano köşesi hizası, DXF)' : ''}`);
     if (P.cift) {
       add(L.arkaW <= L.arkaNet ? 'ok' : 'bad', `Arka sıra: <b>${L.arkaW}</b> / ${L.arkaNet} mm (${L.arka.length} hücre)`,
         `YG ${L.ygLen} − 2×${L.yanBos} mm yan boşluk · DXF: 8 hücre arka duvara dayalı`);
@@ -814,7 +814,7 @@ export function kontroller(cabin) {
     if (!L.kok) {
       const G0 = trafoGabari(kva);
       add(kva <= 2500 ? 'ok' : 'bad', `Trafo: <b>${kva} kVA</b> × ${L.trAkt.length}${L.trB.length > L.trAkt.length ? ` (+${L.trB.length - L.trAkt.length} yedek bölme)` : ''} — prefabrik köşkte 2500 kVA'ya kadar`,
-        'DXF paftasında trafo mahali 2500 kVA\'ya kadar gösterilmiştir' + (kva >= 2000 ? ' · 2000/2500 kVA gabarisi yaklaşık değerdir, üretici teyidi gerekir' : ''));
+        'DXF paftasında trafo mahalli 2500 kVA\'ya kadar gösterilmiştir' + (kva >= 2000 ? ' · 2000/2500 kVA gabarisi yaklaşık değerdir, üretici teyidi gerekir' : ''));
       add(G0.G <= L.trafoBol - 200 ? 'ok' : 'warn', `Trafo bölmesi: <b>${L.trafoBol} mm</b> · trafo genişliği ${G0.G} mm (radyatör dâhil)`,
         'Trafo bölmesinde iki yanda YÜRÜME YOLU bırakılır (DXF)');
       add('ok', `Ray açıklığı: <b>${rayAcikligi(kva)} mm</b> (${kva} kVA)`, '820 mm\'ye kadar ayarlanabilir olacaktır');
@@ -824,8 +824,8 @@ export function kontroller(cabin) {
         : 'Üretici görünüş paftasıyla birebir: K1 panjursuz (YG) · K2 alt yarısı panjurlu (TR) · çift kanat · konumlar ön duvar iç ölçü zincirinden');
     if (!L.kok) {
       add('ok', `Havalandırma: arka duvarda ${L.trB.length} panjur (trafo bölmesi hizasında)`, 'K2 kapı panjurlarıyla çapraz havalandırma sağlanır');
-      if (L.trB.length > 1) add('ok', 'Personel girişi: ön cephe ortasındaki K1 kapısından', 'EK-1B DXF: PERSONEL GİRİŞİ orta YG mahalindedir');
-      add('ok', `AG pano: <b>1750×750</b> serbest duran × ${L.agPanolar.length}`, 'YG mahalinde, betopan bölme yanında dikey yerleşim (DXF \'P 1750X750\' bloğu) — pano adedi trafo adedini izler; ayrı AG bölmesi ve kısa kenar kapısı yoktur');
+      if (L.trB.length > 1) add('ok', 'Personel girişi: ön cephe ortasındaki K1 kapısından', 'EK-1B DXF: PERSONEL GİRİŞİ orta YG mahallindedir');
+      add('ok', `AG pano: <b>1750×750</b> serbest duran × ${L.agPanolar.length}`, 'YG mahallinde, betopan bölme yanında dikey yerleşim (DXF \'P 1750X750\' bloğu) — pano adedi trafo adedini izler; ayrı AG bölmesi ve kısa kenar kapısı yoktur');
     }
     add('warn', 'Prefabrik şartname madde kontrolleri henüz eklenmedi', 'EK-1A görünüş paftası işlendi; yazılı şartname metni yüklendiğinde madde bazlı uygunluk kontrolleri bu listeye eklenecektir');
     return out;

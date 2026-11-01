@@ -133,7 +133,7 @@ export function overheadQuantities(line, len3D, cat, opts = {}) {
 // Yeraltı kablo: gerçek kablo metrajı = kanal + dikey iniş + çıkış + trafo payı + SDK payı + muf payı + rezerv
 export const CABLE_DEFAULTS = { channelType: 'toprak', width: 0.4, depth: null, sandCm: 20, warningTape: 1, protectionPlate: true, plateLenM: 1.0, concreteCm: 10, pipeDia: 110, pipeCount: 0, manholes: 0, joints: null, drumM: 500, riserM: 8, exitM: 2, trafoM: 5, sdkM: 2, jointM: 1.5, reserveM: 5 };
 // v2.4 · Kanal modeli: KAPLAMA (zeminin üstü) + YÖNTEM (nasıl geçildiği) ayrı seçilir
-export const KAPLAMA = { toprak: 'Toprak', tuvenan: 'Tüvenan', asfalt: 'Asfalt', beton: 'Beton', parke: 'Parke taşı' };
+export const KAPLAMA = { toprak: 'Toprak', tuvenan: 'Tuvenan', asfalt: 'Asfalt', beton: 'Beton', parke: 'Parke taşı' };
 export const YONTEM = { acik: 'Açık kazı', borulu: 'Borulu geçiş', sondaj: 'Yatay sondaj' };
 export const KANAL_VARSAYILAN = {
   kazi: { toprak: '032.12.01.01-003', tuvenan: '032.12.01.01-002', asfalt: 'YEREL:KANAL-ASFALT', beton: 'YEREL:KANAL-BETON', parke: 'YEREL:KANAL-PARKE' },

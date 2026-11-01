@@ -808,7 +808,7 @@ export function hesapN(p) {
     notMN = "MN — YG taşıyıcı, AG nihayet: R = 0,81 × Tmax(AG). Rüzgâr YG'de tam açıklıktan, AG'de yarım açıklıktan gelir.";
   } else if (mus && hal === 'mn' && !yg) {
     Pwz = pwAl(tp, col, mus) / 2;
-    notMN = 'Seçilen kolda YG iletkeni yok (yalnız AG); MN hali uygulanamaz. Cer zaten ' + fmt(AG_YG_IND, 2) + ' ile direk tepesine indirgenmiş AG cerıdır.';
+    notMN = 'Seçilen kolda YG iletkeni yok (yalnız AG); MN hali uygulanamaz. Cer zaten ' + fmt(AG_YG_IND, 2) + ' ile direk tepesine indirgenmiş AG ceridir.';
   } else if (mus && hal === 'mn' && !agT) {
     Pwz = pwAl(tp, col, mus) / 2;
     notMN = 'Seçilen hatta AG iletkeni yok; MN hali uygulanamaz, tek yanlı YG cerine göre hesaplandı.';
@@ -1043,7 +1043,7 @@ export function hesapG(p) {
     uyarilar.push(kf ? ('Tevzi direğinde bileşke ne çıkarsa çıksın demir direk kafes olmak zorundadır; en küçüğü K1\'dir.'
       + (at ? ' (Bileşkenin A-tipi karşılığı ' + at.ad + ' olurdu, seçilmez.)' : '')) : 'Yeterli kafes direk bulunamadı.');
   } else if (at) {
-    uyarilar.push('Branşman direklerinin ilerdeki kesit artışlarına cevap verebilmesi için kafes direk (' + (kf ? kf.ad : '—') + ') seçilmesi tavsiye edilir.');
+    uyarilar.push('Branşman direklerinin ilerideki kesit artışlarına cevap verebilmesi için kafes direk (' + (kf ? kf.ad : '—') + ') seçilmesi tavsiye edilir.');
   } else {
     uyarilar.push(kf ? ('A-tipi yetersiz → kafes ' + kf.ad + ' (' + kf.kap + ' kg)') : 'Yeterli direk bulunamadı.');
   }

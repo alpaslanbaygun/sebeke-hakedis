@@ -99,7 +99,7 @@ export const BASEMAPS = [
   { id: 'osm', grup: 'ucretsiz', label: 'OpenStreetMap', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', maxZoom: 19,
     attr: '© OpenStreetMap katkıda bulunanlar', kosul: 'https://operations.osmfoundation.org/policies/tiles/',
     note: 'Ücretsiz, gönüllü sunucular. Toplu / offline indirme yasak; yoğun kullanımda erişim haber verilmeden kesilebilir.' },
-  { id: 'otm', grup: 'ucretsiz', label: 'OpenTopoMap (topoğrafik)', url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png', maxZoom: 17,
+  { id: 'otm', grup: 'ucretsiz', label: 'OpenTopoMap (topografik)', url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png', maxZoom: 17,
     attr: '© OpenStreetMap katkıda bulunanlar, SRTM · © OpenTopoMap (CC-BY-SA)', kosul: 'https://opentopomap.org/about',
     note: 'Ücretsiz; sunucu kapasitesi sınırlı, toplu indirme yok. Eş yükselti eğrili.' },
   { id: 'esri', grup: 'ucretsiz', label: 'Esri uydu görüntüsü', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', maxZoom: 19,

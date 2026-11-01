@@ -109,7 +109,7 @@ Ayrıntı için telefon kılavuzuna bakın; AutoCAD ile birlikte çalışırken 
   Objenin ekranında hakediş kodu ayrıca seçilebilir: **KM** (kurum malzemesi, yüklenici montajı), **ENH**
   (kilometrik bedelli iş), **ME** (mutabakat eksiği); demontajda **KESİK / SÖKÜK**. AutoCAD'den gelen kod korunur.
   **"İleride" durumundaki objeler AutoCAD dosyasına yazılmaz.**
-- **Hat**: başlangıç ve bitiş direğine dokunun; iletken / kablo tipini seçin. Yeraltında kaplama (toprak, tüvenan,
+- **Hat**: başlangıç ve bitiş direğine dokunun; iletken / kablo tipini seçin. Yeraltında kaplama (toprak, tuvenan,
   asfalt, beton, parke) ve yöntem (açık kazı, borulu geçiş, yatay sondaj) AutoCAD'de kanal / sondaj nesnesi olur.
 - **Malzeme**: objeye dokunun › **Malzeme ekle** (katalogdan). AutoCAD'den gelen malzemeler aynen korunur.
 - **Teknik hesaplar**: objenin ekranında **Hesaplar** düğmesi (direk, trafo, hat) ya da **Hesaplar › Teknik

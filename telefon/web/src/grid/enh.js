@@ -44,7 +44,7 @@ export function sectionStates(spansA, mech, kgPerKm, zone, enh) {
   const states = [
     { id: 'S1', label: zone.tMin + '°C buzsuz', t: zone.tMin, g: L.g0 },
     { id: 'S2', label: enh.iceTemp + '°C buzlu', t: enh.iceTemp, g: zone.iceK > 0 ? L.gIce : L.g0 },
-    { id: 'S3', label: '+' + enh.windTemp + '°C rüzgarlı', t: enh.windTemp, g: L.gWind },
+    { id: 'S3', label: '+' + enh.windTemp + '°C rüzgârlı', t: enh.windTemp, g: L.gWind },
     { id: 'S4', label: '+' + zone.tMax + '°C (en büyük sehim)', t: zone.tMax, g: L.g0 },
     { id: 'S5', label: '+15°C (EDS)', t: 15, g: L.g0 }
   ];
