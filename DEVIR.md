@@ -36,6 +36,21 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 | AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
 
+1.11 (`hata-duzeltme` dalı; geri dönüş: `onceki-main-hata-duzeltme-oncesi` dalı): dış incelemenin 9 bulgusu düzeltildi,
+her biri önce başarısız sonra başarılı regresyon denemesiyle. **Koordinat**: UTM / yerel projeden AutoCAD dosyasına
+yazarken bütün koordinatlar dosyanın 3° TM sistemine çevrilir (`sebeke.js › koordinatCevirici`); dosyanın `datum`'u
+korunur (ED50 dosyası ED50 proje; var olan projeye alınırken dönüştürülür; datumsuz eski dosya TUREF). **Yeniden
+alma**: aynı kimlikli elemanın kotu ve bağımsız noktanın konumu / kotu dosyadan güncellenir, kopya üretilmez.
+**Onay kilidi** telefonda bütün servis yollarında (`ProjectService.editLock`: malzeme miktarı / silme / ekleme,
+ekipman ve hat silme, bağlı nokta taşıma, bölme / birleştirme, son alımı geri alma, yeniden numaralama); AutoCAD **Hat
+Değiştir** her iletken satırının hakedişini denetler (`Iletkenler.DegistirmeKilidi`). **Hakediş onayı** fiyat, tutar ve
+sözleşme miktarını da dondurur (eski fiyatsız görüntü `legacyPrices` ile işaretli). **Web bulut kaydı**: eşzamanlı
+kayıtlarda kova ezilmez (sürümlü kovalar, kayıt bazında birleştirme, `m/lock` kilidi). **GNSS** kotsuz konumun epok
+ortalaması 0 değil boş kalır. **Eşitleme** tek projede başka projenin kaydını götürmez. Windows yolları `fileURLToPath`.
+Yeni denemeler: `tests/kilit.test.mjs` (K1–K4), `tests/hakedis.test.mjs` (H1–H2), sebeke A30–A32, web W11–W13, gnss G7,
+scenarios 20b; CekirdekTest 10 denetim. Bilinmesi gereken: eklenti ED50 datumlu çizimi Google Earth / altlık için ITRF96
+sayar (datum dönüşümü yalnız telefonda).
+
 1.11 (`telefon-duzen` dalı; geri dönüş: `onceki-main-telefon-duzen-oncesi` dalı): kullanıcı isteğiyle **Hesap Merkezi
 sadeleşti**: yalnız Direk Tepe Kuvveti (Cer Vektörü) ve Kanal Planı kaldı; öteki 13 hesabın dosyaları silindi
 (geçmişte: `git log -- ortak/hesap/kaynak`), eklenti şeridinde her hesabın kendi düğmesi, trafo çıkış seçimi kalktı;
@@ -247,6 +262,13 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
+- **1.11 `hata-duzeltme` işlerinin denemesi**: telefonda UTM projesinden AutoCAD dosyası yazıp eklentide açma (koordinatlar
+  3° TM'de olmalı), ED50 dosyasını alma, aynı dosyayı ikinci kez alma (düzeltmeler gelmeli, kopya olmamalı), onay açıkken
+  kilitli kayıtta miktar / silme denemesi (bildirim çıkmalı), onaylı hakediş döneminin iş programı yenilenince
+  değişmemesi; AutoCAD'de Hat Değiştir'in 2. dönemi onaylı hatta reddi. Web (bulut) sürümü yeniden yayınlanırsa iki
+  tarayıcıda aynı anda kayıt denemesi (`m/lock` belgesi için db kuralı gerekirse eklenir).
+- **Eklentide datum**: ED50 datumlu proje dosyası eklentide olduğu gibi çizilir; Google Earth / altlık / CBS dönüşümleri
+  ITRF96 sayar (~185 m kayma). ED50 kullanılacaksa eklentiye datum dönüşümü (telefondaki `geo/crs.js` kuralı) taşınmalı.
 - **1.11 `telefon-duzen` işlerinin denemesi**: telefonda yeni Aplikasyon ekranı sahada (yürüyüş yönü pusulası olan
   alıcıyla "ileri / sağa" satırları, pusulasızda semt), gruplu Ayarlar, Hakkında; AutoCAD'de Hakkında penceresi
   (iki sekme) ve Teknik Hesaplamalar panelindeki iki düğme. Kaldırılan hesapların eski kayıtları olan çizim / proje
