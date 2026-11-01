@@ -149,8 +149,34 @@ namespace SebekeHakedis.Cekirdek
         /// </summary>
         public static double Degistir(Hat h, string tur, IList<HatIletkeni> iletkenler, string durum, int hakedis,
                                       Func<string, double> metrajVer, Func<string> sira, string karakteristik, bool koy)
+            => Degistir(h, tur, iletkenler, durum, hakedis, metrajVer, sira, karakteristik, koy, null);
+
+        /// <summary>
+        /// Hat Değiştir'in kilit denetimi: hattın kendi hakedişi, kaldırılacak HAT satırlarının her birinin hakedişi ve
+        /// yeni satırların gideceği hakediş onaylı (kilitli) ise değiştirilemez. Döner: kilit mesajı, kilit yoksa null.
+        /// Komut yalnız hattın ana hakedişine bakıyordu; 1. dönemi açık, 2. dönemi onaylı hattın onaylı satırı siliniyordu.
+        /// </summary>
+        public static string DegistirmeKilidi(Hat h, IDictionary<int, int> onaylar, int hedefHakedis)
+        {
+            if (h == null || !HakedisOnayi.KilitVar(onaylar)) return null;
+            if (HakedisOnayi.Kilitli(onaylar, h.Hakedis)) return h.Hakedis + ". hakediş onaylı (kilitli): hat değiştirilemez.";
+            foreach (var k in HatKalemleri(h))
+                if (HakedisOnayi.Kilitli(onaylar, k.Hakedis))
+                    return k.Hakedis + ". hakediş onaylı (kilitli): hattın bu hakedişteki iletken satırı (" + (k.Tanim ?? "") + ") değiştirilemez, silinemez.";
+            if (hedefHakedis > 0 && HakedisOnayi.Kilitli(onaylar, hedefHakedis)) return HakedisOnayi.KilitMesaji(hedefHakedis);
+            return null;
+        }
+
+        /// <summary>
+        /// Degistir'in onay denetimli biçimi: onaylar verilmişse etkilenen satırlardan biri kilitliyse hiçbir şey değişmeden
+        /// InvalidOperationException fırlatır (model kısmen değişmiş kalmaz).
+        /// </summary>
+        public static double Degistir(Hat h, string tur, IList<HatIletkeni> iletkenler, string durum, int hakedis,
+                                      Func<string, double> metrajVer, Func<string> sira, string karakteristik, bool koy, IDictionary<int, int> onaylar)
         {
             if (h == null) throw new ArgumentNullException(nameof(h));
+            var kilit = DegistirmeKilidi(h, onaylar, hakedis);
+            if (kilit != null) throw new InvalidOperationException(kilit);
             bool turDegisti = !string.Equals(h.Tur ?? "", tur ?? "", StringComparison.Ordinal);
             double guzergah = GuzergahMetraji(h);
             if (turDegisti || guzergah <= 0) guzergah = metrajVer != null ? metrajVer(tur) : guzergah;
