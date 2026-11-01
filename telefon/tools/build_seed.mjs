@@ -1,5 +1,5 @@
 // Tasarım maketinden çıkarılan ham veriyi (design_raw.json) versiyonlu standart paketine
-// (TEDAŞ 2026 · Yeşil Defter 26.23.GR.02) dönüştürür. Çıktı uygulamaya ilk açılışta
+// (2026 poz kataloğu) dönüştürür. Çıktı uygulamaya ilk açılışta
 // veritabanına (IndexedDB) içe aktarılır; uygulama içinde koddan değil DB'den okunur.
 import { applyExtras } from './seed_extras_v23.mjs';
 import fs from 'node:fs';
@@ -41,7 +41,7 @@ function putPoz(code, o) {
     id: STD + ':' + code, stdId: STD, servis: code, pozNo: sectionOf(code), name: '', unit: 'Ad', kgPerUnit: null,
     supply: 'Ş', montaj: true, demontaj: true, dmm: true, kgGroup: '', category: catOf(code), bfPoz: null,
     priceMaterial: null, priceLabor: null, priceUnit: null, inGreenBook: false,
-    validFrom: '2026-01-01', validTo: '2026-12-31', source: 'Yeşil Defter 26.23.GR.02'
+    validFrom: '2026-01-01', validTo: '2026-12-31', source: 'Poz kataloğu 2026'
   }, prev);
   for (const [k, v] of Object.entries(o)) if (v !== undefined && v !== null && v !== '') rec[k] = v;
   poz.set(code, rec);
@@ -321,9 +321,9 @@ const materialsMaster = [
 const cableRules = { verified: false, minDepth: { AG: 0.7, OG: 0.9 }, note: 'Asgari kanal derinliği (m) — şartname ile doğrulayın' };
 
 const standard = {
-  id: STD, code: 'TEDAŞ 2026', name: 'TEDAŞ 2026 · Yeşil Defter 26.23.GR.02', book: '26.23.GR.02', bfYear: 2026,
+  id: STD, code: '2026', name: 'Poz kataloğu 2026', book: '2026', bfYear: 2026,
   validFrom: '2026-01-01', validTo: '2026-12-31', status: 'active', createdAt: '2026-09-26T00:00:00Z',
-  notes: 'Poz/servis kodları, direk tipleri, iletken ağırlıkları ve reçete kuralları VOLT-EDAŞ saha maketinden (Yeşil Defter 26.23.GR.02 + 2026 TEDAŞ BF kitabı) aktarıldı. İletken mekanik değerleri, ENH yük varsayımları, açıklık tabloları ve trafo güç uyumu "doğrulanmamış varsayılan" olarak işaretlidir.',
+  notes: 'Poz / servis kodları, direk tipleri, iletken ağırlıkları ve reçete kuralları 2026 birim fiyat kitabından ve saha maketinden aktarıldı. İletken mekanik değerleri, ENH yük varsayımları, açıklık tabloları ve trafo güç uyumu "doğrulanmamış varsayılan" olarak işaretlidir.',
   unverifiedTables: ['conductors.mech', 'enh', 'clearances', 'trafoPostTypes', 'trafoPoleCompat', 'poleTypes.capacityDaN', 'cableRules', 'materialsMaster']
 };
 

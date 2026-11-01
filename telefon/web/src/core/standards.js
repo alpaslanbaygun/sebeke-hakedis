@@ -4,7 +4,7 @@
 const LIST_TABLES = ['poz', 'poleGroups', 'poleTypes', 'conductors', 'lineTypes', 'transformers', 'panels', 'kiosks', 'trafoPostTypes', 'sdkTypes', 'recipeRules', 'params'];
 const OBJ_TABLES = ['lineDefaults', 'kioskDefaults', 'trafoPoleCompat', 'gnssThresholds', 'enh', 'clearances', 'legend', 'materialsMaster', 'cableRules', 'cabin', 'kanal'];
 // Uygulamayla gelen standart paketinin sürümü: kurulu katalog bundan eskiyse açılışta eksik kalemler eklenir
-export const SEED_REV = 24;
+export const SEED_REV = 25;
 
 export async function listStandards(ds) {
   const all = await ds.db.getAll('standards');
@@ -12,7 +12,7 @@ export async function listStandards(ds) {
 }
 
 export async function importStandard(ds, pkg, opts = {}) {
-  if (!pkg || pkg.format !== 'volt-standard/1') throw new Error('Geçersiz standart paketi (format volt-standard/1 bekleniyor)');
+  if (!pkg || pkg.format !== 'volt-standard/1') throw new Error('Geçersiz katalog paketi');
   const std = pkg.standard;
   const existing = await ds.db.get('standards', std.id);
   if (existing && !opts.replace) return { skipped: true, id: std.id };
@@ -55,7 +55,8 @@ export async function upgradeStandard(ds, pkg) {
     if ((await ds.db.get('stdTables', id)) && !(ups.stdTables || []).includes(t)) continue;
     await ds.db.put('stdTables', { id, stdId, key: t, value: pkg[t] }); n++;
   }
-  await ds.db.put('standards', Object.assign({}, cur, { seedRev: std.seedRev, upgradedAt: ds.iso(), unverifiedTables: std.unverifiedTables || cur.unverifiedTables }));
+  // Katalog başlığı (ad, kod, kitap, not) paketten yenilenir: 25. sürümde kurum ve kitap sürümü yazıları kaldırıldı
+  await ds.db.put('standards', Object.assign({}, cur, { seedRev: std.seedRev, upgradedAt: ds.iso(), unverifiedTables: std.unverifiedTables || cur.unverifiedTables, code: std.code || cur.code, name: std.name || cur.name, book: std.book || cur.book, notes: std.notes || cur.notes }));
   await ds._audit('standards', { id: stdId }, 'import', [], 'Katalog güncellendi (sürüm ' + (cur.seedRev || 0) + ' → ' + std.seedRev + ') · ' + n + ' yeni kayıt');
   return { upgraded: n, id: stdId };
 }

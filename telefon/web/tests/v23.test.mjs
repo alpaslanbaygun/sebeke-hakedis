@@ -223,7 +223,7 @@ test('V9 · Çizim katmanı: DXF projeye eklenir, uçlara yapışır, birleşen 
 });
 
 test('V10 · Şifre özeti: SHA-256 doğru, şifre 4–8 rakam, aynı şifre farklı kullanıcıda farklı saklanır', () => {
-  for (const s of ['', 'abc', 'VOLT-EDAŞ 2026', 'x'.repeat(200)]) {
+  for (const s of ['', 'abc', 'Örnek 2026', 'x'.repeat(200)]) {
     const b = new TextEncoder().encode(s);
     assert.equal(Buffer.from(sha256(b)).toString('hex'), crypto.createHash('sha256').update(b).digest('hex'));
   }

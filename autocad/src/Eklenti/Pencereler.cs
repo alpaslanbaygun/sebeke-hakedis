@@ -1030,13 +1030,14 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>
-        /// Hakkında: Şebeke-M logosu, sürüm, kısa açıklama ve komut listesi (gruplu). "Komut satırına yaz" listeyi AutoCAD'in
-        /// komut satırına da yazar (komutlariYaz null ise düğme yok).
+        /// Hakkında: Şebeke-M logosu, sürüm, slogan; "Hakkında" sekmesinde amaç ve yapabildikler (ortak/marka/hakkinda.json,
+        /// telefonla aynı metin), "Komutlar" sekmesinde komut listesi (gruplu). "Komut satırına yaz" listeyi AutoCAD'in komut
+        /// satırına da yazar (komutlariYaz null ise düğme yok).
         /// </summary>
         public static void Hakkinda(string surum, string ortam, Action komutlariYaz)
         {
             Hazirla();
-            using (var f = new KoyuPencere("Hakkında", 780, 660, Boya.Simge("bilgi", KoyuRenk.Yesil, 20)))
+            using (var f = new KoyuPencere("Hakkında", 780, 680, Boya.Simge("bilgi", KoyuRenk.Yesil, 20)))
             {
                 var alt = f.Alt;
                 int bh = S(34), by = (alt.Height - bh) / 2;
@@ -1047,26 +1048,63 @@ namespace SebekeHakedis.Eklenti
                 f.CancelButton = kapat;
                 if (komutlariYaz != null)
                 {
-                    var yaz = new KoyuDugme("Komut satırına yaz", DugmeTuru.Ikincil, Boya.Simge("bilgi", KoyuRenk.Ikincil, 16));
-                    yaz.SetBounds(kapat.Left - S(10) - S(180), by, S(180), bh);
-                    yaz.Click += (s, e) => komutlariYaz();
-                    alt.Controls.Add(yaz);
+                    var yazDugmesi = new KoyuDugme("Komut satırına yaz", DugmeTuru.Ikincil, Boya.Simge("bilgi", KoyuRenk.Ikincil, 16));
+                    yazDugmesi.SetBounds(kapat.Left - S(10) - S(180), by, S(180), bh);
+                    yazDugmesi.Click += (s, e) => komutlariYaz();
+                    alt.Controls.Add(yazDugmesi);
                 }
                 int icSon = f.IcerikSonu - 16;
+                var bilgi = Marka.Hakkinda;
 
-                Koy(f, new LogoKarti(), 16, 58, 300, 256);
-                var ad = Etiket(f, Marka.Ad, 336, 58, 420, KoyuYazi.Iri, KoyuRenk.Yazi);
+                Koy(f, new LogoKarti(), 16, 58, 260, 200);
+                var ad = Etiket(f, Marka.Ad, 296, 58, 460, KoyuYazi.Iri, KoyuRenk.Yazi);
                 ad.Height = S(38);
-                Etiket(f, "AutoCAD eklentisi · Sürüm " + surum, 336, 104, 420, KoyuYazi.Kalin, KoyuRenk.Yazi);
-                if (!string.IsNullOrEmpty(ortam)) Etiket(f, ortam, 336, 128, 420, KoyuYazi.Kucuk, KoyuRenk.Ikincil);
-                Aciklama(f, Marka.Aciklama + ". Çizimler telefon uygulamasıyla aynı simgelerle çizilir; proje dosyası iki yönde " +
-                            "aktarılır (Telefona Gönder / Telefondan Al).", 336, 158, 420, 60);
+                Etiket(f, "AutoCAD eklentisi · Sürüm " + surum, 296, 104, 460, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                if (!string.IsNullOrEmpty(ortam)) Etiket(f, ortam, 296, 128, 460, KoyuYazi.Kucuk, KoyuRenk.Ikincil);
+                var slogan = Aciklama(f, bilgi.Metin("slogan", Marka.Aciklama), 296, 156, 460, 44);
+                slogan.ForeColor = KoyuRenk.Yazi;
+                slogan.Font = KoyuYazi.Govde;
                 Aciklama(f, "Desteklenen sürümler: AutoCAD 2016–2024 ve AutoCAD 2025 ve sonrası (AutoCAD tabanlı ürünler dahil; " +
-                            "AutoCAD LT desteklenmez).", 336, 222, 420, 44);
-                Aciklama(f, "Sorun olursa hata ayrıntısı %TEMP%\\SebekeHakedis_hata.txt dosyasına yazılır; SH_DOKUM destek için " +
-                            "teknik döküm kaydeder.", 336, 270, 420, 44);
+                            "AutoCAD LT desteklenmez). Sorun olursa hata ayrıntısı %TEMP%\\SebekeHakedis_hata.txt dosyasına yazılır; " +
+                            "SH_DOKUM destek için teknik döküm kaydeder.", 296, 202, 460, 56);
 
-                Etiket(f, "Komutlar", 16, 330, 300, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var sekme = Koy(f, new Sekmeler(), 16, 272, 748, 34);
+                int sy = 316, sh = icSon - 316;
+
+                // Hakkında sekmesi: amaç paragrafları ve yapabildikler (kaydırmalı)
+                var govde = new Panel { BackColor = KoyuRenk.Kart, AutoScroll = true };
+                var kart = Koy(f, new Kart(), 16, sy, 748, sh);
+                Koy(kart, govde, 1, 1, 746, sh - 2);
+                Yerel.KoyuKaydirma(govde);
+                int y = 14, w = 690;
+                Func<string, Font, Color, int> yaz = (metin, yazi, renk) =>
+                {
+                    int h = TextRenderer.MeasureText(metin, yazi, new Size(S(w), int.MaxValue), TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix).Height + S(2);
+                    var l = new Label { Text = metin, UseMnemonic = false, BackColor = Color.Transparent, ForeColor = renk, Font = yazi, AutoSize = false };
+                    l.SetBounds(S(18), S(y), S(w), h);
+                    govde.Controls.Add(l);
+                    return (int)Math.Ceiling(h / (double)S(1));
+                };
+                Etiket(govde, "Amaç", 18, y, 300, KoyuYazi.Kalin, KoyuRenk.Yesil);
+                y += 26;
+                foreach (var x in bilgi.Dizi("amac") ?? new List<object>()) y += yaz(Convert.ToString(x, CultureInfo.InvariantCulture), KoyuYazi.Govde, KoyuRenk.Yazi) + 8;
+                y += 10;
+                Etiket(govde, "Neler yapar?", 18, y, 300, KoyuYazi.Kalin, KoyuRenk.Yesil);
+                y += 26;
+                foreach (var x in bilgi.Dizi("yapabildikler") ?? new List<object>())
+                {
+                    var g1 = x as Cekirdek.JsonNesne;
+                    if (g1 == null) continue;
+                    string yer = g1.Metin("yer");
+                    string ek = yer == "telefon" ? "  ·  telefon" : yer == "autocad" ? "  ·  AutoCAD" : "";
+                    Etiket(govde, g1.Metin("baslik") + ek, 18, y, 600, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                    y += 24;
+                    foreach (var m in g1.Dizi("maddeler") ?? new List<object>()) y += yaz("•  " + Convert.ToString(m, CultureInfo.InvariantCulture), KoyuYazi.Kucuk, KoyuRenk.Soluk) + 4;
+                    y += 10;
+                }
+                sekme.Ekle("Hakkında", kart);
+
+                // Komutlar sekmesi
                 var g = new DataGridView
                 {
                     AllowUserToAddRows = false,
@@ -1098,7 +1136,8 @@ namespace SebekeHakedis.Eklenti
                     g.Rows.Add(k[1], k[2]);
                 }
                 g.Columns[0].DefaultCellStyle.Font = KoyuYazi.Kalin;
-                Koy(f, new Cerceve(g), 16, 354, 748, icSon - 354);
+                var tablo = Koy(f, new Cerceve(g), 16, sy, 748, sh);
+                sekme.Ekle("Komutlar", tablo);
                 f.Shown += (s, e) => { if (g.Rows.Count > 0) g.ClearSelection(); };
                 Goster(f);
             }

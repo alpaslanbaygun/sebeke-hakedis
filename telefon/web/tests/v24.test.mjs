@@ -232,12 +232,12 @@ test('Y8 · Kayıtlı NTRIP profilleri: eski tek ayar taşınır, profil eklenir
   let st = loadProfiles(null, { name: 'TUSAGA-Aktif', host: '212.156.70.42', port: 2101, mount: 'VRSRTCM31', user: 'u', pass: 'p', version: 1 });
   assert.equal(st.list.length, 1); assert.equal(activeProfile(st).host, '212.156.70.42'); assert.equal(activeProfile(st).version, 1);
   const ilk = st.active;
-  st = addProfile(st, 'Sabit istasyon · Elazığ');
-  assert.equal(st.list.length, 2); assert.equal(activeProfile(st).name, 'Sabit istasyon · Elazığ'); assert.equal(activeProfile(st).host, '');
+  st = addProfile(st, 'Sabit istasyon · Şantiye');
+  assert.equal(st.list.length, 2); assert.equal(activeProfile(st).name, 'Sabit istasyon · Şantiye'); assert.equal(activeProfile(st).host, '');
   st = updateActive(st, { host: '10.0.0.5', mount: 'BASE1' });
   assert.equal(activeProfile(st).mount, 'BASE1');
   assert.equal(st.list.find((p) => p.id === ilk).host, '212.156.70.42', 'diğer profil değişmez');
-  assert.throws(() => addProfile(st, 'sabit istasyon · elazığ'), /var/);
+  assert.throws(() => addProfile(st, 'sabit istasyon · şantiye'), /var/);
   assert.throws(() => addProfile(st, '  '), /gerekli/);
   st = selectProfile(st, ilk);
   assert.equal(activeProfile(st).name, 'TUSAGA-Aktif');
@@ -246,7 +246,7 @@ test('Y8 · Kayıtlı NTRIP profilleri: eski tek ayar taşınır, profil eklenir
   const st2 = loadProfiles(JSON.parse(JSON.stringify(st)), null);
   assert.equal(st2.list.length, 2); assert.equal(st2.active, ilk);
   st = removeProfile(st, ilk);
-  assert.equal(st.list.length, 1); assert.equal(activeProfile(st).name, 'Sabit istasyon · Elazığ');
+  assert.equal(st.list.length, 1); assert.equal(activeProfile(st).name, 'Sabit istasyon · Şantiye');
   assert.throws(() => removeProfile(st, st.active), /En az bir/);
   assert.equal(loadProfiles(null, null).list[0].name, 'TUSAGA-Aktif');
 });
@@ -256,12 +256,24 @@ test('Y9 · Katalog güncelleme 23 → 24: kaplamalı kanal kalemleri ve kanal t
   const old = JSON.parse(JSON.stringify(SEED));
   old.poz = old.poz.filter((p) => !/^YEREL:KANAL-/.test(p.servis)); delete old.kanal; old.standard = Object.assign({}, old.standard, { seedRev: 23 });
   await importStandard(ds, old);
-  assert.equal(SEED_REV, 24);
+  assert.equal(SEED_REV, 25);
   const r = await upgradeStandard(ds, SEED);
   assert.ok(r.upgraded >= 4);
   await ps.open((await ps.createProject({ name: 'P', cm: 39 })).id);
   for (const k of ['YEREL:KANAL-ASFALT', 'YEREL:KANAL-BETON', 'YEREL:KANAL-PARKE']) { const p = ps.cat.poz(k); assert.ok(p && p.unit === 'm3' && p.verified === false, k); }
   assert.equal(ps.cat.table('kanal').sondaj, '032.12.06.01-003');
+});
+
+test('Y9b · Katalog güncelleme 24 → 25: katalog başlığından kurum ve kitap sürümü yazıları kalkar (ad, kod, kitap yenilenir)', async () => {
+  const { ds } = await setup({ skipSeed: true });
+  const old = JSON.parse(JSON.stringify(SEED));
+  old.standard = Object.assign({}, old.standard, { seedRev: 24, code: 'XX 2026', name: 'XX 2026 · Defter 26.23.GR.02', book: '26.23.GR.02' });
+  await importStandard(ds, old);
+  await upgradeStandard(ds, SEED);
+  const st = await ds.db.get('standards', SEED.standard.id);
+  assert.equal(st.seedRev, 25);
+  assert.equal(st.name, 'Poz kataloğu 2026'); assert.equal(st.code, '2026'); assert.equal(st.book, '2026');
+  for (const v of [st.name, st.code, st.book, st.notes || '']) assert.ok(!/26\.23|TEDAŞ|VOLT/.test(v), v);
 });
 
 test('Y10 · Önceki sürümde oluşturulmuş proje: seçim yapılana kadar metraj değişmez, kapatılınca yardımcı kalemler çıkar', async () => {

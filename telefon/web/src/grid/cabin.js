@@ -860,7 +860,7 @@ export function kontroller(cabin) {
     add('ok', 'Bu varyantta hücre bölümü yoktur', 'Yalnızca trafo (ve varsa AG pano) bölümünden oluşan kompakt tip');
     if (H.length) add('bad', `Listede ${H.length} hücre var ancak bu varyantta hücre bölümü YOK`, 'Hücreler plan/ön görünüş/tek hat çizimlerine alınmaz. KÖK varyantı ya da hücre bölmeli gövde (MB-3800+) seçin veya hücreleri silin');
   }
-  add(IC_EN >= 2300 ? 'ok' : 'warn', `İç en: <b>${IC_EN} mm</b> (TEDAŞ EK-1A: d ≥ 2300 mm)`, IC_EN >= 2300 ? '' : 'Katalog iç eni 2280 mm; TEDAŞ minimumunun 20 mm altında — üretici tip deney raporu ile teyit edilmelidir');
+  add(IC_EN >= 2300 ? 'ok' : 'warn', `İç en: <b>${IC_EN} mm</b> (standart EK-1A: d ≥ 2300 mm)`, IC_EN >= 2300 ? '' : 'Katalog iç eni 2280 mm; standardın en küçük değerinin 20 mm altında — üretici tip deney raporu ile teyit edilmelidir');
   const hOk = D.h >= 2650;
   add(hOk ? 'ok' : (D.h >= 2650 * 0.95 ? 'warn' : 'bad'), `İç yükseklik (h): <b>${D.h} mm</b> (min 2650)`, hOk ? '' : 'Md. 2.2-k: şartlar sağlanırsa −%5 tolerans (≥2518)');
   add(D.t >= 690 ? 'ok' : (D.t >= 656 ? 'warn' : 'bad'), `Tank/temel (t): <b>${D.t} mm</b> (min 690)`, '');

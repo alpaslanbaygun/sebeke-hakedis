@@ -82,7 +82,7 @@ anahtarlar yalnız kullanıcının bilgisayarında); malzeme adlarının görün
 
 29.10 akşam canlı deneme (AutoCAD 2027, eklenti 0.1.64, uydurma örnek proje): Telefondan Al (72 nesne), renkler /
 Tahoma / açıklık metrajı / kanal kenarları (taşı, kopyala, geri al), şeritten kanal ölçüsü, Proje Özeti ve Excel
-(PROJELER + MALZEME LİSTESİ sayfaları), `SH_KML` (KMZ, 72 nesne, koordinatlar Elazığ'da doğru yerde), `SH_MIFVER`
+(PROJELER + MALZEME LİSTESİ sayfaları), `SH_KML` (KMZ, 72 nesne, koordinatlar haritada doğru yerde), `SH_MIFVER`
 (5 katman, .mif + .mid), `SH_MIFAL` (boş çizime 72 nesne; dilim dosyadan alındı), `SH_CBSBILGI`, `SH_ALTLIK` (Esri,
 35 karo, nesnelerin altında, atıf yazısıyla): **çalıştı**. Denemede görülüp düzeltilen: dik hatta metraj ile hat
 bilgisi çizginin üstüne düşüp birbirini örtüyordu (kaydırma dünya ekseninde uygulanıyordu) → kaydırma artık parçanın

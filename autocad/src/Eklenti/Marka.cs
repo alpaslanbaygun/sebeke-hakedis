@@ -39,6 +39,31 @@ namespace SebekeHakedis.Eklenti
         /// <summary>Tam logo (amblem + "Şebeke-M" + alt yazı), beyaz zemin; bulunamazsa null.</summary>
         public static Image Logo => _logo ?? (_logo = Oku("logo.png"));
 
+        private static Cekirdek.JsonNesne _hakkinda;
+
+        /// <summary>
+        /// Hakkında metni (ortak/marka/hakkinda.json, eklentiye gömülü; telefon aynı dosyayı gösterir): slogan, amac (paragraflar),
+        /// yapabildikler (başlık + maddeler). Bulunamazsa boş nesne.
+        /// </summary>
+        public static Cekirdek.JsonNesne Hakkinda
+        {
+            get
+            {
+                if (_hakkinda != null) return _hakkinda;
+                try
+                {
+                    using (var s = Akis("hakkinda.json"))
+                    {
+                        if (s != null)
+                            using (var r = new System.IO.StreamReader(s, System.Text.Encoding.UTF8))
+                                _hakkinda = Cekirdek.Json.Oku(r.ReadToEnd()) as Cekirdek.JsonNesne;
+                    }
+                }
+                catch { }
+                return _hakkinda ?? (_hakkinda = new Cekirdek.JsonNesne());
+            }
+        }
+
         /// <summary>Beyaz rozet içinde amblem, istenen piksel boyutunda (en yakın gömülü boyuttan yüksek kaliteyle).</summary>
         public static Image Simge(int px)
         {

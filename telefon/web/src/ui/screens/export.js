@@ -67,7 +67,7 @@ export function ExportScreen() {
     app.toast(saved.length + ' dosya ' + (app.web ? 'indirildi' + (saved.length > 1 ? ' (tek zip)' : '') : share ? 'paylaşıldı' : 'kaydedildi (İndirilenler/Sebeke-M)'), 'ok', 5000);
   };
   const toggle = (k) => { const s = Object.assign({}, sel, { [k]: !sel[k] }); setSel(s); app.state.expSel = s; };
-  return html`<div class="title"><div class="grow"><h1>Dışa Aktarım</h1><div class="sub" style="font-family:Inter">CAD, CBS ve TEDAŞ teslim dosyaları</div></div></div>
+  return html`<div class="title"><div class="grow"><h1>Dışa Aktarım</h1><div class="sub" style="font-family:Inter">CAD, CBS ve teslim dosyaları</div></div></div>
     <div class="card"><div class="lbl">Proje</div><div style="font-size:18px;font-weight:700;margin:2px 0">${ps.p.name}</div><div class="mono note">${ps.data.equipment.filter((e) => e.kind === 'pole').length} direk · ${ps.result.spans.length} açıklık · ${trn(tot3, 3)} m · ${photos} foto</div></div>
     <div class="lbl">Koordinat sistemi</div>
     <div class="grid3">${[['proje', ps.p.crs.datum === 'TUREF' ? 'ITRF96 TM' + ps.p.crs.cm : 'Proje CRS'], ['ed50', 'ED50 3°'], ['wgs', 'WGS84 UTM']].map(([k, l]) => html`<${Chip} on=${crsKey === k} onClick=${() => setCrsKey(k)}><span class="mono">${l}</span></${Chip}>`)}</div>

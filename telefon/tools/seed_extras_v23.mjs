@@ -6,7 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const SEED_REV = 24;
+export const SEED_REV = 25;
 
 // [servis, pozNo, ad, kategori, onaylı mı (poz numarası kaynakta görüldü)]
 const POZ = [

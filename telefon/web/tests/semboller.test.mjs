@@ -10,8 +10,8 @@ import { sembolBlogu, sembolAilesi, sembolVaryanti } from '../src/export/dxf.js'
 const kok = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
 
 test('S1 · telefondaki ortak tablolar (src/ortak/*.js) depodaki ortak/katalog/*.json ile birebir aynı', async () => {
-  for (const ad of ['semboller', 'volt-eslesme', 'kalemler', 'katsayilar', 'cizim-stili']) {
-    const json = JSON.parse(fs.readFileSync(path.join(kok, 'ortak/katalog/' + ad + '.json'), 'utf8'));
+  for (const [klasor, ad] of [['katalog', 'semboller'], ['katalog', 'volt-eslesme'], ['katalog', 'kalemler'], ['katalog', 'katsayilar'], ['katalog', 'cizim-stili'], ['marka', 'hakkinda']]) {
+    const json = JSON.parse(fs.readFileSync(path.join(kok, 'ortak/' + klasor + '/' + ad + '.json'), 'utf8'));
     const mod = (await import('../src/ortak/' + ad + '.js')).default;
     assert.deepEqual(mod, json, ad + ' (node araclar/ortak-tablolar.mjs çalıştırın)');
   }

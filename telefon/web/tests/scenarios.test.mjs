@@ -1,4 +1,4 @@
-// 25 saha senaryosu — gerçek standart verisi (Yeşil Defter 26.23.GR.02) ve Elazığ civarı TM39 koordinatlarıyla.
+// 25 saha senaryosu — gerçek katalog verisi (2026 poz kataloğu) ve TM39 dilimindeki koordinatlarla.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setup, newProject, buildPoleLine, route, rtkObs, phoneObs, tick, now, SEED } from './helpers.mjs';

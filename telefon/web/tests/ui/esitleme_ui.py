@@ -32,7 +32,7 @@ MOCK = r"""
 """
 
 # Deneme projesi: AG havai (iki direk + elemansız kırılma köşesi), OG havai mevcut, abone, müşterek, AG kablo (kanal
-# 0,6 m), OG kablo (yatay sondaj), yalnız kanal, demontaj hattı — hepsi uydurma koordinat (Elazığ yakını, TM39)
+# 0,6 m), OG kablo (yatay sondaj), yalnız kanal, demontaj hattı — hepsi uydurma koordinat (TM39 dilimi)
 KUR = """async () => { const a = window.__app, ps = a.ps;
   const p = await ps.createProject({ name: 'Deneme · Eşitleme', code: 'DNM-ES', cm: 39, enhZone: 'III', mode: 'asbuilt' });
   await ps.open(p.id);

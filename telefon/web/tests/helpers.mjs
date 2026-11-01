@@ -1,4 +1,4 @@
-// Test yardımcıları: bellek veritabanı + gerçek standart paketi + Elazığ civarı gerçekçi saha verisi
+// Test yardımcıları: bellek veritabanı + gerçek standart paketi + TM39 diliminde gerçekçi saha verisi
 import fs from 'node:fs';
 import path from 'node:path';
 import { MemoryAdapter } from '../src/core/db.js';
@@ -47,7 +47,7 @@ export function route(start, legs) {
   return out;
 }
 export async function newProject(ps, extra = {}) {
-  const p = await ps.createProject(Object.assign({ name: 'OG-03 Hat Yenileme', code: 'ELZ-2026-OG03', client: 'VOLT-EDAŞ Elazığ İl Müdürlüğü', contractor: 'Yüklenici Firma', cm: 39, enhZone: 'III', mode: 'asbuilt', autoRecipe: true }, extra));   // senaryo testleri otomatik reçete motorunu dener (uygulamada varsayılan kapalı)
+  const p = await ps.createProject(Object.assign({ name: 'OG-03 Hat Yenileme', code: 'ELZ-2026-OG03', client: 'Örnek Dağıtım A.Ş. İl Müdürlüğü', contractor: 'Yüklenici Firma', cm: 39, enhZone: 'III', mode: 'asbuilt', autoRecipe: true }, extra));   // senaryo testleri otomatik reçete motorunu dener (uygulamada varsayılan kapalı)
   await ps.open(p.id);
   return p;
 }
