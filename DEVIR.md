@@ -36,6 +36,16 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 | AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
 
+1.11 akşam (`telefon-duzeltme` dalı, `hata-duzeltme`nin üstüne; §1 kuralı): eklentideki Hat Değiştir kilidinin (hata 5)
+telefon karşılığı — AutoCAD'de onaylı hakedişteki hattın ya da bir iletken satırı o hakedişte olan hattın iletkeni, türü
+ve durumu telefonda değiştirilemez (`sebeke.js › hatDegistirmeKilidi`, `ProjectService.updateLine`; dosyadan alma
+`dosyadan` seçeneğiyle takılmaz; eklentinin Telefondan Al'ı bu değişikliği zaten reddediyordu, telefon artık önceden
+söyler). Telefonda bulunan dört hata: çok satırlı hattın bir satırı hiçbir katalogda yoksa öteki satırlar düşüyordu
+(31.10'daki tek satır kuralı yalnız tek satırda; satırlar kalem olarak korunur, uyarı satırı söyler); "Konum kaynağı"
+kısayolları (üst çubuk, saha, harita, proje) Ayarlar kökü yerine Ölçüm ekranına; kaldırılmış hesabın eski kaydı kendi
+ekranında (`hesapKayit`; kenarlıksız iframe düzeninde çıkıyordu); AutoCAD metrajı saklanırken denetim kaydına satır
+yazılmıyor. Denemeler: `kilit.test.mjs` K5, `sebeke.test.mjs` A33.
+
 1.11 (`hata-duzeltme` dalı; geri dönüş: `onceki-main-hata-duzeltme-oncesi` dalı): dış incelemenin 9 bulgusu düzeltildi,
 her biri önce başarısız sonra başarılı regresyon denemesiyle. **Koordinat**: UTM / yerel projeden AutoCAD dosyasına
 yazarken bütün koordinatlar dosyanın 3° TM sistemine çevrilir (`sebeke.js › koordinatCevirici`); dosyanın `datum`'u
@@ -262,6 +272,9 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
+- **1.11 akşam `telefon-duzeltme` denemesi**: AutoCAD'de 2. hakedişi onaylı dosya telefona alınıp o hattın iletkeni
+  değiştirilmeye çalışılınca "AutoCAD'de onaylı (kilitli)" uyarısı; çok satırlı (biri katalogda olmayan) hattın iki
+  satırla geri dönmesi; üst çubuktaki Bluetooth rozetinin Ölçüm ekranını açması.
 - **1.11 `hata-duzeltme` işlerinin denemesi**: telefonda UTM projesinden AutoCAD dosyası yazıp eklentide açma (koordinatlar
   3° TM'de olmalı), ED50 dosyasını alma, aynı dosyayı ikinci kez alma (düzeltmeler gelmeli, kopya olmamalı), onay açıkken
   kilitli kayıtta miktar / silme denemesi (bildirim çıkmalı), onaylı hakediş döneminin iş programı yenilenince

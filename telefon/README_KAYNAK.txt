@@ -219,3 +219,16 @@ cbsUyarilari), 3B klasöründe de çizilmez; AutoCAD bölgesi olmayan projede uy
 Bing meta verisi ve Google oturumu aynı anda istenen karolar için tek istek, ret bir dakika saklanır; haritada görünen
 alanın dışındaki hatlar çizilmez, yazıları hesaplanmaz. Eklentide CbsYapisi.Yuvarla eksi sıfırı artı sıfıra çevirir
 (.NET 8 "-0", .NET Framework "0" yazıyordu; telefon "0"), ortak denemeye eksi sıfır değerleri eklendi.
+
+Eklentiyle eşitleme 2: Hat Değiştir kilidi ve telefon düzeltmeleri (1.11.2026 akşam)
+====================================================================================
+- interop/sebeke.js: autocadKilitleri (proje.sebeke.onaylar'da hakediş işaretli dönemler), hatDegistirmeKilidi (eklentideki
+  Iletkenler.DegistirmeKilidi: hattın hakedişi ya da bir HAT satırının hakedişi AutoCAD'de onaylıysa iletken / tür /
+  durum / tesis / müşterek / abone alanları değiştirilemez; yalnız gerçekten değişen alanlara bakılır). services/
+  project-service.js › updateLine(id, patch, reason, opts): opts.dosyadan (AutoCAD'den alma) kilide bakmaz.
+- interop/sebeke.js › sebekeIceAl: tek satır kuralı (katalogda olmayan iletken → AutoCAD devresi) yalnız tek HAT satırında;
+  çok satırlı hattın bir satırı eşleşmezse bütün satırlar sebeke.kalemler'de korunur, ozet.eslesmeyen satırı söyler.
+  ilkMetrajlariSakla denetim kaydına yazmaz (noAudit).
+- ui: "Konum kaynağı" kısayolları ayarOlcum ekranına (app.js, field.js, map.js, project.js); settings.js uyarı metni.
+  hesap.js › KaldirilmisHesapKaydi ('hesapKayit' ekranı): kaldırılmış hesabın kaydı sıradan ekran düzeninde.
+Testler: tests/kilit.test.mjs K5, tests/sebeke.test.mjs A33.

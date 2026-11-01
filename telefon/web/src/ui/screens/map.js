@@ -583,7 +583,7 @@ function SourceSheet({ mode, setMode, close }) {
   const g = app.gnss.state;
   const ext = g.source === 'external' || g.source === 'sim';
   const opt = (on, col, title, sub, tag, onClick) => html`<button class=${'srcopt' + (on ? ' on' : '')} style=${'--c:' + col} onClick=${onClick}><i></i><span class="grow"><b>${title}</b><small>${sub}</small></span><span class="badge b-mut">${tag}</span></button>`;
-  const useGnss = () => { if (ext) setMode('gnss'); else { close(); app.toast('Harici GNSS bağlı değil · alıcıyı seçin', 'warn', 4000); app.nav.tab('settings'); } };
+  const useGnss = () => { if (ext) setMode('gnss'); else { close(); app.toast('Harici GNSS bağlı değil · alıcıyı seçin', 'warn', 4000); app.nav.tab('settings'); app.nav.go('ayarOlcum'); } };
   const usePhone = async () => { if (g.source !== 'phone') { try { await app.gnss.usePhone(); } catch (e) { app.toast(e.message, 'err'); return; } } setMode('gnss'); app.toast('Telefon GPS · noktalar [TELEFON GPS] etiketiyle kaydedilir', 'warn', 4000); };
   return html`<section class="sheet" aria-label="Veri kaynağı"><div class="grab" onClick=${close}><i></i></div>
     <div class="body">

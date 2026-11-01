@@ -75,7 +75,7 @@ export function OlcumAyarlari() {
         if (k === 'TELEFON_GPS') { app.state.srcMode = 'gnss'; await usePhone(); }
         else if (k === 'BASE_ROVER') app.nav.go('baseRover');
         else if (k === 'MANUEL') { app.state.srcMode = 'manual'; app.toast('Haritada KAYNAK düğmesinden Manuel / Haritadan / Excel seçilebilir', 'ok', 4000); app.nav.tab('map'); }
-        else { app.state.srcMode = 'gnss'; if (g.method === 'BASE_ROVER') { g.setMethod(null); await app.ds.setting('gnssMethod', { method: null, base: g.base }); } if (s.source !== 'external') (native ? listBt() : webConnect('web-serial')); else if (k === 'RTK_NTRIP' && nts.state !== 'connected') app.toast('Düzeltme kaynağı bölümünden bağlanın (aşağıda)', 'warn', 4000); }
+        else { app.state.srcMode = 'gnss'; if (g.method === 'BASE_ROVER') { g.setMethod(null); await app.ds.setting('gnssMethod', { method: null, base: g.base }); } if (s.source !== 'external') (native ? listBt() : webConnect('web-serial')); else if (k === 'RTK_NTRIP' && nts.state !== 'connected') app.toast('Ayarlar › Düzeltme kaynağı ekranından bağlanın', 'warn', 4000); }
       }}><i></i><span class="grow"><b>${t}</b><small>${d}</small></span></button>`; })}
       <div class="note">Etkin yöntem her ölçüm kaydına yazılır: cihaz, seri no, fix, uydu, HDOP/VDOP/PDOP, düzeltme kaynağı, base ve rover bilgisi, operatör.</div>
     </div>

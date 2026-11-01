@@ -47,7 +47,7 @@ export function HesapMerkeziScreen({ hedef }) {
     ${uygunsuz.length ? html`<button class="sect" style="background:none;border:0;padding:0;cursor:pointer" onClick=${() => setAcik(!acik)}><${Icon} n=${acik ? 'down' : 'next'} s=${14} />Bu hedefe uygun olmayanlar (${uygunsuz.length})</button>
       ${acik ? html`<div class="card tight"><div class="list">${uygunsuz.map(satir)}</div></div>` : null}` : null}
     <div class="sect">Kayıtlı sonuçlar${hedefli ? ' (bu hedef)' : ''}</div>
-    ${kayitlar.length ? html`<div class="card tight"><div class="list">${kayitlar.map((k) => { const m = MODUL.get(k.modul) || { ad: k.modulAdi }; return html`<button class="li" style="align-items:flex-start" onClick=${() => app.nav.go('hesap', { modul: k.modul, hedef: k.hedef, kayitId: k.id })}>
+    ${kayitlar.length ? html`<div class="card tight"><div class="list">${kayitlar.map((k) => { const m = MODUL.get(k.modul) || { ad: k.modulAdi }; return html`<button class="li" style="align-items:flex-start" onClick=${() => app.nav.go(MODUL.has(k.modul) ? 'hesap' : 'hesapKayit', { modul: k.modul, hedef: k.hedef, kayitId: k.id })}>
         <span class="grow" style="min-width:0"><b style="display:block">${m.ad || k.modulAdi}</b><span class="mono" style="font-size:12px;color:#ff8a8a">${(HEDEF_ADI[(k.hedef || {}).tur] || '') + ((k.hedef || {}).no ? ' ' + k.hedef.no : '') + ((k.hedef || {}).hatId ? ' · çıkış ' + (((ps.lineById(k.hedef.hatId) || {}).lineNo) || '?') : '')}</span>
         <span class="note" style="display:block">${k.ozet}</span><span class="note" style="display:block">${tarihYaz(k.tarih)} · ${k.kaynak === 'autocad' ? 'AutoCAD' : 'telefon'}${k.yapan ? ' · ' + k.yapan : ''}</span></span>
         <${KayitRozeti} k=${k} /></button>`; })}</div></div>` : html`<${Empty}>Henüz kayıtlı hesap yok. Bir hesabı açıp üstteki <b>Kaydet</b> ile projeye kaydedin.</${Empty}>`}
@@ -108,18 +108,25 @@ export function HesapScreen({ modul, hedef, kayitId }) {
     };
     return () => { window.removeEventListener('message', dinle); app.backHook = eskiKanca; };
   }, [modul, kayitId]);
-  if (!MODUL.has(modul)) {
-    // Uygulamadan kaldırılmış bir hesabın eski kaydı: sayfası yok, yalnız saklanan özet gösterilir
-    const k = kayitId ? hesapKayitlari(ps).find((d) => d.id === kayitId) : null;
-    return html`<${Title} title=${(k && k.modulAdi) || modul} sub="Bu hesap uygulamada artık yok" />
-      <div class="alert info"><${Icon} n="info" s=${16} /><span>Hesap Merkezi'nde yalnız direk tepe kuvveti (cer vektörü) ve kanal planı kaldı. Bu kayıt bilgi olarak saklanır; AutoCAD dosyasıyla gidip gelir.</span></div>
-      ${k ? html`<div class="card stack"><div class="kv mono" style="font-size:12px"><b>Sonuç</b><span>${k.ozet || '—'}</span><b>Durum</b><span>${DURUM_ADI[k.durum] || k.durum || '—'}</span><b>Tarih</b><span>${tarihYaz(k.tarih)}</span></div>
-        <button class="btn dang" onClick=${async () => { if (await app.confirm('Kaydı sil', 'Bu hesap kaydı silinsin mi?', { danger: true, ok: 'Sil' })) { await hesapSil(ps, k.id); app.nav.back(); } }}>Kaydı sil</button></div>` : null}`;
-  }
+  if (!MODUL.has(modul)) return html`<${KaldirilmisHesapKaydi} modul=${modul} kayitId=${kayitId} />`;
   return html`<iframe ref=${ref} class="hesapcerceve" src=${src} title=${m.ad} allow="clipboard-write"></iframe>`;
 }
 HesapScreen.flush = true;
 HesapScreen.noTabs = true;
 HesapScreen.noHud = true;
+
+/**
+ * Uygulamadan kaldırılmış bir hesabın eski kaydı: sayfası yok, yalnız saklanan özet gösterilir. Sıradan bir ekran
+ * (kenar boşluğu ve alt menüyle; hesap sayfasının kenarsız iframe düzeninde çıkmasın diye ayrı ekran).
+ */
+export function KaldirilmisHesapKaydi({ modul, kayitId }) {
+  useBus(['hesap:kayit']);
+  const ps = app.ps;
+  const k = kayitId ? hesapKayitlari(ps).find((d) => d.id === kayitId) : null;
+  return html`<${Title} title=${(k && k.modulAdi) || modul} sub="Bu hesap uygulamada artık yok" />
+    <div class="alert info"><${Icon} n="info" s=${16} /><span>Hesap Merkezi'nde yalnız direk tepe kuvveti (cer vektörü) ve kanal planı kaldı. Bu kayıt bilgi olarak saklanır; AutoCAD dosyasıyla gidip gelir.</span></div>
+    ${k ? html`<div class="card stack"><div class="kv mono" style="font-size:12px"><b>Sonuç</b><span>${k.ozet || '—'}</span><b>Durum</b><span>${DURUM_ADI[k.durum] || k.durum || '—'}</span><b>Tarih</b><span>${tarihYaz(k.tarih)}</span></div>
+      <button class="btn dang" onClick=${async () => { if (await app.confirm('Kaydı sil', 'Bu hesap kaydı silinsin mi?', { danger: true, ok: 'Sil' })) { await hesapSil(ps, k.id); app.nav.back(); } }}>Kaydı sil</button></div>` : html`<${Empty}>Kayıt bulunamadı</${Empty}>`}`;
+}
 
 export { hesapAc, hesapSil };

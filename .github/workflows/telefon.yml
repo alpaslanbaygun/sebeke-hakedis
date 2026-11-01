@@ -6,7 +6,7 @@ name: Telefon uygulaması
 
 on:
   push:
-    branches: [main, hat-malzeme-simge, sebeke-m, telefon-gnss, telefon-esitleme]
+    branches: [main, hat-malzeme-simge, sebeke-m, telefon-gnss, telefon-esitleme, telefon-duzeltme]
     paths:
       - 'telefon/**'
       - 'ortak/**'

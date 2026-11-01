@@ -1,7 +1,7 @@
 # Kod haritası
 
 Otomatik üretilir, elle düzenlenmez: `python3 araclar/kod-haritasi/kod_haritasi.py` (297 dosya · 32 AutoCAD komutu ·
-1.411 bağ). Dosya, komut ya da konu ararken önce burada arayın (`grep -i "kelime" HARITA.md`).
+1.419 bağ). Dosya, komut ya da konu ararken önce burada arayın (`grep -i "kelime" HARITA.md`).
 Bağlar dosyaların içinden çıkarılır: içe aktarma, tür kullanımı, komut tanımı, belge bağlantısı, dosya / tür adı
 anma. Ad anmasına dayanan birkaç bağ yanlış olabilir; bir dosyayı değiştirmeden önce kendisini okuyun.
 
@@ -34,6 +34,7 @@ değiştirin ve iki tarafın denemelerini çalıştırın (`CekirdekTest`, `tele
 | `autocad/test/CekirdekTest/Program.cs` | `telefon/web/tests/uyum.test.mjs` | Simge ve yazı boyutları (proje.boyutlar): varsayılansa yazılmaz; telefonla aynı alan adları (uyum.test.mjs U3) |
 | `autocad/src/Cekirdek/CbsYapisi.cs` | `telefon/README_KAYNAK.txt` | - export/cbs.js: eklentideki CbsYapisi + KmlYazici + MifDosyasi (yazma) karşılığı. Girdi: SH.projeOku(sebekeYaz(ps)) |
 | `autocad/src/Cekirdek/HaritaAltligi.cs` | `telefon/README_KAYNAK.txt` | birebir), tests/altlik.test.mjs (eklentinin altlık listesi HaritaAltligi.cs'den okunur; Preact kurulu değilse 2'si |
+| `autocad/src/Cekirdek/Iletkenler.cs` | `telefon/README_KAYNAK.txt` | Iletkenler.DegistirmeKilidi: hattın hakedişi ya da bir HAT satırının hakedişi AutoCAD'de onaylıysa iletken / tür / |
 | `autocad/src/Cekirdek/KmlYazici.cs` | `telefon/README_KAYNAK.txt` | - export/cbs.js: eklentideki CbsYapisi + KmlYazici + MifDosyasi (yazma) karşılığı. Girdi: SH.projeOku(sebekeYaz(ps)) |
 | `autocad/src/Cekirdek/MifDosyasi.cs` | `telefon/README_KAYNAK.txt` | - export/cbs.js: eklentideki CbsYapisi + KmlYazici + MifDosyasi (yazma) karşılığı. Girdi: SH.projeOku(sebekeYaz(ps)) |
 | `autocad/src/Cekirdek/CizimStili.cs` | `telefon/web/src/export/cbs.js` | ---------------------------------------------------------------- Ekran renkleri (eklentideki CizimStili.Ekran…) |
@@ -79,9 +80,9 @@ değiştirin ve iki tarafın denemelerini çalıştırın (`CekirdekTest`, `tele
 
 Kod (bağ sayısı): `autocad/test/CekirdekTest/Program.cs` 54, `autocad/src/Eklenti/Serit.cs` 45, `autocad/src/Eklenti/CizimKomutlari.cs` 44, `autocad/src/Cekirdek/Model.cs` 38, `autocad/src/Cekirdek/Turler.cs` 37, `autocad/src/Cekirdek/KomutRehberi.cs` 35, `autocad/src/Eklenti/Pencereler.cs` 34, `autocad/src/Eklenti/Komutlar.cs` 30, `autocad/test/PencereTest/Program.cs` 29, `telefon/web/src/core/schema.js` 27, `autocad/src/Cekirdek/NesneYazici.cs` 26, `telefon/web/src/grid/lines.js` 26.
 
-Belgeler (kodu en çok anan; kod değişince bakılır): `DEVIR.md` 91, `README.md` 39, `KULLANIM.md` 36, `autocad/paket/OKUBENI.txt` 33, `telefon/README_KAYNAK.txt` 27.
+Belgeler (kodu en çok anan; kod değişince bakılır): `DEVIR.md` 92, `README.md` 39, `KULLANIM.md` 36, `autocad/paket/OKUBENI.txt` 33, `telefon/README_KAYNAK.txt` 32.
 
-Köprüler (kümeler arası yolların çoğu buradan geçer): `telefon/web/src/grid/lines.js` %5,5, `ortak/hesap/moduller.json` %4,4, `autocad/test/CekirdekTest/Program.cs` %4,3, `telefon/web/src/services/project-service.js` %3,5, `telefon/web/src/ui/screens/settings.js` %2,9, `telefon/web/tests/sebeke.test.mjs` %2,9.
+Köprüler (kümeler arası yolların çoğu buradan geçer): `telefon/web/src/grid/lines.js` %5,3, `ortak/hesap/moduller.json` %4,4, `autocad/test/CekirdekTest/Program.cs` %4,2, `telefon/web/src/services/project-service.js` %3,5, `telefon/web/src/ui/screens/settings.js` %3,0, `telefon/web/src/export/exporter.js` %2,7.
 
 ## 3. AutoCAD komutları
 
@@ -149,7 +150,7 @@ dosyada geçmez (Android ayarları gibi bazıları yine de kullanılır).
 - `autocad/src/Cekirdek/HesapBaglami.cs` — Hesabın açıldığı hedef: direk, hat (parçalı), trafo, kanal ya da proje. · 587 satır · 12 bağ · HesapMerkezi.cs, Model.cs, Program.cs
 - `autocad/src/Cekirdek/HesapSunucu.cs` — Hesap Merkezi'nin yerel web sunucusu. Hesap sayfaları bilgisayarın tarayıcısında (Edge uygulama pen… · 277 satır · 6 bağ · Json.cs, Turler.cs, HesapMerkezi.cs
 - `autocad/src/Cekirdek/Hesaplar.cs` — Hesap Merkezi'nde kaydedilen bir hesap sonucu: hangi hesap (modül), hangi direk / hat / trafo / pro… · 340 satır · 14 bağ · Json.cs, Program.cs, HesapMerkezi.cs
-- `autocad/src/Cekirdek/Iletkenler.cs` — Bir hattaki bir iletken / kablo (çizim penceresinde ve şeritte seçilen): katalog kalemi ve adedi. · 227 satır · 23 bağ · Pencereler.cs, Program.cs, Model.cs
+- `autocad/src/Cekirdek/Iletkenler.cs` — Bir hattaki bir iletken / kablo (çizim penceresinde ve şeritte seçilen): katalog kalemi ve adedi. · 227 satır · 24 bağ · Pencereler.cs, Program.cs, Model.cs
 - `autocad/src/Cekirdek/Json.cs` — Küçük, bağımlılıksız JSON okuyucu/yazıcı. .NET Framework 4.6 ve .NET 8'de aynı çalışır. Nesneler: J… · 313 satır · 20 bağ · HesapMerkezi.cs, Hesaplar.cs, Program.cs
 - `autocad/src/Cekirdek/Katalog.cs` — Katalogdaki bir kalem tipi (direk tipi, hat kesiti, malzeme). · 407 satır · 23 bağ · CbsIceAktarim.cs, HizliSecim.cs, Pencereler.cs
 - `autocad/src/Cekirdek/Kategoriler.cs` — Menüdeki bir öğe: komut + tür (+ cins süzgeci). Ör. "AG Direk" = SH_ELEMAN, AG_DIREK. · 110 satır · 14 bağ · HizliSecim.cs, Serit.cs, SeritOnizleme.cs
@@ -287,7 +288,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 
 - `telefon/DEVAM-NOTU.md` — Şebeke-M — Devam notu (yeni Claude hesabı için) — Bu dosya projeyi başka bir Claude hesabında kaldı… · 105 satır · 8 bağ · build.mjs, cabin-recipe.js, lines.js
 - `telefon/README.md` — Şebeke-M (telefon uygulaması) — EDAŞ şebeke işleri için Android saha uygulaması (GNSS ile direk, tr… · 24 satır · 6 bağ · README.md, DEVAM-NOTU.md, README_KAYNAK.txt
-- `telefon/README_KAYNAK.txt` — VOLT-EDAŞ Saha 2.4.0 — Kaynak paketi · 221 satır · 27 bağ · HaritaAltligi.cs, exporter.js, ortak-tablolar.mjs
+- `telefon/README_KAYNAK.txt` — VOLT-EDAŞ Saha 2.4.0 — Kaynak paketi · 234 satır · 32 bağ · HaritaAltligi.cs, exporter.js, hesap.js
 
 ### Telefon · Android kabuğu — `telefon/android`
 
@@ -314,7 +315,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 ### Telefon belgeleri — `telefon/docs`
 
 - `telefon/docs/GNSS-BAGLANTI.md` — GNSS bağlantısı: dosyalar, düzeltme kaynakları, sabit istasyon — Telefon uygulamasının (Şebeke-M) G… · 108 satır · 16 bağ · AndroidManifest.xml, NtripClient.java, NtripTest.java
-- `telefon/docs/KULLANIM-KILAVUZU.md` — Şebeke-M Kullanım Kılavuzu — 6 Ekim 2026 · 976 satır · 4 bağ · KULLANIM.md, README.md, GNSS-BAGLANTI.md
+- `telefon/docs/KULLANIM-KILAVUZU.md` — Şebeke-M Kullanım Kılavuzu — 6 Ekim 2026 · 980 satır · 4 bağ · KULLANIM.md, README.md, GNSS-BAGLANTI.md
 
 ### Telefon — `telefon/seed`
 
@@ -418,7 +419,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 
 ### Telefon · AutoCAD aktarımı — `telefon/web/src/interop`
 
-- `telefon/web/src/interop/sebeke.js` — AutoCAD eklentisiyle dosya uyumu: telefon projesi ↔ .sebeke.json (ortak/VERI-MODELI.md). sebekeYaz(… · 1.204 satır · 20 bağ · volt-eslesme.js, sh-core.cjs, volt-eslesme.json
+- `telefon/web/src/interop/sebeke.js` — AutoCAD eklentisiyle dosya uyumu: telefon projesi ↔ .sebeke.json (ortak/VERI-MODELI.md). sebekeYaz(… · 1.240 satır · 22 bağ · volt-eslesme.js, sh-core.cjs, volt-eslesme.json
 - `telefon/web/src/interop/sh-core.cjs` — Şebeke-M — telefonun hesap çekirdeği. AutoCAD eklentisindeki C# çekirdeğinin (autocad/src/Cekirdek)… · 1.063 satır · 23 bağ · MalzemeYazimi.cs, sebeke.js, CinsKodu.cs
 
 ### Telefon · yerel köprü — `telefon/web/src/native`
@@ -444,7 +445,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 - `telefon/web/src/services/cad-service.js` — CAD çizimi (DXF / NCZ) servisi: dosyayı oku, projeye kaydet, haritada katman olarak göster, noktaya… · 86 satır · 6 bağ · ids.js, index.js, map.js
 - `telefon/web/src/services/excel-import.js` — Excel Import Service — şablon üretimi, XLSX/CSV okuma, doğrulama (önizleme) ve toplu aktarım. Akış:… · 259 satır · 6 bağ · field.js, scenarios.test.mjs, schema.js
 - `telefon/web/src/services/photo-service.js` — Photo Service — fotoğraf adlandırma ({ObjeNo}_{Sıra}.jpg), proje klasör yolu, görüntü üstü bilgi sa… · 145 satır · 5 bağ · exporter.js, records.js, scenarios.test.mjs
-- `telefon/web/src/services/project-service.js` — Proje servisi: veritabanı ile hesap zincirini bağlar. UI yalnızca bu servisi çağırır. · 661 satır · 11 bağ · catalog.js, compute.js, crs.js
+- `telefon/web/src/services/project-service.js` — Proje servisi: veritabanı ile hesap zincirini bağlar. UI yalnızca bu servisi çağırır. · 672 satır · 13 bağ · catalog.js, compute.js, crs.js
 - `telefon/web/src/services/survey-service.js` — Survey Service — saha objesi oluşturma (veri kaynağından bağımsız tek giriş noktası) ve koordinat g… · 180 satır · 9 bağ · crs.js, equipment.js, excel-import.js
 
 ### Telefon · arayüz — `telefon/web/src/ui`
@@ -461,14 +462,14 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 - `telefon/web/src/ui/screens/duzeltme.js` — Ayarlar › Düzeltme kaynağı: TUSAGA-Aktif (CORS-TR), kendi sabit istasyonunuz, yerel CORS ağları. Ba… · 185 satır · 5 bağ · ctx.js, kit.js, ntrip-profiles.js
 - `telefon/web/src/ui/screens/equipment.js` — 03 · Ekipman Kaydı (Direk · Trafo · SDK · Aydınlatma · Abone · Menhol) Reçete otomatik; kullanıcı y… · 192 satır · 14 bağ · recipe.js, cabin-recipe.js, cabin.js
 - `telefon/web/src/ui/screens/export.js` — 05 · Dışa Aktarım — gerçek dosya üretimi (DXF, NCN, KMZ, SHP, GeoJSON, XLSX, rapor, teslim paketi) · 85 satır · 7 bağ · crs.js, ctx.js, exporter.js
-- `telefon/web/src/ui/screens/field.js` — Saha operasyonu ekranları (v2.2): Excel toplu aktarım · Saha objeleri listesi · Sabit Base + Rover… · 238 satır · 9 bağ · ctx.js, excel-import.js, index.js
-- `telefon/web/src/ui/screens/hesap.js` — Teknik hesaplar (Hesap Merkezi): hesap listesi, seçili direğe / hatta / trafoya uygun hesaplar, kay… · 125 satır · 7 bağ · baglam.js, ctx.js, index.js
+- `telefon/web/src/ui/screens/field.js` — Saha operasyonu ekranları (v2.2): Excel toplu aktarım · Saha objeleri listesi · Sabit Base + Rover… · 238 satır · 10 bağ · ctx.js, excel-import.js, index.js
+- `telefon/web/src/ui/screens/hesap.js` — Teknik hesaplar (Hesap Merkezi): hesap listesi, seçili direğe / hatta / trafoya uygun hesaplar, kay… · 132 satır · 8 bağ · baglam.js, ctx.js, index.js
 - `telefon/web/src/ui/screens/index.js` — Ekran kayıt defteri · 26 satır · 15 bağ · app.js, cabin.js, calc.js
 - `telefon/web/src/ui/screens/map.js` — 01 · Harita & Nokta Alımı — gerçek GIS motoru + tek elle hızlı ekipman/hat alımı. · 832 satır · 22 bağ · cabin-recipe.js, cabin.js, cad-service.js
 - `telefon/web/src/ui/screens/matpick.js` — Katalogdan malzeme seçme kutusu (ekipman ve hat kayıtlarında ortak) · 13 satır · 3 bağ · ctx.js, kit.js, records.js
 - `telefon/web/src/ui/screens/project.js` — Proje merkezi (akış: PROJE → GNSS → SAHA → ALIM → HAT → BAĞLANTI → REÇETE → METRAJ → HAKEDİŞ → KONT… · 209 satır · 11 bağ · crs.js, ctx.js, index.js
 - `telefon/web/src/ui/screens/records.js` — Nokta kaydı · Hat kaydı · Fotoğraf (kanıt) ekranları · 259 satır · 16 bağ · crs.js, ctx.js, durum-kodu.js
-- `telefon/web/src/ui/screens/settings.js` — 06 · Ayarlar — gruplu menü (1.11.2026): her grup kendi ekranında açılır. Ölçüm (konum kaynağı, yönt… · 240 satır · 10 bağ · crs.js, ctx.js, duzeltme.js
+- `telefon/web/src/ui/screens/settings.js` — 06 · Ayarlar — gruplu menü (1.11.2026): her grup kendi ekranında açılır. Ölçüm (konum kaynağı, yönt… · 240 satır · 11 bağ · crs.js, ctx.js, duzeltme.js
 - `telefon/web/src/ui/screens/stakeout.js` — 02 · Aplikasyon — gerçek hedef noktadan canlı yönlendirme (ileri/sağ-sol, kot, semt, eksen ofseti,… · 147 satır · 6 bağ · cad-service.js, ctx.js, geom.js
 - `telefon/web/src/ui/screens/team.js` — Kullanıcılar, roller ve hakediş onayı (v2.3) Ortak parçalar: HakRow (durum düğmeleri, yetkiye göre)… · 180 satır · 8 bağ · ctx.js, equipment.js, index.js
 - `telefon/web/src/ui/screens/tepe.js` — Cer vektör hesabı ve direk tepe kuvveti. Kollar (yön + açıklık) çizimden ya da uygulamadaki hatlard… · 158 satır · 6 bağ · ctx.js, index.js, kit.js
@@ -491,11 +492,11 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 - `telefon/web/tests/fixtures/ornek-proje.sebeke.json` · 62 satır · bağsız
 - `telefon/web/tests/gnss.test.mjs` — Düzeltme (CORS / sabit istasyon) bağlantıları: hazır profiller, bağlantı bilgisi dosyası, metinden… · 229 satır · 6 bağ · crs.js, gnss-service.js, nmea.js
 - `telefon/web/tests/hakedis.test.mjs` — Hakediş onay görüntüsü (hata 6): onaylı dönemin fiyatı, tutarı ve sözleşme miktarı onay anına bağlı… · 86 satır · 1 bağ · helpers.mjs
-- `telefon/web/tests/helpers.mjs` — Test yardımcıları: bellek veritabanı + gerçek standart paketi + TM39 diliminde gerçekçi saha verisi · 68 satır · 15 bağ · bus.js, crs.js, data-service.js
-- `telefon/web/tests/kilit.test.mjs` — Onay kilidi (hata 3): onay açıkken kontrol edilmiş / hakedişteki / onaylı kaydın miktarı, malzemesi… · 116 satır · 1 bağ · helpers.mjs
+- `telefon/web/tests/helpers.mjs` — Test yardımcıları: bellek veritabanı + gerçek standart paketi + TM39 diliminde gerçekçi saha verisi · 68 satır · 15 bağ · kilit.test.mjs, bus.js, crs.js
+- `telefon/web/tests/kilit.test.mjs` — Onay kilidi (hata 3): onay açıkken kontrol edilmiş / hakedişteki / onaylı kaydın miktarı, malzemesi… · 162 satır · 3 bağ · helpers.mjs, sebeke.js, DEVIR.md
 - `telefon/web/tests/malzeme-yazimi.test.mjs` — Malzeme adlarının görünen yazımı (sh-core malzemeYazisi): eklentideki MalzemeYazimi.Duzelt ile aynı… · 33 satır · 5 bağ · malzeme-yazimi.json, kalemler.js, sh-core.cjs
 - `telefon/web/tests/scenarios.test.mjs` — 25 saha senaryosu — gerçek katalog verisi (2026 poz kataloğu) ve TM39 dilimindeki koordinatlarla. · 749 satır · 15 bağ · crs.js, db.js, excel-import.js
-- `telefon/web/tests/sebeke.test.mjs` — AutoCAD eklentisiyle dosya uyumu: telefon projesi → .sebeke.json → (Durum Tespit) ve .sebeke.json →… · 784 satır · 15 bağ · baglam.js, crs.js, exporter.js
+- `telefon/web/tests/sebeke.test.mjs` — AutoCAD eklentisiyle dosya uyumu: telefon projesi → .sebeke.json → (Durum Tespit) ve .sebeke.json →… · 802 satır · 15 bağ · baglam.js, crs.js, exporter.js
 - `telefon/web/tests/semboller.test.mjs` — Ortak simge takımı: telefonun tablosu (src/export/semboller.js) depodaki ortak dosyayla (ortak/kata… · 83 satır · 4 bağ · dxf.js, semboller.js, ortak-tablolar.mjs
 - `telefon/web/tests/tepe.test.mjs` — Direk tepe kuvveti hesabı (src/calc/tepe.js) — özgün tek dosyalık araca karşı altın testler. tests/… · 596 satır · 1 bağ · tepe.js
 - `telefon/web/tests/ui/esitleme_ui.py` — Arayüz denemesi: eklentiyle eşitleme (31.10.2026) — haritanın çizim görünümü (hat renkleri, metraj,… · 198 satır · 2 bağ · hakkinda.json, telefon.yml
@@ -520,7 +521,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 ### Proje belgeleri — `kök`
 
 - `.gitattributes` · 11 satır · 1 bağ · DEVIR.md
-- `DEVIR.md` — Devir notu — Bu proje başka bir hesaba (GitHub ya da Claude) geçerken sohbet geçmişi taşınmaz. Deva… · 343 satır · 91 bağ · HesapMerkezi.cs, HesapSunucu.cs, sebeke.js
+- `DEVIR.md` — Devir notu — Bu proje başka bir hesaba (GitHub ya da Claude) geçerken sohbet geçmişi taşınmaz. Deva… · 356 satır · 92 bağ · HesapMerkezi.cs, HesapSunucu.cs, sebeke.js
 - `KULLANIM.md` — Şebeke-M — Kullanım Kılavuzu — İki araç var, ikisi aynı proje dosyasını (`.sebeke.json`) kullanır: · 545 satır · 36 bağ · cizim-stili.json, KALDIR.bat, KUR.bat
 - `PLAN.md` — Plan — telefon uygulaması bırakıldı, geri dönüş: `telefon-eski-0.2.3` dalı). Kataloğu TEDAŞ pozları… · 112 satır · 16 bağ · ArayuzSimgeleri.cs, cizim-stili.json, kategoriler.json
 - `README.md` — Şebeke-M — Elektrik dağıtım şebekesi yapım işlerinde saha ölçümü, metraj, hakediş, Durum Tespit rap… · 79 satır · 39 bağ · hesap-dene.py, hesap-paketle.mjs, ortak-tablolar.mjs

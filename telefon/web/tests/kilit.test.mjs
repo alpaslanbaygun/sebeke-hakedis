@@ -114,3 +114,49 @@ test('K4 · kilitli direk yeniden numaralanamaz (hiçbiri değişmez); kilit kap
   await ps.removeEquipment(poles[0].id, 'deneme');
   assert.equal(canli(ps, 'equipment').some((x) => x.id === poles[0].id), false);
 });
+
+// ---------------- AutoCAD'de onaylı hakediş (eklentideki Hat Değiştir kilidi, hata 5) ----------------
+test('K5 · AutoCAD\'de onaylı hakedişteki hat (kendi hakedişi ya da bir iletken satırı): iletken / tür / durum değişikliği reddedilir; düğüm, not ve hakediş durumu serbest; dosyadan alma takılmaz; onay yoksa serbest', async () => {
+  const { hatDegistirmeKilidi, autocadKilitleri, sebekeIceAl, voltProjeOku } = await import('../src/interop/sebeke.js');
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const { setup } = await import('./helpers.mjs');
+  const ORNEK = path.join(path.dirname(new URL(import.meta.url).pathname), 'fixtures/ornek-proje.sebeke.json');
+  // Örnek dosya: H1 (1. hakediş, AG 3A+P+R) ve H2 (2. hakediş, OG 3xSW); 2. hakediş AutoCAD'de onaylı
+  const { proje } = voltProjeOku(fs.readFileSync(ORNEK, 'utf8'));
+  proje.proje.onaylar = [{ no: 2, kontrol: true, hakedis: true, gis: false }];
+  const { ps } = await setup();
+  await sebekeIceAl(ps, proje);
+  assert.deepEqual([...autocadKilitleri(ps.p)], [2]);
+  const h1 = ps.data.lines.find((l) => l.sebekeId === 'H1'), h2 = ps.data.lines.find((l) => l.sebekeId === 'H2');
+  assert.ok(h1 && h2, 'iki hat alındı');
+  assert.equal(hatDegistirmeKilidi(h1, { state: 'DEMONTAJ' }, ps.p), null, '1. hakediş açık: serbest');
+  assert.match(hatDegistirmeKilidi(h2, { state: 'DEMONTAJ' }, ps.p), /2\. hakediş AutoCAD'de onaylı/, '2. hakediş kilitli');
+  assert.equal(hatDegistirmeKilidi(h2, { note: 'x', hak: 'TAMAMLANDI', nodes: h2.nodes.slice().reverse() }, ps.p), null, 'iletkeni değiştirmeyen alanlar serbest');
+  assert.equal(hatDegistirmeKilidi(h2, { state: h2.state, circuits: JSON.parse(JSON.stringify(h2.circuits)) }, ps.p), null, 'aynı değerle kayıt serbest');
+  // Servis: iletken / durum değişikliği reddedilir, veri değişmez; hat kaydı ekranının gönderdiği tam kayıt da (değişmeyen alanlarla)
+  const once = JSON.stringify(h2);
+  await assert.rejects(() => ps.updateLine(h2.id, { state: 'DEMONTAJ' }, 'deneme'), /2\. hakediş AutoCAD'de onaylı \(kilitli\)/);
+  await assert.rejects(() => ps.updateLine(h2.id, Object.assign({}, h2, { circuits: [] }), 'deneme'), /onaylı \(kilitli\)/);
+  await assert.rejects(() => ps.updateLine(h2.id, { lineType: 'AG' }, 'deneme'), /onaylı \(kilitli\)/);
+  assert.equal(JSON.stringify(ps.lineById(h2.id)), once, 'hiçbir şey değişmedi');
+  await ps.updateLine(h2.id, { note: 'saha notu' }, 'deneme');
+  assert.equal(ps.lineById(h2.id).note, 'saha notu', 'not değişir');
+  await ps.reverseLine(h2.id);
+  assert.deepEqual(ps.lineById(h2.id).nodes, h2.nodes.slice().reverse(), 'düğüm sırası değişir');
+  await ps.updateLine(h1.id, { state: 'DEMONTAJ' }, 'deneme');
+  assert.equal(ps.lineById(h1.id).state, 'DEMONTAJ', 'açık hakedişteki hat değişir');
+  // Satır kilidi: hattın kendisi açık hakedişte ama bir iletken satırı onaylı hakedişte (1. dönemi açık, 2. dönemi onaylı hat)
+  const sb = JSON.parse(JSON.stringify(h1.sebeke));
+  sb.kalemBilgisi.H1.push({ cins: 'AG_İLETKEN', tanim: 'P', kaynak: 'HAT', ana: false, sira: '', hakedis: 2, kontrol: null, miktar: 50 });
+  await ps.ds.update('lines', h1.id, { sebeke: sb }, { reason: 'deneme', silent: true }); await ps.reload('lines');
+  const k = hatDegistirmeKilidi(ps.lineById(h1.id), { circuits: [] }, ps.p);
+  assert.match(k, /2\. hakediş AutoCAD'de onaylı \(kilitli\) · hattın bu hakedişteki iletken satırı \(P\)/, 'satır kilidi: ' + k);
+  // Dosyadan yeniden alma kilide takılmaz (dosya esastır)
+  const oz = await sebekeIceAl(ps, proje, { projectId: ps.p.id });
+  assert.equal(oz.guncellenenHat, 2, 'iki hat dosyadan güncellendi');
+  assert.equal(ps.lineById(h2.id).state, 'YENI', 'dosyadaki durum geri geldi');
+  // Onay kalkınca serbest
+  await ps.updateProject({ sebeke: Object.assign({}, ps.p.sebeke, { onaylar: [] }) }, 'deneme');
+  assert.equal(hatDegistirmeKilidi(ps.lineById(h2.id), { state: 'DEMONTAJ' }, ps.p), null);
+});

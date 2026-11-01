@@ -43,7 +43,7 @@ export function Hud({ compact }) {
       <div class="hchip"><b>SAT</b><span>${s.sats ?? '—'}${s.satsInView ? '/' + s.satsInView : ''}</span></div>`}
       ${s.rateHz ? html`<div class="hchip"><span>${Math.round(s.rateHz)} Hz</span></div>` : null}`}
       <div class="grow"></div>
-      <button class="hchip" style="border:0;background:none" aria-label="Konum kaynağı ayarları" onClick=${() => app.nav.tab('settings')}><${Icon} n="bt" s=${18} c=${s.connected ? '#22d3ee' : '#475569'} w=${2.2} /></button>
+      <button class="hchip" style="border:0;background:none" aria-label="Konum kaynağı ayarları" onClick=${() => { app.nav.tab('settings'); app.nav.go('ayarOlcum'); }}><${Icon} n="bt" s=${18} c=${s.connected ? '#22d3ee' : '#475569'} w=${2.2} /></button>
     </div>
     <div class="hud-grid">
       <div><b>${s.sigmaEst ? 'σH (tahmin)' : 'RMS H'}</b><span style=${'color:' + rmsCol}>${s.sigmaH != null ? (s.source === 'phone' ? '±' + s.sigmaH.toFixed(1) : s.sigmaH.toFixed(3)) + ' m' : '—'}</span></div>

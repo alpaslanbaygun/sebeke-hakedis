@@ -888,8 +888,11 @@ kontrol işareti, bölgenin grup kodu, panonun çıkış şeması, hat parçalar
 AutoCAD'de "değişmiş" görünmez.
 
 **Hakediş onayları**: AutoCAD'deki (eski program) onaylar **Hakediş** ekranında görünür (Kontrol / Hakediş / GIS). AutoCAD'de
-onaylı hakediş kilitlidir; o hakedişe dokunan değişiklikler orada aktarılmaz. Telefonda onaylanan dönem AutoCAD'e
-kontrol + hakediş onayı olarak gider. Ayrıntı ve komutlar: depo kökündeki `KULLANIM.md`.
+onaylı hakediş kilitlidir; o hakedişe dokunan değişiklikler orada aktarılmaz. Telefon da bunu önceden söyler: AutoCAD'de
+onaylı hakedişteki bir hattın (ya da bir iletken satırı o hakedişte olan hattın) iletkeni, türü ve durumu telefonda
+değiştirilemez ("… AutoCAD'de onaylı (kilitli)" uyarısı; AutoCAD'deki Hat Değiştir de aynı hattı reddeder). Notu,
+hakediş durumu ve düğüm sırası yine değiştirilebilir. Telefonda onaylanan dönem AutoCAD'e kontrol + hakediş onayı olarak
+gider. Ayrıntı ve komutlar: depo kökündeki `KULLANIM.md`.
 
 ### Ofisteki web sürümüyle veri alışverişi
 
@@ -958,6 +961,7 @@ Yeni sürümün kurulum dosyasını eski sürümün üzerine kurun; uygulamayı 
 | `İŞARETLE` düğmesi açılmıyor | Tolerans dışındasınız ya da RTK FIX yok | Hedefe yaklaşın; `FIX BEKLE` yazıyorsa yerinizde bekleyin |
 | Hakediş durumu değişmiyor | Oturum açık değil ya da adım rolünüzün yetkisinde değil | Oturum açın; soluk adımları yetkili rol atar |
 | "Kayıt kilitli" | Obje "Kontrol Edildi" ya da sonrası durumda | Durum geri çevrilmeli ya da Yönetici düzenlemeli |
+| "… hakediş AutoCAD'de onaylı (kilitli)" | Hattın iletkeni / türü / durumu AutoCAD'de onaylı bir hakedişe bağlı | Değişiklik AutoCAD'de onay geri alınmadan yapılamaz; not ve hakediş durumu serbesttir |
 | `Numaraları ver` düğmesi açılmıyor | Yeni numaralar başka objelerde kullanılıyor | Ön eki ya da başlangıç numarasını değiştirin |
 | Excel'de "Eksik zorunlu sütun" | Şablonun sütun başlığı değişmiş | Şablonu yeniden indirin, başlıklara dokunmayın |
 | "Kamera açılamadı" | Kamera izni yok | Telefon ayarlarından izin verin ya da `Galeri` ile seçin |

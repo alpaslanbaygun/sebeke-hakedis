@@ -224,7 +224,7 @@ export function BaseRoverScreen() {
       ${step === 4 ? html`
         <div class=${'alert ' + (roverOk ? 'ok' : 'warn')}>${roverOk ? 'Rover bağlı: ' + ((s.receiver || {}).name || 'alıcı') : 'Rover bağlı değil'}</div>
         <div class="note">Rover alıcıyı Android Bluetooth ayarlarından eşleştirin, sonra Ayarlar › Ölçüm › Harici GNSS bölümünden seçin. NMEA çıkışı (GGA, RMC, GST, GSA) açık olmalı.</div>
-        <button class="btn" onClick=${() => app.nav.tab('settings')}><${Icon} n="bt" s=${18} />Konum kaynağı ayarları</button>` : null}
+        <button class="btn" onClick=${() => { app.nav.tab('settings'); app.nav.go('ayarOlcum'); }}><${Icon} n="bt" s=${18} />Konum kaynağı ayarları</button>` : null}
       ${step === 5 ? html`
         ${[['Rover NMEA geliyor', roverOk], ['Düzeltme rover\'a ulaşıyor (FLOAT/FIX, yaş < 10 s)', corrOk], ['RTK FIX', roverOk && s.fix === 'FIX'], ['Base konumu tanımlı', hasPos]].map(([t, ok]) => html`<div class="row"><${Icon} n=${ok ? 'check' : 'x'} s=${18} c=${ok ? '#10b981' : '#ef4444'} w=${3} /><span class="grow">${t}</span></div>`)}
         <div class="note">Düzeltme gelmiyorsa: base'in yayında olduğunu, kanal/protokolü ve rover'ın "Rover" modunda olduğunu alıcı yazılımından kontrol edin.</div>` : null}

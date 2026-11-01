@@ -781,3 +781,22 @@ test('A32 · (hata 7) yeniden içe alma: var olan elemanın kotu ve bağımsız 
   assert.ok(oz3.uyarilar.some((u) => /SC2/.test(u) && /kilitli/i.test(u)), 'kilitli kayıt için uyarı: ' + JSON.stringify(oz3.uyarilar));
   assert.equal(ps.pointById(e1.pointId).H, 150, 'öteki kayıtlar alınmaya devam eder');
 });
+
+test('A33 · çok satırlı hattın bir satırı hiçbir katalogda yoksa satırlar düşmez: bütün kalemler korunur, uyarı verilir, dosyaya aynen döner', async () => {
+  const { ps } = await setup();
+  const { proje } = voltProjeOku(fs.readFileSync(ORNEK, 'utf8'));
+  const h2 = proje.hatlar.find((h) => h.id === 'H2');
+  // 3xSW (katalogda var) + projeye özgü, hiçbir katalogda olmayan ikinci iletken satırı (100 m)
+  h2.kalemler.push({ cins: 'OG_İLETKEN', tanim: '3xOZEL-TEL', durum: 'M', miktar: 100, birim: 'mt/mt', katsayi: 1, toplam: 100, birimFiyat: 0, hakedis: 2, tarife: '0106', sira: '16', kontrol: null, kaynak: 'HAT' });
+  const oz = await sebekeIceAl(ps, proje);
+  const l = ps.data.lines.find((x) => x.sebekeId === 'H2');
+  assert.deepEqual(l.circuits, [], 'eşleşmeyen satır varken hiçbir satır devre olmaz');
+  assert.equal((l.sebeke.kalemler || []).filter((k) => k.kaynak === 'HAT').length, 2, 'iki iletken satırı da kalem olarak saklanır');
+  assert.ok(oz.eslesmeyen.some((u) => u.includes('3xOZEL-TEL') && u.includes('korunur')), 'uyarı eşleşmeyen satırı söyler: ' + oz.eslesmeyen.join(' | '));
+  const geri = SH.projeOku(sebekeYaz(ps)).hatlar.filter((h) => h.telefonId === l.id);
+  const satirlar = geri.flatMap((h) => h.kalemler.filter((k) => k.kaynak === 'HAT').map((k) => k.tanim + ':' + k.miktar)).sort();
+  assert.deepEqual(satirlar, ['3xOZEL-TEL:100', '3xSW:50'], 'dosyaya iki satır da aynı metrajla döner');
+  // Tek satırlı, katalogda olmayan hat eskisi gibi AutoCAD devresi olur (tek satır kuralı)
+  const tek = ps.data.lines.find((x) => x.sebekeId === 'H1');
+  assert.equal(tek.circuits.length, 1, '3A+P+R tek satır: AutoCAD devresi');
+});

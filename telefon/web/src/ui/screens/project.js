@@ -105,7 +105,7 @@ export function HubScreen() {
   const rep = d.exportJobs.find((j) => (j.formats || []).includes('report') && !j.stale);
   const steps = [
     ['Proje oluştur', ps.p.name + ' · ' + ps.cat.std.code, true, () => app.nav.go('projectEdit')],
-    ['GNSS bağla', g.source === 'none' ? 'Kaynak yok' : ((g.receiver || {}).name || g.source) + ' · ' + g.fix, g.source !== 'none' && (g.fix === 'FIX' || g.source === 'phone'), () => app.nav.tab('settings')],
+    ['GNSS bağla', g.source === 'none' ? 'Kaynak yok' : ((g.receiver || {}).name || g.source) + ' · ' + g.fix, g.source !== 'none' && (g.fix === 'FIX' || g.source === 'phone'), () => { app.nav.tab('settings'); app.nav.go('ayarOlcum'); }],
     ['Sahaya çık', d.surveySessions.length + ' ölçüm oturumu', d.surveySessions.length > 0, () => app.nav.tab('map')],
     ['Saha objelerini al (GNSS · manuel · harita · Excel)', eqc('pole') + ' direk · ' + eqc('transformer') + ' trafo · ' + eqc('sdk') + ' SDK · ' + (eqc('lighting') + eqc('luminaire')) + ' ayd.', d.equipment.length > 0, () => app.nav.tab('map')],
     ['Hatları çiz', d.lines.length + ' hat · ' + r.spans.length + ' açıklık', d.lines.length > 0, () => app.nav.tab('map')],

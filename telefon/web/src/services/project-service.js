@@ -6,6 +6,7 @@ import { computeProject, impactOf } from '../engine/compute.js';
 import { makeCrs, project as projectLL, unproject } from '../geo/crs.js';
 import { ROLES, approvalOn, strictOn, canHak, canDo, activeMembers, checkPin, pinHash, validPin } from '../core/roles.js';
 import { buildWorkProgram, periodTable, approveSnapshot } from '../qty/hakedis.js';
+import { hatDegistirmeKilidi } from '../interop/sebeke.js';
 
 // Onay açıkken kilitlenen durumlar ve kilit dışı alanlar
 const LOCKED = new Set(['KONTROL', 'HAKEDISTE', 'ONAYLI']);
@@ -320,7 +321,17 @@ export class ProjectService {
     if (!opts.defer) await this.recompute(l.lineNo + ' oluşturuldu');
     return l;
   }
-  async updateLine(id, patch, reason) { patch = this._guardEdit('lines', this.lineById(id), patch, reason); const l = await this.ds.update('lines', id, patch, { reason }); await this._after('lines', reason || l.lineNo + ' güncellendi'); return l; }
+  /**
+   * Hat güncelleme. İletken / tür / durum değişikliği AutoCAD'de onaylı (kilitli) hakedişteki hatta ya da satırda reddedilir
+   * (eklentideki Hat Değiştir kuralı; eklenti bu değişikliği Telefondan Al'da da kabul etmezdi). opts.dosyadan: AutoCAD
+   * dosyasından alma (dosya esastır, bu kilide bakılmaz).
+   */
+  async updateLine(id, patch, reason, opts = {}) {
+    const rec = this.lineById(id);
+    patch = this._guardEdit('lines', rec, patch, reason);
+    if (!opts.dosyadan) { const k = hatDegistirmeKilidi(rec, patch, this.p); if (k) throw new Error(k); }
+    const l = await this.ds.update('lines', id, patch, { reason }); await this._after('lines', reason || l.lineNo + ' güncellendi'); return l;
+  }
   async appendNode(lineId, pointId, index = null) {
     const l = this.lineById(lineId);
     const nodes = l.nodes.slice();

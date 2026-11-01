@@ -871,8 +871,11 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     // Çok iletkenli hat (müşterek OG + AG, 3 adet ALPEK): her iletken satırı bir devre; eşleşmeyen varsa kalemler korunur
     let devreler = hatDevreleri(ps.cat, h, ht);
     let lt = null;
-    if (!devreler) {
-      const ilk = (h.kalemler || []).find((k) => k.kaynak === 'HAT');
+    const hatSatirlari = (h.kalemler || []).filter((k) => k.kaynak === 'HAT');
+    // Tek satır kuralı yalnız tek HAT satırında: birden çok satırdan biri hiçbir katalogda yoksa hiçbiri devre olmaz,
+    // bütün satırlar kalem olarak korunur (yalnız ilk satırı alıp ötekileri düşürmek metrajı sessizce kaybediyordu)
+    if (!devreler && hatSatirlari.length <= 1) {
+      const ilk = hatSatirlari[0];
       const rol = ht.lineType === 'ABONE' ? 'ABONE' : ht.lineType;
       lt = ilk ? iletkenEsle(ps.cat, ilk, rol, ht.install) : null;
       // Katalogda olmayan (ya da HAT satırı olmayan) hat: ana kesitin adıyla eski kural
@@ -913,7 +916,11 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
       const ka = kanalAyari(kanal, h); data.cable = ka.cable; boruKalemi = ka.boru; data.sebeke.kanalId = kanal.id; data.sebeke.kanalKod = kanal.kod; data.sebeke.kanalDurum = kanal.durum;
       if (Object.keys(kanalParcalari).length > 1) data.sebeke.kanalParcalari = kanalParcalari;
     }
-    if (!lt && !devreler && h.anaKesit) ozet.eslesmeyen.push((h.etiket || h.anaKesit) + ': hat tipi katalogda yok, metraj eklentideki kalemlerle korunur');
+    if (!lt && !devreler && (h.anaKesit || hatSatirlari.length)) {
+      const rol = ht.lineType === 'ABONE' ? 'ABONE' : ht.lineType;
+      const yok = hatSatirlari.filter((k) => !iletkenEsle(ps.cat, k, rol, ht.install) && !autocadIletkeni(k)).map((k) => k.tanim || k.cins).filter(Boolean);
+      ozet.eslesmeyen.push((h.etiket || h.anaKesit || h.id) + ': hat tipi katalogda yok' + (hatSatirlari.length > 1 && yok.length ? ' (' + yok.join(', ') + ')' : '') + ', metraj eklentideki kalemlerle korunur');
+    }
     // Telefondaki hat: kimlikle, kimliğin köküyle ya da parçalardan birinin kimliğiyle; aynı hat iki kez kullanılmaz
     // (AutoCAD'de ortadan bir parça silinip hat ikiye ayrıldıysa ikinci kısım yeni hat olur)
     const adaylar = [bul(lineByKey, h), h.telefonId ? lineByKey.get(kokKimlik(h.telefonId)) : null, ...h.parcalar.map((pc) => lineByKey.get(pc.id) || lineByKey.get(kokKimlik(pc.id)))];
@@ -922,7 +929,7 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     if (mevcut) {
       kullanilanHat.add(mevcut.id);
       kilit = ps.editLock(mevcut);
-      try { rec = await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi'); ozet.guncellenenHat++; }
+      try { rec = await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi', { dosyadan: true }); ozet.guncellenenHat++; }
       catch (e) { if (!kilit) throw e; kilitUyar(h.etiket || h.anaKesit || mevcut.lineNo, kilit); rec = mevcut; }
     } else { rec = await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı' }); ozet.yeniHat++; }
     alinanHatlar.push(rec.id);
@@ -935,7 +942,7 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     const nodes = []; for (const xy of c.kose) { const pid = await koseNokta(xy, 'HAT'); if (!nodes.length || nodes[nodes.length - 1] !== pid) nodes.push(pid); }
     const data = { lineType: c.kod & 8 ? 'OG' : c.kod & 4 ? 'AG' : c.kod & 2 ? 'AYD' : 'ABONE', install: 'yeralti', channelOnly: true, circuits: [], nodes, state: voltDurumu(c.durum), cable: kanalAyari(c, null).cable, sebekeId: c.id, sebeke: { id: c.id, kanal: true, kanalId: c.id, kanalKod: c.kod, zemin: c.zemin, durum: c.durum, hakedis: c.hakedis, bolge: c.bolge, kalemBilgisi: { [c.id]: kalemBilgisi(c.kalemler) } } };
     const mevcut = bul(lineByKey, c);
-    if (mevcut) await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi'); else await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı (kanal)' });
+    if (mevcut) await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi', { dosyadan: true }); else await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı (kanal)' });
     ozet.yeniKanal++;
   }
   for (const s of sp.sondajlar || []) {
@@ -943,7 +950,7 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     const cap = /Ø\s*(\d+)/.exec(s.tip || '');
     const data = { lineType: 'OG', install: 'yeralti', channelOnly: true, circuits: [], nodes, state: voltDurumu(s.durum), cable: { surface: 'toprak', method: 'sondaj', width: 0, depth: 0, pipeDia: cap ? +cap[1] : 110, pipeCount: 1 }, sebekeId: s.id, sebeke: { id: s.id, sondaj: true, tip: s.tip, durum: s.durum, hakedis: s.hakedis, bolge: s.bolge, kalemBilgisi: { [s.id]: kalemBilgisi(s.kalemler) } } };
     const mevcut = bul(lineByKey, s);
-    if (mevcut) await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi'); else await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı (sondaj)' });
+    if (mevcut) await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi', { dosyadan: true }); else await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı (sondaj)' });
     ozet.yeniKanal++;
   }
   // Ölçü noktaları: var olan nokta dosyadaki konum / kota göre güncellenir (hata 7), yeni nokta açılır
@@ -1006,7 +1013,7 @@ async function ilkMetrajlariSakla(ps, hatIdleri) {
     const l = ps.lineById(id);
     const ilk = parcalar.get(id);
     if (!l || !l.sebeke || !ilk) continue;
-    await ps.ds.update('lines', id, { sebeke: Object.assign({}, l.sebeke, { ilkMetraj: ilk }) }, { reason: 'AutoCAD metrajı', silent: true });
+    await ps.ds.update('lines', id, { sebeke: Object.assign({}, l.sebeke, { ilkMetraj: ilk }) }, { reason: 'AutoCAD metrajı', silent: true, noAudit: true });
   }
   await ps.reload('lines');
 }
@@ -1049,6 +1056,35 @@ function kalemBilgisiUygula(kalemler, bilgi) {
     if (b.hakedis) k.hakedis = b.hakedis;
     if (b.kontrol !== null && Math.abs((+k.miktar || 0) - b.miktar) < 1e-9) k.kontrol = b.kontrol;
   }
+}
+
+/** AutoCAD'de onaylı (kilitli) hakediş numaraları: projenin AutoCAD bölümündeki onaylarda hakediş işaretli olanlar. */
+export function autocadKilitleri(project) {
+  const l = ((project && project.sebeke && project.sebeke.onaylar) || []).filter((o) => o && o.hakedis).map((o) => Math.round(+o.no)).filter((n) => n > 0);
+  return new Set(l);
+}
+/** Hat kaydında AutoCAD'deki iletken satırlarını değiştiren alanlar (eklentide Hat Değiştir'in değiştirdikleri). */
+const HAT_DEGISTIRME_ALANLARI = ['circuits', 'lineType', 'install', 'musterek', 'state', 'channelOnly', 'abonePhase', 'aboneCount'];
+/**
+ * Hattın iletkenini / türünü / durumunu değiştirme kilidi (eklentideki Iletkenler.DegistirmeKilidi ile aynı kural):
+ * hattın kendi hakedişi ya da AutoCAD'deki iletken (HAT) satırlarından biri AutoCAD'de onaylı (kilitli) hakedişteyse
+ * değiştirilemez; eklenti de bu hattı Telefondan Al'da kabul etmezdi. patch verilirse yalnız bu alanlardan biri
+ * gerçekten değişiyorsa bakılır. Dönüş: kilit mesajı; kilit yoksa null.
+ */
+export function hatDegistirmeKilidi(line, patch, project) {
+  if (!line) return null;
+  if (patch && !HAT_DEGISTIRME_ALANLARI.some((k) => k in patch && JSON.stringify(patch[k] ?? null) !== JSON.stringify(line[k] ?? null))) return null;
+  const kilitli = autocadKilitleri(project);
+  if (!kilitli.size) return null;
+  const sb = line.sebeke || {};
+  const ad = line.lineNo || sb.etiket || sb.id || '';
+  if (kilitli.has(Math.round(+sb.hakedis))) return ad + ': ' + sb.hakedis + '. hakediş AutoCAD\'de onaylı (kilitli) · hattın iletkeni, türü ve durumu değiştirilemez.';
+  for (const rows of Object.values(sb.kalemBilgisi || {})) {
+    for (const k of Array.isArray(rows) ? rows : []) {
+      if (k.kaynak === 'HAT' && kilitli.has(Math.round(+k.hakedis))) return ad + ': ' + k.hakedis + '. hakediş AutoCAD\'de onaylı (kilitli) · hattın bu hakedişteki iletken satırı (' + (k.tanim || k.cins || '') + ') değiştirilemez, silinemez.';
+    }
+  }
+  return null;
 }
 
 /**
