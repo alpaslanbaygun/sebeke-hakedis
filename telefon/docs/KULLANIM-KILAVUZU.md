@@ -538,30 +538,38 @@ Aplikasyon ekranı sizi seçtiğiniz hedef noktaya yürütür ve toleransın iç
 | --- | --- |
 | Listeden | Aplikasyon ekranında `Hedef nokta` kartına dokunun. En yakın noktalar üstte sıralanır |
 | Haritadan | Bir objeye dokunup `Aplikasyon` deyin, ya da haritaya uzun basıp `Buraya aplikasyon yap` deyin |
-| Çizimden | `CAD çizimi aç` ile çizimi açın, çizimde bir uca dokunun, `Aplikasyon yap` deyin |
+| Çizimden | `Ayrıntılar` bölümündeki `CAD çizimi aç` ile çizimi açın, çizimde bir uca dokunun, `Aplikasyon yap` deyin |
 | Sıradaki | `SONRAKİ` düğmesi aynı hattaki bir sonraki düğüme geçer |
 
 ### Hedefe yürüme
 
-Ekrandaki pusula hedefin yönünü, altındaki yazı ne yapacağınızı söyler: "3,2 m ileri, 0,4 m sağa". Yaklaştıkça halkaların ölçeği küçülür.
+Ekran (1.11.2026 tasarımı) tek bakışta okunacak şekilde düzenlenmiştir: solda radar (hedefin yürüyüş yönünüze göre yeri;
+pusula yoksa kuzeye göre), sağda büyük harflerle **kalan mesafe** ve altında **ileri / geri** ve **sağa / sola** ne kadar
+yürüyeceğiniz. Altındaki mavi satır ne yapacağınızı söyler: "Hedef önünüzde · ileri yürüyün", "Hedef sağınızda · sağa
+dönün", 20 cm'den yakında "küçük adımlarla yaklaşın". Yaklaştıkça radar halkalarının ölçeği küçülür. `İŞARETLE` ve
+`SONRAKİ` düğmeleri ekranın altına yapışıktır; kaydırmak gerekmez.
 
-![Aplikasyon ekranı: pusula, kalan mesafe ve tolerans çubuğu](kilavuz/06-aplikasyon.png)
+![Aplikasyon ekranı: radar, kalan mesafe, yönler ve alttaki İŞARETLE çubuğu](kilavuz/06-aplikasyon.png)
 
 | Gösterge | Anlamı |
 | --- | --- |
-| `Kalan mesafe ΔD` | Hedefe yatay uzaklık |
-| `İleri` / `Geri`, `Sağ` / `Sol` | Hangi yöne ne kadar yürüyeceğiniz |
-| `Dolgu (+)` / `Kazı (−)` | Hedef kotuna göre yükseklik farkı |
-| `Eksen ofseti` | Hat ekseninden ne kadar saptığınız (izin 0,20 m) |
-| `BEKLİYOR` → `YAKLAŞIYOR` → `TOLERANS İÇİ` | Durum |
+| `Kalan mesafe` | Hedefe yatay uzaklık (büyük sayı) |
+| `… m ileri` / `geri`, `… m sağa` / `sola` | Hangi yöne ne kadar yürüyeceğiniz (yürüyüş yönü bilinince) |
+| `Kot farkı` (dolgu + / kazı −) | Hedef kotuna göre yükseklik farkı |
+| `Eksen` | Hat ekseninden ne kadar saptığınız (sağ / sol; izin 0,20 m) |
+| `Doğruluk` | Ölçünün yatay doğruluğu (σH) ve tolerans |
+| `BEKLİYOR` → `YAKLAŞIYOR` → `TOLERANS İÇİ`, `FIX` | Durum rozetleri |
+
+`Ayrıntılar` satırına dokununca tolerans bandı, hedef ve mevcut koordinatlar, CAD çizimi düğmeleri ve son
+aplikasyonlar açılır; bir kez açınca açık kalır.
 
 ### İşaretleme
 
-1. "Zemin işareti" altında ne çakacağınızı seçin: `Kazık`, `Çelik Çivi`, `Röper Boya` ya da `Poligon Kazığı`.
+1. "Zemin işareti" altında ne çakacağınızı seçin: `Kazık`, `Çelik çivi`, `Röper boya` ya da `Poligon kazığı`.
 2. Toleransın içine girince telefon titrer ve büyük düğme `İŞARETLE · D-017` olur.
 3. İşareti çakın ve düğmeye basın. Uygulama kaydı alır ve sıradaki hedefe geçer.
 
-Düğme yalnız iki koşul birlikte sağlanınca açılır: toleransın içinde olmak ve `RTK FIX`. `TOLERANS DIŞI` yazıyorsa hedefe yaklaşın; `FIX BEKLE` yazıyorsa yerinizde bekleyin.
+Düğme yalnız iki koşul birlikte sağlanınca açılır: toleransın içinde olmak ve `RTK FIX`. `TOLERANS DIŞI` yazıyorsa hedefe yaklaşın; `FIX BEKLE` yazıyorsa yerinizde bekleyin; `HEDEF SEÇİN` yazıyorsa önce hedef seçin.
 
 Tolerans varsayılan olarak 0,02 metredir; Ayarlar › Hassasiyet eşikleri › `Aplikasyon toleransı` satırından değiştirilir.
 

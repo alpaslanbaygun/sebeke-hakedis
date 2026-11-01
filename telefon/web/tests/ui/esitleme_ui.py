@@ -135,6 +135,27 @@ async def main():
             kontrol(yeni[0] == '@AG_İLETKEN|4P+R' and yeni[1] == 2, 'kaydedildi; metraj tel tel (kg): ' + json.dumps(yeni, ensure_ascii=False))
             await pg.evaluate("() => window.__app.nav.back()"); await pg.wait_for_timeout(400)
 
+            # Aplikasyon (1.11.2026 tasarımı): hedef seçili, simülatörle yaklaşınca İŞARETLE açılır, kayıt düşer
+            await pg.evaluate("""() => { const a = window.__app, ps = a.ps; const e = ps.data.equipment.find((x) => x.kind === 'pole'); a.state.target = { id: e.pointId }; a.bus.emit('ui:target'); a.nav.tab('stake'); }""")
+            await pg.wait_for_timeout(600)
+            kontrol(await pg.locator('.apl-hedef-ad').inner_text() == 'A-01' and await pg.locator('.apl-alt .btn.huge').is_disabled(), 'aplikasyon: hedef A-01, konum yokken İŞARETLE kapalı')
+            await pg.evaluate("""() => { const a = window.__app, ps = a.ps, g = a.gnss; const t = ps.pointById(a.state.target.id); const k = 111320, kl = k * Math.cos(t.lat * Math.PI / 180);
+              g.startSimulator({ profile: 'FIX', base: { lat: t.lat + 6 / k, lon: t.lon + 2 / kl, alt: t.H } }); g.simWalkTo({ lat: t.lat, lon: t.lon }); }""")
+            await pg.wait_for_timeout(1500)
+            await pg.screenshot(path=f'{OUT}/esitleme_04d_aplikasyon_uzak.png')
+            uzak = await pg.locator('.apl-mesafe').inner_text()
+            kontrol(await pg.locator('.apl-yon-satir').count() == 2 and 'ileri' in await pg.locator('.apl-sag').inner_text(), 'aplikasyon: kalan mesafe ' + uzak.replace('\n', ' ') + ', ileri / sağ-sol yönleri')
+            for _ in range(120):   # simülatör 0,5 m'den sonra 2 cm'lik adımlarla yaklaşır (~15 s)
+                if await pg.locator('.apl-alt .btn.huge').is_enabled(): break
+                await pg.wait_for_timeout(300)
+            await pg.screenshot(path=f'{OUT}/esitleme_04e_aplikasyon_yakin.png')
+            sag = await pg.locator('.apl-sag').inner_text()
+            kontrol(await pg.locator('.apl-alt .btn.huge').is_enabled() and 'TOLERANS' in sag.upper(), 'aplikasyon: tolerans içinde İŞARETLE açıldı: ' + sag.replace('\n', ' / '))
+            await pg.locator('.apl-alt .btn.huge').click(); await pg.wait_for_timeout(500)
+            kayit = await pg.evaluate("() => window.__app.ps.data.stakeouts.map((s) => [s.targetNo, s.accepted, s.mark])")
+            kontrol(len(kayit) == 1 and kayit[0][0] == 'A-01' and kayit[0][1] is True and kayit[0][2] == 'kazik', 'aplikasyon kaydı: ' + json.dumps(kayit, ensure_ascii=False))
+            await pg.evaluate("() => window.__app.gnss.stopAll()"); await pg.wait_for_timeout(300)
+
             # Ayarlar: gruplu menü (1.11.2026); Harita grubunda altlık anahtar kutuları
             await pg.evaluate("() => window.__app.nav.tab('settings')"); await pg.wait_for_timeout(700)
             await pg.screenshot(path=f'{OUT}/esitleme_05a_ayarlar_menu.png')
