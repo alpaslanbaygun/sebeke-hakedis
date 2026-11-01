@@ -151,9 +151,8 @@ namespace SebekeHakedis.PencereTest
                     x0 => BuyukPanel(dc, x0, "Telefon", new (string, string, Color?)[] { ("Telefondan\nAl", "telefon_al", Color.FromRgb(0x3B, 0xA4, 0xF6)), ("Telefona\nGönder", "telefon_gonder", Color.FromRgb(0x3B, 0xA4, 0xF6)) }),
                     // CBS ve harita (eklentide Serit: SH_KML, SH_MIFVER, SH_MIFAL, SH_CBSBILGI, SH_ALTLIK)
                     x0 => BuyukPanel(dc, x0, "CBS ve Harita", new (string, string, Color?)[] { ("Google\nEarth", "kml", Color.FromRgb(0x23, 0xA4, 0x55)), ("CBS'ye\nAktar", "cbs_ver", null), ("CBS'den\nAl", "cbs_al", null), ("CBS\nBilgisi", "bilgi", null), ("Harita\nAltlığı", "altlik", Color.FromRgb(0x3B, 0xA4, 0xF6)) }),
-                    // Teknik hesaplar (eklentide Serit.HesapPanelleri): merkez, kayıtlar, iki açılır liste; yerleşim araçları
-                    x0 => BuyukPanel(dc, x0, "Teknik Hesaplamalar", new (string, string, Color?)[] { ("Hesap\nMerkezi", "hesap_merkezi", Color.FromRgb(0xF5, 0x9E, 0x0B)), ("Kayıtlı\nHesaplar", "hesap_kayit", null), ("Hat ve\nDirek ▾", "hesap_direk", null), ("Elektrik ▾", "hesap_elektrik", null) }),
-                    x0 => BuyukPanel(dc, x0, "Proje ve Yerleşim", new (string, string, Color?)[] { ("Beton\nKöşk", "kosk", null), ("Kanal\nPlanı", "kanal", null), ("AG Tek\nHat", "tekhat", null) }),
+                    // Teknik hesaplar (eklentide Serit.HesapPanelleri): merkez, kayıtlar ve moduller.json'daki hesaplar
+                    x0 => BuyukPanel(dc, x0, "Teknik Hesaplamalar", new (string, string, Color?)[] { ("Hesap\nMerkezi", "hesap_merkezi", Color.FromRgb(0xF5, 0x9E, 0x0B)), ("Kayıtlı\nHesaplar", "hesap_kayit", null), ("Cer\nVektörü", "hesap_direk", null), ("Kanal\nPlanı", "kanal", null) }),
                 };
                 foreach (var ek in AracPanelleri) { var e = ek; paneller.Add(x0 => e(dc, x0)); }
                 PanelleriCiz(dc, paneller, "ŞEBEKE-M ARAÇLAR");

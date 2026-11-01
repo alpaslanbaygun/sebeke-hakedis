@@ -1,101 +1,49 @@
 {
-  "surum": 1,
-  "aciklama": "Hesap Merkezi'ndeki hesaplar. Telefon uygulaması (Hesaplar ekranı, direk ve hat ekranları) ile AutoCAD eklentisi (ŞEBEKE-M ARAÇLAR sekmesi, hesap merkezi) aynı listeyi kullanır. uygunluk: hangi hedefte açılabileceği (ortak/hesap/uygunluk.mjs). Hesap araçlarının formülleri ve tabloları değiştirilmeden eklenmiştir.",
-  "gruplar": [
-    { "id": "mekanik", "ad": "Hat ve direk hesapları", "kisa": "Hat ve direk" },
-    { "id": "elektrik", "ad": "Elektrik hesapları", "kisa": "Elektrik" },
-    { "id": "yerlesim", "ad": "Proje ve yerleşim araçları", "kisa": "Proje ve yerleşim" }
-  ],
-  "moduller": [
-    {
-      "id": "enh-sehim", "ad": "ENH Sehim Hesabı", "kisa": "ENH Sehim", "grup": "mekanik",
-      "aciklama": "Gerilme bölümleri, eşdeğer açıklık; sıcaklığa göre çekme kuvveti ve sehim tablosu, saha sehim cetveli",
-      "kaynak": "ENH Sehim Hesabı Simülatörü (hal değişim denklemi)",
-      "uygunluk": { "hedefler": ["hat", "direk"], "havai": true, "devre": ["OG"], "aile": ["ACSR"], "enAzAciklik": 1 }
-    },
-    {
-      "id": "uplift", "ad": "ENH Uplift Kontrolü", "kisa": "Uplift", "grup": "mekanik",
-      "aciklama": "Taşıyıcı direkte en düşük sıcaklıkta yukarı çekme (uplift) var mı; durdurucu gerekir mi",
-      "kaynak": "ENH Uplift Kontrol Simülatörü",
-      "uygunluk": { "hedefler": ["direk", "hat"], "havai": true, "devre": ["OG"], "aile": ["ACSR"], "rol": ["T"], "enAzKol": 2 }
-    },
-    {
-      "id": "enh-agaw", "ad": "ENH ag–aw Bağıntısı", "kisa": "ag–aw", "grup": "mekanik",
-      "aciklama": "Taşıyıcı direklerde ağırlık açıklığı (ag) ile rüzgâr açıklığı (aw) bağıntısı kontrolü (TEDAŞ 2014/1, 2014/3)",
-      "kaynak": "ENH ag–aw Bağıntısı Kontrolü",
-      "uygunluk": { "hedefler": ["hat", "direk"], "havai": true, "devre": ["OG"], "aile": ["ACSR"], "rol": ["T"] }
-    },
-    {
-      "id": "amax", "ad": "Amax Hesabı", "kisa": "Amax", "grup": "mekanik",
-      "aciklama": "Travers düzenine (DfDs0–8), iletkene ve bölgeye göre izin verilen en büyük açıklık",
-      "kaynak": "Amax Hesabı — Travers Düzenleri",
-      "uygunluk": { "hedefler": ["direk", "hat"], "havai": true, "devre": ["OG"], "aile": ["ACSR"], "enAzKol": 1 }
-    },
-    {
-      "id": "kopma", "ad": "İletken Kopma (İki Misli Buz Yükü)", "kisa": "İletken Kopma", "grup": "mekanik",
-      "aciklama": "İki misli buz yükünde direk tepesindeki çekme 0,7·Tkop sınırında kalıyor mu",
-      "kaynak": "İki Misli Buz Yükü — İletken Kopma Hesabı Simülatörü",
-      "uygunluk": { "hedefler": ["direk"], "havai": true, "devre": ["OG"], "aile": ["ACSR"], "enAzKol": 2 }
-    },
-    {
-      "id": "tepe-tedas", "ad": "Direk Tepe Kuvveti (TEDAŞ)", "kisa": "Tepe Kuvveti", "grup": "mekanik",
-      "aciklama": "Tertibat / cer girişlerinden en kötü durum tepe kuvveti ve AG ya da müşterek direk tipi önerisi",
-      "kaynak": "Tepe Kuvveti Hesabı (TEDAŞ)",
-      "uygunluk": { "hedefler": ["direk"], "havai": true, "devre": ["AG", "OG"], "hatTur": ["AG_HAVAI", "MUSTEREK", "AYDINLATMA"], "enAzKol": 1 }
-    },
-    {
-      "id": "tepe-vektor", "ad": "Direk Tepe Kuvveti (Cer Vektörü)", "kisa": "Cer Vektörü", "grup": "mekanik",
-      "aciklama": "Bütün hatların çekme kuvvetlerinin vektörel toplamı ve bileşke yönü",
-      "kaynak": "Cer Vektör Çizimi — Tepe Kuvveti Hesabı",
-      "uygunluk": { "hedefler": ["direk"], "havai": true, "enAzKol": 1 }
-    },
-    {
-      "id": "og-gd", "ad": "OG Gerilim Düşümü ve Güç Kaybı", "kisa": "OG Gerilim Düşümü", "grup": "elektrik",
-      "aciklama": "OG fiderde segment segment gerilim düşümü ve güç kaybı (TEDAŞ K ve C tabloları)",
-      "kaynak": "OG Gerilim Düşümü ve Güç Kaybı Hesabı – TEDAŞ",
-      "uygunluk": { "hedefler": ["hat", "trafo", "proje"], "devre": ["OG"] }
-    },
-    {
-      "id": "ag-gd", "ad": "AG Gerilim Düşümü ve Güç Kaybı", "kisa": "AG Gerilim Düşümü", "grup": "elektrik",
-      "aciklama": "AG kolda hat hat gerilim düşümü, güç kaybı ve iletken akım kontrolü (k / m katsayıları)",
-      "kaynak": "AG Gerilim Düşümü ve Güç Kaybı Hesabı",
-      "uygunluk": { "hedefler": ["trafo", "hat", "proje"], "devre": ["AG"] }
-    },
-    {
-      "id": "og-kd", "ad": "OG Kısa Devre Hesabı", "kisa": "OG Kısa Devre", "grup": "elektrik",
-      "aciklama": "154 kV şebekeden OG hat zinciri ve dağıtım trafosu üzerinden kısa devre akımları (pu ve MVA yöntemi)",
-      "kaynak": "OG Kısa Devre Simülatörü v23",
-      "uygunluk": { "hedefler": ["trafo", "hat", "proje"], "devre": ["OG"] }
-    },
-    {
-      "id": "ag-kd", "ad": "AG Kısa Devre Hesabı", "kisa": "AG Kısa Devre", "grup": "elektrik",
-      "aciklama": "Dağıtım trafosundan AG segment zinciri boyunca kısa devre akımları, kesit ve koruma kontrolü (IEC 60909 / TEDAŞ)",
-      "kaynak": "AG Kısa Devre Hesabı Simülatörü v21",
-      "uygunluk": { "hedefler": ["trafo", "hat", "proje"], "devre": ["AG"] }
-    },
-    {
-      "id": "cu-al", "ad": "Bakır ⇄ Alüminyum Kablo Kesiti", "kisa": "Cu → Al Kesit", "grup": "elektrik",
-      "aciklama": "Bakır kablo kesitine eşdeğer alüminyum kesit, imar kat sayısına göre abone kablosu, 36 kV kablo tablosu",
-      "kaynak": "Bakır Kablo Kesitine Eşdeğer Alüminyum Kablo Kesiti",
-      "uygunluk": { "hedefler": ["hat", "trafo", "kanal", "proje", "direk"] }
-    },
-    {
-      "id": "kosk", "ad": "Beton Köşk Yerleşim Planı", "kisa": "Beton Köşk", "grup": "yerlesim",
-      "aciklama": "Monoblok / prefabrik köşk ve trafo binasında YG hücre, trafo ve AG pano yerleşimi; TEDAŞ kontrolleri, ağırlık, plan, görünüş ve YG tek hat şeması",
-      "kaynak": "Beton Köşk 3B Yerleşim Simülatörü (Monoblok + Prefabrik)",
-      "uygunluk": { "hedefler": ["trafo", "proje"], "trafoTur": ["kosk", "bina"] }
-    },
-    {
-      "id": "kanal", "ad": "Kanal Planı", "kisa": "Kanal Planı", "grup": "yerlesim",
-      "aciklama": "Yeraltı kablo kanalı kesit detayları: kablo dizilişi, kanal genişliği ve derinliği, kazı metrajı, DXF",
-      "kaynak": "Kanal Planı v1.0 (TEDAŞ kablo kanalı detayları)",
-      "uygunluk": { "hedefler": ["kanal", "hat", "proje"], "havai": false }
-    },
-    {
-      "id": "ag-tekhat", "sayfa": "ag-kd", "bolum": "tekhat", "ad": "AG Tek Hat Şeması", "kisa": "AG Tek Hat", "grup": "yerlesim",
-      "aciklama": "Trafodan AG segment zincirinin tek hat şeması ve arıza noktaları (AG kısa devre hesabıyla birlikte)",
-      "kaynak": "AG Kısa Devre Hesabı Simülatörü v21 — tek hat şeması",
-      "uygunluk": { "hedefler": ["trafo", "hat", "proje"], "devre": ["AG"] }
-    }
-  ]
+ "surum": 1,
+ "aciklama": "Hesap Merkezi'ndeki hesaplar (1.11.2026'dan beri yalnız direk cer vektörü ve kanal planı; ötekiler kullanıcı isteğiyle kaldırıldı, dosyaları depo geçmişinde). Telefon uygulaması (Hesaplar ekranı, direk ve hat ekranları) ile AutoCAD eklentisi (ŞEBEKE-M ARAÇLAR sekmesi, hesap merkezi) aynı listeyi kullanır. uygunluk: hangi hedefte açılabileceği (ortak/hesap/uygunluk.mjs). Hesap araçlarının formülleri ve tabloları değiştirilmeden eklenmiştir.",
+ "gruplar": [
+  {
+   "id": "mekanik",
+   "ad": "Hat ve direk hesapları",
+   "kisa": "Hat ve direk"
+  },
+  {
+   "id": "yerlesim",
+   "ad": "Proje ve yerleşim araçları",
+   "kisa": "Proje ve yerleşim"
+  }
+ ],
+ "moduller": [
+  {
+   "id": "tepe-vektor",
+   "ad": "Direk Tepe Kuvveti (Cer Vektörü)",
+   "kisa": "Cer Vektörü",
+   "grup": "mekanik",
+   "aciklama": "Bütün hatların çekme kuvvetlerinin vektörel toplamı ve bileşke yönü",
+   "kaynak": "Cer Vektör Çizimi — Tepe Kuvveti Hesabı",
+   "uygunluk": {
+    "hedefler": [
+     "direk"
+    ],
+    "havai": true,
+    "enAzKol": 1
+   }
+  },
+  {
+   "id": "kanal",
+   "ad": "Kanal Planı",
+   "kisa": "Kanal Planı",
+   "grup": "yerlesim",
+   "aciklama": "Yeraltı kablo kanalı kesit detayları: kablo dizilişi, kanal genişliği ve derinliği, kazı metrajı, DXF",
+   "kaynak": "Kanal Planı v1.0 (TEDAŞ kablo kanalı detayları)",
+   "uygunluk": {
+    "hedefler": [
+     "kanal",
+     "hat",
+     "proje"
+    ],
+    "havai": false
+   }
+  }
+ ]
 }

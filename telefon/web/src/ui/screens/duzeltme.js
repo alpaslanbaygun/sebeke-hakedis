@@ -67,7 +67,7 @@ export function DuzeltmeBolumu() {
     if (!kind) return;
     let ad = HAZIR[kind].name, i = 2;
     while (np.list.some((p) => p.name.toLocaleLowerCase('tr-TR') === ad.toLocaleLowerCase('tr-TR'))) ad = HAZIR[kind].name + ' ' + i++;
-    const n = await app.prompt('Yeni profil · ' + TUR_ADLARI[kind], 'Profil adı', { required: true, value: ad, placeholder: 'ör. Sabit istasyon · Elazığ', note: 'Bağlantı bilgilerini profil seçiliyken aşağıdan girin ya da "Dosyadan al" ile alın.' });
+    const n = await app.prompt('Yeni profil · ' + TUR_ADLARI[kind], 'Profil adı', { required: true, value: ad, placeholder: 'ör. Sabit istasyon · Şantiye', note: 'Bağlantı bilgilerini profil seçiliyken aşağıdan girin ya da "Dosyadan al" ile alın.' });
     if (!n) return;
     try { setMounts([]); setDeneme(null); saveNp(addProfile(np, n, kind)); } catch (e) { app.toast(e.message, 'warn'); }
   };

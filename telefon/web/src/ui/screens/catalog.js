@@ -60,7 +60,7 @@ export function PozScreen({ pickFor }) {
     app.toast(p0 ? 'Kalem güncellendi' : 'Kalem eklendi · artık listelerden seçilebilir', 'ok', 3500);
     await ps.recompute('Katalog kalemi');
   };
-  return html`<${Title} title="Poz Kataloğu" sub=${'Kaynak: ' + cat.std.book + ' yeşil defteri · ' + cat.std.code} right=${html`<button class="btn sm pri" onClick=${() => editPoz(null)}><${Icon} n="plus" s=${16} c="#0b1326" />Kalem ekle</button>`} />
+  return html`<${Title} title="Poz Kataloğu" sub=${cat.std.name} right=${html`<button class="btn sm pri" onClick=${() => editPoz(null)}><${Icon} n="plus" s=${16} c="#0b1326" />Kalem ekle</button>`} />
     <div class="grid3">${['montaj', 'demontaj', 'dmm'].map((j) => html`<div class="stat"><b>${JOB_LABEL[j]}</b><span>${cnt(j)}</span></div>`)}</div>
     <div class="note">Veritabanındaki ${cat.t.poz.length} poz · sürüm ${cat.std.validFrom} – ${cat.std.validTo}. Birim fiyatlar CSV ile (servis;malzeme;montaj) güncellenebilir.</div>
     <div class="row"><${Icon} n="search" c="#94a3b8" /><input class="inp grow" placeholder="Servis poz no veya malzeme adı: GZ-12, 009…" value=${q} onInput=${(e) => { setQ(e.target.value); setN(80); }} /></div>
@@ -72,7 +72,7 @@ export function PozScreen({ pickFor }) {
       ${rows.length > n ? html`<button class="li" style="justify-content:center" onClick=${() => setN(n + 150)}>Daha fazla (${rows.length - n})</button>` : null}</div>
     ${selP ? html`<div class="card ok stack" style="position:sticky;bottom:-24px"><div class="row"><b class="grow">${selP.name}</b><button class="btn xs" onClick=${() => setSel(null)}><${Icon} n="x" s=${14} /></button></div>
       <div class="kv mono" style="font-size:12px"><b>Servis</b><span>${selP.servis} → ${cat.jobCode(selP.servis, 'demontaj')} / ${cat.jobCode(selP.servis, 'dmm')}</span><b>Sayfalar</b><span>${selP.montaj !== false ? 'Montaj ' : ''}${selP.demontaj ? 'Demontaj ' : ''}${selP.dmm ? 'DMM' : ''}</span><b>BF poz</b><span>${selP.bfPoz || '—'}</span><b>Geçerlilik</b><span>${selP.validFrom} – ${selP.validTo}</span></div>
-      ${selP.verified === false && !selP.inGreenBook ? html`<div class="note hw">${selP.source || 'Doğrulanacak kalem'}${selP.pozConfirmed ? ' · TEDAŞ poz numarası kaynakta görüldü' : ''}</div>` : null}
+      ${selP.verified === false && !selP.inGreenBook ? html`<div class="note hw">${selP.source || 'Doğrulanacak kalem'}${selP.pozConfirmed ? ' · poz numarası kaynakta görüldü' : ''}</div>` : null}
       ${selP.verified === false || selP.userAdded ? html`<button class="btn sm" onClick=${() => editPoz(selP)}><${Icon} n="edit" s=${16} />Ad / poz no / fiyat düzelt</button>` : null}
       ${pickFor ? html`<button class="btn pri" onClick=${() => { app.bus.emit('poz:picked', { servis: selP.servis, pickFor }); app.nav.back(); }}>KAYDA EKLE · ${selP.servis}</button>` : null}</div>` : null}`;
 }
@@ -112,7 +112,7 @@ export function LayersScreen() {
     <div class="sect">Sokak lambaları · B_CAD yazı tipi</div>
     <div class="card tight list">${(L.lamps || []).map((l) => html`<div class="li"><b class="grow" style="font-size:13px">${l.n}</b><span class="badge b-warn" style="height:28px;width:34px;justify-content:center;font-size:14px">${l.m}</span><span class="badge b-cy" style="height:28px;width:34px;justify-content:center;font-size:14px">${l.y}</span></div>`)}</div>
     <div class="sect">Hat etiketi ve metraj</div>
-    <div class="card tight list">${Object.entries(STIL.etiketler.kesit).map(([k, fm]) => html`<div class="li"><b class="mono" style=${'width:120px;color:' + (k === 'DEMONTAJ' ? DEMONTAJ_RENGI : H.HAT_AG)}>${'H1 ' + fm.replace('{t}', '3P+R/P')}</b><span class="grow" style="font-size:13px">${{ MEVCUT: 'Mevcut hat', YENI: 'Yeni hat', ILERIDE: 'İlerde yapılacak hat', DMM: 'Sökülüp kullanılan (BYSK)', DEMONTAJ: 'Demontaj hattı' }[k] || k}</span></div>`)}
+    <div class="card tight list">${Object.entries(STIL.etiketler.kesit).map(([k, fm]) => html`<div class="li"><b class="mono" style=${'width:120px;color:' + (k === 'DEMONTAJ' ? DEMONTAJ_RENGI : H.HAT_AG)}>${'H1 ' + fm.replace('{t}', '3P+R/P')}</b><span class="grow" style="font-size:13px">${{ MEVCUT: 'Mevcut hat', YENI: 'Yeni hat', ILERIDE: 'İleride yapılacak hat', DMM: 'Sökülüp kullanılan (BYSK)', DEMONTAJ: 'Demontaj hattı' }[k] || k}</span></div>`)}
       <div class="li"><b class="mono" style=${'width:120px;color:' + H.HAT_AG}>32.50</b><span class="grow" style="font-size:13px">Açıklık metrajı: iki direk (yer altında iki bağlantı elemanı) arası, çizginin üst yanında; etiket alt yanında, hattın renginde</span></div></div>
     <div class="alert info"><${Icon} n="info" s=${16} /><span>Renkler, çizgi tipleri ve yazı düzeni ortak çizim stilinden: haritada, DXF çıktısında ve AutoCAD eklentisinde aynıdır (ortak/katalog/cizim-stili.json).</span></div>`;
 }
@@ -146,10 +146,10 @@ export function DefinitionsScreen({ eqId }) {
   const setQ = (k, v) => ps.updateProject({ paramOverrides: Object.assign({}, ps.p.paramOverrides, { [k]: v }) }, 'Reçete parametresi: ' + k + ' = ' + v);
   const reset = () => ps.updateProject({ paramOverrides: {} }, 'Reçete parametreleri varsayılana döndü');
   const clone = async () => {
-    const code = await app.prompt('Yeni standart sürümü', 'Kod (ör. TEDAŞ 2027)', { value: 'TEDAŞ 2027', required: true, note: 'Mevcut sürüm kopyalanır (taslak). Eski projeler kendi sürümünde kalır; sürümler karışmaz.' });
+    const code = await app.prompt('Yeni katalog sürümü', 'Kod (ör. 2027)', { value: '2027', required: true, note: 'Mevcut sürüm kopyalanır (taslak). Eski projeler kendi sürümünde kalır; sürümler karışmaz.' });
     if (!code) return;
     const id = code.replace(/[^\w]+/g, '-').toUpperCase() + '-' + Date.now().toString(36).slice(-4).toUpperCase();
-    await cloneStandard(app.ds, cat.stdId, { id, code, name: code + ' (taslak · ' + cat.std.book + ' kopyası)', validFrom: code.match(/\d{4}/) ? code.match(/\d{4}/)[0] + '-01-01' : cat.std.validFrom, validTo: code.match(/\d{4}/) ? code.match(/\d{4}/)[0] + '-12-31' : cat.std.validTo });
+    await cloneStandard(app.ds, cat.stdId, { id, code, name: 'Poz kataloğu ' + code + ' (taslak · ' + cat.std.code + ' kopyası)', validFrom: code.match(/\d{4}/) ? code.match(/\d{4}/)[0] + '-01-01' : cat.std.validFrom, validTo: code.match(/\d{4}/) ? code.match(/\d{4}/)[0] + '-12-31' : cat.std.validTo });
     setStds(await listStandards(app.ds)); app.toast(code + ' taslak sürümü oluşturuldu');
   };
   const exportStd = async () => { const pkg = await exportStandard(app.ds, cat.stdId); await app.bridge.saveFile(cat.stdId + '.json', 'application/json', new TextEncoder().encode(JSON.stringify(pkg))); };
@@ -184,9 +184,9 @@ export function DefinitionsScreen({ eqId }) {
     <div class="sect">Malzeme → poz eşlemesi</div>
     <div class="card tight list">${mm.map((m) => html`<button class="li" onClick=${() => mapMat(m)}><div class="grow"><div class="t" style="font-size:13px">${m.label}</div><div class="m">${m.key} · ${m.unit}</div></div>${m.servis ? html`<span class="mono hl" style="font-size:11px">${m.servis}</span>` : html`<${Badge} k="warn">POZ YOK</${Badge}>`}</button>`)}</div>
     <div class="sect">Standart sürümleri</div>
-    <div class="card tight list">${stds.map((s) => html`<div class="li"><div class="grow"><div class="t" style="font-size:13px">${s.name}</div><div class="m">${s.id} · ${s.validFrom} – ${s.validTo} · ${s.status}${s.id === cat.stdId ? ' · BU PROJE' : ''}</div></div></div>`)}</div>
+    <div class="card tight list">${stds.map((s) => html`<div class="li"><div class="grow"><div class="t" style="font-size:13px">${s.name}</div><div class="m">${s.validFrom} – ${s.validTo} · ${s.status === 'active' ? 'etkin' : s.status}${s.id === cat.stdId ? ' · BU PROJE' : ''}</div></div></div>`)}</div>
     <div class="grid2"><button class="btn" onClick=${clone}>Yeni sürüm (kopya)</button><button class="btn" onClick=${exportStd}>Sürümü dışa aktar</button></div>
     <div class="sect">Doğrulanmamış varsayılan tablolar</div>
     <div class="card tight list">${['enh', 'clearances', 'cableRules'].map((k) => { const v = cat.table(k) || {}; return html`<div class="li"><div class="grow"><div class="t" style="font-size:13px">${k}</div><div class="s">${v.note || ''}</div></div>${v.verified ? html`<${Badge} k="ok">DOĞRULANDI</${Badge}>` : html`<button class="btn xs" onClick=${() => verify(k)}>Doğrula</button>`}</div>`; })}</div>
-    <div class="note">Projenin standart sürümü oluşturulurken sabitlenir (${ps.p.stdId}); TEDAŞ 2026 ve 2027 aynı projede karışmaz.</div>`;
+    <div class="note">Projenin katalog sürümü oluşturulurken sabitlenir; 2026 ve 2027 sürümleri aynı projede karışmaz.</div>`;
 }

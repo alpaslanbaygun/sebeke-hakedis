@@ -44,7 +44,7 @@ async function boot() {
     const user = ((await db.get('settings', 'user')) || {}).value || { id: 'u-' + dev.value, name: WEB ? 'Ofis' : 'Saha Operatörü', role: WEB ? 'engineer' : 'operator' };
     const ds = new DataService(db, { bus, user, deviceId: dev.value });
     if (!(await db.count('standards'))) {
-      splash('TEDAŞ 2026 · Yeşil Defter 26.23.GR.02 yükleniyor…');
+      splash('Poz kataloğu yükleniyor…');
       const pkg = await (await fetch('seed/standard-tedas-2026.json')).json();
       const imp = () => importStandard(ds, pkg, { reason: 'İlk kurulum · standart paketi' });
       if (cloud) await cloud.seed(imp); else await imp();

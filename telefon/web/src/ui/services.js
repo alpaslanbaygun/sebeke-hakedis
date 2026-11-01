@@ -32,7 +32,7 @@ export function wireRawLog() {
 export async function measure({ critical = true, label = 'Nokta' } = {}) {
   const g = app.gnss;
   if (g.state.source === 'none') {
-    app.toast('Konum kaynağı yok · Ayarlar › Konum kaynağı', 'warn', 4000);
+    app.toast('Konum kaynağı yok · Ayarlar › Ölçüm', 'warn', 4000);
     return null;
   }
   const phone = g.state.source === 'phone';
@@ -88,7 +88,7 @@ export async function favorites(toggleId) {
 
 // ---------------------------------------------------------------- Harita altlıkları
 // Her altlık: haritada gösterilecek atıf (attr), kullanım koşulu notu ve adresi, gereken anahtar (key: Ayarlar'daki
-// anahtarın adı) ve toplu / offline indirmeye izin (offline). Anahtarlar kodda yoktur: Ayarlar › Harita altlığı'nda
+// anahtarın adı) ve toplu / offline indirmeye izin (offline). Anahtarlar kodda yoktur: Ayarlar › Harita'da
 // girilir, yalnız bu cihazda saklanır (proje dosyalarına, eşitlemeye ve paylaşıma girmez). Anahtar isteyen altlık
 // anahtarsız denenmez; anahtarsız ücretsiz seçenekler (OpenStreetMap, OpenTopoMap, Esri uydu) her zaman vardır.
 // Ücretsiz kullanım sınırsız değildir: sağlayıcı yoğun kullanımı kesebilir (notlarda yazılı).
@@ -99,7 +99,7 @@ export const BASEMAPS = [
   { id: 'osm', grup: 'ucretsiz', label: 'OpenStreetMap', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', maxZoom: 19,
     attr: '© OpenStreetMap katkıda bulunanlar', kosul: 'https://operations.osmfoundation.org/policies/tiles/',
     note: 'Ücretsiz, gönüllü sunucular. Toplu / offline indirme yasak; yoğun kullanımda erişim haber verilmeden kesilebilir.' },
-  { id: 'otm', grup: 'ucretsiz', label: 'OpenTopoMap (topoğrafik)', url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png', maxZoom: 17,
+  { id: 'otm', grup: 'ucretsiz', label: 'OpenTopoMap (topografik)', url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png', maxZoom: 17,
     attr: '© OpenStreetMap katkıda bulunanlar, SRTM · © OpenTopoMap (CC-BY-SA)', kosul: 'https://opentopomap.org/about',
     note: 'Ücretsiz; sunucu kapasitesi sınırlı, toplu indirme yok. Eş yükselti eğrili.' },
   { id: 'esri', grup: 'ucretsiz', label: 'Esri uydu görüntüsü', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', maxZoom: 19,
@@ -208,7 +208,7 @@ export async function tileUrl(bm, z, x, y, keys) {
   keys = keys || app.state.mapKeys || {};
   const fill = (u) => u.replace('{z}', z).replace('{x}', x).replace('{y}', y).replace('{q}', quadKey(x, y, z)).replace('{s}', bm.sub ? bm.sub[(x + y) % bm.sub.length] : '');
   const key = basemapKey(bm, keys);
-  if (bm.key && !key) { const e = new Error(bm.label + ': anahtar girilmemiş (Ayarlar › Harita altlığı)'); e.anahtar = true; throw e; }
+  if (bm.key && !key) { const e = new Error(bm.label + ': anahtar girilmemiş (Ayarlar › Harita)'); e.anahtar = true; throw e; }
   if (bm.provider === 'google') { const s = await googleSession(bm, key); return 'https://tile.googleapis.com/v1/2dtiles/' + z + '/' + x + '/' + y + '?session=' + encodeURIComponent(s) + '&key=' + encodeURIComponent(key); }
   if (bm.provider === 'bing') { const m = await bingMeta(bm, key); return m.url.replace('{subdomain}', m.alt.length ? m.alt[(x + y) % m.alt.length] : 't0').replace('{quadkey}', quadKey(x, y, z)).replace('{culture}', 'tr-TR'); }
   if (bm.id === 'ozel') return fill(key);

@@ -1,4 +1,4 @@
-// 25 saha senaryosu — gerçek standart verisi (Yeşil Defter 26.23.GR.02) ve Elazığ civarı TM39 koordinatlarıyla.
+// 25 saha senaryosu — gerçek katalog verisi (2026 poz kataloğu) ve TM39 dilimindeki koordinatlarla.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setup, newProject, buildPoleLine, route, rtkObs, phoneObs, tick, now, SEED } from './helpers.mjs';
@@ -548,7 +548,7 @@ test('29 · Excel: şablonlar, 124 kayıtlık dosya, doğrulama (118 uygun / 6 h
   const res = validateImport(ps, await parseTable(xlsx, 'saha.xlsx'));
   assert.equal(res.total, 124); assert.equal(res.ok, 118); assert.equal(res.bad, 6);
   const errs = res.records.filter((r) => !r.ok).map((r) => r.errors.join(' | ')).join('\n');
-  for (const re of [/Eksik obje numarası/, /Geçersiz veri tipi: X/, /Duplicate obje numarası: D-900 projede/, /Duplicate obje numarası: E-039 dosyada/, /Hatalı \/ boş koordinat/, /Koordinat sistemi uyumsuz/]) assert.match(errs, re);
+  for (const re of [/Eksik obje numarası/, /Geçersiz veri tipi: X/, /Yinelenen obje numarası: D-900 projede/, /Yinelenen obje numarası: E-039 dosyada/, /Hatalı \/ boş koordinat/, /Koordinat sistemi uyumsuz/]) assert.match(errs, re);
   assert.ok(res.records.find((r) => r.no === 'E-070').warnings.some((w) => /yer değiştirmiş/.test(w)));
   assert.ok(res.records.find((r) => r.no === 'E-080').warnings.some((w) => /Tip katalogda bulunamadı/.test(w)));
   assert.ok(res.records.find((r) => r.no === 'K-001').warnings.some((w) => /Uzunluk/.test(w)), 'kanal uzunluğu koordinatla karşılaştırıldı');

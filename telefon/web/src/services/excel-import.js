@@ -164,8 +164,8 @@ export function validateImport(ps, sheets, opts = {}) {
       if (!no) rec.errors.push('Eksik obje numarası (' + noCol + ')');
       else {
         const k = norm(no);
-        if (existing.has(k)) rec.errors.push('Duplicate obje numarası: ' + no + ' projede zaten var');
-        else if (seen.has(k)) rec.errors.push('Duplicate obje numarası: ' + no + ' dosyada ' + seen.get(k) + ' ile aynı');
+        if (existing.has(k)) rec.errors.push('Yinelenen obje numarası: ' + no + ' projede zaten var');
+        else if (seen.has(k)) rec.errors.push('Yinelenen obje numarası: ' + no + ' dosyada ' + seen.get(k) + ' ile aynı');
         else seen.set(k, sh.name + ' satır ' + (r + 1));
       }
       if (t.key === 'genel') {

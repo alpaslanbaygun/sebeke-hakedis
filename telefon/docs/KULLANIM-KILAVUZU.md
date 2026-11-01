@@ -2,7 +2,7 @@
 
 6 Ekim 2026
 
-Bu kılavuz, Şebeke-M telefon uygulamasının (eski adıyla VOLT-EDAŞ Saha) 2.4.0 ve sonraki (2.5.x) sürümlerini sahada kullanacak kişiler içindir. Uygulama Android telefonda çalışır; internet olmadan da kayıt alır.
+Bu kılavuz, Şebeke-M telefon uygulamasının 2.4.0 ve sonraki (2.5.x) sürümlerini sahada kullanacak kişiler içindir. Uygulama Android telefonda çalışır; internet olmadan da kayıt alır.
 
 ## Uygulama ne işe yarar
 
@@ -50,7 +50,11 @@ Uygulamanın beş ana ekranı vardır; ekranın altındaki menüden geçilir. Pr
 | Aplikasyon | Bir hedef noktaya yürünür ve zemine işaret çakılır |
 | Hesaplar | Açıklık, sehim, metraj, hakediş ve kontrol listesi |
 | Dışa Aktar | Çizim, Excel, rapor ve teslim paketi üretilir |
-| Ayarlar | Konum kaynağı, GNSS alıcı, NTRIP profilleri, eşikler, kullanıcılar ve onay, tanımlar |
+| Ayarlar | Gruplu menü: Ölçüm, Düzeltme kaynağı, Hassasiyet eşikleri, Koordinat sistemi, Harita, Veri ve kullanıcılar, Deneme ve eğitim, Hakkında |
+
+Ayarlar ekranının üstündeki kart o anki konum kaynağını ve düzeltme durumunu özetler; dokununca Ölçüm grubu
+açılır. **Hakkında** grubunda uygulamanın amacı, neler yapabildiği ve sürümü yazar (AutoCAD eklentisinin Hakkında
+penceresiyle aynı metin).
 
 ### Üst durum çubuğu
 
@@ -93,7 +97,7 @@ Sağ üstteki Bluetooth simgesi Ayarlar'ı açar; alıcı bağlıyken mavi yanar
 
 Her iş bir proje içinde tutulur; önce proje oluşturulur, sonra sahaya çıkılır.
 
-1. "Projeler" ekranında `Yeni proje` düğmesine basın. (Ekrana sonradan dönmek için: Ayarlar › Tanımlar ve kayıtlar › Projeler.)
+1. "Projeler" ekranında `Yeni proje` düğmesine basın. (Ekrana sonradan dönmek için: Ayarlar › Veri ve kullanıcılar › Projeler.)
 2. Formu doldurun.
 3. `PROJE OLUŞTUR` düğmesine basın. Proje merkezi açılır.
 
@@ -113,7 +117,7 @@ Her iş bir proje içinde tutulur; önce proje oluşturulur, sonra sahaya çık�
 | `Uygulama / as-built` | "Tamamlandı" sayılır, metraja ve hakedişe girer |
 | `Tasarım / keşif` | "Yapılacak" olarak kalır |
 
-Koordinat sistemi sonradan Ayarlar › "Koordinat sistemi · proje" bölümünden değiştirilebilir; tüm noktalar yeniden hesaplanır.
+Koordinat sistemi sonradan Ayarlar › Koordinat sistemi ekranından değiştirilebilir; tüm noktalar yeniden hesaplanır.
 
 ### Proje merkezi
 
@@ -129,7 +133,7 @@ Proje merkezi projenin özet ekranıdır. Haritada sol üstteki klasör düğmes
 
 ### Proje silme
 
-1. Ayarlar › "Tanımlar ve kayıtlar" › `Projeler` ekranını açın.
+1. Ayarlar › Veri ve kullanıcılar › `Projeler` ekranını açın.
 2. Silinecek projenin satırındaki çöp kutusuna basın.
 3. Onay için proje adını yazın, `Kalıcı olarak sil` deyin.
 
@@ -137,14 +141,14 @@ Proje; noktaları, objeleri, hatları, fotoğrafları ve hakediş kayıtlarıyla
 
 ## GNSS alıcıyı bağlama
 
-Hassas alım için harici bir GNSS alıcı Bluetooth ile bağlanır ve düzeltme verisi (TUSAGA-Aktif, kendi sabit istasyonunuz ya da yerel bir CORS ağı) açılır. Tüm ayarlar Ayarlar ekranındadır.
+Hassas alım için harici bir GNSS alıcı Bluetooth ile bağlanır ve düzeltme verisi (TUSAGA-Aktif, kendi sabit istasyonunuz ya da yerel bir CORS ağı) açılır. Ayarlar ekranı gruplu bir menüdür (1.11.2026): alıcı ve yöntem **Ölçüm**, düzeltme profilleri **Düzeltme kaynağı** grubundadır.
 
 ![Solda Ayarlar ekranının konum kaynağı ve ölçüm yöntemi bölümü, sağda kayıtlı NTRIP profilleri](kilavuz/09-gnss-v24.png)
 
 ### Alıcıyı Bluetooth ile bağlama
 
 1. Alıcıyı açın ve telefonun kendi Bluetooth ayarlarından eşleştirin.
-2. Uygulamada Ayarlar › "Konum kaynağı" bölümünde `Harici GNSS` düğmesine basın.
+2. Uygulamada Ayarlar › Ölçüm › "Konum kaynağı" bölümünde `Harici GNSS` düğmesine basın.
 3. "GNSS alıcı · Bluetooth" bölümünde `Cihaz Tara` düğmesine basın.
 4. Listeden alıcınıza dokunun. Bağlandığında adının yanında `BAĞLI` yazar.
 5. `Anten yüksekliği` alanına jalon boyunu metre olarak yazın; ölçü dikse `Dikey`, eğikse `Eğik` seçin.
@@ -153,7 +157,7 @@ Liste boşsa alıcı telefonla eşleşmemiştir; birinci adımı tekrarlayın.
 
 ### Düzeltme kaynağı: TUSAGA-Aktif, sabit istasyon, yerel CORS
 
-Ayarlar › "Düzeltme kaynağı · CORS / sabit istasyon" bölümünde her kaynak ayrı bir profildir. Uygulama ilk açılışta
+Ayarlar › Düzeltme kaynağı ekranında her kaynak ayrı bir profildir. Uygulama ilk açılışta
 üç hazır profil ekler:
 
 | Profil | Hazır gelen | Sizin gireceğiniz |
@@ -200,7 +204,7 @@ Telefonda internet olmalıdır; düzeltme telefondan alıcıya iletilir.
 
 ### Alıcı ayarı (bir kez)
 
-Ayarlar › "GNSS alıcı · Bluetooth" › `Alıcı ayar rehberi`: alıcıyı kendi yazılımından **Rover** moduna alın, düzeltme
+Ayarlar › Ölçüm › "GNSS alıcı · Bluetooth" › `Alıcı ayar rehberi`: alıcıyı kendi yazılımından **Rover** moduna alın, düzeltme
 girişini **Bluetooth / telefon** seçin, Bluetooth çıkışına **NMEA** (GGA, GST, GSA, RMC) açın, alıcının kendi internet /
 NTRIP bağlantısını ve radyosunu kapatın.
 
@@ -217,15 +221,15 @@ Alıcı markası seçimi bu sürümde kaldırıldı. Uygulama marka ayırmaz; al
 
 ### Float çözümde alım
 
-`RTK FLOAT` durumunda alım serbesttir; uygulama soru sormaz ve noktayı `[RTK FLOAT]` etiketiyle kaydeder. Her alımda onay sorulmasını isterseniz Ayarlar › "Hassasiyet eşikleri · proje" bölümünde `FLOAT çözümde nokta alımına izin ver` anahtarını kapatın.
+`RTK FLOAT` durumunda alım serbesttir; uygulama soru sormaz ve noktayı `[RTK FLOAT]` etiketiyle kaydeder. Her alımda onay sorulmasını isterseniz Ayarlar › Hassasiyet eşikleri ekranında `FLOAT çözümde nokta alımına izin ver` anahtarını kapatın.
 
 ### Telefon GPS (yalnız deneme)
 
-Ayarlar › "Konum kaynağı" › `Telefon GPS`. Doğruluk ±3–10 metredir. Noktalar `[TELEFON GPS]` etiketiyle kaydedilir ve kritik noktalar RTK FIX ile yeniden ölçülene kadar kontrol listesinde "ÖLÇÜ KABUL EDİLMEDİ" olarak kalır.
+Ayarlar › Ölçüm › "Konum kaynağı" › `Telefon GPS`. Doğruluk ±3–10 metredir. Noktalar `[TELEFON GPS]` etiketiyle kaydedilir ve kritik noktalar RTK FIX ile yeniden ölçülene kadar kontrol listesinde "ÖLÇÜ KABUL EDİLMEDİ" olarak kalır.
 
 ### Kendi base istasyonunuzla çalışma
 
-Ayarlar › "Ölçüm yöntemi" › `Sabit Base + Rover` altı adımlık rehberi açar. Uygulama base alıcıya bağlanmaz; base'i kendi yazılımından (ör. M-Survey) "Base" moduna alırsınız, rehber bilgileri kayda geçirir.
+Ayarlar › Ölçüm › "Ölçüm yöntemi" › `Sabit Base + Rover` altı adımlık rehberi açar. Uygulama base alıcıya bağlanmaz; base'i kendi yazılımından (ör. M-Survey) "Base" moduna alırsınız, rehber bilgileri kayda geçirir.
 
 1. **BASE bağla:** base adı, cihaz / seri no, anten yüksekliği.
 2. **BASE konumu:** `Bilinen nokta`, `Manuel koordinat`, `Ortalama al` (60 ölçünün ortalaması) ya da `Kayıtlı base`.
@@ -236,7 +240,7 @@ Ayarlar › "Ölçüm yöntemi" › `Sabit Base + Rover` altı adımlık rehberi
 
 ### Hassasiyet eşikleri
 
-Uygulama bir ölçüyü aşağıdaki eşiklere göre "uygun" sayar. Değerler Ayarlar › "Hassasiyet eşikleri · proje" bölümünden değiştirilir.
+Uygulama bir ölçüyü aşağıdaki eşiklere göre "uygun" sayar. Değerler Ayarlar › Hassasiyet eşikleri ekranından değiştirilir.
 
 | Eşik | Varsayılan |
 | --- | --- |
@@ -379,7 +383,7 @@ Abone ve "Diğer" türü objeler hatta kendiliğinden bağlanmaz.
 
 ### Yeraltı kablosu ve kanal
 
-Yeraltı hattında önce `Kaplama` (`Toprak`, `Tüvenan`, `Asfalt`, `Beton`, `Parke taşı`), sonra `Yöntem` seçilir. `Derinlik (m)` zorunludur; girilmeden hat başlamaz.
+Yeraltı hattında önce `Kaplama` (`Toprak`, `Tuvenan`, `Asfalt`, `Beton`, `Parke taşı`), sonra `Yöntem` seçilir. `Derinlik (m)` zorunludur; girilmeden hat başlamaz.
 
 | Yöntem | Uygulamanın hesapladığı |
 | --- | --- |
@@ -471,8 +475,8 @@ Haritanın görünümü sağ üstteki Katmanlar düğmesinden ayarlanır; proje 
 
 Katmanlar penceresinin altındaki `Altlık` listesinden seçilir. Üç grup vardır:
 
-- **Ücretsiz (anahtarsız)**: `OpenStreetMap`, `OpenTopoMap (topoğrafik)`, `Esri uydu görüntüsü`. Her zaman kullanılabilir.
-- **Anahtarlı (ücretsiz katmanı olan)**: `MapTiler sokak`, `MapTiler uydu`, `Esri uydu (ArcGIS anahtarı)`, `Google harita`, `Google uydu`, `Google uydu + yol adları`, `Bing uydu`, `Bing uydu + yol adları`, `Azure Maps uydu`, `Azure Maps yol haritası`, `Yandex harita`. Kendi anahtarınızı Ayarlar › "Harita altlığı" bölümüne yazın; anahtar girilmemişse o altlık listede kapalı görünür ve denenmez (anahtarsız genel adresler kaldırıldı; sağlayıcı koşullarına uymuyordu). Bing yalnız kurumsal (Enterprise) anahtarla çalışır; yeni anahtar alacaksanız Azure Maps'i seçin. Liste AutoCAD eklentisinin altlık listesiyle aynıdır.
+- **Ücretsiz (anahtarsız)**: `OpenStreetMap`, `OpenTopoMap (topografik)`, `Esri uydu görüntüsü`. Her zaman kullanılabilir.
+- **Anahtarlı (ücretsiz katmanı olan)**: `MapTiler sokak`, `MapTiler uydu`, `Esri uydu (ArcGIS anahtarı)`, `Google harita`, `Google uydu`, `Google uydu + yol adları`, `Bing uydu`, `Bing uydu + yol adları`, `Azure Maps uydu`, `Azure Maps yol haritası`, `Yandex harita`. Kendi anahtarınızı Ayarlar › Harita › "Harita altlığı" bölümüne yazın; anahtar girilmemişse o altlık listede kapalı görünür ve denenmez (anahtarsız genel adresler kaldırıldı; sağlayıcı koşullarına uymuyordu). Bing yalnız kurumsal (Enterprise) anahtarla çalışır; yeni anahtar alacaksanız Azure Maps'i seçin. Liste AutoCAD eklentisinin altlık listesiyle aynıdır.
 - **Özel**: kendi karo sunucunuz (XYZ adresi: `{z}`, `{x}`, `{y}` ya da Bing tipi `{q}`).
 
 Notlar:
@@ -534,48 +538,58 @@ Aplikasyon ekranı sizi seçtiğiniz hedef noktaya yürütür ve toleransın iç
 | --- | --- |
 | Listeden | Aplikasyon ekranında `Hedef nokta` kartına dokunun. En yakın noktalar üstte sıralanır |
 | Haritadan | Bir objeye dokunup `Aplikasyon` deyin, ya da haritaya uzun basıp `Buraya aplikasyon yap` deyin |
-| Çizimden | `CAD çizimi aç` ile çizimi açın, çizimde bir uca dokunun, `Aplikasyon yap` deyin |
+| Çizimden | `Ayrıntılar` bölümündeki `CAD çizimi aç` ile çizimi açın, çizimde bir uca dokunun, `Aplikasyon yap` deyin |
 | Sıradaki | `SONRAKİ` düğmesi aynı hattaki bir sonraki düğüme geçer |
 
 ### Hedefe yürüme
 
-Ekrandaki pusula hedefin yönünü, altındaki yazı ne yapacağınızı söyler: "3,2 m ileri, 0,4 m sağa". Yaklaştıkça halkaların ölçeği küçülür.
+Ekran (1.11.2026 tasarımı) tek bakışta okunacak şekilde düzenlenmiştir: solda radar (hedefin yürüyüş yönünüze göre yeri;
+pusula yoksa kuzeye göre), sağda büyük harflerle **kalan mesafe** ve altında **ileri / geri** ve **sağa / sola** ne kadar
+yürüyeceğiniz. Altındaki mavi satır ne yapacağınızı söyler: "Hedef önünüzde · ileri yürüyün", "Hedef sağınızda · sağa
+dönün", 20 cm'den yakında "küçük adımlarla yaklaşın". Yaklaştıkça radar halkalarının ölçeği küçülür. `İŞARETLE` ve
+`SONRAKİ` düğmeleri ekranın altına yapışıktır; kaydırmak gerekmez.
 
-![Aplikasyon ekranı: pusula, kalan mesafe ve tolerans çubuğu](kilavuz/06-aplikasyon.png)
+![Aplikasyon ekranı: radar, kalan mesafe, yönler ve alttaki İŞARETLE çubuğu](kilavuz/06-aplikasyon.png)
 
 | Gösterge | Anlamı |
 | --- | --- |
-| `Kalan mesafe ΔD` | Hedefe yatay uzaklık |
-| `İleri` / `Geri`, `Sağ` / `Sol` | Hangi yöne ne kadar yürüyeceğiniz |
-| `Dolgu (+)` / `Kazı (−)` | Hedef kotuna göre yükseklik farkı |
-| `Eksen ofseti` | Hat ekseninden ne kadar saptığınız (izin 0,20 m) |
-| `BEKLİYOR` → `YAKLAŞIYOR` → `TOLERANS İÇİ` | Durum |
+| `Kalan mesafe` | Hedefe yatay uzaklık (büyük sayı) |
+| `… m ileri` / `geri`, `… m sağa` / `sola` | Hangi yöne ne kadar yürüyeceğiniz (yürüyüş yönü bilinince) |
+| `Kot farkı` (dolgu + / kazı −) | Hedef kotuna göre yükseklik farkı |
+| `Eksen` | Hat ekseninden ne kadar saptığınız (sağ / sol; izin 0,20 m) |
+| `Doğruluk` | Ölçünün yatay doğruluğu (σH) ve tolerans |
+| `BEKLİYOR` → `YAKLAŞIYOR` → `TOLERANS İÇİ`, `FIX` | Durum rozetleri |
+
+`Ayrıntılar` satırına dokununca tolerans bandı, hedef ve mevcut koordinatlar, CAD çizimi düğmeleri ve son
+aplikasyonlar açılır; bir kez açınca açık kalır.
 
 ### İşaretleme
 
-1. "Zemin işareti" altında ne çakacağınızı seçin: `Kazık`, `Çelik Çivi`, `Röper Boya` ya da `Poligon Kazığı`.
+1. "Zemin işareti" altında ne çakacağınızı seçin: `Kazık`, `Çelik çivi`, `Röper boya` ya da `Poligon kazığı`.
 2. Toleransın içine girince telefon titrer ve büyük düğme `İŞARETLE · D-017` olur.
 3. İşareti çakın ve düğmeye basın. Uygulama kaydı alır ve sıradaki hedefe geçer.
 
-Düğme yalnız iki koşul birlikte sağlanınca açılır: toleransın içinde olmak ve `RTK FIX`. `TOLERANS DIŞI` yazıyorsa hedefe yaklaşın; `FIX BEKLE` yazıyorsa yerinizde bekleyin.
+Düğme yalnız iki koşul birlikte sağlanınca açılır: toleransın içinde olmak ve `RTK FIX`. `TOLERANS DIŞI` yazıyorsa hedefe yaklaşın; `FIX BEKLE` yazıyorsa yerinizde bekleyin; `HEDEF SEÇİN` yazıyorsa önce hedef seçin.
 
-Tolerans varsayılan olarak 0,02 metredir; Ayarlar › "Hassasiyet eşikleri · proje" › `Aplikasyon toleransı` satırından değiştirilir.
+Tolerans varsayılan olarak 0,02 metredir; Ayarlar › Hassasiyet eşikleri › `Aplikasyon toleransı` satırından değiştirilir.
 
 ## Teknik hesaplar (Hesap Merkezi)
 
 Hesap sayfaları uygulamaya formülleri değiştirilmeden eklenmiştir;
-AutoCAD eklentisinde de aynı sayfalar açılır. Hesaplar üç gruptur:
+AutoCAD eklentisinde de aynı sayfalar açılır. İki hesap vardır:
 
-| Grup | Hesaplar |
+| Hesap | Ne yapar |
 | --- | --- |
-| Hat ve direk | ENH Sehim, Uplift (kaldırma) kontrolü, ag–aw bağıntısı, Amax, İletken kopma (iki misli buz yükü), Direk tepe kuvveti (TEDAŞ), Direk tepe kuvveti (cer vektörü) |
-| Elektrik | OG gerilim düşümü ve güç kaybı, AG gerilim düşümü ve güç kaybı, OG kısa devre, AG kısa devre, Bakır ⇄ alüminyum kablo kesiti |
-| Proje ve yerleşim | Beton köşk yerleşim planı, Kanal planı, AG tek hat şeması |
+| Direk Tepe Kuvveti (Cer Vektörü) | Direğe bağlı bütün hatların çekme kuvvetlerinin vektörel toplamı ve bileşke yönü; direk tipi kontrolü |
+| Kanal Planı | Yeraltı kablo kanalı kesit detayları: kablo dizilişi, kanal genişliği ve derinliği, kazı metrajı, DXF |
+
+(1.11.2026'dan önceki sürümlerde bulunan sehim, uplift, gerilim düşümü, kısa devre gibi hesaplar kaldırıldı; eski
+kayıtları projede bilgi olarak durur.)
 
 **Nereden açılır:** bir direğin, trafonun ya da hattın kendi ekranındaki `Hesaplar` düğmesi; haritada objenin
 balonundaki `Teknik hesaplar`; hat listesindeki `Hesaplar`; ya da `Hesaplar › Teknik hesaplar` (proje geneli).
-Objeden açılınca liste o objeye **uygun** hesapları üstte, uygun olmayanları nedeniyle birlikte altta katlanmış
-gösterir. Trafodan açılan gerilim düşümü / kısa devre hesapları hangi **çıkış hattı** için yapılacağını sorar.
+Objeden açılınca liste o objeye **uygun** hesapları üstte, uygun olmayanları nedenleriyle birlikte altta katlanmış
+gösterir.
 
 **Sayfada:** üstte hesabın adı, hedef (`Direk D-17`), durum (`19 bilgi projeden · 2 eksik`), `Kaydet` ve `ⓘ`.
 Objenin bilgileri (tip, açıklıklar, iletken, kot, trafo gücü, kablolar…) hesaba kendiliğinden yazılır. Projede
@@ -678,7 +692,7 @@ Koordinatı elinizde olan çok sayıda obje tek tek girilmez; hazır şablon dol
 3. Dosyayı bilgisayarda doldurup telefona geri alın.
 4. `Dosyadaki koordinat sistemi` seçin. Proje sisteminden farklıysa uygulama dönüştürür.
 5. `Excel (.xlsx) ya da CSV seç` deyin.
-6. "Önizleme" kartında bulunan, uygun ve hatalı kayıt sayılarına bakın. Hatalı satırlar nedeniyle birlikte listelenir.
+6. "Önizleme" kartında bulunan, uygun ve hatalı kayıt sayılarına bakın. Hatalı satırlar nedenleriyle birlikte listelenir.
 7. `İÇE AKTAR` düğmesine basın. Yalnız uygun kayıtlar alınır, `[EXCEL]` etiketiyle kaydedilir.
 
 | Sayfa | Zorunlu sütunlar |
@@ -737,7 +751,7 @@ Hesaplar › `Kontrol` ekranı eksikleri sıralar: tipi seçilmemiş direk, FIX 
 
 ### Poz kataloğu
 
-Ayarlar › "Tanımlar ve kayıtlar" › `Poz kataloğu (Yeşil Defter)`. Ad ya da poz numarasıyla aranır.
+Ayarlar › Veri ve kullanıcılar › `Poz kataloğu`. Ad ya da poz numarasıyla aranır.
 
 | Rozet | Anlamı |
 | --- | --- |
@@ -772,7 +786,7 @@ Durum üç yerden değiştirilir: haritada objenin kartından, kayıt ekranında
 
 Onay mekanizması başlangıçta kapalıdır; kapalıyken durumu herkes değiştirebilir.
 
-1. `Kullanıcılar ve hakediş onayı` ekranını açın. Üç yerden açılır: Ayarlar › "Kullanıcılar ve hakediş onayı" › `Aç`; Hesaplar › Hakediş ekranının sağ üstündeki `Kullanıcılar ve onay`; Proje merkezi.
+1. `Kullanıcılar ve hakediş onayı` ekranını açın. Üç yerden açılır: Ayarlar › Veri ve kullanıcılar › "Kullanıcılar ve hakediş onayı" › `Aç`; Hesaplar › Hakediş ekranının sağ üstündeki `Kullanıcılar ve onay`; Proje merkezi.
 2. `İlk yöneticiyi tanımla · onayı aç` deyin.
 3. Ad soyad ve 4–8 rakamlı şifreyi iki kez yazıp `Kaydet` deyin.
 4. `+ Kullanıcı ekle` ile diğer kişileri ekleyin; her birine bir rol ve şifre verin.
@@ -781,7 +795,7 @@ Onay mekanizması başlangıçta kapalıdır; kapalıyken durumu herkes değişt
 
 ### Roller ve adımlar
 
-*(Çizim: hakediş onay akışı · 6 durum, 4 rol — Drive\'daki PDF kılavuzda görülür.)*
+*(Çizim: hakediş onay akışı · 6 durum, 4 rol — Drive'daki PDF kılavuzda görülür.)*
 
 Geri çevirme her zaman gerekçe ister. Kimin, ne zaman, hangi adımı attığı objenin kayıt ekranındaki "Onay geçmişi"nde ve Denetim kaydında görünür.
 
@@ -858,7 +872,7 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 
 Büroda eski program çizimleriyle çalışan Şebeke-M AutoCAD eklentisi aynı proje dosyasını kullanır:
 
-1. AutoCAD'de **ŞEBEKE HAKEDİŞ › Telefona Gönder** ile yazılan dosyayı Drive'a koyun.
+1. AutoCAD'de **ŞEBEKE-M ARAÇLAR › Telefon › Telefona Gönder** ile yazılan dosyayı Drive'a koyun.
 2. Telefonda **Projeler › AutoCAD dosyasından proje al** (ya da açık projede **Proje merkezi › AutoCAD dosyasını bu
    projeye al**) ile seçin. Direkler, hatlar, kanallar, bölgeler ve malzemeler gelir; telefon kataloğunda bulunamayan
    kalemler Poz Kataloğu'nda "AutoCAD" kategorisinde DOĞRULANACAK olarak görünür.
@@ -885,7 +899,7 @@ Web sürümü 2.3.0'da bırakıldı; 2.4.0 yalnız telefon içindir. Web, telefo
 
 **Telefondan ofise:**
 
-1. Ayarlar › "Veri ve senkron" › `Senkron` ekranını açın.
+1. Ayarlar › Veri ve kullanıcılar › "Veri ve senkron" › `Senkron` ekranını açın.
 2. `Değişiklikleri paylaş (.vsync)` deyin ve dosyayı kendinize gönderin (e-posta, Drive).
 3. Uygulama "Dosya karşı cihaza aktarıldı mı?" diye sorar. Dosya ofise ulaştıysa `Tamam` deyin.
 4. Ofiste web sürümünde `Telefonla veri` › `Telefondan gelen dosyayı seç` deyin.
@@ -924,7 +938,7 @@ Yeni sürümün kurulum dosyasını eski sürümün üzerine kurun; uygulamayı 
 
 | Ne görüyorsunuz | Neden | Ne yapmalı |
 | --- | --- | --- |
-| "Önce bir proje açın" | Açık proje yok | Ayarlar › Tanımlar ve kayıtlar › `Projeler` |
+| "Önce bir proje açın" | Açık proje yok | Ayarlar › Veri ve kullanıcılar › `Projeler` |
 | Cihaz listesi boş | Alıcı telefonla eşleşmemiş ya da Bluetooth izni verilmemiş | Telefonun Bluetooth ayarlarından eşleştirin; uygulamaya "yakındaki cihazlar" iznini verin |
 | Alıcı `BAĞLI` ama konum gelmiyor | Alıcı konum cümlelerini göndermiyor | Alıcının kendi yazılımından GGA, GST, GSA ve RMC çıkışını açın |
 | `RTK FLOAT`'ta kalıyor, `RTK FIX` olmuyor | Düzeltme gelmiyor ya da gökyüzü kapalı | NTRIP durumuna ve telefonun internetine bakın; ağaç ve bina altından çıkın; birkaç saniye bekleyin |

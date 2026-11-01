@@ -10,9 +10,6 @@ import { MODUL, GRUPLAR, DURUM_ADI, HEDEF_ADI, hesapKayitlari, kayitBul, hedefKa
 const kullanici = () => { const u = (app.ds && app.ds.user) || {}; return u.name && u.name !== 'Operatör' ? u.name : null; };
 const DURUM_RENK = { uygun: 'ok', 'uygun-degil': 'err', bilgi: 'cy' };
 const tarihYaz = (t) => { try { return new Date(t).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return t || ''; } };
-// Trafo hedefinde hangi çıkışın (kolun) hesaplanacağı sorulan hesaplar
-const KOL_ISTER = new Set(['og-gd', 'ag-gd', 'og-kd', 'ag-kd', 'ag-tekhat']);
-
 function hedefYazisi(b) {
   if (!b || !b.hedef || b.hedef.tur === 'proje') return 'Proje geneli';
   return (HEDEF_ADI[b.hedef.tur] || '') + (b.hedef.no ? ' ' + b.hedef.no : '') + (b.hedef.ad ? ' · ' + b.hedef.ad : '');
@@ -26,26 +23,8 @@ function KayitRozeti({ k }) {
     ${g.hedefYok ? html`<${Badge} k="err">HEDEF YOK</${Badge}>` : g.farklar.length ? html`<${Badge} k="warn">GÜNCEL DEĞİL</${Badge}>` : null}</span>`;
 }
 
-async function kolSec(hedef, m) {
-  // Trafonun hangi çıkışı (kolu) hesaplanacak?
-  const ps = app.ps, e = ps.eqById(hedef.id);
-  if (!e) return hedef;
-  const k = new BaglamKurucu(ps, { kullanici: kullanici() });
-  const og = /^og-/.test(m.sayfa || m.id);
-  const hatlar = k.trafoCikislari(e).filter((l) => (og ? l.lineType === 'OG' || l.lineType === 'ENH' : l.lineType !== 'OG' && l.lineType !== 'ENH'));
-  if (!hatlar.length) return hedef;
-  if (hatlar.length === 1) return Object.assign({}, hedef, { hatId: hatlar[0].id });
-  const sec = await app.modal((close) => html`<div class="mh"><h3>Hangi çıkış?</h3></div>
-    <div class="mb"><div class="note" style="margin-bottom:8px">${e.no} trafosundan çıkan ${og ? 'OG' : 'AG'} hatlar. Hesap seçtiğiniz hat boyunca yapılır.</div>
-      <div class="list">${hatlar.map((l) => html`<button class="li" onClick=${() => close(l.id)}><b class="mono" style="color:#ff8a8a">${l.lineNo}</b><span class="grow">${(k.hat(l).iletkenler || []).map((x) => x.ad).join(' + ') || '—'}</span><span class="note mono">${Math.round((k.hat(l).toplamUzunluk) || 0)} m</span></button>`)}</div></div>
-    <div class="mf"><button class="btn grow" onClick=${() => close(null)}>Trafo bilgisiyle aç</button></div>`);
-  return sec ? Object.assign({}, hedef, { hatId: sec }) : hedef;
-}
-
 async function hesapAc(m, hedef) {
-  let h = hedef || { tur: 'proje', id: '' };
-  if (h.tur === 'trafo' && KOL_ISTER.has(m.id)) h = await kolSec(h, m);
-  app.nav.go('hesap', { modul: m.id, hedef: h });
+  app.nav.go('hesap', { modul: m.id, hedef: hedef || { tur: 'proje', id: '' } });
 }
 
 export function HesapMerkeziScreen({ hedef }) {
@@ -129,6 +108,14 @@ export function HesapScreen({ modul, hedef, kayitId }) {
     };
     return () => { window.removeEventListener('message', dinle); app.backHook = eskiKanca; };
   }, [modul, kayitId]);
+  if (!MODUL.has(modul)) {
+    // Uygulamadan kaldırılmış bir hesabın eski kaydı: sayfası yok, yalnız saklanan özet gösterilir
+    const k = kayitId ? hesapKayitlari(ps).find((d) => d.id === kayitId) : null;
+    return html`<${Title} title=${(k && k.modulAdi) || modul} sub="Bu hesap uygulamada artık yok" />
+      <div class="alert info"><${Icon} n="info" s=${16} /><span>Hesap Merkezi'nde yalnız direk tepe kuvveti (cer vektörü) ve kanal planı kaldı. Bu kayıt bilgi olarak saklanır; AutoCAD dosyasıyla gidip gelir.</span></div>
+      ${k ? html`<div class="card stack"><div class="kv mono" style="font-size:12px"><b>Sonuç</b><span>${k.ozet || '—'}</span><b>Durum</b><span>${DURUM_ADI[k.durum] || k.durum || '—'}</span><b>Tarih</b><span>${tarihYaz(k.tarih)}</span></div>
+        <button class="btn dang" onClick=${async () => { if (await app.confirm('Kaydı sil', 'Bu hesap kaydı silinsin mi?', { danger: true, ok: 'Sil' })) { await hesapSil(ps, k.id); app.nav.back(); } }}>Kaydı sil</button></div>` : null}`;
+  }
   return html`<iframe ref=${ref} class="hesapcerceve" src=${src} title=${m.ad} allow="clipboard-write"></iframe>`;
 }
 HesapScreen.flush = true;

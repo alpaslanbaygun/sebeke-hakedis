@@ -32,7 +32,7 @@ MOCK = r"""
 """
 
 # Deneme projesi: AG havai (iki direk + elemansız kırılma köşesi), OG havai mevcut, abone, müşterek, AG kablo (kanal
-# 0,6 m), OG kablo (yatay sondaj), yalnız kanal, demontaj hattı — hepsi uydurma koordinat (Elazığ yakını, TM39)
+# 0,6 m), OG kablo (yatay sondaj), yalnız kanal, demontaj hattı — hepsi uydurma koordinat (TM39 dilimi)
 KUR = """async () => { const a = window.__app, ps = a.ps;
   const p = await ps.createProject({ name: 'Deneme · Eşitleme', code: 'DNM-ES', cm: 39, enhZone: 'III', mode: 'asbuilt' });
   await ps.open(p.id);
@@ -135,8 +135,33 @@ async def main():
             kontrol(yeni[0] == '@AG_İLETKEN|4P+R' and yeni[1] == 2, 'kaydedildi; metraj tel tel (kg): ' + json.dumps(yeni, ensure_ascii=False))
             await pg.evaluate("() => window.__app.nav.back()"); await pg.wait_for_timeout(400)
 
-            # Ayarlar › Harita altlığı: yeni anahtar kutuları
+            # Aplikasyon (1.11.2026 tasarımı): hedef seçili, simülatörle yaklaşınca İŞARETLE açılır, kayıt düşer
+            await pg.evaluate("""() => { const a = window.__app, ps = a.ps; const e = ps.data.equipment.find((x) => x.kind === 'pole'); a.state.target = { id: e.pointId }; a.bus.emit('ui:target'); a.nav.tab('stake'); }""")
+            await pg.wait_for_timeout(600)
+            kontrol(await pg.locator('.apl-hedef-ad').inner_text() == 'A-01' and await pg.locator('.apl-alt .btn.huge').is_disabled(), 'aplikasyon: hedef A-01, konum yokken İŞARETLE kapalı')
+            await pg.evaluate("""() => { const a = window.__app, ps = a.ps, g = a.gnss; const t = ps.pointById(a.state.target.id); const k = 111320, kl = k * Math.cos(t.lat * Math.PI / 180);
+              g.startSimulator({ profile: 'FIX', base: { lat: t.lat + 6 / k, lon: t.lon + 2 / kl, alt: t.H } }); g.simWalkTo({ lat: t.lat, lon: t.lon }); }""")
+            await pg.wait_for_timeout(1500)
+            await pg.screenshot(path=f'{OUT}/esitleme_04d_aplikasyon_uzak.png')
+            uzak = await pg.locator('.apl-mesafe').inner_text()
+            kontrol(await pg.locator('.apl-yon-satir').count() == 2 and 'ileri' in await pg.locator('.apl-sag').inner_text(), 'aplikasyon: kalan mesafe ' + uzak.replace('\n', ' ') + ', ileri / sağ-sol yönleri')
+            for _ in range(120):   # simülatör 0,5 m'den sonra 2 cm'lik adımlarla yaklaşır (~15 s)
+                if await pg.locator('.apl-alt .btn.huge').is_enabled(): break
+                await pg.wait_for_timeout(300)
+            await pg.screenshot(path=f'{OUT}/esitleme_04e_aplikasyon_yakin.png')
+            sag = await pg.locator('.apl-sag').inner_text()
+            kontrol(await pg.locator('.apl-alt .btn.huge').is_enabled() and 'TOLERANS' in sag.upper(), 'aplikasyon: tolerans içinde İŞARETLE açıldı: ' + sag.replace('\n', ' / '))
+            await pg.locator('.apl-alt .btn.huge').click(); await pg.wait_for_timeout(500)
+            kayit = await pg.evaluate("() => window.__app.ps.data.stakeouts.map((s) => [s.targetNo, s.accepted, s.mark])")
+            kontrol(len(kayit) == 1 and kayit[0][0] == 'A-01' and kayit[0][1] is True and kayit[0][2] == 'kazik', 'aplikasyon kaydı: ' + json.dumps(kayit, ensure_ascii=False))
+            await pg.evaluate("() => window.__app.gnss.stopAll()"); await pg.wait_for_timeout(300)
+
+            # Ayarlar: gruplu menü (1.11.2026); Harita grubunda altlık anahtar kutuları
             await pg.evaluate("() => window.__app.nav.tab('settings')"); await pg.wait_for_timeout(700)
+            await pg.screenshot(path=f'{OUT}/esitleme_05a_ayarlar_menu.png')
+            menu = await pg.locator('.card.tight.list .li .t').all_inner_texts()
+            kontrol(menu == ['Ölçüm', 'Düzeltme kaynağı', 'Hassasiyet eşikleri', 'Koordinat sistemi', 'Harita', 'Veri ve kullanıcılar', 'Deneme ve eğitim', 'Hakkında'], 'ayarlar menüsü gruplu: ' + ' | '.join(menu))
+            await pg.get_by_role('button', name='Harita', exact=False).filter(has_text='Simge ve yazı').click(); await pg.wait_for_timeout(700)
             alt = pg.locator('.sect', has_text='Harita altlığı').locator('xpath=following-sibling::div[1]')
             await alt.locator('.fld', has_text='ArcGIS anahtarı').scroll_into_view_if_needed(); await pg.wait_for_timeout(300)
             await pg.screenshot(path=f'{OUT}/esitleme_05_altlik.png')
@@ -145,6 +170,11 @@ async def main():
             await alt.locator('.fld', has_text='Azure Maps anahtarı').locator('input').fill('deneme-anahtar')
             await alt.locator('.fld', has_text='Azure Maps anahtarı').locator('input').press('Tab'); await pg.wait_for_timeout(300)
             kontrol(await pg.evaluate("() => (window.__app.state.mapKeys || {}).azure") == 'deneme-anahtar', 'Azure anahtarı kaydedildi (yalnız cihazda)')
+            # Hakkında: amaç ve yapabildikler (ortak/marka/hakkinda.json; eklentinin Hakkında penceresiyle aynı)
+            await pg.evaluate("() => { window.__app.nav.tab('settings'); window.__app.nav.go('hakkinda'); }"); await pg.wait_for_timeout(700)
+            hk = await pg.locator('main.screen').text_content()
+            kontrol('Amaç' in hk and 'Neler yapar?' in hk and 'Sahada ölçüm ve aplikasyon' in hk and 'TEDAŞ' not in hk and '26.23' not in hk, 'hakkında: amaç, yapabildikler; kurum yazısı yok')
+            await pg.screenshot(path=f'{OUT}/esitleme_05b_hakkinda.png')
 
             # Dışa Aktarım: Google Earth KMZ + CBS MapInfo
             await pg.evaluate("() => { window.__app.state.expSel = { kmz: true, mif: true }; window.__app.nav.tab('export'); }"); await pg.wait_for_timeout(800)

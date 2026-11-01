@@ -35,9 +35,9 @@ test('G1 · Hazır profiller bir kez eklenir; TUSAGA-Aktif sunucusu dolar; kulla
   const silindi = removeProfile(ilk.st, ilk.st.list[2].id);
   assert.equal(hazirProfilleriEkle(silindi).st.list.length, 2);
   // Eski kurulum: kullanıcının kendi profilleri (biri sabit istasyon adlı) → yalnız eksikler eklenir
-  const eski = loadProfiles({ active: 'a', list: [{ id: 'a', name: 'TUSAGA-Aktif', host: '', mount: '' }, { id: 'b', name: 'Sabit istasyon · Elazığ', host: '10.0.0.5', mount: 'BASE1' }] }, null);
+  const eski = loadProfiles({ active: 'a', list: [{ id: 'a', name: 'TUSAGA-Aktif', host: '', mount: '' }, { id: 'b', name: 'Sabit istasyon · Şantiye', host: '10.0.0.5', mount: 'BASE1' }] }, null);
   const r = hazirProfilleriEkle(eski);
-  assert.deepEqual(r.st.list.map((p) => p.name), ['TUSAGA-Aktif', 'Sabit istasyon · Elazığ', 'Yerel CORS ağı']);
+  assert.deepEqual(r.st.list.map((p) => p.name), ['TUSAGA-Aktif', 'Sabit istasyon · Şantiye', 'Yerel CORS ağı']);
   assert.equal(r.st.list[0].host, '212.156.70.42', 'boş TUSAGA-Aktif sunucusu doldu');
   assert.equal(r.st.list[1].host, '10.0.0.5'); assert.equal(r.st.list[1].kind, 'sabit');
   assert.equal(r.st.active, 'a');

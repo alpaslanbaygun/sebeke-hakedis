@@ -37,6 +37,7 @@
     <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-24.png" Link="Marka\simge-24.png" LogicalName="SebekeHakedis.marka.simge-24.png" />
     <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-32.png" Link="Marka\simge-32.png" LogicalName="SebekeHakedis.marka.simge-32.png" />
     <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-64.png" Link="Marka\simge-64.png" LogicalName="SebekeHakedis.marka.simge-64.png" />
+    <EmbeddedResource Include="..\..\..\ortak\marka\hakkinda.json" Link="Marka\hakkinda.json" LogicalName="SebekeHakedis.marka.hakkinda.json" />
     <None Include="..\CekirdekTest\ornek-dokum.json" Link="ornek-dokum.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\CekirdekTest\telefon-proje.sebeke.json" Link="telefon-proje.sebeke.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

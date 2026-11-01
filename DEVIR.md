@@ -28,13 +28,26 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
   kısım nedeniyle birlikte §6'ya yazılır. Eşitlik ortak denemelerle denetlenir: `ortak/deneme/` (malzeme yazımı,
   CBS çıktıları: iki taraf aynı girdiden aynı beklenen dosyaları üretmek zorunda) ve HARITA.md §1'deki dosya çiftleri.
 
-## 2. Durum (31.10.2026)
+## 2. Durum (1.11.2026)
 
 | Parça | Sürüm | Durum |
 | --- | --- | --- |
-| Telefon uygulaması (Şebeke-M) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı; Esri ArcGIS, Bing, Azure dâhil), **Hesap Merkezi** (15 hesap), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası), **haritada çizim görünümü**, Google Earth ve CBS (MIF / MID) eklentiyle aynı; telefonda denenmedi |
+| Telefon uygulaması (Şebeke-M) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı; Esri ArcGIS, Bing, Azure dâhil), **Hesap Merkezi** (iki hesap: direk cer vektörü, kanal planı), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası), **haritada çizim görünümü**, Google Earth ve CBS (MIF / MID) eklentiyle aynı; telefonda denenmedi |
 | AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
+
+1.11 (`telefon-duzen` dalı; geri dönüş: `onceki-main-telefon-duzen-oncesi` dalı): kullanıcı isteğiyle **Hesap Merkezi
+sadeleşti**: yalnız Direk Tepe Kuvveti (Cer Vektörü) ve Kanal Planı kaldı; öteki 13 hesabın dosyaları silindi
+(geçmişte: `git log -- ortak/hesap/kaynak`), eklenti şeridinde her hesabın kendi düğmesi, trafo çıkış seçimi kalktı;
+kaldırılmış hesabın eski kaydı telefonda özet olarak görünür. **Telefon Ayarlar** gruplu menü (Ölçüm, Düzeltme kaynağı,
+Hassasiyet eşikleri, Koordinat sistemi, Harita, Veri ve kullanıcılar, Deneme ve eğitim, Hakkında; `settings.js` alt
+ekranları `ayar*`). **Aplikasyon** ekranı yeniden tasarlandı (büyük kalan mesafe ve yön, yönlendirme cümlesi, alta
+yapışık İŞARETLE / SONRAKİ, katlanır ayrıntılar). **Kurum ve kitap sürümü yazıları** kaldırıldı (katalog başlığı
+"Poz kataloğu 2026", seedRev 25 başlığı kurulu telefonlarda da yeniler; açılış yazısı, katalog, dışa aktarım, teslim
+paketi adı). **Hakkında** metni ortak (`ortak/marka/hakkinda.json` → telefon `src/ortak/hakkinda.js`, eklentiye gömülü;
+eklentinin penceresi Hakkında / Komutlar sekmeli). **Yazım**: katalog tanımlarındaki 22 yazım hatası görünen yazım
+katmanında (`MalzemeYazimi` ↔ `malzemeYazisi`, ortak örnekler), telefon metinleri ve kılavuzlar düzeltildi. Genel
+denetim: eslint (tanımsız değişken yok), 43 ekran Playwright ile açıldı (konsol hatası yok), bütün denemeler.
 
 31.10 (`cbs-uyum` dalı, `telefon-esitleme` dalını da içerir; geri dönüş: `onceki-main-cbs-uyum-oncesi` dalı ve
 Releases'teki eklenti 0.1.66 / telefon 2.5.44): kullanıcının 30.10 listesi. **KVKK**: kişisel bilgiler temizlendi (hesap
@@ -82,7 +95,7 @@ anahtarlar yalnız kullanıcının bilgisayarında); malzeme adlarının görün
 
 29.10 akşam canlı deneme (AutoCAD 2027, eklenti 0.1.64, uydurma örnek proje): Telefondan Al (72 nesne), renkler /
 Tahoma / açıklık metrajı / kanal kenarları (taşı, kopyala, geri al), şeritten kanal ölçüsü, Proje Özeti ve Excel
-(PROJELER + MALZEME LİSTESİ sayfaları), `SH_KML` (KMZ, 72 nesne, koordinatlar Elazığ'da doğru yerde), `SH_MIFVER`
+(PROJELER + MALZEME LİSTESİ sayfaları), `SH_KML` (KMZ, 72 nesne, koordinatlar haritada doğru yerde), `SH_MIFVER`
 (5 katman, .mif + .mid), `SH_MIFAL` (boş çizime 72 nesne; dilim dosyadan alındı), `SH_CBSBILGI`, `SH_ALTLIK` (Esri,
 35 karo, nesnelerin altında, atıf yazısıyla): **çalıştı**. Denemede görülüp düzeltilen: dik hatta metraj ile hat
 bilgisi çizginin üstüne düşüp birbirini örtüyordu (kaydırma dünya ekseninde uygulanıyordu) → kaydırma artık parçanın
@@ -120,7 +133,7 @@ temizlik `kaynak/DEGISIKLIKLER.md`) ortak köprü (`kopru-bas.js`, `kopru.js`), 
 başına uyarlama (`uyarlama/<id>.js|css`) ile telefona (iframe, postMessage) ve AutoCAD'e (yerel HTTP sunucu
 `HesapSunucu`, Edge uygulama penceresi, `HesapMerkezi.cs`) bağlandı. Bağlam / kayıt / güncellik sözleşmesi
 `ortak/hesap/BAGLAM.md`; paketleyici `araclar/hesap-paketle.mjs` (derlemede çalışır, `ortak/hesap/paket` depoya
-konmaz); deneme koşucusu `araclar/hesap-dene.py` (Playwright; 70 durum, masaüstü + telefon boyutu). Hesap
+konmaz); deneme koşucusu `araclar/hesap-dene.py` (Playwright; masaüstü + telefon boyutu). Hesap
 araçlarının tablolarında saptanan ve **aracın sahibiyle doğrulanması gereken** değerler her hesabın ⓘ panelindeki
 "Hesap hakkında" notlarında ve `uyarlama/<id>.js` içindeki `notlar` listesinde yazılıdır (değiştirilmedi).
 
@@ -234,6 +247,13 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
+- **1.11 `telefon-duzen` işlerinin denemesi**: telefonda yeni Aplikasyon ekranı sahada (yürüyüş yönü pusulası olan
+  alıcıyla "ileri / sağa" satırları, pusulasızda semt), gruplu Ayarlar, Hakkında; AutoCAD'de Hakkında penceresi
+  (iki sekme) ve Teknik Hesaplamalar panelindeki iki düğme. Kaldırılan hesapların eski kayıtları olan çizim / proje
+  varsa Kayıtlı Hesaplar listesinde görünmeye devam eder (sayfası açılmaz).
+- **Yazım düzeltmeleri yalnız görünen yazıda**: katalogdaki tanımlar (ör. "PARAFUDUR ŞASESİ") eski programla
+  eşleşme için olduğu gibi durur; raporlar ham adı yazar. Kullanıcı raporda da düzeltilmiş ad isterse eski programın
+  listesiyle birlikte karar verilmeli.
 - **31.10 `cbs-uyum` işlerinin denemesi**: AutoCAD'de `SH_HATDEGISTIR`, Çizim Ayarları › Görünüm (boyutlar),
   `SH_MIFVER` dosyalarının MapInfo / QGIS'te açılması, `SH_MIFAL` ile kullanıcının kendi CBS örnek dosyası (Drive'da
   `Sebeke-M-deneme`; depoya konmaz — sütun adları farklıysa `CbsIceAktarim.Esanlamlar`'a eklenir); telefonda hat

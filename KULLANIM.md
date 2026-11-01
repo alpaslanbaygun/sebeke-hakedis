@@ -109,7 +109,7 @@ Ayrıntı için telefon kılavuzuna bakın; AutoCAD ile birlikte çalışırken 
   Objenin ekranında hakediş kodu ayrıca seçilebilir: **KM** (kurum malzemesi, yüklenici montajı), **ENH**
   (kilometrik bedelli iş), **ME** (mutabakat eksiği); demontajda **KESİK / SÖKÜK**. AutoCAD'den gelen kod korunur.
   **"İleride" durumundaki objeler AutoCAD dosyasına yazılmaz.**
-- **Hat**: başlangıç ve bitiş direğine dokunun; iletken / kablo tipini seçin. Yeraltında kaplama (toprak, tüvenan,
+- **Hat**: başlangıç ve bitiş direğine dokunun; iletken / kablo tipini seçin. Yeraltında kaplama (toprak, tuvenan,
   asfalt, beton, parke) ve yöntem (açık kazı, borulu geçiş, yatay sondaj) AutoCAD'de kanal / sondaj nesnesi olur.
 - **Malzeme**: objeye dokunun › **Malzeme ekle** (katalogdan). AutoCAD'den gelen malzemeler aynen korunur.
 - **Teknik hesaplar**: objenin ekranında **Hesaplar** düğmesi (direk, trafo, hat) ya da **Hesaplar › Teknik
@@ -132,7 +132,7 @@ o programın çizimleriyle karışık kullanılabilir, raporda aynı okunur, o p
 - **ŞEBEKE-M** (çizim): Kategori, Elemanlar, Ayarlar, Malzeme, Düzenle.
 - **ŞEBEKE-M ARAÇLAR**: Hakediş, Raporlar, Telefon, **Teknik Hesaplamalar**, **Proje ve Yerleşim**.
 
-İkisinin başında **Şebeke-M** paneli (logo, **Hakkında**: sürüm, ortam ve komut listesi).
+İkisinin başında **Şebeke-M** paneli (logo, **Hakkında**: sürüm, amaç ve yapabildikler, komut listesi).
 
 ### Çizim sekmesi (soldan sağa)
 
@@ -184,8 +184,7 @@ kendiliğinden artar. Her komut AutoCAD'in **U** (Geri Al) komutuyla tek seferde
 | Raporlar | Durum Tespit, Dosyadan Rapor, Proje Özeti, Eksik Malzeme |
 | Telefon | Telefondan Al, Telefona Gönder |
 | CBS ve Harita | Google Earth, CBS'ye Aktar, CBS'den Al, CBS Bilgisi, Harita Altlığı |
-| Teknik Hesaplamalar | Hesap Merkezi, Kayıtlı Hesaplar, **Hat ve Direk ▾** (sehim, uplift, ag–aw, Amax, iletken kopma, tepe kuvveti TEDAŞ, cer vektörü), **Elektrik ▾** (OG / AG gerilim düşümü, OG / AG kısa devre, bakır–alüminyum kesit) |
-| Proje ve Yerleşim | Beton Köşk, Kanal Planı, AG Tek Hat |
+| Teknik Hesaplamalar | Hesap Merkezi, Kayıtlı Hesaplar, Cer Vektörü (direk tepe kuvveti), Kanal Planı |
 
 ### Pencereler
 
@@ -213,7 +212,7 @@ başlığından tutup taşınır.
   hesabı yapan, unvan, firma, buz yükü bölgesi — teknik hesaplara ve raporlara buradan yazılır.
 - **Telefondan al**: Yeni eklenecek / Güncellenecek / Değişmeyen kutucukları (listeleriyle) ve uyarılar (kilitli
   hakediş, telefonda silinmiş, onaylar). **Çizime aktar** ile başlar.
-- **Hakkında**: logo, sürüm, AutoCAD ve .NET sürümü, komut listesi.
+- **Hakkında**: logo, sürüm, AutoCAD ve .NET sürümü; **Hakkında** sekmesinde Şebeke-M'in amacı ve neler yapabildiği (telefonun Ayarlar › Hakkında ekranıyla aynı metin), **Komutlar** sekmesinde komut listesi.
 
 ### Hat, kanal ve sondaj parça parça çizilir
 
@@ -367,7 +366,7 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 | Harita Altlığı | `SH_ALTLIK` | Aşağıda: CBS ve harita. |
 | Hesap Merkezi | `SH_HESAP merkez` | Bölüm 5. Seçili nesne için uygun hesapların listesi ve kayıtlı sonuçları. |
 | Kayıtlı Hesaplar | `SH_HESAPLAR` | Bölüm 5. Çizimdeki bütün hesap kayıtları. |
-| Hat ve Direk ▾, Elektrik ▾, Beton Köşk, Kanal Planı, AG Tek Hat | `SH_HESAP <hesap>` | Bölüm 5. Seçili nesne için o hesabı açar. |
+| Cer Vektörü, Kanal Planı | `SH_HESAP <hesap>` | Bölüm 5. Seçili nesne için o hesabı açar. |
 
 ### CBS ve harita
 
@@ -453,24 +452,26 @@ Hesap araçları bir elektrik-elektronik mühendisinin hazırladığı hesap say
 değiştirilmeden Şebeke-M'e eklenmiştir. Telefonda ve AutoCAD'de **aynı sayfalar** açılır; aradaki tek
 fark, bilgilerin nereden geldiğidir (telefonda projeden, AutoCAD'de çizimden).
 
-| Grup | Hesaplar |
+| Hesap | Ne yapar |
 | --- | --- |
-| Hat ve direk | ENH Sehim, Uplift (kaldırma) kontrolü, ag–aw bağıntısı, Amax, İletken kopma (iki misli buz yükü), Direk tepe kuvveti (TEDAŞ), Direk tepe kuvveti (cer vektörü) |
-| Elektrik | OG gerilim düşümü ve güç kaybı, AG gerilim düşümü ve güç kaybı, OG kısa devre, AG kısa devre, Bakır ⇄ alüminyum kablo kesiti |
-| Proje ve yerleşim | Beton köşk yerleşim planı, Kanal planı, AG tek hat şeması (AG kısa devre hesabının içindeki şema) |
+| Direk Tepe Kuvveti (Cer Vektörü) | Direğe bağlı bütün hatların çekme kuvvetlerinin vektörel toplamı ve bileşke yönü; direk tipi kontrolü |
+| Kanal Planı | Yeraltı kablo kanalı kesit detayları: kablo dizilişi, kanal genişliği ve derinliği, kazı metrajı, DXF |
+
+1.11.2026'dan beri Hesap Merkezi'nde yalnız bu iki hesap vardır (kullanıcı isteği). Daha önce bulunan sehim, uplift,
+ag–aw, Amax, kopma, tablo yöntemiyle tepe kuvveti, gerilim düşümü, kısa devre, bakır–alüminyum kesit, beton köşk
+yerleşimi ve AG tek hat hesapları kaldırıldı; eski kayıtları projede bilgi olarak durur (sayfası açılmaz).
 
 ### Nasıl açılır?
 
 - **Telefon**: bir direğin, trafonun ya da hattın ekranında **Hesaplar** düğmesi; haritada objenin balonunda
   **Teknik hesaplar**; ya da **Hesaplar › Teknik hesaplar** (proje geneli). Listede yalnız o nesneye **uygun**
-  hesaplar üstte gelir; uygun olmayanlar nedeniyle birlikte altta katlanmış durur.
+  hesaplar üstte gelir; uygun olmayanlar nedenleriyle birlikte altta katlanmış durur.
 - **AutoCAD**: nesneyi seçip (ya da düğmeden sonra seçerek) **ŞEBEKE-M ARAÇLAR › Teknik Hesaplamalar**:
   - **Hesap Merkezi**: seçilen nesne için uygun hesaplar ve o nesnenin kayıtlı sonuçları. Nesne seçmeden **Enter**:
     çizimin tamamı.
-  - **Hat ve Direk ▾ / Elektrik ▾**: hesabı doğrudan seçin. Trafo seçildiyse hangi **çıkışın (kolun)** hesaplanacağı
-    komut satırında sorulur.
+  - **Cer Vektörü / Kanal Planı**: hesabı doğrudan açar.
   - **Kayıtlı Hesaplar**: çizimdeki bütün kayıtlar.
-  - Komut satırından: `SH_HESAP` (hesap kimliği sorar; `merkez` ya da ör. `enh-sehim`), `SH_HESAPLAR`.
+  - Komut satırından: `SH_HESAP` (hesap kimliği sorar; `merkez`, `tepe-vektor` ya da `kanal`), `SH_HESAPLAR`.
   Sayfa bilgisayarın tarayıcısında açılır (Edge varsa uygulama penceresi, yoksa varsayılan tarayıcı, ör. Chrome);
   AutoCAD açık kaldığı sürece çizimle konuşur.
 

@@ -441,12 +441,18 @@ namespace SebekeHakedis.PencereTest
             // Hakkında: Şebeke-M logosu, sürüm, komut listesi
             Esit(true, Marka.Logo != null && Marka.Simge(20) != null && Marka.SeritSimgesi(32) != null, "marka: logo ve simgeler gömülü");
             bool yazildi = false;
+            Esit(true, Marka.Hakkinda.Dizi("amac") != null && Marka.Hakkinda.Dizi("amac").Count >= 2 && Marka.Hakkinda.Dizi("yapabildikler").Count >= 3, "marka: hakkında metni gömülü (ortak/marka/hakkinda.json)");
             Dene("24-hakkinda", () => Pencereler.Hakkinda("0.1.99", "AutoCAD R25.0 · .NET 8", () => yazildi = true), f =>
             {
                 Bul<Button>(f, b => b.Text == "Komut satırına yaz").PerformClick();
                 Esit(true, yazildi, "hakkında: komut listesi yazılır");
                 var g = Bul<DataGridView>(f, x => true);
                 Esit(true, g != null && g.Rows.Count > KomutRehberi.Liste.Length, "hakkında: komutlar gruplu listelenir");
+                Esit(true, Bul<Label>(f, l => l.Text == "Neler yapar?") != null && Bul<Label>(f, l => l.Text.StartsWith("•  ")) != null, "hakkında: amaç ve yapabildikler metni");
+                var sekme = Bul<Sekmeler>(f, x => true);
+                Esit(true, sekme != null && sekme.Secili == 0, "hakkında: önce Hakkında sekmesi");
+                sekme.Secili = 1;
+                Resim(f, "komutlar");
             });
 
             // Proje özeti: projeler solda, seçilen projenin malzeme listesi sağda; Excel'e aktar görünen listeyi verir

@@ -28,7 +28,7 @@ export function CalcScreen() {
   return html`<div class="title"><div class="grow"><h1>Hesaplar</h1><div class="sub">${l ? l.lineNo + ' hattı · ' + (l.voltageKV || (l.lineType === 'OG' ? 34.5 : 0.4)) + ' kV · ' + (poles[0] ? poles[0].no : '') + ' → ' + (poles[poles.length - 1] ? poles[poles.length - 1].no : '') : 'Havai hat yok'}</div></div></div>
     <button class="card hesapgiris" onClick=${() => app.nav.go('hesapMerkezi', {})}>
       <${Icon} n="calc" s=${26} c="#f59e0b" />
-      <span class="grow"><b>Teknik hesaplar</b><span class="note">Sehim, uplift, ag–aw, Amax, kopma, tepe kuvveti · gerilim düşümü, kısa devre · köşk, kanal, AG tek hat</span></span>
+      <span class="grow"><b>Teknik hesaplar</b><span class="note">Direk tepe kuvveti (cer vektörü) · kanal planı</span></span>
       ${hesapSayisi ? html`<span class="badge b-m">${hesapSayisi} kayıt</span>` : html`<${Icon} n="next" s=${18} c="#64748b" />`}
     </button>
     ${l ? html`<button class="btn blk" style="margin:-2px 0 8px" onClick=${() => app.nav.go('hesapMerkezi', { hedef: { tur: 'hat', id: l.id } })}><${Icon} n="calc" s=${16} />${l.lineNo} hattı için uygun hesaplar</button>` : null}

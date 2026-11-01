@@ -112,7 +112,6 @@ footer{padding:10px 16px 24px;color:var(--sm-mut);font-size:12px;max-width:1500p
   var KAYIT = /*__MODULLER__*/null;
   var MODULLER = (KAYIT && KAYIT.moduller) || [];
   var GRUPLAR = (KAYIT && KAYIT.gruplar) || [];
-  var KOL_ISTER = { 'og-gd': 1, 'ag-gd': 1, 'og-kd': 1, 'ag-kd': 1, 'ag-tekhat': 1 };
   var HEDEF_ADI = { direk: 'Direk', hat: 'Hat', trafo: 'Trafo', kanal: 'Kanal', proje: 'Proje' };
   var DURUM_ADI = { uygun: 'UYGUN', 'uygun-degil': 'UYGUN DEĞİL', bilgi: 'BİLGİ' };
   var DURUM_SINIF = { uygun: 'ok', 'uygun-degil': 'err', bilgi: 'cy' };
@@ -316,30 +315,9 @@ footer{padding:10px 16px 24px;color:var(--sm-mut);font-size:12px;max-width:1500p
   function git(url) { location.href = url; }
 
   function hesapAc(m) {
-    var hd = V.hedef || {};
-    var veri = { modul: m.id };
-    if (hd.tur === 'trafo' && KOL_ISTER[m.id]) {
-      var og = /^og-/.test(m.sayfa || m.id);
-      var cikislar = (V.cikislar || []).filter(function (c) { return og ? c.devre === 'OG' : c.devre !== 'OG'; });
-      if (cikislar.length === 1) veri.hatId = cikislar[0].id;
-      else if (cikislar.length > 1) {
-        var kapat = function (v) { d.getElementById('mk-pencere').__kapat(v); };
-        var satirlar = cikislar.map(function (c) {
-          return h('button', { class: 'satir', onclick: function () { kapat({ hatId: c.id }); } }, [
-            h('span', { class: 'govde' }, [h('b', { class: 'mono', text: c.no }), h('span', { class: 'not', text: (c.iletken || '—') + ' · ' + c.tur })])
-          ]);
-        });
-        satirlar.push(h('button', { class: 'satir', onclick: function () { kapat({ hatId: '' }); } }, [
-          h('span', { class: 'govde' }, [h('b', { text: 'Çıkış seçmeden aç' }), h('span', { class: 'not', text: 'Yalnız trafo bilgisiyle; hat bilgileri hesapta elle girilir.' })])
-        ]));
-        sor('Hangi çıkış?', (hd.no || 'Trafo') + ' trafosundan çıkan ' + (og ? 'OG' : 'AG') + ' hatlar. Hesap seçtiğiniz hat boyunca yapılır.',
-          h('div', { class: 'kart' }, [h('div', { class: 'liste' }, satirlar)]), null, 'Vazgeç')
-          .then(function (v) { if (v && typeof v === 'object') { if (v.hatId) veri.hatId = v.hatId; ac(veri); } });
-        return;
-      }
-    }
-    ac(veri);
+    ac({ modul: m.id });
   }
+
   function ac(veri) {
     api('ac', veri).then(function (r) { if (r && r.url) git(r.url); else throw new Error('Adres alınamadı'); })
       .catch(function (e) { mesaj('Hesap açılamadı: ' + e.message, 'hata', 6000); });

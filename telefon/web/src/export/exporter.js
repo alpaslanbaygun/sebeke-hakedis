@@ -1,4 +1,4 @@
-// Dışa aktarım servisi: tüm formatlar + TEDAŞ/EDAŞ teslim paketi (ZIP + SHA-256 manifest).
+// Dışa aktarım servisi: tüm formatlar + teslim paketi (ZIP + SHA-256 manifest).
 import { buildExportModel } from './model.js';
 import { buildDXF, dxfBytes } from './dxf.js';
 import { shapefileLayers, writeShapefile } from './shp.js';
@@ -30,7 +30,7 @@ export const FORMATS = {
   geojson: { label: 'GeoJSON', ext: '.geojson', desc: 'RFC 7946 (WGS84) + proje CRS sürümü' },
   xlsx: { label: 'Excel (Metraj · Yeşil Defter · Hakediş)', ext: '.xlsx', desc: 'Montaj / Demontaj / DMM sayfaları, poz, malzeme, hakediş' },
   report: { label: 'Teknik rapor', ext: '.html', desc: 'Yazdır → PDF' },
-  package: { label: 'TEDAŞ/EDAŞ teslim paketi', ext: '.zip', desc: 'Proje klasörü: PROJECT_INFO · SAHA_ALIMI · HAKEDIS · GNSS · fotoğraflar (tür/obje) · HARITA · EXPORT · RAPORLAR · SHA-256' }
+  package: { label: 'Teslim paketi', ext: '.zip', desc: 'Proje klasörü: PROJECT_INFO · SAHA_ALIMI · HAKEDIS · GNSS · fotoğraflar (tür/obje) · HARITA · EXPORT · RAPORLAR · SHA-256' }
 };
 
 // Obje satırları (ekipman + hat + ekipmansız nokta): rapor, Excel ve CSV aynı listeyi kullanır
