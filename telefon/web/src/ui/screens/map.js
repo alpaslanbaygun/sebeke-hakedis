@@ -210,7 +210,7 @@ export function MapScreen() {
   // Konum düğmesi: her dokunuşta konumu görünen haritanın ortasına getirir ve takibi açar; takipteyken dokununca takibi bırakır
   const locate = () => {
     const g = app.gnss.state, e = eng.current;
-    if (g.E == null) { app.toast('Konum yok · Ayarlar › Konum kaynağı', 'warn'); return; }
+    if (g.E == null) { app.toast('Konum yok · Ayarlar › Ölçüm', 'warn'); return; }
     if (follow && e.inView(g.E, g.N, 60)) { setFollow(false); app.state.follow = false; return; }
     setFollow(true); app.state.follow = true; e.center(g.E, g.N, Math.min(e.view.res, 0.3));
   };
@@ -306,7 +306,7 @@ MapScreen.compactHud = true;
 async function altlikSec(id, eng, yenile) {
   const b = basemapById(id);
   if (b.key && !basemapReady(b)) {
-    if (await app.confirm(b.label, b.label + ' için ' + (b.id === 'ozel' ? 'karo adresi' : 'anahtar') + ' gerekli: Ayarlar › Harita altlığı bölümünden girin. ' + (b.note || '') + ' Ayarlar açılsın mı?', { ok: 'Ayarlara git' })) app.nav.tab('settings');
+    if (await app.confirm(b.label, b.label + ' için ' + (b.id === 'ozel' ? 'karo adresi' : 'anahtar') + ' gerekli: Ayarlar › Harita bölümünden girin. ' + (b.note || '') + ' Ayarlar açılsın mı?', { ok: 'Ayarlara git' })) { app.nav.tab('settings'); app.nav.go('ayarHarita'); }
     yenile();
     return;
   }

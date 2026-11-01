@@ -50,7 +50,11 @@ Uygulamanın beş ana ekranı vardır; ekranın altındaki menüden geçilir. Pr
 | Aplikasyon | Bir hedef noktaya yürünür ve zemine işaret çakılır |
 | Hesaplar | Açıklık, sehim, metraj, hakediş ve kontrol listesi |
 | Dışa Aktar | Çizim, Excel, rapor ve teslim paketi üretilir |
-| Ayarlar | Konum kaynağı, GNSS alıcı, NTRIP profilleri, eşikler, kullanıcılar ve onay, tanımlar |
+| Ayarlar | Gruplu menü: Ölçüm, Düzeltme kaynağı, Hassasiyet eşikleri, Koordinat sistemi, Harita, Veri ve kullanıcılar, Deneme ve eğitim, Hakkında |
+
+Ayarlar ekranının üstündeki kart o anki konum kaynağını ve düzeltme durumunu özetler; dokununca Ölçüm grubu
+açılır. **Hakkında** grubunda uygulamanın amacı, neler yapabildiği ve sürümü yazar (AutoCAD eklentisinin Hakkında
+penceresiyle aynı metin).
 
 ### Üst durum çubuğu
 
@@ -93,7 +97,7 @@ Sağ üstteki Bluetooth simgesi Ayarlar'ı açar; alıcı bağlıyken mavi yanar
 
 Her iş bir proje içinde tutulur; önce proje oluşturulur, sonra sahaya çıkılır.
 
-1. "Projeler" ekranında `Yeni proje` düğmesine basın. (Ekrana sonradan dönmek için: Ayarlar › Tanımlar ve kayıtlar › Projeler.)
+1. "Projeler" ekranında `Yeni proje` düğmesine basın. (Ekrana sonradan dönmek için: Ayarlar › Veri ve kullanıcılar › Projeler.)
 2. Formu doldurun.
 3. `PROJE OLUŞTUR` düğmesine basın. Proje merkezi açılır.
 
@@ -113,7 +117,7 @@ Her iş bir proje içinde tutulur; önce proje oluşturulur, sonra sahaya çık�
 | `Uygulama / as-built` | "Tamamlandı" sayılır, metraja ve hakedişe girer |
 | `Tasarım / keşif` | "Yapılacak" olarak kalır |
 
-Koordinat sistemi sonradan Ayarlar › "Koordinat sistemi · proje" bölümünden değiştirilebilir; tüm noktalar yeniden hesaplanır.
+Koordinat sistemi sonradan Ayarlar › Koordinat sistemi ekranından değiştirilebilir; tüm noktalar yeniden hesaplanır.
 
 ### Proje merkezi
 
@@ -129,7 +133,7 @@ Proje merkezi projenin özet ekranıdır. Haritada sol üstteki klasör düğmes
 
 ### Proje silme
 
-1. Ayarlar › "Tanımlar ve kayıtlar" › `Projeler` ekranını açın.
+1. Ayarlar › Veri ve kullanıcılar › `Projeler` ekranını açın.
 2. Silinecek projenin satırındaki çöp kutusuna basın.
 3. Onay için proje adını yazın, `Kalıcı olarak sil` deyin.
 
@@ -137,14 +141,14 @@ Proje; noktaları, objeleri, hatları, fotoğrafları ve hakediş kayıtlarıyla
 
 ## GNSS alıcıyı bağlama
 
-Hassas alım için harici bir GNSS alıcı Bluetooth ile bağlanır ve düzeltme verisi (TUSAGA-Aktif, kendi sabit istasyonunuz ya da yerel bir CORS ağı) açılır. Tüm ayarlar Ayarlar ekranındadır.
+Hassas alım için harici bir GNSS alıcı Bluetooth ile bağlanır ve düzeltme verisi (TUSAGA-Aktif, kendi sabit istasyonunuz ya da yerel bir CORS ağı) açılır. Ayarlar ekranı gruplu bir menüdür (1.11.2026): alıcı ve yöntem **Ölçüm**, düzeltme profilleri **Düzeltme kaynağı** grubundadır.
 
 ![Solda Ayarlar ekranının konum kaynağı ve ölçüm yöntemi bölümü, sağda kayıtlı NTRIP profilleri](kilavuz/09-gnss-v24.png)
 
 ### Alıcıyı Bluetooth ile bağlama
 
 1. Alıcıyı açın ve telefonun kendi Bluetooth ayarlarından eşleştirin.
-2. Uygulamada Ayarlar › "Konum kaynağı" bölümünde `Harici GNSS` düğmesine basın.
+2. Uygulamada Ayarlar › Ölçüm › "Konum kaynağı" bölümünde `Harici GNSS` düğmesine basın.
 3. "GNSS alıcı · Bluetooth" bölümünde `Cihaz Tara` düğmesine basın.
 4. Listeden alıcınıza dokunun. Bağlandığında adının yanında `BAĞLI` yazar.
 5. `Anten yüksekliği` alanına jalon boyunu metre olarak yazın; ölçü dikse `Dikey`, eğikse `Eğik` seçin.
@@ -153,7 +157,7 @@ Liste boşsa alıcı telefonla eşleşmemiştir; birinci adımı tekrarlayın.
 
 ### Düzeltme kaynağı: TUSAGA-Aktif, sabit istasyon, yerel CORS
 
-Ayarlar › "Düzeltme kaynağı · CORS / sabit istasyon" bölümünde her kaynak ayrı bir profildir. Uygulama ilk açılışta
+Ayarlar › Düzeltme kaynağı ekranında her kaynak ayrı bir profildir. Uygulama ilk açılışta
 üç hazır profil ekler:
 
 | Profil | Hazır gelen | Sizin gireceğiniz |
@@ -200,7 +204,7 @@ Telefonda internet olmalıdır; düzeltme telefondan alıcıya iletilir.
 
 ### Alıcı ayarı (bir kez)
 
-Ayarlar › "GNSS alıcı · Bluetooth" › `Alıcı ayar rehberi`: alıcıyı kendi yazılımından **Rover** moduna alın, düzeltme
+Ayarlar › Ölçüm › "GNSS alıcı · Bluetooth" › `Alıcı ayar rehberi`: alıcıyı kendi yazılımından **Rover** moduna alın, düzeltme
 girişini **Bluetooth / telefon** seçin, Bluetooth çıkışına **NMEA** (GGA, GST, GSA, RMC) açın, alıcının kendi internet /
 NTRIP bağlantısını ve radyosunu kapatın.
 
@@ -217,15 +221,15 @@ Alıcı markası seçimi bu sürümde kaldırıldı. Uygulama marka ayırmaz; al
 
 ### Float çözümde alım
 
-`RTK FLOAT` durumunda alım serbesttir; uygulama soru sormaz ve noktayı `[RTK FLOAT]` etiketiyle kaydeder. Her alımda onay sorulmasını isterseniz Ayarlar › "Hassasiyet eşikleri · proje" bölümünde `FLOAT çözümde nokta alımına izin ver` anahtarını kapatın.
+`RTK FLOAT` durumunda alım serbesttir; uygulama soru sormaz ve noktayı `[RTK FLOAT]` etiketiyle kaydeder. Her alımda onay sorulmasını isterseniz Ayarlar › Hassasiyet eşikleri ekranında `FLOAT çözümde nokta alımına izin ver` anahtarını kapatın.
 
 ### Telefon GPS (yalnız deneme)
 
-Ayarlar › "Konum kaynağı" › `Telefon GPS`. Doğruluk ±3–10 metredir. Noktalar `[TELEFON GPS]` etiketiyle kaydedilir ve kritik noktalar RTK FIX ile yeniden ölçülene kadar kontrol listesinde "ÖLÇÜ KABUL EDİLMEDİ" olarak kalır.
+Ayarlar › Ölçüm › "Konum kaynağı" › `Telefon GPS`. Doğruluk ±3–10 metredir. Noktalar `[TELEFON GPS]` etiketiyle kaydedilir ve kritik noktalar RTK FIX ile yeniden ölçülene kadar kontrol listesinde "ÖLÇÜ KABUL EDİLMEDİ" olarak kalır.
 
 ### Kendi base istasyonunuzla çalışma
 
-Ayarlar › "Ölçüm yöntemi" › `Sabit Base + Rover` altı adımlık rehberi açar. Uygulama base alıcıya bağlanmaz; base'i kendi yazılımından (ör. M-Survey) "Base" moduna alırsınız, rehber bilgileri kayda geçirir.
+Ayarlar › Ölçüm › "Ölçüm yöntemi" › `Sabit Base + Rover` altı adımlık rehberi açar. Uygulama base alıcıya bağlanmaz; base'i kendi yazılımından (ör. M-Survey) "Base" moduna alırsınız, rehber bilgileri kayda geçirir.
 
 1. **BASE bağla:** base adı, cihaz / seri no, anten yüksekliği.
 2. **BASE konumu:** `Bilinen nokta`, `Manuel koordinat`, `Ortalama al` (60 ölçünün ortalaması) ya da `Kayıtlı base`.
@@ -236,7 +240,7 @@ Ayarlar › "Ölçüm yöntemi" › `Sabit Base + Rover` altı adımlık rehberi
 
 ### Hassasiyet eşikleri
 
-Uygulama bir ölçüyü aşağıdaki eşiklere göre "uygun" sayar. Değerler Ayarlar › "Hassasiyet eşikleri · proje" bölümünden değiştirilir.
+Uygulama bir ölçüyü aşağıdaki eşiklere göre "uygun" sayar. Değerler Ayarlar › Hassasiyet eşikleri ekranından değiştirilir.
 
 | Eşik | Varsayılan |
 | --- | --- |
@@ -472,7 +476,7 @@ Haritanın görünümü sağ üstteki Katmanlar düğmesinden ayarlanır; proje 
 Katmanlar penceresinin altındaki `Altlık` listesinden seçilir. Üç grup vardır:
 
 - **Ücretsiz (anahtarsız)**: `OpenStreetMap`, `OpenTopoMap (topoğrafik)`, `Esri uydu görüntüsü`. Her zaman kullanılabilir.
-- **Anahtarlı (ücretsiz katmanı olan)**: `MapTiler sokak`, `MapTiler uydu`, `Esri uydu (ArcGIS anahtarı)`, `Google harita`, `Google uydu`, `Google uydu + yol adları`, `Bing uydu`, `Bing uydu + yol adları`, `Azure Maps uydu`, `Azure Maps yol haritası`, `Yandex harita`. Kendi anahtarınızı Ayarlar › "Harita altlığı" bölümüne yazın; anahtar girilmemişse o altlık listede kapalı görünür ve denenmez (anahtarsız genel adresler kaldırıldı; sağlayıcı koşullarına uymuyordu). Bing yalnız kurumsal (Enterprise) anahtarla çalışır; yeni anahtar alacaksanız Azure Maps'i seçin. Liste AutoCAD eklentisinin altlık listesiyle aynıdır.
+- **Anahtarlı (ücretsiz katmanı olan)**: `MapTiler sokak`, `MapTiler uydu`, `Esri uydu (ArcGIS anahtarı)`, `Google harita`, `Google uydu`, `Google uydu + yol adları`, `Bing uydu`, `Bing uydu + yol adları`, `Azure Maps uydu`, `Azure Maps yol haritası`, `Yandex harita`. Kendi anahtarınızı Ayarlar › Harita › "Harita altlığı" bölümüne yazın; anahtar girilmemişse o altlık listede kapalı görünür ve denenmez (anahtarsız genel adresler kaldırıldı; sağlayıcı koşullarına uymuyordu). Bing yalnız kurumsal (Enterprise) anahtarla çalışır; yeni anahtar alacaksanız Azure Maps'i seçin. Liste AutoCAD eklentisinin altlık listesiyle aynıdır.
 - **Özel**: kendi karo sunucunuz (XYZ adresi: `{z}`, `{x}`, `{y}` ya da Bing tipi `{q}`).
 
 Notlar:
@@ -559,7 +563,7 @@ Ekrandaki pusula hedefin yönünü, altındaki yazı ne yapacağınızı söyler
 
 Düğme yalnız iki koşul birlikte sağlanınca açılır: toleransın içinde olmak ve `RTK FIX`. `TOLERANS DIŞI` yazıyorsa hedefe yaklaşın; `FIX BEKLE` yazıyorsa yerinizde bekleyin.
 
-Tolerans varsayılan olarak 0,02 metredir; Ayarlar › "Hassasiyet eşikleri · proje" › `Aplikasyon toleransı` satırından değiştirilir.
+Tolerans varsayılan olarak 0,02 metredir; Ayarlar › Hassasiyet eşikleri › `Aplikasyon toleransı` satırından değiştirilir.
 
 ## Teknik hesaplar (Hesap Merkezi)
 
@@ -739,7 +743,7 @@ Hesaplar › `Kontrol` ekranı eksikleri sıralar: tipi seçilmemiş direk, FIX 
 
 ### Poz kataloğu
 
-Ayarlar › "Tanımlar ve kayıtlar" › `Poz kataloğu (Yeşil Defter)`. Ad ya da poz numarasıyla aranır.
+Ayarlar › Veri ve kullanıcılar › `Poz kataloğu`. Ad ya da poz numarasıyla aranır.
 
 | Rozet | Anlamı |
 | --- | --- |
@@ -774,7 +778,7 @@ Durum üç yerden değiştirilir: haritada objenin kartından, kayıt ekranında
 
 Onay mekanizması başlangıçta kapalıdır; kapalıyken durumu herkes değiştirebilir.
 
-1. `Kullanıcılar ve hakediş onayı` ekranını açın. Üç yerden açılır: Ayarlar › "Kullanıcılar ve hakediş onayı" › `Aç`; Hesaplar › Hakediş ekranının sağ üstündeki `Kullanıcılar ve onay`; Proje merkezi.
+1. `Kullanıcılar ve hakediş onayı` ekranını açın. Üç yerden açılır: Ayarlar › Veri ve kullanıcılar › "Kullanıcılar ve hakediş onayı" › `Aç`; Hesaplar › Hakediş ekranının sağ üstündeki `Kullanıcılar ve onay`; Proje merkezi.
 2. `İlk yöneticiyi tanımla · onayı aç` deyin.
 3. Ad soyad ve 4–8 rakamlı şifreyi iki kez yazıp `Kaydet` deyin.
 4. `+ Kullanıcı ekle` ile diğer kişileri ekleyin; her birine bir rol ve şifre verin.
@@ -887,7 +891,7 @@ Web sürümü 2.3.0'da bırakıldı; 2.4.0 yalnız telefon içindir. Web, telefo
 
 **Telefondan ofise:**
 
-1. Ayarlar › "Veri ve senkron" › `Senkron` ekranını açın.
+1. Ayarlar › Veri ve kullanıcılar › "Veri ve senkron" › `Senkron` ekranını açın.
 2. `Değişiklikleri paylaş (.vsync)` deyin ve dosyayı kendinize gönderin (e-posta, Drive).
 3. Uygulama "Dosya karşı cihaza aktarıldı mı?" diye sorar. Dosya ofise ulaştıysa `Tamam` deyin.
 4. Ofiste web sürümünde `Telefonla veri` › `Telefondan gelen dosyayı seç` deyin.
@@ -926,7 +930,7 @@ Yeni sürümün kurulum dosyasını eski sürümün üzerine kurun; uygulamayı 
 
 | Ne görüyorsunuz | Neden | Ne yapmalı |
 | --- | --- | --- |
-| "Önce bir proje açın" | Açık proje yok | Ayarlar › Tanımlar ve kayıtlar › `Projeler` |
+| "Önce bir proje açın" | Açık proje yok | Ayarlar › Veri ve kullanıcılar › `Projeler` |
 | Cihaz listesi boş | Alıcı telefonla eşleşmemiş ya da Bluetooth izni verilmemiş | Telefonun Bluetooth ayarlarından eşleştirin; uygulamaya "yakındaki cihazlar" iznini verin |
 | Alıcı `BAĞLI` ama konum gelmiyor | Alıcı konum cümlelerini göndermiyor | Alıcının kendi yazılımından GGA, GST, GSA ve RMC çıkışını açın |
 | `RTK FLOAT`'ta kalıyor, `RTK FIX` olmuyor | Düzeltme gelmiyor ya da gökyüzü kapalı | NTRIP durumuna ve telefonun internetine bakın; ağaç ve bina altından çıkın; birkaç saniye bekleyin |

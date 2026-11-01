@@ -84,7 +84,7 @@ async def main():
               const p = await ps.createProject({ name: 'Deneme · Düzeltme', code: 'DNM-01', cm: 39, enhZone: 'III', mode: 'asbuilt' });
               await ps.open(p.id);
               await ps.createPoint({ pointNo: 'P1', cls: 'DETAY', critical: false, coord: { lat: 38.6700, lon: 39.2300, H: 1031 }, source: 'MANUAL' });
-              a.nav.tab('settings'); }""")
+              a.nav.tab('settings'); a.nav.go('ayarDuzeltme'); }""")
             await pg.wait_for_timeout(900)
             bolum = pg.locator('.sect', has_text='Düzeltme kaynağı').locator('xpath=following-sibling::div[1]')
             await bolum.scroll_into_view_if_needed()
@@ -151,11 +151,14 @@ async def main():
             if ok:
                 dosya = json.loads(saved[0][1]); ok = dosya['bicim'] == 'sebeke-m.gnss-baglanti' and all('pass' not in p for p in dosya['profiller']) and any(p['host'] == 'caster.ornek.com' for p in dosya['profiller'])
             kontrol(ok, 'paylaşılan dosya şifresiz: ' + (saved[0][0] if saved else 'yok'))
-            # Alıcı ayar rehberi
+            # Alıcı ayar rehberi (Ayarlar › Ölçüm ekranında)
+            await pg.evaluate("() => { window.__app.nav.back(); window.__app.nav.go('ayarOlcum'); }"); await pg.wait_for_timeout(700)
             gn = pg.locator('.sect', has_text='GNSS alıcı').locator('xpath=following-sibling::div[1]')
             await gn.get_by_role('button', name='Alıcı ayar rehberi (bir kez yapılır)').click(); await pg.wait_for_timeout(300)
             await gn.screenshot(path=f'{OUT}/gnss_06_alici_rehberi.png')
             kontrol(await gn.get_by_text('Rover').count() > 0, 'alıcı ayar rehberi açıldı')
+            await pg.evaluate("() => { window.__app.nav.back(); window.__app.nav.go('ayarDuzeltme'); }"); await pg.wait_for_timeout(700)
+            bolum = pg.locator('.sect', has_text='Düzeltme kaynağı').locator('xpath=following-sibling::div[1]')
             # Kapalı sunucu: deneme hatası açıklamalı
             await pg.evaluate("() => window.__app.gnss.ntripDisconnect()")
             await bolum.locator('.chips button', has_text='Yerel CORS ağı').click(); await pg.wait_for_timeout(300)

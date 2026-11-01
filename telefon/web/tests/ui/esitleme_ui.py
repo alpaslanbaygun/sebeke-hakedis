@@ -135,8 +135,12 @@ async def main():
             kontrol(yeni[0] == '@AG_İLETKEN|4P+R' and yeni[1] == 2, 'kaydedildi; metraj tel tel (kg): ' + json.dumps(yeni, ensure_ascii=False))
             await pg.evaluate("() => window.__app.nav.back()"); await pg.wait_for_timeout(400)
 
-            # Ayarlar › Harita altlığı: yeni anahtar kutuları
+            # Ayarlar: gruplu menü (1.11.2026); Harita grubunda altlık anahtar kutuları
             await pg.evaluate("() => window.__app.nav.tab('settings')"); await pg.wait_for_timeout(700)
+            await pg.screenshot(path=f'{OUT}/esitleme_05a_ayarlar_menu.png')
+            menu = await pg.locator('.card.tight.list .li .t').all_inner_texts()
+            kontrol(menu == ['Ölçüm', 'Düzeltme kaynağı', 'Hassasiyet eşikleri', 'Koordinat sistemi', 'Harita', 'Veri ve kullanıcılar', 'Deneme ve eğitim', 'Hakkında'], 'ayarlar menüsü gruplu: ' + ' | '.join(menu))
+            await pg.get_by_role('button', name='Harita', exact=False).filter(has_text='Simge ve yazı').click(); await pg.wait_for_timeout(700)
             alt = pg.locator('.sect', has_text='Harita altlığı').locator('xpath=following-sibling::div[1]')
             await alt.locator('.fld', has_text='ArcGIS anahtarı').scroll_into_view_if_needed(); await pg.wait_for_timeout(300)
             await pg.screenshot(path=f'{OUT}/esitleme_05_altlik.png')
@@ -145,6 +149,11 @@ async def main():
             await alt.locator('.fld', has_text='Azure Maps anahtarı').locator('input').fill('deneme-anahtar')
             await alt.locator('.fld', has_text='Azure Maps anahtarı').locator('input').press('Tab'); await pg.wait_for_timeout(300)
             kontrol(await pg.evaluate("() => (window.__app.state.mapKeys || {}).azure") == 'deneme-anahtar', 'Azure anahtarı kaydedildi (yalnız cihazda)')
+            # Hakkında: amaç ve yapabildikler (ortak/marka/hakkinda.json; eklentinin Hakkında penceresiyle aynı)
+            await pg.evaluate("() => { window.__app.nav.tab('settings'); window.__app.nav.go('hakkinda'); }"); await pg.wait_for_timeout(700)
+            hk = await pg.locator('main.screen').text_content()
+            kontrol('Amaç' in hk and 'Neler yapar?' in hk and 'Sahada ölçüm ve aplikasyon' in hk and 'TEDAŞ' not in hk and '26.23' not in hk, 'hakkında: amaç, yapabildikler; kurum yazısı yok')
+            await pg.screenshot(path=f'{OUT}/esitleme_05b_hakkinda.png')
 
             # Dışa Aktarım: Google Earth KMZ + CBS MapInfo
             await pg.evaluate("() => { window.__app.state.expSel = { kmz: true, mif: true }; window.__app.nav.tab('export'); }"); await pg.wait_for_timeout(800)
