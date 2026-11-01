@@ -32,7 +32,7 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 
 | Parça | Sürüm | Durum |
 | --- | --- | --- |
-| Telefon uygulaması (Şebeke-M) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı; Esri ArcGIS, Bing, Azure dâhil), **Hesap Merkezi** (15 hesap), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası), **haritada çizim görünümü**, Google Earth ve CBS (MIF / MID) eklentiyle aynı; telefonda denenmedi |
+| Telefon uygulaması (Şebeke-M) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı; Esri ArcGIS, Bing, Azure dâhil), **Hesap Merkezi** (iki hesap: direk cer vektörü, kanal planı), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası), **haritada çizim görünümü**, Google Earth ve CBS (MIF / MID) eklentiyle aynı; telefonda denenmedi |
 | AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
 
@@ -120,7 +120,7 @@ temizlik `kaynak/DEGISIKLIKLER.md`) ortak köprü (`kopru-bas.js`, `kopru.js`), 
 başına uyarlama (`uyarlama/<id>.js|css`) ile telefona (iframe, postMessage) ve AutoCAD'e (yerel HTTP sunucu
 `HesapSunucu`, Edge uygulama penceresi, `HesapMerkezi.cs`) bağlandı. Bağlam / kayıt / güncellik sözleşmesi
 `ortak/hesap/BAGLAM.md`; paketleyici `araclar/hesap-paketle.mjs` (derlemede çalışır, `ortak/hesap/paket` depoya
-konmaz); deneme koşucusu `araclar/hesap-dene.py` (Playwright; 70 durum, masaüstü + telefon boyutu). Hesap
+konmaz); deneme koşucusu `araclar/hesap-dene.py` (Playwright; masaüstü + telefon boyutu). Hesap
 araçlarının tablolarında saptanan ve **aracın sahibiyle doğrulanması gereken** değerler her hesabın ⓘ panelindeki
 "Hesap hakkında" notlarında ve `uyarlama/<id>.js` içindeki `notlar` listesinde yazılıdır (değiştirilmedi).
 

@@ -564,18 +564,20 @@ Tolerans varsayılan olarak 0,02 metredir; Ayarlar › "Hassasiyet eşikleri · 
 ## Teknik hesaplar (Hesap Merkezi)
 
 Hesap sayfaları uygulamaya formülleri değiştirilmeden eklenmiştir;
-AutoCAD eklentisinde de aynı sayfalar açılır. Hesaplar üç gruptur:
+AutoCAD eklentisinde de aynı sayfalar açılır. İki hesap vardır:
 
-| Grup | Hesaplar |
+| Hesap | Ne yapar |
 | --- | --- |
-| Hat ve direk | ENH Sehim, Uplift (kaldırma) kontrolü, ag–aw bağıntısı, Amax, İletken kopma (iki misli buz yükü), Direk tepe kuvveti (TEDAŞ), Direk tepe kuvveti (cer vektörü) |
-| Elektrik | OG gerilim düşümü ve güç kaybı, AG gerilim düşümü ve güç kaybı, OG kısa devre, AG kısa devre, Bakır ⇄ alüminyum kablo kesiti |
-| Proje ve yerleşim | Beton köşk yerleşim planı, Kanal planı, AG tek hat şeması |
+| Direk Tepe Kuvveti (Cer Vektörü) | Direğe bağlı bütün hatların çekme kuvvetlerinin vektörel toplamı ve bileşke yönü; direk tipi kontrolü |
+| Kanal Planı | Yeraltı kablo kanalı kesit detayları: kablo dizilişi, kanal genişliği ve derinliği, kazı metrajı, DXF |
+
+(1.11.2026'dan önceki sürümlerde bulunan sehim, uplift, gerilim düşümü, kısa devre gibi hesaplar kaldırıldı; eski
+kayıtları projede bilgi olarak durur.)
 
 **Nereden açılır:** bir direğin, trafonun ya da hattın kendi ekranındaki `Hesaplar` düğmesi; haritada objenin
 balonundaki `Teknik hesaplar`; hat listesindeki `Hesaplar`; ya da `Hesaplar › Teknik hesaplar` (proje geneli).
-Objeden açılınca liste o objeye **uygun** hesapları üstte, uygun olmayanları nedeniyle birlikte altta katlanmış
-gösterir. Trafodan açılan gerilim düşümü / kısa devre hesapları hangi **çıkış hattı** için yapılacağını sorar.
+Objeden açılınca liste o objeye **uygun** hesapları üstte, uygun olmayanları nedenleriyle birlikte altta katlanmış
+gösterir.
 
 **Sayfada:** üstte hesabın adı, hedef (`Direk D-17`), durum (`19 bilgi projeden · 2 eksik`), `Kaydet` ve `ⓘ`.
 Objenin bilgileri (tip, açıklıklar, iletken, kot, trafo gücü, kablolar…) hesaba kendiliğinden yazılır. Projede
@@ -678,7 +680,7 @@ Koordinatı elinizde olan çok sayıda obje tek tek girilmez; hazır şablon dol
 3. Dosyayı bilgisayarda doldurup telefona geri alın.
 4. `Dosyadaki koordinat sistemi` seçin. Proje sisteminden farklıysa uygulama dönüştürür.
 5. `Excel (.xlsx) ya da CSV seç` deyin.
-6. "Önizleme" kartında bulunan, uygun ve hatalı kayıt sayılarına bakın. Hatalı satırlar nedeniyle birlikte listelenir.
+6. "Önizleme" kartında bulunan, uygun ve hatalı kayıt sayılarına bakın. Hatalı satırlar nedenleriyle birlikte listelenir.
 7. `İÇE AKTAR` düğmesine basın. Yalnız uygun kayıtlar alınır, `[EXCEL]` etiketiyle kaydedilir.
 
 | Sayfa | Zorunlu sütunlar |

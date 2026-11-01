@@ -815,9 +815,6 @@ namespace SebekeHakedis.Eklenti
     /// </summary>
     public sealed class HesapKomutlari
     {
-        /// <summary>Trafo hedefinde hangi çıkışın (kolun) hesaplanacağı sorulan hesaplar (telefondaki KOL_ISTER ile aynı).</summary>
-        private static readonly HashSet<string> KolIster = new HashSet<string>(StringComparer.Ordinal) { "og-gd", "ag-gd", "og-kd", "ag-kd", "ag-tekhat" };
-
         [CommandMethod("SH_HESAP", CommandFlags.Modal | CommandFlags.UsePickSet)]
         public void Hesap()
         {
@@ -916,28 +913,6 @@ namespace SebekeHakedis.Eklenti
                     return;
                 }
 
-                // 3) Trafo hedefinde çıkış (kol) seçimi
-                if (hedef.Tur == "trafo" && m != null && KolIster.Contains(modul))
-                {
-                    bool og = modul.StartsWith("og-", StringComparison.Ordinal);
-                    var cikislar = HesapBaglami.TrafoCikislari(p, hedef.Id).FindAll(x => og == x.Tur.StartsWith("OG", StringComparison.Ordinal));
-                    if (cikislar.Count == 1) hedef.HatId = cikislar[0].Id;
-                    else if (cikislar.Count > 1)
-                    {
-                        ed.WriteMessage("\n" + hedef.No + " trafosunun " + (og ? "OG" : "AG") + " çıkışları:");
-                        for (int i = 0; i < cikislar.Count; i++)
-                        {
-                            var c = cikislar[i];
-                            double uz = c.CizimUzunlugu > 0 ? c.CizimUzunlugu : Geometri.Uzunluk(c.Kose);
-                            ed.WriteMessage("\n  " + (i + 1) + ": " + HesapBaglami.HatAdi(p, c) + "  " + (c.AnaKesit ?? "") + "  " + uz.ToString("0", CultureInfo.InvariantCulture) + " m");
-                        }
-                        var pio = new PromptIntegerOptions("\nHangi çıkış hesaplanacak? (numara; Enter = yalnız trafo bilgisiyle) ") { AllowNone = true, LowerLimit = 1, UpperLimit = cikislar.Count };
-                        var ir = ed.GetInteger(pio);
-                        if (ir.Status == PromptStatus.Cancel) return;
-                        if (ir.Status == PromptStatus.OK) hedef.HatId = cikislar[ir.Value - 1].Id;
-                    }
-                    else ed.WriteMessage("\nBu trafonun çizimde " + (og ? "OG" : "AG") + " çıkış hattı yok; hesap trafo bilgisiyle açılır.");
-                }
                 Baslat(belge, modul, hedef);
             });
         }
