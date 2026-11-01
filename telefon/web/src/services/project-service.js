@@ -618,7 +618,8 @@ export class ProjectService {
   async approvePeriod(id, reason) {
     { const c = this.can('period.approve'); if (!c.ok) throw new Error(c.why); }
     const t = this.periodTable(id);
-    await this.ds.update('periods', id, { status: 'onayli', snapshot: approveSnapshot(t), approvedAt: this.ds.iso(), approvedBy: this.ds.user.name, totals: t.totals }, { reason: reason || 'Hakediş onaylandı' });
+    const wp = this.activeProgram();
+    await this.ds.update('periods', id, { status: 'onayli', snapshot: approveSnapshot(t), approvedAt: this.ds.iso(), approvedBy: this.ds.user.name, totals: t.totals, programId: wp ? wp.id : null, programBasis: wp ? wp.basis : null }, { reason: reason || 'Hakediş onaylandı' });
     await this.reload('periods');
     const per = this.data.periods.find((x) => x.id === id);
     const n = await this._advanceHak(per ? per.end : null, ['HAKEDISTE'], 'ONAYLI', (per ? per.no + '. ' : '') + 'hakediş onaylandı');
