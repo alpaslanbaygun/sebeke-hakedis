@@ -9,7 +9,7 @@
   }
   html.sm-var body{font-family:var(--sm-font)}
   html.sm-var .header{background:var(--sm-panel);border-bottom-color:var(--sm-line)}
-  html.sm-var .header-badge{color:#0b1326}
+  html.sm-var .header-badge{display:none} /* kurum rozeti gösterilmez (1.11.2026) */
   html.sm-var .panel-left{background:var(--sm-panel);border-right-color:var(--sm-line)}
   html.sm-var .section{border-bottom-color:var(--sm-line2)}
   html.sm-var .bar-btn{background:var(--sm-bg2);border-color:var(--sm-line)}

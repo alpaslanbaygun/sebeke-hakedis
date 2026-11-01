@@ -132,7 +132,7 @@ o programın çizimleriyle karışık kullanılabilir, raporda aynı okunur, o p
 - **ŞEBEKE-M** (çizim): Kategori, Elemanlar, Ayarlar, Malzeme, Düzenle.
 - **ŞEBEKE-M ARAÇLAR**: Hakediş, Raporlar, Telefon, **Teknik Hesaplamalar**, **Proje ve Yerleşim**.
 
-İkisinin başında **Şebeke-M** paneli (logo, **Hakkında**: sürüm, ortam ve komut listesi).
+İkisinin başında **Şebeke-M** paneli (logo, **Hakkında**: sürüm, amaç ve yapabildikler, komut listesi).
 
 ### Çizim sekmesi (soldan sağa)
 
@@ -212,7 +212,7 @@ başlığından tutup taşınır.
   hesabı yapan, unvan, firma, buz yükü bölgesi — teknik hesaplara ve raporlara buradan yazılır.
 - **Telefondan al**: Yeni eklenecek / Güncellenecek / Değişmeyen kutucukları (listeleriyle) ve uyarılar (kilitli
   hakediş, telefonda silinmiş, onaylar). **Çizime aktar** ile başlar.
-- **Hakkında**: logo, sürüm, AutoCAD ve .NET sürümü, komut listesi.
+- **Hakkında**: logo, sürüm, AutoCAD ve .NET sürümü; **Hakkında** sekmesinde Şebeke-M'in amacı ve neler yapabildiği (telefonun Ayarlar › Hakkında ekranıyla aynı metin), **Komutlar** sekmesinde komut listesi.
 
 ### Hat, kanal ve sondaj parça parça çizilir
 
