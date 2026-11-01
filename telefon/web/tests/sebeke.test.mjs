@@ -9,6 +9,7 @@ import { lineLabel, circuitParts, autocadAnahtari } from '../src/grid/lines.js';
 import KALEMLER from '../src/ortak/kalemler.js';
 import KATSAYILAR from '../src/ortak/katsayilar.js';
 import { exportFormat } from '../src/export/exporter.js';
+import { makeCrs, project as projLL, unproject as unprojLL } from '../src/geo/crs.js';
 
 const here = path.dirname(new URL(import.meta.url).pathname);
 const OUT = path.join(here, 'out/'); fs.mkdirSync(OUT, { recursive: true });
@@ -633,4 +634,150 @@ test('A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosya
   const [pk] = await exportFormat(ps, 'package');
   const pf = Object.keys(await unzip(pk.data));
   assert.ok(pf.some((n) => /\/HARITA\/.*\.kmz$/.test(n)) && pf.some((n) => /\/HARITA\/mif\/.*_DIREK\.mif$/.test(n)), 'paket: KMZ ve MIF');
+});
+
+// ---------------------------------------------------------------- Koordinat sistemi ve yeniden alma (hata 1, 2, 7)
+const yakin = (a, b, tol, ne) => assert.ok(Math.abs(a - b) <= tol, (ne || '') + ' · beklenen ' + b + ' bulunan ' + a + ' (fark ' + Math.abs(a - b).toFixed(4) + ')');
+
+test('A30 · (hata 1) UTM projesi AutoCAD dosyasına: eleman, hat, kanal, nokta ve bölge koordinatları dosyanın 3° TM sistemine çevrilir, kot korunur', async () => {
+  const { ps } = await setup();
+  const utm = makeCrs({ datum: 'WGS84', projection: 'UTM', zone: 36 });
+  await newProject(ps, { crs: utm, autoRecipe: false });
+  const tm = makeCrs({ datum: 'WGS84', projection: 'TM3', cm: 33 });
+  const ll = [[39, 33], [39.001, 33.001], [39.002, 33.0015]];
+  const direkler = [];
+  for (let i = 0; i < ll.length; i++) {
+    const q = projLL(ll[i][0], ll[i][1], utm);
+    direkler.push(await ps.addEquipment('pole', { group: 'bahh', typeId: ps.cat.poleTypeByName('bahh', 'GT-12 (3 AWG)').id, state: 'YENI' }, { coord: { E: q.E, N: q.N, H: 1000 + i }, source: 'DESIGN', defer: true }));
+  }
+  await ps.createLine({ lineType: 'OG', install: 'havai', circuits: [{ role: 'OG', key: '3xSwallow', count: 1 }], nodes: direkler.map((d) => d.pointId), state: 'YENI' });
+  const sdk = await ps.addEquipment('sdk', { state: 'YENI', attrs: { sdkTypeId: ps.cat.sdkTypes()[0].id } }, { coord: Object.assign({}, projLL(39.0025, 33.002, utm), { H: 1003 }), source: 'DESIGN', defer: true });
+  await ps.createLine({ lineType: 'AG', install: 'yeralti', circuits: [{ role: 'AG', key: 'NAYY 3x95+50', count: 1 }], nodes: [direkler[2].pointId, sdk.pointId], state: 'YENI', cable: { surface: 'asfalt', method: 'borulu', width: 0.4, depth: 0.8, pipeDia: 110, pipeCount: 1 } });
+  const q4 = projLL(39.003, 33.0025, utm);
+  const nokta = await ps.createPoint({ pointNo: 'P1', cls: 'DETAY', critical: false, coord: { E: q4.E, N: q4.N, H: 950 }, source: 'DESIGN' });
+  await ps.recompute('deneme');
+  assert.equal(ps.p.crs.projection, 'UTM');
+  const sp = sebekeModel(ps);
+  assert.equal(sp.proje.koordinat.sistem, 'TM'); assert.equal(sp.proje.koordinat.dom, 33);
+  // Eleman: UTM36N kuzeyi 4316776.5832 iken dosyada 3° TM (DOM 33) değeri 4318503.9847 yazılır
+  const e0 = sp.elemanlar.find((e) => e.telefonId === direkler[0].id);
+  const b0 = projLL(39, 33, tm);
+  yakin(e0.saga, b0.E, 0.001, 'eleman sağa'); yakin(e0.yukari, b0.N, 0.001, 'eleman yukarı'); yakin(e0.yukari, 4318503.9847, 0.001, 'eleman yukarı (sayı)');
+  assert.equal(e0.kot, 1000);
+  for (let i = 1; i < ll.length; i++) { const e = sp.elemanlar.find((x) => x.telefonId === direkler[i].id); const b = projLL(ll[i][0], ll[i][1], tm); yakin(e.saga, b.E, 0.001, 'eleman ' + i); yakin(e.yukari, b.N, 0.001, 'eleman ' + i); assert.equal(e.kot, 1000 + i); }
+  // Hat köşeleri (parçalar direkten direğe) ve çizim uzunluğu dosyanın sisteminde
+  const og = sp.hatlar.filter((h) => h.tur === 'OG_HAVAI' || /OG/.test(h.tur));
+  assert.ok(og.length >= 1, 'OG hat yazıldı');
+  const koseler = og.flatMap((h) => h.kose);
+  for (const [lat, lon] of ll) { const b = projLL(lat, lon, tm); assert.ok(koseler.some((k) => Math.abs(k[0] - b.E) < 0.001 && Math.abs(k[1] - b.N) < 0.001), 'hat köşesi dosyanın sisteminde: ' + lat + ',' + lon); }
+  const b1 = projLL(ll[0][0], ll[0][1], tm), b2 = projLL(ll[1][0], ll[1][1], tm);
+  const ilkParca = og.find((h) => Math.abs(h.kose[0][0] - b1.E) < 0.001);
+  yakin(ilkParca.cizimUzunlugu, Math.hypot(b2.E - b1.E, b2.N - b1.N), 0.002, 'çizim uzunluğu TM düzleminde');
+  // Kanal köşeleri ve bağımsız nokta
+  assert.equal(sp.kanallar.length, 1);
+  const bs = projLL(39.0025, 33.002, tm);
+  assert.ok(sp.kanallar[0].kose.some((k) => Math.abs(k[0] - bs.E) < 0.001 && Math.abs(k[1] - bs.N) < 0.001), 'kanal köşesi dosyanın sisteminde');
+  const n = sp.noktalar.find((x) => x.telefonId === nokta.id);
+  const b4 = projLL(39.003, 33.0025, tm);
+  yakin(n.saga, b4.E, 0.001, 'nokta sağa'); yakin(n.yukari, b4.N, 0.001, 'nokta yukarı'); assert.equal(n.kot, 950);
+  // Bölge (projenin kutusu) dosyanın sisteminde: bütün nesneler içinde, bölge kimliği boş değil
+  const sinir = sp.bolgeler[0].sinir;
+  const xs = sinir.map((q) => q[0]), ys = sinir.map((q) => q[1]);
+  for (const [x, y] of [[e0.saga, e0.yukari], [n.saga, n.yukari], ...koseler]) assert.ok(x >= Math.min(...xs) && x <= Math.max(...xs) && y >= Math.min(...ys) && y <= Math.max(...ys), 'bölge kutusu nesneyi kapsar');
+  assert.equal(e0.bolge, 'B1'); assert.equal(n.bolge, 'B1');
+  // Geri alma: aynı UTM projesine alınınca koordinatlar değişmez (gidiş-dönüş)
+  const oz = await sebekeIceAl(ps, sp, { projectId: ps.p.id });
+  assert.equal(oz.yeniEleman, 0);
+  const p0 = ps.pointById(direkler[0].pointId), q0 = projLL(39, 33, utm);
+  yakin(p0.E, q0.E, 0.001, 'gidiş-dönüş sağa'); yakin(p0.N, q0.N, 0.001, 'gidiş-dönüş yukarı');
+  assert.equal(ps.data.points.filter((x) => x.status !== 'deleted').length, 5, 'kopya nokta üretilmez');
+});
+
+test('A31 · (hata 2) ED50 dosyası yeni proje olarak alınınca datum korunur; var olan TUREF projesine alınınca koordinatlar dönüştürülür; datumsuz eski dosya TUREF sayılır', async () => {
+  const dosya = (datum, dom) => { const sp = SH.yeniProje({ ad: 'Datum denemesi', dom }); if (datum === undefined) delete sp.proje.koordinat.datum; else sp.proje.koordinat.datum = datum; return sp; };
+  const ed = makeCrs({ datum: 'ED50', projection: 'TM3', cm: 33 }), tr = makeCrs({ datum: 'TUREF', projection: 'TM3', cm: 33 });
+  const qEd = projLL(39, 33, ed, 1000); // kot 1000'deki noktanın ED50 koordinatı
+  const eleman = (q) => ({ id: 'E1', tur: 'ENH_DIREK', gisId: 'SC1', cins: 'ENH_DEMİR_GLV', tip: 'G-D-10 (sw)', durum: 'M', hakedis: 1, bolge: 'B1', saga: Math.round(q.E * 10000) / 10000, yukari: Math.round(q.N * 10000) / 10000, kot: 1000, aci: 0, kalemler: [] });
+  const nokta = (q, id) => ({ id, ad: 'N' + id, kod: 'DETAY', saga: Math.round(q.E * 10000) / 10000, yukari: Math.round(q.N * 10000) / 10000, kot: 900, hakedis: 1, bolge: 'B1' });
+  // 1) Yeni proje: dosyanın datumu projenin datumu olur, koordinatlar olduğu gibi kalır
+  {
+    const { ps } = await setup();
+    const sp = dosya('ED50', 33); sp.elemanlar.push(eleman(qEd)); sp.noktalar.push(nokta(projLL(39.001, 33.001, ed, 900), 'N1'));
+    await sebekeIceAl(ps, sp);
+    assert.equal(ps.p.crs.datum, 'ED50', 'proje datumu dosyadan'); assert.equal(ps.p.crs.cm, 33); assert.equal(ps.p.crs.projection, 'TM3');
+    const p = ps.pointById(ps.data.equipment[0].pointId);
+    yakin(p.E, qEd.E, 0.001, 'ED50 sağa olduğu gibi'); yakin(p.N, qEd.N, 0.001, 'ED50 yukarı olduğu gibi');
+    yakin(p.lat, 39, 2e-7, 'enlem WGS84 çerçevesinde doğru'); yakin(p.lon, 33, 2e-7, 'boylam WGS84 çerçevesinde doğru');
+    // Geri yazınca datum ve koordinatlar aynı döner
+    const geri = sebekeModel(ps);
+    assert.equal(geri.proje.koordinat.datum, 'ED50'); assert.equal(geri.proje.koordinat.dom, 33);
+    yakin(geri.elemanlar[0].saga, qEd.E, 0.001, 'geri sağa'); yakin(geri.elemanlar[0].yukari, qEd.N, 0.001, 'geri yukarı');
+  }
+  // 2) Var olan TUREF projesine ED50 dosyası: koordinatlar TUREF'e dönüştürülür (~185,83 m fark)
+  {
+    const { ps } = await setup(); await newProject(ps, { crs: tr, autoRecipe: false });
+    const sp = dosya('ED50', 33); sp.elemanlar.push(eleman(qEd)); sp.noktalar.push(nokta(projLL(39.001, 33.001, ed, 900), 'N1'));
+    await sebekeIceAl(ps, sp, { projectId: ps.p.id });
+    const qTr = projLL(39, 33, tr);
+    const p = ps.pointById(ps.data.equipment[0].pointId);
+    yakin(p.E, qTr.E, 0.002, 'TUREF sağa'); yakin(p.N, qTr.N, 0.002, 'TUREF yukarı');
+    yakin(Math.hypot(p.E - qEd.E, p.N - qEd.N), 185.83, 0.05, 'ED50 → TUREF farkı');
+    const n = ps.data.points.find((x) => x.sebekeId === 'N1'); const nTr = projLL(39.001, 33.001, tr);
+    yakin(n.E, nTr.E, 0.002, 'nokta TUREF sağa'); yakin(n.N, nTr.N, 0.002, 'nokta TUREF yukarı');
+  }
+  // 3) Datum yazmayan eski dosya ve ITRF96 yazan dosya: TUREF (eski davranış)
+  for (const d of [undefined, 'ITRF96', 'TUREF']) {
+    const { ps } = await setup();
+    const sp = dosya(d, 39); const q = projLL(39, 39.01, tr); sp.elemanlar.push(eleman(q));
+    await sebekeIceAl(ps, sp);
+    assert.equal(ps.p.crs.datum, 'TUREF', 'datum ' + d + ' → TUREF'); assert.equal(ps.p.crs.cm, 39);
+    const p = ps.pointById(ps.data.equipment[0].pointId); yakin(p.E, q.E, 0.001, 'sağa'); yakin(p.N, q.N, 0.001, 'yukarı');
+  }
+});
+
+test('A32 · (hata 7) yeniden içe alma: var olan elemanın kotu ve bağımsız noktanın konumu / kotu dosyadan güncellenir, kopya üretilmez, kilitli kayıt korunur', async () => {
+  const { ps } = await setup();
+  const tr = makeCrs({ datum: 'TUREF', projection: 'TM3', cm: 39 });
+  const sp = SH.yeniProje({ ad: 'Düzeltme denemesi', dom: 39 });
+  sp.elemanlar.push({ id: 'E1', tur: 'ENH_DIREK', gisId: 'SC1', cins: 'ENH_DEMİR_GLV', tip: 'G-D-10 (sw)', durum: 'M', hakedis: 1, bolge: 'B1', saga: 519000, yukari: 4282000, kot: 100, aci: 0, kalemler: [] });
+  sp.elemanlar.push({ id: 'E2', tur: 'ENH_DIREK', gisId: 'SC2', cins: 'ENH_DEMİR_GLV', tip: 'G-D-10 (sw)', durum: 'M', hakedis: 1, bolge: 'B1', saga: 519080, yukari: 4282000, kot: 100, aci: 0, kalemler: [] });
+  sp.noktalar.push({ id: 'N1', ad: 'P1', kod: 'DETAY', saga: 519200, yukari: 4282100, kot: 100, hakedis: 1, bolge: 'B1' });
+  sp.noktalar.push({ id: 'N2', ad: 'P2', kod: 'DETAY', saga: 519300, yukari: 4282100, kot: 0, hakedis: 1, bolge: 'B1' });
+  const oz1 = await sebekeIceAl(ps, sp);
+  assert.equal(oz1.yeniEleman, 2); assert.equal(oz1.nokta, 2);
+  const e1 = ps.data.equipment.find((e) => e.sebekeId === 'E1'), e2 = ps.data.equipment.find((e) => e.sebekeId === 'E2');
+  assert.equal(ps.pointById(e1.pointId).H, 100);
+  assert.equal(ps.data.points.find((p) => p.sebekeId === 'N2').H, null, 'kot 0 yazılan nokta: kot bilinmiyor');
+  // Dosyada düzeltme: E1 kotu 150; N1 +10 m doğuya ve kot 150; N2 kotu 0 kalır (bilinmiyor) ama konumu değişir
+  const sp2 = JSON.parse(JSON.stringify(sp));
+  sp2.elemanlar[0].kot = 150;
+  sp2.noktalar[0].saga = 519210; sp2.noktalar[0].kot = 150;
+  sp2.noktalar[1].yukari = 4282105;
+  const oz2 = await sebekeIceAl(ps, sp2, { projectId: ps.p.id });
+  assert.equal(oz2.yeniEleman, 0); assert.equal(oz2.guncellenenEleman, 2); assert.equal(oz2.nokta, 0, 'yeni nokta yok');
+  assert.equal(ps.pointById(e1.pointId).H, 150, 'elemanın kotu dosyadan alındı');
+  yakin(ps.pointById(e1.pointId).E, 519000, 0.0005, 'elemanın konumu değişmedi');
+  const n1 = ps.data.points.find((p) => p.sebekeId === 'N1');
+  yakin(n1.E, 519210, 0.0005, 'bağımsız nokta +10 m'); yakin(n1.N, 4282100, 0.0005); assert.equal(n1.H, 150, 'bağımsız noktanın kotu');
+  const n2 = ps.data.points.find((p) => p.sebekeId === 'N2');
+  yakin(n2.N, 4282105, 0.0005, 'N2 konumu güncellendi'); assert.equal(n2.H, null, 'kot 0 (bilinmiyor) kotu silmez / sıfırlamaz');
+  const canli = ps.data.points.filter((p) => p.status !== 'deleted');
+  assert.equal(canli.length, 4, 'tekrar içe alma kopya nokta üretmez');
+  assert.equal(ps.data.equipment.filter((e) => e.status !== 'deleted').length, 2);
+  // Üçüncü alma, değişiklik yok: hiçbir şey taşınmaz (geçmişe kayıt eklenmez)
+  const hist = (ps.pointById(e1.pointId).history || []).length;
+  await sebekeIceAl(ps, sp2, { projectId: ps.p.id });
+  assert.equal((ps.pointById(e1.pointId).history || []).length, hist, 'aynı dosya yeniden alınınca nokta taşınmaz');
+  assert.equal(ps.data.points.filter((p) => p.status !== 'deleted').length, 4);
+  // Kilitli (onaylı) eleman: onay açık (yönetici tanımlı), oturum kapalı → dosyadaki konum / kot düzeltmesi uygulanmaz, uyarı yazılır, alma sürer
+  await ps.addMember({ name: 'Yön Etici', role: 'yonetici', pin: '9999' }); ps.logout();
+  assert.equal(ps.approval().on, true); assert.equal(ps.approval().lock, true); assert.equal(ps.member, null);
+  await ps.ds.update('equipment', e2.id, { hak: 'ONAYLI' }, { reason: 'deneme' }); await ps.reload('equipment');
+  const sp3 = JSON.parse(JSON.stringify(sp2));
+  sp3.elemanlar[1].saga = 519090; sp3.elemanlar[1].kot = 170;
+  const oz3 = await sebekeIceAl(ps, sp3, { projectId: ps.p.id });
+  const p2 = ps.pointById(e2.pointId);
+  yakin(p2.E, 519080, 0.0005, 'kilitli elemanın konumu korunur'); assert.equal(p2.H, 100, 'kilitli elemanın kotu korunur');
+  assert.ok(oz3.uyarilar.some((u) => /SC2/.test(u) && /kilitli/i.test(u)), 'kilitli kayıt için uyarı: ' + JSON.stringify(oz3.uyarilar));
+  assert.equal(ps.pointById(e1.pointId).H, 150, 'öteki kayıtlar alınmaya devam eder');
 });

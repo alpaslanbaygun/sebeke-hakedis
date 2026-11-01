@@ -164,11 +164,15 @@ export class ProjectService {
     await this.recompute('Nokta revize: ' + p.pointNo);
     return p;
   }
-  async movePoint(pointId, E, N, reason) {
+  // Noktayı taşı. opts: { H: yeni kot (verilmezse kot değişmez), source: 'MANUAL' (elle) | 'DESIGN' (proje dosyasından) }
+  async movePoint(pointId, E, N, reason, opts = {}) {
     const p0 = this.pointById(pointId);
     const g = unproject(E, N, this.p.crs);
     const hist = (p0.history || []).concat([{ at: p0.updatedAt, source: p0.source, E: p0.E, N: p0.N, H: p0.H, by: p0.updatedBy, manualMove: true }]);
-    await this.ds.update('points', pointId, { E, N, lat: g.lat, lon: g.lon, source: 'MANUAL', accuracyClass: 'MANUEL', history: hist }, { reason: reason || 'Elle taşındı' });
+    const src = opts.source || 'MANUAL';
+    const patch = { E, N, lat: g.lat, lon: g.lon, source: src, accuracyClass: src === 'DESIGN' ? 'PROJE' : 'MANUEL', history: hist };
+    if (opts.H !== undefined) { patch.H = opts.H; patch.zUnknown = opts.H == null; }
+    await this.ds.update('points', pointId, patch, { reason: reason || 'Elle taşındı' });
     return this._after('points', 'Nokta taşındı: ' + p0.pointNo);
   }
   async updatePoint(pointId, patch, reason) { await this.ds.update('points', pointId, patch, { reason }); return this._after('points', reason || 'Nokta güncellendi'); }
@@ -373,16 +377,37 @@ export class ProjectService {
     const m = this.member;
     return [...(rec.hakLog || []), { at: this.ds.iso(), by: m ? m.name : this.ds.user.name, role: m ? m.role : null, from, to, note: note || null }].slice(-20);
   }
+  /**
+   * Kayıt kilidi: onay açıkken kontrol / hakedişte / onaylı kayıt, kilit kapatılmamışsa ve oturumdaki üye yönetici
+   * değilse kilitlidir → { status, label, why }; değilse null. Kaydın miktar, malzeme, konum değişikliği ve silinmesi
+   * (bağlı noktalar dahil) bu kilide bağlıdır; durum değişikliği ayrıca yetkiye bakar (_guardEdit).
+   */
+  editLock(rec) {
+    if (!rec || !approvalOn(this.p)) return null;
+    const from = hakOf(rec);
+    if (!(from && LOCKED.has(from))) return null;
+    if (this.p.approval && this.p.approval.lock === false) return null;
+    const m = this.member;
+    if (m && m.role === 'yonetici') return null;
+    const label = HAK_STATUSES[from].label;
+    return { status: from, label, why: (rec.no || rec.lineNo) + ' "' + label + '" durumunda · kayıt kilitli. Değiştirmek için önce durum geri çevrilmeli ya da Yönetici düzenlemeli.' };
+  }
+  /** Kilitli kayıtta değişiklik / silme yapılamaz: kilitliyse hata fırlatır (servis katmanı denetimi). */
+  _assertUnlocked(rec, what) {
+    const k = this.editLock(rec);
+    if (k) throw new Error(k.why + (what ? ' (' + what + ')' : ''));
+  }
   // Kayıt düzenleme denetimi: durum değişikliği yetkiye bağlı; kontrol edilmiş kayıt (isteğe bağlı) kilitli
   _guardEdit(store, rec, patch, reason) {
     if (!rec || !approvalOn(this.p)) return patch;
     const from = hakOf(rec);
     const to = 'hak' in patch || 'state' in patch || 'progress' in patch ? hakOf(Object.assign({}, rec, patch)) : from;
     const m = this.member;
-    if (from && LOCKED.has(from) && !(this.p.approval && this.p.approval.lock === false) && !(m && m.role === 'yonetici')) {
+    const kilit = this.editLock(rec);
+    if (kilit) {
       const hakChange = to !== from;
       const touched = Object.keys(patch).filter((k) => !FREE_KEYS.has(k) && !(hakChange && (k === 'progress' || k === 'workDate')) && JSON.stringify(patch[k] ?? null) !== JSON.stringify(rec[k] ?? null));
-      if (touched.length) throw new Error((rec.no || rec.lineNo) + ' "' + HAK_STATUSES[from].label + '" durumunda · kayıt kilitli. Değiştirmek için önce durum geri çevrilmeli ya da Yönetici düzenlemeli.');
+      if (touched.length) throw new Error(kilit.why);
     }
     if (from && to && from !== to) {
       const ck = canHak(this.p, m, from, to);
