@@ -10,8 +10,9 @@ import { greenBookPage } from '../src/qty/metraj.js';
 import { makeGGA, makeGST, makeGSA } from '../src/gnss/nmea.js';
 import { unzip } from '../src/export/zip.js';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const OUT = new URL('./out/', import.meta.url).pathname;
+const OUT = fileURLToPath(new URL('./out/', import.meta.url));
 fs.mkdirSync(OUT, { recursive: true });
 const q = (ps, job, servis) => ps.result.quantities.find((x) => x.job === job && x.servis === servis);
 const approx = (a, b, tol = 1e-3, msg) => assert.ok(Math.abs(a - b) <= tol, (msg || '') + ' beklenen ' + b + ' bulunan ' + a);

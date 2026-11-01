@@ -3,9 +3,10 @@
 // (telefon/web/src/ortak/<ad>.js). Böylece telefon ile eklenti aynı tabloları kullanır.
 // Kullanım: node araclar/ortak-tablolar.mjs      (semboller.json'ı araclar/semboller-uret.mjs üretir)
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const kok = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const kaynak = path.join(kok, 'ortak/katalog');
 const hedef = path.join(kok, 'telefon/web/src/ortak');
 fs.mkdirSync(hedef, { recursive: true });

@@ -2,6 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { setup, newProject, buildPoleLine, rtkObs, route } from './helpers.mjs';
 import { sebekeYaz, sebekeModel, sebekeIceAl, voltProjeYaz, voltProjeOku, cizimTip, voltTip, cizimKesit, hatTipiEsle, direkEsle, autocadSecenekleri, SH } from '../src/interop/sebeke.js';
@@ -11,7 +12,7 @@ import KATSAYILAR from '../src/ortak/katsayilar.js';
 import { exportFormat } from '../src/export/exporter.js';
 import { makeCrs, project as projLL, unproject as unprojLL } from '../src/geo/crs.js';
 
-const here = path.dirname(new URL(import.meta.url).pathname);
+const here = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(here, 'out/'); fs.mkdirSync(OUT, { recursive: true });
 const ORNEK = path.join(here, 'fixtures/ornek-proje.sebeke.json');
 

@@ -3,9 +3,10 @@
 // veritabanına (IndexedDB) içe aktarılır; uygulama içinde koddan değil DB'den okunur.
 import { applyExtras } from './seed_extras_v23.mjs';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const raw = JSON.parse(fs.readFileSync(path.join(root, 'seed/design_raw.json'), 'utf8'));
 const STD = 'TEDAS-2026-GR02';
 
