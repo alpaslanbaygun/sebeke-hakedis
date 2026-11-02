@@ -31,6 +31,7 @@ GitHub › **Releases**:
 | Kabin / köşk yerleşimi, tepe kuvveti, enerji kontrolü (eski ekranlar) | ✓ | — |
 | Fotoğraf ve not | ✓ | — |
 | Metraj, Yeşil Defter, hakediş dönemi ve onay | ✓ (Excel; onaylı dönem AutoCAD'e onay olarak gider) | `SH_OZET`, `SH_ONAY` (Kontrol → Hakediş → GIS, onaylı hakediş kilitli) |
+| Kullanıcılar, roller, hakediş yetkisi | ✓ (Kullanıcılar ve onay; yazmaya kapalı hakedişler) | `SH_KULLANICILAR`, `SH_OTURUM` (aynı kullanıcılar ve şifreler; onay aşamaları rolle) |
 | Durum Tespit raporu (Excel, eski programın biçimi) | telefondan gelen dosyayla eklentide | `SH_RAPOR`, `SH_PROJERAPOR` |
 | Eksik malzeme (DETAY sorgusu) | — | `SH_DETAY` |
 | DXF, Google Earth (KMZ), CBS (MIF / MID), SHP, GeoJSON, teslim paketi | ✓ (DXF simgeleri, Google Earth ve MIF / MID eklentiyle aynı) | `SH_KML`, `SH_MIFVER` (ve `SH_MIFAL` ile CBS'den alma) |

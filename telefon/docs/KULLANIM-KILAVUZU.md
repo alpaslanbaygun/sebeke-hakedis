@@ -828,6 +828,24 @@ Kontrol mühendisi, hakediş sorumlusu ve onay yetkilisi oturum açınca aynı e
 
 İkisi de varsayılan olarak açıktır ve yalnız Yönetici değiştirir. `Onay mekanizmasını kapat` düğmesi her şeyi eski serbest haline döndürür; geçmiş kayıtlar saklanır.
 
+### Hakediş yetkisi (yazmaya kapalı hakedişler)
+
+Yönetici, hakedişleri yazmaya kapatabilir. Kapalı hakedişteki obje değiştirilemez, silinemez; o hakedişe yeni obje eklenemez. Yönetici için bu kısıt yoktur.
+
+1. `Kullanıcılar ve onay` ekranında "Hakediş yetkisi" kartına inin.
+2. Kapatılacak hakedişin numarasına dokunun. Kapalı numara kırmızı ve kilitli görünür.
+3. Açmak için aynı numaraya yeniden dokunun.
+
+Numaralar AutoCAD'deki hakediş numaralarıdır: AutoCAD'den gelen obje kendi numarasını taşır; telefonda çizilen obje aktif hakedişe (açık dönemin numarası) düşer. İş kalemi olmayan mevcut objeler etkilenmez.
+
+### AutoCAD ile ortak kullanıcılar
+
+Bu ekrandaki kullanıcılar, roller, şifreler ve hakediş yetkisi AutoCAD eklentisinde de geçerlidir. AutoCAD proje dosyasıyla (Dışa Aktar › AutoCAD proje dosyası; eklentide `Telefona Gönder` / `Telefondan Al`) iki yönde taşınır.
+
+- Şifre dosyaya düz yazıyla gitmez; yalnız özeti gider. Aynı şifreyle eklentide de oturum açılır.
+- İki tarafta da değişen kullanıcıda son değişiklik kazanır. Kullanıcı silinmez, kapatılır.
+- AutoCAD'deki hakediş onayında Kontrol aşamasını Kontrol mühendisi, Hakediş ve GIS aşamasını Onay yetkilisi verir. Yönetici her aşamayı verebilir.
+
 ### Hakediş dönemi
 
 Hesaplar › `Hakediş` ekranında dönem açılır ve onaylanır.
