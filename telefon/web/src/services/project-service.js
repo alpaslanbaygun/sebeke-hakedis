@@ -6,6 +6,7 @@ import { computeProject, impactOf } from '../engine/compute.js';
 import { makeCrs, project as projectLL, unproject } from '../geo/crs.js';
 import { ROLES, approvalOn, strictOn, canHak, canDo, activeMembers, checkPin, pinHash, validPin } from '../core/roles.js';
 import { buildWorkProgram, periodTable, approveSnapshot } from '../qty/hakedis.js';
+import { aktifHakedis, objeHakedisi } from '../core/hakedis-no.js';
 
 // Onay açıkken kilitlenen durumlar ve kilit dışı alanlar
 const LOCKED = new Set(['KONTROL', 'HAKEDISTE', 'ONAYLI']);
@@ -192,6 +193,7 @@ export class ProjectService {
     return (EQUIPMENT_KINDS[kind] || { prefix: 'E' }).prefix;
   }
   async addEquipment(kind, data, opts = {}) {
+    this._assertNewAllowed(Object.assign({ kind, state: kind === 'transformer' ? 'yeni' : 'YENI', progress: this.p.mode === 'asbuilt' ? 'done' : 'planned' }, data));
     const prefix = this.eqPrefix(kind, data.group);
     const no = data.no || nextNo(prefix, this.data.equipment.map((e) => e.no).concat(this.data.points.map((p) => p.pointNo)), prefix === 'D' ? 3 : 2);
     let pointId = data.pointId;
@@ -313,6 +315,7 @@ export class ProjectService {
   // ---------------- Hat ----------------
   async createLine(d, opts = {}) {
     const rec = Object.assign({ projectId: this.p.id, lineNo: d.lineNo || this.nextLineNo(), state: 'YENI', nodes: [], circuits: [], install: 'havai', progress: this.p.mode === 'asbuilt' ? 'done' : 'planned', workDate: this.p.mode === 'asbuilt' ? this.ds.iso().slice(0, 10) : null }, d);
+    this._assertNewAllowed(rec);
     if (!rec.hak || !HAK_STATUSES[rec.hak]) rec.hak = hakOf(rec);
     this._initHak(rec);
     const l = await this.ds.create('lines', rec, { reason: opts.reason || 'Hat oluşturuldu' });
@@ -421,13 +424,36 @@ export class ProjectService {
    */
   editLock(rec) {
     if (!rec || !approvalOn(this.p)) return null;
-    const from = hakOf(rec);
-    if (!(from && LOCKED.has(from))) return null;
-    if (this.p.approval && this.p.approval.lock === false) return null;
     const m = this.member;
     if (m && m.role === 'yonetici') return null;
-    const label = HAK_STATUSES[from].label;
-    return { status: from, label, why: (rec.no || rec.lineNo) + ' "' + label + '" durumunda · kayıt kilitli. Değiştirmek için önce durum geri çevrilmeli ya da Yönetici düzenlemeli.' };
+    const from = hakOf(rec);
+    if (from && LOCKED.has(from) && !(this.p.approval && this.p.approval.lock === false)) {
+      const label = HAK_STATUSES[from].label;
+      return { status: from, label, why: (rec.no || rec.lineNo) + ' "' + label + '" durumunda · kayıt kilitli. Değiştirmek için önce durum geri çevrilmeli ya da Yönetici düzenlemeli.' };
+    }
+    // Hakediş yetkisi: yazmaya kapalı hakedişteki obje kilitli (AutoCAD'deki gibi; iş kalemi olmayan mevcut obje hariç)
+    const kapali = this.closedHakedis();
+    if (kapali.length && (from || (rec.sebeke && rec.sebeke.hakedis))) {
+      const n = objeHakedisi(rec, this.data.periods);
+      if (kapali.includes(n)) return { status: 'KAPALI', label: n + '. hakediş yazmaya kapalı', why: (rec.no || rec.lineNo) + ' · ' + n + '. hakediş yazmaya kapalı (hakediş yetkisi) · kayıt kilitli. Açmak için Yönetici: Kullanıcılar ve onay › Hakediş yetkisi.' };
+    }
+    return null;
+  }
+  /** Yazmaya kapalı hakedişler (hakediş yetkisi; onay mekanizması açıkken geçerli). */
+  closedHakedis() {
+    const a = this.p && this.p.approval;
+    return a && Array.isArray(a.closed) ? a.closed.filter((n) => Number.isInteger(n) && n > 0) : [];
+  }
+  /** Yeni obje (telefonda çizilen) yazmaya kapalı hakedişe düşüyorsa hata (AutoCAD'den gelen obje hariç). */
+  _assertNewAllowed(rec) {
+    if (!approvalOn(this.p) || rec.sebekeId) return;
+    if (!hakOf(rec) && !(rec.sebeke && rec.sebeke.hakedis)) return; // iş kalemi olmayan (mevcut / ileride) obje
+    const m = this.member;
+    if (m && m.role === 'yonetici') return;
+    const kapali = this.closedHakedis();
+    if (!kapali.length) return;
+    const n = objeHakedisi(rec, this.data.periods);
+    if (kapali.includes(n)) throw new Error(n + '. hakediş yazmaya kapalı (hakediş yetkisi): bu hakedişe yeni obje eklenemez. Açmak için Yönetici: Kullanıcılar ve onay › Hakediş yetkisi.');
   }
   /** Kilitli kayıtta değişiklik / silme yapılamaz: kilitliyse hata fırlatır (servis katmanı denetimi). */
   _assertUnlocked(rec, what) {
@@ -465,7 +491,7 @@ export class ProjectService {
 
   // ---------------- Kullanıcılar, roller, oturum ----------------
   get member() { const s = this._session; if (!s || !this.p || s.projectId !== this.p.id) return null; return activeMembers(this.p).find((m) => m.id === s.id) || null; }
-  approval() { return { on: approvalOn(this.p), strict: strictOn(this.p), lock: approvalOn(this.p) && !(this.p.approval && this.p.approval.lock === false), members: (this.p.members || []).map(({ pinHash: _h, salt: _s, ...m }) => m), member: this.member }; }
+  approval() { return { on: approvalOn(this.p), strict: strictOn(this.p), lock: approvalOn(this.p) && !(this.p.approval && this.p.approval.lock === false), closed: this.closedHakedis(), activeHakedis: aktifHakedis(this.data.periods), members: (this.p.members || []).map(({ pinHash: _h, salt: _s, ...m }) => m), member: this.member }; }
   can(action) { return canDo(this.p, this.member, action); }
   canHak(from, to) { return canHak(this.p, this.member, from, to); }
   login(memberId, pin) {
@@ -495,7 +521,8 @@ export class ProjectService {
     if (!boot) { const c = this.can('members.manage'); if (!c.ok) throw new Error(c.why); }
     if (list.some((m) => m.active !== false && m.name.toLocaleLowerCase('tr-TR') === name.toLocaleLowerCase('tr-TR'))) throw new Error('Bu adla kullanıcı var');
     const salt = ulid(this.ds.now().getTime());
-    const m = { id: ulid(this.ds.now().getTime()), name, role, salt, pinHash: pinHash(pin, salt), active: true, createdAt: this.ds.iso() };
+    const t = this.ds.iso();
+    const m = { id: ulid(this.ds.now().getTime()), name, role, salt, pinHash: pinHash(pin, salt), active: true, createdAt: t, updatedAt: t };
     list.push(m);
     await this._saveMembers(list, 'Kullanıcı eklendi: ' + name + ' (' + ROLES[role].label + ')');
     if (boot) { this._session = { projectId: this.p.id, id: m.id }; this.ds.setUser({ id: m.id, name }); await this.recompute('Onay mekanizması açıldı'); this.bus.emit('auth:change', m); }
@@ -513,20 +540,45 @@ export class ProjectService {
     if (patch.active != null) m.active = !!patch.active;
     if (patch.pin != null) { if (!validPin(patch.pin)) throw new Error('Şifre 4–8 rakam olmalı'); m.salt = ulid(this.ds.now().getTime()); m.pinHash = pinHash(patch.pin, m.salt); }
     if (!list.some((x) => x.active !== false && x.role === 'yonetici')) throw new Error('En az bir etkin Yönetici kalmalı · önce başka bir Yönetici tanımlayın ya da onay mekanizmasını kapatın');
+    m.updatedAt = this.ds.iso();
     await this._saveMembers(list, 'Kullanıcı güncellendi: ' + m.name);
     if (self && m.active === false) this.logout();
     return m;
   }
   async setApproval(patch) {
     const c = this.can('members.manage'); if (!c.ok) throw new Error(c.why);
-    this.p = await this.ds.update('projects', this.p.id, { approval: Object.assign({}, this.p.approval || {}, patch) }, { reason: 'Onay ayarı' });
+    this.p = await this.ds.update('projects', this.p.id, { approval: Object.assign({}, this.p.approval || {}, patch, { updatedAt: this.ds.iso() }) }, { reason: 'Onay ayarı' });
     await this.recompute('Onay ayarı');
     return this.p;
+  }
+  /**
+   * Hakediş yetkisi: yazmaya kapalı hakedişler (AutoCAD hakediş numaraları). Kapalı hakedişteki obje değiştirilemez, o
+   * hakedişe yeni obje eklenemez (Yönetici hariç); eklentide de aynı. Yalnız Yönetici belirler.
+   */
+  async setClosedHakedis(nums) {
+    const c = this.can('hakedis.yetkisi'); if (!c.ok) throw new Error(c.why);
+    if (!approvalOn(this.p)) throw new Error('Hakediş yetkisi için önce onay mekanizmasını açın (ilk Yönetici)');
+    const closed = [...new Set((nums || []).map((n) => Math.round(+n)).filter((n) => n > 0))].sort((a, b) => a - b);
+    this.p = await this.ds.update('projects', this.p.id, { approval: Object.assign({}, this.p.approval || {}, { closed, updatedAt: this.ds.iso() }) }, { reason: 'Hakediş yetkisi: ' + (closed.length ? closed.join(', ') + '. hakediş yazmaya kapalı' : 'bütün hakedişler açık') });
+    await this.recompute('Hakediş yetkisi');
+    return this.p;
+  }
+  /** AutoCAD dosyasından gelen kullanıcılar (birleştirilmiş liste; yetki sorulmaz: dosyadaki değişiklik eklentide yetkiyle yapılmıştır). */
+  async importMembers(members, reason) {
+    await this._saveMembers(members, reason || 'Kullanıcılar dosyadan alındı');
+    if (this._session && !this.member) this.logout();
+    await this.recompute(reason || 'Kullanıcılar dosyadan alındı');
+  }
+  /** AutoCAD dosyasından gelen onay ayarı (güncelleme zamanı yeni olan; birleştirme sebeke.js'de). */
+  async importApproval(approval, reason) {
+    this.p = await this.ds.update('projects', this.p.id, { approval: Object.assign({}, this.p.approval || {}, approval) }, { reason: reason || 'Onay ayarı dosyadan alındı' });
+    await this.recompute(reason || 'Onay ayarı dosyadan alındı');
   }
   // Onay mekanizmasını kapat: kullanıcılar pasife alınır (liste ve geçmiş saklanır), uygulama kısıtsız çalışır
   async closeApproval(reason) {
     const c = this.can('members.manage'); if (!c.ok) throw new Error(c.why);
-    await this._saveMembers((this.p.members || []).map((m) => Object.assign({}, m, { active: false })), 'Onay mekanizması kapatıldı' + (reason ? ' · ' + reason : ''));
+    const t = this.ds.iso();
+    await this._saveMembers((this.p.members || []).map((m) => Object.assign({}, m, m.active !== false ? { active: false, updatedAt: t } : {})), 'Onay mekanizması kapatıldı' + (reason ? ' · ' + reason : ''));
     this.logout();
     await this.recompute('Onay mekanizması kapatıldı');
   }

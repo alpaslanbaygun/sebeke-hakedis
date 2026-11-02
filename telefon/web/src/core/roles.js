@@ -2,15 +2,11 @@
 // Projede en az bir etkin Yönetici tanımlanınca devreye girer; tanımlı kullanıcı yoksa uygulama eskisi gibi kısıtsız çalışır.
 // Hakediş durumu sırası: YAPILACAK → BASLANDI → TAMAMLANDI → KONTROL → HAKEDISTE → ONAYLI
 import { HAK_STATUSES, HAK_ORDER, hakOf } from './schema.js';
+import ROLLER from '../ortak/roller.js';
 
-export const ROLES = {
-  saha: { label: 'Saha operatörü', short: 'SAHA', color: '#38bdf8', does: 'İşi başlatır ve "Tamamlandı" yapar.' },
-  kontrol: { label: 'Kontrol mühendisi', short: 'KONTROL', color: '#c084fc', does: 'Tamamlanan işi yerinde kontrol edip onaylar ya da geri çevirir.' },
-  hakedis: { label: 'Hakediş sorumlusu', short: 'HAKEDİŞ', color: '#fb923c', does: 'Kontrol edilmiş işleri hakedişe alır, hakediş dönemini açar.' },
-  onay: { label: 'Onay yetkilisi', short: 'ONAY', color: '#22c55e', does: 'Hakedişi onaylar ya da geri çevirir, dönemi kapatır.' },
-  yonetici: { label: 'Yönetici', short: 'YÖNETİCİ', color: '#fbbf24', does: 'Kullanıcı ekler, rol verir; gerektiğinde her adımı yapabilir.' }
-};
-export const ROLE_ORDER = ['saha', 'kontrol', 'hakedis', 'onay', 'yonetici'];
+// Roller, işlem yetkileri ve şifre kuralı ortak tablodan (ortak/katalog/roller.json; AutoCAD eklentisi de aynısını kullanır)
+export const ROLES = Object.fromEntries(ROLLER.roller.map((r) => [r.id, { label: r.ad, short: r.kisa, color: r.renk, does: r.gorev }]));
+export const ROLE_ORDER = ROLLER.roller.map((r) => r.id);
 
 // İzinli geçişler: "ileri" adımlar onay, "geri" adımlar ret / geri çekme (gerekçe zorunlu)
 const FIELD = ['YAPILACAK', 'BASLANDI', 'TAMAMLANDI'];
@@ -21,12 +17,10 @@ const RULES = {
   onay: (f, t) => (f === 'HAKEDISTE' && t === 'ONAYLI') || (f === 'HAKEDISTE' && t === 'KONTROL') || (f === 'ONAYLI' && t === 'HAKEDISTE'),
   yonetici: () => true
 };
-const ACTIONS = {
-  'period.create': ['hakedis', 'yonetici'],
-  'period.approve': ['onay', 'yonetici'],
-  'members.manage': ['yonetici'],
-  'material.approve': ['kontrol', 'yonetici']
-};
+const ACTIONS = ROLLER.islemler;
+export const ACTION_LABELS = ROLLER.islemAdlari;
+/** İşlemi yapabilen roller (ortak tablo; tanımsız işlem yalnız Yönetici). */
+export const actionRoles = (action) => ACTIONS[action] || ['yonetici'];
 
 export const activeMembers = (project) => ((project && project.members) || []).filter((m) => m.active !== false);
 // Onay mekanizması açık mı? (en az bir etkin yönetici)
@@ -52,7 +46,7 @@ export function whoCan(from, to) {
 export function canDo(project, member, action) {
   if (!approvalOn(project)) return { ok: true };
   if (!member) return { ok: false, why: 'Bu işlem için oturum açın' };
-  const roles = ACTIONS[action] || ['yonetici'];
+  const roles = actionRoles(action);
   if (!roles.includes(member.role)) return { ok: false, why: 'Bu işlemi ' + roles.map((r) => ROLES[r].label).join(' ya da ') + ' yapabilir' };
   return { ok: true };
 }
@@ -94,11 +88,13 @@ export function sha256(bytes) {
   return out;
 }
 const hex = (u8) => Array.from(u8, (b) => b.toString(16).padStart(2, '0')).join('');
-const ROUNDS = 1200;
+const ROUNDS = ROLLER.sifre.tur;
+export const PIN_RULE = ROLLER.sifre;
 export function pinHash(pin, salt) {
   let h = new TextEncoder().encode(String(salt) + ':' + String(pin));
   for (let i = 0; i < ROUNDS; i++) h = sha256(h);
   return hex(h);
 }
-export function validPin(pin) { return /^\d{4,8}$/.test(String(pin || '')); }
+const PIN_RE = new RegExp('^[0-9]{' + ROLLER.sifre.enAz + ',' + ROLLER.sifre.enCok + '}$');
+export function validPin(pin) { return PIN_RE.test(String(pin ?? '')); }
 export function checkPin(member, pin) { return !!member && !!member.pinHash && pinHash(pin, member.salt) === member.pinHash; }

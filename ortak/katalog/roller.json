@@ -1,0 +1,40 @@
+{
+ "bicim": "sebeke-hakedis.roller",
+ "surum": 1,
+ "aciklama": "Kullanıcı rolleri ve yetkileri: telefon (src/ortak/roller.js → core/roles.js) ve AutoCAD eklentisi (gömülü; Cekirdek/Kullanicilar.cs) aynı tabloyu kullanır. Projede en az bir etkin Yönetici tanımlanınca onay mekanizması açılır; tanımlı kullanıcı yoksa iki taraf da eskisi gibi kısıtsız çalışır. Kullanıcılar ve onay ayarları proje dosyasıyla (proje.kullanicilar, proje.onayAyari) iki yönde taşınır.",
+ "roller": [
+  { "id": "saha", "ad": "Saha operatörü", "kisa": "SAHA", "renk": "#38bdf8", "gorev": "İşi başlatır ve \"Tamamlandı\" yapar." },
+  { "id": "kontrol", "ad": "Kontrol mühendisi", "kisa": "KONTROL", "renk": "#c084fc", "gorev": "Tamamlanan işi yerinde kontrol edip onaylar ya da geri çevirir; AutoCAD'de hakedişin Kontrol onayını verir." },
+  { "id": "hakedis", "ad": "Hakediş sorumlusu", "kisa": "HAKEDİŞ", "renk": "#fb923c", "gorev": "Kontrol edilmiş işleri hakedişe alır, hakediş dönemini açar." },
+  { "id": "onay", "ad": "Onay yetkilisi", "kisa": "ONAY", "renk": "#22c55e", "gorev": "Hakedişi onaylar ya da geri çevirir, dönemi kapatır; AutoCAD'de hakedişin Hakediş ve GIS onayını verir." },
+  { "id": "yonetici", "ad": "Yönetici", "kisa": "YÖNETİCİ", "renk": "#fbbf24", "gorev": "Kullanıcı ekler, rol verir, hakediş yetkisini (yazmaya açık / kapalı hakedişler) belirler; gerektiğinde her adımı yapabilir." }
+ ],
+ "islemler": {
+  "period.create": ["hakedis", "yonetici"],
+  "period.approve": ["onay", "yonetici"],
+  "members.manage": ["yonetici"],
+  "material.approve": ["kontrol", "yonetici"],
+  "hakedis.yetkisi": ["yonetici"],
+  "autocad.kontrol": ["kontrol", "yonetici"],
+  "autocad.hakedis": ["onay", "yonetici"],
+  "autocad.gis": ["onay", "yonetici"]
+ },
+ "islemAdlari": {
+  "period.create": "Hakediş dönemi açma",
+  "period.approve": "Hakediş dönemini onaylama",
+  "members.manage": "Kullanıcı ekleme ve rol verme",
+  "material.approve": "Sahada ilave malzemeyi onaylama",
+  "hakedis.yetkisi": "Hakediş yetkisi (yazmaya açık / kapalı hakedişler)",
+  "autocad.kontrol": "AutoCAD hakediş onayı · Kontrol aşaması",
+  "autocad.hakedis": "AutoCAD hakediş onayı · Hakediş aşaması",
+  "autocad.gis": "AutoCAD hakediş onayı · GIS aşaması"
+ },
+ "sifre": {
+  "aciklama": "Şifre yalnız rakam, 4–8 hane. Saklanan: özet = SHA-256'nın tur kez uygulanması (ilk girdi UTF-8 'tuz:şifre', sonrakiler önceki özetin 32 baytı), küçük harfli onaltılık. Yanlış denemede bekleme.",
+  "enAz": 4,
+  "enCok": 8,
+  "tur": 1200,
+  "yanlisDeneme": 5,
+  "beklemeSaniye": 60
+ }
+}

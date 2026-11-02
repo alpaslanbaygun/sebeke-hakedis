@@ -1,0 +1,65 @@
+{
+ "aciklama": "Kullanıcılar ve onay ayarları için ortak deneme: AutoCAD eklentisi (CekirdekTest) ve telefon (tests/kullanicilar.test.mjs) aynı girdiden aynı sonucu üretmek zorundadır. Şifre özetleri Python hashlib ile ayrıca doğrulandı. Adlar ve şifreler uydurmadır.",
+ "sifreler": [
+  { "tuz": "T1", "sifre": "1234", "ozet": "9c15a9a44a9f76040ef85e8bffe5db7128726ab78216f564a9287864bd1b08bb" },
+  { "tuz": "01K8Z3M4N5P6Q7R8S9T0VWXYZ1", "sifre": "98765432", "ozet": "c12d7cb8da4dbdd58836c07d9ff292ce4cc9009649e2c63739a2e6cd0592feea" },
+  { "tuz": "çğüşİ", "sifre": "0000", "ozet": "4e8f45fe12fe48daed965a9491aab96ac28979da22e8201392c74ec9664c4838" }
+ ],
+ "gecersizSifreler": ["", "123", "123456789", "12a4", " 1234", "12 34", "١٢٣٤"],
+ "birlestirme": [
+  {
+   "ad": "gelen dosyadaki yeni kullanıcı eklenir; iki tarafta olan kullanıcıda güncelleme zamanı yeni olan kazanır; eşitse yerel kalır",
+   "yerel": [
+    { "id": "U1", "ad": "Deneme Yönetici", "rol": "yonetici", "tuz": "T1", "ozet": "a1", "etkin": true, "guncelleme": "2026-11-01T08:00:00.000Z" },
+    { "id": "U2", "ad": "Deneme Kontrol", "rol": "kontrol", "tuz": "T2", "ozet": "a2", "etkin": true, "guncelleme": "2026-11-01T09:00:00.000Z" },
+    { "id": "U3", "ad": "Deneme Saha", "rol": "saha", "tuz": "T3", "ozet": "a3", "etkin": true, "guncelleme": "2026-11-01T10:00:00.000Z" }
+   ],
+   "gelen": [
+    { "id": "U2", "ad": "Deneme Kontrol", "rol": "onay", "tuz": "T2b", "ozet": "b2", "etkin": true, "guncelleme": "2026-11-02T09:00:00.000Z" },
+    { "id": "U3", "ad": "Deneme Saha (eski)", "rol": "saha", "tuz": "T3", "ozet": "b3", "etkin": false, "guncelleme": "2026-11-01T10:00:00.000Z" },
+    { "id": "U4", "ad": "Deneme Hakediş", "rol": "hakedis", "tuz": "T4", "ozet": "b4", "guncelleme": "2026-11-02T10:00:00.000Z" },
+    { "ad": "Kimliksiz kayıt atlanır", "rol": "saha" }
+   ],
+   "beklenen": [
+    { "id": "U1", "ad": "Deneme Yönetici", "rol": "yonetici", "tuz": "T1", "ozet": "a1", "etkin": true, "guncelleme": "2026-11-01T08:00:00.000Z" },
+    { "id": "U2", "ad": "Deneme Kontrol", "rol": "onay", "tuz": "T2b", "ozet": "b2", "etkin": true, "guncelleme": "2026-11-02T09:00:00.000Z" },
+    { "id": "U3", "ad": "Deneme Saha", "rol": "saha", "tuz": "T3", "ozet": "a3", "etkin": true, "guncelleme": "2026-11-01T10:00:00.000Z" },
+    { "id": "U4", "ad": "Deneme Hakediş", "rol": "hakedis", "tuz": "T4", "ozet": "b4", "etkin": true, "guncelleme": "2026-11-02T10:00:00.000Z" }
+   ],
+   "onayAcik": true
+  },
+  {
+   "ad": "yerel boş: gelen kullanıcılar olduğu gibi alınır; yöneticisi pasifse onay mekanizması kapalı sayılır",
+   "yerel": [],
+   "gelen": [
+    { "id": "U1", "ad": "Deneme Yönetici", "rol": "yonetici", "tuz": "T1", "ozet": "a1", "etkin": false, "guncelleme": "2026-11-03T08:00:00.000Z" },
+    { "id": "U5", "ad": "Deneme Onay", "rol": "onay", "tuz": "T5", "ozet": "a5", "etkin": true, "guncelleme": "2026-11-03T08:00:00.000Z" }
+   ],
+   "beklenen": [
+    { "id": "U1", "ad": "Deneme Yönetici", "rol": "yonetici", "tuz": "T1", "ozet": "a1", "etkin": false, "guncelleme": "2026-11-03T08:00:00.000Z" },
+    { "id": "U5", "ad": "Deneme Onay", "rol": "onay", "tuz": "T5", "ozet": "a5", "etkin": true, "guncelleme": "2026-11-03T08:00:00.000Z" }
+   ],
+   "onayAcik": false
+  }
+ ],
+ "onayAyari": [
+  {
+   "ad": "yeni olan kazanır; kapalı hakedişler sıralanır, tekrarlar ve geçersizler düşer",
+   "yerel": { "kilit": true, "siki": true, "kapaliHakedisler": [2], "guncelleme": "2026-11-01T08:00:00.000Z" },
+   "gelen": { "kilit": false, "kapaliHakedisler": [5, 3, 3, 0, -1, 2.5, "x"], "guncelleme": "2026-11-02T08:00:00.000Z" },
+   "beklenen": { "kilit": false, "siki": true, "kapaliHakedisler": [3, 5], "guncelleme": "2026-11-02T08:00:00.000Z" }
+  },
+  {
+   "ad": "gelen eskiyse yerel kalır",
+   "yerel": { "kilit": true, "siki": false, "kapaliHakedisler": [1, 4], "guncelleme": "2026-11-05T08:00:00.000Z" },
+   "gelen": { "kilit": false, "siki": true, "kapaliHakedisler": [], "guncelleme": "2026-11-02T08:00:00.000Z" },
+   "beklenen": { "kilit": true, "siki": false, "kapaliHakedisler": [1, 4], "guncelleme": "2026-11-05T08:00:00.000Z" }
+  },
+  {
+   "ad": "yerel yoksa gelen (eksik alanlar varsayılan)",
+   "yerel": null,
+   "gelen": { "kapaliHakedisler": [7] },
+   "beklenen": { "kilit": true, "siki": true, "kapaliHakedisler": [7], "guncelleme": "" }
+  }
+ ]
+}

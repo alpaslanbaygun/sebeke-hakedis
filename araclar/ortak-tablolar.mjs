@@ -10,7 +10,7 @@ const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const kaynak = path.join(kok, 'ortak/katalog');
 const hedef = path.join(kok, 'telefon/web/src/ortak');
 fs.mkdirSync(hedef, { recursive: true });
-const dosyalar = ['semboller', 'volt-eslesme', 'kalemler', 'katsayilar', 'cizim-stili'];
+const dosyalar = ['semboller', 'volt-eslesme', 'kalemler', 'katsayilar', 'cizim-stili', 'roller'];
 // Marka metinleri (ortak/marka/hakkinda.json): telefonun Hakkında ekranı ve eklentinin Hakkında penceresi aynı metni gösterir
 const markalar = ['hakkinda'];
 const kopyala = (klasor, ad) => {
