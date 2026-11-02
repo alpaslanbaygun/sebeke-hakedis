@@ -9,6 +9,7 @@ import {
 } from '../src/gnss/ntrip-profiles.js';
 import { GnssService } from '../src/gnss/gnss-service.js';
 import { checksumOk, parseSentence } from '../src/gnss/nmea.js';
+import { makeCrs } from '../src/geo/crs.js';
 
 function kucukBus() {
   const h = new Map();
@@ -203,4 +204,26 @@ test('G6 · GNSS servisi: yaklaşık GGA, bağlanma hatası, istasyon uzaklığ�
   assert.equal(cagri.length, 1);
   // Hazır TUSAGA-Aktif profili sabit
   assert.equal(HAZIR.tusaga.host, '212.156.70.42');
+});
+
+test('G7 · Bilinmeyen GNSS yüksekliği sıfıra dönüşmez: telefon konumu kotsuz gelince h / H null; epok ortalaması da null; kısmi eksik ve gerçek sıfır kot', async () => {
+  const { averageEpochs } = await import('../src/gnss/quality.js');
+  const bus = kucukBus();
+  const g = new GnssService({ bus, bridge: { isNative: () => true }, now: () => Date.UTC(2026, 10, 1, 12, 0, 0) });
+  g.configure({ crs: makeCrs({ datum: 'TUREF', projection: 'TM3', cm: 33 }) });
+  g.state.source = 'phone';
+  g.onPhone({ lat: 39, lon: 33, alt: null, acc: 4 });
+  assert.equal(g.state.h, null, 'telefon kot vermedi: h null'); assert.equal(g.state.H, null, 'H null');
+  assert.ok(Number.isFinite(g.state.E) && Number.isFinite(g.state.N), 'yatay konum yine hesaplanır');
+  // Beş kotsuz epok birleşince kot bilinmiyor kalır (eskiden 0 çıkıyordu)
+  const eps = Array.from({ length: 5 }, (_, i) => Object.assign(g.epoch(), { t: i }));
+  const o = g.buildObservation(eps, { cls: 'A', warn: [] });
+  assert.equal(o.h, null, 'ölçü kaydında h null'); assert.equal(o.H, null, 'ölçü kaydında H null'); assert.equal(o.stdH, null); assert.equal(o.epochsH, 0);
+  assert.ok(Number.isFinite(o.E) && Number.isFinite(o.N));
+  // Kısmen eksik: yalnız kotu olan epoklar ortalanır
+  const kismi = averageEpochs([{ t: 0, lat: 39, lon: 33, h: 100, E: 1, N: 2, fix: 'FIX' }, { t: 1, lat: 39, lon: 33, h: null, E: 1, N: 2, fix: 'FIX' }, { t: 2, lat: 39, lon: 33, h: 102, E: 1, N: 2, fix: 'FIX' }]);
+  assert.equal(kismi.h, 101); assert.equal(kismi.epochsH, 2); assert.ok(Math.abs(kismi.stdH - Math.SQRT2) < 1e-9, 'kot sapması yalnız kotlu epoklardan');
+  // Gerçek sıfır kot sıfırdır, bilinmiyor değildir
+  const sifir = averageEpochs([{ t: 0, lat: 39, lon: 33, h: 0, E: 1, N: 2, fix: 'FIX' }, { t: 1, lat: 39, lon: 33, h: 0, E: 1, N: 2, fix: 'FIX' }]);
+  assert.equal(sifir.h, 0); assert.equal(sifir.stdH, 0); assert.equal(sifir.epochsH, 2);
 });

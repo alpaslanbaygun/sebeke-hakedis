@@ -241,3 +241,86 @@ test('W10 · Çizim (CAD) web bulutunda: büyük çizim parçalara bölünür, b
   assert.equal(m.ents.length, 6000);
   assert.ok(m.layers.some((l) => l.name === 'AG_ŞEBEKE'), 'Türkçe katman adı korunur');
 });
+
+test('W11 · (hata 4) eşzamanlı kayıt: iki bilgisayar aynı tabloya ayrı kayıt ekleyip art arda kaydedince ikisi de kalır; üçüncü bilgisayar ikisini de görür', async () => {
+  const cloud = new FakeCloud();
+  const A = await webStack(cloud, { tab: 'A' });
+  const p = await newProject(A.ps);
+  await A.adapter.flush();
+  const B = await webStack(cloud, { tab: 'B' });
+  await B.ps.open(p.id);
+  // İkisi de aynı başlangıç verisini açtı; A P1, B P2 ekler (aynı tablo, aynı kova); önce A sonra B kaydeder
+  const p1 = await A.ps.createPoint({ pointNo: 'P1', cls: 'DETAY', critical: false, coord: { E: 512300, N: 4281200, H: 1000 }, source: 'DESIGN' });
+  const p2 = await B.ps.createPoint({ pointNo: 'P2', cls: 'DETAY', critical: false, coord: { E: 512400, N: 4281300, H: 1001 }, source: 'DESIGN' });
+  await A.adapter.flush();
+  await B.adapter.flush();
+  await wait(60);
+  assert.equal(A.adapter.status.state, 'saved'); assert.equal(B.adapter.status.state, 'saved');
+  const C = await webStack(cloud, { tab: 'C' });
+  const cPts = (await C.adapter.getAll('points')).map((x) => x.pointNo).sort();
+  assert.deepEqual(cPts, ['P1', 'P2'], 'bulutta ikisi de var');
+  assert.deepEqual((await A.adapter.getAll('points')).map((x) => x.pointNo).sort(), ['P1', 'P2'], 'A ötekinin kaydını aldı');
+  assert.deepEqual((await B.adapter.getAll('points')).map((x) => x.pointNo).sort(), ['P1', 'P2'], 'B ötekinin kaydını aldı');
+  assert.equal((await C.adapter.get('points', p1.id)).pointNo, 'P1'); assert.equal((await C.adapter.get('points', p2.id)).pointNo, 'P2');
+  // Ters sıra ve aynı anda: A ve B yine ayrı kayıt ekler, bu kez ikisi birden kaydeder
+  const p3 = await A.ps.createPoint({ pointNo: 'P3', cls: 'DETAY', critical: false, coord: { E: 512500, N: 4281200, H: 1000 }, source: 'DESIGN' });
+  const p4 = await B.ps.createPoint({ pointNo: 'P4', cls: 'DETAY', critical: false, coord: { E: 512600, N: 4281300, H: 1001 }, source: 'DESIGN' });
+  await Promise.all([B.adapter.flush(), A.adapter.flush()]);
+  await wait(60);
+  const D = await webStack(cloud, { tab: 'D' });
+  assert.deepEqual((await D.adapter.getAll('points')).map((x) => x.pointNo).sort(), ['P1', 'P2', 'P3', 'P4'], 'aynı anda kaydedince de kayıp yok');
+  assert.ok([p3, p4].every((x) => x.id));
+  assert.ok(cloud.acquires > 0, 'kaydetme sunucu kilidiyle (acquire) sıralanır');
+});
+
+test('W12 · (hata 4) aynı kaydın eşzamanlı değiştirilmesi ve silinmesi: kayıt bazında birleştirme, sonuç kaydetme sırasından bağımsız ve her bilgisayarda aynı', async () => {
+  for (const once of ['A', 'B']) {
+    const cloud = new FakeCloud();
+    const A = await webStack(cloud, { tab: 'A' });
+    const p = await newProject(A.ps);
+    const r = await A.ps.createPoint({ pointNo: 'R', cls: 'DETAY', critical: false, coord: { E: 512300, N: 4281200, H: 1000 }, source: 'DESIGN' });
+    const s = await A.ps.createPoint({ pointNo: 'S', cls: 'DETAY', critical: false, coord: { E: 512310, N: 4281200, H: 1000 }, source: 'DESIGN' });
+    await A.adapter.flush();
+    const B = await webStack(cloud, { tab: 'B' });
+    await B.ps.open(p.id);
+    // Kendiliğinden kaydetme kapalı: değişiklikler iki tarafta da aynı başlangıç kopyası üstünde yapılır (gerçek eşzamanlılık)
+    A.adapter.delay = 60000; B.adapter.delay = 60000; clearTimeout(A.adapter.timer); clearTimeout(B.adapter.timer);
+    // A: R'nin notunu değiştirir (rev 2, önce); B: R'yi siler (rev 2, sonra) → daha yeni olan (silme) kazanır
+    await A.ds.update('points', r.id, { note: 'A notu' }, { reason: 'deneme' });
+    tick(1000);
+    await B.ds.remove('points', r.id, { reason: 'deneme' });
+    // S: B değiştirir (rev 2), A iki kez değiştirir (rev 3) → daha çok değişen (rev 3) kazanır
+    await B.ds.update('points', s.id, { note: 'B' }, { reason: 'deneme' });
+    tick(1000);
+    await A.ds.update('points', s.id, { note: 'A1' }, { reason: 'deneme' }); await A.ds.update('points', s.id, { note: 'A2' }, { reason: 'deneme' });
+    assert.equal((await A.adapter.get('points', r.id)).rev, 2); assert.equal((await B.adapter.get('points', r.id)).rev, 2, 'iki taraf da aynı tabandan değiştirdi');
+    clearTimeout(A.adapter.timer); clearTimeout(B.adapter.timer);
+    if (once === 'A') { await A.adapter.flush(); await B.adapter.flush(); } else { await B.adapter.flush(); await A.adapter.flush(); }
+    await wait(60);
+    const C = await webStack(cloud, { tab: 'C' });
+    const cR = await C.adapter.get('points', r.id), cS = await C.adapter.get('points', s.id);
+    assert.equal(cR.status, 'deleted', 'sıra ' + once + ': silme (daha yeni) kazandı'); assert.equal(cR.rev, 2);
+    assert.equal(cS.note, 'A2', 'sıra ' + once + ': rev 3 kazandı'); assert.equal(cS.rev, 3);
+    for (const X of [A, B]) {
+      const xR = await X.adapter.get('points', r.id), xS = await X.adapter.get('points', s.id);
+      assert.equal(xR.status, 'deleted', 'sıra ' + once + ' · ' + X.adapter.tab + ' R'); assert.equal(xS.note, 'A2', 'sıra ' + once + ' · ' + X.adapter.tab + ' S');
+    }
+    assert.equal((await C.adapter.getAll('points')).length, 2, 'kopya yok');
+  }
+});
+
+test('W13 · (hata 4) sunucu kilidi (acquire) olmayan eski ortamda da sürüm denetimi ve kayıt bazında birleştirme art arda kaydetmede kaybı önler', async () => {
+  const cloud = new FakeCloud(); cloud.noAcquire = true;
+  const A = await webStack(cloud, { tab: 'A' });
+  const p = await newProject(A.ps);
+  await A.adapter.flush();
+  const B = await webStack(cloud, { tab: 'B' });
+  await B.ps.open(p.id);
+  await A.ps.createPoint({ pointNo: 'P1', cls: 'DETAY', critical: false, coord: { E: 512300, N: 4281200, H: 1000 }, source: 'DESIGN' });
+  await B.ps.createPoint({ pointNo: 'P2', cls: 'DETAY', critical: false, coord: { E: 512400, N: 4281300, H: 1001 }, source: 'DESIGN' });
+  await A.adapter.flush(); await B.adapter.flush(); await wait(60);
+  assert.equal(cloud.acquires, 0);
+  const C = await webStack(cloud, { tab: 'C' });
+  assert.deepEqual((await C.adapter.getAll('points')).map((x) => x.pointNo).sort(), ['P1', 'P2']);
+  assert.deepEqual((await A.adapter.getAll('points')).map((x) => x.pointNo).sort(), ['P1', 'P2']);
+});

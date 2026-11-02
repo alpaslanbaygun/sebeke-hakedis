@@ -402,13 +402,17 @@ namespace SebekeHakedis.Eklenti
                 {
                     var h = o.Proje.Hatlar.Find(x => string.Equals(x.Id, id.Handle.ToString(), StringComparison.OrdinalIgnoreCase));
                     if (h == null) continue;
-                    if (o.Kilitli(h.Hakedis)) { kilitli++; continue; }
+                    // Hattın kendi hakedişi gibi iletken satırlarının her birinin hakedişi de denetlenir (1. dönemi açık, 2. dönemi onaylı hat)
+                    var kilit = Iletkenler.DegistirmeKilidi(h, o.Proje.Onaylar, 0);
+                    if (kilit != null) { kilitli++; ed.WriteMessage("\n" + NesneYazici.HatEtiketi(h) + ": " + kilit); continue; }
                     secilen.Add(new KeyValuePair<ObjectId, Hat>(id, h));
                 }
-                if (kilitli > 0) ed.WriteMessage("\n" + kilitli + " hat onaylı (kilitli) hakedişte; değiştirilmez.");
+                if (kilitli > 0) ed.WriteMessage("\n" + kilitli + " hat onaylı (kilitli) hakedişte satır taşıyor; değiştirilmez.");
                 if (secilen.Count == 0) { ed.WriteMessage("\nSeçimde değiştirilecek şebeke hattı yok (kanal ve sondaj için Malzeme komutunu kullanın)."); return; }
                 var secim = Pencereler.Hat(o, SimdikiSecim(o, secilen[0].Value), secilen.Count);
                 if (secim == null) return;
+                // Yeni satırlar onaylı (kilitli) hakedişe yazılamaz: hiçbir şey değişmeden çıkılır
+                if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(HakedisOnayi.KilitMesaji(secim.Hakedis)); return; }
                 o.AyarKaydet();
                 int yazilan = 0;
                 using (var tr = o.Db.TransactionManager.StartTransaction())
@@ -425,7 +429,7 @@ namespace SebekeHakedis.Eklenti
                         {
                             double L = h.CizimUzunlugu > 0 ? h.CizimUzunlugu : Uzunluk(h.Kose.ConvertAll(k => new Point3d(k[0], k[1], 0)));
                             double m = Iletkenler.Degistir(h, secim.Tur, secim.Iletkenleri, secim.Durum, secim.Hakedis,
-                                                           tur => o.Ayar.HatMetraji(L, tur), o.YeniSira, o.Ayar.Karakteristik, o.Ayar.Koy);
+                                                           tur => o.Ayar.HatMetraji(L, tur), o.YeniSira, o.Ayar.Karakteristik, o.Ayar.Koy, o.Proje.Onaylar);
                             NesneyiYaz(o, y, kv.Key, h, eskiDurum, eskiHakedis);
                             yazilan++;
                             ed.WriteMessage("\n" + eskiEtiket + "  →  " + NesneYazici.HatEtiketi(h) + "  (metraj " + Metraj.Yazi(m) + " m)");

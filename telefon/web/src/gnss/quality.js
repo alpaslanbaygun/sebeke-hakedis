@@ -34,17 +34,21 @@ export function evaluateFix(st, th = DEFAULT_THRESHOLDS, opts = {}) {
   return { ok: reasons.length === 0, cls: reasons.length ? 'RED' : cls, reasons, warn };
 }
 
-// Epok ortalaması + dağılım istatistiği (proje düzleminde)
+// Epok ortalaması + dağılım istatistiği (proje düzleminde). Yükseklik bilinmeyen epoklar (h null: telefonun konum servisi
+// kot vermediğinde) ortalamaya girmez; hiçbirinde yoksa h ve stdH null kalır (sıfır sanılmasın). Gerçek 0 kot korunur.
 export function averageEpochs(epochs) {
   const n = epochs.length;
   if (!n) return null;
   const m = (k) => epochs.reduce((s, e) => s + e[k], 0) / n;
   const sd = (k, mu) => (n > 1 ? Math.sqrt(epochs.reduce((s, e) => s + (e[k] - mu) ** 2, 0) / (n - 1)) : 0);
-  const E = m('E'), N = m('N'), h = m('h'), lat = m('lat'), lon = m('lon');
+  const hVar = epochs.filter((e) => e.h != null && Number.isFinite(e.h));
+  const mH = hVar.length ? hVar.reduce((s, e) => s + e.h, 0) / hVar.length : null;
+  const sdH = mH == null ? null : hVar.length > 1 ? Math.sqrt(hVar.reduce((s, e) => s + (e.h - mH) ** 2, 0) / (hVar.length - 1)) : 0;
+  const E = m('E'), N = m('N'), h = mH, lat = m('lat'), lon = m('lon');
   const worst = (k, f) => epochs.reduce((a, e) => (e[k] == null ? a : a == null ? e[k] : f(a, e[k])), null);
   const fixes = [...new Set(epochs.map((e) => e.fix))];
   return {
-    lat, lon, h, E, N, epochs: n, stdE: sd('E', E), stdN: sd('N', N), stdH: sd('h', h),
+    lat, lon, h, E, N, epochs: n, epochsH: hVar.length, stdE: sd('E', E), stdN: sd('N', N), stdH: sdH,
     spreadH: Math.hypot(sd('E', E), sd('N', N)),
     sigmaH: worst('sigmaH', Math.max), sigmaV: worst('sigmaV', Math.max), pdop: worst('pdop', Math.max), hdop: worst('hdop', Math.max), vdop: worst('vdop', Math.max), sats: worst('sats', Math.min), age: worst('age', Math.max),
     fix: fixes.length === 1 ? fixes[0] : fixes.includes('FLOAT') ? 'FLOAT' : fixes.join('/'),

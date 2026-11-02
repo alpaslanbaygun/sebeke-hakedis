@@ -7,6 +7,13 @@
 //   x/<blobId>~<i>      → büyük metin blokları (revizyon anlık görüntüsü) parça parça
 // Kayıtlar tabloya göre "kova"lara dağıtılır; yalnız değişen kovalar yeniden yazılır. Bir kova sınırı aşarsa
 // o tablonun düzeyi artar (kova sayısı iki katına çıkar / zaman penceresi daralır) ve tablo yeniden dağıtılır.
+//
+// Eşzamanlı yazma (hata 4): iki bilgisayar aynı kovaya ayrı kayıt eklerse sonraki yazan öncekini ezmesin diye
+//   · her kova belgesi sürüm (v) taşır; manifestteki b[kova] da bu sürümdür,
+//   · kaydetme öncesi manifest okunur, buluttaki sürümü bizim bildiğimizden farklı kovalar çekilir ve KAYIT BAZINDA
+//     birleştirilir: bu tarafta dokunulmamış kayıtlar bulut kopyasıyla (uzak silme dahil) değiştirilir; iki tarafta da
+//     değişen kayıtta rev'i büyük olan, eşitse updatedAt'i yeni olan kazanır (silme de bir değişikliktir, aynı kural),
+//   · kaydetme sunucunun kısa kilidiyle (m/lock belgesi, acquire) sıralanır; kilit yoksa / alınamazsa sürüm denetimiyle sürer.
 import { PROJECT_STORES, STD_STORES, GLOBAL_STORES } from '../core/schema.js';
 
 const clone = (x) => (x === undefined ? undefined : (typeof structuredClone === 'function' ? structuredClone(x) : JSON.parse(JSON.stringify(x))));
@@ -18,6 +25,7 @@ const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 export const BUCKET_LIMIT = 170 * 1024;   // hedef belge boyutu (seri hâli, bayt)
 export const DOC_HARD = 250 * 1024;       // belge sınırı 256 KiB: tek kayıt bundan büyükse buluta yazılamaz
 const MAX_LEVEL = 8;
+const LOCK_TTL = 4000;                    // kaydetme kilidi (ms): kısa tutulur, uzun kaydetmede yenilenir; kaydeden çökse de kendiliğinden düşer
 const enc = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
 const bytes = (s) => (enc ? enc.encode(s).length : s.length);
 
@@ -60,7 +68,7 @@ export class CloudAdapter {
     this.s = new Map(); for (const name of Object.keys(ALL)) this.s.set(name, new Map());
     this.levels = {};            // tablo → düzey
     this.known = new Map();      // belge kimliği → buluttaki sürüm
-    this.dirty = new Map();      // tablo → Set(kova)
+    this.dirty = new Map();      // tablo → Map(kayıt kimliği → 'put' | 'del'): bu tarafta değişen, henüz buluta yazılmamış kayıtlar
     this.cloudIds = new Map();   // standart tabloları: buluta ait (tohum sonrası değişen) kayıt kimlikleri
     this.pendingStd = [];        // tohumdan sonra uygulanacak bulut kayıtları
     this.seeding = false;
@@ -69,6 +77,8 @@ export class CloudAdapter {
     this.listeners = new Set();
     this.onRemote = opts.onRemote || null;
     this.timer = null; this.flushing = null; this.unsub = null;
+    this.inflight = null;        // kaydedilmekte olan değişiklikler (tablo → kayıtlar); uzak okuma bunlara dokunmaz
+    this.remoteSkipped = null;   // kaydetme sırasında ertelenen uzak manifest (kaydetme bitince işlenir)
   }
   on(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
   _status(p) { Object.assign(this.status, p, { pending: [...this.dirty.values()].reduce((n, s) => n + s.size, 0) }); for (const f of this.listeners) { try { f(this.status); } catch (e) { /* */ } } }
@@ -126,7 +136,9 @@ export class CloudAdapter {
     for (const st of Object.keys(d.levels || {})) if ((this.levels[st] || 0) !== d.levels[st]) stores.add(st);
     const changed = [];
     for (const store of stores) {
-      if (!this.s.has(store) || this.dirty.has(store)) continue;     // bu tarafta bekleyen yazma varsa dokunma (son yazan kazanır)
+      if (!this.s.has(store)) continue;
+      // Bu tarafta bekleyen ya da kaydedilmekte olan değişiklik varsa dokunma: kaydetme kayıt bazında birleştirir, sonra yeniden bakılır
+      if (this.dirty.has(store) || (this.inflight && this.inflight.has(store))) { if (this.inflight) this.remoteSkipped = d; continue; }
       this.levels[store] = (d.levels || {})[store] || 0;
       const keys = Object.entries(d.b || {}).filter(([k]) => k.startsWith(store + '~'));
       const m = this.m(store);
@@ -154,12 +166,12 @@ export class CloudAdapter {
   async estimate() { return null; }
 
   // ---- Yazma ----
-  _touch(store, id) {
+  _touch(store, id, op = 'put') {
     if (this.seeding || LOCAL_ONLY.has(store) || MEM_ONLY.has(store) || store === 'blobs') return;
     if (this.isStd(store)) { const set = this.cloudIds.get(store) || new Set(); set.add(id); this.cloudIds.set(store, set); }
-    const set = this.dirty.get(store) || new Set();
-    set.add(bucketOf(store, id, this.levels[store] || 0));
-    this.dirty.set(store, set);
+    const ids = this.dirty.get(store) || new Map();
+    ids.set(id, op);
+    this.dirty.set(store, ids);
   }
   _schedule() {
     if (this.seeding || !this.dirty.size) return;
@@ -177,9 +189,9 @@ export class CloudAdapter {
     m.set(rec.id, clone(rec)); this._touch(store, rec.id); this._schedule(); return rec.id;
   }
   async bulkPut(store, recs) { const m = this.m(store); for (const r of recs) { m.set(r.id, clone(r)); this._touch(store, r.id); } this._schedule(); return recs.length; }
-  async delete(store, id) { if (this.m(store).delete(id)) { this._touch(store, id); this._schedule(); } if ((store === 'blobs' || LOCAL_ONLY.has(store)) && this.local) { try { await this.local.delete(store, id); } catch (e) { /* */ } } }
-  async bulkDelete(store, ids) { const m = this.m(store); for (const id of ids) if (m.delete(id)) this._touch(store, id); this._schedule(); return ids.length; }
-  async clear(store) { const m = this.m(store); for (const id of [...m.keys()]) { m.delete(id); this._touch(store, id); } this._schedule(); if (LOCAL_ONLY.has(store) && this.local) { try { await this.local.clear(store); } catch (e) { /* */ } } }
+  async delete(store, id) { if (this.m(store).delete(id)) { this._touch(store, id, 'del'); this._schedule(); } if ((store === 'blobs' || LOCAL_ONLY.has(store)) && this.local) { try { await this.local.delete(store, id); } catch (e) { /* */ } } }
+  async bulkDelete(store, ids) { const m = this.m(store); for (const id of ids) if (m.delete(id)) this._touch(store, id, 'del'); this._schedule(); return ids.length; }
+  async clear(store) { const m = this.m(store); for (const id of [...m.keys()]) { m.delete(id); this._touch(store, id, 'del'); } this._schedule(); if (LOCAL_ONLY.has(store) && this.local) { try { await this.local.clear(store); } catch (e) { /* */ } } }
 
   // ---- İkili / büyük veri ----
   // Fotoğraf baytları yalnız bu tarayıcıda (IndexedDB) tutulur; metin blokları (revizyon anlık görüntüsü) buluta parça parça yazılır
@@ -236,14 +248,91 @@ export class CloudAdapter {
     }
     return groups;
   }
+  // ---- Eşzamanlı yazma: sunucu kilidi ve kayıt bazında birleştirme ----
+  /** Kaydetme kilidi (m/lock, acquire): alınırsa { renew } döner; sunucu desteklemiyorsa ya da uzun süre alınamazsa null (sürüm denetimiyle sürülür). */
+  async _lock() {
+    let ref;
+    try { ref = this.cdb.doc('m/lock'); } catch (e) { return null; }
+    if (!ref || typeof ref.acquire !== 'function') return null;
+    const ttl = LOCK_TTL;
+    const deadline = Date.now() + 6 * ttl;
+    while (Date.now() < deadline) {
+      let r;
+      try { r = await ref.acquire({ holder: this.tab, ttlMs: ttl }); } catch (e) { return null; }
+      if (r && r.acquired) {
+        let t0 = Date.now();
+        return {
+          renew: async () => { if (Date.now() - t0 > ttl / 2) { t0 = Date.now(); try { await ref.acquire({ holder: this.tab, ttlMs: ttl }); } catch (e) { /* */ } } },
+          release: async () => { try { await ref.acquire({ holder: this.tab, ttlMs: 1000 }); } catch (e) { /* kira kendiliğinden düşer */ } }   // bırakma fiili yok: kira en kısaya çekilir
+        };
+      }
+      const exp = r && r.expiresAt ? new Date(r.expiresAt).getTime() - Date.now() : NaN;
+      await new Promise((res) => setTimeout(res, Number.isFinite(exp) ? Math.min(1000, Math.max(50, exp + 50)) : 500));
+    }
+    return null;
+  }
+  /** İki tarafta da değişen kayıt: rev'i büyük olan, eşitse updatedAt'i yeni olan kazanır; yine eşitse bulut kopyası kalır. */
+  static wins(local, remote) {
+    const lr = +(local && local.rev) || 0, rr = +(remote && remote.rev) || 0;
+    if (lr !== rr) return lr > rr;
+    return String((local && local.updatedAt) || '') > String((remote && remote.updatedAt) || '');
+  }
+  /**
+   * Buluttaki tabloyu bu tarafın bellek kopyasıyla kayıt bazında birleştirir (kaydetmeden önce). Bulutta sürümü
+   * değişmiş kovalar çekilir: dokunulmamış yerel kayıtlar bulut kopyasıyla değiştirilir (uzak silme dahil), dokunulmuş
+   * kayıtlarda wins() kuralı uygulanır. Uzak taraf tabloyu yeniden dağıtmışsa (düzey) tablonun tümü çekilir.
+   * ids: bu tarafta değişen kayıtlar (kimlik → 'put' | 'del'); kazanamayan yerel değişiklik listeden düşer.
+   */
+  async _reconcile(store, ids, man) {
+    if (!man) return;
+    const remoteLevel = (man.levels || {})[store] || 0;
+    const relevel = remoteLevel !== (this.levels[store] || 0);
+    const entries = Object.entries(man.b || {}).filter(([k]) => k.startsWith(store + '~'));
+    const stale = entries.filter(([k, v]) => relevel ? v > 0 : v > 0 && v !== (this.known.get(k) || 0));
+    const gone = entries.filter(([k, v]) => !(v > 0) && (this.known.get(k) || 0) > 0);
+    if (!stale.length && !gone.length && !relevel) return;
+    const m = this.m(store);
+    const scope = this.isStd(store) ? (this.cloudIds.get(store) || new Set()) : null;   // standart tabloda yalnız buluta ait kayıtlar
+    const inScope = (id) => !scope || scope.has(id);
+    const dropUntouched = (pred) => { for (const id of [...m.keys()]) if (inScope(id) && !ids.has(id) && pred(id)) { m.delete(id); if (scope) scope.delete(id); } };
+    if (relevel) { dropUntouched(() => true); this.levels[store] = remoteLevel; }
+    else { for (const [k] of gone) { const key = k.slice(store.length + 1); dropUntouched((id) => bucketOf(store, id, remoteLevel) === key); } }
+    for (const [k] of gone) this.known.set(k, 0);
+    for (const [k, v] of stale) {
+      const snap = await retry(() => this.cdb.doc('b/' + k).get());
+      const recs = snap.exists ? JSON.parse(snap.data().j || '[]') : [];
+      const key = k.slice(store.length + 1);
+      if (!relevel) { const uzak = new Set(recs.map((r) => r.id)); dropUntouched((id) => bucketOf(store, id, remoteLevel) === key && !uzak.has(id)); }
+      for (const r of recs) {
+        const op = ids.get(r.id);
+        if (!op) { m.set(r.id, r); if (scope) scope.add(r.id); continue; }            // bu tarafta dokunulmamış: bulut kopyası
+        if (op === 'del') continue;                                                     // yerel (kesin) silme: kalır
+        const loc = m.get(r.id);
+        if (!loc || !CloudAdapter.wins(loc, r)) { m.set(r.id, r); if (scope) scope.add(r.id); ids.delete(r.id); } // uzak değişiklik kazandı
+      }
+      this.known.set(k, v);
+    }
+  }
+  async _manifest() {
+    if (this.fresh) return null;
+    const snap = await retry(() => this.cdb.doc('m/manifest').get());
+    return snap.exists ? snap.data() : null;
+  }
   async _flush() {
     if (!this.dirty.size) return;
     this._status({ state: 'saving' });
     const work = this.dirty; this.dirty = new Map();
+    this.inflight = work;
     const patch = {}; const drop = []; let skipped = 0;
+    let lock = null;
     try {
-      for (const [store, keys0] of work) {
-        let level = this.levels[store] || 0, keys = keys0, groups, json;
+      lock = await this._lock();
+      const man = await this._manifest();
+      if (man) { this.rev = Math.max(this.rev, man.rev || 0); this.blobIds = new Set(Object.keys(man.x || {})); }
+      for (const [store, ids] of work) {
+        await this._reconcile(store, ids, man);
+        let level = this.levels[store] || 0, groups, json;
+        let keys = new Set([...ids.keys()].map((id) => bucketOf(store, id, level)));
         // Sınırı aşan kova varsa düzeyi artır ve tabloyu yeniden dağıt
         for (;;) {
           groups = this._group(store, level, keys);
@@ -258,8 +347,10 @@ export class CloudAdapter {
           const id = docId(store, k); const j = json.get(k);
           if (!j) { if (this.known.get(id)) { await retry(() => this.cdb.doc('b/' + id).delete(), true); patch[id] = 0; this.known.set(id, 0); } continue; }
           if (docBytes(j) > DOC_HARD) { skipped++; console.warn('Buluta sığmayan kova', id, docBytes(j)); continue; }
-          await retry(() => this.cdb.doc('b/' + id).set({ s: store, k, n: groups.get(k).length, j }), true);
-          const v = (this.known.get(id) || 0) + 1; patch[id] = v; this.known.set(id, v);
+          const v = (this.known.get(id) || 0) + 1;
+          await retry(() => this.cdb.doc('b/' + id).set({ s: store, k, n: groups.get(k).length, v, j }), true);
+          patch[id] = v; this.known.set(id, v);
+          if (lock) await lock.renew();
         }
         if (releveled) {
           for (const [id, v] of this.known) if (v > 0 && id.startsWith(store + '~') && !groups.has(id.slice(store.length + 1))) { patch[id] = 0; drop.push(id); }
@@ -273,11 +364,18 @@ export class CloudAdapter {
       for (const id of drop) { this.known.set(id, 0); try { await this.cdb.doc('b/' + id).delete(); } catch (e) { /* artık kalır, zararsız */ } }
       this._status(skipped ? { state: 'error', error: 'Bazı kayıtlar buluta sığmadı', at: body.at } : { state: 'saved', at: body.at, error: null });
     } catch (e) {
-      // Yazılamayanları kuyruğa geri koy
-      for (const [store, keys] of work) { const set = this.dirty.get(store) || new Set(); for (const k of keys) set.add(k); this.dirty.set(store, set); }
+      this.inflight = null;
+      // Yazılamayanları kuyruğa geri koy (sonradan dokunulan aynı kayıt varsa o kalır)
+      for (const [store, ids] of work) { const cur = this.dirty.get(store) || new Map(); for (const [id, op] of ids) if (!cur.has(id)) cur.set(id, op); this.dirty.set(store, cur); }
       this._fail(e);
       if (this.status.state === 'error') { clearTimeout(this.timer); this.timer = setTimeout(() => this.flush().catch(() => {}), 15000); }
+      if (lock) await lock.release();
       throw e;
     }
+    this.inflight = null;
+    if (lock) await lock.release();
+    // Kaydetme sırasında ertelenen uzak değişiklik varsa şimdi al (bekleyen yazması olan tablolar yine atlanır)
+    const d = this.remoteSkipped; this.remoteSkipped = null;
+    if (d) await this._remote(d);
   }
 }

@@ -2,10 +2,11 @@
 // --web ile: dist/web (tarayıcı / ofis sürümü). index.html tam sayfa (yerel deneme ve kendi sunucun için), page.html yayın parçası.
 import * as esbuild from 'esbuild';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { paketle } from '../../araclar/hesap-paketle.mjs';
 
-const root = path.dirname(new URL(import.meta.url).pathname);
+const root = path.dirname(fileURLToPath(import.meta.url));
 const WEB = process.argv.includes('--web');
 const out = path.join(root, WEB ? 'dist/web' : 'dist/www');
 fs.rmSync(out, { recursive: true, force: true });

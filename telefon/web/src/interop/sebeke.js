@@ -13,7 +13,7 @@ import ESLESME from '../ortak/volt-eslesme.js';
 import KALEMLER from '../ortak/kalemler.js';
 import { lineLabel, circuitLabel, circuitParts, kanalModel, autocadDevresi, autocadAnahtari, autocadGrubu } from '../grid/lines.js';
 import { jobOf } from '../grid/recipe.js';
-import { makeCrs } from '../geo/crs.js';
+import { makeCrs, project as projLL, unproject as unprojLL, zoneForLon, TM_ZONES } from '../geo/crs.js';
 import { hakOf } from '../core/schema.js';
 
 export const VOLT_BICIM = 'volt-project/3';
@@ -107,6 +107,51 @@ export function cizimKesit(label, lineType, install) {
   return { tanim: s, aciklama: '' };
 }
 
+// ---------------------------------------------------------------- Koordinat sistemi (dosya ↔ telefon)
+// AutoCAD dosyası 3° TM'dir: dilim orta meridyeni DOM, ölçek 1, sağa 500 000 (eklentideki Koordinat sınıfı). Telefon
+// projesi UTM, yerel ya da başka datumda olabilir. Dışa aktarımda telefon koordinatları dosyanın sistemine, içe alımda
+// dosyanın koordinatları projenin sistemine çevrilir; iki sistem aynıysa koordinatlara dokunulmaz (eski davranış).
+
+/** Dosyadaki datum yazımı → telefon datumu. ITRF96 / TUREF ve yazılmamış datum TUREF'tir (eski dosyalar). */
+export function dosyaDatumu(d) {
+  const s = String(d || '').trim().toUpperCase();
+  if (/ED\s*50/.test(s)) return 'ED50';
+  if (/WGS/.test(s)) return 'WGS84';
+  return 'TUREF';
+}
+/** Telefon datumu → dosyadaki yazım (eklenti ITRF96 yazar). */
+export function dosyaDatumAdi(datum) { return !datum || /turef|itrf/i.test(datum) ? 'ITRF96' : datum; }
+/** Dosyanın koordinat sistemi: 3° TM, dosyadaki DOM ve datum. */
+export function dosyaCrs(pj, varsayilanDom = 39) {
+  const k = (pj && pj.koordinat) || {};
+  return makeCrs({ datum: dosyaDatumu(k.datum), projection: 'TM3', cm: +k.dom || varsayilanDom });
+}
+/** İki sistem aynı mı (datum, projeksiyon ve TM parametreleri; yerel dönüşümlü sistem hiçbir sisteme eş değildir). */
+export function ayniSistem(a, b) {
+  if (!a || !b || a.local || b.local) return false;
+  const oz = (c) => ({ datum: c.datum || 'TUREF', proj: c.projection || 'TM3' });
+  const x = oz(a), y = oz(b);
+  if (x.datum !== y.datum || x.proj !== y.proj) return false;
+  if (x.proj === 'GEO') return true;
+  const tm = (c) => [+c.cm || 0, c.k0 ?? 1, c.fe ?? 500000, c.fn ?? 0];
+  return tm(a).every((v, i) => Math.abs(v - tm(b)[i]) < 1e-9);
+}
+/** Koordinat çevirici: (E, N, h) → { E, N } hedef sistemde; sistemler aynıysa null (çeviri gerekmez). */
+export function koordinatCevirici(kaynak, hedef) {
+  if (!kaynak || !hedef || ayniSistem(kaynak, hedef)) return null;
+  return (E, N, h) => { const g = unprojLL(E, N, kaynak, h || 0); return projLL(g.lat, g.lon, hedef, h || 0); };
+}
+/** Dosyaya yazılacak 3° dilim: TM3 projede projenin dilimi; UTM / yerel / coğrafi projede eklentiden gelen dilim, yoksa en yakın 3° dilim. */
+function dosyaDilimi(crs, sb, pts) {
+  const tm3 = !crs.local && (crs.projection || 'TM3') === 'TM3' && (crs.k0 ?? 1) === 1 && (crs.fe ?? 500000) === 500000 && (crs.fn ?? 0) === 0;
+  if (tm3 && TM_ZONES.includes(+crs.cm)) return +crs.cm;
+  if (+sb.dom) return +sb.dom;
+  if (+crs.cm) return zoneForLon(+crs.cm);
+  let n = 0, top = 0;
+  for (const p of pts) if (p.lon != null && Number.isFinite(p.lon)) { top += p.lon; n++; }
+  return n ? zoneForLon(top / n) : 39;
+}
+
 // ---------------------------------------------------------------- Telefon → AutoCAD (.sebeke.json)
 
 /** Açık projeden AutoCAD proje nesnesi (SH.projeYaz ile yazılır). opts: { katmanOnEki, gisOnEki } */
@@ -116,8 +161,12 @@ export function sebekeModel(ps, opts = {}) {
   const uyarilar = [];
   const sb = project.sebeke || {};
   const crs = project.crs || {};
-  const dom = +crs.cm || +(sb.dom) || 39;
-  const datum = /turef|itrf/i.test(crs.datum || '') || !crs.datum ? 'ITRF96' : crs.datum;
+  const act = (a) => (a || []).filter((x) => x.status !== 'deleted');
+  const dom = dosyaDilimi(crs, sb, act(data.points));
+  const datum = dosyaDatumAdi(crs.datum);
+  // Telefon koordinatları dosyanın sistemine (3° TM, DOM, datum); UTM / yerel projede her nokta çevrilir (hata 1)
+  const cevir = koordinatCevirici(crs, makeCrs({ datum: dosyaDatumu(datum), projection: 'TM3', cm: dom }));
+  const dosyaNoktasi = (p) => { if (!cevir || p.E == null) return p; const q = cevir(p.E, p.N, p.H); return Object.assign({}, p, { E: q.E, N: q.N }); };
   const sp = SH.yeniProje({ ad: project.name, dom, hakedis: aktifHakedis(data.periods), katmanOnEki: opts.katmanOnEki || sb.katmanOnEki || 'SC', gisOnEki: opts.gisOnEki || sb.gisOnEki || sb.katmanOnEki || 'SC' });
   sp.olusturan = 'Şebeke-M (telefon)';
   sp.proje.kaynak = sb.kaynak || 'telefon';
@@ -128,8 +177,7 @@ export function sebekeModel(ps, opts = {}) {
   if (by) sp.proje.boyutlar = by;
   const onaylar = onaylariHazirla(sb.onaylar, data.periods);
   if (onaylar.length) sp.proje.onaylar = onaylar;
-  const act = (a) => (a || []).filter((x) => x.status !== 'deleted');
-  const pts = new Map(act(data.points).map((p) => [p.id, p]));
+  const pts = new Map(act(data.points).map((p) => [p.id, dosyaNoktasi(p)]));
   const eqs = act(data.equipment), lines = act(data.lines);
 
   // Bölgeler: AutoCAD'den gelen bölgeler korunur; yoksa projenin kendisi tek bölgedir (tüm noktaları kapsayan kutu)
@@ -726,12 +774,19 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
   const ozet = { yeniEleman: 0, guncellenenEleman: 0, yeniHat: 0, guncellenenHat: 0, yeniKanal: 0, nokta: 0, uyarilar: [], eslesmeyen: [] };
   const pj = sp.proje || {};
   const dom = pj.koordinat && pj.koordinat.dom ? pj.koordinat.dom : 39;
+  // Dosyanın koordinat sistemi: 3° TM, dosyadaki dilim ve datum (ED50 dosyası ED50 kalır; datum yazmayan eski dosya TUREF) (hata 2)
+  const dosya = dosyaCrs(pj, dom);
   let project;
   if (opts.projectId) { project = await ps.open(opts.projectId); }
   else {
-    project = await ps.createProject({ name: opts.name || pj.ad || 'AutoCAD projesi', code: pj.kod || '', crs: opts.crs || makeCrs({ datum: 'TUREF', projection: 'TM3', cm: dom }), autoRecipe: false, mode: 'asbuilt' });
+    project = await ps.createProject({ name: opts.name || pj.ad || 'AutoCAD projesi', code: pj.kod || '', crs: opts.crs || dosya, autoRecipe: false, mode: 'asbuilt' });
     await ps.open(project.id);
   }
+  // Dosyanın koordinatları projenin sistemine: datum ya da dilim farklıysa (var olan TUREF projesine ED50 dosyası,
+  // UTM projesine 3° TM dosyası) her nokta çevrilir; aynıysa olduğu gibi alınır
+  const cevir = koordinatCevirici(dosya, ps.p.crs);
+  const xy = (E, N, h) => (cevir ? cevir(+E, +N, h) : { E: +E, N: +N });
+  const kilitUyar = (ad, kilit) => { const u = ad + ': kayıt kilitli ("' + kilit.label + '"), dosyadaki değişiklik alınmadı'; if (!ozet.uyarilar.includes(u)) ozet.uyarilar.push(u); };
   const sebeke = Object.assign({}, project.sebeke || {}, { katmanOnEki: pj.katmanOnEki || (project.sebeke || {}).katmanOnEki || 'SC', gisOnEki: pj.gisOnEki || pj.katmanOnEki || 'SC', kaynak: pj.kaynak || '', dom, olusturan: sp.olusturan || '', bolgeler: (sp.bolgeler || []).map((b) => Object.assign({ id: b.id, ad: b.ad, kod: b.kod, aciklama: b.aciklama || '', sinir: b.sinir }, b.grup ? { grup: b.grup } : {})), onaylar: onaylariHazirla(pj.onaylar, null), alinma: new Date().toISOString() });
   // Boyutlar: AutoCAD'de ayarlanmışsa onlar alınır; dosyada yoksa (varsayılan) telefondaki kalır
   const by = SH.boyutlarOku(pj.boyutlar);
@@ -775,30 +830,34 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     }
     if (Object.keys(attrs).length) data.attrs = attrs;
     const mevcut = bul(eqByKey, el);
-    let rec;
+    const hedef = xy(el.saga, el.yukari, el.kot);
+    let rec, kilit = null;
     if (mevcut) {
-      const p = ps.pointById(mevcut.pointId);
-      if (p && (Math.abs(p.E - el.saga) > 0.0005 || Math.abs(p.N - el.yukari) > 0.0005)) await ps.movePoint(p.id, el.saga, el.yukari, 'AutoCAD dosyasından güncellendi');
-      rec = await ps.updateEquipment(mevcut.id, Object.assign(data, { no: el.gisId || mevcut.no }), 'AutoCAD dosyasından güncellendi');
-      ozet.guncellenenEleman++;
+      // Var olan eleman: konum ve kot dosyadan güncellenir (hata 7); onayla kilitli kayıt dokunulmaz, uyarı yazılır
+      kilit = ps.editLock(mevcut);
+      await noktayiDosyadanGuncelle(ps, ps.pointById(mevcut.pointId), hedef, el.kot, kilit, el.gisId || mevcut.no, kilitUyar);
+      try { rec = await ps.updateEquipment(mevcut.id, Object.assign(data, { no: el.gisId || mevcut.no }), 'AutoCAD dosyasından güncellendi'); ozet.guncellenenEleman++; }
+      catch (e) { if (!kilit) throw e; kilitUyar(el.gisId || mevcut.no, kilit); rec = mevcut; }
     } else {
-      rec = await ps.addEquipment(et.kind, Object.assign(data, { no: el.gisId || undefined }), { coord: { E: el.saga, N: el.yukari, H: el.kot || null }, source: 'DESIGN', defer: true, reason: 'AutoCAD dosyasından alındı' });
+      rec = await ps.addEquipment(et.kind, Object.assign(data, { no: el.gisId || undefined }), { coord: { E: hedef.E, N: hedef.N, H: el.kot || null }, source: 'DESIGN', defer: true, reason: 'AutoCAD dosyasından alındı' });
       ozet.yeniEleman++;
     }
     noktaIdByEleman.set(el.id, rec.pointId);
     if (el.telefonId) noktaIdByEleman.set(el.telefonId, rec.pointId);
+    if (kilit) continue; // kilitli kaydın malzemeleri de değişmez
     // Telefonun kendisinin ürettiği kalemler (trafo gücünden trafo kalemi) malzeme olarak ayrıca yazılmaz
     const telefonUretir = (k) => trafo && attrs.kva && /^TRAFO/.test(k.cins || '') && !/B[İI]NA/.test(k.cins || '');
     await malzemeleriYaz(ps, 'equipment', rec.id, (el.kalemler || []).filter((k) => !k.ana && !telefonUretir(k)), opts);
   }
 
   // Hatlar
-  const koseNokta = async (xy, cls) => {
-    // Yakın ekipman noktası (1 m) varsa o; yoksa yeni hat köşe noktası
+  const koseNokta = async (kose, cls) => {
+    // Dosyadaki köşe projenin sistemine; yakın ekipman noktası (1 m) varsa o, yoksa yeni hat köşe noktası
+    const q = xy(kose[0], kose[1]);
     let enYakin = null, enKisa = 1.0;
-    for (const p of ps.data.points) { if (p.status === 'deleted' || p.E == null) continue; const d = Math.hypot(p.E - xy[0], p.N - xy[1]); if (d < enKisa) { enKisa = d; enYakin = p; } }
+    for (const p of ps.data.points) { if (p.status === 'deleted' || p.E == null) continue; const d = Math.hypot(p.E - q.E, p.N - q.N); if (d < enKisa) { enKisa = d; enYakin = p; } }
     if (enYakin) return enYakin.id;
-    const p = await ps.createPoint({ pointNo: ps.nextPointNo('P'), cls: cls || 'HAT', critical: false, coord: { E: xy[0], N: xy[1] }, source: 'DESIGN' });
+    const p = await ps.createPoint({ pointNo: ps.nextPointNo('P'), cls: cls || 'HAT', critical: false, coord: { E: q.E, N: q.N }, source: 'DESIGN' });
     return p.id;
   };
   const kanalIndeks = new Map((sp.kanallar || []).map((c) => [koseAnahtari(c.kose), c]));
@@ -859,10 +918,15 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     // (AutoCAD'de ortadan bir parça silinip hat ikiye ayrıldıysa ikinci kısım yeni hat olur)
     const adaylar = [bul(lineByKey, h), h.telefonId ? lineByKey.get(kokKimlik(h.telefonId)) : null, ...h.parcalar.map((pc) => lineByKey.get(pc.id) || lineByKey.get(kokKimlik(pc.id)))];
     const mevcut = adaylar.find((x) => x && !kullanilanHat.has(x.id)) || null;
-    let rec;
-    if (mevcut) { kullanilanHat.add(mevcut.id); rec = await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi'); ozet.guncellenenHat++; }
-    else { rec = await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı' }); ozet.yeniHat++; }
+    let rec, kilit = null;
+    if (mevcut) {
+      kullanilanHat.add(mevcut.id);
+      kilit = ps.editLock(mevcut);
+      try { rec = await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi'); ozet.guncellenenHat++; }
+      catch (e) { if (!kilit) throw e; kilitUyar(h.etiket || h.anaKesit || mevcut.lineNo, kilit); rec = mevcut; }
+    } else { rec = await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı' }); ozet.yeniHat++; }
     alinanHatlar.push(rec.id);
+    if (kilit) continue; // kilitli hattın malzemeleri de değişmez
     // Boru kalemi kanal ayarına (borulu geçiş, boru sayısı) çevrildi; malzeme olarak ayrıca yazılmaz (telefon kendisi hesaplar)
     await malzemeleriYaz(ps, 'line', rec.id, (h.kalemler || []).filter((k) => !k.ana && k.kaynak !== 'HAT' && !(boruKalemi && k.cins === boruKalemi.cins && k.tanim === boruKalemi.tanim)), opts);
   }
@@ -882,11 +946,12 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     if (mevcut) await ps.updateLine(mevcut.id, data, 'AutoCAD dosyasından güncellendi'); else await ps.createLine(Object.assign({ lineNo: ps.nextLineNo() }, data), { defer: true, reason: 'AutoCAD dosyasından alındı (sondaj)' });
     ozet.yeniKanal++;
   }
-  // Ölçü noktaları
+  // Ölçü noktaları: var olan nokta dosyadaki konum / kota göre güncellenir (hata 7), yeni nokta açılır
   for (const n of sp.noktalar || []) {
     const mevcut = bul(pointByKey, n);
-    if (mevcut) continue;
-    await ps.createPoint({ pointNo: n.ad || ps.nextPointNo('P'), cls: n.kod && /^[A-ZÇĞİÖŞÜ]+$/.test(n.kod) && n.kod.length <= 8 ? 'DETAY' : 'DETAY', critical: false, coord: { E: n.saga, N: n.yukari, H: n.kot || null }, source: 'DESIGN', note: n.kod ? 'Kod: ' + n.kod : '' });
+    const hedef = xy(n.saga, n.yukari, n.kot);
+    if (mevcut) { if (await noktayiDosyadanGuncelle(ps, mevcut, hedef, n.kot, null, n.ad || mevcut.pointNo, kilitUyar)) ozet.guncellenenNokta = (ozet.guncellenenNokta || 0) + 1; continue; }
+    await ps.createPoint({ pointNo: n.ad || ps.nextPointNo('P'), cls: n.kod && /^[A-ZÇĞİÖŞÜ]+$/.test(n.kod) && n.kod.length <= 8 ? 'DETAY' : 'DETAY', critical: false, coord: { E: hedef.E, N: hedef.N, H: n.kot || null }, source: 'DESIGN', note: n.kod ? 'Kod: ' + n.kod : '' });
     const p = ps.data.points[ps.data.points.length - 1];
     if (p) await ps.ds.update('points', p.id, { sebekeId: n.id }, { reason: 'AutoCAD nokta kimliği', silent: true });
     ozet.nokta++;
@@ -904,6 +969,22 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
   ozet.uyarilar.push(...(sp.uyarilar || []));
   ozet.projectId = ps.p.id;
   return ozet;
+}
+
+/**
+ * Var olan noktayı dosyadaki konuma / kota taşır (hata 7): yatay fark 0,5 mm'den büyükse konum, dosyada kot yazılıysa
+ * (0 = bilinmiyor, kotu silmez) ve farklıysa kot güncellenir. Kilitli (onaylı) kayıtta dokunulmaz, uyarı yazılır.
+ * Döner: değişiklik yapıldı mı.
+ */
+async function noktayiDosyadanGuncelle(ps, p, hedef, kot, kilit, ad, uyar) {
+  if (!p || p.E == null || !hedef || !Number.isFinite(hedef.E) || !Number.isFinite(hedef.N)) return false;
+  const konum = Math.abs(p.E - hedef.E) > 0.0005 || Math.abs(p.N - hedef.N) > 0.0005;
+  const kotVar = kot != null && Number.isFinite(+kot) && +kot !== 0;
+  const kotFark = kotVar && (p.H == null || Math.abs(p.H - +kot) > 0.0005);
+  if (!konum && !kotFark) return false;
+  if (kilit) { uyar(ad, kilit); return false; }
+  await ps.movePoint(p.id, konum ? hedef.E : p.E, konum ? hedef.N : p.N, 'AutoCAD dosyasından güncellendi', { H: kotFark ? +kot : undefined, source: 'DESIGN' });
+  return true;
 }
 
 /**

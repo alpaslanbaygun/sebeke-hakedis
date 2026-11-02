@@ -3,13 +3,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import KALEMLER from '../src/ortak/kalemler.js';
 
 const require = createRequire(import.meta.url);
 const SH = require('../src/interop/sh-core.cjs');
-const here = path.dirname(new URL(import.meta.url).pathname);
+const here = path.dirname(fileURLToPath(import.meta.url));
 const ORNEK = JSON.parse(fs.readFileSync(path.join(here, '../../../ortak/deneme/malzeme-yazimi.json'), 'utf8'));
 
 test('Y1 · ortak örnekler: eklentiyle aynı görünen yazım', () => {

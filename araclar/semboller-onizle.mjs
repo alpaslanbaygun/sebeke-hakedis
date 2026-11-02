@@ -2,9 +2,10 @@
 // semboller.json'daki tüm simgeleri bir SVG sayfasına çizer (gözle denetim için).
 // Kullanım: node araclar/semboller-onizle.mjs [çıktı.svg]
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const kok = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const d = JSON.parse(fs.readFileSync(path.join(kok, 'ortak/katalog/semboller.json'), 'utf8'));
 const hedef = process.argv[2] || path.join(kok, 'araclar/semboller-onizleme.svg');
 const varyantlar = Object.keys(d.varyantlar);

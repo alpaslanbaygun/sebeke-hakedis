@@ -4,6 +4,7 @@
 // Bu kalemler EDAŞ Yeşil Defter servis kodu taşımaz: servis alanı "TEDAS:<poz no>" ya da "YEREL:<ad>" biçimindedir
 // ve verified:false ("doğrulanacak") olarak işaretlenir. Poz numarası uygulamadan düzeltilebilir.
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 export const SEED_REV = 25;
@@ -104,7 +105,7 @@ export function applyExtras(out) {
 }
 
 if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]))) {
-  const f = path.join(path.dirname(new URL(import.meta.url).pathname), '../web/seed/standard-tedas-2026.json');
+  const f = path.join(path.dirname(fileURLToPath(import.meta.url)), '../web/seed/standard-tedas-2026.json');
   const out = JSON.parse(fs.readFileSync(f, 'utf8'));
   const added = applyExtras(out);
   fs.writeFileSync(f, JSON.stringify(out));

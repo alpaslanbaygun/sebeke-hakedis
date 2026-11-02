@@ -5,9 +5,12 @@
 import { ulid } from './ids.js';
 import { diffFields } from './data-service.js';
 
+// Bekleyen değişiklikler. Proje verilince yalnız o projenin kayıtları ve kendi proje kaydı gider; ortak katalog
+// (poz) kalemleri projeden bağımsızdır, her eşitlemeyle gider. Başka projenin kaydı ve kuyruğu etkilenmez.
 export async function pendingChanges(ds, projectId) {
   const all = await ds.db.getAll('outbox');
-  return all.filter((c) => !c.synced && (!projectId || c.projectId === projectId || c.store === 'projects' || c.store === 'poz')).sort((a, b) => a.ts.localeCompare(b.ts));
+  const ait = (c) => !projectId || c.projectId === projectId || (c.store === 'projects' && c.entityId === projectId) || c.store === 'poz';
+  return all.filter((c) => !c.synced && ait(c)).sort((a, b) => a.ts.localeCompare(b.ts));
 }
 export async function exportChangeset(ds, projectId) {
   const changes = await pendingChanges(ds, projectId);

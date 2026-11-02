@@ -14,7 +14,12 @@ Karışıklık olmasın diye eksenler açık adla tutulur:
 | `yukari` | kuzey (yukarı değer) | Y |
 | `kot` | yükseklik | Z |
 
-Çizgiler `kose` dizisiyle tutulur: `[[saga, yukari], ...]`. Projeksiyon: TM, ITRF96 (`proje.koordinat`).
+Çizgiler `kose` dizisiyle tutulur: `[[saga, yukari], ...]`. Projeksiyon: 3° TM (dilim orta meridyeni `dom`, ölçek 1,
+sağa 500 000), datum `proje.koordinat.datum` (eklenti `ITRF96` yazar; `ED50` ve `WGS84` de olabilir; yazılmamışsa ITRF96 /
+TUREF sayılır). Telefon projesi UTM, yerel ya da başka datumda olabilir: dosyaya yazarken bütün koordinatlar (eleman,
+hat / kanal köşeleri, noktalar, bölge kutusu, çizim uzunlukları) dosyanın sistemine çevrilir; dosyadan alırken yeni
+projenin sistemi dosyanınki olur, var olan projeye alınırken dosyanın koordinatları projenin sistemine çevrilir
+(`telefon/web/src/interop/sebeke.js › dosyaCrs, koordinatCevirici`). İki sistem aynıysa koordinatlara dokunulmaz.
 
 ## Dosyanın yapısı
 
@@ -247,12 +252,28 @@ Hat etiketi eski program yazımıyladır: `^ kesit/341m/(tanıtıcı)` (M), `* �
    varsa (tanıtıcısı küçükse) “silinmiş görünen” olarak sorulur. Bilgisayarda sonradan çizilenler sorulmaz.
 4. Onaylı (kilitli) hakediş: kilitli satırları değişen, kendisi kilitliyken yeri / geometrisi değişen, kilitli
    hakedişe yeni gelen ya da telefonda silinmiş kilitli nesneler aktarılmaz, ayrıca listelenir. Kilitli nesneye
-   açık hakedişte malzeme eklenmesi aktarılır.
+   açık hakedişte malzeme eklenmesi aktarılır. Hat Değiştir (`SH_HATDEGISTIR`) de hattın kendi hakedişi gibi
+   iletken satırlarının her birinin hakedişine ve yeni satırların gideceği hakedişe bakar (`Iletkenler.DegistirmeKilidi`).
+
+## AutoCAD dosyasını telefona alma (yeniden alma)
+
+Aynı kimlikli (telefon kimliği ya da AutoCAD tanıtıcısı) eleman ve bağımsız nokta yeniden alınınca dosyadaki konum
+ve kota göre güncellenir: yatay fark 0,5 mm'den büyükse konum, dosyada kot yazılıysa (0 = bilinmiyor, kotu silmez) ve
+farklıysa kot. Değişiklik yoksa dokunulmaz; tekrar alma kopya nesne üretmez. Telefonda onay kilidi (kontrol edilmiş /
+hakedişteki / onaylı kayıt) varsa o kaydın konumu, kotu, alanları ve malzemeleri değişmez; uyarı yazılır, alma sürer.
 
 ## Telefonda saklama
 
 Telefon (Şebeke-M) verisini kendi veritabanında tutar (IndexedDB `volt-edas-saha`; tablolar
-`telefon/web/src/core/schema.js`). AutoCAD'den alınan nesnelerde `sebekeId` (AutoCAD tanıtıcısı) ve `sebeke`
+`telefon/web/src/core/schema.js`). **Onay kilidi** (`ProjectService.editLock`): onay açıkken kontrol edilmiş /
+hakedişteki / onaylı kaydın tipi, miktarı, malzemesi, konumu değiştirilemez, kaydı silinemez; bağlı nokta (ekipmanın
+noktası, hattın düğümleri) taşınamaz; hat bölünemez / birleştirilemez; kilit kapalıyken ve yönetici oturumunda serbesttir.
+**Hakediş dönemi onayı** (`periods.snapshot`): miktarlar gibi sözleşme miktarı, birim fiyat ve tutar da onay anında
+dondurulur (`contract`, `unitPrice`, `amount`, `programId`); güncel iş programı yalnız açık dönemi etkiler. Eski sürümün
+fiyatsız görüntüsü `legacyPrices` ile işaretlenir, toplamı dönem kaydındaki onay anı toplamıdır.
+**Web (bulut) kaydı** (`src/web/cloud-adapter.js`): kova belgeleri sürümlüdür; kaydetmeden önce bulutta değişen kovalar
+çekilip kayıt bazında birleştirilir (dokunulmamış kayıtlar bulut kopyasıyla, iki tarafta da değişen kayıtta rev'i
+büyük / updatedAt'i yeni olan kazanır; silme de bir değişikliktir), kaydetme sunucunun kısa kilidiyle (`m/lock`) sıralanır. AutoCAD'den alınan nesnelerde `sebekeId` (AutoCAD tanıtıcısı) ve `sebeke`
 (tür, cins, tip, katman, blok, bölge, hakediş; hatta ana kesit, eşleşmeyen kalemler ve parça kimlikleri; kalemlerin
 sıra / hakediş / kontrol bilgisi `kalemBilgisi`; elemanda `ekVeri`) saklanır; projede `sebeke` (katman / GIS ön eki,
 bölgeler, onaylar, kaynak) tutulur. Böylece telefonda değiştirilip geri gönderilen dosya AutoCAD'deki

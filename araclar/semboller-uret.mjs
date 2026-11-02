@@ -15,9 +15,10 @@
 //
 // Kullanım: node araclar/semboller-uret.mjs
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const kok = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const r4 = (v) => Math.round(v * 10000) / 10000;
 const pt = (p) => [r4(p[0]), r4(p[1])];
 

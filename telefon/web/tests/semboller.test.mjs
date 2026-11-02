@@ -3,11 +3,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import SEMBOLLER from '../src/ortak/semboller.js';
 import { sembolBlogu, sembolAilesi, sembolVaryanti } from '../src/export/dxf.js';
 
-const kok = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../..');
+const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 test('S1 · telefondaki ortak tablolar (src/ortak/*.js) depodaki ortak/katalog/*.json ile birebir aynı', async () => {
   for (const [klasor, ad] of [['katalog', 'semboller'], ['katalog', 'volt-eslesme'], ['katalog', 'kalemler'], ['katalog', 'katsayilar'], ['katalog', 'cizim-stili'], ['marka', 'hakkinda']]) {

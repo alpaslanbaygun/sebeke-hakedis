@@ -10,8 +10,9 @@ import { greenBookPage } from '../src/qty/metraj.js';
 import { makeGGA, makeGST, makeGSA } from '../src/gnss/nmea.js';
 import { unzip } from '../src/export/zip.js';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const OUT = new URL('./out/', import.meta.url).pathname;
+const OUT = fileURLToPath(new URL('./out/', import.meta.url));
 fs.mkdirSync(OUT, { recursive: true });
 const q = (ps, job, servis) => ps.result.quantities.find((x) => x.job === job && x.servis === servis);
 const approx = (a, b, tol = 1e-3, msg) => assert.ok(Math.abs(a - b) <= tol, (msg || '') + ' beklenen ' + b + ' bulunan ' + a);
@@ -321,6 +322,31 @@ test('20 · Senkronizasyon: iki cihaz, değişiklik aktarımı ve çakışma ç�
   await resolveConflict(B.ds, cf.id, { note: 'remote' });
   assert.equal((await B.ds.get('equipment', e.id)).note, 'A: temel kayalık');
   assert.equal((await listConflicts(B.ds)).length, 0);
+});
+
+test('20b · Tek proje eşitlemesi (hata 9): başka projenin kaydı çıkmaz, kuyruğu "gönderildi" olmaz; ortak katalog kalemi yine gider', async () => {
+  const A = await setup({ deviceId: 'tablet-A', user: 'Mühendis A' });
+  const p1 = await newProject(A.ps, { name: 'Proje 1', code: 'P1' });
+  await A.ps.addEquipment('pole', { group: 'bahh', typeId: A.ps.cat.poleTypeByName('bahh', 'GT-12 (3 AWG)').id }, { obs: rtkObs(519000, 4282000, 1055) });
+  const p2 = await newProject(A.ps, { name: 'Proje 2', code: 'P2' });
+  await A.ps.addEquipment('pole', { group: 'bahh', typeId: A.ps.cat.poleTypeByName('bahh', 'GT-12 (3 AWG)').id }, { obs: rtkObs(529000, 4292000, 1055) });
+  // Kullanıcının kataloğa eklediği kalem: projeden bağımsız, her eşitlemeyle gider
+  const poz = await A.ds.putStd('poz', { id: 'POZ-TEST-20b', stdId: SEED.id, servis: 'TEST.20B', name: 'Deneme kalemi', unit: 'AD' }, 'deneme');
+  const cs = await exportChangeset(A.ds, p1.id);
+  const stores = (c) => cs.changes.filter((x) => x.store === c);
+  assert.deepEqual(stores('projects').map((x) => x.entityId), [p1.id], 'yalnız seçilen projenin kaydı');
+  assert.ok(cs.changes.every((x) => x.store === 'poz' || x.projectId === p1.id || (x.store === 'projects' && x.entityId === p1.id)), 'P2 verisi yok: ' + JSON.stringify(cs.changes.filter((x) => x.projectId === p2.id).map((x) => x.store)));
+  assert.equal(stores('equipment').length, 1, 'P1 direği gider, P2 direği gitmez');
+  assert.ok(stores('poz').some((x) => x.entityId === poz.id), 'ortak katalog kalemi gider');
+  await markSynced(A.ds, cs.outboxIds);
+  const kuyruk = (await A.ds.db.getAll('outbox')).filter((x) => !x.synced);
+  assert.ok(kuyruk.some((x) => x.store === 'projects' && x.entityId === p2.id), 'P2 proje kaydı kuyrukta bekler');
+  assert.ok(kuyruk.some((x) => x.store === 'equipment' && x.projectId === p2.id), 'P2 direği kuyrukta bekler');
+  assert.ok(!kuyruk.some((x) => x.projectId === p1.id || (x.store === 'projects' && x.entityId === p1.id)), 'P1 kuyruğu boşaldı');
+  // P2 eşitlemesi kendi kaydını götürür; katalog kalemi gönderildiği için yeniden gitmez
+  const cs2 = await exportChangeset(A.ds, p2.id);
+  assert.deepEqual(cs2.changes.filter((x) => x.store === 'projects').map((x) => x.entityId), [p2.id]);
+  assert.equal(cs2.changes.filter((x) => x.store === 'poz').length, 0);
 });
 
 test('21 · DXF üretimi: katman/ACI/blok/yazı, Türkçe kodlama', async () => {

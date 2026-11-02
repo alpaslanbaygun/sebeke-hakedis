@@ -106,6 +106,8 @@ async function boot() {
     if (lr && bridge.isNative()) gnss.connectExternal({ type: lr.type, address: lr.address, name: lr.name }).catch(() => {});
     document.getElementById('splash').remove();
     render(html`<${App} />`, document.body);
+    // Yakalanmamış servis hatası (ör. kilitli kayıt reddi) sessizce kaybolmasın: kullanıcıya bildirim olarak gösterilir
+    window.addEventListener('unhandledrejection', (ev) => { const m = ev.reason && ev.reason.message; if (m && app.toast) { app.toast(m, 'err', 6000); ev.preventDefault(); } });
     bus.on('native:gnssStatus', (d) => { if (d && d.state === 'error' && app.toast) app.toast('GNSS: ' + (d.error || 'bağlantı hatası'), 'err', 5000); if (d && d.state === 'connected' && app.toast) app.toast('GNSS bağlandı · ' + (d.name || '')); });
     // v2.4: alıcı markası seçimi kaldırıldı (birden çok marka kullanılacak); tüm alıcılar genel NMEA ile okunur.
     bus.on('native:ntrip', (d) => { if (d && d.state === 'error' && app.toast) app.toast('NTRIP: ' + (d.error || 'hata'), 'err', 5000); });

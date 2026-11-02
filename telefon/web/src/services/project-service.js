@@ -10,6 +10,8 @@ import { buildWorkProgram, periodTable, approveSnapshot } from '../qty/hakedis.j
 // Onay açıkken kilitlenen durumlar ve kilit dışı alanlar
 const LOCKED = new Set(['KONTROL', 'HAKEDISTE', 'ONAYLI']);
 const FREE_KEYS = new Set(['hak', 'hakLog', 'hakNote', 'energyOpen', 'note']);
+// Kilitli kayda bağlı noktada değiştirilemeyen alanlar (konum, kot, numara); kritik işareti ve not serbesttir
+const POINT_LOCKED_KEYS = new Set(['E', 'N', 'H', 'h', 'lat', 'lon', 'pointNo', 'cls']);
 const LOAD = ['points', 'equipment', 'lines', 'crossings', 'materials', 'photos', 'periods', 'workPrograms', 'stakeouts', 'revisions', 'surveySessions', 'gnssObservations', 'inspections', 'exportJobs', 'documents'];
 
 export class ProjectService {
@@ -157,6 +159,7 @@ export class ProjectService {
   async remeasure(pointId, obs, reason) {
     const before = this.pointById(pointId);
     if (!before) throw new Error('Nokta yok');
+    this._assertPointUnlocked(pointId, 'yeniden ölçüm');
     const o = await this.saveObservation(obs, { pointNo: before.pointNo, accepted: true, remeasureOf: pointId });
     const hist = (before.history || []).concat([{ at: before.updatedAt, source: before.source, E: before.E, N: before.N, H: before.H, observationId: before.observationId || null, quality: before.quality || null, by: before.updatedBy }]);
     const p = await this.ds.update('points', pointId, Object.assign(this.pointFromObs(obs), { observationId: o.id, history: hist }), { reason: reason || ('Yeniden ölçüm: ' + before.source + ' → ' + (obs.source === 'phone' ? 'PHONE' : 'GNSS_RTK ' + obs.fix)) });
@@ -164,14 +167,24 @@ export class ProjectService {
     await this.recompute('Nokta revize: ' + p.pointNo);
     return p;
   }
-  async movePoint(pointId, E, N, reason) {
+  // Noktayı taşı. opts: { H: yeni kot (verilmezse kot değişmez), source: 'MANUAL' (elle) | 'DESIGN' (proje dosyasından) }
+  async movePoint(pointId, E, N, reason, opts = {}) {
     const p0 = this.pointById(pointId);
+    if (!p0) throw new Error('Nokta yok');
+    this._assertPointUnlocked(pointId, 'taşıma');
     const g = unproject(E, N, this.p.crs);
     const hist = (p0.history || []).concat([{ at: p0.updatedAt, source: p0.source, E: p0.E, N: p0.N, H: p0.H, by: p0.updatedBy, manualMove: true }]);
-    await this.ds.update('points', pointId, { E, N, lat: g.lat, lon: g.lon, source: 'MANUAL', accuracyClass: 'MANUEL', history: hist }, { reason: reason || 'Elle taşındı' });
+    const src = opts.source || 'MANUAL';
+    const patch = { E, N, lat: g.lat, lon: g.lon, source: src, accuracyClass: src === 'DESIGN' ? 'PROJE' : 'MANUEL', history: hist };
+    if (opts.H !== undefined) { patch.H = opts.H; patch.zUnknown = opts.H == null; }
+    await this.ds.update('points', pointId, patch, { reason: reason || 'Elle taşındı' });
     return this._after('points', 'Nokta taşındı: ' + p0.pointNo);
   }
-  async updatePoint(pointId, patch, reason) { await this.ds.update('points', pointId, patch, { reason }); return this._after('points', reason || 'Nokta güncellendi'); }
+  async updatePoint(pointId, patch, reason) {
+    // Konum, kot ve numara kilitli kaydın metrajını / kimliğini değiştirir; öteki alanlar (kritik işareti, not) serbest
+    if (Object.keys(patch || {}).some((k) => POINT_LOCKED_KEYS.has(k))) this._assertPointUnlocked(pointId, 'nokta düzenleme');
+    await this.ds.update('points', pointId, patch, { reason }); return this._after('points', reason || 'Nokta güncellendi');
+  }
 
   // ---------------- Ekipman ----------------
   eqPrefix(kind, group) {
@@ -226,6 +239,8 @@ export class ProjectService {
   async renumber(opts = {}) {
     const { plan, clash } = this.renumberPlan(opts);
     if (clash.length) throw new Error('Bu numaralar başka objelerde kullanılıyor: ' + clash.slice(0, 5).join(', ') + (clash.length > 5 ? '…' : '') + ' · başlangıç numarasını ya da ön eki değiştirin');
+    const kilitli = plan.filter((x) => x.old !== x.no).map((x) => this.editLock(this.eqById(x.id))).filter(Boolean);
+    if (kilitli.length) throw new Error('Kilitli kayıtlar yeniden numaralanamaz: ' + kilitli[0].why);
     let n = 0;
     for (const x of plan) {
       if (x.old === x.no) continue;
@@ -249,6 +264,7 @@ export class ProjectService {
   // Sahada ilave talebi (reçete dışı, ayrı işaretli, onay bekler)
   async addFieldMaterial(eqId, servis, qty, reason) {
     if (!reason) throw new Error('Sahada ilave için gerekçe zorunlu');
+    this._assertUnlocked(this.eqById(eqId), 'sahada ilave');
     const pz = this.cat.poz(servis);
     const x = await this.ds.create('materials', { projectId: this.p.id, ownerId: eqId, ownerType: 'equipment', servis, qty, unit: pz ? pz.unit : 'Ad', origin: 'SAHADA_ILAVE', reason, approved: false, grp: pz ? pz.kgGroup : '' }, { reason: 'Sahada ilave: ' + servis + ' × ' + qty + ' · ' + reason });
     this.data.materials.push(x);
@@ -262,7 +278,7 @@ export class ProjectService {
     if (!pz) throw new Error('Kalem katalogda yok');
     const owner = ownerType === 'line' ? this.lineById(ownerId) : this.eqById(ownerId);
     if (!owner) throw new Error('Kayıt yok');
-    this._guardEdit(ownerType === 'line' ? 'lines' : 'equipment', owner, { materials: Date.now() }, 'Malzeme eklendi');
+    this._assertUnlocked(owner, 'malzeme ekleme');
     const x = await this.ds.create('materials', { projectId: this.p.id, ownerId, ownerType: ownerType === 'line' ? 'line' : 'equipment', servis, qty: +qty, unit: pz.unit, origin: 'MANUEL', reason: note || 'Elle eklendi', approved: true, grp: pz.kgGroup || '' }, { reason: 'Malzeme eklendi: ' + (owner.no || owner.lineNo) + ' · ' + pz.name + ' × ' + qty });
     this.data.materials.push(x);
     await this.recompute('Malzeme eklendi');
@@ -270,12 +286,29 @@ export class ProjectService {
   }
   async setMaterialRowQty(id, qty) {
     if (!(+qty > 0)) throw new Error('Miktar sıfırdan büyük olmalı');
+    this._assertUnlocked(this._materialOwner(id), 'malzeme miktarı');
     await this.ds.update('materials', id, { qty: +qty }, { reason: 'Malzeme miktarı: ' + qty });
     return this._after('materials', 'Malzeme miktarı');
   }
-  async approveMaterial(id, ok, reason) { { const c = this.can('material.approve'); if (!c.ok) throw new Error(c.why); } await this.ds.update('materials', id, { approved: !!ok }, { reason: (ok ? 'Onaylandı' : 'Onay geri alındı') + (reason ? ' · ' + reason : '') }); return this._after('materials', 'Malzeme onayı'); }
-  async removeMaterial(id, reason) { await this.ds.remove('materials', id, { reason }); return this._after('materials', 'Malzeme kaldırıldı'); }
-  async removeEquipment(id, reason) { await this.ds.remove('equipment', id, { reason }); return this._after('equipment', 'Ekipman silindi'); }
+  async approveMaterial(id, ok, reason) {
+    { const c = this.can('material.approve'); if (!c.ok) throw new Error(c.why); }
+    this._assertUnlocked(this._materialOwner(id), 'malzeme onayı');
+    await this.ds.update('materials', id, { approved: !!ok }, { reason: (ok ? 'Onaylandı' : 'Onay geri alındı') + (reason ? ' · ' + reason : '') });
+    return this._after('materials', 'Malzeme onayı');
+  }
+  async removeMaterial(id, reason) { this._assertUnlocked(this._materialOwner(id), 'malzeme silme'); await this.ds.remove('materials', id, { reason }); return this._after('materials', 'Malzeme kaldırıldı'); }
+  async removeEquipment(id, reason) { this._assertUnlocked(this.eqById(id), 'ekipman silme'); await this.ds.remove('equipment', id, { reason }); return this._after('equipment', 'Ekipman silindi'); }
+  /** Malzeme satırının sahibi (ekipman ya da hat kaydı); yoksa null. */
+  _materialOwner(materialId) {
+    const m = (this.data.materials || []).find((x) => x.id === materialId);
+    if (!m) return null;
+    return m.ownerType === 'line' ? this.lineById(m.ownerId) : this.eqById(m.ownerId);
+  }
+  /** Noktaya bağlı kayıtlar (noktadaki ekipmanlar, noktayı düğüm olarak kullanan hatlar) kilitliyse hata. */
+  _assertPointUnlocked(pointId, what) {
+    for (const e of this.data.equipment || []) if (e.status !== 'deleted' && e.pointId === pointId) this._assertUnlocked(e, what);
+    for (const l of this.data.lines || []) if (l.status !== 'deleted' && (l.nodes || []).includes(pointId)) this._assertUnlocked(l, what);
+  }
 
   // ---------------- Hat ----------------
   async createLine(d, opts = {}) {
@@ -300,6 +333,8 @@ export class ProjectService {
   // Böl: düğüm indeksinde ikiye ayır (düğüm iki hatta ortak kalır)
   async splitLine(lineId, index) {
     const l = this.lineById(lineId);
+    if (!l) throw new Error('Hat yok');
+    this._assertUnlocked(l, 'hat bölme');
     if (index <= 0 || index >= l.nodes.length - 1) throw new Error('Bölme noktası hat ucunda olamaz');
     const a = l.nodes.slice(0, index + 1), b = l.nodes.slice(index);
     await this.ds.update('lines', lineId, { nodes: a }, { reason: 'Hat bölündü' });
@@ -311,6 +346,8 @@ export class ProjectService {
   // Birleştir: ortak uçtan iki hattı tek hatta topla (aynı tip/iletken olmalı)
   async mergeLines(aId, bId) {
     const a = this.lineById(aId), b = this.lineById(bId);
+    if (!a || !b) throw new Error('Hat yok');
+    this._assertUnlocked(a, 'hat birleştirme'); this._assertUnlocked(b, 'hat birleştirme');
     if (a.lineType !== b.lineType || a.install !== b.install || JSON.stringify(a.circuits) !== JSON.stringify(b.circuits)) throw new Error('Birleştirme için hat tipi, tesis şekli ve iletkenler aynı olmalı');
     let A = a.nodes.slice(), B = b.nodes.slice();
     if (A[A.length - 1] === B[0]) { /* uygun */ } else if (A[A.length - 1] === B[B.length - 1]) B.reverse(); else if (A[0] === B[0]) A.reverse(); else if (A[0] === B[B.length - 1]) { A.reverse(); B.reverse(); } else throw new Error('Hatların ortak ucu yok');
@@ -320,6 +357,10 @@ export class ProjectService {
   }
   // Son alımı geri al: hat düğümü + ekipman + (başka yerde kullanılmıyorsa) nokta. Denetim kaydına yazılır.
   async undoCapture({ pointId, eqId, lineId }, reason = 'Son alım geri alındı') {
+    // Önce bütün denetimler, sonra değişiklik: reddedilince hiçbir şey kısmen değişmez
+    if (lineId) this._assertUnlocked(this.lineById(lineId), 'son alımı geri alma');
+    if (eqId) this._assertUnlocked(this.eqById(eqId), 'son alımı geri alma');
+    if (pointId) this._assertPointUnlocked(pointId, 'son alımı geri alma');
     if (lineId && pointId) { const l = this.lineById(lineId); if (l) { const i = l.nodes.lastIndexOf(pointId); if (i >= 0) { const nodes = l.nodes.slice(); nodes.splice(i, 1); await this.ds.update('lines', lineId, { nodes }, { reason }); } } }
     if (eqId) await this.ds.remove('equipment', eqId, { reason });
     await this.reload('lines'); await this.reload('equipment');
@@ -327,7 +368,7 @@ export class ProjectService {
     if (pointId && !used) await this.ds.remove('points', pointId, { reason });
     return this._after(['lines', 'equipment', 'points'], reason);
   }
-  async removeLine(id, reason) { await this.ds.remove('lines', id, { reason }); return this._after('lines', 'Hat silindi'); }
+  async removeLine(id, reason) { this._assertUnlocked(this.lineById(id), 'hat silme'); await this.ds.remove('lines', id, { reason }); return this._after('lines', 'Hat silindi'); }
 
   // ---------------- Obje bazlı hakediş durumu ----------------
   // type: 'equipment' | 'line'. Durum "tamamlandı" ve sonrası ise obje metraj/hakediş kümülatifine girer (iş tarihi yoksa bugün).
@@ -373,16 +414,37 @@ export class ProjectService {
     const m = this.member;
     return [...(rec.hakLog || []), { at: this.ds.iso(), by: m ? m.name : this.ds.user.name, role: m ? m.role : null, from, to, note: note || null }].slice(-20);
   }
+  /**
+   * Kayıt kilidi: onay açıkken kontrol / hakedişte / onaylı kayıt, kilit kapatılmamışsa ve oturumdaki üye yönetici
+   * değilse kilitlidir → { status, label, why }; değilse null. Kaydın miktar, malzeme, konum değişikliği ve silinmesi
+   * (bağlı noktalar dahil) bu kilide bağlıdır; durum değişikliği ayrıca yetkiye bakar (_guardEdit).
+   */
+  editLock(rec) {
+    if (!rec || !approvalOn(this.p)) return null;
+    const from = hakOf(rec);
+    if (!(from && LOCKED.has(from))) return null;
+    if (this.p.approval && this.p.approval.lock === false) return null;
+    const m = this.member;
+    if (m && m.role === 'yonetici') return null;
+    const label = HAK_STATUSES[from].label;
+    return { status: from, label, why: (rec.no || rec.lineNo) + ' "' + label + '" durumunda · kayıt kilitli. Değiştirmek için önce durum geri çevrilmeli ya da Yönetici düzenlemeli.' };
+  }
+  /** Kilitli kayıtta değişiklik / silme yapılamaz: kilitliyse hata fırlatır (servis katmanı denetimi). */
+  _assertUnlocked(rec, what) {
+    const k = this.editLock(rec);
+    if (k) throw new Error(k.why + (what ? ' (' + what + ')' : ''));
+  }
   // Kayıt düzenleme denetimi: durum değişikliği yetkiye bağlı; kontrol edilmiş kayıt (isteğe bağlı) kilitli
   _guardEdit(store, rec, patch, reason) {
     if (!rec || !approvalOn(this.p)) return patch;
     const from = hakOf(rec);
     const to = 'hak' in patch || 'state' in patch || 'progress' in patch ? hakOf(Object.assign({}, rec, patch)) : from;
     const m = this.member;
-    if (from && LOCKED.has(from) && !(this.p.approval && this.p.approval.lock === false) && !(m && m.role === 'yonetici')) {
+    const kilit = this.editLock(rec);
+    if (kilit) {
       const hakChange = to !== from;
       const touched = Object.keys(patch).filter((k) => !FREE_KEYS.has(k) && !(hakChange && (k === 'progress' || k === 'workDate')) && JSON.stringify(patch[k] ?? null) !== JSON.stringify(rec[k] ?? null));
-      if (touched.length) throw new Error((rec.no || rec.lineNo) + ' "' + HAK_STATUSES[from].label + '" durumunda · kayıt kilitli. Değiştirmek için önce durum geri çevrilmeli ya da Yönetici düzenlemeli.');
+      if (touched.length) throw new Error(kilit.why);
     }
     if (from && to && from !== to) {
       const ck = canHak(this.p, m, from, to);
@@ -556,7 +618,8 @@ export class ProjectService {
   async approvePeriod(id, reason) {
     { const c = this.can('period.approve'); if (!c.ok) throw new Error(c.why); }
     const t = this.periodTable(id);
-    await this.ds.update('periods', id, { status: 'onayli', snapshot: approveSnapshot(t), approvedAt: this.ds.iso(), approvedBy: this.ds.user.name, totals: t.totals }, { reason: reason || 'Hakediş onaylandı' });
+    const wp = this.activeProgram();
+    await this.ds.update('periods', id, { status: 'onayli', snapshot: approveSnapshot(t), approvedAt: this.ds.iso(), approvedBy: this.ds.user.name, totals: t.totals, programId: wp ? wp.id : null, programBasis: wp ? wp.basis : null }, { reason: reason || 'Hakediş onaylandı' });
     await this.reload('periods');
     const per = this.data.periods.find((x) => x.id === id);
     const n = await this._advanceHak(per ? per.end : null, ['HAKEDISTE'], 'ONAYLI', (per ? per.no + '. ' : '') + 'hakediş onaylandı');

@@ -1,5 +1,6 @@
 // Test yardımcıları: bellek veritabanı + gerçek standart paketi + TM39 diliminde gerçekçi saha verisi
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { MemoryAdapter } from '../src/core/db.js';
 import { DataService } from '../src/core/data-service.js';
@@ -10,7 +11,7 @@ import { GnssService } from '../src/gnss/gnss-service.js';
 import { unproject, makeCrs } from '../src/geo/crs.js';
 import { polar } from '../src/geo/geom.js';
 
-const here = path.dirname(new URL(import.meta.url).pathname);
+const here = path.dirname(fileURLToPath(import.meta.url));
 export const SEED = JSON.parse(fs.readFileSync(path.join(here, '../seed/standard-tedas-2026.json'), 'utf8'));
 
 let clock = Date.parse('2026-09-20T07:00:00Z');

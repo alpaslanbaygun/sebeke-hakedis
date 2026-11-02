@@ -25,7 +25,8 @@ export async function autocadDosyasiAl(file, projectId) {
     const m = [];
     if (oz.yeniEleman) m.push(oz.yeniEleman + ' yeni eleman'); if (oz.guncellenenEleman) m.push(oz.guncellenenEleman + ' eleman güncellendi');
     if (oz.yeniHat) m.push(oz.yeniHat + ' yeni hat'); if (oz.guncellenenHat) m.push(oz.guncellenenHat + ' hat güncellendi');
-    if (oz.yeniKanal) m.push(oz.yeniKanal + ' kanal / sondaj'); if (oz.nokta) m.push(oz.nokta + ' nokta');
+    if (oz.yeniKanal) m.push(oz.yeniKanal + ' kanal / sondaj'); if (oz.nokta) m.push(oz.nokta + ' nokta'); if (oz.guncellenenNokta) m.push(oz.guncellenenNokta + ' nokta güncellendi');
+    if (oz.uyarilar.some((u) => /kilitli/.test(u))) m.push(oz.uyarilar.filter((u) => /kilitli/.test(u)).length + ' kilitli kayıt değiştirilmedi');
     app.toast('AutoCAD dosyası alındı: ' + (m.join(' · ') || 'değişiklik yok') + (oz.eslesmeyen.length ? ' · ' + oz.eslesmeyen.length + ' kalem katalogda bulunamadı (Kontrol listesi)' : ''), oz.eslesmeyen.length ? 'warn' : 'ok', 7000);
     return oz;
   } catch (e) { app.toast('Alınamadı: ' + e.message, 'err', 8000); return null; }

@@ -1432,6 +1432,38 @@ namespace SebekeHakedis.Test
                  "hat değiştir: iki iletken iki satır (eski sıra, sonra yeni sıra numarası)");
             Esit(true, dh.Kalemler[2].Sira == "7001" || dh.Kalemler[2].Sira == "7002", "hat değiştir: fazla satıra yeni sıra numarası (" + dh.Kalemler[2].Sira + ")");
 
+            // Hata 5 · Hat Değiştir onaylı satırı silemez: hattın 1. dönem satırı açık, 2. dönem satırı onaylı → komut izin
+            // vermez; model hiç değişmez. Yalnız hattın ana hakedişine bakmak yetmez, her HAT satırının hakedişi denetlenir.
+            {
+                var kh = new Hat { Id = "HK1", Tur = "AG_HAVAI", Durum = "M", Hakedis = 1, Katman = "SC_1.HAK.AG_HAT", CizimUzunlugu = 40 };
+                kh.Kose.Add(new[] { 0.0, 0.0 }); kh.Kose.Add(new[] { 40.0, 0.0 });
+                kh.Kalemler.AddRange(Iletkenler.Kalemler(new[] { new HatIletkeni(alpek50) }, 42, "M", 1, () => "8001", "", false));   // 1. dönem (açık)
+                kh.Kalemler.AddRange(Iletkenler.Kalemler(new[] { new HatIletkeni(alpek70) }, 42, "M", 2, () => "8002", "", false));   // 2. dönem (onaylı)
+                kh.Kalemler.Add(Katalog.KalemYap(arm, 1, "M", 1, false, "MALZEME", "8003"));
+                kh.AnaKesit = Iletkenler.AnaKesit(new[] { new HatIletkeni(alpek50), new HatIletkeni(alpek70) });
+                var onaylar = new SortedDictionary<int, int> { { 2, HakedisOnayi.Kontrol | HakedisOnayi.Hakedis } };   // 2. hakediş onaylı (kilitli)
+                Esit(false, HakedisOnayi.Kilitli(onaylar, kh.Hakedis), "hat değiştir kilidi: hattın ana hakedişi (1) açık");
+                Esit(true, Iletkenler.DegistirmeKilidi(kh, onaylar, 1) != null, "hat değiştir kilidi: onaylı 2. dönem satırı varken hat değiştirilemez");
+                Esit(null, Iletkenler.DegistirmeKilidi(kh, new SortedDictionary<int, int>(), 1), "hat değiştir kilidi: onay yoksa serbest");
+                var sh = new Hat { Id = "HS1", Tur = "AG_HAVAI", Durum = "M", Hakedis = 1, CizimUzunlugu = 40 };
+                sh.Kalemler.AddRange(Iletkenler.Kalemler(new[] { new HatIletkeni(alpek50) }, 42, "M", 1, () => "8101", "", false));
+                Esit(null, Iletkenler.DegistirmeKilidi(sh, onaylar, 1), "hat değiştir kilidi: onaylı satırı olmayan hat serbest");
+                Esit(true, Iletkenler.DegistirmeKilidi(sh, onaylar, 2) != null, "hat değiştir kilidi: yeni satırlar onaylı hakedişe yazılamaz");
+                Esit(true, Iletkenler.DegistirmeKilidi(dh, onaylar, 1) != null, "hat değiştir kilidi: ana hakedişi onaylı hat (eski denetim) yine kilitli");
+                Func<Hat, string> imza = x => x.Tur + "|" + x.AnaKesit + "|" + x.Durum + "|" + x.Hakedis + "|" + x.Katman + "|" +
+                                              string.Join(";", x.Kalemler.ConvertAll(k => k.Cins + "/" + k.Tanim + "/" + k.Kaynak + "/" + k.Sira + "/" + k.Miktar + "/" + k.Hakedis + "/" + k.Durum).ToArray());
+                string once = imza(kh);
+                bool firlatti = false;
+                try { Iletkenler.Degistir(kh, "AG_HAVAI", new[] { new HatIletkeni(nyy) }, "M", 1, t => 99, yeniSira, "", false, onaylar); }
+                catch (InvalidOperationException) { firlatti = true; }
+                Esit(true, firlatti, "hat değiştir: kilitli satırda işlem reddedilir");
+                Esit(once, imza(kh), "hat değiştir: reddedilince model kısmen değişmiş kalmaz (satırlar, tür, ana kesit aynı)");
+                Esit("8001|8002|8003", kh.Kalemler[0].Sira + "|" + kh.Kalemler[1].Sira + "|" + kh.Kalemler[2].Sira, "hat değiştir: onaylı 2. dönem satırı yerinde");
+                // Onay kaldırılınca aynı işlem yapılır
+                double km = Iletkenler.Degistir(kh, "AG_HAVAI", new[] { new HatIletkeni(nyy) }, "M", 1, t => 99, yeniSira, "", false, new SortedDictionary<int, int>());
+                Esit("42|2|" + nyy.Tanim, km + "|" + kh.Kalemler.Count + "|" + kh.Kalemler[0].Tanim, "hat değiştir: onay yokken satırlar değişir");
+            }
+
             var adirek = new Eleman { Id = "D5", Tur = "AG_DIREK", Cins = "AG_BETON", Tip = "9,3/2", Durum = "M", Hakedis = 1 };
             adirek.Kalemler.Add(new Kalem { Cins = "AG_BETON", Tanim = "9,3/2", Durum = "M", Ana = true, Kaynak = "NIT", Miktar = 1 });
             Esit("", NesneYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null).Armatur, "armatür: malzemesi yoksa simge yok");
