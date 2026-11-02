@@ -382,6 +382,97 @@ namespace SebekeHakedis.PencereTest
                 Resim(f, "sonra");
             });
 
+            // Kullanıcılar ve roller (telefondakilerle aynı): onay mekanizması açıkken her aşama kendi rolünde
+            Func<string, string, string, Kullanici> uye = (id, ad, rol) => new Kullanici { Id = id, Ad = ad, Rol = rol, Tuz = "T" + id, Ozet = Yetki.Ozet("1234", "T" + id), Guncelleme = "2026-11-01T08:00:00.000Z" };
+            var yonetici = uye("U1", "Deneme Yönetici", "yonetici");
+            var kontrolcu = uye("U2", "Deneme Kontrol", "kontrol");
+            var saha = uye("U3", "Deneme Saha", "saha");
+            o.Proje.Kullanicilar = new List<Kullanici> { yonetici, kontrolcu, saha };
+            o.Proje.OnayAyari = new OnayAyari { KapaliHakedisler = new SortedSet<int> { 4 } };
+            o.Uye = kontrolcu;
+            var rolOnaylari = new SortedDictionary<int, int> { { 1, 6 } };
+            Dene("19b-hakedis-onayi-rol", () =>
+            {
+                bool ok = Pencereler.Onaylar(o, rolOnaylari);
+                Esit(true, ok, "rol: Kaydet");
+                Esit(4, HakedisOnayi.Bitler(rolOnaylari, 3), "rol: kontrol mühendisi 3. hakedişe Kontrol onayı verir");
+                Esit(6, HakedisOnayi.Bitler(rolOnaylari, 1), "rol: Hakediş onayı kutusu kapalı, değişmedi");
+            }, f =>
+            {
+                var kutular = new List<CheckBox>();
+                Hepsi(f, kutular);
+                Esit(true, kutular[0].Enabled && !kutular[1].Enabled && !kutular[2].Enabled, "rol: yalnız Kontrol kutuları açık");
+                kutular[6].Checked = true;   // 3. hakediş · Kontrol
+                Esit(true, Bul<Label>(f, l => l.Text.Contains("yazmaya kapalı")) != null, "rol: yazmaya kapalı hakediş satırda yazılı");
+                Esit(true, Bul<Label>(f, l => l.Text.StartsWith("Oturum: Deneme Kontrol", StringComparison.Ordinal)) != null, "rol: oturum ve izinli aşamalar yazılı");
+                Resim(f, "sonra");
+            });
+
+            // Kullanıcılar ve yetkiler: Yönetici oturumu, 2. hakedişi yazmaya kapatır
+            var duzen = new KullaniciDuzeni(o.Proje.Kullanicilar, o.Proje.OnayAyari, yonetici);
+            Dene("19c-kullanicilar", () =>
+            {
+                bool ok = Pencereler.Kullanicilar(o, duzen, (l, id, sifre) => sifre == "1234" ? null : "Şifre yanlış.");
+                Esit(true, ok, "kullanıcılar: Kaydet");
+                Esit("2,4", string.Join(",", new List<int>(duzen.Kapali).ConvertAll(n => n.ToString(CultureInfo.InvariantCulture)).ToArray()), "kullanıcılar: 2. hakediş yazmaya kapandı");
+                Esit(true, duzen.Degisti, "kullanıcılar: değişiklik kaydedilecek");
+            }, f =>
+            {
+                var kutular = new List<CheckBox>();
+                Hepsi(f, kutular);
+                var iki = kutular.Find(c => c.Text == "2.");
+                Esit(true, iki != null && iki.Enabled, "kullanıcılar: Yönetici hakediş yetkisini değiştirebilir");
+                Esit(true, kutular.Exists(c => c.Text == "4." && c.Checked), "kullanıcılar: kayıtlı kapalı hakediş işaretli");
+                iki.Checked = true;
+                Esit(true, Bul<Label>(f, l => l.Text == "Deneme Kontrol") != null, "kullanıcılar: liste");
+                Resim(f, "sonra");
+            });
+
+            // Kullanıcılar: oturum yok → değiştirilemez (düğmeler kapalı)
+            var duzen2 = new KullaniciDuzeni(o.Proje.Kullanicilar, o.Proje.OnayAyari, null);
+            Dene("19d-kullanicilar-oturumsuz", () =>
+            {
+                Pencereler.Kullanicilar(o, duzen2, (l, id, sifre) => "Şifre yanlış.");
+                Esit(false, duzen2.Degisti, "oturumsuz: değişiklik yok");
+            }, f =>
+            {
+                var kutular = new List<CheckBox>();
+                Hepsi(f, kutular);
+                Esit(true, kutular.TrueForAll(c => !c.Enabled), "oturumsuz: hakediş yetkisi kapalı");
+                Esit(true, Bul<Button>(f, b => b.Text == "Oturum aç" && b.Visible) != null, "oturumsuz: Oturum aç düğmesi");
+            });
+
+            Dene("19e-ilk-yonetici", () =>
+            {
+                var g = Pencereler.KullaniciFormu(null, true, true);
+                Esit("Deneme Yeni|yonetici|2468", g == null ? "" : g.Ad + "|" + g.Rol + "|" + g.Sifre, "form: ilk yönetici adı, rolü, şifresi");
+            }, f =>
+            {
+                var metinler = new List<MetinKutusu>();
+                Hepsi(f, metinler);
+                metinler[0].Text = "Deneme Yeni";
+                metinler[1].Text = "2468";
+                metinler[2].Text = "2468";
+                Esit(true, metinler[1].Kutu.UseSystemPasswordChar, "form: şifre gizli");
+                Resim(f, "sonra");
+            });
+
+            Dene("19f-oturum-ac", () =>
+            {
+                string denenen = null;
+                bool ok = Pencereler.OturumAc(o.Proje.Kullanicilar, (id, sifre) => { denenen = id + ":" + sifre; return sifre == "1234" ? null : "Şifre yanlış."; }, "U2");
+                Esit(true, ok, "oturum: giriş");
+                Esit("U2:1234", denenen, "oturum: seçili kullanıcı ve şifre denendi");
+            }, f =>
+            {
+                var m = Bul<MetinKutusu>(f, x => true);
+                m.Text = "1234";
+                Resim(f, "sonra");
+            });
+            o.Proje.Kullanicilar = new List<Kullanici>();
+            o.Proje.OnayAyari = null;
+            o.Uye = null;
+
             // Onaylı hakedişteki satırlar kilitli: değiştirilemez, silinemez
             o.Proje.Onaylar[direk.Hakedis] = HakedisOnayi.Kontrol | HakedisOnayi.Hakedis;
             int kilitliOnce = direk.Kalemler.Count;

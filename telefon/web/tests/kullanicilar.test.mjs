@@ -43,6 +43,15 @@ test('R2 · roller ve işlem yetkileri ortak tablodan: telefonun rolleri, AutoCA
   assert.equal(canDo(p, { role: 'kontrol' }, 'hakedis.yetkisi').ok, false);
   assert.equal(canDo(p, { role: 'yonetici' }, 'hakedis.yetkisi').ok, true);
   assert.equal(canDo({ members: [] }, null, 'hakedis.yetkisi').ok, true, 'onay kapalıyken kısıt yok');
+  // Eklenti aynı alanları aynı sırayla yazar (Cekirdek/Kullanicilar.cs › Json) ve aynı dosya anahtarlarını okur
+  const cs = fs.readFileSync(path.join(KOK, 'autocad/src/Cekirdek/Kullanicilar.cs'), 'utf8');
+  const alanlar = (govde) => [...govde.matchAll(/o\["(\w+)"\] =/g)].map((m) => m[1]);
+  const kGovde = cs.slice(cs.indexOf('public JsonNesne Json()'), cs.indexOf('public override string ToString() => Ad'));
+  assert.deepEqual(alanlar(kGovde), Object.keys(SH.kullaniciOku({ id: 'x' })), 'kullanıcı alanları eklentiyle aynı sırada');
+  const aGovde = cs.slice(cs.indexOf('public JsonNesne Json()', cs.indexOf('class OnayAyari')));
+  assert.deepEqual(alanlar(aGovde.slice(0, aGovde.indexOf('}\n    }'))), Object.keys(SH.onayAyariOku({})), 'onay ayarı alanları eklentiyle aynı sırada');
+  const pd = fs.readFileSync(path.join(KOK, 'autocad/src/Cekirdek/ProjeDosyasi.cs'), 'utf8');
+  assert.ok(pd.includes('pj["kullanicilar"]') && pd.includes('pj["onayAyari"]') && pd.includes('pj.Dizi("kullanicilar")') && pd.includes('pj.Nesne("onayAyari")'), 'eklenti proje.kullanicilar ve proje.onayAyari yazar / okur');
 });
 
 test('R3 · kullanıcılar ve hakediş yetkisi AutoCAD dosyasıyla taşınır: başka telefonda aynı şifreyle oturum, yeni olan kazanır', async () => {

@@ -178,6 +178,7 @@ namespace SebekeHakedis.Eklenti
         private static void Hazirla()
         {
             KatalogKaynagi.StiliYukle();
+            KatalogKaynagi.RolleriYukle();
             KatalogKaynagi.SembolleriYukle();
             HizliSecim.Yukle();
         }
@@ -707,7 +708,7 @@ namespace SebekeHakedis.Eklenti
                 alt.Tamam.Click += (s, e) =>
                 {
                     if (liste.Secili == null) { Uyar("Listeden bir tip seçin."); return; }
-                    if (o.Kilitli((int)hak.Value)) { Uyar(HakedisOnayi.KilitMesaji((int)hak.Value)); return; }
+                    if (o.Kilitli((int)hak.Value)) { Uyar(o.KilitMesaji((int)hak.Value)); return; }
                     f.DialogResult = DialogResult.OK;
                 };
                 if (Goster(f) != DialogResult.OK) return null;
@@ -983,7 +984,7 @@ namespace SebekeHakedis.Eklenti
                 alt.Tamam.Click += (s, e) =>
                 {
                     if (yuva1.Kesit == null) { Uyar("Listeden bir iletken / kablo seçin."); return; }
-                    if (o.Kilitli((int)hak.Value)) { Uyar(HakedisOnayi.KilitMesaji((int)hak.Value)); return; }
+                    if (o.Kilitli((int)hak.Value)) { Uyar(o.KilitMesaji((int)hak.Value)); return; }
                     f.DialogResult = DialogResult.OK;
                 };
                 if (Goster(f) != DialogResult.OK) return null;
@@ -1250,7 +1251,7 @@ namespace SebekeHakedis.Eklenti
                 {
                     if (!(og.Checked || ag.Checked || ayd.Checked || rek.Checked)) { Uyar("Kanaldaki kabloları seçin."); return; }
                     if (zeminDegeri().Trim().Length == 0) { Uyar("Zemin türünü seçin."); return; }
-                    if (o.Kilitli((int)hak.Value)) { Uyar(HakedisOnayi.KilitMesaji((int)hak.Value)); return; }
+                    if (o.Kilitli((int)hak.Value)) { Uyar(o.KilitMesaji((int)hak.Value)); return; }
                     f.DialogResult = DialogResult.OK;
                 };
                 if (Goster(f) != DialogResult.OK) return null;
@@ -1313,7 +1314,7 @@ namespace SebekeHakedis.Eklenti
                 alt.Tamam.Click += (s, e) =>
                 {
                     if (liste.Secili == null) { Uyar("Listeden bir sondaj tipi seçin."); return; }
-                    if (o.Kilitli((int)hak.Value)) { Uyar(HakedisOnayi.KilitMesaji((int)hak.Value)); return; }
+                    if (o.Kilitli((int)hak.Value)) { Uyar(o.KilitMesaji((int)hak.Value)); return; }
                     f.DialogResult = DialogResult.OK;
                 };
                 if (Goster(f) != DialogResult.OK) return null;
@@ -2004,7 +2005,20 @@ namespace SebekeHakedis.Eklenti
                 var alt = AltKur(w, "Kaydet", false);
                 Koy(w, new BilgiCubugu(BilgiTuru.Bilgi, "Hakediş onayı verilen hakediş kilitlenir: satırları değiştirilemez, silinemez; o hakedişe yeni nesne " +
                                                          "çizilemez; telefondan gelen değişiklik o hakedişe dokunuyorsa aktarılmaz."), 16, 56, 648, 64);
-                Etiket(w, "Her hakediş için sırayla: Kontrol → Hakediş → GIS. Sonraki aşama işaretlenince öncekiler de işaretlenir.", 16, 130, 648, KoyuYazi.Kucuk);
+                // Onay mekanizması açıksa (telefondaki kullanıcılar ve roller) her aşama kendi rolünde; yetki dışı kutular kapalı
+                bool[] yetki = { Yetki.AsamaYetkisi(o.OnayAcik, o.Uye, HakedisOnayi.Kontrol), Yetki.AsamaYetkisi(o.OnayAcik, o.Uye, HakedisOnayi.Hakedis), Yetki.AsamaYetkisi(o.OnayAcik, o.Uye, HakedisOnayi.Gis) };
+                if (o.OnayAcik)
+                {
+                    var izinli = new List<string>();
+                    if (yetki[0]) izinli.Add("Kontrol");
+                    if (yetki[1]) izinli.Add("Hakediş");
+                    if (yetki[2]) izinli.Add("GIS");
+                    Etiket(w, (o.Uye != null ? "Oturum: " + o.Uye + " · " : "Oturum açık değil · ") +
+                              (izinli.Count > 0 ? "işaretleyebileceğiniz aşamalar: " + string.Join(", ", izinli.ToArray()) + ". Soluk kutular başka rolün yetkisinde." : "bu rol onay aşaması işaretleyemez."),
+                           16, 130, 648, KoyuYazi.Kucuk, KoyuRenk.Yazi);
+                }
+                else Etiket(w, "Her hakediş için sırayla: Kontrol → Hakediş → GIS. Sonraki aşama işaretlenince öncekiler de işaretlenir.", 16, 130, 648, KoyuYazi.Kucuk);
+                var kapali = o.Proje.OnayAyari != null && o.OnayAcik ? o.Proje.OnayAyari.KapaliHakedisler : new SortedSet<int>();
                 int ty = 154;
                 var kart = Koy(w, new Kart(), 16, ty, 648, tabloBoy);
                 int[] merkez = { 360, 470, 580 };
@@ -2028,22 +2042,38 @@ namespace SebekeHakedis.Eklenti
                     say.TryGetValue(n, out c0);
                     Etiket(satir, n + ". hakediş" + (aktif ? "  (aktif)" : ""), 18, 7, 0, aktif ? KoyuYazi.Kalin : KoyuYazi.Govde, KoyuRenk.Yazi);
                     var kilit = Resim(satir, kilitResmi, 150, 6, 20, 20);
-                    Etiket(satir, c0 > 0 ? c0.ToString("N0", Tr) + " nesne" : "—", 200, 7, 0, null, KoyuRenk.Ikincil);
+                    Etiket(satir, (c0 > 0 ? c0.ToString("N0", Tr) + " nesne" : "—") + (kapali.Contains(n) ? " · yazmaya kapalı" : ""), 200, 7, 0, null, kapali.Contains(n) ? KoyuRenk.Sari : KoyuRenk.Ikincil);
                     int b = HakedisOnayi.Bitler(onaylar, n);
-                    var k = Koy(satir, new KoyuOnay { Isaret = true, AutoSize = false, Checked = (b & HakedisOnayi.Kontrol) != 0 }, merkez[0] - 26, 4, 52, 24);
-                    var h = Koy(satir, new KoyuOnay { Isaret = true, AutoSize = false, Checked = (b & HakedisOnayi.Hakedis) != 0 }, merkez[1] - 26, 4, 52, 24);
-                    var g = Koy(satir, new KoyuOnay { Isaret = true, AutoSize = false, Checked = (b & HakedisOnayi.Gis) != 0 }, merkez[2] - 26, 4, 52, 24);
+                    var k = Koy(satir, new KoyuOnay { Isaret = true, AutoSize = false, Checked = (b & HakedisOnayi.Kontrol) != 0, Enabled = yetki[0] }, merkez[0] - 26, 4, 52, 24);
+                    var h = Koy(satir, new KoyuOnay { Isaret = true, AutoSize = false, Checked = (b & HakedisOnayi.Hakedis) != 0, Enabled = yetki[1] }, merkez[1] - 26, 4, 52, 24);
+                    var g = Koy(satir, new KoyuOnay { Isaret = true, AutoSize = false, Checked = (b & HakedisOnayi.Gis) != 0, Enabled = yetki[2] }, merkez[2] - 26, 4, 52, 24);
                     kilit.Visible = h.Checked;
                     kutular[n] = new[] { k, h, g };
                     kilitler[n] = kilit;
+                    int satirNo = n;
                     EventHandler sira = (s, e) =>
                     {
                         if (ayarlaniyor) return;
                         ayarlaniyor = true;
+                        bool[] once = { k.Checked, h.Checked, g.Checked };
                         if (s == g && g.Checked) { h.Checked = true; k.Checked = true; }
                         else if (s == h && h.Checked) k.Checked = true;
                         else if (s == k && !k.Checked) { h.Checked = false; g.Checked = false; }
                         else if (s == h && !h.Checked) g.Checked = false;
+                        // Sıra kuralı yetkisi olmayan aşamayı değiştirecekse tıklama geri alınır (ör. Kontrol onayı yokken Hakediş)
+                        var kutu = new[] { k, h, g };
+                        for (int i = 0; i < 3; i++)
+                            if (!kutu[i].Enabled && kutu[i] != s && kutu[i].Checked != once[i])
+                            {
+                                string[] adlar = { "Kontrol", "Hakediş", "GIS" };
+                                string[] islem = { Roller.KontrolOnayi, Roller.HakedisOnayi_, Roller.GisOnayi };
+                                for (int j = 0; j < 3; j++) if (kutu[j] != s) kutu[j].Checked = once[j];
+                                var tik = (KoyuOnay)s;
+                                tik.Checked = !tik.Checked;
+                                ayarlaniyor = false;
+                                Uyar(satirNo + ". hakediş: sıra kuralı " + adlar[i] + " aşamasını da değiştirir; " + adlar[i] + " onayını " + Roller.Kimler(islem[i]) + " verir ya da kaldırır.");
+                                return;
+                            }
                         ayarlaniyor = false;
                         kilit.Visible = h.Checked;
                     };
@@ -2067,6 +2097,274 @@ namespace SebekeHakedis.Eklenti
                     if (b != 0) onaylar[kv.Key] = HakedisOnayi.Duzelt(b);
                 }
                 return true;
+            }
+        }
+
+        // ================= Kullanıcılar, oturum, hakediş yetkisi =================
+
+        /// <summary>Kullanıcı formundan dönen değerler (şifre boşsa null: değişmez).</summary>
+        internal sealed class KullaniciGirdisi
+        {
+            public string Ad = "", Rol = "", Sifre;
+            public bool Etkin = true;
+        }
+
+        private static MetinKutusu SifreKutusu(string ipucu)
+        {
+            var m = new MetinKutusu("", ipucu, Boya.Simge("anahtar", KoyuRenk.Ikincil));
+            m.Kutu.UseSystemPasswordChar = true;
+            m.Kutu.MaxLength = 8;
+            m.Kutu.KeyPress += (s, e) => { if (!char.IsControl(e.KeyChar) && (e.KeyChar < '0' || e.KeyChar > '9')) e.Handled = true; };
+            return m;
+        }
+
+        /// <summary>
+        /// Oturum aç: kullanıcı ve şifre. dene(id, şifre) hata metni döner (yanlış şifre, bekleme) ya da null; hata pencerede
+        /// gösterilir, pencere açık kalır. Açılırsa true.
+        /// </summary>
+        public static bool OturumAc(IList<Kullanici> liste, Func<string, string, string> dene, string onSecili = null, IWin32Window sahip = null)
+        {
+            Hazirla();
+            var etkin = new List<Kullanici>();
+            if (liste != null) foreach (var k in liste) if (k.Etkin) etkin.Add(k);
+            if (etkin.Count == 0) { Uyar("Bu çizimde etkin kullanıcı yok."); return false; }
+            using (var w = new KoyuPencere("Oturum aç", 420, 300, Boya.Simge("anahtar", KoyuRenk.Yesil, 20)))
+            {
+                var alt = AltKur(w, "Giriş", false);
+                Etiket(w, "Kullanıcı", 16, 58, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var kim = Koy(w, new KoyuAcilir(), 16, 80, 388, 30);
+                foreach (var k in etkin) kim.Items.Add(k);
+                int sec = etkin.FindIndex(k => k.Id == onSecili);
+                kim.SelectedIndex = sec >= 0 ? sec : 0;
+                Etiket(w, "Şifre (" + Roller.SifreEnAz + "–" + Roller.SifreEnCok + " rakam)", 16, 122, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var sifre = Koy(w, SifreKutusu("••••"), 16, 144, 388, 30);
+                var hata = Koy(w, new BilgiCubugu(BilgiTuru.Hata, "") { Visible = false }, 16, 184, 388, 44);
+                alt.Tamam.Click += (s, e) =>
+                {
+                    var k = kim.SelectedItem as Kullanici;
+                    string h = k == null ? "Kullanıcı seçin." : dene(k.Id, sifre.Text);
+                    if (h == null) { w.DialogResult = DialogResult.OK; return; }
+                    hata.Text = h;
+                    hata.Visible = true;
+                    sifre.Text = "";
+                    sifre.Kutu.Focus();
+                };
+                w.Shown += (s, e) => sifre.Kutu.Focus();
+                return Goster(w, sahip) == DialogResult.OK;
+            }
+        }
+
+        /// <summary>
+        /// Kullanıcı ekle / düzenle. k null: yeni. ilk: ilk kullanıcı (rol Yönetici, değiştirilemez). yonetici: rol ve
+        /// durum değiştirilebilir (değilse yalnız şifre). Döner: girilenler ya da null (vazgeç).
+        /// </summary>
+        public static KullaniciGirdisi KullaniciFormu(Kullanici k, bool ilk, bool yonetici, IWin32Window sahip = null)
+        {
+            Hazirla();
+            string baslik = k == null ? (ilk ? "İlk yöneticiyi tanımla" : "Kullanıcı ekle") : yonetici ? "Kullanıcıyı düzenle" : "Şifremi değiştir";
+            using (var w = new KoyuPencere(baslik, 460, ilk ? 478 : 426, Boya.Simge("kullanici", KoyuRenk.Yesil, 20)))
+            {
+                var alt = AltKur(w, "Kaydet", false);
+                int y = 56;
+                if (ilk)
+                {
+                    Koy(w, new BilgiCubugu(BilgiTuru.Bilgi, "İlk kullanıcı Yönetici olur ve bu çizimde onay mekanizması açılır. Şifreyi unutmayın: başka Yönetici yoksa şifre geri alınamaz."), 16, y, 428, 58);
+                    y += 68;
+                }
+                Etiket(w, "Ad soyad", 16, y, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var ad = Koy(w, new MetinKutusu(k != null ? k.Ad : ""), 16, y + 22, 428, 30);
+                ad.Enabled = yonetici || k == null;
+                y += 62;
+                Etiket(w, "Rol", 16, y, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var rol = Koy(w, new KoyuAcilir(), 16, y + 22, 428, 30);
+                foreach (var r in Roller.Liste) rol.Items.Add(r);
+                string rolId = ilk ? Roller.Yonetici : k != null ? k.Rol : "saha";
+                rol.SelectedIndex = Math.Max(0, new List<Rol>(Roller.Liste).FindIndex(r => r.Id == rolId));
+                rol.Enabled = yonetici && !ilk;
+                var gorev = Aciklama(w, "", 16, y + 56, 428, 34);
+                Action gorevYaz = () => { var r = rol.SelectedItem as Rol; gorev.Text = r != null ? r.Gorev : ""; };
+                rol.SelectedIndexChanged += (s, e) => gorevYaz();
+                gorevYaz();
+                y += 96;
+                Etiket(w, k == null ? "Şifre (" + Roller.SifreEnAz + "–" + Roller.SifreEnCok + " rakam)" : "Yeni şifre (boş = aynı)", 16, y, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var s1 = Koy(w, SifreKutusu("••••"), 16, y + 22, 208, 30);
+                Etiket(w, "Şifre tekrar", 236, y, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var s2 = Koy(w, SifreKutusu("••••"), 236, y + 22, 208, 30);
+                y += 62;
+                var etkin = Koy(w, new KoyuOnay("Etkin (oturum açabilir)") { Checked = k == null || k.Etkin, AutoSize = false }, 16, y, 300, 24);
+                etkin.Visible = k != null && yonetici;
+                var hata = Koy(w, new BilgiCubugu(BilgiTuru.Hata, "") { Visible = false }, 16, y + (etkin.Visible ? 30 : 0), 428, 40);
+                alt.Tamam.Click += (s, e) =>
+                {
+                    string h = null;
+                    if (ad.Text.Trim().Length == 0) h = "Ad gerekli.";
+                    else if ((k == null || s1.Text.Length > 0) && !Yetki.SifreGecerli(s1.Text)) h = "Şifre " + Roller.SifreEnAz + "–" + Roller.SifreEnCok + " rakam olmalı.";
+                    else if (s1.Text != s2.Text) h = "Şifreler aynı değil.";
+                    if (h != null) { hata.Text = h; hata.Visible = true; return; }
+                    w.DialogResult = DialogResult.OK;
+                };
+                if (Goster(w, sahip) != DialogResult.OK) return null;
+                return new KullaniciGirdisi { Ad = ad.Text.Trim(), Rol = ((Rol)rol.SelectedItem).Id, Sifre = s1.Text.Length > 0 ? s1.Text : null, Etkin = etkin.Checked };
+            }
+        }
+
+        /// <summary>
+        /// Kullanıcılar ve yetkiler (SH_KULLANICILAR): telefondaki kullanıcılar ve roller, oturum, hakediş yetkisi
+        /// (yazmaya kapalı hakedişler). d çalışma kopyasıdır (kurallar KullaniciDuzeni'nde); Kaydet'e basılırsa true.
+        /// oturumAc(liste, id, şifre): hata metni ya da null; oturumKapat: oturumu hemen kapatır.
+        /// </summary>
+        public static bool Kullanicilar(OrtamVerisi o, KullaniciDuzeni d, Func<IList<Kullanici>, string, string, string> oturumAc, Action oturumKapat = null)
+        {
+            Hazirla();
+            int son = Math.Max(HakedisOnayi.SabitOnaySayisi, o.Hakedis);
+            foreach (var n in d.Kapali) son = Math.Max(son, n);
+            const int en = 700, satirBoy = 34;
+            int gorunen = 7;
+            int kartBoy = 46 + gorunen * satirBoy + 44;
+            int yetkiBoy = 40 + ((son + 11) / 12) * 34 + 30;
+            int boy = 56 + 66 + 10 + 64 + 12 + kartBoy + 12 + yetkiBoy + 16 + 60;
+            using (var w = new KoyuPencere("Kullanıcılar ve yetkiler", en, boy, Boya.Simge("kullanicilar", KoyuRenk.Yesil, 20)))
+            {
+                var alt = AltKur(w, "Kaydet", false);
+                Koy(w, new BilgiCubugu(BilgiTuru.Bilgi, "Telefondaki kullanıcılar ve roller AutoCAD'de de geçerlidir; proje dosyasıyla (Telefona Gönder / Telefondan Al) iki yönde taşınır. " +
+                                                         "Onay mekanizması açıkken Kontrol onayını " + Roller.Kimler(Roller.KontrolOnayi) + ", Hakediş ve GIS onayını " + Roller.Kimler(Roller.HakedisOnayi_) + " verir; hakediş yetkisini " + Roller.Kimler(Roller.HakedisYetkisi) + " belirler."), 16, 56, en - 32, 66);
+                int y = 132;
+                // Oturum
+                var oturum = Koy(w, new Kart(), 16, y, en - 32, 64);
+                Resim(oturum, Boya.Simge("kullanici", KoyuRenk.Ikincil, 22), 14, 16, 30, 30);
+                var kimAd = Etiket(oturum, "", 54, 12, 360, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var kimRol = Etiket(oturum, "", 54, 34, 360, KoyuYazi.Kucuk);
+                var acDugme = Koy(oturum, new KoyuDugme("Oturum aç", DugmeTuru.Birincil), en - 32 - 14 - 120, 15, 120, 34);
+                var kapatDugme = Koy(oturum, new KoyuDugme("Oturumu kapat"), en - 32 - 14 - 130, 15, 130, 34);
+                var sifremDugme = Koy(oturum, new KoyuDugme("Şifremi değiştir", DugmeTuru.Hayalet), en - 32 - 14 - 130 - 10 - 140, 15, 140, 34);
+                y += 64 + 12;
+                // Kullanıcılar
+                var kart = Koy(w, new Kart("Kullanıcılar"), 16, y, en - 32, kartBoy);
+                var ekleDugme = Koy(kart, new KoyuDugme("Kullanıcı ekle", DugmeTuru.Birincil, Boya.Simge("arti", Color.White, 14)), en - 32 - 14 - 170, 8, 170, 30);
+                var govde = new Panel { BackColor = KoyuRenk.Kart, AutoScroll = true };
+                Koy(kart, govde, 1, 44, en - 34, gorunen * satirBoy + 2);
+                Yerel.KoyuKaydirma(govde);
+                var kapaDugme = Koy(kart, new KoyuDugme("Onay mekanizmasını kapat", DugmeTuru.Hayalet), 12, kartBoy - 40, 220, 30);
+                var durumYazi = Etiket(kart, "", 244, kartBoy - 34, en - 32 - 260, KoyuYazi.Kucuk);
+                y += kartBoy + 12;
+                // Hakediş yetkisi
+                var yetkiKart = Koy(w, new Kart("Hakediş yetkisi · yazmaya kapalı hakedişler"), 16, y, en - 32, yetkiBoy);
+                var kutular = new Dictionary<int, KoyuOnay>();
+                for (int n = 1; n <= son; n++)
+                {
+                    int sira = (n - 1) % 12, satir = (n - 1) / 12;
+                    var kutu = Koy(yetkiKart, new KoyuOnay(n + ".") { AutoSize = false, Checked = d.Kapali.Contains(n) }, 14 + sira * 54, 38 + satir * 34, 52, 26);
+                    kutular[n] = kutu;
+                }
+                var yetkiYazi = Etiket(yetkiKart, "", 14, yetkiBoy - 30, en - 60, KoyuYazi.Kucuk);
+                bool ciziliyor = false;
+
+                Action ciz = null;
+                Action<Kullanici> duzenle = k =>
+                {
+                    var g = KullaniciFormu(k, false, d.Yonetebilir, w);
+                    if (g == null) return;
+                    string h = d.Guncelle(k.Id, d.Yonetebilir ? g.Ad : null, d.Yonetebilir ? g.Rol : null, g.Sifre, d.Yonetebilir ? (bool?)g.Etkin : null);
+                    if (h != null) Uyar(h);
+                    ciz();
+                };
+                ciz = () =>
+                {
+                    ciziliyor = true;
+                    bool acik = d.OnayAcik;
+                    if (!acik) { kimAd.Text = "Onay mekanizması kapalı"; kimRol.Text = "Kullanıcı tanımlı değil: onaylar ve hakediş yetkisi herkese açık (eski davranış). Açmak için ilk Yöneticiyi tanımlayın."; }
+                    else if (d.Uye != null) { kimAd.Text = d.Uye.Ad; kimRol.Text = Roller.Ad(d.Uye.Rol); kimRol.ForeColor = KoyuRenk.Hex(Roller.Bul(d.Uye.Rol)?.Renk ?? "", KoyuRenk.Ikincil); }
+                    else { kimAd.Text = "Oturum açık değil"; kimRol.Text = "Onay vermek, kullanıcı eklemek ya da hakediş yetkisini değiştirmek için oturum açın."; kimRol.ForeColor = KoyuRenk.Ikincil; }
+                    if (!acik || d.Uye == null) kimRol.ForeColor = KoyuRenk.Ikincil;
+                    acDugme.Visible = acik && d.Uye == null;
+                    kapatDugme.Visible = d.Uye != null;
+                    sifremDugme.Visible = d.Uye != null;
+                    ekleDugme.Text = acik ? "Kullanıcı ekle" : "İlk yöneticiyi tanımla";
+                    ekleDugme.Enabled = d.Yonetebilir;
+                    kapaDugme.Visible = acik;
+                    kapaDugme.Enabled = d.Yonetici;
+                    govde.SuspendLayout();
+                    govde.Controls.Clear();
+                    var liste = new List<Kullanici>(d.Liste);
+                    liste.Sort((a, b) => a.Etkin != b.Etkin ? (a.Etkin ? -1 : 1) : string.Compare(a.Ad, b.Ad, StringComparison.CurrentCulture));
+                    int i = 0;
+                    foreach (var k in liste)
+                    {
+                        var ku = k;
+                        bool ben = d.Uye != null && d.Uye.Id == k.Id;
+                        var sp = new SatirPaneli { Vurgulu = ben, BackColor = ben ? KoyuRenk.Secili : KoyuRenk.Kart };
+                        Koy(govde, sp, 0, i * satirBoy, en - 34 - 20, satirBoy);
+                        Etiket(sp, k.Ad + (ben ? "  (siz)" : ""), 14, 8, 250, KoyuYazi.Kalin, k.Etkin ? KoyuRenk.Yazi : KoyuRenk.Soluk);
+                        Etiket(sp, Roller.Ad(k.Rol), 270, 8, 170, KoyuYazi.Govde, k.Etkin ? KoyuRenk.Hex(Roller.Bul(k.Rol)?.Renk ?? "", KoyuRenk.Ikincil) : KoyuRenk.Soluk);
+                        Etiket(sp, k.Etkin ? "Etkin" : "Pasif", 448, 8, 70, KoyuYazi.Kucuk, k.Etkin ? KoyuRenk.Ikincil : KoyuRenk.Soluk);
+                        if (d.Yonetebilir && d.OnayAcik)
+                        {
+                            var b = Koy(sp, new KoyuDugme("Düzenle"), en - 34 - 20 - 100, 3, 92, 28);
+                            b.Click += (s, e) => duzenle(ku);
+                        }
+                        i++;
+                    }
+                    if (liste.Count == 0) Etiket(govde, "Kullanıcı yok.", 14, 10, 300, KoyuYazi.Govde, KoyuRenk.Soluk);
+                    govde.ResumeLayout();
+                    int etkinSay = d.Liste.FindAll(x => x.Etkin).Count;
+                    durumYazi.Text = acik ? etkinSay + " etkin, " + (d.Liste.Count - etkinSay) + " pasif kullanıcı" : (d.Liste.Count > 0 ? d.Liste.Count + " eski kullanıcı kaydı saklanıyor (pasif)." : "");
+                    foreach (var kv in kutular) { kv.Value.Checked = d.Kapali.Contains(kv.Key); kv.Value.Enabled = d.YetkiVerebilir; }
+                    var kapali = new List<string>();
+                    foreach (var n in d.Kapali) kapali.Add(n + ".");
+                    yetkiYazi.Text = (kapali.Count > 0 ? "Yazmaya kapalı: " + string.Join(", ", kapali.ToArray()) + " hakediş — bu hakedişlere yeni nesne çizilemez, satırları değiştirilemez." : "Bütün hakedişler yazmaya açık.") +
+                                     (d.YetkiVerebilir ? "" : acik ? " Yalnız Yönetici değiştirebilir." : " Önce ilk Yöneticiyi tanımlayın.");
+                    ciziliyor = false;
+                };
+                foreach (var kv in kutular)
+                {
+                    int n = kv.Key;
+                    var kutu = kv.Value;
+                    kutu.CheckedChanged += (s, e) =>
+                    {
+                        if (ciziliyor) return;
+                        string h = d.KapaliYap(n, kutu.Checked);
+                        if (h != null) Uyar(h);
+                        ciz();
+                    };
+                }
+                acDugme.Click += (s, e) =>
+                {
+                    if (OturumAc(d.Liste, (id, sifre) =>
+                    {
+                        string h = oturumAc(d.Liste, id, sifre);
+                        if (h == null) d.Uye = d.Liste.Find(x => x.Id == id);
+                        return h;
+                    }, null, w)) ciz();
+                };
+                kapatDugme.Click += (s, e) => { d.Uye = null; oturumKapat?.Invoke(); ciz(); };
+                sifremDugme.Click += (s, e) =>
+                {
+                    var g = KullaniciFormu(d.Uye, false, false, w);
+                    if (g == null || g.Sifre == null) return;
+                    string h = d.Guncelle(d.Uye.Id, null, null, g.Sifre, null);
+                    if (h != null) Uyar(h); else Bilgi("Şifre değişti (Kaydet ile çizime yazılır).");
+                    ciz();
+                };
+                ekleDugme.Click += (s, e) =>
+                {
+                    bool ilk = !d.OnayAcik;
+                    var g = KullaniciFormu(null, ilk, true, w);
+                    if (g == null) return;
+                    Kullanici yeni;
+                    string h = d.Ekle(g.Ad, ilk ? Roller.Yonetici : g.Rol, g.Sifre, out yeni);
+                    if (h != null) Uyar(h);
+                    ciz();
+                };
+                kapaDugme.Click += (s, e) =>
+                {
+                    if (!Onay("Onay mekanizması kapatılsın mı?\n\nBütün kullanıcılar pasif olur (liste saklanır); onaylar ve hakediş yetkisi herkese açılır.", false)) return;
+                    string h = d.MekanizmayiKapat();
+                    if (h != null) Uyar(h);
+                    ciz();
+                };
+                alt.Tamam.Click += (s, e) => w.DialogResult = DialogResult.OK;
+                ciz();
+                return Goster(w) == DialogResult.OK;
             }
         }
 
@@ -2259,7 +2557,7 @@ namespace SebekeHakedis.Eklenti
                 {
                     g.EndEdit();
                     if (satirlar.Count == 0) { Uyar("Soldan en az bir malzeme seçip Ekle'ye basın."); return; }
-                    if (o.Kilitli((int)hak.Value)) { Uyar(HakedisOnayi.KilitMesaji((int)hak.Value)); return; }
+                    if (o.Kilitli((int)hak.Value)) { Uyar(o.KilitMesaji((int)hak.Value)); return; }
                     w.DialogResult = DialogResult.OK;
                 };
                 w.Shown += (s, e) => ara.Kutu.Focus();
@@ -2569,7 +2867,7 @@ namespace SebekeHakedis.Eklenti
                 alt.Tamam.Click += (s, e) =>
                 {
                     g.EndEdit();
-                    if (o.Kilitli((int)hak.Value)) { Uyar(HakedisOnayi.KilitMesaji((int)hak.Value)); return; }
+                    if (o.Kilitli((int)hak.Value)) { Uyar(o.KilitMesaji((int)hak.Value)); return; }
                     f.DialogResult = DialogResult.OK;
                 };
                 if (Goster(f) != DialogResult.OK) return false;
@@ -2622,7 +2920,7 @@ namespace SebekeHakedis.Eklenti
             if (oz.CizimdeSilinmis > 0)
                 cubuklar.Add(new BilgiCubugu(BilgiTuru.Uyari, "Bilgisayarda silinmiş, telefonda duran: " + oz.CizimdeSilinmis + " (ayrıca sorulacak)"));
             if (oz.Onaylar.Count > 0)
-                cubuklar.Add(new BilgiCubugu(BilgiTuru.Bilgi, "Telefondaki hakediş onayları çizime de yazılacak:" + listele(oz.Onaylar, 4)));
+                cubuklar.Add(new BilgiCubugu(BilgiTuru.Bilgi, "Telefondaki hakediş onayları ve yetkiler çizime de yazılacak:" + listele(oz.Onaylar, 4)));
             if (oz.Uyarilar.Count > 0)
                 cubuklar.Add(new BilgiCubugu(BilgiTuru.Uyari, "Uyarılar:" + listele(oz.Uyarilar, 4)));
             int en = 800;
@@ -2925,7 +3223,7 @@ namespace SebekeHakedis.Eklenti
                         case 6:
                             {
                                 int h = SayiCoz.Tam(deger, k.Hakedis);
-                                if (h > 0 && o.Kilitli(h)) Uyar(HakedisOnayi.KilitMesaji(h));
+                                if (h > 0 && o.Kilitli(h)) Uyar(o.KilitMesaji(h));
                                 else if (h > 0) k.Hakedis = h;
                                 break;
                             }
@@ -2960,7 +3258,7 @@ namespace SebekeHakedis.Eklenti
 
                 ekle.Click += (s, e) =>
                 {
-                    if (o.Kilitli(o.Hakedis)) { Uyar(HakedisOnayi.KilitMesaji(o.Hakedis)); return; }
+                    if (o.Kilitli(o.Hakedis)) { Uyar(o.KilitMesaji(o.Hakedis)); return; }
                     var it = KatalogdanSec("Malzeme ekle — " + baslik, o.Katalog.Malzemeler(katalogNesnesi), w);
                     if (it == null) return;
                     string dur = nesneDurumu == "MEVCUT" || string.IsNullOrEmpty(nesneDurumu) ? "M" : nesneDurumu;
@@ -2987,7 +3285,7 @@ namespace SebekeHakedis.Eklenti
                     var k = g.CurrentRow.Tag as Kalem;
                     if (k == null) return;
                     if (ReferenceEquals(k, ana)) { Uyar("Nesnenin kendi pozu silinemez. Nesneyi silmek için AutoCAD'de silin."); return; }
-                    if (o.Kilitli(k.Hakedis)) { Uyar(k.Hakedis + ". hakediş onaylı (kilitli): bu satır silinemez."); return; }
+                    if (o.Kilitli(k.Hakedis)) { Uyar(o.KilitMesaji(k.Hakedis) + " Bu satır silinemez."); return; }
                     kalemler.Remove(k);
                     g.Rows.Remove(g.CurrentRow);
                     toplamYaz();

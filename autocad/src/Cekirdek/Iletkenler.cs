@@ -159,10 +159,10 @@ namespace SebekeHakedis.Cekirdek
         public static string DegistirmeKilidi(Hat h, IDictionary<int, int> onaylar, int hedefHakedis)
         {
             if (h == null || !HakedisOnayi.KilitVar(onaylar)) return null;
-            if (HakedisOnayi.Kilitli(onaylar, h.Hakedis)) return h.Hakedis + ". hakediş onaylı (kilitli): hat değiştirilemez.";
+            if (HakedisOnayi.Kilitli(onaylar, h.Hakedis)) return h.Hakedis + ". hakediş kilitli (onaylı ya da yazmaya kapalı): hat değiştirilemez.";
             foreach (var k in HatKalemleri(h))
                 if (HakedisOnayi.Kilitli(onaylar, k.Hakedis))
-                    return k.Hakedis + ". hakediş onaylı (kilitli): hattın bu hakedişteki iletken satırı (" + (k.Tanim ?? "") + ") değiştirilemez, silinemez.";
+                    return k.Hakedis + ". hakediş kilitli (onaylı ya da yazmaya kapalı): hattın bu hakedişteki iletken satırı (" + (k.Tanim ?? "") + ") değiştirilemez, silinemez.";
             if (hedefHakedis > 0 && HakedisOnayi.Kilitli(onaylar, hedefHakedis)) return HakedisOnayi.KilitMesaji(hedefHakedis);
             return null;
         }

@@ -82,6 +82,14 @@ namespace SebekeHakedis.Cekirdek
                 onaylar.Add(o);
             }
             if (onaylar.Count > 0) pj["onaylar"] = onaylar;
+            // Kullanıcılar ve onay ayarı (telefonla aynı alanlar; sh-core projeYaz)
+            if (p.Kullanicilar != null && p.Kullanicilar.Count > 0)
+            {
+                var kl = new List<object>();
+                foreach (var ku in p.Kullanicilar) kl.Add(ku.Json());
+                pj["kullanicilar"] = kl;
+            }
+            if (p.OnayAyari != null) pj["onayAyari"] = p.OnayAyari.Json();
             k["proje"] = pj;
 
             var bolgeler = new List<object>();
@@ -244,6 +252,8 @@ namespace SebekeHakedis.Cekirdek
                 int b = (o.Mantik("kontrol") == true ? HakedisOnayi.Kontrol : 0) | (o.Mantik("hakedis") == true ? HakedisOnayi.Hakedis : 0) | (o.Mantik("gis") == true ? HakedisOnayi.Gis : 0);
                 if (no > 0 && b != 0) p.Onaylar[no] = b;
             }
+            p.Kullanicilar = Yetki.Oku(pj.Dizi("kullanicilar"));
+            p.OnayAyari = OnayAyari.Oku(pj.Nesne("onayAyari"));
 
             foreach (var o in Nesneler(k, "bolgeler"))
             {
