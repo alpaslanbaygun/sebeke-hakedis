@@ -596,7 +596,10 @@ namespace SebekeHakedis.PencereTest
                 Esit(kl.Satirlar.Count + kl.Projeler.Count, kg.RowCount, "proje özeti: kanal listesi (satırlar + proje toplamları + genel toplam)");
                 Esit(true, Bul<Button>(f, b => b.Name == "kanalTablosu").Visible, "proje özeti: kanal sekmesinde 'Çizime tablo olarak koy'");
                 Resim(f, "kanal");
+                // Excel'e aktar: malzeme sekmesi, son proje ve DM süzgeciyle (görünüm Excel'e gider)
                 sekme.Secili = 0;
+                lb.SelectedIndex = son;
+                durum.SelectedItem = "DM";
                 Bul<Button>(f, b => b.Text == "Excel'e aktar").PerformClick();
             });
 
@@ -608,7 +611,7 @@ namespace SebekeHakedis.PencereTest
             {
                 Bul<Sekmeler>(f, x => true).Secili = 1;
                 Bul<Button>(f, b => b.Name == "kanalTablosu").PerformClick();
-            }, false);
+            });
 
             // Koordinat dilimi (Google Earth / CBS / harita altlığı için; çizimde yoksa sorulur)
             Dene("26-koordinat-dilimi", () => Esit(39, Pencereler.DomSec(0, "Google Earth dosyası"), "dilim: seçilen dilim döner"), f =>
