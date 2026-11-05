@@ -1790,52 +1790,77 @@ namespace SebekeHakedis.Eklenti
                     Name = "kanalListesi",
                 };
                 KoyuTablo.Uygula(kg);
-                string[] kBasliklar = { "Proje", "Baş – bit", "Kablo", "Cins", "Kaplama", "Ölçü (cm)", "Uzunluk (m)", "Hacim (m³)", "Durum", "Hak." };
-                float[] kAgirlik = { 160, 90, 40, 40, 110, 50, 10, 10, 10, 10 };
+                // Sütunlar çizimdeki tabloyla aynı (KanalTablosu.Basliklar); proje adı ayrı sütun değil, "Tüm projeler"de
+                // her projenin başında bir başlık satırı (çizimdeki tablo ve Excel gibi).
+                string[] kBasliklar = { "Baş – bit", "Kablo", "Cins", "Kaplama", "Ölçü (cm)", "Uzunluk (m)", "Hacim (m³)", "Durum", "Hak." };
+                float[] kAgirlik = { 70, 60, 70, 110, 40, 10, 10, 10, 10 };
                 // Sütun başlıkları kesilmesin: her sütun en az başlığı (Ölçü sütunu "40/40 × 100" yazısı) kadar geniş;
-                // artan genişlik çoğunlukla Proje ve Kaplama'ya gider.
+                // artan genişlik çoğunlukla Cins ve Kaplama'ya gider.
                 var baslikYazisi = kg.ColumnHeadersDefaultCellStyle.Font ?? kg.Font;
                 var hucreYazisi = kg.DefaultCellStyle.Font ?? kg.Font;
                 int pay = Olcu.S(14);
                 for (int i = 0; i < kBasliklar.Length; i++)
                 {
                     var c = new DataGridViewTextBoxColumn { HeaderText = kBasliklar[i], FillWeight = kAgirlik[i], SortMode = DataGridViewColumnSortMode.NotSortable };
-                    if (i == 6 || i == 7 || i == 9) c.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-                    int en = i == 0 ? Olcu.S(80)
-                        : Math.Max(TextRenderer.MeasureText(kBasliklar[i], baslikYazisi).Width, i == 5 ? TextRenderer.MeasureText("00/00 × 000", hucreYazisi).Width : 0) + pay;
+                    if (i == 5 || i == 6 || i == 8) c.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                    int en = Math.Max(TextRenderer.MeasureText(kBasliklar[i], baslikYazisi).Width, i == 4 ? TextRenderer.MeasureText("00/00 × 000", hucreYazisi).Width : 0) + pay;
                     c.MinimumWidth = Math.Max(Olcu.S(36), en);
                     kg.Columns.Add(c);
                 }
                 var kanalSayfasi = Koy(w, new Cerceve(kg), 332, 186, 692, 386);
                 sekme.Ekle("Malzeme listesi", malzemeSayfasi);
                 sekme.Ekle("Kanal listesi", kanalSayfasi);
+                // Satırlar: KanalListesi.Satir (kanal), KanalListesi.Toplam (proje toplamı / genel toplam), string (proje başlığı)
                 var kGorunen = new List<object>();
+                Func<int, string> yayilanYazi = i =>
+                {
+                    if (i < 0 || i >= kGorunen.Count) return null;
+                    var t = kGorunen[i] as KanalListesi.Toplam;
+                    if (t != null) return (t.Tumu ? "GENEL TOPLAM" : t.GorunenAd + " toplamı") + " · " + t.Adet.ToString("N0", Tr) + " kanal";
+                    return kGorunen[i] as string;
+                };
                 kg.CellValueNeeded += (s, e) =>
                 {
                     if (e.RowIndex < 0 || e.RowIndex >= kGorunen.Count) return;
-                    var t = kGorunen[e.RowIndex] as KanalListesi.Toplam;
+                    var o = kGorunen[e.RowIndex];
+                    var t = o as KanalListesi.Toplam;
                     if (t != null)
                     {
                         switch (e.ColumnIndex)
                         {
-                            case 0: e.Value = t.Tumu ? "GENEL TOPLAM" : t.GorunenAd + " toplamı"; break;
-                            case 1: e.Value = t.Adet.ToString("N0", Tr) + " kanal"; break;
-                            case 6: e.Value = KanalTablosu.Sayi(t.Uzunluk, 2); break;
-                            case 7: e.Value = KanalTablosu.Sayi(t.Hacim, 3); break;
+                            case 0: e.Value = yayilanYazi(e.RowIndex); break;
+                            case 5: e.Value = KanalTablosu.Sayi(t.Uzunluk, 2); break;
+                            case 6: e.Value = KanalTablosu.Sayi(t.Hacim, 3); break;
                         }
                         return;
                     }
-                    var r = (KanalListesi.Satir)kGorunen[e.RowIndex];
-                    var h = KanalTablosu.Hucreler(r);
-                    e.Value = e.ColumnIndex == 0 ? (r.Proje.Length == 0 ? ProjeOzeti.ProjesizAdi : r.Proje) : h[e.ColumnIndex - 1];
+                    if (o is string) { if (e.ColumnIndex == 0) e.Value = o; return; }
+                    e.Value = KanalTablosu.Hucreler((KanalListesi.Satir)o)[e.ColumnIndex];
                 };
                 kg.CellFormatting += (s, e) =>
                 {
-                    if (e.RowIndex >= 0 && e.RowIndex < kGorunen.Count && kGorunen[e.RowIndex] is KanalListesi.Toplam)
-                    {
-                        e.CellStyle.Font = KoyuYazi.Kalin;
-                        e.CellStyle.ForeColor = KoyuRenk.Yazi;
-                    }
+                    if (e.RowIndex < 0 || e.RowIndex >= kGorunen.Count || kGorunen[e.RowIndex] is KanalListesi.Satir) return;
+                    e.CellStyle.Font = KoyuYazi.Kalin;
+                    e.CellStyle.ForeColor = KoyuRenk.Yazi;
+                    if (kGorunen[e.RowIndex] is string) e.CellStyle.BackColor = KoyuRenk.Kart;
+                };
+                // Proje başlığı ve toplam yazısı hücrelere sığmaz: satırın üstüne yayılarak yazılır (başlık bütün satıra,
+                // toplam yazısı uzunluk sütununa kadar)
+                kg.RowPostPaint += (s, e) =>
+                {
+                    string yazi = yayilanYazi(e.RowIndex);
+                    if (yazi == null) return;
+                    int son = kGorunen[e.RowIndex] is string ? kg.Columns.Count - 1 : 4;
+                    int sag = e.RowBounds.Left - kg.HorizontalScrollingOffset;
+                    for (int c = 0; c <= son; c++) if (kg.Columns[c].Visible) sag += kg.Columns[c].Width;
+                    var alan = new Rectangle(e.RowBounds.Left, e.RowBounds.Top, Math.Max(0, sag - e.RowBounds.Left), e.RowBounds.Height - 1);
+                    bool secili = kg.Rows[e.RowIndex].Selected;
+                    var stil = kg.DefaultCellStyle;
+                    Color zemin = secili ? stil.SelectionBackColor : kGorunen[e.RowIndex] is string ? KoyuRenk.Kart : stil.BackColor;
+                    using (var firca = new SolidBrush(zemin)) e.Graphics.FillRectangle(firca, alan);
+                    var ic = new Rectangle(alan.Left + Olcu.S(8), alan.Top, Math.Max(0, alan.Width - Olcu.S(12)), alan.Height);
+                    TextRenderer.DrawText(e.Graphics, yazi, KoyuYazi.Kalin, ic, secili ? stil.SelectionForeColor : KoyuRenk.Yazi,
+                        TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix | TextFormatFlags.SingleLine);
                 };
 
                 var gorunen = new List<DurumTespit.OzetSatiri>();
@@ -1882,6 +1907,7 @@ namespace SebekeHakedis.Eklenti
                         {
                             if (son != null && tumu) l.Add(son);
                             son = new KanalListesi.Toplam { Proje = r.Proje, ProjeKodu = r.ProjeKodu };
+                            if (tumu) l.Add("PROJE: " + son.GorunenAd + (son.ProjeKodu.Length > 0 ? " (" + son.ProjeKodu + ")" : ""));
                         }
                         l.Add(r);
                         son.Adet++; son.Uzunluk += r.Uzunluk; son.Hacim += r.Hacim;
@@ -1890,7 +1916,6 @@ namespace SebekeHakedis.Eklenti
                     if (son != null && tumu) l.Add(son);
                     if (satirlar.Count > 0) l.Add(genel);
                     kGorunen = l;
-                    kg.Columns[0].Visible = tumu;
                     kg.RowCount = 0;
                     kg.RowCount = l.Count;
                     kg.Invalidate();

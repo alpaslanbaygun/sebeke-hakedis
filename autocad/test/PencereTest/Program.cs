@@ -593,7 +593,8 @@ namespace SebekeHakedis.PencereTest
                 sekme.Secili = 1;
                 var kg = Bul<DataGridView>(f, x => x.Name == "kanalListesi");
                 var kl = poz.Kanallar;
-                Esit(kl.Satirlar.Count + kl.Projeler.Count, kg.RowCount, "proje özeti: kanal listesi (satırlar + proje toplamları + genel toplam)");
+                Esit(kl.Satirlar.Count + 2 * kl.Projeler.Count - 1, kg.RowCount, "proje özeti: kanal listesi (proje başlıkları + satırlar + proje toplamları + genel toplam)");
+                Esit(true, kg.Columns[0].HeaderText == "Baş – bit" && (kg.Rows.Count > 0 && Convert.ToString(kg.Rows[0].Cells[0].Value).StartsWith("PROJE: ")), "proje özeti: kanal listesinde proje başlık satırı");
                 Esit(true, Bul<Button>(f, b => b.Name == "kanalTablosu").Visible, "proje özeti: kanal sekmesinde 'Çizime tablo olarak koy'");
                 Resim(f, "kanal");
                 // Excel'e aktar: malzeme sekmesi, son proje ve DM süzgeciyle (görünüm Excel'e gider)
