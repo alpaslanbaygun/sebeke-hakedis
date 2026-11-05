@@ -428,6 +428,77 @@
     return s;
   }
 
+  // ---------------------------------------------------------------- Kanal zemini
+  // Cins (dolgu), kaplama, bariyer ve trencher ayrı seçilir; çizime / rapora eski programın kalem adı olarak tek yazı
+  // gider. Eklentideki karşılığı: autocad/src/Cekirdek/KanalZemini.cs (aynı kural); ortak deneme
+  // ortak/deneme/kanal-zemini.json (iki taraf aynı sonuçları üretmek zorunda).
+
+  const KANAL_ZEMIN = {
+    CINSLER: ['TOPRAK', 'TUVENAN', 'MICIR', 'BRANŞMAN KANAL', 'KANAL (KABLO DEMONTAJ)'],
+    KAPLAMALAR: ['', 'PARKE', 'ASFALT', 'BETON'],
+    CINS_ADI: { TOPRAK: 'Toprak', TUVENAN: 'Tüvenan', MICIR: 'Mıcır', 'BRANŞMAN KANAL': 'Branşman kanalı', 'KANAL (KABLO DEMONTAJ)': 'Kablo demontaj kanalı' },
+    KAPLAMA_ADI: { '': 'Kaplamasız', PARKE: 'Parke', ASFALT: 'Asfalt', BETON: 'Beton' }
+  };
+  const kanalOzelMi = (cins) => cins === 'BRANŞMAN KANAL' || cins === 'KANAL (KABLO DEMONTAJ)';
+
+  /** {cins, kaplama, bariyerli, trencher} → kalem adı ("PARKE TUVENAN (BARİYERLİ)"). */
+  function kanalZeminiTanim(z) {
+    const o = z || {};
+    if (kanalOzelMi(o.cins)) return o.cins;
+    const cins = o.cins === 'TUVENAN' || o.cins === 'MICIR' ? o.cins : 'TOPRAK';
+    const kaplama = o.kaplama || '';
+    let s = (o.trencher ? 'TRENCHER ' : '') + (kaplama === 'PARKE' ? 'PARKE ' : '');
+    const sonEkli = kaplama === 'ASFALT' || kaplama === 'BETON';
+    // Eski programın adı: önü ve kaplama eki olmayan mıcır "MICIRLI"dır
+    s += cins === 'MICIR' && s.length === 0 && !sonEkli ? 'MICIRLI' : cins;
+    if (sonEkli) s += ' (' + kaplama + ' KAPLAMALI)';
+    if (o.bariyerli) s += ' (BARİYERLİ)';
+    return s;
+  }
+
+  /** Okunur yazı: "Tüvenan · Parke · bariyerli". */
+  function kanalZeminiYazi(z) {
+    const o = z || {};
+    if (kanalOzelMi(o.cins)) return KANAL_ZEMIN.CINS_ADI[o.cins];
+    const l = [KANAL_ZEMIN.CINS_ADI[o.cins] || KANAL_ZEMIN.CINS_ADI.TOPRAK, KANAL_ZEMIN.KAPLAMA_ADI[o.kaplama || ''] || o.kaplama];
+    if (o.bariyerli) l.push('bariyerli');
+    if (o.trencher) l.push('trencher');
+    return l.join(' · ');
+  }
+
+  function zeminSade(s) {
+    return String(s == null ? '' : s).trim().toLocaleUpperCase('tr-TR')
+      .replace(/İ/g, 'I').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ç/g, 'C').replace(/Ö/g, 'O').replace(/Ğ/g, 'G')
+      .replace(/\s+/g, ' ');
+  }
+
+  /** Kalem adı → {cins, kaplama, bariyerli, trencher}; kural dışı ad (ör. "ASFALT") için null (ad olduğu gibi korunur). */
+  function kanalZeminiCoz(tanim) {
+    let s = zeminSade(tanim);
+    if (!s) return null;
+    if (s === zeminSade('BRANŞMAN KANAL')) return { cins: 'BRANŞMAN KANAL', kaplama: '', bariyerli: false, trencher: false };
+    if (s === zeminSade('KANAL (KABLO DEMONTAJ)')) return { cins: 'KANAL (KABLO DEMONTAJ)', kaplama: '', bariyerli: false, trencher: false };
+    const z = { cins: 'TOPRAK', kaplama: '', bariyerli: false, trencher: false };
+    const kes = (parca, basta) => {
+      if (basta) { if (!s.startsWith(parca)) return false; s = s.slice(parca.length).trim(); return true; }
+      const i = s.indexOf(parca);
+      if (i < 0) return false;
+      s = (s.slice(0, i) + ' ' + s.slice(i + parca.length)).trim().replace(/\s+/g, ' ');
+      return true;
+    };
+    z.bariyerli = kes('(BARIYERLI)', false);
+    if (kes('(ASFALT KAPLAMALI)', false)) z.kaplama = 'ASFALT';
+    else if (kes('(BETON KAPLAMALI)', false)) z.kaplama = 'BETON';
+    z.trencher = kes('TRENCHER ', true);
+    if (kes('PARKE ', true)) { if (z.kaplama) return null; z.kaplama = 'PARKE'; }
+    if (!z.trencher && kes('TRENCHER ', true)) z.trencher = true; // "PARKE TRENCHER …" da okunur
+    if (s === 'TOPRAK') z.cins = 'TOPRAK';
+    else if (s === 'TUVENAN') z.cins = 'TUVENAN';
+    else if (s === 'MICIR' || s === 'MICIRLI') z.cins = 'MICIR';
+    else return null;
+    return z;
+  }
+
   /** Kanal hacmi (m³): genişlikler ve derinlik cm, uzunluk m. */
   function kanalHacmi(altCm, ustCm, derCm, uzunlukM) {
     return temiz(((sayi(altCm) || 0) + (sayi(ustCm) || 0)) / 2 / 100 * ((sayi(derCm) || 0) / 100) * (sayi(uzunlukM) || 0));
@@ -1092,6 +1163,75 @@
     return liste;
   }
 
+  // ---------------------------------------------------------------- Kanal listesi (proje bazında)
+  // Eklentideki karşılığı: autocad/src/Cekirdek/KanalListesi.cs (aynı alanlar, aynı sıra, aynı yuvarlama); ortak deneme
+  // ortak/deneme/kanal-listesi.json.
+
+  /** Projeler ada göre (Türkçe, büyük/küçük harf farkı yok); projesi olmayanlar en sonda. */
+  function projeSirasi(a, b) {
+    a = a || ''; b = b || '';
+    if (!a !== !b) return a ? -1 : 1;
+    return a.localeCompare(b, 'tr', { sensitivity: 'accent' });
+  }
+
+  /**
+   * Proje dosyasındaki kanallardan liste: { satirlar, projeler (en sonda tumu), ozet (proje × zemin × durum) }.
+   * opts.proje: yalnız bu proje (bölge adı); opts.hakedis: yalnız bu hakediş.
+   */
+  function kanalListesi(p, opts) {
+    const o = opts || {};
+    const bolgeler = new Map();
+    for (const b of p.bolgeler || []) if (b.id && !bolgeler.has(b.id)) bolgeler.set(b.id, b);
+    const sirali = [];
+    (p.kanallar || []).forEach((c, i) => {
+      const b = c.bolge ? bolgeler.get(c.bolge) : null;
+      const s = {
+        proje: b ? b.ad || '' : '', projeKodu: b ? b.kod || '' : '', kimlik: c.id || '', basNo: c.basNo || '', bitNo: c.bitNo || '',
+        kablolar: kanalKablolari(c.kod || 0).replace(/^\/+|\/+$/g, ''), zemin: c.zemin || '', cins: '', kaplama: '', bariyerli: false, trencher: false,
+        durum: c.durum || '', hakedis: c.hakedis || 0, alt: sayi(c.altGenislik) || 0, ust: sayi(c.ustGenislik) || 0, derinlik: sayi(c.derinlik) || 0,
+        uzunluk: 0, hacim: 0
+      };
+      if (o.proje != null && s.proje !== o.proje) return;
+      if (o.hakedis > 0 && s.hakedis !== o.hakedis) return;
+      const z = kanalZeminiCoz(s.zemin);
+      if (z) {
+        s.cins = KANAL_ZEMIN.CINS_ADI[z.cins];
+        s.kaplama = kanalOzelMi(z.cins) ? '' : KANAL_ZEMIN.KAPLAMA_ADI[z.kaplama];
+        s.bariyerli = z.bariyerli; s.trencher = z.trencher;
+      } else s.cins = s.zemin;
+      const ana = (c.kalemler || []).find((k) => k.ana);
+      if (ana) { s.uzunluk = sayi(ana.miktar) || 0; s.hacim = sayi(ana.toplam) || 0; }
+      else {
+        s.uzunluk = Math.ceil(Math.max(0, sayi(c.cizimUzunlugu) || 0) - 1e-6);
+        s.hacim = kanalHacmi(c.altGenislik, c.ustGenislik, c.derinlik, s.uzunluk);
+      }
+      s.uzunluk = temiz(s.uzunluk, 2);
+      s.hacim = temiz(s.hacim, 3);
+      sirali.push([i, s]);
+    });
+    sirali.sort((x, y) => projeSirasi(x[1].proje, y[1].proje) || (x[1].hakedis - y[1].hakedis) || (x[0] - y[0]));
+    const satirlar = sirali.map((x) => x[1]);
+    const projeler = [];
+    const tumu = { proje: '', projeKodu: '', tumu: true, adet: 0, uzunluk: 0, hacim: 0 };
+    const ozet = [], ozetHarita = new Map();
+    let son = null;
+    for (const s of satirlar) {
+      if (!son || son.proje !== s.proje) { son = { proje: s.proje, projeKodu: s.projeKodu, tumu: false, adet: 0, uzunluk: 0, hacim: 0 }; projeler.push(son); }
+      son.adet++; son.uzunluk += s.uzunluk; son.hacim += s.hacim;
+      tumu.adet++; tumu.uzunluk += s.uzunluk; tumu.hacim += s.hacim;
+      const a = s.proje + '\u0001' + s.zemin + '\u0001' + s.durum;
+      let x = ozetHarita.get(a);
+      if (!x) { x = { proje: s.proje, zemin: s.zemin, durum: s.durum, adet: 0, uzunluk: 0, hacim: 0 }; ozetHarita.set(a, x); ozet.push(x); }
+      x.adet++; x.uzunluk += s.uzunluk; x.hacim += s.hacim;
+    }
+    for (const t of projeler) { t.uzunluk = temiz(t.uzunluk, 2); t.hacim = temiz(t.hacim, 3); }
+    tumu.uzunluk = temiz(tumu.uzunluk, 2); tumu.hacim = temiz(tumu.hacim, 3);
+    projeler.push(tumu);
+    for (const x of ozet) { x.uzunluk = temiz(x.uzunluk, 2); x.hacim = temiz(x.hacim, 3); }
+    ozet.sort((x, y) => projeSirasi(x.proje, y.proje) || ordinal(x.zemin, y.zemin) || ordinal(x.durum, y.durum));
+    return { cizimAdi: p.ad || '', satirlar, projeler, ozet };
+  }
+
   /** Raporu hakediş ve/veya bölgeye göre süzer (null: hepsi). */
   function satirSuz(satirlar, p, hakedis, bolgeId) {
     const ad = bolgeId ? (p.bolgeler.find(b => b.id === bolgeId) || {}).ad : null;
@@ -1105,6 +1245,7 @@
     tmIleri, tmGeri, domBoylamdan, domTahmin,
     mesafe, uzunluk, ortaNokta, icinde, alan, dogruParcasinaMesafe, cokgeneMesafe, bolgeSec, kutu, projeKutusu,
     katsayiHazirla, kanalUnsurlari, kanalKodu, kanalKablolari, kanalHacmi, hatMetraji, metrajYazisi, hatEtiketi, malzemeYazisi,
+    KANAL_ZEMIN, kanalZeminiTanim, kanalZeminiYazi, kanalZeminiCoz, kanalListesi, projeSirasi,
     sonrakiGis, enBuyukSira,
     katalogHazirla, anaTipler, hatKesitleri, malzemeler, kalemYap, kalemToplami, birimler,
     yeniProje, projeOku, projeYaz, yeniId, zaman,

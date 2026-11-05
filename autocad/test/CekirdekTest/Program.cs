@@ -284,6 +284,7 @@ namespace SebekeHakedis.Test
             RaporUyumu(varliklar, xlsx);
             OnayAkisi(varliklar);
             KullanicilarDene();
+            KanalDene();
             HesapMerkezi_(tp);
             CizimGorunumu(); // ortak çizim stilini yükler: en sonda (önceki denetimler stilsiz yazımı dener)
             CbsOrtakDeneme(); // telefonla aynı CBS dosyaları (stil yüklü olmalı: renkler ortak stilden)
@@ -1119,6 +1120,69 @@ namespace SebekeHakedis.Test
         }
 
         // ---------------- Hakediş onayı (AutoCAD HAK_ONAY) ve kilit ----------------
+
+        /// <summary>
+        /// Kanal zemini (cins / kaplama / bariyer / trencher → eski programın kalem adı) ve proje bazında kanal listesi:
+        /// ortak denemeler ortak/deneme/kanal-zemini.json ve kanal-listesi.json (telefondaki tests/kanal.test.mjs aynı
+        /// dosyaları okur, aynı sonucu üretmek zorundadır).
+        /// </summary>
+        private static void KanalDene()
+        {
+            Console.WriteLine("Kanal zemini ve kanal listesi");
+            var z = Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kanal-zemini.json"), Encoding.UTF8)) as JsonNesne;
+            int n = 0;
+            foreach (var x in z.Dizi("katalog"))
+            {
+                string t = Convert.ToString(x, CultureInfo.InvariantCulture);
+                var c = KanalZemini.Coz(t);
+                Esit(true, c != null, "ortak: katalog adı çözülür · " + t);
+                if (c != null) Esit(t, c.Tanim, "ortak: katalog adı yeniden kurulur · " + t);
+                n++;
+            }
+            Esit(19, n, "ortak: katalogdaki kanal adı sayısı");
+            foreach (var x in z.Dizi("kurulum"))
+            {
+                var o = (JsonNesne)x;
+                var c = new KanalZemini { Cins = o.Metin("cins"), Kaplama = o.Metin("kaplama"), Bariyerli = o.Mantik("bariyerli") == true, Trencher = o.Mantik("trencher") == true };
+                Esit(o.Metin("tanim"), c.Tanim, "ortak: kalem adı · " + o.Metin("tanim"));
+                Esit(o.Metin("yazi"), c.Yazi, "ortak: okunur yazı · " + o.Metin("tanim"));
+            }
+            foreach (var x in z.Dizi("cozum"))
+            {
+                var o = (JsonNesne)x;
+                var c = KanalZemini.Coz(o.Metin("tanim"));
+                Esit(o.Metin("cins") + "|" + o.Metin("kaplama") + "|" + (o.Mantik("bariyerli") == true) + "|" + (o.Mantik("trencher") == true),
+                    c == null ? "null" : c.Cins + "|" + c.Kaplama + "|" + c.Bariyerli + "|" + c.Trencher, "ortak: çözüm · " + o.Metin("tanim"));
+            }
+            foreach (var x in z.Dizi("kuralDisi"))
+                Esit(true, KanalZemini.Coz(Convert.ToString(x, CultureInfo.InvariantCulture)) == null, "ortak: kural dışı ad · \"" + x + "\"");
+            Esit(50, KanalZemini.Hepsi().Count, "bütün birleşimler: 3 cins × 4 kaplama × bariyer × trencher + 2 özel");
+            var adlar = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var c in KanalZemini.Hepsi()) adlar.Add(c.Tanim);
+            Esit(50, adlar.Count, "bütün birleşimlerin adları ayrı");
+            foreach (var c in KanalZemini.Hepsi())
+            {
+                var g = KanalZemini.Coz(c.Tanim);
+                if (g == null || g.Tanim != c.Tanim) { Esit(c.Tanim, g == null ? "null" : g.Tanim, "her birleşim geri çözülür"); break; }
+            }
+
+            var l = Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kanal-listesi.json"), Encoding.UTF8)) as JsonNesne;
+            var p = ProjeDosyasi.Oku(Json.Yaz(l.Nesne("girdi"), false));
+            var liste = new KanalListesi(p).Json();
+            var beklenen = l.Nesne("beklenen");
+            foreach (var ad in new[] { "satirlar", "projeler", "ozet" })
+                Esit(Json.Yaz(beklenen.Dizi(ad), false), Json.Yaz(liste[ad], false), "ortak kanal listesi: " + ad);
+            var merkez = new KanalListesi(p, "Merkez");
+            Esit("K2,K5,K1", string.Join(",", merkez.Satirlar.ConvertAll(s => s.Kimlik).ToArray()), "kanal listesi: tek proje süzgeci");
+            Esit("K1", string.Join(",", new KanalListesi(p, null, 2).Satirlar.ConvertAll(s => s.Kimlik).ToArray()), "kanal listesi: tek hakediş süzgeci");
+            // Excel sayfaları kurulur (KANAL LİSTESİ: 5 satır + 3 proje toplamı + genel toplam)
+            var xl = new XlsxYazici();
+            new KanalListesi(p).SayfalariEkle(xl, "deneme");
+            string gecici = Path.Combine(Path.GetTempPath(), "kanal-listesi-deneme.xlsx");
+            xl.Kaydet(gecici);
+            Esit(true, new FileInfo(gecici).Length > 1000, "kanal listesi: Excel yazılır");
+            File.Delete(gecici);
+        }
 
         /// <summary>
         /// Kullanıcılar, roller ve hakediş yetkisi (17. madde): telefonla ortak tablo (roller.json) ve ortak deneme

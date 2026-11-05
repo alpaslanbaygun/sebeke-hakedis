@@ -25,6 +25,9 @@
     <!-- Kullanıcılar ve roller: telefonla ortak tablo ve ortak deneme (telefon/web/tests/kullanicilar.test.mjs de okur) -->
     <None Include="..\..\..\ortak\katalog\roller.json" Link="roller.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\deneme\kullanicilar.json" Link="kullanicilar.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Kanal zemini ve kanal listesi: telefonla ortak deneme (telefon/web/tests/kanal.test.mjs de okur) -->
+    <None Include="..\..\..\ortak\deneme\kanal-zemini.json" Link="kanal-zemini.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\ortak\deneme\kanal-listesi.json" Link="kanal-listesi.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- Telefonla ortak CBS denemesi: girdi ve beklenen KML / MIF / MID (telefon/web/tests/cbs.test.mjs de okur) -->
     <None Include="..\..\..\ortak\deneme\cbs\**\*" LinkBase="cbs" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
