@@ -380,7 +380,7 @@ namespace SebekeHakedis.Eklenti
                 var s = TaniticiylaAc(t, db, n.Simge);
                 if (s != null && !s.IsErased && s.OwnerId == ms && ArmaturBagi.SimgeSahibi(s) == n.Tanitici)
                 {
-                    s.UpgradeOpen();
+                    if (!s.IsWriteEnabled) s.UpgradeOpen();
                     s.Erase();
                 }
                 return;
@@ -400,7 +400,7 @@ namespace SebekeHakedis.Eklenti
                 {
                     // Simge silinmiş: yalnız direk de geri geldiyse simge de gelir; kullanıcı simgeyi kendisi sildiyse dokunulmaz
                     if (!n.GeriGeldi) return;
-                    mevcut.UpgradeOpen();
+                    if (!mevcut.IsWriteEnabled) mevcut.UpgradeOpen();
                     mevcut.Erase(false);
                 }
                 var konum = new Point3d(direk.Position.X + dx, direk.Position.Y + dy, direk.Position.Z);
@@ -433,7 +433,7 @@ namespace SebekeHakedis.Eklenti
             if (aday == null)
                 foreach (var a in hepsi)
                     if (!a.Alindi && a.Konum.DistanceTo(hedef) < 1e-3) { aday = a; break; }
-            direk.UpgradeOpen(); // kilitli katmanda burada durur, yarım iş kalmaz
+            if (!direk.IsWriteEnabled) direk.UpgradeOpen(); // kilitli katmanda burada durur, yarım iş kalmaz
             BlockReference yeni;
             if (aday != null)
             {

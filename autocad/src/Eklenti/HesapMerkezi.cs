@@ -147,7 +147,7 @@ namespace SebekeHakedis.Eklenti
                 string anahtar = Anahtar(id);
                 if (alt != null && alt.Contains(anahtar))
                 {
-                    alt.UpgradeOpen();
+                    if (!alt.IsWriteEnabled) alt.UpgradeOpen();
                     alt.Remove(anahtar);
                     silindi = true;
                 }

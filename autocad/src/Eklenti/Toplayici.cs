@@ -251,6 +251,7 @@ namespace SebekeHakedis.Eklenti
                     rb.Add(new TypedValue((int)DxfCode.ExtendedDataRegAppName, u));
                     rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, ""));
                 }
+                if (!o.IsWriteEnabled) o.UpgradeOpen();
                 o.XData = rb;
             }
         }

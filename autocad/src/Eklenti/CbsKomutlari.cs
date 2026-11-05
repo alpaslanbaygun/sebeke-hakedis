@@ -328,7 +328,7 @@ namespace SebekeHakedis.Eklenti
             var rat = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead);
             if (!rat.Has(Uygulama))
             {
-                rat.UpgradeOpen();
+                if (!rat.IsWriteEnabled) rat.UpgradeOpen();
                 var r = new RegAppTableRecord { Name = Uygulama };
                 rat.Add(r);
                 tr.AddNewlyCreatedDBObject(r, true);
@@ -394,7 +394,7 @@ namespace SebekeHakedis.Eklenti
             if (renk != null) e.Color = renk;
             _ms.AppendEntity(e);
             _tr.AddNewlyCreatedDBObject(e, true);
-            if (bilgi != null) e.XData = bilgi;
+            if (bilgi != null) { if (!e.IsWriteEnabled) e.UpgradeOpen(); e.XData = bilgi; }
             try
             {
                 var ext = e.GeometricExtents;
@@ -420,7 +420,7 @@ namespace SebekeHakedis.Eklenti
             var lt = (LayerTable)_tr.GetObject(_db.LayerTableId, OpenMode.ForRead);
             if (lt.Has(ad)) return lt[ad];
             var ltr = new LayerTableRecord { Name = ad, Color = Color.FromColorIndex(ColorMethod.ByAci, 252) };
-            lt.UpgradeOpen();
+            if (!lt.IsWriteEnabled) lt.UpgradeOpen();
             var id = lt.Add(ltr);
             _tr.AddNewlyCreatedDBObject(ltr, true);
             return id;

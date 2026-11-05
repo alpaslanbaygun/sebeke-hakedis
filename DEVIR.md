@@ -36,6 +36,15 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 | AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
 
+5.11 (`cokme-duzeltme` dalı, `main`'den): **Hat çizip komuttan çıkınca AutoCAD kapanıyordu** ("INTERNAL ERROR:
+!dbobji.cpp@8703: eNotOpenForWrite"; kullanıcı ekran görüntüsü, AutoCAD 2027). Neden: süs takibi (`KenarTakibi.EksenIsle`)
+komut bitince hattı yalnız okunur açıp `CizimYazici.EtiketYaz`'ı çağırıyor, o da hattın ETK verisini yazmaya açmadan
+yazıyordu (31.10 `b7f7e85` ile geldi; 0.1.74–0.1.80). Düzeltme: ETK aynıysa yazılmaz, değilse önce yazmaya açılır;
+eklentideki bütün `UpgradeOpen` çağrıları "yazmaya açık değilse" korumalı. Yeni deneme `CekirdekTest` ›
+`YazmaDenetimiDene`: eklenti kaynağında genişletilmiş veri yazılan her yerde nesnenin hemen önce yazmaya açıldığı ve
+korumasız `UpgradeOpen` kalmadığı denetlenir (eski kod bu denetimde yakalanıyor). Aynı gün bulunan öbür çökme (eski
+çizim açılırken): çizim 0.1.43 ile yazılmıştı (değersiz genişletilmiş veri bölümü, 0.1.58'de düzelmişti); dosya
+DWG 2000 biçiminde olduğundan AutoCAD dışında onarıldı (6 nesne), kullanıcıya gönderildi.
 2.11 (`kullanici-rolleri` dalı; geri dönüş: `onceki-main-kullanici-rolleri-oncesi` dalı): **17. madde (eski program
 parolaları / HAK_YETKİ)** kullanıcı kararıyla Şebeke-M'nin kendi tasarımıyla yapıldı: **telefondaki kullanıcılar ve
 roller eklentide de geçerli** (ortak tablo `ortak/katalog/roller.json`; şifre özeti iki tarafta aynı; proje dosyasında
