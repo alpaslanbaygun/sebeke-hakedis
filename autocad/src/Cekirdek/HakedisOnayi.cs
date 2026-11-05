@@ -70,6 +70,29 @@ namespace SebekeHakedis.Cekirdek
             return l;
         }
 
+        /// <summary>
+        /// Kilit denetimi için birleşik sözlük: onaylar + hakediş yetkisiyle yazmaya kapalı hakedişler (Hakediş biti konmuş
+        /// gibi). Yalnız kilit denetiminde kullanılır; çizime / dosyaya onay olarak yazılmaz.
+        /// </summary>
+        public static SortedDictionary<int, int> KilitSozlugu(IDictionary<int, int> onaylar, IEnumerable<int> kapali)
+        {
+            var r = new SortedDictionary<int, int>();
+            if (onaylar != null) foreach (var kv in onaylar) r[kv.Key] = kv.Value;
+            if (kapali != null)
+                foreach (var n in kapali)
+                {
+                    if (n <= 0) continue;
+                    int b;
+                    r.TryGetValue(n, out b);
+                    r[n] = b | Hakedis;
+                }
+            return r;
+        }
+
+        public static string KapaliMesaji(int hakedis) =>
+            hakedis + ". hakediş yazmaya kapalı (hakediş yetkisi): bu hakedişe yeni nesne çizilemez, bu hakedişteki satırlar değiştirilemez. " +
+            "Açmak için Yönetici oturumuyla Kullanıcılar ve yetkiler (SH_KULLANICILAR).";
+
         public static string KilitMesaji(int hakedis) =>
             hakedis + ". hakediş onaylı (kilitli): bu hakedişe yeni nesne çizilemez, bu hakedişteki satırlar değiştirilemez. " +
             "Açık bir hakediş seçin; kilidi kaldırmak için Hakediş Onayı (SH_ONAY).";

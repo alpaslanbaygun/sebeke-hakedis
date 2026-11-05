@@ -22,6 +22,9 @@
     <None Include="..\..\..\ortak\katalog\kategoriler.json" Link="kategoriler.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\katalog\cizim-stili.json" Link="cizim-stili.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\deneme\malzeme-yazimi.json" Link="malzeme-yazimi.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Kullanıcılar ve roller: telefonla ortak tablo ve ortak deneme (telefon/web/tests/kullanicilar.test.mjs de okur) -->
+    <None Include="..\..\..\ortak\katalog\roller.json" Link="roller.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\ortak\deneme\kullanicilar.json" Link="kullanicilar.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- Telefonla ortak CBS denemesi: girdi ve beklenen KML / MIF / MID (telefon/web/tests/cbs.test.mjs de okur) -->
     <None Include="..\..\..\ortak\deneme\cbs\**\*" LinkBase="cbs" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

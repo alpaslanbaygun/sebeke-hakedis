@@ -676,6 +676,52 @@
     return Object.keys(r).every((k) => Math.abs(r[k] - BOYUT_VARSAYILAN[k]) < 1e-9) ? null : r;
   }
 
+  // ---------------------------------------------------------------- Kullanıcılar ve onay ayarı (proje.kullanicilar, proje.onayAyari)
+  // Telefondaki kullanıcılar ve roller eklentide de geçerlidir (ortak/katalog/roller.json); proje dosyasıyla iki yönde
+  // taşınır. Eklentideki karşılığı Cekirdek/Kullanicilar.cs (aynı kurallar; ortak deneme ortak/deneme/kullanicilar.json).
+
+  /** Kullanıcı kaydı: { id, ad, rol, tuz, ozet, etkin, guncelleme }; kimliksiz kayıt null. */
+  function kullaniciOku(o) {
+    if (!o || typeof o !== 'object') return null;
+    const id = str(o.id).trim();
+    if (!id) return null;
+    return { id, ad: str(o.ad), rol: str(o.rol), tuz: str(o.tuz), ozet: str(o.ozet), etkin: o.etkin !== false, guncelleme: str(o.guncelleme) };
+  }
+  function kullanicilarOku(l) {
+    const r = [], gorulen = new Set();
+    for (const o of Array.isArray(l) ? l : []) { const k = kullaniciOku(o); if (k && !gorulen.has(k.id)) { gorulen.add(k.id); r.push(k); } }
+    return r;
+  }
+  /** Onay mekanizması açık mı: en az bir etkin Yönetici. */
+  function onayAcik(kullanicilar) { return kullanicilarOku(kullanicilar).some(k => k.etkin && k.rol === 'yonetici'); }
+  /**
+   * İki kullanıcı listesini birleştirir (yerel: bu taraftaki, gelen: dosyadaki). İki tarafta olan kullanıcıda güncelleme
+   * zamanı yeni olan kazanır (eşitse yerel kalır); yalnız gelende olan eklenir. Kullanıcı silinmez, pasif olur.
+   */
+  function kullanicilariBirlestir(yerel, gelen) {
+    const r = kullanicilarOku(yerel);
+    const yer = new Map(r.map((k, i) => [k.id, i]));
+    for (const k of kullanicilarOku(gelen)) {
+      if (!yer.has(k.id)) { yer.set(k.id, r.length); r.push(k); continue; }
+      const i = yer.get(k.id);
+      if (k.guncelleme > r[i].guncelleme) r[i] = k;
+    }
+    return r;
+  }
+  /** Onay ayarı: { kilit, siki, kapaliHakedisler (yazmaya kapalı hakedişler, artan, tekrarsız), guncelleme }. */
+  function onayAyariOku(o) {
+    if (!o || typeof o !== 'object') return null;
+    const kapali = [...new Set((Array.isArray(o.kapaliHakedisler) ? o.kapaliHakedisler : []).filter(n => typeof n === 'number' && Number.isInteger(n) && n > 0))].sort((a, b) => a - b);
+    return { kilit: o.kilit !== false, siki: o.siki !== false, kapaliHakedisler: kapali, guncelleme: str(o.guncelleme) };
+  }
+  /** Onay ayarlarından güncelleme zamanı yeni olan (eşitse yerel); biri yoksa öteki. */
+  function onayAyariBirlestir(yerel, gelen) {
+    const a = onayAyariOku(yerel), b = onayAyariOku(gelen);
+    if (!a) return b;
+    if (!b) return a;
+    return b.guncelleme > a.guncelleme ? b : a;
+  }
+
   function yeniProje(o) {
     const a = o || {};
     return {
@@ -744,6 +790,9 @@
     if (!p.proje.gisOnEki) p.proje.gisOnEki = p.proje.katmanOnEki || 'SC';
     const by = boyutlarOku(pj.boyutlar);
     if (by) p.proje.boyutlar = by; else delete p.proje.boyutlar;
+    if (Array.isArray(pj.kullanicilar)) p.proje.kullanicilar = kullanicilarOku(pj.kullanicilar); else delete p.proje.kullanicilar;
+    const oa = onayAyariOku(pj.onayAyari);
+    if (oa) p.proje.onayAyari = oa; else delete p.proje.onayAyari;
     const kimlik = (o, set) => {
       let id = str(o.id);
       if (!id || set.has(id)) id = yeniId();
@@ -867,7 +916,9 @@
       proje: sirala(pj, [['ad', pj.ad], ['kaynak', pj.kaynak],
         ['koordinat', Object.assign({ sistem: 'TM', datum: 'ITRF96', dom: 0 }, pj.koordinat, { eksenler: 'saga = doğu (CAD X), yukari = kuzey (CAD Y)' })],
         ['aktifHakedis', pj.aktifHakedis], ['katmanOnEki', katmanAscii(pj.katmanOnEki)], ['gisOnEki', pj.gisOnEki],
-        ['boyutlar', boyutlarOku(pj.boyutlar) || undefined]]),
+        ['boyutlar', boyutlarOku(pj.boyutlar) || undefined], ['onaylar', pj.onaylar && pj.onaylar.length ? pj.onaylar : undefined],
+        ['kullanicilar', Array.isArray(pj.kullanicilar) && pj.kullanicilar.length ? kullanicilarOku(pj.kullanicilar) : undefined],
+        ['onayAyari', onayAyariOku(pj.onayAyari) || undefined]]),
       bolgeler: p.bolgeler.map(b => sirala(b, [['id', b.id], ['ad', b.ad], ['kod', b.kod], ['grup', b.grup || undefined], ['aciklama', b.aciklama || undefined], ['sinir', kYaz(b.sinir)]])),
       noktalar: p.noktalar.map(n => sirala(n, [['id', n.id], ['ad', n.ad], ['kod', n.kod], ['saga', r4(n.saga)], ['yukari', r4(n.yukari)],
         ['kot', r4(n.kot)], ['hakedis', n.hakedis], ['bolge', n.bolge], ['ekMetinler', n.ekMetinler && n.ekMetinler.length ? n.ekMetinler : undefined]])),
@@ -1057,6 +1108,7 @@
     sonrakiGis, enBuyukSira,
     katalogHazirla, anaTipler, hatKesitleri, malzemeler, kalemYap, kalemToplami, birimler,
     yeniProje, projeOku, projeYaz, yeniId, zaman,
+    kullaniciOku, kullanicilarOku, onayAcik, kullanicilariBirlestir, onayAyariOku, onayAyariBirlestir,
     degisiklikUygula, indeksYap,
     kontrolMetni, durumTespit, ozet, satirSuz
   };

@@ -143,6 +143,12 @@ namespace SebekeHakedis.Eklenti
                     return new[] { D(12, 12, 9), "M12,11 V16.5", "!" + D(12, 7.7, 1.25) };
                 case "ara":
                     return new[] { D(10.5, 10.5, 6.5), "M15.3,15.3 L20.5,20.5" };
+                case "kullanici":
+                    return new[] { D(12, 8, 3.6), "M4.8,20.5 Q4.8,13.6 12,13.6 Q19.2,13.6 19.2,20.5" };
+                case "kullanicilar":
+                    return new[] { D(9, 8.2, 3.1), "M3,19.5 Q3,13.6 9,13.6 Q15,13.6 15,19.5", "M15.2,5.6 A3,3 0 1 1 15.6,11", "M16.8,13.8 Q21,14.6 21,19.5" };
+                case "anahtar":
+                    return new[] { D(8, 12, 3.8), "M11.8,12 H20.5", "M17.5,12 V15.5", "M20.5,12 V14.8" };
                 case "kilit":
                     return new[] { "M6,11 H18 V20.5 H6 Z", "M8.8,11 V8.3 A3.2,3.2 0 0 1 15.2,8.3 V11", "!" + D(12, 15.6, 1.3) };
                 case "uyari":

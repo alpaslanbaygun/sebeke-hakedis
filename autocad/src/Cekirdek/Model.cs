@@ -162,6 +162,10 @@ namespace SebekeHakedis.Cekirdek
         public List<HesapKaydi> Hesaplar = new List<HesapKaydi>();
         /// <summary>Hakediş onayları (AutoCAD HAK_ONAY): hakediş no → bitler (Kontrol 4, Hakediş 2, GIS 1). Bkz. HakedisOnayi.</summary>
         public SortedDictionary<int, int> Onaylar = new SortedDictionary<int, int>();
+        /// <summary>Kullanıcılar ve roller (telefondaki üyeler; proje.kullanicilar). Etkin Yönetici varsa onay mekanizması açıktır.</summary>
+        public List<Kullanici> Kullanicilar = new List<Kullanici>();
+        /// <summary>Onay ayarı ve hakediş yetkisi (proje.onayAyari); ayarlanmadıysa null.</summary>
+        public OnayAyari OnayAyari;
         /// <summary>Simge ve yazı boyutları (proje dosyasında "boyutlar"; null: varsayılan, telefonla aynı).</summary>
         public Boyutlar Boyutlar;
 

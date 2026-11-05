@@ -3,7 +3,7 @@
 import { html, useState, useBus, Icon, Sel, Seg, Toggle, Badge, Title, fmt } from '../kit.js';
 import { app } from '../ctx.js';
 import { HAK_STATUSES, HAK_ORDER, EQUIPMENT_KINDS, hakOf } from '../../core/schema.js';
-import { ROLES, ROLE_ORDER, PENDING, REJECT_TO, validPin } from '../../core/roles.js';
+import { ROLES, ROLE_ORDER, PENDING, REJECT_TO, validPin, actionRoles } from '../../core/roles.js';
 
 const pinInput = (ph, onInput, auto) => html`<input class="inp mono" type="password" inputmode="numeric" autocomplete="off" maxlength="8" autofocus=${!!auto} placeholder=${ph} style="letter-spacing:6px;font-size:20px;text-align:center" onInput=${(e) => { e.target.value = e.target.value.replace(/\D/g, ''); onInput(e.target.value); }} />`;
 
@@ -147,10 +147,19 @@ export function TeamScreen() {
   const setActive = async (m, on) => { if (!on && !(await app.confirm('Kullanıcıyı kapat', m.name + ' artık oturum açamayacak. Geçmiş kayıtları saklanır.', { danger: true, ok: 'Kapat' }))) return; try { await ps.updateMember(m.id, { active: on }); } catch (e) { app.toast(e.message, 'err', 6000); } force((x) => x + 1); };
   const closeAll = async () => { const why = await app.prompt('Onay mekanizmasını kapat', 'Gerekçe', { required: true, note: 'Tüm kullanıcılar kapatılır; herkes hakediş durumunu yeniden serbestçe değiştirebilir. Geçmiş kayıtlar saklanır.' }); if (!why) return; try { await ps.closeApproval(why); app.toast('Onay mekanizması kapatıldı'); } catch (e) { app.toast(e.message, 'err'); } };
   const setOpt = async (p) => { try { await ps.setApproval(p); } catch (e) { app.toast(e.message, 'err'); } force((x) => x + 1); };
+  // Hakediş yetkisi: AutoCAD hakediş numaraları (1…12 ve kullanılan büyükler); kapalı olana yazılamaz
+  const kapali = new Set(ap.closed);
+  const hakSon = Math.max(12, ap.activeHakedis, ...ap.closed);
+  const togHak = async (n) => { const k = new Set(kapali); if (k.has(n)) k.delete(n); else k.add(n); try { await ps.setClosedHakedis([...k]); app.toast(n + '. hakediş ' + (k.has(n) ? 'yazmaya kapatıldı' : 'yazmaya açıldı'), 'ok'); } catch (e) { app.toast(e.message, 'err', 6000); } force((x) => x + 1); };
+  const yetki = html`<div class="sect">Hakediş yetkisi</div><div class="card stack" style="gap:8px">
+    <div class="note">Yazmaya kapalı hakedişteki obje değiştirilemez, o hakedişe yeni obje eklenemez (Yönetici hariç). AutoCAD eklentisinde de aynıdır; ayar proje dosyasıyla taşınır. Aktif hakediş: <b>${ap.activeHakedis}.</b></div>
+    <div class="row wrap" style="gap:6px">${Array.from({ length: hakSon }, (_, i) => i + 1).map((n) => html`<button class=${'btn xs' + (kapali.has(n) ? ' dang' : '')} disabled=${!admin} aria-pressed=${kapali.has(n)} aria-label=${n + '. hakediş ' + (kapali.has(n) ? 'yazmaya kapalı' : 'açık')} onClick=${() => togHak(n)} style="min-width:46px">${kapali.has(n) ? html`<${Icon} n="lock" s=${12} /> ` : null}${n}</button>`)}</div>
+    <div class="note">${kapali.size ? 'Yazmaya kapalı: ' + [...kapali].sort((a, b) => a - b).map((n) => n + '.').join(', ') + ' hakediş.' : 'Bütün hakedişler yazmaya açık.'}${admin ? ' Değiştirmek için numaraya dokunun.' : ' Yalnız Yönetici değiştirebilir.'}</div></div>`;
 
   const flow = html`<div class="card stack" style="gap:8px"><div class="lbl">Onay akışı · kim hangi adımı atar</div>
     ${[['saha', ['YAPILACAK', 'BASLANDI', 'TAMAMLANDI']], ['kontrol', ['TAMAMLANDI', 'KONTROL']], ['hakedis', ['KONTROL', 'HAKEDISTE']], ['onay', ['HAKEDISTE', 'ONAYLI']]].map(([r, st]) => html`<div class="row" style="gap:8px;align-items:flex-start"><span style=${'flex:0 0 118px;font-weight:800;font-size:12.5px;color:' + ROLES[r].color}>${ROLES[r].label}</span><span class="grow" style="font-size:12.5px">${st.map((k, i) => html`${i ? ' → ' : ''}<span style=${'color:' + HAK_STATUSES[k].color}>${HAK_STATUSES[k].label}</span>`)}<div class="note">${ROLES[r].does}</div></span></div>`)}
     <div class="row" style="gap:8px;align-items:flex-start"><span style=${'flex:0 0 118px;font-weight:800;font-size:12.5px;color:' + ROLES.yonetici.color}>Yönetici</span><span class="grow note">${ROLES.yonetici.does}</span></div>
+    <div class="row" style="gap:8px;align-items:flex-start"><span style="flex:0 0 118px;font-weight:800;font-size:12.5px">AutoCAD onayı</span><span class="grow note">Aynı kullanıcılar AutoCAD eklentisinde de geçerlidir: hakedişin Kontrol onayını ${actionRoles('autocad.kontrol').map((r) => ROLES[r].label).join(' ya da ')}, Hakediş onayını ${actionRoles('autocad.hakedis').map((r) => ROLES[r].label).join(' ya da ')}, GIS onayını ${actionRoles('autocad.gis').map((r) => ROLES[r].label).join(' ya da ')} verir.</span></div>
     <div class="note">Geri çevirme (ret) her zaman gerekçe ister; kim, ne zaman, hangi adımı attı objenin "Onay geçmişi"nde ve Denetim kaydında görünür.</div></div>`;
 
   if (!ap.on) {
@@ -175,6 +184,7 @@ export function TeamScreen() {
     ${admin ? html`<div class="sect">Kurallar</div><div class="card stack">
       <div class="row"><div class="grow"><b style="font-size:14px">Hakedişe yalnız kontrol edilmiş işler girsin</b><div class="note">Açıkken "Tamamlandı" durumundaki iş, Kontrol mühendisi onaylayana kadar metraj ve hakediş toplamına girmez.</div></div><${Toggle} on=${ap.strict} onChange=${(v) => setOpt({ strict: v })} label="Yalnız kontrol edilmiş" /></div>
       <div class="row"><div class="grow"><b style="font-size:14px">Kontrol edilmiş kaydı kilitle</b><div class="note">Açıkken "Kontrol Edildi" ve sonrası durumdaki objenin tipi, malzemesi, hattı değiştirilemez; önce geri çevrilmesi gerekir (Yönetici hariç).</div></div><${Toggle} on=${ap.lock} onChange=${(v) => setOpt({ lock: v })} label="Kilitle" /></div></div>` : null}
+    ${yetki}
     ${flow}
     ${admin ? html`<button class="btn dang blk" onClick=${closeAll}>Onay mekanizmasını kapat</button>` : null}`;
 }

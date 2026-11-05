@@ -221,7 +221,7 @@ namespace SebekeHakedis.Eklenti
         private static void ElemanDongusu(Ortam o, ElemanSecimi secim, MenuOgesi oge)
         {
             var ed = o.Ed;
-            if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(HakedisOnayi.KilitMesaji(secim.Hakedis)); return; }
+            if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(o.KilitMesaji(secim.Hakedis)); return; }
             string ilkGis = secim.Gis;
             ObjectId sonId = ObjectId.Null;
             Eleman son = null;
@@ -403,16 +403,16 @@ namespace SebekeHakedis.Eklenti
                     var h = o.Proje.Hatlar.Find(x => string.Equals(x.Id, id.Handle.ToString(), StringComparison.OrdinalIgnoreCase));
                     if (h == null) continue;
                     // Hattın kendi hakedişi gibi iletken satırlarının her birinin hakedişi de denetlenir (1. dönemi açık, 2. dönemi onaylı hat)
-                    var kilit = Iletkenler.DegistirmeKilidi(h, o.Proje.Onaylar, 0);
+                    var kilit = Iletkenler.DegistirmeKilidi(h, o.Kilitler, 0);
                     if (kilit != null) { kilitli++; ed.WriteMessage("\n" + NesneYazici.HatEtiketi(h) + ": " + kilit); continue; }
                     secilen.Add(new KeyValuePair<ObjectId, Hat>(id, h));
                 }
-                if (kilitli > 0) ed.WriteMessage("\n" + kilitli + " hat onaylı (kilitli) hakedişte satır taşıyor; değiştirilmez.");
+                if (kilitli > 0) ed.WriteMessage("\n" + kilitli + " hat kilitli (onaylı ya da yazmaya kapalı) hakedişte satır taşıyor; değiştirilmez.");
                 if (secilen.Count == 0) { ed.WriteMessage("\nSeçimde değiştirilecek şebeke hattı yok (kanal ve sondaj için Malzeme komutunu kullanın)."); return; }
                 var secim = Pencereler.Hat(o, SimdikiSecim(o, secilen[0].Value), secilen.Count);
                 if (secim == null) return;
-                // Yeni satırlar onaylı (kilitli) hakedişe yazılamaz: hiçbir şey değişmeden çıkılır
-                if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(HakedisOnayi.KilitMesaji(secim.Hakedis)); return; }
+                // Yeni satırlar kilitli (onaylı ya da yazmaya kapalı) hakedişe yazılamaz: hiçbir şey değişmeden çıkılır
+                if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(o.KilitMesaji(secim.Hakedis)); return; }
                 o.AyarKaydet();
                 int yazilan = 0;
                 using (var tr = o.Db.TransactionManager.StartTransaction())
@@ -429,7 +429,7 @@ namespace SebekeHakedis.Eklenti
                         {
                             double L = h.CizimUzunlugu > 0 ? h.CizimUzunlugu : Uzunluk(h.Kose.ConvertAll(k => new Point3d(k[0], k[1], 0)));
                             double m = Iletkenler.Degistir(h, secim.Tur, secim.Iletkenleri, secim.Durum, secim.Hakedis,
-                                                           tur => o.Ayar.HatMetraji(L, tur), o.YeniSira, o.Ayar.Karakteristik, o.Ayar.Koy, o.Proje.Onaylar);
+                                                           tur => o.Ayar.HatMetraji(L, tur), o.YeniSira, o.Ayar.Karakteristik, o.Ayar.Koy, o.Kilitler);
                             NesneyiYaz(o, y, kv.Key, h, eskiDurum, eskiHakedis);
                             yazilan++;
                             ed.WriteMessage("\n" + eskiEtiket + "  →  " + NesneYazici.HatEtiketi(h) + "  (metraj " + Metraj.Yazi(m) + " m)");
@@ -466,7 +466,7 @@ namespace SebekeHakedis.Eklenti
         private static void HatDongusu(Ortam o, HatSecimi secim, MenuOgesi oge)
         {
             var ed = o.Ed;
-            if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(HakedisOnayi.KilitMesaji(secim.Hakedis)); return; }
+            if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(o.KilitMesaji(secim.Hakedis)); return; }
             int sayi = 0;
             ed.WriteMessage("\nHat: " + secim);
             ed.WriteMessage("\nDireğe, SDK'ya, aydınlatma direğine ya da başka bir elemana (simgesinin üstüne) tıklayınca hat orada biter ve " +
@@ -546,7 +546,7 @@ namespace SebekeHakedis.Eklenti
         private static void KanalDongusu(Ortam o, KanalSecimi secim, MenuOgesi oge)
         {
             var ed = o.Ed;
-            if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(HakedisOnayi.KilitMesaji(secim.Hakedis)); return; }
+            if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(o.KilitMesaji(secim.Hakedis)); return; }
             int sayi = 0;
             ed.WriteMessage("\n" + secim);
             while (true)
@@ -633,7 +633,7 @@ namespace SebekeHakedis.Eklenti
         private static void SondajDongusu(Ortam o, SondajSecimi secim, MenuOgesi oge)
         {
             var ed = o.Ed;
-            if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(HakedisOnayi.KilitMesaji(secim.Hakedis)); return; }
+            if (o.Kilitli(secim.Hakedis)) { Pencereler.Uyar(o.KilitMesaji(secim.Hakedis)); return; }
             int sayi = 0;
             ed.WriteMessage("\n" + secim);
             while (true)
@@ -1240,10 +1240,11 @@ namespace SebekeHakedis.Eklenti
                 var eskiler = new Dictionary<ObjectId, string>();
                 var satirlar = new List<string>();
                 int kilitli = 0;
+                var kilitler = o.Kilitler;
                 foreach (ObjectId id in r.Value.GetObjectIds())
                 {
                     var nesne = NesneBul(o.Proje, id.Handle.ToString());
-                    if (nesne != null && HakedisOnayi.NesneKilitli(o.Proje.Onaylar, nesne)) { kilitli++; continue; }
+                    if (nesne != null && HakedisOnayi.NesneKilitli(kilitler, nesne)) { kilitli++; continue; }
                     if (nesne is Hat h)
                     {
                         if (Iletkenler.HatKalemleri(h).Count == 0) continue;
@@ -1277,7 +1278,7 @@ namespace SebekeHakedis.Eklenti
                         degisen.Add(new KeyValuePair<ObjectId, object>(id, s));
                     }
                 }
-                if (kilitli > 0) ed.WriteMessage("\n" + kilitli + " nesne onaylı (kilitli) hakedişte olduğu için atlandı.");
+                if (kilitli > 0) ed.WriteMessage("\n" + kilitli + " nesne kilitli (onaylı ya da yazmaya kapalı) hakedişte olduğu için atlandı.");
                 if (degisen.Count == 0) { ed.WriteMessage("\nSeçilen nesnelerin metrajı çizim uzunluğuyla zaten uyumlu."); return; }
                 var sb = new StringBuilder(degisen.Count + " nesnenin metrajı değişecek:\n");
                 for (int i = 0; i < satirlar.Count && i < 15; i++) sb.AppendLine("  • " + satirlar[i]);
@@ -1365,6 +1366,8 @@ namespace SebekeHakedis.Eklenti
             {
                 var o = Ortam.Hazirla(belge);
                 var ed = o.Ed;
+                // Onay mekanizması açıksa (kullanıcılar tanımlı) önce oturum: her aşama kendi rolünde
+                if (o.OnayAcik && o.Uye == null && !OturumAcSor(o, "Hakediş onayı için oturum açın.")) return;
                 var eski = new SortedDictionary<int, int>(o.Proje.Onaylar);
                 var yeni = new SortedDictionary<int, int>(o.Proje.Onaylar);
                 if (!Pencereler.Onaylar(o, yeni)) return;
@@ -1373,6 +1376,9 @@ namespace SebekeHakedis.Eklenti
                 var degisen = new List<int>();
                 foreach (var n in hepsi) if (HakedisOnayi.Bitler(eski, n) != HakedisOnayi.Bitler(yeni, n)) degisen.Add(n);
                 if (degisen.Count == 0) { ed.WriteMessage("\nOnaylar değişmedi."); return; }
+                // Yetki denetimi (pencereden bağımsız): değişen her aşama oturumdaki rolün yetkisinde olmalı
+                string yetkiHatasi = Yetki.OnayDegisikligi(o.Proje.Kullanicilar, o.Uye, eski, yeni);
+                if (yetkiHatasi != null) { Pencereler.Uyar(yetkiHatasi + "\n\nOnaylar değiştirilmedi."); return; }
                 using (var tr = o.Db.TransactionManager.StartTransaction())
                 {
                     // AutoCAD'in penceresindeki 12 hakediş her zaman yazılır (AutoCAD hepsini okur)
@@ -1381,9 +1387,66 @@ namespace SebekeHakedis.Eklenti
                     tr.Commit();
                 }
                 foreach (var n in degisen)
-                    ed.WriteMessage("\n" + n + ". hakediş: " + HakedisOnayi.Metin(HakedisOnayi.Bitler(yeni, n)) + (HakedisOnayi.Kilitli(yeni, n) ? "  → kilitli" : ""));
+                    ed.WriteMessage("\n" + n + ". hakediş: " + HakedisOnayi.Metin(HakedisOnayi.Bitler(yeni, n)) + (HakedisOnayi.Kilitli(yeni, n) ? "  → kilitli" : "") +
+                                    (o.Uye != null ? "  · " + o.Uye : ""));
                 if (HakedisOnayi.Kilitli(yeni, o.Hakedis))
                     ed.WriteMessage("\nDikkat: aktif hakediş (" + o.Hakedis + ") artık kilitli; yeni çizim için Hakediş (SH_HAKEDIS) ile açık bir hakediş seçin.");
+            });
+        }
+
+        // ================= SH_KULLANICILAR / SH_OTURUM: kullanıcılar, roller, hakediş yetkisi =================
+
+        /// <summary>Oturum açma penceresi (çizimin kullanıcılarıyla); açılırsa o.Uye konur.</summary>
+        internal static bool OturumAcSor(Ortam o, string neden = null)
+        {
+            if (neden != null) o.Ed.WriteMessage("\n" + neden);
+            bool ok = Pencereler.OturumAc(o.Proje.Kullanicilar, (id, sifre) => Oturum.Ac(o.Db, o.Proje.Kullanicilar, id, sifre));
+            if (ok) { o.Uye = Oturum.Uye(o.Db, o.Proje.Kullanicilar); o.Ed.WriteMessage("\nOturum: " + o.Uye); }
+            return ok && o.Uye != null;
+        }
+
+        [CommandMethod("SH_KULLANICILAR", CommandFlags.Modal)]
+        public void KullanicilarKomutu()
+        {
+            var belge = AcApp.DocumentManager.MdiActiveDocument;
+            if (belge == null) return;
+            Komutlar.Calistir("Kullanıcılar", () =>
+            {
+                var o = Ortam.Hazirla(belge);
+                var d = new KullaniciDuzeni(o.Proje.Kullanicilar, o.Proje.OnayAyari, o.Uye);
+                bool kaydet = Pencereler.Kullanicilar(o, d, (liste, id, sifre) => Oturum.Ac(o.Db, liste, id, sifre), () => Oturum.Kapat(o.Db));
+                if (!kaydet || !d.Degisti)
+                {
+                    if (kaydet) o.Ed.WriteMessage("\nKullanıcılar ve yetkiler değişmedi.");
+                    return;
+                }
+                KullaniciDeposu.Yaz(o.Db, d.Liste, d.Ayar);
+                // Oturum: ilk Yönetici tanımlandıysa oturuma alınır; oturumdaki kullanıcı pasif olduysa kapanır
+                if (d.Uye != null && d.Uye.Etkin) Oturum.Koy(o.Db, d.Uye.Id); else Oturum.Kapat(o.Db);
+                o.Ed.WriteMessage("\nKullanıcılar ve yetkiler kaydedildi: " + d.Liste.FindAll(k => k.Etkin).Count + " etkin kullanıcı" +
+                                  (d.OnayAcik ? ", onay mekanizması açık" : ", onay mekanizması kapalı") +
+                                  (d.Kapali.Count > 0 ? ", yazmaya kapalı hakediş: " + string.Join(", ", new List<int>(d.Kapali).ConvertAll(n => n + ".").ToArray()) : "") +
+                                  ". Telefona Gönder ile telefona da gider.");
+            });
+        }
+
+        [CommandMethod("SH_OTURUM", CommandFlags.Modal)]
+        public void OturumKomutu()
+        {
+            var belge = AcApp.DocumentManager.MdiActiveDocument;
+            if (belge == null) return;
+            Komutlar.Calistir("Oturum", () =>
+            {
+                var o = Ortam.Hazirla(belge);
+                if (!o.OnayAcik) { Pencereler.Bilgi("Bu çizimde onay mekanizması kapalı (kullanıcı tanımlı değil).\nKullanıcı tanımlamak için: Kullanıcılar (SH_KULLANICILAR)."); return; }
+                if (o.Uye != null)
+                {
+                    if (!Pencereler.Onay("Oturum: " + o.Uye + "\n\nOturum kapatılsın mı?", false)) return;
+                    Oturum.Kapat(o.Db);
+                    o.Ed.WriteMessage("\nOturum kapatıldı.");
+                    return;
+                }
+                OturumAcSor(o);
             });
         }
 
@@ -1459,7 +1522,23 @@ namespace SebekeHakedis.Eklenti
                 };
 
                 ed.WriteMessage("\nKarşılaştırılıyor...");
-                var plan = Aktarim.Planla(o.Varliklar, tel, o.OnEk, o.Proje.Onaylar);
+                var plan = Aktarim.Planla(o.Varliklar, tel, o.OnEk, o.Kilitler);
+                // Kullanıcılar ve onay ayarı (hakediş yetkisi): telefondakiyle birleştirilir, güncelleme zamanı yeni olan kazanır
+                var kulBirlesik = Yetki.Birlestir(o.Proje.Kullanicilar, tel.Kullanicilar);
+                var ayarBirlesik = Yetki.Birlestir(o.Proje.OnayAyari, tel.OnayAyari);
+                bool kulDegisti = tel.Kullanicilar.Count > 0 && !Yetki.Ayni(o.Proje.Kullanicilar, kulBirlesik);
+                bool ayarDegisti = tel.OnayAyari != null && !Yetki.Ayni(o.Proje.OnayAyari, ayarBirlesik);
+                string kullaniciNotu = kulDegisti || ayarDegisti
+                    ? "Kullanıcılar ve hakediş yetkisi telefondakiyle birleştirilecek (" + kulBirlesik.FindAll(k => k.Etkin).Count + " etkin kullanıcı" +
+                      (ayarBirlesik != null && ayarBirlesik.KapaliHakedisler.Count > 0 ? ", yazmaya kapalı: " + string.Join(", ", new List<int>(ayarBirlesik.KapaliHakedisler).ConvertAll(n => n + ".").ToArray()) + " hakediş" : "") + ")"
+                    : null;
+                Action kullanicilariAl = () =>
+                {
+                    if (kullaniciNotu == null) return;
+                    KullaniciDeposu.Yaz(o.Db, kulBirlesik, ayarBirlesik);
+                    if (o.Uye != null && Oturum.Uye(o.Db, kulBirlesik) == null) Oturum.Kapat(o.Db);
+                    ed.WriteMessage("\n" + kullaniciNotu.Replace("birleştirilecek", "birleştirildi") + ".");
+                };
                 // Telefonda onaylanan hakedişler (dönem onayı): aktarımdan sonra çizimin onay kaydına da eklenir
                 var birlesikOnay = HakedisOnayi.Birlestir(o.Proje.Onaylar, tel.Onaylar);
                 var yeniOnaylar = new List<int>();
@@ -1481,9 +1560,11 @@ namespace SebekeHakedis.Eklenti
                         }
                         catch (System.Exception ex) { ed.WriteMessage("\nHesap kayıtları alınamadı: " + ex.Message); }
                     }
+                    kullanicilariAl();
                     Pencereler.Bilgi("Telefondaki proje bu çizimle aynı; aktarılacak değişiklik yok.\n(" + plan.Ayni + " nesne karşılaştırıldı.)" + hesapNotu +
+                                     (kullaniciNotu != null ? "\n\n" + kullaniciNotu.Replace("birleştirilecek", "birleştirildi") + "." : "") +
                                      (plan.Kilitliler.Count + plan.KilitliSilinenler.Count > 0
-                                         ? "\n\nOnaylı (kilitli) hakedişe dokunduğu için aktarılmayan: " + (plan.Kilitliler.Count + plan.KilitliSilinenler.Count) + " değişiklik."
+                                         ? "\n\nKilitli (onaylı ya da yazmaya kapalı) hakedişe dokunduğu için aktarılmayan: " + (plan.Kilitliler.Count + plan.KilitliSilinenler.Count) + " değişiklik."
                                          : ""));
                     boyutlariAl();
                     BoyutlariUygulaSor(belge, boyutlariUygula);
@@ -1509,9 +1590,11 @@ namespace SebekeHakedis.Eklenti
                 foreach (var kv in plan.Silinenler) oz.Silinenler.Add(kv.Value);
                 foreach (var n in yeniOnaylar)
                     oz.Onaylar.Add(n + ". hakediş → " + HakedisOnayi.Metin(birlesikOnay[n]) + (HakedisOnayi.Kilitli(birlesikOnay, n) ? " (kilitlenecek)" : ""));
+                if (kullaniciNotu != null) oz.Onaylar.Add(kullaniciNotu);
                 for (int i = 0; i < plan.Uyarilar.Count && i < 8; i++) oz.Uyarilar.Add(plan.Uyarilar[i]);
                 if (!Pencereler.AktarimOnayi(oz)) return;
                 boyutlariAl();
+                kullanicilariAl();
 
                 bool sil = false;
                 if (plan.Silinenler.Count > 0)

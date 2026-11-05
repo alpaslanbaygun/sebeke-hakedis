@@ -303,6 +303,12 @@ namespace SebekeHakedis.Eklenti
             }
             var p = NesneOkuyucu.Oku(varliklar, belge.Name);
             p.Onaylar = CizimSozlugu.OnaylariOku(belge.Database);
+            // Kullanıcılar ve onay ayarı da dosyaya gider (telefonda aynı kullanıcılar ve hakediş yetkisi)
+            List<Kullanici> kullanicilar;
+            OnayAyari ayar;
+            KullaniciDeposu.Oku(belge.Database, out kullanicilar, out ayar);
+            p.Kullanicilar = kullanicilar;
+            p.OnayAyari = ayar;
             try { p.Hesaplar = HesapDeposu.Oku(belge.Database); } catch (System.Exception ex) { ed.WriteMessage("\nHesap kayıtları okunamadı: " + ex.Message); }
             ed.WriteMessage("\n" + p.Bolgeler.Count + " bölge, " + p.Elemanlar.Count + " eleman, " + p.Hatlar.Count + " hat, " + p.Kanallar.Count + " kanal" +
                             (p.Hesaplar.Count > 0 ? ", " + p.Hesaplar.Count + " hesap kaydı" : "") + " okundu (" + sure.ElapsedMilliseconds + " ms).");

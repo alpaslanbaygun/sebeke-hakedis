@@ -172,7 +172,7 @@ namespace SebekeHakedis.Eklenti
                 {
                     var uyarilar = new List<string>();
                     var proje = CbsIceAktarim.ProjeyeCevir(nesneDosyalari, o.Katalog, o.Proje, ayar, uyarilar);
-                    var plan = Aktarim.Planla(o.Varliklar, proje, o.OnEk, o.Proje.Onaylar);
+                    var plan = Aktarim.Planla(o.Varliklar, proje, o.OnEk, o.Kilitler);
                     var oz = new AktarimOzeti
                     {
                         Baslik = "CBS'den al", Simge = "cbs_al", Proje = "CBS (MapInfo)", Degismeyen = plan.Ayni,

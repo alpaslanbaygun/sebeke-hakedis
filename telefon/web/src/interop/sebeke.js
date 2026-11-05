@@ -14,7 +14,7 @@ import KALEMLER from '../ortak/kalemler.js';
 import { lineLabel, circuitLabel, circuitParts, kanalModel, autocadDevresi, autocadAnahtari, autocadGrubu } from '../grid/lines.js';
 import { jobOf } from '../grid/recipe.js';
 import { makeCrs, project as projLL, unproject as unprojLL, zoneForLon, TM_ZONES } from '../geo/crs.js';
-import { hakOf } from '../core/schema.js';
+import { aktifHakedis, objeHakedisi } from '../core/hakedis-no.js';
 
 export const VOLT_BICIM = 'volt-project/3';
 const r3 = (v) => Math.round((+v || 0) * 1000) / 1000;
@@ -177,6 +177,11 @@ export function sebekeModel(ps, opts = {}) {
   if (by) sp.proje.boyutlar = by;
   const onaylar = onaylariHazirla(sb.onaylar, data.periods);
   if (onaylar.length) sp.proje.onaylar = onaylar;
+  // Kullanıcılar, roller ve onay ayarı (hakediş yetkisi dahil): eklentide de geçerlidir
+  const kullanicilar = kullanicilarDosyaya(project.members);
+  if (kullanicilar.length) sp.proje.kullanicilar = kullanicilar;
+  const oa = onayAyariDosyaya(project.approval);
+  if (oa) sp.proje.onayAyari = oa;
   const pts = new Map(act(data.points).map((p) => [p.id, dosyaNoktasi(p)]));
   const eqs = act(data.equipment), lines = act(data.lines);
 
@@ -455,23 +460,6 @@ function parcaKimligi(l, sira, pc, n) {
   return n === 1 ? kok : kok + '-' + sira;
 }
 
-function aktifHakedis(periods) {
-  const ps = (periods || []).filter((p) => p.status !== 'deleted');
-  if (!ps.length) return 1;
-  const taslak = ps.filter((p) => p.status === 'taslak').sort((a, b) => b.no - a.no)[0];
-  return taslak ? taslak.no : Math.max(...ps.map((p) => p.no)) + 1;
-}
-/** Objenin hakediş numarası: hakedişe girdiyse iş tarihinin düştüğü dönem; yoksa aktif hakediş. */
-function objeHakedisi(rec, periods, aktif) {
-  if (rec.sebeke && rec.sebeke.hakedis) return rec.sebeke.hakedis;
-  const h = hakOf(rec);
-  if (h === 'HAKEDISTE' || h === 'ONAYLI') {
-    const d = (rec.workDate || '').slice(0, 10);
-    const per = (periods || []).filter((p) => p.status !== 'deleted' && (!d || ((!p.start || p.start <= d) && (!p.end || d <= p.end)))).sort((a, b) => a.no - b.no)[0];
-    if (per) return per.no;
-  }
-  return aktif;
-}
 function olcumBilgisi(p) {
   if (!p) return undefined;
   const q = p.quality || {};
@@ -964,6 +952,9 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
     for (const l of act(ps.data.lines)) { ln2.set(l.id, l); if (l.sebekeId) ln2.set(l.sebekeId, l); for (const pid of Object.values((l.sebeke || {}).parcalar || {})) ln2.set(pid, l); }
     await hesaplariIceAl(ps, sp, eq2, ln2, ozet);
   }
+  // Kullanıcılar ve onay ayarı en son: nesneler projenin şimdiki ayarlarıyla alınır; sonra dosyadakilerle birleştirilir
+  // (güncelleme zamanı yeni olan kazanır)
+  await kullanicilariIceAl(ps, pj, ozet);
   await ps.recompute('AutoCAD dosyası alındı');
   await ilkMetrajlariSakla(ps, alinanHatlar);
   ozet.uyarilar.push(...(sp.uyarilar || []));
@@ -1048,6 +1039,46 @@ function kalemBilgisiUygula(kalemler, bilgi) {
     if (!k.sira && b.sira) k.sira = b.sira;
     if (b.hakedis) k.hakedis = b.hakedis;
     if (b.kontrol !== null && Math.abs((+k.miktar || 0) - b.miktar) < 1e-9) k.kontrol = b.kontrol;
+  }
+}
+
+// ---------------------------------------------------------------- Kullanıcılar ve onay ayarı
+// Telefon üyesi { id, name, role, salt, pinHash, active, createdAt, updatedAt } ↔ dosya { id, ad, rol, tuz, ozet, etkin, guncelleme };
+// telefon onay ayarı { lock, strict, closed, updatedAt } ↔ dosya { kilit, siki, kapaliHakedisler, guncelleme }.
+
+/** Telefonun üyeleri → proje dosyasının kullanıcıları. */
+export function kullanicilarDosyaya(members) {
+  return SH.kullanicilarOku((members || []).map((m) => ({ id: m.id, ad: m.name, rol: m.role, tuz: m.salt, ozet: m.pinHash, etkin: m.active !== false, guncelleme: m.updatedAt || m.createdAt || '' })));
+}
+/** Telefonun onay ayarı → dosyadaki onayAyari (ayar hiç yapılmadıysa null). */
+export function onayAyariDosyaya(a) {
+  if (!a || typeof a !== 'object') return null;
+  return SH.onayAyariOku({ kilit: a.lock, siki: a.strict, kapaliHakedisler: a.closed, guncelleme: a.updatedAt || '' });
+}
+/**
+ * Dosyadaki kullanıcıları ve onay ayarını projeye birleştirir (SH.kullanicilariBirlestir / onayAyariBirlestir; eklentideki
+ * Kullanicilar.Birlestir ile aynı). Oturumdaki kullanıcı pasif olduysa oturum kapanır.
+ */
+async function kullanicilariIceAl(ps, pj, ozet) {
+  const p = ps.p;
+  if (Array.isArray(pj.kullanicilar) && pj.kullanicilar.length) {
+    const once = kullanicilarDosyaya(p.members);
+    const sonra = SH.kullanicilariBirlestir(once, pj.kullanicilar);
+    if (JSON.stringify(once) !== JSON.stringify(sonra)) {
+      const eski = new Map((p.members || []).map((m) => [m.id, m]));
+      const members = sonra.map((k) => Object.assign({}, eski.get(k.id) || {}, { id: k.id, name: k.ad, role: k.rol, salt: k.tuz, pinHash: k.ozet, active: k.etkin, updatedAt: k.guncelleme || undefined, createdAt: (eski.get(k.id) || {}).createdAt || k.guncelleme || undefined }));
+      // Yalnız telefonda olan (dosyada hiç yer almayan) üyeler birleştirmede korunmuştur; sıralama birleştirmenin sırası
+      await ps.importMembers(members, 'AutoCAD dosyasından kullanıcılar');
+      ozet.kullanici = sonra.length;
+    }
+  }
+  if (pj.onayAyari) {
+    const once = onayAyariDosyaya(p.approval);
+    const sonra = SH.onayAyariBirlestir(once, pj.onayAyari);
+    if (sonra && JSON.stringify(once) !== JSON.stringify(sonra)) {
+      await ps.importApproval({ lock: sonra.kilit, strict: sonra.siki, closed: sonra.kapaliHakedisler, updatedAt: sonra.guncelleme || undefined }, 'AutoCAD dosyasından onay ayarı');
+      ozet.onayAyari = true;
+    }
   }
 }
 

@@ -36,6 +36,15 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 | AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
 
+2.11 (`kullanici-rolleri` dalı; geri dönüş: `onceki-main-kullanici-rolleri-oncesi` dalı): **17. madde (eski program
+parolaları / HAK_YETKİ)** kullanıcı kararıyla Şebeke-M'nin kendi tasarımıyla yapıldı: **telefondaki kullanıcılar ve
+roller eklentide de geçerli** (ortak tablo `ortak/katalog/roller.json`; şifre özeti iki tarafta aynı; proje dosyasında
+`proje.kullanicilar` / `proje.onayAyari`, alırken son değişiklik kazanır). Eklentide `SH_KULLANICILAR` (Kullanıcılar ve
+yetkiler penceresi), `SH_OTURUM`; `SH_ONAY` onay mekanizması açıkken rol ister (Kontrol → Kontrol mühendisi, Hakediş ve
+GIS → Onay yetkilisi, Yönetici hepsi). **Hakediş yetkisi**: Yönetici hakedişleri yazmaya kapatır; kapalı hakedişe iki
+tarafta da yeni nesne eklenmez, nesneleri değiştirilmez (Yönetici, AutoCAD'den gelen obje ve iş kalemi olmayan mevcut
+obje hariç). Eski programın `KEY` / `HAK_YETKİ` kayıtları okunmaz. Ortak deneme `ortak/deneme/kullanicilar.json`.
+
 1.11 (`hata-duzeltme` dalı; geri dönüş: `onceki-main-hata-duzeltme-oncesi` dalı): dış incelemenin 9 bulgusu düzeltildi,
 her biri önce başarısız sonra başarılı regresyon denemesiyle. **Koordinat**: UTM / yerel projeden AutoCAD dosyasına
 yazarken bütün koordinatlar dosyanın 3° TM sistemine çevrilir (`sebeke.js › koordinatCevirici`); dosyanın `datum`'u
@@ -262,6 +271,12 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
+- **2.11 `kullanici-rolleri` işlerinin denemesi**: AutoCAD'de `SH_KULLANICILAR` ile ilk Yöneticiyi tanımlama, kullanıcı
+  ekleme, `SH_OTURUM`, `SH_ONAY`'da rol kısıtı (Kontrol mühendisi yalnız Kontrol), bir hakedişi yazmaya kapatıp o hakedişe
+  çizim denemesi; `Telefona Gönder` → telefonda aynı şifreyle oturum; telefonda hakediş yetkisini değiştirip `Telefondan
+  Al`. Bilinmesi gereken: şifreler 4–8 rakam olduğu için proje dosyasındaki özetler kararlı biri tarafından denenerek
+  bulunabilir; bu düzen iş akışını düzenler, güçlü bir güvenlik kilidi değildir (dosya güvenilmeyen kişiyle
+  paylaşılacaksa kullanıcılar kapatılıp gönderilebilir).
 - **1.11 `hata-duzeltme` işlerinin denemesi**: telefonda UTM projesinden AutoCAD dosyası yazıp eklentide açma (koordinatlar
   3° TM'de olmalı), ED50 dosyasını alma, aynı dosyayı ikinci kez alma (düzeltmeler gelmeli, kopya olmamalı), onay açıkken
   kilitli kayıtta miktar / silme denemesi (bildirim çıkmalı), onaylı hakediş döneminin iş programı yenilenince
@@ -313,8 +328,8 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
    profiline girilir (gereksinimler `telefon/docs/GNSS-BAGLANTI.md` › 4).
 3. **Bulut eşitleme** (Faz 7): dosyayı Drive'a elle taşımadan eşitleme. Yöntem kullanıcıyla konuşulmalı.
 4. İstenirse: pano çıkış şeması / hücre düzenleme penceresi, kanal ve sondaj metrajının telefonda AutoCAD değeriyle
-   korunması (hatlarda 31.10'da yapıldı; kanal / sondaj telefonda geometriden hesaplanır), eski program parolaları ve
-   `HAK_YETKİ`.
+   korunması (hatlarda 31.10'da yapıldı; kanal / sondaj telefonda geometriden hesaplanır). (Eski program parolaları ve
+   `HAK_YETKİ` yerine 2.11'de ortak kullanıcılar ve hakediş yetkisi yapıldı.)
 5. Telefonun ofis (web) sürümü 2.3.0'da kaldı; istenirse yeni hesapta yeniden yayınlanır (`telefon/DEVAM-NOTU.md`).
 6. Açık sorular PLAN.md'de (birim fiyat, malzeme eşlemesinin inceltilmesi, "ileride" objeler).
 7. **Tek ortak malzeme listesi** (telefon ve AutoCAD aynı liste; kullanıcı isteği 18.10): başlandı, 25.10'da kullanıcı

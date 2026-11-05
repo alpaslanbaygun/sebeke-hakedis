@@ -173,7 +173,10 @@ Hepsi yapıldı (`serit-ve-stil` dalı); ayrıntı KULLANIM.md › Bölüm 4 ve 
 8. ✓ **Onay akışı**: `SH_ONAY` (`HAK_ONAY/ONAY_DURUM<n>`, Kontrol → Hakediş → GIS, parolasız). Hakediş onayı
    verilen hakediş eklentide kilitlidir (satır düzeyinde; kilitli nesneye açık hakedişte malzeme eklenebilir).
    Denetlenmiş (`KONTROL`) nesnede uyarı. Telefonda onaylanan dönem eklentiye onay olarak gelir.
-   Yapılmayan: eski programın parolaları (`KEY`) ve `HAK_YETKİ` bayrakları (eklenti tek kullanıcılı; telefonda roller var).
+   Eski programın parolaları (`KEY`) ve `HAK_YETKİ` bayrakları okunmaz (kullanıcı kararı, 2.11.2026): yerine telefondaki
+   kullanıcılar ve roller eklentide de geçerlidir (`SH_KULLANICILAR`, `SH_OTURUM`; Kontrol aşaması Kontrol mühendisi,
+   Hakediş ve GIS aşaması Onay yetkilisi) ve hakediş yetkisi Şebeke-M'nin kendi kaydındadır (yazmaya kapalı hakedişler;
+   çizimde `SEBEKE_HAKEDIS › KULLANICILAR`, proje dosyasında `proje.kullanicilar` / `proje.onayAyari`).
 9. ✓ Pano çıkış şeması (`ANA`/`CON`, öznitelik `C_1..C_8`) ve bina TR hücreleri (`FIDER`): okunur, telefonda ve
    dosyada taşınır, aynen geri yazılır. Düzenleme penceresi yok (ileride istenirse).
 

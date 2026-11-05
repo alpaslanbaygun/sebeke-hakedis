@@ -35,6 +35,7 @@ namespace SebekeHakedis.Eklenti
             Sira = Numara.EnBuyukSira(Proje);
             _katalog = null;
             KatalogKaynagi.StiliYukle();
+            KatalogKaynagi.RolleriYukle();
         }
 
         private static string Ilk(params string[] l)
@@ -43,8 +44,36 @@ namespace SebekeHakedis.Eklenti
             return "";
         }
 
-        /// <summary>Hakediş onaylı (kilitli) mı: bu hakedişe yeni nesne çizilmez, satırları değiştirilmez.</summary>
-        public bool Kilitli(int hakedis) => HakedisOnayi.Kilitli(Proje.Onaylar, hakedis);
+        // ---- Kullanıcılar, oturum ve kilit ----
+
+        /// <summary>Oturumdaki kullanıcı (yoksa null). Ortam hazırlanırken çizimin oturumundan konur.</summary>
+        public Kullanici Uye;
+
+        /// <summary>Onay mekanizması açık mı (çizimde etkin Yönetici var): onaylar ve hakediş yetkisi rolle korunur.</summary>
+        public bool OnayAcik => Yetki.OnayAcik(Proje.Kullanicilar);
+
+        public bool Yonetici => Uye != null && Uye.Rol == Roller.Yonetici;
+
+        /// <summary>Hakediş yetkisiyle yazmaya kapalı hakedişler (onay mekanizması açıkken geçerli; Yönetici'ye uygulanmaz).</summary>
+        public IEnumerable<int> KapaliHakedisler =>
+            OnayAcik && !Yonetici && Proje.OnayAyari != null ? (IEnumerable<int>)Proje.OnayAyari.KapaliHakedisler : new int[0];
+
+        /// <summary>Kilit denetimi sözlüğü: onaylı hakedişler + yazmaya kapalı hakedişler (HakedisOnayi.KilitSozlugu).</summary>
+        public IDictionary<int, int> Kilitler => HakedisOnayi.KilitSozlugu(Proje.Onaylar, KapaliHakedisler);
+
+        /// <summary>Hakediş kilitli mi (onaylı ya da yazmaya kapalı): bu hakedişe yeni nesne çizilmez, satırları değiştirilmez.</summary>
+        public bool Kilitli(int hakedis) => HakedisOnayi.Kilitli(Proje.Onaylar, hakedis) || YazmayaKapali(hakedis);
+
+        /// <summary>Hakediş yetkisiyle yazmaya kapalı mı (onaylı değil).</summary>
+        public bool YazmayaKapali(int hakedis)
+        {
+            foreach (var n in KapaliHakedisler) if (n == hakedis) return true;
+            return false;
+        }
+
+        /// <summary>Kilidin nedenine göre ileti: onaylı hakediş ya da yazmaya kapalı hakediş.</summary>
+        public string KilitMesaji(int hakedis) =>
+            HakedisOnayi.Kilitli(Proje.Onaylar, hakedis) ? HakedisOnayi.KilitMesaji(hakedis) : HakedisOnayi.KapaliMesaji(hakedis);
 
         /// <summary>Yeni kalemin sıra numarası (INDEX).</summary>
         public string YeniSira()
@@ -119,6 +148,14 @@ namespace SebekeHakedis.Eklenti
             string json = Kaynak("SebekeHakedis.kategoriler.json");
             if (!string.IsNullOrEmpty(json)) Kategoriler.Yukle(json);
             _kategorilerYuklendi = true;
+        }
+
+        /// <summary>Rolleri ve yetkileri bir kez yükler (ortak/katalog/roller.json; telefonla aynı tablo).</summary>
+        public static void RolleriYukle()
+        {
+            if (Roller.Yuklu) return;
+            string json = Kaynak("SebekeHakedis.roller.json");
+            if (!string.IsNullOrEmpty(json)) Roller.Yukle(json);
         }
 
         private static string Kaynak(string ad)

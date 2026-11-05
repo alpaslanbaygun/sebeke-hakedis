@@ -283,6 +283,7 @@ namespace SebekeHakedis.Test
             TelefondanAlma(varliklar, tp);
             RaporUyumu(varliklar, xlsx);
             OnayAkisi(varliklar);
+            KullanicilarDene();
             HesapMerkezi_(tp);
             CizimGorunumu(); // ortak çizim stilini yükler: en sonda (önceki denetimler stilsiz yazımı dener)
             CbsOrtakDeneme(); // telefonla aynı CBS dosyaları (stil yüklü olmalı: renkler ortak stilden)
@@ -1118,6 +1119,129 @@ namespace SebekeHakedis.Test
         }
 
         // ---------------- Hakediş onayı (AutoCAD HAK_ONAY) ve kilit ----------------
+
+        /// <summary>
+        /// Kullanıcılar, roller ve hakediş yetkisi (17. madde): telefonla ortak tablo (roller.json) ve ortak deneme
+        /// (kullanicilar.json — telefondaki tests/kullanicilar.test.mjs aynı dosyayı okur), onay değişikliği yetkisi,
+        /// yazmaya kapalı hakediş kilidi, proje dosyasında taşınma.
+        /// </summary>
+        private static void KullanicilarDene()
+        {
+            Console.WriteLine("Kullanıcılar ve roller");
+            Roller.Yukle(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "roller.json"), Encoding.UTF8));
+            Esit("saha,kontrol,hakedis,onay,yonetici", string.Join(",", new List<Rol>(Roller.Liste).ConvertAll(r => r.Id).ToArray()), "roller: telefonla aynı sıra");
+            Esit("Kontrol mühendisi ya da Yönetici", Roller.Kimler(Roller.KontrolOnayi), "AutoCAD Kontrol onayı: kontrol mühendisi");
+            Esit("Onay yetkilisi ya da Yönetici", Roller.Kimler(Roller.HakedisOnayi_), "AutoCAD Hakediş onayı: onay yetkilisi");
+            Esit("Onay yetkilisi ya da Yönetici", Roller.Kimler(Roller.GisOnayi), "AutoCAD GIS onayı: onay yetkilisi");
+            Esit("Yönetici", Roller.Kimler("tanimsiz.islem"), "tanımsız işlem yalnız Yönetici");
+
+            var ortak = Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kullanicilar.json"), Encoding.UTF8)) as JsonNesne;
+            foreach (var x in ortak.Dizi("sifreler"))
+            {
+                var o = (JsonNesne)x;
+                Esit(o.Metin("ozet"), Yetki.Ozet(o.Metin("sifre"), o.Metin("tuz")), "ortak: şifre özeti telefonla aynı (tuz " + o.Metin("tuz") + ")");
+                Esit(true, Yetki.SifreGecerli(o.Metin("sifre")), "ortak: geçerli şifre " + o.Metin("sifre"));
+            }
+            foreach (var x in ortak.Dizi("gecersizSifreler"))
+                Esit(false, Yetki.SifreGecerli(Convert.ToString(x, CultureInfo.InvariantCulture)), "ortak: geçersiz şifre \"" + x + "\"");
+            Esit(false, Yetki.SifreGecerli("1234\n"), "şifre: satır sonu kabul edilmez");
+            foreach (var x in ortak.Dizi("birlestirme"))
+            {
+                var c = (JsonNesne)x;
+                var sonuc = Yetki.Birlestir(Yetki.Oku(c.Dizi("yerel")), Yetki.Oku(c.Dizi("gelen")));
+                Esit(Json.Yaz(c.Dizi("beklenen"), false), Yetki.ListeJson(sonuc), "ortak birleştirme: " + c.Metin("ad"));
+                Esit(c.Mantik("onayAcik") == true, Yetki.OnayAcik(sonuc), "ortak birleştirme: onay açık mı · " + c.Metin("ad"));
+            }
+            foreach (var x in ortak.Dizi("onayAyari"))
+            {
+                var c = (JsonNesne)x;
+                var sonuc = Yetki.Birlestir(OnayAyari.Oku(c.Nesne("yerel")), OnayAyari.Oku(c.Nesne("gelen")));
+                Esit(Json.Yaz(c.Nesne("beklenen"), false), sonuc == null ? "null" : Json.Yaz(sonuc.Json(), false), "ortak onay ayarı: " + c.Metin("ad"));
+            }
+
+            // Onay değişikliği yetkisi (SH_ONAY): onay kapalıyken serbest; açıkken her aşama kendi rolünde
+            Func<string, string, string, Kullanici> uye = (id, ad, rol) => new Kullanici { Id = id, Ad = ad, Rol = rol, Tuz = "T" + id, Ozet = Yetki.Ozet("1234", "T" + id), Guncelleme = "2026-11-01T08:00:00.000Z" };
+            var yon = uye("U1", "Deneme Yönetici", "yonetici");
+            var kon = uye("U2", "Deneme Kontrol", "kontrol");
+            var ona = uye("U3", "Deneme Onay", "onay");
+            var saha = uye("U4", "Deneme Saha", "saha");
+            var liste = new List<Kullanici> { yon, kon, ona, saha };
+            var bos = new SortedDictionary<int, int>();
+            var kontrolOnayi = new SortedDictionary<int, int> { { 1, HakedisOnayi.Kontrol } };
+            var hakedisOnayi = new SortedDictionary<int, int> { { 1, HakedisOnayi.Kontrol | HakedisOnayi.Hakedis } };
+            var gisOnayi = new SortedDictionary<int, int> { { 1, 7 } };
+            Esit(null, Yetki.OnayDegisikligi(new List<Kullanici>(), null, bos, gisOnayi), "onay kapalı: oturumsuz her aşama serbest (eski davranış)");
+            Esit(true, Yetki.OnayDegisikligi(liste, null, bos, kontrolOnayi) != null, "onay açık: oturumsuz onay verilemez");
+            Esit(null, Yetki.OnayDegisikligi(liste, kon, bos, kontrolOnayi), "kontrol mühendisi Kontrol onayı verir");
+            Esit(true, Yetki.OnayDegisikligi(liste, kon, kontrolOnayi, hakedisOnayi) != null, "kontrol mühendisi Hakediş onayı veremez");
+            Esit(null, Yetki.OnayDegisikligi(liste, ona, kontrolOnayi, gisOnayi), "onay yetkilisi Hakediş ve GIS onayı verir");
+            Esit(true, Yetki.OnayDegisikligi(liste, ona, bos, hakedisOnayi) != null, "onay yetkilisi Kontrol aşamasını atlayamaz (sıra kuralı Kontrol'ü de işaretler)");
+            Esit(true, Yetki.OnayDegisikligi(liste, saha, bos, kontrolOnayi) != null, "saha operatörü onay veremez");
+            Esit(true, Yetki.OnayDegisikligi(liste, kon, hakedisOnayi, bos) != null, "kontrol mühendisi Hakediş onayını kaldıramaz");
+            Esit(null, Yetki.OnayDegisikligi(liste, yon, bos, gisOnayi), "yönetici her aşamayı verir");
+            Esit(null, Yetki.OnayDegisikligi(liste, saha, gisOnayi, gisOnayi), "değişiklik yoksa yetki sorulmaz");
+            Esit(true, Yetki.Islem(liste, kon, Roller.HakedisYetkisi) != null && Yetki.Islem(liste, yon, Roller.HakedisYetkisi) == null, "hakediş yetkisini yalnız yönetici belirler");
+            Esit(true, Yetki.SifreDogru(kon, "1234") && !Yetki.SifreDogru(kon, "1235"), "şifre denetimi");
+            yon.Etkin = false;
+            Esit(false, Yetki.OnayAcik(liste), "etkin yönetici kalmayınca onay mekanizması kapalı");
+            yon.Etkin = true;
+
+            // Hakediş yetkisi: yazmaya kapalı hakediş kilit sözlüğünde Hakediş biti gibi; onay kaydına yazılmaz
+            var onaylar = new SortedDictionary<int, int> { { 1, 4 } };
+            var kilit = HakedisOnayi.KilitSozlugu(onaylar, new[] { 2, 0, -3 });
+            Esit(true, HakedisOnayi.Kilitli(kilit, 2) && !HakedisOnayi.Kilitli(kilit, 1) && !HakedisOnayi.Kilitli(kilit, 3), "kapalı hakediş kilitli, öteki açık");
+            Esit(6, kilit[2] | HakedisOnayi.Kontrol, "kilit sözlüğü: kapalı hakedişe Hakediş biti");
+            Esit(1, onaylar.Count, "kilit sözlüğü onayları değiştirmez");
+            var h = new Hat { Id = "HY1", Tur = "AG_HAVAI", Hakedis = 1 };
+            h.Kalemler.Add(new Kalem { Cins = "ALPEK_KABLOLAR", Tanim = "3X50/16+70 ALPEK", Kaynak = "HAT", Hakedis = 2 });
+            Esit(true, Iletkenler.DegistirmeKilidi(h, kilit, 1) != null, "Hat Değiştir: yazmaya kapalı hakedişteki satır da korunur");
+
+            // Proje dosyası: kullanıcılar ve onay ayarı yazılır, okunur (telefonla aynı alanlar)
+            var pr = new Proje { Ad = "Deneme" };
+            pr.Kullanicilar.AddRange(liste);
+            pr.OnayAyari = new OnayAyari { Kilit = false, KapaliHakedisler = new SortedSet<int> { 3, 1 }, Guncelleme = "2026-11-02T08:00:00.000Z" };
+            var metin = ProjeDosyasi.Yaz(pr, "deneme");
+            Esit(false, metin.Contains("\"1234\""), "dosyada şifre düz yazıyla yok");
+            var geri = ProjeDosyasi.Oku(metin);
+            Esit(Yetki.ListeJson(liste), Yetki.ListeJson(geri.Kullanicilar), "dosya: kullanıcılar gidip gelir");
+            Esit("[1,3]|False|True", "[" + string.Join(",", new List<int>(geri.OnayAyari.KapaliHakedisler).ConvertAll(n => n.ToString(CultureInfo.InvariantCulture)).ToArray()) + "]|" + geri.OnayAyari.Kilit + "|" + geri.OnayAyari.Siki, "dosya: onay ayarı gidip gelir");
+            var pj = (Json.Oku(metin) as JsonNesne).Nesne("proje");
+            var anahtar = new List<string>();
+            foreach (var kv in pj) anahtar.Add(kv.Key);
+            Esit(anahtar.IndexOf("kullanicilar") + 1, anahtar.IndexOf("onayAyari"), "dosya: onayAyari kullanicilar'ın ardından (telefonla aynı sıra)");
+            var eskiDosya = ProjeDosyasi.Oku("{\"bicim\":\"sebeke-hakedis.proje\",\"surum\":1,\"proje\":{\"ad\":\"Eski\"}}");
+            Esit(true, eskiDosya.Kullanicilar.Count == 0 && eskiDosya.OnayAyari == null, "eski dosya: kullanıcı yok, onay ayarı yok (kısıtsız)");
+
+            // Kullanıcılar penceresinin kuralları (telefondaki addMember / updateMember / closeApproval / setClosedHakedis)
+            int saat = 0;
+            var dz = new KullaniciDuzeni(null, null, null) { Saat = () => "2026-11-02T08:00:" + (10 + saat++).ToString(CultureInfo.InvariantCulture) + ".000Z" };
+            Kullanici y1;
+            Esit(true, dz.KapaliYap(1, true) != null, "pencere: onay kapalıyken hakediş yetkisi verilemez");
+            Esit("İlk kullanıcı Yönetici olmalı.", dz.Ekle("Deneme Kontrol", "kontrol", "1234", out y1), "pencere: ilk kullanıcı Yönetici olmalı");
+            Esit(true, dz.Ekle("Deneme Yönetici", "yonetici", "12", out y1) != null, "pencere: kısa şifre reddedilir");
+            Esit(null, dz.Ekle("Deneme Yönetici", "yonetici", "4321", out y1), "pencere: ilk Yönetici tanımlanır");
+            Esit(true, dz.OnayAcik && dz.Uye == y1 && dz.IlkYonetici == y1.Id, "pencere: ilk Yönetici oturuma alınır");
+            Esit(true, Yetki.SifreDogru(y1, "4321") && y1.Tuz.Length == 26, "pencere: şifre özetle saklanır, tuz rastgele");
+            Kullanici k1, s1;
+            Esit(null, dz.Ekle("Deneme Kontrol", "kontrol", "1111", out k1), "pencere: Yönetici kullanıcı ekler");
+            Esit("Bu adla kullanıcı var.", dz.Ekle("deneme kontrol", "saha", "2222", out s1), "pencere: aynı ad (büyük / küçük harf) eklenmez");
+            Esit(null, dz.Ekle("Deneme Saha", "saha", "2222", out s1), "pencere: saha kullanıcısı");
+            Esit(null, dz.KapaliYap(2, true), "pencere: Yönetici 2. hakedişi yazmaya kapatır");
+            Esit("2", string.Join(",", new List<int>(dz.Kapali).ConvertAll(n => n.ToString(CultureInfo.InvariantCulture)).ToArray()), "pencere: kapalı hakediş listesi");
+            Esit(true, dz.Guncelle(y1.Id, null, "saha", null, null) != null, "pencere: son Yönetici rolünü bırakamaz");
+            dz.Uye = dz.Liste.Find(x => x.Id == k1.Id);
+            Kullanici o1;
+            Esit(true, dz.Ekle("Deneme Onay", "onay", "3333", out o1) != null && o1 == null, "pencere: Yönetici olmayan kullanıcı ekleyemez");
+            Esit(true, dz.KapaliYap(3, true) != null, "pencere: Yönetici olmayan hakediş yetkisi veremez");
+            Esit(true, dz.Guncelle(y1.Id, null, null, "9999", null) != null, "pencere: başkasının şifresini değiştiremez");
+            string onceGun = dz.Uye.Guncelleme;
+            Esit(null, dz.Guncelle(k1.Id, null, null, "5555", null), "pencere: kendi şifresini değiştirir");
+            Esit(true, Yetki.SifreDogru(dz.Uye, "5555") && string.CompareOrdinal(dz.Uye.Guncelleme, onceGun) > 0, "pencere: yeni şifre geçerli, güncelleme zamanı ilerler");
+            dz.Uye = dz.Liste.Find(x => x.Id == y1.Id);
+            Esit(null, dz.Guncelle(s1.Id, null, null, null, false), "pencere: Yönetici kullanıcıyı pasif yapar");
+            Esit(null, dz.MekanizmayiKapat(), "pencere: onay mekanizmasını kapatır");
+            Esit(true, !dz.OnayAcik && dz.Uye == null && dz.Liste.TrueForAll(x => !x.Etkin), "pencere: herkes pasif, oturum kapalı, liste saklanır");
+        }
 
         private static void OnayAkisi(List<CadVarlik> ornekCizim)
         {

@@ -33,6 +33,13 @@ namespace SebekeHakedis.Eklenti
             if (hakNo > 0) { o.Hakedis = hakNo; o.Ayar.AktifHakedis = hakNo; }
             // Hakediş onayları (AutoCAD HAK_ONAY): onaylı hakedişler kilitlidir
             o.Proje.Onaylar = CizimSozlugu.OnaylariOku(o.Db);
+            // Kullanıcılar, roller ve hakediş yetkisi (telefonla aynı); oturum çizim başına
+            List<Kullanici> kullanicilar;
+            OnayAyari ayar;
+            KullaniciDeposu.Oku(o.Db, out kullanicilar, out ayar);
+            o.Proje.Kullanicilar = kullanicilar;
+            o.Proje.OnayAyari = ayar;
+            o.Uye = Oturum.Uye(o.Db, kullanicilar);
             return o;
         }
 

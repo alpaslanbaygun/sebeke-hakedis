@@ -558,11 +558,12 @@ namespace SebekeHakedis.Eklenti
                 if (Checked)
                 {
                     using (var b = new SolidBrush(Enabled ? KoyuRenk.Vurgu : KoyuRenk.VurguPasif)) g.FillEllipse(b, r);
-                    Tik(g, r, Color.White);
+                    Tik(g, r, Enabled ? Color.White : KoyuRenk.Ikincil);
                 }
                 else
                 {
-                    using (var p = new Pen(_uzerinde && Enabled ? KoyuRenk.Yesil : KoyuRenk.KenarAcik, Math.Max(1.2f, Olcu.K * 1.3f)))
+                    // Kapalı (yetki dışı) kutu soluk çizilir
+                    using (var p = new Pen(!Enabled ? KoyuRenk.Kenar : _uzerinde ? KoyuRenk.Yesil : KoyuRenk.KenarAcik, Math.Max(1.2f, Olcu.K * 1.3f)))
                         g.DrawEllipse(p, r.X + 1, r.Y + 1, r.Width - 2, r.Height - 2);
                 }
             }

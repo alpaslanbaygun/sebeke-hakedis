@@ -26,7 +26,8 @@ projenin sistemi dosyanınki olur, var olan projeye alınırken dosyanın koordi
 ```
 {
   "bicim": "sebeke-hakedis.proje", "surum": 1,
-  "proje":    { ad, kaynak, koordinat{sistem, datum, dom}, aktifHakedis, katmanOnEki, gisOnEki, boyutlar{}, onaylar[] },
+  "proje":    { ad, kaynak, koordinat{sistem, datum, dom}, aktifHakedis, katmanOnEki, gisOnEki, boyutlar{}, onaylar[],
+                kullanicilar[{ id, ad, rol, tuz, ozet, etkin, guncelleme }], onayAyari{ kilit, siki, kapaliHakedisler[], guncelleme } },
   "bolgeler": [ { id, ad, kod, grup, sinir[[saga,yukari]...] } ],           alt projeler (eski program: BÖLGE)
   "noktalar": [ { id, ad, kod, saga, yukari, kot, hakedis, bolge } ],          saha ölçüm noktaları (NOKTA AL)
   "elemanlar":[ { id, tur, gisId, cins, tip, durum, hakedis, bolge, saga, yukari, aci, guc, gerilim, dmDurum, kontrol, kalemler[], ekVeri{} } ],
@@ -52,6 +53,15 @@ projenin sistemi dosyanınki olur, var olan projeye alınırken dosyanın koordi
 - `proje.onaylar`: hakediş onayları `[{ no, kontrol, hakedis, gis }]` (eski program `HAK_ONAY`; sıra kontrol → hakediş → GIS).
   Hakediş onayı olan hakediş eklentide kilitlidir. Telefonda onaylanan dönem `kontrol + hakedis` olarak yazılır;
   eklenti telefondan gelen onayları çizimdekilere ekler (onay geri alınmaz).
+- `proje.kullanicilar` ve `proje.onayAyari` (isteğe bağlı): telefondaki kullanıcılar ve roller eklentide de geçerlidir
+  (rol tablosu `ortak/katalog/roller.json`: saha, kontrol, hakedis, onay, yonetici; işlem yetkileri ve şifre kuralı).
+  `ozet` = SHA-256'nın 1200 kez uygulanması (ilk girdi UTF-8 `tuz:şifre`), şifre hiçbir yerde düz yazıyla durmaz. Etkin bir
+  Yönetici varsa onay mekanizması açıktır: eklentide hakediş onayının Kontrol aşamasını Kontrol mühendisi, Hakediş ve GIS
+  aşamasını Onay yetkilisi verir (Yönetici hepsini). `onayAyari.kapaliHakedisler` **hakediş yetkisidir**: bu hakedişler
+  yazmaya kapalıdır (yeni nesne çizilmez / eklenmez, satırları ve nesneleri değiştirilmez; Yönetici hariç; iki tarafta da).
+  `kilit` ve `siki` telefonun kuralları (eklenti taşır). Alırken birleştirilir: aynı kimlikli kullanıcıda ve onay ayarında
+  `guncelleme`'si yeni olan kazanır, yalnız bir tarafta olan kullanıcı eklenir, kullanıcı silinmez (pasif olur). Ortak deneme:
+  `ortak/deneme/kullanicilar.json` (eklenti `CekirdekTest`, telefon `tests/kullanicilar.test.mjs`).
 - `bolge.grup`: eski program grup kodu (`FULLREG` üçüncü alanı, boş olabilir).
 - `eleman.ekVeri`: eski programın eklentide ve telefonda düzenlenmeyen verileri — pano çıkış şeması `ANA`, `CON`, bina
   tipi trafonun hücreleri `FIDER` (her biri XDATA satırları dizisi). Okunur, taşınır, aynen geri yazılır; dosyada

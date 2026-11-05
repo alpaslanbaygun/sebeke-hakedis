@@ -302,7 +302,9 @@ namespace SebekeHakedis.Eklenti
 
             var hakedis = Panel(araclar, "Hakediş");
             hakedis.Items.Add(Dugme("Aktif\nHakediş", "Aktif hakedişi değiştirir; yeni nesneler bu hakedişin katmanlarına konur.", "_SH_HAKEDIS ", "aktif_hakedis", Color.FromRgb(0x23, 0xA4, 0x55)));
-            hakedis.Items.Add(Dugme("Hakediş\nOnayı", "Hakediş onayı (Kontrol → Hakediş → GIS). Onaylanan hakediş kilitlenir: satırları değiştirilemez, o hakedişe yeni nesne çizilemez.", "_SH_ONAY ", "onay", null));
+            hakedis.Items.Add(Dugme("Hakediş\nOnayı", "Hakediş onayı (Kontrol → Hakediş → GIS). Onaylanan hakediş kilitlenir: satırları değiştirilemez, o hakedişe yeni nesne çizilemez. Kullanıcı tanımlıysa her aşamayı kendi rolü verir.", "_SH_ONAY ", "onay", null));
+            hakedis.Items.Add(Dugme("Kullanıcılar", "Telefondaki kullanıcılar ve roller (Yönetici, Kontrol, Hakediş, Onay, Saha) ve hakediş yetkisi: yazmaya kapalı hakedişler. İlk Yönetici tanımlanınca onay mekanizması açılır; proje dosyasıyla telefona gider.", "_SH_KULLANICILAR ", "kullanicilar", null));
+            hakedis.Items.Add(Dugme("Oturum", "Oturum aç / kapat (kullanıcı ve şifre). Onay mekanizması açıkken hakediş onayı ve hakediş yetkisi oturumdaki rolle yapılır.", "_SH_OTURUM ", "anahtar", null));
 
             var rapor = Panel(araclar, "Raporlar");
             rapor.Items.Add(Dugme("Durum\nTespit", "Bu çizimden Durum Tespit raporunu Excel olarak üretir.", "_SH_RAPOR ", "rapor", null));
