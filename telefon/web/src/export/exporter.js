@@ -15,6 +15,7 @@ import { photoPath, safeName, projectFolder } from '../services/photo-service.js
 import { HAK_STATUSES, HAK_ORDER } from '../core/schema.js';
 import { sebekeYaz, voltProjeYaz } from '../interop/sebeke.js';
 import { kayitSatirlari } from '../hesap/kayitlar.js';
+import { kanalSayfalari } from './kanal.js';
 
 // Hesap kayıtlarında "hesabı yapan": uygulamadaki kullanıcı adı (varsayılan ad değilse)
 const kullaniciAdi = (ps) => { const u = (ps.ds && ps.ds.user) || {}; return u.name && u.name !== 'Operatör' ? u.name : null; };
@@ -73,6 +74,10 @@ export function workbookSheets(model, ps) {
   sheets.push({ name: 'Fotoğraflar', title: 'Fotoğraflar · ' + (model.photos || []).length + ' adet', columns: ['photo_id', 'project_id', 'object_id', 'object_type', 'filename', 'filepath', 'timestamp', 'latitude', 'longitude', 'elevation', 'accuracy', 'device_id', 'operator_id'].map((h) => ({ h, w: /filepath/.test(h) ? 40 : /filename|timestamp/.test(h) ? 22 : 13 })), rows: (model.photos || []).map((ph) => { const f = photoFile(ph); return [ph.id, ph.projectId, ph.ownerId || '', ph.ownerType || '', f.filename, f.filepath, ph.timestamp || '', ph.lat ?? null, ph.lon ?? null, ph.elevation ?? null, ph.accuracy ?? null, ph.device || '', ph.operator || ph.user || '']; }) });
   sheets.push({ name: 'Noktalar', title: 'GNSS / ölçü noktaları · ' + model.crs.label, columns: [{ h: 'No', w: 10 }, { h: 'Sınıf', w: 10 }, { h: 'Kaynak', w: 20 }, { h: 'FIX', w: 8 }, { h: 'σH', w: 8, fmt: '0.000' }, { h: 'σV', w: 8, fmt: '0.000' }, { h: 'Y (Sağa)', w: 14, fmt: '0.000' }, { h: 'X (Yukarı)', w: 14, fmt: '0.000' }, { h: 'Z', w: 10, fmt: '0.000' }, { h: 'Enlem', w: 14 }, { h: 'Boylam', w: 14 }], rows: model.points.map((p) => [p.no, p.cls, p.source, p.fix || '', p.sigmaH, p.sigmaV, p.E, p.N, p.H, p.lat != null ? +p.lat.toFixed(9) : null, p.lon != null ? +p.lon.toFixed(9) : null]) });
   sheets.push({ name: 'Açıklıklar', title: 'Açıklıklar', columns: [{ h: 'Hat', w: 8 }, { h: 'Başlangıç', w: 10 }, { h: 'Bitiş', w: 10 }, { h: '2B (m)', w: 10, fmt: '0.000' }, { h: '3B (m)', w: 10, fmt: '0.000' }, { h: 'ΔH (m)', w: 10, fmt: '0.000' }, { h: 'Semt (°)', w: 10, fmt: '0.000' }, { h: 'Kaynak', w: 8 }], rows: model.spans.map((s) => [s.lineNo, s.fromNo, s.toNo, s.length2D, s.length3D, s.dH, s.bearing, s.source]) });
+  // Proje bazında kanal listesi (AutoCAD eklentisinin KANAL LİSTESİ / KANAL ÖZETİ sayfalarıyla aynı)
+  if (ps) {
+    try { const kl = SH.kanalListesi(eklentiModeli(ps)); if (kl.satirlar.length) sheets.push(...kanalSayfalari(kl)); } catch (e) { /* kanal listesi çıkmazsa öbür sayfalar yine yazılır */ }
+  }
   sheets.push({ name: 'Kontrol', title: 'Otomatik uygunluk kontrolü', columns: [{ h: 'Kod', w: 22 }, { h: 'Önem', w: 8 }, { h: 'Kayıt', w: 14 }, { h: 'Açıklama', w: 90 }], rows: model.issues.map((i) => [i.code, i.severity === 'error' ? 'HATA' : 'UYARI', i.entityNo, i.message]) });
   return sheets;
 }

@@ -137,7 +137,7 @@ namespace SebekeHakedis.Eklenti
                 var ltr = new LayerTableRecord { Name = ad, Color = Color.FromColorIndex(ColorMethod.ByAci, renk) };
                 var cizgiId = CizgiTipi(cizgi);
                 if (!cizgiId.IsNull) ltr.LinetypeObjectId = cizgiId;
-                lt.UpgradeOpen();
+                if (!lt.IsWriteEnabled) lt.UpgradeOpen();
                 id = lt.Add(ltr);
                 _tr.AddNewlyCreatedDBObject(ltr, true);
             }
@@ -161,7 +161,7 @@ namespace SebekeHakedis.Eklenti
                 else
                 {
                     ts = new TextStyleTableRecord { Name = ad };
-                    tst.UpgradeOpen();
+                    if (!tst.IsWriteEnabled) tst.UpgradeOpen();
                     tst.Add(ts);
                     _tr.AddNewlyCreatedDBObject(ts, true);
                 }
@@ -283,7 +283,7 @@ namespace SebekeHakedis.Eklenti
                         if (e == null || e.IsErased || !tasinacak.TryGetValue(e.LayerId, out hedef)) continue;
                         try
                         {
-                            e.UpgradeOpen();
+                            if (!e.IsWriteEnabled) e.UpgradeOpen();
                             e.LayerId = hedef;
                         }
                         catch { tasinamayan++; } // kilitli katmandaki nesne
@@ -333,7 +333,7 @@ namespace SebekeHakedis.Eklenti
                 double toplam = 0;
                 for (int i = 0; i < desen.Length; i++) { ltr.SetDashLengthAt(i, desen[i]); toplam += Math.Abs(desen[i]); }
                 ltr.PatternLength = toplam;
-                ltt.UpgradeOpen();
+                if (!ltt.IsWriteEnabled) ltt.UpgradeOpen();
                 var id = ltt.Add(ltr);
                 _tr.AddNewlyCreatedDBObject(ltr, true);
                 return id;
@@ -383,7 +383,7 @@ namespace SebekeHakedis.Eklenti
                 return id0;
             }
             if (!Tanimlayabilir(ad)) throw new InvalidOperationException("Blok bulunamadı: " + ad);
-            bt.UpgradeOpen();
+            if (!bt.IsWriteEnabled) bt.UpgradeOpen();
             var btr = new BlockTableRecord { Name = ad, Origin = Point3d.Origin };
             var id = bt.Add(btr);
             _tr.AddNewlyCreatedDBObject(btr, true);
@@ -872,7 +872,7 @@ namespace SebekeHakedis.Eklenti
                 if (ar == null) continue;
                 string d;
                 if (!degerler.TryGetValue(ar.Tag, out d) || ar.TextString == (d ?? "")) continue;
-                ar.UpgradeOpen();
+                if (!ar.IsWriteEnabled) ar.UpgradeOpen();
                 ar.TextString = d ?? "";
                 if (ar.Justify != AttachmentPoint.BaseLeft)
                 {
@@ -916,7 +916,7 @@ namespace SebekeHakedis.Eklenti
                         var eski = koseler[i].Position;
                         if (Math.Abs(eski.X - hedef.X) > 1e-6 || Math.Abs(eski.Y - hedef.Y) > 1e-6)
                         {
-                            koseler[i].UpgradeOpen();
+                            if (!koseler[i].IsWriteEnabled) koseler[i].UpgradeOpen();
                             koseler[i].Position = new Point3d(hedef.X, hedef.Y, eski.Z);
                         }
                     }
@@ -929,7 +929,7 @@ namespace SebekeHakedis.Eklenti
                 }
                 for (int i = n; i < koseler.Count; i++)
                 {
-                    koseler[i].UpgradeOpen();
+                    if (!koseler[i].IsWriteEnabled) koseler[i].UpgradeOpen();
                     koseler[i].Erase();
                 }
                 if (p2.Closed != v.Kapali) p2.Closed = v.Kapali;
@@ -950,7 +950,7 @@ namespace SebekeHakedis.Eklenti
                         var eski = koseler[i].Position;
                         if (Math.Abs(eski.X - v.Kose[i][0]) > 1e-6 || Math.Abs(eski.Y - v.Kose[i][1]) > 1e-6)
                         {
-                            koseler[i].UpgradeOpen();
+                            if (!koseler[i].IsWriteEnabled) koseler[i].UpgradeOpen();
                             koseler[i].Position = new Point3d(v.Kose[i][0], v.Kose[i][1], eski.Z);
                         }
                     }
@@ -963,7 +963,7 @@ namespace SebekeHakedis.Eklenti
                 }
                 for (int i = n; i < koseler.Count; i++)
                 {
-                    koseler[i].UpgradeOpen();
+                    if (!koseler[i].IsWriteEnabled) koseler[i].UpgradeOpen();
                     koseler[i].Erase();
                 }
                 if (p3.Closed != v.Kapali) p3.Closed = v.Kapali;
@@ -981,7 +981,7 @@ namespace SebekeHakedis.Eklenti
             var yazi = Etiket(ent);
             if (yazi != null && !BaskaHattin(yazi, ent.Handle.ToString()))
             {
-                yazi.UpgradeOpen();
+                if (!yazi.IsWriteEnabled) yazi.UpgradeOpen();
                 yazi.Erase();
             }
             ParcaMetrajlariSil(ent);
@@ -989,7 +989,7 @@ namespace SebekeHakedis.Eklenti
             var arm = ent is BlockReference ? ArmaturBul((BlockReference)ent) : null;
             if (arm != null)
             {
-                arm.UpgradeOpen();
+                if (!arm.IsWriteEnabled) arm.UpgradeOpen();
                 arm.Erase();
             }
             ent.Erase();
@@ -1035,7 +1035,7 @@ namespace SebekeHakedis.Eklenti
             {
                 if (mevcut != null)
                 {
-                    mevcut.UpgradeOpen();
+                    if (!mevcut.IsWriteEnabled) mevcut.UpgradeOpen();
                     mevcut.Erase();
                 }
                 string eski;
@@ -1071,7 +1071,7 @@ namespace SebekeHakedis.Eklenti
                 ArmaturBagi.DirekVerisiYaz(direk, br.Handle.ToString(), dx, dy);
                 return;
             }
-            mevcut.UpgradeOpen();
+            if (!mevcut.IsWriteEnabled) mevcut.UpgradeOpen();
             if (!konumlu) ArmaturBagi.DirekVerisiYaz(direk, mevcut.Handle.ToString(), dx, dy);
             if (mevcut.Position.DistanceTo(konum) > 1e-6) mevcut.Position = konum;
             if (mevcut.BlockTableRecord != btrId) mevcut.BlockTableRecord = btrId;
@@ -1112,7 +1112,7 @@ namespace SebekeHakedis.Eklenti
                     List<string> l;
                     if (v.Xd.TryGetValue(app, out l) && l.Count > 0) { Bolum(rb, app, l); bolum++; }
                 }
-                if (bolum > 0) e.XData = rb;
+                if (bolum > 0) { if (!e.IsWriteEnabled) e.UpgradeOpen(); e.XData = rb; }
             }
             Toplayici.XdataSil(e, silinecek);
             // Denetim: sıfır uzunluklu bölüm kalmamalı (kalırsa kaydedilen çizim açılırken nesne atılır)
@@ -1273,7 +1273,7 @@ namespace SebekeHakedis.Eklenti
                 var yazi = _tr.GetObject(tid, OpenMode.ForRead, false) as DBText;
                 // AutoCAD'le kopyalanmış hat asıl hattın yazılarını silmesin
                 if (yazi == null || yazi.IsErased || !Sahibi(yazi, sahip)) continue;
-                yazi.UpgradeOpen();
+                if (!yazi.IsWriteEnabled) yazi.UpgradeOpen();
                 yazi.Erase();
             }
         }
@@ -1434,7 +1434,7 @@ namespace SebekeHakedis.Eklenti
                 if (string.IsNullOrEmpty(h) || !Toplayici.TaniticiylaBul(_db, h, out kid)) continue;
                 var k = _tr.GetObject(kid, OpenMode.ForRead, false) as Entity;
                 if (k == null || k.IsErased || !string.Equals(SahibiOku(k), sahip, StringComparison.OrdinalIgnoreCase)) continue;
-                k.UpgradeOpen();
+                if (!k.IsWriteEnabled) k.UpgradeOpen();
                 k.Erase();
             }
         }
@@ -1499,7 +1499,7 @@ namespace SebekeHakedis.Eklenti
             }
             else
             {
-                yazi.UpgradeOpen();
+                if (!yazi.IsWriteEnabled) yazi.UpgradeOpen();
                 bool yaziDegisti = yazi.TextString != metin;
                 if (yaziDegisti) yazi.TextString = metin;
                 if (yazi.LayerId != katman) yazi.LayerId = katman;
@@ -1523,6 +1523,12 @@ namespace SebekeHakedis.Eklenti
             }
             if (!string.Equals(SahibiOku(yazi), hat.Handle.ToString(), StringComparison.OrdinalIgnoreCase)) SahibiYaz(yazi, hat.Handle.ToString());
 
+            // ETK zaten bu etiketi gösteriyorsa hatta yazılmaz. Süs takibi (KenarTakibi) hattı yalnız okunur açar: yazmadan
+            // önce yazmaya açılmazsa AutoCAD "eNotOpenForWrite" iç hatasıyla kapanır (0.1.74–0.1.80, hat çizip komuttan çıkınca).
+            List<string> etk;
+            if (Toplayici.XdataOku(hat).TryGetValue("ETK", out etk) && etk.Count == 1 &&
+                string.Equals(etk[0], yazi.Handle.ToString(), StringComparison.OrdinalIgnoreCase)) return;
+            if (!hat.IsWriteEnabled) hat.UpgradeOpen();
             using (var rb = new ResultBuffer(
                 new TypedValue((int)DxfCode.ExtendedDataRegAppName, "ETK"),
                 new TypedValue((int)DxfCode.ExtendedDataAsciiString, yazi.Handle.ToString())))
@@ -1541,7 +1547,7 @@ namespace SebekeHakedis.Eklenti
             var yazi = Etiket(cizgi);
             if (yazi != null && !yazi.IsErased && !BaskaHattin(yazi, cizgi.Handle.ToString()))
             {
-                yazi.UpgradeOpen();
+                if (!yazi.IsWriteEnabled) yazi.UpgradeOpen();
                 yazi.Erase();
             }
             ParcaMetrajlariSil(cizgi);

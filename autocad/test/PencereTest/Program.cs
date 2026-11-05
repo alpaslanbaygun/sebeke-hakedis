@@ -188,6 +188,19 @@ namespace SebekeHakedis.PencereTest
                 Esit(true, s != null, "kanal: döner");
                 Esit(KanalKodu.AG, s != null ? s.Kod : -1, "kanal: varsayılan kablo AG");
                 Esit(40.0, s != null ? s.Alt : 0, "kanal: alt genişlik varsayılanı");
+                Esit("PARKE TUVENAN (BARİYERLİ)", s != null ? s.Zemin : "", "kanal: cins + kaplama + bariyer → kalem adı");
+            }, f =>
+            {
+                // Kanal cinsi (zemin) ve kaplama ayrı seçilir; altında kalem adı
+                Esit(5, Bul<KoyuAcilir>(f, c => c.Name == "zeminCinsi").Items.Count, "kanal: 5 cins (toprak, tüvenan, mıcır, branşman, demontaj)");
+                Bul<KoyuAcilir>(f, c => c.Name == "zeminCinsi").SelectedIndex = 1;
+                Bul<KoyuAcilir>(f, c => c.Name == "zeminKaplamasi").SelectedIndex = 1;
+                Bul<KoyuOnay>(f, c => c.Name == "zeminBariyer").Checked = true;
+                Esit(true, Bul<Label>(f, l => l.Text == "Kalem adı: PARKE TUVENAN (BARİYERLİ)") != null, "kanal: kalem adı katalogdaki gibi (uyarı yok)");
+                Resim(f, "zemin");
+                Bul<KoyuAcilir>(f, c => c.Name == "zeminKaplamasi").SelectedIndex = 2;
+                Esit(true, Bul<Label>(f, l => l.Text.StartsWith("Kalem adı: TUVENAN (ASFALT KAPLAMALI) (BARİYERLİ)") && l.Text.Contains("listesinde yok")) != null, "kanal: katalogda olmayan birleşim uyarılı");
+                Bul<KoyuAcilir>(f, c => c.Name == "zeminKaplamasi").SelectedIndex = 1;
             });
 
             Dene("05-sondaj", () =>
@@ -286,11 +299,17 @@ namespace SebekeHakedis.PencereTest
                 Esit(60.0, kanal.AltGenislik, "malzeme (kanal): alt genişlik değişti");
                 var ana = kanal.Kalemler.Find(k => k.Ana);
                 Esit(Metraj.KanalHacmi(60, kanal.UstGenislik, kanal.Derinlik, ana.Miktar), ana.Toplam, "malzeme (kanal): hacim yeniden hesaplandı");
+                Esit("TOPRAK (ASFALT KAPLAMALI)", kanal.Zemin, "malzeme (kanal): zemin cins + kaplamadan");
+                Esit("TOPRAK (ASFALT KAPLAMALI)", ana.Tanim, "malzeme (kanal): kanal kaleminin adı da");
             }, f =>
             {
                 var sayilar = new List<SayiKutusu>();
                 Hepsi(f, sayilar);
                 sayilar[0].Value = 60;
+                Bul<KoyuAcilir>(f, c => c.Name == "zeminCinsi").SelectedIndex = 0;
+                Bul<KoyuAcilir>(f, c => c.Name == "zeminKaplamasi").SelectedIndex = 2;
+                Bul<KoyuOnay>(f, c => c.Name == "zeminBariyer").Checked = false;
+                Bul<KoyuOnay>(f, c => c.Name == "zeminTrencher").Checked = false;
                 Resim(f, "sonra");
             });
 
@@ -567,7 +586,32 @@ namespace SebekeHakedis.PencereTest
                 durum.SelectedItem = "DM";
                 Esit(poz.Malzemeler(poz.Projeler[son], 0, "DM").Count, g.RowCount, "proje özeti: durum süzgeci");
                 Resim(f, "sonra");
+                // Kanal listesi sekmesi: tüm projeler, her projenin altında toplamı ve genel toplam
+                durum.SelectedIndex = 0;
+                lb.SelectedIndex = 0;
+                var sekme = Bul<Sekmeler>(f, x => true);
+                sekme.Secili = 1;
+                var kg = Bul<DataGridView>(f, x => x.Name == "kanalListesi");
+                var kl = poz.Kanallar;
+                Esit(kl.Satirlar.Count + 2 * kl.Projeler.Count - 1, kg.RowCount, "proje özeti: kanal listesi (proje başlıkları + satırlar + proje toplamları + genel toplam)");
+                Esit(true, kg.Columns[0].HeaderText == "Baş – bit" && (kg.Rows.Count > 0 && Convert.ToString(kg.Rows[0].Cells[0].Value).StartsWith("PROJE: ")), "proje özeti: kanal listesinde proje başlık satırı");
+                Esit(true, Bul<Button>(f, b => b.Name == "kanalTablosu").Visible, "proje özeti: kanal sekmesinde 'Çizime tablo olarak koy'");
+                Resim(f, "kanal");
+                // Excel'e aktar: malzeme sekmesi, son proje ve DM süzgeciyle (görünüm Excel'e gider)
+                sekme.Secili = 0;
+                lb.SelectedIndex = son;
+                durum.SelectedItem = "DM";
                 Bul<Button>(f, b => b.Text == "Excel'e aktar").PerformClick();
+            });
+
+            Dene("25b-kanal-tablosu", () =>
+            {
+                var gv = Pencereler.ProjeOzetiGoster(poz, null);
+                Esit(true, gv != null && gv.KanalTablosu && gv.Sekme == 1, "proje özeti: kanal tablosu istenir");
+            }, f =>
+            {
+                Bul<Sekmeler>(f, x => true).Secili = 1;
+                Bul<Button>(f, b => b.Name == "kanalTablosu").PerformClick();
             });
 
             // Koordinat dilimi (Google Earth / CBS / harita altlığı için; çizimde yoksa sorulur)

@@ -66,9 +66,24 @@ namespace SebekeHakedis.Eklenti
                 case "SH_ELEMAN": return k.ElemanCinsListesi(oge.Tur);
                 case "SH_HAT": return k.HatCinsListesi(oge.Tur);
                 case "SH_SONDAJ": return new List<string>(k.SondajCinsleri);
-                case "SH_KANAL": return new List<string>(k.KanalCinsleri);
+                case "SH_KANAL": return new List<string>(KanalZemini.Cinsler);
                 default: return new List<string>();
             }
+        }
+
+        /// <summary>
+        /// Tipin şeritteki cinsi: kanalda zeminin cinsi (toprak, tüvenan, mıcır, branşman, demontaj; tip listesi
+        /// kaplamalardır), diğer öğelerde katalog cinsi.
+        /// </summary>
+        public static string TipCinsi(MenuOgesi oge, KatalogKalemi it)
+        {
+            if (it == null) return "";
+            if (oge != null && oge.Komut == "SH_KANAL")
+            {
+                var z = KanalZemini.Coz(it.Tanim);
+                return z != null ? z.Cins : it.Cins;
+            }
+            return it.Cins;
         }
 
         /// <summary>
@@ -99,7 +114,7 @@ namespace SebekeHakedis.Eklenti
             var k = TemelKatalog;
             var hepsi = Tipler(oge, k);
             string cins = SeciliCins(oge, k);
-            var l = string.IsNullOrEmpty(cins) ? hepsi : hepsi.FindAll(x => x.Cins == cins);
+            var l = string.IsNullOrEmpty(cins) ? hepsi : hepsi.FindAll(x => TipCinsi(oge, x) == cins);
             if (l.Count == 0) l = hepsi;
             return Kisalt(l, oge, k, ListeSiniri);
         }
@@ -129,7 +144,10 @@ namespace SebekeHakedis.Eklenti
         {
             if (string.IsNullOrEmpty(anahtar)) return null;
             int i = anahtar.IndexOf('|');
-            return i < 0 ? null : k.Bul(anahtar.Substring(0, i), anahtar.Substring(i + 1));
+            if (i < 0) return null;
+            string cins = anahtar.Substring(0, i), tanim = anahtar.Substring(i + 1);
+            // Kanalda katalogda olmayan birleşimler kuralla kurulur (Katalog.KanalZeminleri)
+            return k.Bul(cins, tanim) ?? (k.KanalCinsleri.Contains(cins) ? k.KanalZeminiKalemi(tanim) : null);
         }
 
         /// <summary>
@@ -168,7 +186,7 @@ namespace SebekeHakedis.Eklenti
             if (oge == null || it == null) return;
             Yukle();
             _tip[oge.Kod] = it.Anahtar;
-            _cins[oge.Kod] = it.Cins;
+            _cins[oge.Kod] = TipCinsi(oge, it);
             SonaKoy(oge.Kod, it);
             SonaKoy(TurAnahtari(oge), it);
             Kaydet();
@@ -186,7 +204,7 @@ namespace SebekeHakedis.Eklenti
             string c;
             if (_cins.TryGetValue(oge.Kod, out c) && cinsler.Contains(c)) return c;
             var tip = SeciliTip(oge, k);
-            if (tip != null && cinsler.Contains(tip.Cins)) return tip.Cins;
+            if (tip != null && cinsler.Contains(TipCinsi(oge, tip))) return TipCinsi(oge, tip);
             return cinsler.Count > 0 ? cinsler[0] : "";
         }
 
@@ -198,9 +216,9 @@ namespace SebekeHakedis.Eklenti
             _cins[oge.Kod] = cins;
             var k = TemelKatalog;
             var tip = SeciliTip(oge, k);
-            if (tip == null || tip.Cins != cins)
+            if (tip == null || TipCinsi(oge, tip) != cins)
             {
-                var yeni = EnCokKullanilan(Tipler(oge, k).FindAll(x => x.Cins == cins));
+                var yeni = EnCokKullanilan(Tipler(oge, k).FindAll(x => TipCinsi(oge, x) == cins));
                 if (yeni != null) _tip[oge.Kod] = yeni.Anahtar;
             }
             Kaydet();
@@ -437,7 +455,7 @@ namespace SebekeHakedis.Eklenti
                 else
                 {
                     var t = SeciliTip(oge, TemelKatalog);
-                    if (t != null) parca.Add(t.Gorunen);
+                    if (t != null) parca.Add(oge.Komut == "SH_KANAL" ? KanalZemini.YaziOf(t.Tanim) + " (" + t.Tanim + ")" : t.Gorunen);
                 }
                 parca.Add(Durum + (Turler.DemontajMi(Durum) && !string.IsNullOrEmpty(DmDurum) ? " " + DmDurum : ""));
                 parca.Add(Hakedis > 0 ? Hakedis + ". hakediş" : "aktif hakediş");

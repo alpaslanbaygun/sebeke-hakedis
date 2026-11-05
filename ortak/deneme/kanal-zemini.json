@@ -1,0 +1,47 @@
+{
+  "bicim": "sebeke-hakedis.deneme.kanal-zemini",
+  "surum": 1,
+  "aciklama": "Kanal zemini: cins (dolgu), kaplama, bariyer ve trencher ayrı seçilir, kalem adı tek yazıdır. Eklenti (Cekirdek/KanalZemini.cs, CekirdekTest) ve telefon (sh-core.cjs kanalZeminiTanim / kanalZeminiCoz, tests/kanal.test.mjs) bu dosyadaki her durumu aynı sonuçla geçmek zorundadır. 'katalog': eski programın 19 kanal adı; çözülüp yeniden kurulunca aynı yazı çıkmalı.",
+  "katalog": [
+    "TUVENAN",
+    "TUVENAN (BARİYERLİ)",
+    "TUVENAN (ASFALT KAPLAMALI)",
+    "PARKE TUVENAN",
+    "PARKE TUVENAN (BARİYERLİ)",
+    "TOPRAK",
+    "TOPRAK (BARİYERLİ)",
+    "PARKE TOPRAK",
+    "PARKE TOPRAK (BARİYERLİ)",
+    "TRENCHER TOPRAK",
+    "TRENCHER TUVENAN",
+    "TRENCHER MICIR",
+    "MICIRLI",
+    "MICIRLI (BARİYERLİ)",
+    "MICIR (ASFALT KAPLAMALI)",
+    "PARKE MICIR",
+    "PARKE MICIR (BARİYERLİ)",
+    "KANAL (KABLO DEMONTAJ)",
+    "BRANŞMAN KANAL"
+  ],
+  "kurulum": [
+    { "cins": "TOPRAK", "kaplama": "", "bariyerli": false, "trencher": false, "tanim": "TOPRAK", "yazi": "Toprak · Kaplamasız" },
+    { "cins": "TOPRAK", "kaplama": "ASFALT", "bariyerli": false, "trencher": false, "tanim": "TOPRAK (ASFALT KAPLAMALI)", "yazi": "Toprak · Asfalt" },
+    { "cins": "TOPRAK", "kaplama": "BETON", "bariyerli": true, "trencher": false, "tanim": "TOPRAK (BETON KAPLAMALI) (BARİYERLİ)", "yazi": "Toprak · Beton · bariyerli" },
+    { "cins": "TUVENAN", "kaplama": "ASFALT", "bariyerli": true, "trencher": false, "tanim": "TUVENAN (ASFALT KAPLAMALI) (BARİYERLİ)", "yazi": "Tüvenan · Asfalt · bariyerli" },
+    { "cins": "TUVENAN", "kaplama": "PARKE", "bariyerli": true, "trencher": false, "tanim": "PARKE TUVENAN (BARİYERLİ)", "yazi": "Tüvenan · Parke · bariyerli" },
+    { "cins": "MICIR", "kaplama": "", "bariyerli": false, "trencher": false, "tanim": "MICIRLI", "yazi": "Mıcır · Kaplamasız" },
+    { "cins": "MICIR", "kaplama": "BETON", "bariyerli": false, "trencher": false, "tanim": "MICIR (BETON KAPLAMALI)", "yazi": "Mıcır · Beton" },
+    { "cins": "MICIR", "kaplama": "", "bariyerli": false, "trencher": true, "tanim": "TRENCHER MICIR", "yazi": "Mıcır · Kaplamasız · trencher" },
+    { "cins": "TOPRAK", "kaplama": "PARKE", "bariyerli": false, "trencher": true, "tanim": "TRENCHER PARKE TOPRAK", "yazi": "Toprak · Parke · trencher" },
+    { "cins": "TUVENAN", "kaplama": "ASFALT", "bariyerli": false, "trencher": true, "tanim": "TRENCHER TUVENAN (ASFALT KAPLAMALI)", "yazi": "Tüvenan · Asfalt · trencher" },
+    { "cins": "BRANŞMAN KANAL", "kaplama": "PARKE", "bariyerli": true, "trencher": true, "tanim": "BRANŞMAN KANAL", "yazi": "Branşman kanalı" },
+    { "cins": "KANAL (KABLO DEMONTAJ)", "kaplama": "", "bariyerli": false, "trencher": false, "tanim": "KANAL (KABLO DEMONTAJ)", "yazi": "Kablo demontaj kanalı" }
+  ],
+  "cozum": [
+    { "tanim": "tüvenan (bariyerli)", "cins": "TUVENAN", "kaplama": "", "bariyerli": true, "trencher": false },
+    { "tanim": "  Parke   Mıcır ", "cins": "MICIR", "kaplama": "PARKE", "bariyerli": false, "trencher": false },
+    { "tanim": "PARKE TRENCHER TOPRAK", "cins": "TOPRAK", "kaplama": "PARKE", "bariyerli": false, "trencher": true },
+    { "tanim": "Branşman Kanal", "cins": "BRANŞMAN KANAL", "kaplama": "", "bariyerli": false, "trencher": false }
+  ],
+  "kuralDisi": ["", "ASFALT", "BETON", "PARKE", "TOPRAK X", "PARKE TOPRAK (ASFALT KAPLAMALI)", "KUM"]
+}

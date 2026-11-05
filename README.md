@@ -30,6 +30,9 @@ GitHub › **Releases**:
 | **Teknik hesaplar (Hesap Merkezi)**: sehim, uplift, ag–aw, Amax, iletken kopma, tepe kuvveti (TEDAŞ / cer vektörü), OG–AG gerilim düşümü, OG–AG kısa devre, Cu ⇄ Al kesit, beton köşk yerleşimi, kanal planı, AG tek hat | ✓ (objeden açılır, bilgiler projeden dolar, sonuç projeye kaydedilir) | ✓ (`SH_HESAP`, `SH_HESAPLAR`; sonuç çizime kaydedilir, raporun HESAPLAR sayfasına yazılır) |
 | Kabin / köşk yerleşimi, tepe kuvveti, enerji kontrolü (eski ekranlar) | ✓ | — |
 | Fotoğraf ve not | ✓ | — |
+| Kanal cinsi (zemin) ve kaplama ayrı (toprak / tüvenan / mıcır; kaplamasız / parke / asfalt / beton; bariyerli, trencher) | ✓ hat formu ve hat kaydı | şeritte Cins / Kaplama, kanal penceresi (`SH_KANAL`) |
+| Proje bazında kanal listesi | ✓ ekran, Excel sayfaları | Proje Özeti sekmesi, Excel, çizime tablo (`SH_KANALLISTESI`) |
+| Açılırken çöken çizimi onarma (DWG 2000) | — | `SH_ONAR` |
 | Metraj, Yeşil Defter, hakediş dönemi ve onay | ✓ (Excel; onaylı dönem AutoCAD'e onay olarak gider) | `SH_OZET`, `SH_ONAY` (Kontrol → Hakediş → GIS, onaylı hakediş kilitli) |
 | Kullanıcılar, roller, hakediş yetkisi | ✓ (Kullanıcılar ve onay; yazmaya kapalı hakedişler) | `SH_KULLANICILAR`, `SH_OTURUM` (aynı kullanıcılar ve şifreler; onay aşamaları rolle) |
 | Durum Tespit raporu (Excel, eski programın biçimi) | telefondan gelen dosyayla eklentide | `SH_RAPOR`, `SH_PROJERAPOR` |

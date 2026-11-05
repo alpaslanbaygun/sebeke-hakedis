@@ -353,12 +353,40 @@ namespace SebekeHakedis.Cekirdek
             return l;
         }
 
-        /// <summary>Kanal zeminleri (KABLO_KANALI kalemleri): tanım listesi, katalog sırasıyla.</summary>
+        /// <summary>
+        /// Kanal zeminleri: cins (toprak, tüvenan, mıcır) × kaplama (yok, parke, asfalt, beton) × bariyer × trencher ve
+        /// özel kanallar, KanalZemini sırasıyla. Katalogda olan ad katalogdaki kalemdir; olmayan birleşim aynı tarifeyle
+        /// kurulan kalemdir (Kaynak "kural": eski programın listesinde yok). Kurala uymayan katalog kalemleri sonda.
+        /// </summary>
         public List<KatalogKalemi> KanalZeminleri()
         {
-            var l = Kalemler.FindAll(it => it.Rol == "kanal" || KanalCinsleri.Contains(it.Cins));
-            l.Sort(Siralayici(KanalCinsleri));
+            var katalog = Kalemler.FindAll(it => it.Rol == "kanal" || KanalCinsleri.Contains(it.Cins));
+            katalog.Sort(Siralayici(KanalCinsleri));
+            var adla = new Dictionary<string, KatalogKalemi>(StringComparer.Ordinal);
+            foreach (var it in katalog) if (!adla.ContainsKey(KatalogKalemi.Sade(it.Tanim))) adla[KatalogKalemi.Sade(it.Tanim)] = it;
+            var ornek = katalog.Find(it => it.Tanim == KanalZemini.Toprak) ?? (katalog.Count > 0 ? katalog[0] : null);
+            string cins = ornek != null ? ornek.Cins : KanalCinsleri.Count > 0 ? KanalCinsleri[0] : "KABLO_KANALI";
+            var l = new List<KatalogKalemi>();
+            var kullanilan = new HashSet<KatalogKalemi>();
+            foreach (var z in KanalZemini.Hepsi())
+            {
+                KatalogKalemi it;
+                if (adla.TryGetValue(KatalogKalemi.Sade(z.Tanim), out it)) { kullanilan.Add(it); l.Add(it); continue; }
+                l.Add(new KatalogKalemi
+                {
+                    Cins = cins, Tanim = z.Tanim, Birim = ornek != null ? ornek.Birim : "mt/m³", Rol = "kanal",
+                    Tarife = ornek != null ? ornek.Tarife : "0104", UnsurKoy = ornek != null ? ornek.UnsurKoy : "16", Kaynak = "kural",
+                });
+            }
+            foreach (var it in katalog) if (!kullanilan.Contains(it)) l.Add(it);
             return l;
+        }
+
+        /// <summary>Kanal zemini kalemi (katalogdaki ya da kuralla kurulan); yoksa null.</summary>
+        public KatalogKalemi KanalZeminiKalemi(string tanim)
+        {
+            string s = KatalogKalemi.Sade(tanim);
+            return KanalZeminleri().Find(z => KatalogKalemi.Sade(z.Tanim) == s);
         }
 
         /// <summary>Nesneye eklenebilecek malzemeler: önce o nesnede kullanılanlar (çok kullanılan önce), sonra katalog sırası.</summary>

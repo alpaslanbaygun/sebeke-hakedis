@@ -103,7 +103,7 @@ test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Dur
   assert.equal(yer.anaKesit, '3x95+50 Nyy Alm.'); assert.equal(yer.kalemler[0].cins, 'AG_ALÜMİNYUM_KABLO', 'cins kodu yazım hatası düzeltilmiş');
   assert.equal(sp.kanallar.length, 1);
   const kn = sp.kanallar[0];
-  assert.equal(kn.kod, 4); assert.equal(kn.zemin, 'ASFALT'); assert.equal(kn.altGenislik, 40); assert.equal(kn.derinlik, 80);
+  assert.equal(kn.kod, 4); assert.equal(kn.zemin, 'TUVENAN (ASFALT KAPLAMALI)'); // v2.6: eski 'asfalt' seçimi katalogdaki adla (eklentiyle aynı kural) assert.equal(kn.altGenislik, 40); assert.equal(kn.derinlik, 80);
   assert.equal(kn.kalemler[0].cins, '4'); assert.equal(kn.kalemler[0].birim, 'mt/m³');
   assert.ok(!kn.kalemler.some((k) => /boru/i.test(k.tanim)) && yer.kalemler.some((k) => /boru/i.test(k.tanim) && k.kaynak === 'MALZEME'), 'borulu geçişte boru kalemi kablonun malzemesi (kanal yalnız kendi kalemini taşır)');
   assert.equal(kn.basNo, agPts[0].no); assert.equal(kn.bitNo, sdk.no);

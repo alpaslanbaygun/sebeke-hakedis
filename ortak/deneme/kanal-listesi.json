@@ -1,0 +1,52 @@
+{
+  "bicim": "sebeke-hakedis.deneme.kanal-listesi",
+  "surum": 1,
+  "aciklama": "Proje bazında kanal listesi. Eklenti (Cekirdek/KanalListesi.cs, CekirdekTest) ve telefon (sh-core.cjs kanalListesi, tests/kanal.test.mjs) 'girdi' proje dosyasından 'beklenen' listeyi aynen üretmek zorundadır. Sıra: proje adı (Türkçe, büyük/küçük harf farkı yok; projesizler sonda), hakediş, çizim sırası. Uzunluk / hacim: kanal kaleminin miktarı / toplamı; kalemi olmayan kanalda çizim uzunluğu yukarı yuvarlanır, hacim ölçülerden hesaplanır.",
+  "girdi": {
+    "bicim": "sebeke-hakedis.proje",
+    "surum": 1,
+    "proje": { "ad": "DENEME KANAL" },
+    "bolgeler": [
+      { "id": "B1", "ad": "Merkez", "kod": "11.22.33" },
+      { "id": "B2", "ad": "çarşı", "kod": "" }
+    ],
+    "kanallar": [
+      { "id": "K1", "kod": 4, "zemin": "TOPRAK", "altGenislik": 40, "ustGenislik": 40, "derinlik": 100, "basNo": "SCB1", "bitNo": "SCB2", "durum": "M+M", "hakedis": 2, "bolge": "B1",
+        "kose": [[0, 0], [24.3, 0]],
+        "kalemler": [{ "cins": "4", "tanim": "TOPRAK", "durum": "M+M", "miktar": 25, "toplam": 10, "birim": "mt/m³", "katsayi": 1, "hakedis": 2, "ana": true, "kaynak": "NIT" }] },
+      { "id": "K2", "kod": 12, "zemin": "PARKE TUVENAN (BARİYERLİ)", "altGenislik": 60, "ustGenislik": 60, "derinlik": 120, "basNo": "SCTR01", "bitNo": "SCB1", "durum": "M", "hakedis": 1, "bolge": "B1",
+        "kose": [[0, 0], [0, 11.6]],
+        "kalemler": [{ "cins": "12", "tanim": "PARKE TUVENAN (BARİYERLİ)", "durum": "M", "miktar": 12, "toplam": 8.64, "birim": "mt/m³", "katsayi": 1, "hakedis": 1, "ana": true, "kaynak": "NIT" }] },
+      { "id": "K3", "kod": 4, "zemin": "ASFALT", "altGenislik": 40, "ustGenislik": 40, "derinlik": 80, "basNo": "", "bitNo": "", "durum": "M+M", "hakedis": 1, "bolge": "B2",
+        "kose": [[0, 0], [10, 0], [10, 5.5]],
+        "kalemler": [] },
+      { "id": "K4", "kod": 2, "zemin": "TRENCHER MICIR", "altGenislik": 40, "ustGenislik": 60, "derinlik": 100, "basNo": "", "bitNo": "SCAY3", "durum": "M", "hakedis": 1, "bolge": "",
+        "kose": [[0, 0], [6.2, 0]],
+        "kalemler": [{ "cins": "2", "tanim": "TRENCHER MICIR", "durum": "M", "miktar": 7, "toplam": 3.5, "birim": "mt/m³", "katsayi": 1, "hakedis": 1, "ana": true, "kaynak": "NIT" }] },
+      { "id": "K5", "kod": 4, "zemin": "TOPRAK", "altGenislik": 40, "ustGenislik": 40, "derinlik": 100, "basNo": "SCB2", "bitNo": "SCB3", "durum": "M+M", "hakedis": 1, "bolge": "B1",
+        "kose": [[0, 0], [9.4, 0]],
+        "kalemler": [{ "cins": "4", "tanim": "TOPRAK", "durum": "M+M", "miktar": 10, "toplam": 4, "birim": "mt/m³", "katsayi": 1, "hakedis": 1, "ana": true, "kaynak": "NIT" }] }
+    ]
+  },
+  "beklenen": {
+    "satirlar": [
+      { "proje": "çarşı", "projeKodu": "", "kimlik": "K3", "basNo": "", "bitNo": "", "kablolar": "AG", "zemin": "ASFALT", "cins": "ASFALT", "kaplama": "", "bariyerli": false, "trencher": false, "durum": "M+M", "hakedis": 1, "alt": 40, "ust": 40, "derinlik": 80, "uzunluk": 16, "hacim": 5.12 },
+      { "proje": "Merkez", "projeKodu": "11.22.33", "kimlik": "K2", "basNo": "SCTR01", "bitNo": "SCB1", "kablolar": "OG/AG", "zemin": "PARKE TUVENAN (BARİYERLİ)", "cins": "Tüvenan", "kaplama": "Parke", "bariyerli": true, "trencher": false, "durum": "M", "hakedis": 1, "alt": 60, "ust": 60, "derinlik": 120, "uzunluk": 12, "hacim": 8.64 },
+      { "proje": "Merkez", "projeKodu": "11.22.33", "kimlik": "K5", "basNo": "SCB2", "bitNo": "SCB3", "kablolar": "AG", "zemin": "TOPRAK", "cins": "Toprak", "kaplama": "Kaplamasız", "bariyerli": false, "trencher": false, "durum": "M+M", "hakedis": 1, "alt": 40, "ust": 40, "derinlik": 100, "uzunluk": 10, "hacim": 4 },
+      { "proje": "Merkez", "projeKodu": "11.22.33", "kimlik": "K1", "basNo": "SCB1", "bitNo": "SCB2", "kablolar": "AG", "zemin": "TOPRAK", "cins": "Toprak", "kaplama": "Kaplamasız", "bariyerli": false, "trencher": false, "durum": "M+M", "hakedis": 2, "alt": 40, "ust": 40, "derinlik": 100, "uzunluk": 25, "hacim": 10 },
+      { "proje": "", "projeKodu": "", "kimlik": "K4", "basNo": "", "bitNo": "SCAY3", "kablolar": "AYD", "zemin": "TRENCHER MICIR", "cins": "Mıcır", "kaplama": "Kaplamasız", "bariyerli": false, "trencher": true, "durum": "M", "hakedis": 1, "alt": 40, "ust": 60, "derinlik": 100, "uzunluk": 7, "hacim": 3.5 }
+    ],
+    "projeler": [
+      { "proje": "çarşı", "projeKodu": "", "tumu": false, "adet": 1, "uzunluk": 16, "hacim": 5.12 },
+      { "proje": "Merkez", "projeKodu": "11.22.33", "tumu": false, "adet": 3, "uzunluk": 47, "hacim": 22.64 },
+      { "proje": "", "projeKodu": "", "tumu": false, "adet": 1, "uzunluk": 7, "hacim": 3.5 },
+      { "proje": "", "projeKodu": "", "tumu": true, "adet": 5, "uzunluk": 70, "hacim": 31.26 }
+    ],
+    "ozet": [
+      { "proje": "çarşı", "zemin": "ASFALT", "durum": "M+M", "adet": 1, "uzunluk": 16, "hacim": 5.12 },
+      { "proje": "Merkez", "zemin": "PARKE TUVENAN (BARİYERLİ)", "durum": "M", "adet": 1, "uzunluk": 12, "hacim": 8.64 },
+      { "proje": "Merkez", "zemin": "TOPRAK", "durum": "M+M", "adet": 2, "uzunluk": 35, "hacim": 14 },
+      { "proje": "", "zemin": "TRENCHER MICIR", "durum": "M", "adet": 1, "uzunluk": 7, "hacim": 3.5 }
+    ]
+  }
+}

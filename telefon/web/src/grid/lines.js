@@ -132,23 +132,78 @@ export function overheadQuantities(line, len3D, cat, opts = {}) {
 
 // Yeraltı kablo: gerçek kablo metrajı = kanal + dikey iniş + çıkış + trafo payı + SDK payı + muf payı + rezerv
 export const CABLE_DEFAULTS = { channelType: 'toprak', width: 0.4, depth: null, sandCm: 20, warningTape: 1, protectionPlate: true, plateLenM: 1.0, concreteCm: 10, pipeDia: 110, pipeCount: 0, manholes: 0, joints: null, drumM: 500, riserM: 8, exitM: 2, trafoM: 5, sdkM: 2, jointM: 1.5, reserveM: 5 };
-// v2.4 · Kanal modeli: KAPLAMA (zeminin üstü) + YÖNTEM (nasıl geçildiği) ayrı seçilir
-export const KAPLAMA = { toprak: 'Toprak', tuvenan: 'Tuvenan', asfalt: 'Asfalt', beton: 'Beton', parke: 'Parke taşı' };
+// v2.4 · Kanal modeli: KAPLAMA (zeminin üstü) + YÖNTEM (nasıl geçildiği) ayrı seçilir.
+// KAPLAMA kanalın poz anahtarıdır (surface): kaplama seçiliyse kaplama, değilse zemin cinsi.
+export const KAPLAMA = { toprak: 'Toprak', tuvenan: 'Tüvenan', micir: 'Mıcır', asfalt: 'Asfalt', beton: 'Beton', parke: 'Parke taşı' };
 export const YONTEM = { acik: 'Açık kazı', borulu: 'Borulu geçiş', sondaj: 'Yatay sondaj' };
+// v2.6 · Kanal zemini AutoCAD eklentisiyle aynı: cins (dolgu) + kaplama + bariyer + trencher ayrı seçilir, AutoCAD'e
+// eski programın kalem adı gider (SH.kanalZeminiTanim; ortak deneme ortak/deneme/kanal-zemini.json).
+export const ZEMIN_CINSI = { toprak: 'Toprak', tuvenan: 'Tüvenan', micir: 'Mıcır', bransman: 'Branşman kanalı', demontaj: 'Kablo demontaj kanalı' };
+export const KAPLAMA_TURU = { '': 'Kaplamasız', parke: 'Parke', asfalt: 'Asfalt', beton: 'Beton' };
+const ZEMIN_KODU = { toprak: 'TOPRAK', tuvenan: 'TUVENAN', micir: 'MICIR', bransman: 'BRANŞMAN KANAL', demontaj: 'KANAL (KABLO DEMONTAJ)' };
+const KAPLAMA_KODU = { '': '', parke: 'PARKE', asfalt: 'ASFALT', beton: 'BETON' };
+const ZEMIN_ANAHTARI = Object.fromEntries(Object.entries(ZEMIN_KODU).map(([k, v]) => [v, k]));
+const KAPLAMA_ANAHTARI = Object.fromEntries(Object.entries(KAPLAMA_KODU).map(([k, v]) => [v, k]));
+export const zeminOzelMi = (zemin) => zemin === 'bransman' || zemin === 'demontaj';
+/** Kayıttaki kanal zemini: {zemin, kaplama, bariyer, trencher}; eski kayıtta tek "surface" seçiminden çıkarılır. */
+export function kanalZemini(cable) {
+  const c = cable || {};
+  if (c.zemin && ZEMIN_CINSI[c.zemin]) {
+    const ozel = zeminOzelMi(c.zemin);
+    return { zemin: c.zemin, kaplama: !ozel && KAPLAMA_TURU[c.kaplama || ''] ? c.kaplama || '' : '', bariyer: !ozel && !!c.bariyer, trencher: !ozel && !!c.trencher };
+  }
+  const s = c.surface;
+  if (s === 'asfalt' || s === 'parke') return { zemin: 'tuvenan', kaplama: s, bariyer: false, trencher: false };
+  if (s === 'beton') return { zemin: 'toprak', kaplama: 'beton', bariyer: false, trencher: false };
+  return { zemin: s === 'tuvenan' || s === 'micir' ? s : 'toprak', kaplama: '', bariyer: false, trencher: false };
+}
+/** Zeminin poz anahtarı (KAPLAMA): kaplama seçiliyse kaplama, değilse zemin cinsi (branşman / demontaj: toprak). */
+export const zemindenSurface = (z) => z.kaplama || (z.zemin === 'tuvenan' || z.zemin === 'micir' ? z.zemin : 'toprak');
+/** AutoCAD'e giden kanal kalemi adı; AutoCAD'den gelen kural dışı ad (zeminHam) seçim değişmedikçe aynen döner. */
+export function kanalZeminTanimi(cable) {
+  const c = cable || {};
+  if (c.zeminHam) return c.zeminHam;
+  const z = kanalZemini(c);
+  return SH.kanalZeminiTanim({ cins: ZEMIN_KODU[z.zemin], kaplama: KAPLAMA_KODU[z.kaplama], bariyerli: z.bariyer, trencher: z.trencher });
+}
+/** AutoCAD'deki kanal kalemi adından telefonun kanal zemini alanları (kural dışı adda zeminHam). */
+export function zemindenAlanlar(tanim) {
+  const z = SH.kanalZeminiCoz(tanim);
+  if (!z) {
+    const t = String(tanim || '').trim().toUpperCase();
+    // Eski telefon dosyalarındaki yalın kaplama adları (ASFALT, BETON) ve bilinmeyen adlar: ad korunur
+    const k = kanalZemini({ surface: t === 'ASFALT' ? 'asfalt' : t === 'BETON' ? 'beton' : 'toprak' });
+    return Object.assign(k, { surface: zemindenSurface(k) }, t ? { zeminHam: String(tanim).trim() } : {});
+  }
+  const k = { zemin: ZEMIN_ANAHTARI[z.cins] || 'toprak', kaplama: KAPLAMA_ANAHTARI[z.kaplama] || '', bariyer: z.bariyerli, trencher: z.trencher };
+  return Object.assign(k, { surface: zemindenSurface(k) });
+}
+/** Okunur yazı: "Tüvenan · Parke · bariyerli" (AutoCAD'deki kural dışı ad olduğu gibi). */
+export function kanalZeminYazisi(cable) {
+  const c = cable || {};
+  if (c.zeminHam) return c.zeminHam;
+  const z = kanalZemini(c);
+  if (zeminOzelMi(z.zemin)) return ZEMIN_CINSI[z.zemin];
+  return [ZEMIN_CINSI[z.zemin], KAPLAMA_TURU[z.kaplama], z.bariyer ? 'bariyerli' : '', z.trencher ? 'trencher' : ''].filter(Boolean).join(' · ');
+}
 export const KANAL_VARSAYILAN = {
-  kazi: { toprak: '032.12.01.01-003', tuvenan: '032.12.01.01-002', asfalt: 'YEREL:KANAL-ASFALT', beton: 'YEREL:KANAL-BETON', parke: 'YEREL:KANAL-PARKE' },
+  kazi: { toprak: '032.12.01.01-003', tuvenan: '032.12.01.01-002', micir: 'YEREL:KANAL-MICIR', asfalt: 'YEREL:KANAL-ASFALT', beton: 'YEREL:KANAL-BETON', parke: 'YEREL:KANAL-PARKE' },
   sondaj: '032.12.06.01-003',
   abone: { kaplamasiz: '032.13.03.01-001', kaplamali: '032.13.03.01-002' }
 };
 // Kayıttaki kanal bilgisinden kaplama + yöntem (eski kayıtlar: toprak / beton / borulu / direk inişi / duvar)
 export function kanalModel(cable) {
   const c = cable || {};
-  if (c.surface || c.method) return { surface: KAPLAMA[c.surface] ? c.surface : 'toprak', method: YONTEM[c.method] ? c.method : 'acik', yeni: true };
+  if (c.zemin || c.surface || c.method) {
+    const z = kanalZemini(c);
+    const surface = c.zemin ? zemindenSurface(z) : KAPLAMA[c.surface] ? c.surface : 'toprak';
+    return Object.assign({ surface, method: YONTEM[c.method] ? c.method : 'acik', yeni: true }, z);
+  }
   const t = c.channelType || 'toprak';
   // 'direk' (direk inişi) ve 'duvar' (duvar geçişi) v2.4'te kaldırıldı: bu eski kayıtlarda kazı yoktur → kaplama seçilene kadar kanal hesaplanmaz
   return { surface: t === 'beton' ? 'beton' : 'toprak', method: t === 'borulu' ? 'borulu' : 'acik', yeni: false, eski: t, kazisiz: t === 'direk' || t === 'duvar' };
 }
-export function kanalLabel(cable) { const k = kanalModel(cable); return KAPLAMA[k.surface] + (k.method !== 'acik' ? ' · ' + YONTEM[k.method] : ''); }
+export function kanalLabel(cable) { const k = kanalModel(cable); return (cable && (cable.zemin || cable.zeminHam) ? kanalZeminYazisi(cable) : KAPLAMA[k.surface]) + (k.method !== 'acik' ? ' · ' + YONTEM[k.method] : ''); }
 export function cableQuantities(line, route, endKinds, cat, opts = {}) {
   const auto = opts.auto !== false;
   const cfg = Object.assign({}, CABLE_DEFAULTS, line.cable || {});
@@ -188,7 +243,7 @@ export function cableQuantities(line, route, endKinds, cat, opts = {}) {
     const olcu = Lc.toFixed(2) + ' m × ' + w + ' × ' + (cfg.depth ?? '?') + ' m';
     if (Lc > 0 && !km.kazisiz) {
       if (km.method === 'sondaj') poz(K.sondaj, Lc, 'm', 'Yatay sondaj · ' + Lc.toFixed(2) + ' m', 'Yatay sondaj');
-      else if (line.lineType === 'ABONE') { if (!auto) poz((K.abone || {})[km.surface === 'toprak' || km.surface === 'tuvenan' ? 'kaplamasiz' : 'kaplamali'], Lc, 'm', 'Abone bağlantı kanalı · ' + KAPLAMA[km.surface] + ' · ' + Lc.toFixed(2) + ' m', 'Abone bağlantı kanalı'); }
+      else if (line.lineType === 'ABONE') { if (!auto) poz((K.abone || {})[(km.zemin ? !km.kaplama : km.surface === 'toprak' || km.surface === 'tuvenan') ? 'kaplamasiz' : 'kaplamali'], Lc, 'm', 'Abone bağlantı kanalı · ' + KAPLAMA[km.surface] + ' · ' + Lc.toFixed(2) + ' m', 'Abone bağlantı kanalı'); }
       else poz((K.kazi || {})[km.surface], hacim, 'm3', 'Kanal · ' + KAPLAMA[km.surface] + (km.method === 'borulu' ? ' · borulu geçiş' : '') + ' · ' + olcu, 'Kablo kanalı (' + KAPLAMA[km.surface] + ')');
       const nBoru = km.method === 'borulu' ? Math.max(1, +cfg.pipeCount || 0) : km.method === 'sondaj' ? (+cfg.pipeCount || 0) : 0;
       if (nBoru > 0) { kanal.boru = Lc * nBoru; mat('BORU_' + cfg.pipeDia, Lc * nBoru, 'm', nBoru + ' × Ø' + cfg.pipeDia + ' boru · ' + YONTEM[km.method]); }

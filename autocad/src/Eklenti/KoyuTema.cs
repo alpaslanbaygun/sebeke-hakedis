@@ -1181,15 +1181,20 @@ namespace SebekeHakedis.Eklenti
             Invalidate();
         }
 
+        /// <summary>Seçili sekme değişince.</summary>
+        public event Action Degisti;
+
         public int Secili
         {
             get => _secili;
             set
             {
                 if (value < 0 || value >= _sayfalar.Count) return;
+                bool degisti = value != _secili;
                 _secili = value;
                 for (int i = 0; i < _sayfalar.Count; i++) _sayfalar[i].Visible = i == value;
                 Invalidate();
+                if (degisti) Degisti?.Invoke();
             }
         }
 

@@ -109,8 +109,13 @@ Ayrıntı için telefon kılavuzuna bakın; AutoCAD ile birlikte çalışırken 
   Objenin ekranında hakediş kodu ayrıca seçilebilir: **KM** (kurum malzemesi, yüklenici montajı), **ENH**
   (kilometrik bedelli iş), **ME** (mutabakat eksiği); demontajda **KESİK / SÖKÜK**. AutoCAD'den gelen kod korunur.
   **"İleride" durumundaki objeler AutoCAD dosyasına yazılmaz.**
-- **Hat**: başlangıç ve bitiş direğine dokunun; iletken / kablo tipini seçin. Yeraltında kaplama (toprak, tuvenan,
-  asfalt, beton, parke) ve yöntem (açık kazı, borulu geçiş, yatay sondaj) AutoCAD'de kanal / sondaj nesnesi olur.
+- **Hat**: başlangıç ve bitiş direğine dokunun; iletken / kablo tipini seçin. Yeraltında kanalın **cinsi** (toprak,
+  tüvenan, mıcır, branşman kanalı, kablo demontaj kanalı), **kaplaması** (kaplamasız, parke, asfalt, beton),
+  **bariyerli** / **trencher** ve yöntem (açık kazı, borulu geçiş, yatay sondaj) ayrı seçilir; AutoCAD'de kanal /
+  sondaj nesnesi olur, kanalın kalem adı eklentidekiyle aynıdır (ör. `PARKE TUVENAN (BARİYERLİ)`).
+- **Kanal listesi**: Proje merkezi › **Kanal listesi (proje bazında)**: her projenin kanalları (baş – bit, kablolar,
+  cins, kaplama, ölçü, uzunluk, hacim, durum, hakediş) ve toplamları. Excel: Dışa Aktar › Excel dosyasında
+  **Kanal Listesi** ve **Kanal Özeti** sayfaları.
 - **Malzeme**: objeye dokunun › **Malzeme ekle** (katalogdan). AutoCAD'den gelen malzemeler aynen korunur.
 - **Teknik hesaplar**: objenin ekranında **Hesaplar** düğmesi (direk, trafo, hat) ya da **Hesaplar › Teknik
   hesaplar**. Ayrıntı Bölüm 5.
@@ -161,6 +166,11 @@ Renk teması: **Koyu**). Simgeler açık temada da okunur.
 3. **Ayarlar**:
    - **Cins**: önce cinsi seçin (ör. AG direkte *Beton*, *Ağaç*, *Demir*; AG hatta *Çıplak*, *ALPEK*). **Tip**
      listesi yalnız o cinsin tiplerini katalog sırasıyla gösterir (ALPEK'ler bir arada, araya çıplak iletken girmez).
+   - **Kablo kanalında** Cins kanalın zeminidir (*Toprak*, *Tüvenan*, *Mıcır*, *Branşman kanalı*, *Kablo demontaj
+     kanalı*); Tip'in yerinde **Kaplama** listesi çıkar (*Kaplamasız*, *Parke*, *Asfalt*, *Beton*; her birinin
+     *bariyerli* olanı ve *Trencher* ile kazılanı). Seçimden kanalın kalem adı kurulur (ör. Tüvenan + Parke +
+     bariyerli → `PARKE TUVENAN (BARİYERLİ)`). Eski programın listesinde olmayan birleşim de seçilebilir (ör. Toprak +
+     Asfalt → `TOPRAK (ASFALT KAPLAMALI)`); ipucunda "listesinde yok" yazar, raporlara bu adla geçer.
    - **Ara**: yazıp Enter'a basın (ör. `k2`, `beton 9,3`, `alpek 50`); öğenin bütün tipleri arasında arar, bulunanlar
      Tip listesine gelir, ilki seçilir (cinsi de seçilir). Boş Enter kısa listeye döner.
    - **Durum** (M, M+M, KM, DM, DM+M, MEVCUT): her durumun yanında çizilecek simge görünür. **Hakediş** ("Aktif
@@ -181,7 +191,7 @@ kendiliğinden artar. Her komut AutoCAD'in **U** (Geri Al) komutuyla tek seferde
 | Panel | Düğmeler |
 | --- | --- |
 | Hakediş | Aktif Hakediş, Hakediş Onayı |
-| Raporlar | Durum Tespit, Dosyadan Rapor, Proje Özeti, Eksik Malzeme |
+| Raporlar | Durum Tespit, Dosyadan Rapor, Proje Özeti, Kanal Listesi, Çizim Onar, Eksik Malzeme |
 | Telefon | Telefondan Al, Telefona Gönder |
 | CBS ve Harita | Google Earth, CBS'ye Aktar, CBS'den Al, CBS Bilgisi, Harita Altlığı |
 | Teknik Hesaplamalar | Hesap Merkezi, Kayıtlı Hesaplar, Cer Vektörü (direk tepe kuvveti), Kanal Planı |
@@ -202,7 +212,9 @@ başlığından tutup taşınır.
 - **Toplu malzeme**: solda katalog (arama kutusuyla), **Ekle** ile sağdaki tabloya; tabloda miktar ve durum
   ("elemana göre" ya da bir durum), altta hakediş. **Hafızadakiler** son konan elemanın malzemelerini tabloya getirir.
   **Malzemeleri ekle** seçilen bütün direklere yazar.
-- **Kablo kanalı çiz**: kanaldaki kablolar, zemin listesi, ölçüler ve **hızlı seçim** düğmeleri (40×40×80 …).
+- **Kablo kanalı çiz**: kanaldaki kablolar, **kanal cinsi (zemin)** ve **kaplama** ayrı ayrı (+ Bariyerli, Trencher;
+  altında kalem adı), ölçüler ve **hızlı seçim** düğmeleri (40×40×80 …). Aynı seçici kanalın **Malzemeler**
+  penceresinde ve **Çizim Ayarları › Metraj**'daki kanal varsayılanında da vardır.
 - **Yatay sondaj çiz**: tip listesi, durum, hakediş.
 - **Malzemeler**: nesnenin kendi pozu en üstte (kalın, simgeli); hücreye tıklayıp durum, miktar, hakediş, DM
   durumu değişir; altta toplam ağırlık. Onaylı hakedişin satırları gri ve kilit simgelidir.
@@ -361,7 +373,9 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 | Telefona Gönder | `SH_ICEAL` | Bölüm 2. `.sebeke.json` (varsayılan) ya da `.volt.json` olarak kaydeder (onaylar, kullanıcılar, hakediş yetkisi ve hesap kayıtları da gider). |
 | Durum Tespit | `SH_RAPOR` | Bu çizimden Excel rapor (eski programın sayfaları; ayrıca **DETAY** sayfası: her elemanın ara malzemeleri satır satır; **HESAPLAR** sayfası: teknik hesap sonuçları ve güncellikleri). |
 | Dosyadan Rapor | `SH_PROJERAPOR` | Bir proje dosyasından Excel rapor (çizim açmadan; telefon dosyaları da olur). |
-| Proje Özeti | `SH_OZET` | Pencere: solda projeler (bölgeler), sağda seçilen projenin malzeme listesi (hakediş, durum ve aramayla süzülür). **Excel'e aktar** proje listesini ve görünen malzeme listesini yazar; "Tüm projeler" seçiliyse her projenin listesi de ayrı sayfada. |
+| Proje Özeti | `SH_OZET` | Pencere: solda projeler (bölgeler), sağda seçilen projenin **Malzeme listesi** ya da **Kanal listesi** sekmesi (hakediş, durum ve aramayla süzülür). Kanal listesinde her kanal parçası (baş – bit, kablolar, cins, kaplama, ölçü, uzunluk, hacim, durum, hakediş); "Tüm projeler"de her proje bir başlık satırıyla başlar, altında toplamı. **Excel'e aktar** proje listesini, görünen malzeme listesini ve **KANAL LİSTESİ / KANAL ÖZETİ** sayfalarını yazar. Kanal sekmesindeki **Çizime tablo olarak koy** görünen listeyi çizime tablo olarak koyar. |
+| Kanal Listesi | `SH_KANALLISTESI` | Proje bazında kanal listesini çizime **tablo** olarak koyar (sol üst köşesini gösterin): her proje için başlık, kanallar ve toplamı, en altta genel toplam. Tablo `SH_KANAL_LISTESI` bloğudur (katman `SC_KANAL_LISTESI`); yeniden çalıştırınca yerinde yenilenir. AutoCAD'in tablo nesnesi değildir, DWG 2000 biçiminde de bozulmadan kalır. |
+| Çizim Onar | `SH_ONAR` | Açılırken AutoCAD'i kapatan çizimi **açmadan** onarır (DWG 2000 biçimi): eklentinin eski sürümünün (0.1.57 ve öncesi) bıraktığı boş kayıtlar çıkarılır, onarılmış kopya `…-onarildi.dwg` adıyla yanına yazılır; asıl dosyaya dokunulmaz. Birden çok çizim seçilebilir; çizim AutoCAD'de açık olmamalıdır. |
 | Eksik Malzeme | `SH_DETAY` | Eski programdaki DETAY sorgusu: ör. "topraklaması **olmayan** AG direkleri". Hangi elemanlarda (ana cins, tip, durum, bölge) hangi ara malzemenin (cins, tip, durum, hakediş) aranacağını seçin; **olmayanlar / olanlar / hepsi**. Sonuç pencerede listelenir; **Çizimde seç** bulunan elemanları seçer, **Excel'e yaz** ayrıca DETAY dosyasını yazar. |
 | Google Earth | `SH_KML` | Aşağıda: CBS ve harita. |
 | CBS'ye Aktar / CBS'den Al / CBS Bilgisi | `SH_MIFVER` / `SH_MIFAL` / `SH_CBSBILGI` | Aşağıda: CBS ve harita. |
@@ -538,10 +552,14 @@ yerleşimi ve AG tek hat hesapları kaldırıldı; eski kayıtları projede bilg
 - **Hesap sayfası tarayıcıda açılmadı**: Edge yoksa varsayılan tarayıcı kullanılır; yine açılmadıysa komut satırındaki
   adres kopyalanıp tarayıcıya yapıştırılabilir (`SH_HESAP` yazdıktan sonra görünür).
 - **Eklentiyle çizilmiş bir çizim açılırken AutoCAD kapanıyor ("Unhandled Access Violation")**: eklentinin
-  0.1.52 ve önceki sürümleri Telefondan Al ile çizdiği nesnelere bozuk bir veri bölümü yazıyordu; böyle kaydedilmiş
-  çizim açılışta çöker, `RECOVER` ile açılır ama o nesneler gelmez. Çözüm: eklentiyi güncelleyin, boş bir çizime
-  projeyi telefon dosyasından yeniden alın (`SH_PROJEAL`) ve kaydedin. Düzeltme 0.1.52'den sonraki sürümlerdedir
-  (`SH_HAKKINDA` sürümü gösterir).
+  0.1.57 ve önceki sürümleri bazı nesnelere boş bir veri bölümü yazıyordu; böyle kaydedilmiş çizim açılışta çöker,
+  `RECOVER` ile açılır ama o nesneler gelmez. Çözüm: eklentiyi güncelleyin; çizim **DWG 2000** biçiminde
+  kaydedildiyse **Çizim Onar** (`SH_ONAR`) onu açmadan onarır (`…-onarildi.dwg`). Başka biçimdeyse boş bir çizime
+  projeyi telefon dosyasından yeniden alın (`SH_PROJEAL`). Düzeltme 0.1.58 ve sonraki sürümlerdedir (`SH_HAKKINDA`
+  sürümü gösterir; bilgisayarda eski zip dosyası kaldıysa silin).
+- **Hat çizip komuttan çıkınca AutoCAD kapanıyor ("INTERNAL ERROR: !dbobji.cpp@8703: eNotOpenForWrite")**:
+  0.1.74–0.1.80 sürümlerindeki hata; eklentiyi güncelleyin. Kapanmadan önce kaydedilmemiş iş AutoCAD'in Kurtarma
+  penceresindeki yedekten açılır.
 - **Şerit sekmesi kayboldu**: komut satırına `SH_SERIT`.
 - **Bir hata oldu**: ayrıntı `%TEMP%\SebekeHakedis_hata.txt` dosyasına yazılır. Destek için `SH_DOKUM`
   çizimin teknik dökümünü kaydeder.

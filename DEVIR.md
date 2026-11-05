@@ -36,6 +36,37 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 | AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
 
+5.11 (`kanal-listesi` dalı, `kullanici-rolleri` + `cokme-duzeltme` üstüne; geri dönüş: `onceki-main-kanal-oncesi` dalı):
+kullanıcının 5.11 listesi (Karakoçan yeraltı çizimi). **Kanal cinsi ve kaplama ayrı** (kullanıcı kararı: her birleşim
+seçilebilir): cins = zemin (toprak, tüvenan, mıcır, branşman, kablo demontaj), kaplama (yok, parke, asfalt, beton),
+bariyerli, trencher; dosyaya ve rapora eski programın kalem adı gider (`Cekirdek/KanalZemini.cs` ↔ sh-core
+`kanalZeminiTanim / kanalZeminiCoz`; ortak deneme `ortak/deneme/kanal-zemini.json`: 19 katalog adı birebir). Katalogda
+olmayan birleşim `Katalog.KanalZeminleri` içinde kuralla kurulan kalemdir (Kaynak "kural", tarifesi topraktaki gibi).
+Eklentide şeritte kanalda Cins = zemin, Tip'in yerinde **Kaplama**; kanal çizme, malzeme penceresi ve Çizim Ayarları ›
+Metraj'da ortak `ZeminSecici`. Telefonda hat formu ve hat kaydında aynı seçim (`cable.zemin/kaplama/bariyer/trencher`,
+poz anahtarı `surface` bunlardan; kurala uymayan AutoCAD adı `cable.zeminHam` ile korunur; eski "surface" kayıtları
+okunur). **Proje bazında kanal listesi** (kullanıcı kararı: Proje Özeti + Excel + çizime tablo): `Cekirdek/KanalListesi.cs`
+↔ sh-core `kanalListesi` (ortak deneme `ortak/deneme/kanal-listesi.json`); Proje Özeti'nde Kanal listesi sekmesi, Excel'de
+KANAL LİSTESİ / KANAL ÖZETİ, `SH_KANALLISTESI` (şeritte Raporlar › Kanal Listesi) ile çizime tablo (`KanalTablosu` düzeni,
+`SH_KANAL_LISTESI` bloğu, çizgi + yazı; AutoCAD tablo nesnesi değil, DWG 2000'de bozulmaz; yeniden çalışınca yerinde
+yenilenir). Telefonda Proje merkezi › Kanal listesi ekranı ve Excel'de Kanal Listesi / Kanal Özeti sayfaları; çizime
+tablo telefonda yok (DXF'e konmadı). **Çizim Onar** (`SH_ONAR`, `Cekirdek/DwgOnarici.cs`): açılırken çöken DWG 2000
+çizimini açmadan onarır (değersiz genişletilmiş veri bölümleri; nesne yerinde yeniden yazılır, CRC ve bit boyu
+yenilenir); uydurma DWG ile çekirdek denemesi, gerçek çizimde Python aracı `araclar/dwg-onar` ile bayt bayt aynı, eski
+programın sağlam çiziminde (11.657 nesne) hiçbir şey değiştirmez. Kullanıcı kararları: mevcut köşk simgesi böyle kalır
+(MEVCUT durumu içi boş; çizimdeki köşk "M" olduğu için dolu); yeraltı kablosunda metraj iki eleman arasına bir kez
+(0.1.64'ten beri böyle; çizimdeki her köşedeki yazılar eski sürümden — `SH_GORUNUM` yeniler; yeni çekirdek denemesi).
+Simge boyu Çizim Ayarları › Görünüm'de (0.1.66+). Kullanıcının çizimini eski sürüm (0.1.43) yazmıştı.
+
+5.11 (`cokme-duzeltme` dalı, `main`'den): **Hat çizip komuttan çıkınca AutoCAD kapanıyordu** ("INTERNAL ERROR:
+!dbobji.cpp@8703: eNotOpenForWrite"; kullanıcı ekran görüntüsü, AutoCAD 2027). Neden: süs takibi (`KenarTakibi.EksenIsle`)
+komut bitince hattı yalnız okunur açıp `CizimYazici.EtiketYaz`'ı çağırıyor, o da hattın ETK verisini yazmaya açmadan
+yazıyordu (31.10 `b7f7e85` ile geldi; 0.1.74–0.1.80). Düzeltme: ETK aynıysa yazılmaz, değilse önce yazmaya açılır;
+eklentideki bütün `UpgradeOpen` çağrıları "yazmaya açık değilse" korumalı. Yeni deneme `CekirdekTest` ›
+`YazmaDenetimiDene`: eklenti kaynağında genişletilmiş veri yazılan her yerde nesnenin hemen önce yazmaya açıldığı ve
+korumasız `UpgradeOpen` kalmadığı denetlenir (eski kod bu denetimde yakalanıyor). Aynı gün bulunan öbür çökme (eski
+çizim açılırken): çizim 0.1.43 ile yazılmıştı (değersiz genişletilmiş veri bölümü, 0.1.58'de düzelmişti); dosya
+DWG 2000 biçiminde olduğundan AutoCAD dışında onarıldı (6 nesne), kullanıcıya gönderildi.
 2.11 (`kullanici-rolleri` dalı; geri dönüş: `onceki-main-kullanici-rolleri-oncesi` dalı): **17. madde (eski program
 parolaları / HAK_YETKİ)** kullanıcı kararıyla Şebeke-M'nin kendi tasarımıyla yapıldı: **telefondaki kullanıcılar ve
 roller eklentide de geçerli** (ortak tablo `ortak/katalog/roller.json`; şifre özeti iki tarafta aynı; proje dosyasında
@@ -270,6 +301,13 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 - Telefondan alma: o çizimden çıkmış, değişmemiş proje 17.837 nesnede 0 iş üretir.
 
 ## 6. Sıradaki işler
+
+- **5.11 `kanal-listesi` işlerinin AutoCAD'de denemesi**: şeritte Kablo Kanalı › Cins / Kaplama seçip kanal çizme
+  (kalem adı, rapor), kanalın Malzemeler penceresinde zemini değiştirme, Proje Özeti › Kanal listesi ve Excel, Kanal
+  Listesi ile çizime tablo (DWG 2000 kaydedip yeniden açma), Çizim Onar ile kullanıcının bozuk çizimi; telefonda
+  kanal cins / kaplama ile AutoCAD dosyasına yazıp eklentide açma. Telefona taşınamayan: kanal listesinin çizime
+  tablosu (telefonun DXF'inde yok; ekran ve Excel var). Mıcır zeminli ve kaplamalı kanalların telefondaki poz
+  numaraları yerel (YEREL:KANAL-…), fiyatı girilmeli.
 
 - **2.11 `kullanici-rolleri` işlerinin denemesi**: AutoCAD'de `SH_KULLANICILAR` ile ilk Yöneticiyi tanımlama, kullanıcı
   ekleme, `SH_OTURUM`, `SH_ONAY`'da rol kısıtı (Kontrol mühendisi yalnız Kontrol), bir hakedişi yazmaya kapatıp o hakedişe

@@ -117,8 +117,8 @@ Telefonun kataloğu TEDAŞ poz kodlarıyla (ör. `005.01.02.01-008`), eklentinin
 - Hat metrajı tam metreye yukarı yuvarlanır (eski program gibi); yeraltında telefonun payları (dikey iniş, çıkış, trafo,
   SDK, rezerv) dahildir ve `3(1x…)` kablolarda üç damarın toplamı yazılır.
 - Yeraltı hattın kazı kanalı ayrı **Kanal** nesnesi olur: kod kablo türlerinden (OG 8, AG 4, AYD 2, REK 1), zemin
-  `toprak/tuvenan/asfalt/beton/parke → TOPRAK/TUVENAN/ASFALT/BETON/PARKE TUVENAN`, genişlik ve derinlik cm, borulu
-  geçişte boru kalemi; yatay sondaj ayrı **Sondaj** nesnesidir. Ters yönde kanal, aynı köşeleri paylaşan hatta
+  telefonun cins / kaplama / bariyer / trencher seçiminden kalem adı olarak (aşağıda **Kanal zemini**), genişlik ve
+  derinlik cm, borulu geçişte boru kalemi; yatay sondaj ayrı **Sondaj** nesnesidir. Ters yönde kanal, aynı köşeleri paylaşan hatta
   bağlanır; hattı olmayan kanal "kablosuz kanal / kazı" hattı olur.
 - Bölge: AutoCAD'den gelen bölgeler telefonda saklanır ve geri yazılır; telefonda açılan projede tek bölge projenin
   kendisidir (tüm noktaları kapsayan kutu). Hakediş: hakedişe girmiş objede iş tarihinin düştüğü dönem, diğerlerinde
@@ -186,6 +186,26 @@ Telefonda her `HAT` kalemi bir devredir (`{role, key, count}`); eşlenemeyen ile
 
 Kanaldaki kablo türlerinin puan toplamı: **REK 1 + AYD 2 + AG 4 + OG 8** (ör. 12 = OG + AG).
 Kanal hacmi = (alt genişlik + üst genişlik) / 2 × derinlik × uzunluk (genişlik ve derinlik cm).
+
+### Kanal zemini (`kanallar[].zemin`)
+
+Dosyada eski programın kalem adıdır (değişmedi); iki uygulamada cins, kaplama, bariyer ve trencher ayrı seçilir ve ad
+şu kuralla kurulur / çözülür (eklenti `Cekirdek/KanalZemini.cs`, telefon `sh-core.cjs › kanalZeminiTanim /
+kanalZeminiCoz`; ortak deneme `ortak/deneme/kanal-zemini.json`):
+
+`[TRENCHER ][PARKE ]CİNS[ (ASFALT KAPLAMALI)| (BETON KAPLAMALI)][ (BARİYERLİ)]` — cins `TOPRAK`, `TUVENAN`, `MICIR`
+(önü ve kaplama eki yoksa `MICIRLI`); `BRANŞMAN KANAL` ve `KANAL (KABLO DEMONTAJ)` tek başınadır. Eski programın 19
+kanal adının hepsi bu kuralla birebir kurulur; listede olmayan birleşim (ör. `TOPRAK (ASFALT KAPLAMALI)`) aynı kuralla
+adlanır, tarifesi topraktakiyle aynıdır. Kurala uymayan ad (ör. eski telefon dosyasındaki `ASFALT`) olduğu gibi korunur.
+Telefonun kendi kaydında `cable.zemin` (toprak · tuvenan · micir · bransman · demontaj), `cable.kaplama` ('' · parke ·
+asfalt · beton), `cable.bariyer`, `cable.trencher`; kurala uymayan AutoCAD adı `cable.zeminHam`.
+
+### Kanal listesi (proje bazında)
+
+Eklenti `Cekirdek/KanalListesi.cs` ↔ telefon `sh-core.cjs › kanalListesi` (ortak deneme
+`ortak/deneme/kanal-listesi.json`): her kanal bir satır (proje = bölge adı, baş – bit, kablolar, cins, kaplama,
+bariyer, trencher, ölçüler, uzunluk = kanal kaleminin miktarı, hacim = kalemin toplamı, durum, hakediş); sıra proje
+adı (Türkçe, projesizler sonda), hakediş, çizim sırası; her projenin toplamı ve proje × kalem adı × durum özeti.
 
 ## Rapor kuralları (Durum Tespit)
 
