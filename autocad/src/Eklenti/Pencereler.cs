@@ -1816,7 +1816,7 @@ namespace SebekeHakedis.Eklenti
                 {
                     if (i < 0 || i >= kGorunen.Count) return null;
                     var t = kGorunen[i] as KanalListesi.Toplam;
-                    if (t != null) return (t.Tumu ? "GENEL TOPLAM" : t.GorunenAd + " toplamı") + " · " + t.Adet.ToString("N0", Tr) + " kanal";
+                    if (t != null) return (t.Tumu ? "GENEL TOPLAM" : "Proje toplamı") + " · " + t.Adet.ToString("N0", Tr) + " kanal";
                     return kGorunen[i] as string;
                 };
                 kg.CellValueNeeded += (s, e) =>
