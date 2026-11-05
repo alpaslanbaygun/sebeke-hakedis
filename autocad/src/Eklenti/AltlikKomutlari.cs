@@ -302,7 +302,7 @@ namespace SebekeHakedis.Eklenti
                 var e = tr.GetObject(id, OpenMode.ForRead) as Entity;
                 if (e == null || !string.Equals(e.Layer, Katman, StringComparison.OrdinalIgnoreCase)) continue;
                 if (e is DBText t && !t.TextString.StartsWith("Altlık:", StringComparison.Ordinal)) continue;
-                e.UpgradeOpen();
+                if (!e.IsWriteEnabled) e.UpgradeOpen();
                 e.Erase();
                 if (e is RasterImage) sayi++;
             }

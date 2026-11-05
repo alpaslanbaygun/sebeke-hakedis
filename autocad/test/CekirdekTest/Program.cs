@@ -287,6 +287,7 @@ namespace SebekeHakedis.Test
             CizimGorunumu(); // ortak çizim stilini yükler: en sonda (önceki denetimler stilsiz yazımı dener)
             CbsOrtakDeneme(); // telefonla aynı CBS dosyaları (stil yüklü olmalı: renkler ortak stilden)
             CbsIceAktarimDene(); // CBS'den şebeke nesnesi olarak alma
+            YazmaDenetimiDene();
         }
 
         /// <summary>Çizim görünümü: ortak stil (renkler, yazı tipi, kanal kenarı), açıklık metrajı, hat etiketi.</summary>
@@ -747,6 +748,44 @@ namespace SebekeHakedis.Test
         /// Malzeme adlarının görünen yazımı: büyük harf, standart birim ve kodlar, açılan kısaltmalar. Örnekler
         /// ortak/deneme/malzeme-yazimi.json'da; telefondaki deneme (telefon/web/tests/malzeme-yazimi.test.mjs) aynı dosyayı okur.
         /// </summary>
+        /// <summary>
+        /// Eklenti kaynağı denetimi (5.11.2026 çökmesi: hat çizip komuttan çıkınca AutoCAD "eNotOpenForWrite" iç hatasıyla
+        /// kapanıyordu — süs takibi hattı yalnız okunur açıp genişletilmiş verisine yazıyordu). Kural: genişletilmiş veri
+        /// yazılmadan hemen önce nesne yazmaya açılmış olmalı; UpgradeOpen yalnız yazmaya açık değilse çağrılır (açıksa
+        /// AutoCAD hata verir).
+        /// </summary>
+        private static void YazmaDenetimiDene()
+        {
+            Console.WriteLine("Eklenti kaynağı: yazmaya açma denetimi");
+            string kok = AppContext.BaseDirectory;
+            while (kok != null && !Directory.Exists(Path.Combine(kok, "autocad", "src", "Eklenti"))) kok = Path.GetDirectoryName(kok.TrimEnd(Path.DirectorySeparatorChar));
+            if (kok == null) { Console.WriteLine("  (kaynak bulunamadı, atlandı)"); return; }
+            var hatalar = new List<string>();
+            int xdata = 0;
+            foreach (var dosya in Directory.GetFiles(Path.Combine(kok, "autocad", "src", "Eklenti"), "*.cs"))
+            {
+                var satirlar = File.ReadAllLines(dosya, Encoding.UTF8);
+                for (int i = 0; i < satirlar.Length; i++)
+                {
+                    var m = System.Text.RegularExpressions.Regex.Match(satirlar[i], @"(\w+(?:\[\w]+\])?)\.XData = ");
+                    if (m.Success)
+                    {
+                        xdata++;
+                        string ad = m.Groups[1].Value;
+                        bool tamam = false;
+                        for (int j = Math.Max(0, i - 8); j <= i && !tamam; j++)
+                            tamam = satirlar[j].Contains(ad + ".IsWriteEnabled") || satirlar[j].Contains(ad + " = new ") || satirlar[j].Contains("OpenMode.ForWrite") && satirlar[j].Contains(ad);
+                        if (!tamam) hatalar.Add(Path.GetFileName(dosya) + ":" + (i + 1) + " " + ad + ".XData — önce yazmaya açılmalı");
+                    }
+                    var u = System.Text.RegularExpressions.Regex.Match(satirlar[i], @"(\w+(?:\[\w]+\])?)\.UpgradeOpen\(\)");
+                    if (u.Success && !satirlar[i].Contains("!" + u.Groups[1].Value + ".IsWriteEnabled"))
+                        hatalar.Add(Path.GetFileName(dosya) + ":" + (i + 1) + " " + u.Groups[1].Value + ".UpgradeOpen() korumasız");
+                }
+            }
+            Esit(true, xdata >= 8, "genişletilmiş veri yazan yerler bulundu (" + xdata + ")");
+            Esit("", string.Join(" | ", hatalar.ToArray()), "yalnız okunur nesneye yazma yok");
+        }
+
         /// <summary>Örnekler ortak dosyada: telefondaki deneme de aynı dosyayı okur.</summary>
         private static List<string[]> MalzemeYazimiOrnekleri()
         {

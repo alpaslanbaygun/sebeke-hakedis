@@ -126,7 +126,7 @@ namespace SebekeHakedis.Eklenti
                 if (nod.Contains(Sozluk)) sozluk = (DBDictionary)tr.GetObject(nod.GetAt(Sozluk), OpenMode.ForWrite);
                 else
                 {
-                    nod.UpgradeOpen();
+                    if (!nod.IsWriteEnabled) nod.UpgradeOpen();
                     sozluk = new DBDictionary();
                     nod.SetAt(Sozluk, sozluk);
                     tr.AddNewlyCreatedDBObject(sozluk, true);
