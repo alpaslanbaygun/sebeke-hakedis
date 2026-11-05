@@ -27,6 +27,7 @@ namespace SebekeHakedis.Cekirdek
             new[] { "Raporlar", "SH_RAPOR", "Bu çizimden Durum Tespit raporu (Excel)" },
             new[] { "Raporlar", "SH_PROJERAPOR", "Proje dosyasından Durum Tespit raporu" },
             new[] { "Raporlar", "SH_OZET", "Proje özeti penceresi: projeler, seçilen projenin malzeme ve kanal listesi; Excel'e aktarılır, kanal listesi çizime tablo olarak konur" },
+            new[] { "Raporlar", "SH_ONAR", "Açılırken çöken çizimi açmadan onarır (DWG 2000; eski sürümün bıraktığı boş kayıtlar); onarılmış kopya yanına yazılır" },
             new[] { "Raporlar", "SH_KANALLISTESI", "Proje bazında kanal listesini çizime tablo olarak koyar ya da yeniler (cins, kaplama, ölçü, uzunluk, hacim; proje toplamları)" },
             new[] { "Raporlar", "SH_DETAY", "Eksik malzeme bulur (ör. topraklaması olmayan direkler); bulunanları seçer, Excel'e yazar" },
             new[] { "Teknik hesaplar", "SH_HESAP", "Seçilen direk / hat / trafo / kanal için teknik hesabı tarayıcıda açar (SH_HESAP merkez: uygun hesapların listesi)" },

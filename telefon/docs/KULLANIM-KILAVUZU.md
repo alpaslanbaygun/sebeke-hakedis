@@ -383,7 +383,9 @@ Abone ve "Diğer" türü objeler hatta kendiliğinden bağlanmaz.
 
 ### Yeraltı kablosu ve kanal
 
-Yeraltı hattında önce `Kaplama` (`Toprak`, `Tuvenan`, `Asfalt`, `Beton`, `Parke taşı`), sonra `Yöntem` seçilir. `Derinlik (m)` zorunludur; girilmeden hat başlamaz.
+Yeraltı hattında kanalın `Cins`'i (zemin: `Toprak`, `Tüvenan`, `Mıcır`, `Branşman kanalı`, `Kablo demontaj kanalı`), `Kaplama`'sı (`Kaplamasız`, `Parke`, `Asfalt`, `Beton`) ve `Ek` (`Bariyerli`, `Trencher`) ayrı ayrı, sonra `Yöntem` seçilir. `Derinlik (m)` zorunludur; girilmeden hat başlamaz.
+
+Seçimden AutoCAD'e giden kanal kalemi adı kurulur; AutoCAD eklentisindekiyle aynı kural (ör. Tüvenan + Parke + Bariyerli → `PARKE TUVENAN (BARİYERLİ)`, Toprak + Asfalt → `TOPRAK (ASFALT KAPLAMALI)`). Hat kaydı ekranında "AutoCAD kalem adı" satırı bunu gösterir. AutoCAD'den gelen ve bu kurala uymayan bir ad olduğu gibi korunur; cins ya da kaplama seçilince yenisi yazılır. Eski sürümde tek `Kaplama` seçimiyle girilmiş hatlar okunur (Parke ve Asfalt → Tüvenan zemin, Beton → Toprak zemin).
 
 | Yöntem | Uygulamanın hesapladığı |
 | --- | --- |
@@ -397,7 +399,11 @@ Yeraltı hattında önce `Kaplama` (`Toprak`, `Tuvenan`, `Asfalt`, `Beton`, `Par
 - Yalnız kazı yapıldıysa `Yalnız kanal / kazı` anahtarını açın; kablo metrajı çıkmaz, kanal hesabı çıkar.
 - Kum, uyarı bandı, koruma plakası, ek ve başlık kendiliğinden gelmez; Hat kaydı › "Malzemeler" › `Malzeme ekle` ile eklenir.
 - "Direk inişi" ve "Duvar geçişi" seçenekleri kaldırıldı. Eski sürümde bu seçenekle girilmiş hatlarda kaplama seçilene kadar kazı hesaplanmaz; Hat kaydı ekranı bunu uyarır.
-- Asfalt, beton ve parke kaplamalı kanal ile boru kalemlerinin poz numarası ve fiyatı henüz girilmemiştir; Hesaplar › Poz kataloğu ekranından girin.
+- Asfalt, beton ve parke kaplamalı kanal, mıcır zeminli kanal ile boru kalemlerinin poz numarası ve fiyatı henüz girilmemiştir; Hesaplar › Poz kataloğu ekranından girin.
+
+### Kanal listesi
+
+Proje merkezinde `Kanal listesi (proje bazında)` düğmesi: her projenin (AutoCAD'den gelen bölgenin) kanalları; her satırda baş – bit numarası, kablolar, cins, kaplama, ölçü, uzunluk, hacim, durum ve hakediş; her projenin altında toplam, en altta genel toplam. Üstteki düğmelerle tek projeye ya da tek hakedişe süzülür. Aynı liste Dışa Aktar › Excel dosyasında `Kanal Listesi` ve `Kanal Özeti` (proje × kalem adı × durum) sayfalarıdır; AutoCAD'de Proje Özeti'nde ve çizime tablo olarak (`Kanal Listesi`) aynı satırlar çıkar.
 
 ### Hat kaydı
 

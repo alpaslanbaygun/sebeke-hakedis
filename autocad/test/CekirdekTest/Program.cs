@@ -39,6 +39,17 @@ namespace SebekeHakedis.Test
                     case "katsayilar": File.WriteAllText(args[1], Json.Yaz(Katsayilar.Varsayilan.JsonYap()) + "\n", new UTF8Encoding(false)); Console.WriteLine("yazıldı: " + args[1]); break;
                     case "semboller": SembolleriYukle(); Semboller_(); SembolDokumu(args.Length > 1 ? args[1] : null); break;
                     case "cbs": CbsBeklenenYaz(args[1]); break;
+                    case "dwgonar":
+                        {
+                            // Geliştirme: eklentinin SH_ONAR'ı ile aynı onarım (gerçek çizim depoya konmaz)
+                            byte[] cikti;
+                            var so = DwgOnarici.Onar(File.ReadAllBytes(args[1]), out cikti);
+                            if (so.Hata.Length > 0) { Console.WriteLine(so.Hata); return 1; }
+                            foreach (var kv in so.Nesneler) Console.WriteLine("  " + kv.Key + ": " + string.Join(", ", kv.Value.ToArray()));
+                            Console.WriteLine(so.Nesneler.Count + " nesne onarıldı (" + so.NesneSayisi + " nesne okundu)");
+                            if (so.Degisti) File.WriteAllBytes(args[2], cikti);
+                            break;
+                        }
                     default: Console.WriteLine("Bilinmeyen komut: " + komut); return 2;
                 }
             }
@@ -285,6 +296,7 @@ namespace SebekeHakedis.Test
             OnayAkisi(varliklar);
             KullanicilarDene();
             KanalDene();
+            DwgOnarDene();
             HesapMerkezi_(tp);
             CizimGorunumu(); // ortak çizim stilini yükler: en sonda (önceki denetimler stilsiz yazımı dener)
             CbsOrtakDeneme(); // telefonla aynı CBS dosyaları (stil yüklü olmalı: renkler ortak stilden)
@@ -1159,6 +1171,147 @@ namespace SebekeHakedis.Test
         }
 
         // ---------------- Hakediş onayı (AutoCAD HAK_ONAY) ve kilit ----------------
+
+        // ---------------- DWG 2000 onarımı (uydurma dosyayla) ----------------
+
+        private static void BsYaz(DwgOnarici.Yazici y, int v)
+        {
+            if (v == 0) { y.Sayi(2, 2); return; }
+            if (v < 256) { y.Sayi(1, 2); y.Sayi(v, 8); return; }
+            y.Sayi(0, 2); y.Sayi(v & 0xFF, 8); y.Sayi(v >> 8, 8);
+        }
+
+        private static void HYaz(DwgOnarici.Yazici y, int kod, int v)
+        {
+            y.Sayi(kod, 4);
+            int n = v == 0 ? 0 : v < 0x100 ? 1 : 2;
+            y.Sayi(n, 4);
+            for (int i = n - 1; i >= 0; i--) y.Sayi((v >> (8 * i)) & 0xFF, 8);
+        }
+
+        /// <summary>Uydurma nesne: tür, tanıtıcı, EED bölümleri (uygulama tanıtıcısı, veri; veri null: değersiz bölüm), gövde, tanıtıcı akışı.</summary>
+        private static byte[] UydurmaNesne(int tur, int tanitici, List<KeyValuePair<int, byte[]>> eed, Action<DwgOnarici.Yazici> govde, int katman)
+        {
+            // Bit boyu tanıtıcı akışının başıdır: önce gövdeyi ölç, sonra yaz
+            Func<long, DwgOnarici.Yazici> yaz = bitBoy =>
+            {
+                var y = new DwgOnarici.Yazici();
+                BsYaz(y, tur);
+                foreach (var bayt in BitConverter.GetBytes((uint)bitBoy)) y.Sayi(bayt, 8);
+                HYaz(y, 0, tanitici);
+                foreach (var e in eed)
+                {
+                    BsYaz(y, e.Value == null ? 0 : e.Value.Length);
+                    HYaz(y, 5, e.Key);
+                    if (e.Value != null) foreach (var bb in e.Value) y.Sayi(bb, 8);
+                }
+                BsYaz(y, 0);
+                govde(y);
+                return y;
+            };
+            long ana = yaz(0).BitSayisi;
+            var son = yaz(ana);
+            if (katman > 0) HYaz(son, 5, katman);
+            var veri = son.Baytlar();
+            var on = DwgOnarici.MsYaz(veri.Length);
+            var nesne = new byte[on.Length + veri.Length + 2];
+            Buffer.BlockCopy(on, 0, nesne, 0, on.Length);
+            Buffer.BlockCopy(veri, 0, nesne, on.Length, veri.Length);
+            int crc = DwgOnarici.Crc(nesne, 0, on.Length + veri.Length);
+            nesne[nesne.Length - 2] = (byte)crc; nesne[nesne.Length - 1] = (byte)(crc >> 8);
+            return nesne;
+        }
+
+        private static byte[] UydurmaDwg(List<KeyValuePair<int, byte[]>> nesneler)
+        {
+            var dosya = new List<byte>(Encoding.ASCII.GetBytes("AC1015"));
+            while (dosya.Count < 0x100) dosya.Add(0);
+            var konum = new List<KeyValuePair<int, int>>();
+            foreach (var n in nesneler) { konum.Add(new KeyValuePair<int, int>(n.Key, dosya.Count)); dosya.AddRange(n.Value); }
+            int haritaBas = dosya.Count;
+            var bolum = new List<byte>();
+            int st = 0, sl = 0;
+            Action<int, bool> mc = (v, isaretli) =>
+            {
+                bool eksi = v < 0; int a = Math.Abs(v);
+                while (true)
+                {
+                    int sinir = isaretli ? 0x40 : 0x80;
+                    if (a < sinir) { bolum.Add((byte)(a | (isaretli && eksi ? 0x40 : 0))); return; }
+                    bolum.Add((byte)((a & 0x7F) | 0x80)); a >>= 7;
+                }
+            };
+            foreach (var kv in konum) { mc(kv.Key - st, false); mc(kv.Value - sl, true); st = kv.Key; sl = kv.Value; }
+            int boy = bolum.Count + 2;
+            dosya.Add((byte)(boy >> 8)); dosya.Add((byte)boy); dosya.AddRange(bolum); dosya.Add(0); dosya.Add(0);
+            dosya.Add(0); dosya.Add(2); dosya.Add(0); dosya.Add(0);
+            int haritaBoy = dosya.Count - haritaBas;
+            var b = dosya.ToArray();
+            BitConverter.GetBytes(3).CopyTo(b, 0x15);
+            for (int i = 0; i < 3; i++)
+            {
+                b[0x19 + i * 9] = (byte)i;
+                BitConverter.GetBytes(i == 2 ? haritaBas : 0).CopyTo(b, 0x19 + i * 9 + 1);
+                BitConverter.GetBytes(i == 2 ? haritaBoy : 0).CopyTo(b, 0x19 + i * 9 + 5);
+            }
+            return b;
+        }
+
+        /// <summary>
+        /// Açılırken çöken çizimin onarımı (DwgOnarici): uydurma bir DWG 2000 dosyasında değersiz (sıfır uzunluklu)
+        /// genişletilmiş veri bölümü çıkarılır, öbür bölümler, nesnenin gövdesi ve tanıtıcı akışı aynen kalır.
+        /// </summary>
+        private static void DwgOnarDene()
+        {
+            Console.WriteLine("DWG 2000 onarımı (değersiz genişletilmiş veri bölümü)");
+            Action<DwgOnarici.Yazici> appidGovde(string ad) => y => { y.Sayi(2, 2); BsYaz(y, ad.Length + 1); foreach (char c in ad) y.Sayi(c, 8); y.Sayi(0, 8); };
+            Action<DwgOnarici.Yazici> varlik = y => { y.Sayi(0, 1); y.Sayi(0x1A5, 13); };
+            var nesneler = new List<KeyValuePair<int, byte[]>>
+            {
+                new KeyValuePair<int, byte[]>(0x10, UydurmaNesne(67, 0x10, new List<KeyValuePair<int, byte[]>>(), appidGovde("GIS"), 0)),
+                new KeyValuePair<int, byte[]>(0x11, UydurmaNesne(67, 0x11, new List<KeyValuePair<int, byte[]>>(), appidGovde("MALZEME"), 0)),
+                new KeyValuePair<int, byte[]>(0x20, UydurmaNesne(19, 0x20, new List<KeyValuePair<int, byte[]>>
+                {
+                    new KeyValuePair<int, byte[]>(0x10, new byte[] { 0, 3, 0xA2, 0x00, 0x41, 0x42, 0x43 }),
+                    new KeyValuePair<int, byte[]>(0x11, null),
+                }, varlik, 0x30)),
+                new KeyValuePair<int, byte[]>(0x21, UydurmaNesne(19, 0x21, new List<KeyValuePair<int, byte[]>>
+                {
+                    new KeyValuePair<int, byte[]>(0x10, new byte[] { 0, 1, 0xA2, 0x00, 0x5A }),
+                }, varlik, 0x30)),
+            };
+            var dwg = UydurmaDwg(nesneler);
+            byte[] onarilmis;
+            var s = DwgOnarici.Onar(dwg, out onarilmis);
+            Esit("", s.Hata, "onarım: dosya okunur");
+            Esit(4, s.NesneSayisi, "onarım: nesne haritası");
+            Esit("20:MALZEME", string.Join(" ", s.Nesneler.ConvertAll(kv => kv.Key + ":" + string.Join(",", kv.Value.ToArray())).ToArray()), "onarım: yalnız değersiz bölümü olan nesne");
+            Esit(dwg.Length, onarilmis.Length, "onarım: dosya boyu aynı (nesne yerinde, haritaya dokunulmaz)");
+            byte[] ikinci;
+            Esit(false, DwgOnarici.Onar(onarilmis, out ikinci).Degisti, "onarım: onarılmış dosyada iş kalmaz");
+            // Onarılmış nesne: CRC tutar, GIS bölümü aynen, gövde ve tanıtıcı akışı (katman 0x30) yerinde
+            var harita = DwgOnarici.NesneHaritasi(onarilmis, BitConverter.ToInt32(onarilmis, 0x19 + 18 + 1), BitConverter.ToInt32(onarilmis, 0x19 + 18 + 5));
+            int loc = harita[0x20];
+            int sz = onarilmis[loc] | (onarilmis[loc + 1] << 8);
+            Esit(onarilmis[loc + 2 + sz] | (onarilmis[loc + 3 + sz] << 8), DwgOnarici.Crc(onarilmis, loc, 2 + sz), "onarım: nesnenin CRC'si yeni");
+            var r = new DwgOnarici.Okuyucu(onarilmis, loc + 2);
+            Esit(19, r.BS(), "onarım: tür");
+            long bitBoy = r.RL();
+            Esit(0x20L, r.H(), "onarım: tanıtıcı");
+            int es = r.BS();
+            Esit(7, es, "onarım: GIS bölümü (7 bayt)");
+            Esit(0x10L, r.H(), "onarım: GIS uygulaması");
+            r.P += es * 8;
+            Esit(0, r.BS(), "onarım: değersiz bölüm yok, bitiş");
+            Esit(0L, r.Bitler(1), "onarım: gövde aynen (grafik yok)");
+            Esit(0x1A5L, r.Bitler(13), "onarım: gövde aynen");
+            Esit(bitBoy, r.P - (loc + 2) * 8L, "onarım: bit boyu tanıtıcı akışının başı");
+            Esit(0x30L, r.H(), "onarım: tanıtıcı akışı (katman) yerinde");
+            var yeni = new byte[106];
+            Encoding.ASCII.GetBytes("AC1032").CopyTo(yeni, 0);
+            byte[] x;
+            Esit(true, DwgOnarici.Onar(yeni, out x).Hata.Contains("AutoCAD 2018"), "onarım: 2018 biçiminde açıklama");
+        }
 
         /// <summary>
         /// Kanal zemini (cins / kaplama / bariyer / trencher → eski programın kalem adı) ve proje bazında kanal listesi:

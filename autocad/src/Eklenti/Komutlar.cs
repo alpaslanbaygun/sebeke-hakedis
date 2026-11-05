@@ -172,6 +172,47 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>
+        /// Açılırken AutoCAD'i çökerten çizimi açmadan onarır (DWG 2000 biçimi): eklentinin 0.1.57 ve öncesinin bıraktığı
+        /// değersiz genişletilmiş veri bölümleri çıkarılır, onarılmış kopya "-onarildi" ekiyle yanına yazılır; asıl dosyaya
+        /// dokunulmaz. Seçilen çizimler AutoCAD'de açık olmamalıdır.
+        /// </summary>
+        [CommandMethod("SH_ONAR", CommandFlags.Modal | CommandFlags.Session)]
+        public void CizimOnar()
+        {
+            Calistir("Çizim onarma", () =>
+            {
+                string[] dosyalar;
+                using (var dlg = new WinForms.OpenFileDialog { Title = "Onarılacak çizimler (açılırken çöken)", Filter = "AutoCAD çizimi (*.dwg)|*.dwg", Multiselect = true })
+                {
+                    if (dlg.ShowDialog() != WinForms.DialogResult.OK) return;
+                    dosyalar = dlg.FileNames;
+                }
+                var acik = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (Document d in AcApp.DocumentManager) { try { acik.Add(Path.GetFullPath(d.Name)); } catch { } }
+                var rapor = new List<string>();
+                int onarilan = 0;
+                foreach (var yol in dosyalar)
+                {
+                    string ad = Path.GetFileName(yol);
+                    if (acik.Contains(Path.GetFullPath(yol))) { rapor.Add("• " + ad + ": AutoCAD'de açık; kapatıp yeniden deneyin."); continue; }
+                    byte[] cikti;
+                    DwgOnarici.Sonuc so;
+                    try { so = DwgOnarici.Onar(File.ReadAllBytes(yol), out cikti); }
+                    catch (System.Exception ex) { rapor.Add("• " + ad + ": okunamadı (" + ex.Message + ")"); continue; }
+                    if (so.Hata.Length > 0) { rapor.Add("• " + ad + ": " + so.Hata); continue; }
+                    if (!so.Degisti) { rapor.Add("• " + ad + ": bu türden bozukluk yok (" + so.NesneSayisi.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR")) + " nesne okundu)."); continue; }
+                    string hedef = Path.Combine(Path.GetDirectoryName(yol) ?? "", Path.GetFileNameWithoutExtension(yol) + "-onarildi.dwg");
+                    for (int i = 2; File.Exists(hedef); i++) hedef = Path.Combine(Path.GetDirectoryName(yol) ?? "", Path.GetFileNameWithoutExtension(yol) + "-onarildi-" + i + ".dwg");
+                    File.WriteAllBytes(hedef, cikti);
+                    onarilan++;
+                    rapor.Add("• " + ad + ": " + so.Nesneler.Count + " nesne onarıldı → " + Path.GetFileName(hedef));
+                    foreach (var kv in so.Nesneler) Uygulama.Yaz("  " + ad + " · nesne " + kv.Key + ": boş kayıt çıkarıldı (" + string.Join(", ", kv.Value.ToArray()) + ")");
+                }
+                Pencereler.Bilgi((onarilan > 0 ? onarilan + " çizim onarıldı. Onarılmış kopyayı açın; asıl dosyaya dokunulmadı.\n\n" : "Onarılan çizim yok.\n\n") + string.Join("\n", rapor.ToArray()));
+            });
+        }
+
+        /// <summary>
         /// Proje bazında kanal listesini çizime tablo olarak koyar ya da (varsa) yeniler: her proje için kanallar
         /// (baş – bit, kablolar, cins, kaplama, ölçü, uzunluk, hacim, durum, hakediş) ve proje toplamı; en sonda genel toplam.
         /// </summary>

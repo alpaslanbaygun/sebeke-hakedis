@@ -313,6 +313,7 @@ namespace SebekeHakedis.Eklenti
             rapor.Items.Add(Dugme("Dosyadan\nRapor", "Bir proje dosyasından (.sebeke.json, .volt.json ya da teslim paketi) Durum Tespit raporu üretir.", "_SH_PROJERAPOR ", "dosya_rapor", null));
             rapor.Items.Add(Dugme("Proje\nÖzeti", "Projeleri (bölgeleri), seçilen projenin malzeme listesini ve kanal listesini bir pencerede gösterir; listeler Excel'e aktarılır, kanal listesi çizime tablo olarak konabilir.", "_SH_OZET ", "ozet", null));
             rapor.Items.Add(Dugme("Kanal\nListesi", "Proje bazında kanal listesini çizime tablo olarak koyar ya da yeniler: her projenin kanalları (cins, kaplama, ölçü, uzunluk, hacim) ve toplamları. Liste Proje Özeti'nde de görünür ve Excel'e aktarılır.", "_SH_KANALLISTESI ", "kanal", null));
+            rapor.Items.Add(Dugme("Çizim\nOnar", "Açılırken AutoCAD'i çökerten çizimi açmadan onarır (DWG 2000): eklentinin eski sürümünün (0.1.57 ve öncesi) bıraktığı boş kayıtlar çıkarılır, onarılmış kopya '-onarildi' ekiyle yanına yazılır; asıl dosyaya dokunulmaz.", "_SH_ONAR ", "uyari", null));
             rapor.Items.Add(Dugme("Eksik\nMalzeme", "Eksik malzeme bul (DETAY sorgusu): ör. topraklaması olmayan direkler. Bulunanlar çizimde seçilir, istenirse Excel'e yazılır.", "_SH_DETAY ", "eksik", null));
 
             var telefon = Panel(araclar, "Telefon");
