@@ -11,7 +11,7 @@ import { hesapKayitlari } from '../hesap/kayitlar.js';
 import SH from './sh-core.cjs';
 import ESLESME from '../ortak/volt-eslesme.js';
 import KALEMLER from '../ortak/kalemler.js';
-import { lineLabel, circuitLabel, circuitParts, kanalModel, autocadDevresi, autocadAnahtari, autocadGrubu } from '../grid/lines.js';
+import { lineLabel, circuitLabel, circuitParts, kanalModel, kanalZeminTanimi, zemindenAlanlar, autocadDevresi, autocadAnahtari, autocadGrubu } from '../grid/lines.js';
 import { jobOf } from '../grid/recipe.js';
 import { makeCrs, project as projLL, unproject as unprojLL, zoneForLon, TM_ZONES } from '../geo/crs.js';
 import { aktifHakedis, objeHakedisi } from '../core/hakedis-no.js';
@@ -313,7 +313,8 @@ export function sebekeModel(ps, opts = {}) {
         kalemBilgisiUygula(s.kalemler, kayitliBilgi(sb, s.id));
         sp.sondajlar.push(s);
       } else {
-        const zemin = ESLESME.zeminler[km.surface] || 'TOPRAK';
+        // Kanal kalemi adı: cins + kaplama + bariyer + trencher (eklentiyle aynı kural); AutoCAD'den gelen kural dışı ad korunur
+        const zemin = kanalZeminTanimi(l.cable);
         const gen = Math.round((kn.genislik || 0) * 100), der = Math.round((kn.derinlik || 0) * 100);
         const kDurum = sb.kanalDurum ? korunanDurum({ durum: sb.kanalDurum }, l.state, false, tedarik) : durum;
         const c = { id: kanalKimligi('K'), kod: SH.kanalKodu(kablolar.OG, kablolar.AG, kablolar.AYD, kablolar.REK), zemin, altGenislik: gen, ustGenislik: gen, derinlik: der, basNo: uc[0] ? uc[0].no : '', bitNo: uc[1] ? uc[1].no : '', durum: kDurum, hakedis: hak, bolge, kose, cizimUzunlugu: r3(uzunluk), kontrol: null, kalemler: [], telefonId: l.id };
@@ -1166,12 +1167,12 @@ function zinciriBirlestir(zincir) {
 }
 /** Kanal nesnesinden telefonun kanal ayarı; boru kalemi kanalda ya da aynı güzergâhtaki hatta aranır. */
 function kanalAyari(c, hat) {
-  const surface = ESLESME.zeminlerTers[(c.zemin || '').toUpperCase()] || 'toprak';
+  const zemin = zemindenAlanlar(c.zemin);
   const boruMu = (k) => /boru/i.test(k.tanim || '') || /BORU/i.test(k.cins || '');
   const boru = (c.kalemler || []).find(boruMu) || ((hat && hat.kalemler) || []).find((k) => !k.ana && k.kaynak !== 'HAT' && boruMu(k)) || null;
   const cap = boru ? /Ø\s*(\d+)/.exec(boru.tanim || '') : null;
   const uzunluk = Math.max(1, c.cizimUzunlugu || SH.uzunluk(c.kose) || 1);
-  return { cable: { surface, method: boru ? 'borulu' : 'acik', width: r3(((+c.altGenislik || 0) + (+c.ustGenislik || 0)) / 2 / 100), depth: r3((+c.derinlik || 0) / 100), pipeDia: cap ? +cap[1] : 110, pipeCount: boru ? Math.max(1, Math.round((+boru.miktar || 0) / uzunluk)) : 0 }, boru };
+  return { cable: { ...zemin, method: boru ? 'borulu' : 'acik', width: r3(((+c.altGenislik || 0) + (+c.ustGenislik || 0)) / 2 / 100), depth: r3((+c.derinlik || 0) / 100), pipeDia: cap ? +cap[1] : 110, pipeCount: boru ? Math.max(1, Math.round((+boru.miktar || 0) / uzunluk)) : 0 }, boru };
 }
 
 /**

@@ -5,7 +5,7 @@ import { measure } from '../services.js';
 import { renumberDialog } from './field.js';
 import { HakRow, HakHistory } from './team.js';
 import { STATUSES, HAK_STATUSES, HAK_ORDER, hakOf } from '../../core/schema.js';
-import { circuitLabel, circuitParts, autocadDevresi, lineLabelText, malzemeYazisi, CABLE_DEFAULTS, KAPLAMA, YONTEM, kanalModel } from '../../grid/lines.js';
+import { circuitLabel, circuitParts, autocadDevresi, lineLabelText, malzemeYazisi, CABLE_DEFAULTS, KAPLAMA, YONTEM, kanalModel, ZEMIN_CINSI, KAPLAMA_TURU, zemindenSurface, zeminOzelMi, kanalZeminTanimi } from '../../grid/lines.js';
 import { autocadSecenekleri, autocadCinsAdi } from '../../interop/sebeke.js';
 import { autoRecipeOn } from '../../grid/recipe.js';
 import { MaterialPicker } from './matpick.js';
@@ -93,6 +93,15 @@ export function LineScreen({ id }) {
   const set = (p) => setD((x) => Object.assign({}, x, p));
   const setC = (i, p) => setD((x) => Object.assign({}, x, { circuits: x.circuits.map((c, j) => (j === i ? Object.assign({}, c, p) : c)) }));
   const setCable = (p) => setD((x) => Object.assign({}, x, { cable: Object.assign({}, x.cable || {}, p) }));
+  // Kanal zemini seçimi: cins / kaplama / bariyer / trencher birlikte yazılır, poz anahtarı (surface) onlardan; AutoCAD'in kural dışı adı bırakılır
+  const setZemin = (p) => setD((x) => {
+    const km = kanalModel(x.cable);
+    const z = Object.assign({ zemin: km.zemin || 'toprak', kaplama: km.kaplama || '', bariyer: !!km.bariyer, trencher: !!km.trencher }, p);
+    if (zeminOzelMi(z.zemin)) Object.assign(z, { kaplama: '', bariyer: false, trencher: false });
+    const c = Object.assign({}, x.cable || {}, z, { surface: zemindenSurface(z), method: km.method });
+    delete c.zeminHam;
+    return Object.assign({}, x, { cable: c });
+  });
   const dirty = JSON.stringify(d) !== JSON.stringify(l0);
   const auto = autoRecipeOn(ps.p);
   const num = (v) => +String(v).replace(',', '.');
@@ -150,8 +159,10 @@ export function LineScreen({ id }) {
     ${d.install === 'yeralti' ? (() => { const km = kanalModel(d.cable); const kn = li.cable && li.cable.kanal; const fld = ([k, l]) => html`<div class="fld"><label>${l}</label><input class="inp mono" type="number" step="0.05" value=${(d.cable || {})[k] ?? (k === 'joints' || k === 'depth' ? '' : cb[k])} onChange=${(e) => setCable({ [k]: e.target.value === '' ? null : +e.target.value })} /></div>`;
       return html`<div class="sect">Kanal</div><div class="card stack">
       ${!km.yeni && (km.eski === 'direk' || km.eski === 'duvar') ? html`<div class="alert warn" style="font-size:12px">Bu kayıt eski "${km.eski === 'direk' ? 'Direk inişi' : 'Duvar geçişi'}" türündeydi; bu tür kaldırıldı. Kaplama ve yöntemi seçip kaydedin.</div>` : null}
-      <div class="fld"><label>Kaplama</label><div class="chips">${Object.entries(KAPLAMA).map(([k, l]) => html`<${Chip} on=${km.surface === k} onClick=${() => setCable({ surface: k, method: km.method })}>${l}</${Chip}>`)}</div></div>
-      <div class="fld"><label>Yöntem</label><div class="chips">${Object.entries(YONTEM).map(([k, l]) => html`<${Chip} on=${km.method === k} onClick=${() => setCable(Object.assign({ surface: km.surface, method: k }, k === 'borulu' && !((d.cable || {}).pipeCount > 0) ? { pipeCount: 1 } : {}))}>${l}</${Chip}>`)}</div></div>
+      <div class="fld"><label>Cins (zemin)</label><div class="chips">${Object.entries(ZEMIN_CINSI).map(([k, l]) => html`<${Chip} on=${km.zemin === k && !(d.cable || {}).zeminHam} onClick=${() => setZemin({ zemin: k })}>${l}</${Chip}>`)}</div></div>
+      ${zeminOzelMi(km.zemin) ? null : html`<div class="fld"><label>Kaplama</label><div class="chips">${Object.entries(KAPLAMA_TURU).map(([k, l]) => html`<${Chip} on=${km.kaplama === k && !(d.cable || {}).zeminHam} onClick=${() => setZemin({ kaplama: k })}>${l}</${Chip}>`)}<${Chip} on=${!!km.bariyer} onClick=${() => setZemin({ bariyer: !km.bariyer })}>Bariyerli</${Chip}><${Chip} on=${!!km.trencher} onClick=${() => setZemin({ trencher: !km.trencher })}>Trencher</${Chip}></div></div>`}
+      <div class="note mono">AutoCAD kalem adı: ${kanalZeminTanimi(d.cable)}${(d.cable || {}).zeminHam ? ' (AutoCAD\'den geldiği gibi; seçim yapınca değişir)' : ''}</div>
+      <div class="fld"><label>Yöntem</label><div class="chips">${Object.entries(YONTEM).map(([k, l]) => html`<${Chip} on=${km.method === k} onClick=${() => setCable(Object.assign({ surface: km.surface, method: k, zemin: km.zemin, kaplama: km.kaplama, bariyer: km.bariyer, trencher: km.trencher }, k === 'borulu' && !((d.cable || {}).pipeCount > 0) ? { pipeCount: 1 } : {}))}>${l}</${Chip}>`)}</div></div>
       <div class="grid3">${[['depth', 'Derinlik m *'], ['width', 'Genişlik m']].map(fld)}${km.method !== 'acik' ? [['pipeDia', 'Boru Ø mm'], ['pipeCount', 'Boru adet']].map(fld) : null}</div>
       ${kn && kn.eski ? html`<div class="alert warn">Bu hat eski sürümde “${kn.eski === 'direk' ? 'Direk inişi' : 'Duvar geçişi'}” olarak girilmiş; bu seçenek kaldırıldı ve kazı hesaplanmıyor. Burada kanal açılıyorsa yukarıdan kaplamayı seçin.</div>` : null}
       ${kn ? html`<div class="kv mono" style="font-size:12px"><b>Kanal boyu</b><span>${trn(kn.uzunluk, 2)} m</span>${kn.method === 'sondaj' ? html`<b>Yatay sondaj</b><span class="hl">${trn(kn.uzunluk, 2)} m</span>` : html`<b>Kazı hacmi</b><span class="hl">${trn(kn.uzunluk, 2)} × ${kn.genislik} × ${kn.derinlik} = ${trn(kn.hacim, 2)} m³</span>`}${kn.boru ? html`<b>Boru</b><span>${trn(kn.boru, 2)} m</span>` : null}</div>` : html`<div class="note">Kaplama ve yöntemi seçip kaydedince kanal hesabı burada görünür.</div>`}

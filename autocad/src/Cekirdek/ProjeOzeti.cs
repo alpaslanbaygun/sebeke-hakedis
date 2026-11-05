@@ -39,11 +39,21 @@ namespace SebekeHakedis.Cekirdek
         public readonly List<string> Durumlar = new List<string>();
 
         private readonly List<DurumTespit.OzetSatiri> _satirlar;
+        private readonly Proje _proje;
+
+        /// <summary>Proje bazında kanal listesi (bütün projeler; pencere ve Excel'in KANAL sayfaları).</summary>
+        public readonly KanalListesi Kanallar;
+
+        /// <summary>Kanal listesi süzgeçle: proje (null ya da "Tüm projeler": hepsi) ve hakediş (0: hepsi).</summary>
+        public KanalListesi KanalListesi(ProjeSatiri proje, int hakedis = 0) =>
+            new KanalListesi(_proje, proje == null || proje.Tumu ? null : proje.Ad, hakedis);
         private static readonly CultureInfo Tr = CultureInfo.GetCultureInfo("tr-TR");
 
         public ProjeOzeti(Proje p, Katsayilar k = null)
         {
             CizimAdi = p.Ad ?? "";
+            _proje = p;
+            Kanallar = new KanalListesi(p);
             var dt = new DurumTespit(p, k);
             _satirlar = dt.Ozet();
 
@@ -160,6 +170,7 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>
         /// Listeleri Excel'e yazar: PROJELER (proje listesi ve toplam), MALZEME LİSTESİ (seçili projenin, süzgeçlerle
         /// pencerede görünen hâli). "Tüm projeler" seçiliyse bir de PROJE BAZINDA sayfası (her projenin listesi ayrı satırlarda).
+        /// Kanal varsa KANAL LİSTESİ (proje bazında, her projenin altında toplam) ve KANAL ÖZETİ (proje × zemin × durum).
         /// </summary>
         public void ExcelYaz(string yol, ProjeSatiri secili, int hakedis, string durum, string ara, string surum)
         {
@@ -197,6 +208,8 @@ namespace SebekeHakedis.Cekirdek
                 pb.UstBilgi.Add(olusturma);
                 MalzemeSayfasi(pb, Malzemeler(null, hakedis, durum, ara), true);
             }
+            // Proje bazında kanal listesi ve kanal özeti (bütün projeler, süzgeçsiz)
+            if (Kanallar.Satirlar.Count > 0) Kanallar.SayfalariEkle(x, olusturma);
             x.Kaydet(yol);
         }
 

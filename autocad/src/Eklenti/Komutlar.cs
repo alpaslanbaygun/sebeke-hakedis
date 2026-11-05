@@ -149,7 +149,7 @@ namespace SebekeHakedis.Eklenti
                 var p = CizimdenProje(belge);
                 if (p == null) return;
                 var oz = new ProjeOzeti(p);
-                Pencereler.ProjeOzetiGoster(oz, g =>
+                var son = Pencereler.ProjeOzetiGoster(oz, g =>
                 {
                     string ek = g.Proje == null || g.Proje.Tumu ? "_PROJE_OZETI_" : "_" + g.Proje.GorunenAd + "_MALZEME_";
                     string yol = KayitYeriSor("Proje özetini Excel'e kaydet", "Excel dosyası (*.xlsx)|*.xlsx",
@@ -159,6 +159,31 @@ namespace SebekeHakedis.Eklenti
                     Uygulama.Yaz("Proje özeti Excel'e yazıldı: " + yol);
                     Ac(yol);
                 });
+                // Kanal listesi sekmesinden "Çizime tablo olarak koy": görünen proje ve hakedişle
+                if (son != null && son.KanalTablosu)
+                {
+                    var o = Ortam.Hazirla(belge);
+                    bool tumu = son.Proje == null || son.Proje.Tumu;
+                    var liste = new KanalListesi(o.Proje, tumu ? null : son.Proje.Ad, son.Hakedis);
+                    string baslik = "KANAL LİSTESİ — " + (tumu ? (o.Proje.Ad ?? "") : son.Proje.GorunenAd) + (son.Hakedis > 0 ? " · " + son.Hakedis + ". hakediş" : "");
+                    KanalTablosuYazici.Koy(o, liste, baslik.Trim(' ', '—'));
+                }
+            });
+        }
+
+        /// <summary>
+        /// Proje bazında kanal listesini çizime tablo olarak koyar ya da (varsa) yeniler: her proje için kanallar
+        /// (baş – bit, kablolar, cins, kaplama, ölçü, uzunluk, hacim, durum, hakediş) ve proje toplamı; en sonda genel toplam.
+        /// </summary>
+        [CommandMethod("SH_KANALLISTESI", CommandFlags.Modal)]
+        public void KanalListesiKoy()
+        {
+            var belge = AcApp.DocumentManager.MdiActiveDocument;
+            if (belge == null) return;
+            Calistir("Kanal listesi", () =>
+            {
+                var o = Ortam.Hazirla(belge);
+                KanalTablosuYazici.Koy(o, new KanalListesi(o.Proje));
             });
         }
 

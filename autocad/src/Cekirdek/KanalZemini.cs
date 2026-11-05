@@ -90,6 +90,16 @@ namespace SebekeHakedis.Cekirdek
             }
         }
 
+        /// <summary>Şeritteki kaplama listesinin yazısı (cins ayrı seçilir): "Parke · bariyerli", "Trencher · Kaplamasız".</summary>
+        public string KaplamaYazisi
+        {
+            get
+            {
+                if (OzelMi(Cins)) return CinsAdi(Cins);
+                return (Trencher ? "Trencher · " : "") + KaplamaAdi(Kaplama) + (Bariyerli ? " · bariyerli" : "");
+            }
+        }
+
         private static readonly CultureInfo Tr = CultureInfo.GetCultureInfo("tr-TR");
 
         /// <summary>Karşılaştırma yazımı: büyük harf, Türkçe harfler sadeleşir (TÜVENAN = TUVENAN, MİCİR = MICIR), tek boşluk.</summary>

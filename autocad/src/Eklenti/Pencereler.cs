@@ -525,6 +525,120 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
+        /// <summary>
+        /// Kanal zemini: cins (toprak, tüvenan, mıcır, branşman, kablo demontaj), kaplama (yok, parke, asfalt, beton),
+        /// bariyer ve trencher ayrı seçilir; altında çizime ve rapora gidecek kalem adı (KanalZemini). Kurala uymayan eski ad
+        /// (ör. "ASFALT") "Diğer" olarak listede durur; seçim değişmezse aynen korunur.
+        /// </summary>
+        private sealed class ZeminSecici
+        {
+            public readonly KoyuAcilir Cins, Kaplama;
+            public readonly KoyuOnay Bariyer, Trencher;
+            public readonly Label Ad;
+            public readonly int Boy;
+            public event Action Degisti;
+            private readonly Katalog _katalog;
+            private string _ham;
+            private bool _yukleniyor;
+
+            /// <param name="yatay">Tek satır (geniş pencere); değilse alt alta (dar sütun).</param>
+            public ZeminSecici(Control kap, int x, int y, int w, bool yatay, string tanim, Katalog katalog)
+            {
+                _katalog = katalog;
+                Cins = new KoyuAcilir { Name = "zeminCinsi" };
+                Kaplama = new KoyuAcilir { Name = "zeminKaplamasi" };
+                Bariyer = new KoyuOnay("Bariyerli") { Name = "zeminBariyer" };
+                Trencher = new KoyuOnay("Trencher") { Name = "zeminTrencher" };
+                if (yatay)
+                {
+                    int w1 = Math.Min(190, (w - 236) / 2), w2 = w1;
+                    Etiket(kap, "Kanal cinsi (zemin)", x, y);
+                    Koy(kap, Cins, x, y + 20, w1);
+                    Etiket(kap, "Kaplama", x + w1 + 12, y);
+                    Koy(kap, Kaplama, x + w1 + 12, y + 20, w2);
+                    Koy(kap, Bariyer, x + w1 + w2 + 28, y + 24);
+                    Koy(kap, Trencher, x + w1 + w2 + 28 + 112, y + 24);
+                    Ad = Etiket(kap, "", x, y + 58, w, KoyuYazi.Kucuk, KoyuRenk.Soluk);
+                    Boy = 80;
+                }
+                else
+                {
+                    Etiket(kap, "Kanal cinsi (zemin)", x, y);
+                    Koy(kap, Cins, x, y + 20, w);
+                    Etiket(kap, "Kaplama", x, y + 60);
+                    Koy(kap, Kaplama, x, y + 80, w);
+                    Koy(kap, Bariyer, x, y + 120);
+                    Koy(kap, Trencher, x + Math.Min(120, w / 2), y + 120);
+                    Ad = Aciklama(kap, "", x, y + 150, w, 40);
+                    Boy = 190;
+                }
+                foreach (var k in KanalZemini.Kaplamalar) Kaplama.Items.Add(KanalZemini.KaplamaAdi(k));
+                Tanim = tanim;
+                EventHandler degisti = (s, e) =>
+                {
+                    if (_yukleniyor) return;
+                    if (Cins.SelectedIndex < KanalZemini.Cinsler.Length) _ham = null;
+                    Yenile();
+                    Degisti?.Invoke();
+                };
+                Cins.SelectedIndexChanged += degisti;
+                Kaplama.SelectedIndexChanged += degisti;
+                Bariyer.CheckedChanged += degisti;
+                Trencher.CheckedChanged += degisti;
+            }
+
+            /// <summary>Seçili zeminin kalem adı ("PARKE TUVENAN (BARİYERLİ)"); kural dışı eski ad değişmediyse kendisi.</summary>
+            public string Tanim
+            {
+                get
+                {
+                    if (_ham != null && Cins.SelectedIndex >= KanalZemini.Cinsler.Length) return _ham;
+                    return Secim().Tanim;
+                }
+                set
+                {
+                    _yukleniyor = true;
+                    try
+                    {
+                        var z = KanalZemini.Coz(value);
+                        _ham = z == null && !string.IsNullOrWhiteSpace(value) ? value.Trim() : null;
+                        Cins.Items.Clear();
+                        foreach (var c in KanalZemini.Cinsler) Cins.Items.Add(KanalZemini.CinsAdi(c));
+                        if (_ham != null) Cins.Items.Add("Diğer: " + _ham);
+                        z = z ?? new KanalZemini();
+                        Cins.SelectedIndex = _ham != null ? Cins.Items.Count - 1 : Math.Max(0, Array.IndexOf(KanalZemini.Cinsler, z.Cins));
+                        Kaplama.SelectedIndex = Math.Max(0, Array.IndexOf(KanalZemini.Kaplamalar, z.Kaplama ?? ""));
+                        Bariyer.Checked = z.Bariyerli;
+                        Trencher.Checked = z.Trencher;
+                    }
+                    finally { _yukleniyor = false; }
+                    Yenile();
+                }
+            }
+
+            private KanalZemini Secim()
+            {
+                int c = Cins.SelectedIndex, k = Kaplama.SelectedIndex;
+                return new KanalZemini
+                {
+                    Cins = c >= 0 && c < KanalZemini.Cinsler.Length ? KanalZemini.Cinsler[c] : KanalZemini.Toprak,
+                    Kaplama = k >= 0 && k < KanalZemini.Kaplamalar.Length ? KanalZemini.Kaplamalar[k] : "",
+                    Bariyerli = Bariyer.Checked, Trencher = Trencher.Checked,
+                };
+            }
+
+            private void Yenile()
+            {
+                bool ozel = (_ham != null && Cins.SelectedIndex >= KanalZemini.Cinsler.Length) || KanalZemini.OzelMi(Secim().Cins);
+                Kaplama.Enabled = !ozel;
+                Bariyer.Enabled = !ozel;
+                Trencher.Enabled = !ozel;
+                string ad = Tanim;
+                var it = _katalog != null ? _katalog.KanalZeminiKalemi(ad) : null;
+                Ad.Text = "Kalem adı: " + ad + (it == null || it.Kaynak == "kural" ? "  ·  eski programın listesinde yok, bu adla yazılır" : "");
+            }
+        }
+
         private static KoyuAcilir DmKutusu(string secili)
         {
             var c = new KoyuAcilir();
@@ -1146,26 +1260,6 @@ namespace SebekeHakedis.Eklenti
 
         // ================= Kanal =================
 
-        /// <summary>Kanal zeminleri: katalogdakiler (AutoCAD sırası), sabit liste ve çizimde geçenler.</summary>
-        private static List<string> Zeminler(OrtamVerisi o, string secili)
-        {
-            var l = new List<string>();
-            var gorulen = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var it in o.Katalog.KanalZeminleri()) if (gorulen.Add(it.Tanim)) l.Add(it.Tanim);
-            foreach (var z in Turler.Zeminler) if (gorulen.Add(z)) l.Add(z);
-            foreach (var k in o.Proje.Kanallar) if (!string.IsNullOrEmpty(k.Zemin) && gorulen.Add(k.Zemin)) l.Add(k.Zemin);
-            if (!string.IsNullOrEmpty(secili) && gorulen.Add(secili)) l.Insert(0, secili);
-            return l;
-        }
-
-        private static KoyuAcilir ZeminKutusu(OrtamVerisi o, string secili)
-        {
-            var c = new KoyuAcilir(true);
-            foreach (var z in Zeminler(o, null)) c.Items.Add(z);
-            c.Text = string.IsNullOrEmpty(secili) ? "TOPRAK" : secili;
-            return c;
-        }
-
         public static KanalSecimi Kanal(OrtamVerisi o, KanalSecimi onceki)
         {
             Hazirla();
@@ -1180,13 +1274,8 @@ namespace SebekeHakedis.Eklenti
                 var ag = Koy(kablo, new KoyuOnay("AG"), 16, 64);
                 var ayd = Koy(kablo, new KoyuOnay("Aydınlatma"), 16, 92);
                 var rek = Koy(kablo, new KoyuOnay("Rekortman"), 16, 120);
-                Etiket(f, "Zemin", 16, 224);
-                var zemin = new IkiSatirListe();
-                Koy(f, new Cerceve(zemin), 16, 244, 240, 240);
                 string zeminSecili = onceki != null ? onceki.Zemin : a.KanalZemin;
-                foreach (var z in Zeminler(o, zeminSecili)) zemin.Items.Add(z);
-                int zi = zemin.Items.IndexOf(string.IsNullOrEmpty(zeminSecili) ? "TOPRAK" : zeminSecili);
-                if (zemin.Items.Count > 0) zemin.SelectedIndex = Math.Max(0, zi);
+                var zemin = new ZeminSecici(f, 16, 224, 240, false, string.IsNullOrEmpty(zeminSecili) ? KanalZemini.Toprak : zeminSecili, o.Katalog);
 
                 // Sağ: ölçüler (şeritte girilmişse oradan), hızlı seçim, durum, hakediş
                 HizliSecim.Yukle();
@@ -1223,7 +1312,7 @@ namespace SebekeHakedis.Eklenti
                 ayd.Checked = kablolar.Contains("AYD,");
                 rek.Checked = kablolar.Contains("REK,");
 
-                Func<string> zeminDegeri = () => zemin.SelectedItem as string ?? "";
+                Func<string> zeminDegeri = () => zemin.Tanim ?? "";
                 Action ozetYaz = () =>
                 {
                     var kl = new List<string>();
@@ -1238,7 +1327,7 @@ namespace SebekeHakedis.Eklenti
                 };
                 var kilitDenetle = KilitBagla(o, hak, bilgi, alt.Tamam, normal);
                 foreach (var c in new[] { og, ag, ayd, rek }) c.CheckedChanged += (s, e) => ozetYaz();
-                zemin.SelectedIndexChanged += (s, e) => ozetYaz();
+                zemin.Degisti += () => ozetYaz();
                 altG.ValueChanged += (s, e) => ozetYaz();
                 ust.ValueChanged += (s, e) => ozetYaz();
                 der.ValueChanged += (s, e) => ozetYaz();
@@ -1250,7 +1339,7 @@ namespace SebekeHakedis.Eklenti
                 alt.Tamam.Click += (s, e) =>
                 {
                     if (!(og.Checked || ag.Checked || ayd.Checked || rek.Checked)) { Uyar("Kanaldaki kabloları seçin."); return; }
-                    if (zeminDegeri().Trim().Length == 0) { Uyar("Zemin türünü seçin."); return; }
+                    if (zeminDegeri().Trim().Length == 0) { Uyar("Kanal cinsini (zemin) seçin."); return; }
                     if (o.Kilitli((int)hak.Value)) { Uyar(o.KilitMesaji((int)hak.Value)); return; }
                     f.DialogResult = DialogResult.OK;
                 };
@@ -1600,11 +1689,16 @@ namespace SebekeHakedis.Eklenti
             public ProjeOzeti.ProjeSatiri Proje;
             public int Hakedis;
             public string Durum = "", Ara = "";
+            /// <summary>0: malzeme listesi, 1: kanal listesi.</summary>
+            public int Sekme;
+            /// <summary>"Çizime tablo olarak koy" ile kapandı: kanal listesi (görünen proje ve hakedişle) çizime konacak.</summary>
+            public bool KanalTablosu;
         }
 
         /// <summary>
-        /// Proje özeti: solda projeler (bölgeler), sağda seçilen projenin malzeme listesi; hakediş, durum ve aramayla süzülür.
-        /// "Excel'e aktar" listeleri yazar (excel), pencere açık kalır. Dönen değer: son görünüm.
+        /// Proje özeti: solda projeler (bölgeler), sağda seçilen projenin malzeme listesi ya da kanal listesi (sekme);
+        /// hakediş, durum ve aramayla süzülür. "Excel'e aktar" listeleri yazar (excel), pencere açık kalır. Kanal listesi
+        /// sekmesindeki "Çizime tablo olarak koy" pencereyi kapatır (KanalTablosu). Dönen değer: son görünüm.
         /// </summary>
         public static ProjeOzetiGorunumu ProjeOzetiGoster(ProjeOzeti oz, Action<ProjeOzetiGorunumu> excel)
         {
@@ -1620,7 +1714,11 @@ namespace SebekeHakedis.Eklenti
                 excelDugme.SetBounds(S(16), by, S(150), bh);
                 w.Alt.Controls.Add(excelDugme);
                 w.Alt.Controls.Add(kapat);
-                var excelBilgi = Etiket(w.Alt, "Proje listesi ve görünen malzeme listesi yazılır.", 182, 0, 560, KoyuYazi.Kucuk, KoyuRenk.Soluk);
+                var tabloDugme = new KoyuDugme("Çizime tablo olarak koy", DugmeTuru.Ikincil, Boya.Simge("kanal", KoyuRenk.Ikincil, 16)) { Name = "kanalTablosu" };
+                tabloDugme.SetBounds(kapat.Left - S(10) - S(210), by, S(210), bh);
+                tabloDugme.Visible = false;
+                w.Alt.Controls.Add(tabloDugme);
+                var excelBilgi = Etiket(w.Alt, "Proje listesi, görünen malzeme listesi ve kanal listesi yazılır.", 182, 0, 420, KoyuYazi.Kucuk, KoyuRenk.Soluk);
                 excelBilgi.Top = (w.Alt.Height - excelBilgi.Height) / 2;
                 w.CancelButton = kapat;
 
@@ -1644,17 +1742,18 @@ namespace SebekeHakedis.Eklenti
                 // Sağ: başlık, süzgeçler, malzeme listesi
                 var baslik = Etiket(w, "", 332, 54, 692, KoyuYazi.Baslik, KoyuRenk.Yazi);
                 var altBaslik = Etiket(w, "", 332, 80, 692, KoyuYazi.Kucuk, KoyuRenk.Soluk);
-                Etiket(w, "Hakediş", 332, 114);
-                var hak = Koy(w, new KoyuAcilir(), 392, 108, 124);
+                var sekme = Koy(w, new Sekmeler(), 332, 102, 692, 34);
+                Etiket(w, "Hakediş", 332, 152);
+                var hak = Koy(w, new KoyuAcilir(), 392, 146, 124);
                 hak.Items.Add(Hepsi);
                 foreach (var h in oz.Hakedisler) hak.Items.Add(h + ". hakediş");
                 hak.SelectedIndex = 0;
-                Etiket(w, "Durum", 532, 114);
-                var durum = Koy(w, new KoyuAcilir(), 584, 108, 124);
+                Etiket(w, "Durum", 532, 152);
+                var durum = Koy(w, new KoyuAcilir(), 584, 146, 124);
                 durum.Items.Add(Hepsi);
                 foreach (var d in oz.Durumlar) durum.Items.Add(d);
                 durum.SelectedIndex = 0;
-                var ara = Koy(w, new MetinKutusu("", "Cins ya da malzeme ara", Boya.Simge("ara", KoyuRenk.Soluk, 16)), 724, 106, 300, 32);
+                var ara = Koy(w, new MetinKutusu("", "Cins, malzeme ya da kanal ara", Boya.Simge("ara", KoyuRenk.Soluk, 16)), 724, 144, 300, 32);
 
                 var g = new DataGridView
                 {
@@ -1675,8 +1774,61 @@ namespace SebekeHakedis.Eklenti
                     if (i >= 4) c.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
                     g.Columns.Add(c);
                 }
-                Koy(w, new Cerceve(g), 332, 150, 692, 422);
+                var malzemeSayfasi = Koy(w, new Cerceve(g), 332, 186, 692, 386);
                 var toplam = Etiket(w, "", 332, 582, 692, KoyuYazi.Govde, KoyuRenk.Ikincil);
+
+                // Kanal listesi (proje bazında): kanal satırları, "Tüm projeler"de her projenin altında toplamı
+                var kg = new DataGridView
+                {
+                    VirtualMode = true,
+                    ReadOnly = true,
+                    AllowUserToAddRows = false,
+                    AllowUserToDeleteRows = false,
+                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                    MultiSelect = false,
+                    AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                    Name = "kanalListesi",
+                };
+                KoyuTablo.Uygula(kg);
+                string[] kBasliklar = { "Proje", "Baş – bit", "Kablolar", "Cins", "Kaplama", "Ölçü (cm)", "Uzunluk (m)", "Hacim (m³)", "Durum", "Hak." };
+                float[] kAgirlik = { 120, 110, 64, 74, 120, 92, 78, 78, 52, 40 };
+                for (int i = 0; i < kBasliklar.Length; i++)
+                {
+                    var c = new DataGridViewTextBoxColumn { HeaderText = kBasliklar[i], FillWeight = kAgirlik[i], SortMode = DataGridViewColumnSortMode.NotSortable };
+                    if (i == 6 || i == 7 || i == 9) c.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                    kg.Columns.Add(c);
+                }
+                var kanalSayfasi = Koy(w, new Cerceve(kg), 332, 186, 692, 386);
+                sekme.Ekle("Malzeme listesi", malzemeSayfasi);
+                sekme.Ekle("Kanal listesi", kanalSayfasi);
+                var kGorunen = new List<object>();
+                kg.CellValueNeeded += (s, e) =>
+                {
+                    if (e.RowIndex < 0 || e.RowIndex >= kGorunen.Count) return;
+                    var t = kGorunen[e.RowIndex] as KanalListesi.Toplam;
+                    if (t != null)
+                    {
+                        switch (e.ColumnIndex)
+                        {
+                            case 0: e.Value = t.Tumu ? "GENEL TOPLAM" : t.GorunenAd + " toplamı"; break;
+                            case 1: e.Value = t.Adet.ToString("N0", Tr) + " kanal"; break;
+                            case 6: e.Value = KanalTablosu.Sayi(t.Uzunluk, 2); break;
+                            case 7: e.Value = KanalTablosu.Sayi(t.Hacim, 3); break;
+                        }
+                        return;
+                    }
+                    var r = (KanalListesi.Satir)kGorunen[e.RowIndex];
+                    var h = KanalTablosu.Hucreler(r);
+                    e.Value = e.ColumnIndex == 0 ? (r.Proje.Length == 0 ? ProjeOzeti.ProjesizAdi : r.Proje) : h[e.ColumnIndex - 1];
+                };
+                kg.CellFormatting += (s, e) =>
+                {
+                    if (e.RowIndex >= 0 && e.RowIndex < kGorunen.Count && kGorunen[e.RowIndex] is KanalListesi.Toplam)
+                    {
+                        e.CellStyle.Font = KoyuYazi.Kalin;
+                        e.CellStyle.ForeColor = KoyuRenk.Yazi;
+                    }
+                };
 
                 var gorunen = new List<DurumTespit.OzetSatiri>();
                 g.CellValueNeeded += (s, e) =>
@@ -1703,6 +1855,40 @@ namespace SebekeHakedis.Eklenti
                     Hakedis = hak.SelectedIndex > 0 ? oz.Hakedisler[hak.SelectedIndex - 1] : 0,
                     Durum = durum.SelectedIndex > 0 ? oz.Durumlar[durum.SelectedIndex - 1] : "",
                     Ara = (ara.Text ?? "").Trim(),
+                    Sekme = sekme.Secili,
+                };
+                // Kanal listesi: hakediş çekirdekte, durum ve arama burada süzülür; proje toplamları görünen satırlardan
+                Action<ProjeOzetiGorunumu> kanallariYaz = v =>
+                {
+                    var kl = oz.KanalListesi(v.Proje, v.Hakedis);
+                    string a = DetaySorgu.Sade(v.Ara);
+                    var satirlar = kl.Satirlar.FindAll(r => (string.IsNullOrEmpty(v.Durum) || r.Durum == v.Durum) &&
+                        (a.Length == 0 || DetaySorgu.Sade(r.Zemin + " " + r.Numara + " " + r.Kablolar + " " + r.Cins + " " + r.Kaplama + " " + r.Proje).IndexOf(a, StringComparison.Ordinal) >= 0));
+                    var l = new List<object>();
+                    var genel = new KanalListesi.Toplam { Tumu = true };
+                    KanalListesi.Toplam son = null;
+                    bool tumu = v.Proje == null || v.Proje.Tumu;
+                    foreach (var r in satirlar)
+                    {
+                        if (son == null || son.Proje != r.Proje)
+                        {
+                            if (son != null && tumu) l.Add(son);
+                            son = new KanalListesi.Toplam { Proje = r.Proje, ProjeKodu = r.ProjeKodu };
+                        }
+                        l.Add(r);
+                        son.Adet++; son.Uzunluk += r.Uzunluk; son.Hacim += r.Hacim;
+                        genel.Adet++; genel.Uzunluk += r.Uzunluk; genel.Hacim += r.Hacim;
+                    }
+                    if (son != null && tumu) l.Add(son);
+                    if (satirlar.Count > 0) l.Add(genel);
+                    kGorunen = l;
+                    kg.Columns[0].Visible = tumu;
+                    kg.RowCount = 0;
+                    kg.RowCount = l.Count;
+                    kg.Invalidate();
+                    string suzgec = ProjeOzeti.SuzgecYazisi(v.Hakedis, v.Durum, v.Ara);
+                    toplam.Text = genel.Adet.ToString("N0", Tr) + " kanal · " + KanalTablosu.Sayi(genel.Uzunluk, 2) + " m · " + KanalTablosu.Sayi(genel.Hacim, 3) + " m³" +
+                                  (suzgec.Length > 0 ? "   (süzgeç: " + suzgec + ")" : "");
                 };
                 Action yenile = () =>
                 {
@@ -1716,6 +1902,8 @@ namespace SebekeHakedis.Eklenti
                     if (p.Tumu) bilgi.Add(oz.CizimAdi);
                     bilgi.Add(p.Eleman.ToString("N0", Tr) + " eleman · " + p.Hat.ToString("N0", Tr) + " hat · " + p.Kanal.ToString("N0", Tr) + " kanal · " + p.Sondaj.ToString("N0", Tr) + " sondaj");
                     altBaslik.Text = string.Join("   ·   ", bilgi.ToArray());
+                    tabloDugme.Visible = v.Sekme == 1;
+                    if (v.Sekme == 1) { kanallariYaz(v); return; }
                     List<DurumTespit.OzetSatiri> l;
                     try { l = oz.Malzemeler(p, v.Hakedis, v.Durum, v.Ara); }
                     catch { l = new List<DurumTespit.OzetSatiri>(); }
@@ -1732,6 +1920,7 @@ namespace SebekeHakedis.Eklenti
                 var zamanlayici = new Timer { Interval = 250 };
                 zamanlayici.Tick += (s, e) => { zamanlayici.Stop(); yenile(); };
                 liste.SelectedIndexChanged += (s, e) => yenile();
+                sekme.Degisti += () => yenile();
                 hak.SelectedIndexChanged += (s, e) => yenile();
                 durum.SelectedIndexChanged += (s, e) => yenile();
                 ara.Kutu.TextChanged += (s, e) => { zamanlayici.Stop(); zamanlayici.Start(); };
@@ -1745,6 +1934,14 @@ namespace SebekeHakedis.Eklenti
                     yenile();
                     try { excel?.Invoke(gorunum); }
                     catch (Exception ex) { Uyar("Excel dosyası yazılamadı: " + ex.Message); }
+                };
+                tabloDugme.Click += (s, e) =>
+                {
+                    zamanlayici.Stop();
+                    yenile();
+                    if (kGorunen.Count == 0) { Uyar("Bu süzgeçte kanal yok."); return; }
+                    gorunum.KanalTablosu = true;
+                    w.DialogResult = DialogResult.OK;
                 };
                 Goster(w);
                 return gorunum;
@@ -2670,8 +2867,7 @@ namespace SebekeHakedis.Eklenti
                 var kUst = Koy(metraj, new SayiKutusu(0, 1000, D(a.KanalUst), 0, 5), 146, 258, 130, 30);
                 Etiket(metraj, "Derinlik (cm)", 292, 238);
                 var kDer = Koy(metraj, new SayiKutusu(0, 1000, D(a.KanalDerinlik), 0, 5), 292, 258, 130, 30);
-                Etiket(metraj, "Kanal zemini", 0, 300);
-                var zemin = Koy(metraj, ZeminKutusu(o, a.KanalZemin), 0, 320, 422);
+                var zemin = new ZeminSecici(metraj, 0, 296, 616, true, string.IsNullOrEmpty(a.KanalZemin) ? KanalZemini.Toprak : a.KanalZemin, o.Katalog);
 
                 // Proje (teknik hesaplar ve raporlar için)
                 var proje = sayfa();
@@ -2729,7 +2925,7 @@ namespace SebekeHakedis.Eklenti
                 a.KanalAlt = (double)kAlt.Value;
                 a.KanalUst = (double)kUst.Value;
                 a.KanalDerinlik = (double)kDer.Value;
-                a.KanalZemin = zemin.Text.Trim().Length > 0 ? zemin.Text.Trim() : "TOPRAK";
+                a.KanalZemin = zemin.Tanim.Trim().Length > 0 ? zemin.Tanim.Trim() : KanalZemini.Toprak;
                 a.ProjeAdi = pAdi.Text.Trim();
                 a.ProjeKodu = pKod.Text.Trim();
                 a.Hazirlayan = pYapan.Text.Trim();
@@ -3021,7 +3217,7 @@ namespace SebekeHakedis.Eklenti
                 w.Alt.Controls.Add(sil);
 
                 MetinKutusu gis = null, guc = null, gerilim = null, bas = null, bit = null;
-                KoyuAcilir zemin = null;
+                ZeminSecici zemin = null;
                 SayiKutusu kAlt = null, kUst = null, kDer = null;
                 KoyuOnay og = null, ag = null, ayd = null, rek = null;
                 int gy = 56;
@@ -3045,15 +3241,14 @@ namespace SebekeHakedis.Eklenti
                     ag = Koy(w, new KoyuOnay("AG") { Checked = (kanal.Kod & KanalKodu.AG) != 0 }, 76, 80);
                     ayd = Koy(w, new KoyuOnay("Aydınlatma") { Checked = (kanal.Kod & KanalKodu.AYD) != 0 }, 136, 80);
                     rek = Koy(w, new KoyuOnay("Rekortman") { Checked = (kanal.Kod & KanalKodu.REK) != 0 }, 252, 80);
-                    Etiket(w, "Zemin", 370, 56);
-                    zemin = Koy(w, ZeminKutusu(o, kanal.Zemin), 370, 76, 210);
-                    Etiket(w, "Alt genişlik (cm)", 596, 56);
-                    kAlt = Koy(w, new SayiKutusu(0, 1000, D(kanal.AltGenislik), 0, 5), 596, 76, 110, 30);
-                    Etiket(w, "Üst genişlik (cm)", 716, 56);
-                    kUst = Koy(w, new SayiKutusu(0, 1000, D(kanal.UstGenislik), 0, 5), 716, 76, 110, 30);
-                    Etiket(w, "Derinlik (cm)", 836, 56);
-                    kDer = Koy(w, new SayiKutusu(0, 1000, D(kanal.Derinlik), 0, 5), 836, 76, 108, 30);
-                    gy = 122;
+                    Etiket(w, "Alt genişlik (cm)", 380, 56);
+                    kAlt = Koy(w, new SayiKutusu(0, 1000, D(kanal.AltGenislik), 0, 5), 380, 76, 120, 30);
+                    Etiket(w, "Üst genişlik (cm)", 516, 56);
+                    kUst = Koy(w, new SayiKutusu(0, 1000, D(kanal.UstGenislik), 0, 5), 516, 76, 120, 30);
+                    Etiket(w, "Derinlik (cm)", 652, 56);
+                    kDer = Koy(w, new SayiKutusu(0, 1000, D(kanal.Derinlik), 0, 5), 652, 76, 120, 30);
+                    zemin = new ZeminSecici(w, 16, 118, 928, true, kanal.Zemin, o.Katalog);
+                    gy = 118 + zemin.Boy + 4;
                 }
                 else if (sondaj != null)
                 {
@@ -3236,7 +3431,7 @@ namespace SebekeHakedis.Eklenti
                 Koy(w, new Cerceve(g), 16, gy, 928, 518 - gy);
 
                 if (anaKilitli)
-                    foreach (var c in new Control[] { gis, guc, gerilim, bas, bit, zemin, kAlt, kUst, kDer, og, ag, ayd, rek })
+                    foreach (var c in new Control[] { gis, guc, gerilim, bas, bit, zemin?.Cins, zemin?.Kaplama, zemin?.Bariyer, zemin?.Trencher, kAlt, kUst, kDer, og, ag, ayd, rek })
                         if (c != null) c.Enabled = false;
 
                 if (kanal != null)
@@ -3330,7 +3525,7 @@ namespace SebekeHakedis.Eklenti
                 if (kanal != null)
                 {
                     kanal.Kod = KanalKodu.Kod(og.Checked, ag.Checked, ayd.Checked, rek.Checked);
-                    kanal.Zemin = zemin.Text.Trim();
+                    kanal.Zemin = zemin.Tanim.Trim();
                     kanal.AltGenislik = (double)kAlt.Value;
                     kanal.UstGenislik = (double)kUst.Value;
                     kanal.Derinlik = (double)kDer.Value;

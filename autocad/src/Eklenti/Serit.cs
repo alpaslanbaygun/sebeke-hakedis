@@ -33,7 +33,7 @@ namespace SebekeHakedis.Eklenti
 
         private static RibbonCombo _cins, _tip, _durum, _dm, _hakedis, _adet, _ek, _kanalHazir;
         private static RibbonTextBox _ara, _kanalAlt, _kanalUst, _kanalDer;
-        private static RibbonLabel _dmEtiket, _adetEtiket, _ekEtiket, _kanalEtiket, _kanalAltEtiket, _kanalUstEtiket, _kanalDerEtiket;
+        private static RibbonLabel _cinsEtiket, _tipEtiket, _dmEtiket, _adetEtiket, _ekEtiket, _kanalEtiket, _kanalAltEtiket, _kanalUstEtiket, _kanalDerEtiket;
         /// <summary>Hazır kanal ölçüleri (alt × üst × derinlik, cm): kanal penceresindeki hızlı seçimlerle aynı.</summary>
         private static readonly int[][] KanalHazir = { new[] { 40, 40, 80 }, new[] { 40, 40, 100 }, new[] { 60, 60, 120 }, new[] { 80, 80, 150 } };
         /// <summary>"Ayrıntılı…" düğmesi: ipucunda sıradaki tıklamada çizilecek olanın tam yazısı (şeritte uzun yazı yer kaplamasın).</summary>
@@ -178,12 +178,14 @@ namespace SebekeHakedis.Eklenti
             // 3) Ayarlar: cins, tip, arama | durum, hakediş, demontaj | adet, ikinci iletken, özet | ayrıntılı
             var ay = Panel(sekme, "Ayarlar");
             var s1 = new RibbonRowPanel();
-            s1.Items.Add(Etiket("Cins"));
+            _cinsEtiket = Etiket("Cins");
+            s1.Items.Add(_cinsEtiket);
             _cins = new RibbonCombo { Width = 190, ShowText = false, Size = RibbonItemSize.Standard };
             _cins.CurrentChanged += (s, e) => { if (!_yukleniyor) CinsSecildi(_cins.Current as RibbonButton); };
             s1.Items.Add(_cins);
             s1.Items.Add(new RibbonRowBreak());
-            s1.Items.Add(Etiket("Tip"));
+            _tipEtiket = Etiket("Tip");
+            s1.Items.Add(_tipEtiket);
             _tip = new RibbonCombo { Width = 190, ShowText = false, Size = RibbonItemSize.Standard };
             _tip.CurrentChanged += (s, e) => { if (!_yukleniyor) TipSecildi(_tip.Current as RibbonButton); };
             s1.Items.Add(_tip);
@@ -309,7 +311,8 @@ namespace SebekeHakedis.Eklenti
             var rapor = Panel(araclar, "Raporlar");
             rapor.Items.Add(Dugme("Durum\nTespit", "Bu çizimden Durum Tespit raporunu Excel olarak üretir.", "_SH_RAPOR ", "rapor", null));
             rapor.Items.Add(Dugme("Dosyadan\nRapor", "Bir proje dosyasından (.sebeke.json, .volt.json ya da teslim paketi) Durum Tespit raporu üretir.", "_SH_PROJERAPOR ", "dosya_rapor", null));
-            rapor.Items.Add(Dugme("Proje\nÖzeti", "Projeleri (bölgeleri) ve seçilen projenin malzeme listesini bir pencerede gösterir; listeler Excel'e aktarılır.", "_SH_OZET ", "ozet", null));
+            rapor.Items.Add(Dugme("Proje\nÖzeti", "Projeleri (bölgeleri), seçilen projenin malzeme listesini ve kanal listesini bir pencerede gösterir; listeler Excel'e aktarılır, kanal listesi çizime tablo olarak konabilir.", "_SH_OZET ", "ozet", null));
+            rapor.Items.Add(Dugme("Kanal\nListesi", "Proje bazında kanal listesini çizime tablo olarak koyar ya da yeniler: her projenin kanalları (cins, kaplama, ölçü, uzunluk, hacim) ve toplamları. Liste Proje Özeti'nde de görünür ve Excel'e aktarılır.", "_SH_KANALLISTESI ", "kanal", null));
             rapor.Items.Add(Dugme("Eksik\nMalzeme", "Eksik malzeme bul (DETAY sorgusu): ör. topraklaması olmayan direkler. Bulunanlar çizimde seçilir, istenirse Excel'e yazılır.", "_SH_DETAY ", "eksik", null));
 
             var telefon = Panel(araclar, "Telefon");
@@ -489,7 +492,7 @@ namespace SebekeHakedis.Eklenti
             {
                 case "SH_ELEMAN": return oge.Ad + ": tıklayın, sonra çizimde yerlerini gösterin (her tıklama bir eleman). Tip, durum ve hakediş Ayarlar panelinden.";
                 case "SH_HAT": return oge.Ad + ": direkten direğe tıklayın; hat her direkte biter, her parçanın metrajı ayrı yazılır. Kesit Ayarlar panelinden.";
-                case "SH_KANAL": return oge.Ad + ": kanal köşelerini gösterin; box / direk aralarında parçalanır. Zemin (Tip) ve ölçüler (Kanal: alt, üst, derinlik) Ayarlar panelinden.";
+                case "SH_KANAL": return oge.Ad + ": kanal köşelerini gösterin; box / direk aralarında parçalanır. Zemin (Cins), kaplama (Kaplama) ve ölçüler (Kanal: alt, üst, derinlik) Ayarlar panelinden.";
                 case "SH_SONDAJ": return oge.Ad + ": sondajın başını ve sonunu gösterin.";
                 default: return oge.Ad;
             }
@@ -551,6 +554,9 @@ namespace SebekeHakedis.Eklenti
                 var oge = HizliSecim.Oge;
                 var k = HizliSecim.TemelKatalog;
                 bool tipli = oge != null && (oge.TipliMi || oge.Komut == "SH_KANAL");
+                // Kanal: cins = zemin (toprak, tüvenan, mıcır…), tip listesi = kaplama (+ bariyer, trencher)
+                bool kanalOgesi = oge != null && oge.Komut == "SH_KANAL";
+                if (_tipEtiket != null) _tipEtiket.Text = kanalOgesi ? "Kaplama" : "Tip";
 
                 // Cins
                 _cins.Items.Clear();
@@ -559,7 +565,8 @@ namespace SebekeHakedis.Eklenti
                 RibbonButton curCins = null;
                 foreach (var c in cinsler)
                 {
-                    var b = new RibbonButton { Text = k.CinsAdi(c), ShowText = true, Tag = c, ToolTip = k.CinsAdi(c) + " · " + c, Description = c };
+                    string cinsAdi = kanalOgesi ? KanalZemini.CinsAdi(c) : k.CinsAdi(c);
+                    var b = new RibbonButton { Text = cinsAdi, ShowText = true, Tag = c, ToolTip = cinsAdi + " · " + c, Description = c };
                     _cins.Items.Add(b);
                     if (c == seciliCins) curCins = b;
                 }
@@ -576,7 +583,10 @@ namespace SebekeHakedis.Eklenti
                 foreach (var it in liste)
                 {
                     string ac = TipAciklamasi(it);
-                    var b = new RibbonButton { Text = it.Gorunen, ShowText = true, Tag = it, ToolTip = it.Gorunen + " · " + ac, Description = ac };
+                    var z = kanalOgesi ? KanalZemini.Coz(it.Tanim) : null;
+                    string metin = z != null ? z.KaplamaYazisi : it.Gorunen;
+                    if (kanalOgesi) ac = it.Tanim + (it.Kaynak == "kural" ? " · eski programın listesinde yok, bu adla yazılır" : "");
+                    var b = new RibbonButton { Text = metin, ShowText = true, Tag = it, ToolTip = metin + " · " + ac, Description = ac };
                     _tip.Items.Add(b);
                     if (it == secili) cur = b;
                 }

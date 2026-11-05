@@ -25,7 +25,7 @@ namespace SebekeHakedis.Cekirdek
             /// <summary>Uzunluk: kanal kaleminin metrajı (m); hacim: kalemin toplamı (m³).</summary>
             public double Uzunluk, Hacim;
 
-            public string Numara => BasNo.Length > 0 || BitNo.Length > 0 ? BasNo + " – " + BitNo : "";
+            public string Numara => BasNo.Length > 0 || BitNo.Length > 0 ? (BasNo.Length > 0 ? BasNo : "…") + " – " + (BitNo.Length > 0 ? BitNo : "…") : "";
             public string Olcu => Sayi(Alt) + "/" + Sayi(Ust) + " × " + Sayi(Derinlik);
         }
 

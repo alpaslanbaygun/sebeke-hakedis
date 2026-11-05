@@ -1196,6 +1196,18 @@ namespace SebekeHakedis.Test
             foreach (var x in z.Dizi("kuralDisi"))
                 Esit(true, KanalZemini.Coz(Convert.ToString(x, CultureInfo.InvariantCulture)) == null, "ortak: kural dışı ad · \"" + x + "\"");
             Esit(50, KanalZemini.Hepsi().Count, "bütün birleşimler: 3 cins × 4 kaplama × bariyer × trencher + 2 özel");
+            // Katalog: her birleşim kanal kalemi; katalogdakiler kendi kalemi, olmayanlar aynı tarifeyle kurulur
+            var kat = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            var zeminler = kat.KanalZeminleri();
+            Esit(50, zeminler.Count, "katalog: 50 kanal zemini kalemi");
+            Esit(19, zeminler.FindAll(x => x.Kaynak != "kural").Count, "katalog: eski programın 19 adı kendi kalemiyle");
+            var asfaltli = kat.KanalZeminiKalemi("TOPRAK (ASFALT KAPLAMALI)");
+            Esit(true, asfaltli != null && asfaltli.Kaynak == "kural" && asfaltli.Cins == "KABLO_KANALI" && asfaltli.Birim == "mt/m³", "katalog: katalogda olmayan birleşim kuralla kurulur");
+            Esit(kat.KanalZeminiKalemi("TOPRAK").Tarife, asfaltli.Tarife, "katalog: kurulan kalemin tarifesi topraktaki gibi");
+            // Yeraltı kablosu / kanal metrajı açıklık başına: ara kırılma köşelerinde bölünmez, yalnız elemanlarda
+            var kose = new List<double[]> { new[] { 0.0, 0 }, new[] { 10.0, 0 }, new[] { 10.0, 10 }, new[] { 20.0, 10 }, new[] { 20.0, 30 }, new[] { 25.0, 30 } };
+            Esit(1, Geometri.Acikliklar(kose, i => false).Count, "metraj: elemansız köşelerde tek açıklık (her iki nokta arasına yazılmaz)");
+            Esit(2, Geometri.Acikliklar(kose, i => i == 3).Count, "metraj: arada eleman (muf, box) varsa iki açıklık");
             var adlar = new HashSet<string>(StringComparer.Ordinal);
             foreach (var c in KanalZemini.Hepsi()) adlar.Add(c.Tanim);
             Esit(50, adlar.Count, "bütün birleşimlerin adları ayrı");
@@ -1214,6 +1226,23 @@ namespace SebekeHakedis.Test
             var merkez = new KanalListesi(p, "Merkez");
             Esit("K2,K5,K1", string.Join(",", merkez.Satirlar.ConvertAll(s => s.Kimlik).ToArray()), "kanal listesi: tek proje süzgeci");
             Esit("K1", string.Join(",", new KanalListesi(p, null, 2).Satirlar.ConvertAll(s => s.Kimlik).ToArray()), "kanal listesi: tek hakediş süzgeci");
+            // Çizime konan tablo: başlık + sütun başlıkları + her proje (başlık, kanallar, toplam) + genel toplam
+            var tablo = new KanalTablosu(new KanalListesi(p), 1.8);
+            Esit(14, tablo.SatirSayisi, "kanal tablosu: satır sayısı");
+            double toplamGenislik = 0;
+            foreach (var g in tablo.Sutunlar) toplamGenislik += g;
+            Esit(true, Math.Abs(toplamGenislik - tablo.Genislik) < 1e-9, "kanal tablosu: sütunlar tablonun genişliğini doldurur");
+            Esit(true, Math.Abs(tablo.Yukseklik - (2.4 * 1.8 + 13 * 1.8 * 1.8)) < 1e-9, "kanal tablosu: yükseklik (başlık 2,4h, satırlar 1,8h)");
+            bool tasan = false;
+            foreach (var y in tablo.Yazilar)
+            {
+                double sol = y.Sag ? y.X - YaziDuzeni.Genislik(y.Metin, y.H) : y.X, sag = y.Sag ? y.X : y.X + YaziDuzeni.Genislik(y.Metin, y.H);
+                if (sol < -1e-9 || sag > tablo.Genislik + 1e-9) tasan = true;
+            }
+            Esit(false, tasan, "kanal tablosu: yazılar tablonun içinde");
+            Esit(true, tablo.Yazilar.Exists(y => y.Metin == "PROJE: Merkez (11.22.33)") && tablo.Yazilar.Exists(y => y.Metin == "22,64" && y.Sag),
+                "kanal tablosu: proje başlığı ve sağa yaslı toplam hacim");
+            Esit(true, tablo.Yazilar.Exists(y => y.Metin == "Parke · bariyerli") && tablo.Yazilar.Exists(y => y.Metin == "Kaplamasız · trencher"), "kanal tablosu: kaplama hücresi");
             // Excel sayfaları kurulur (KANAL LİSTESİ: 5 satır + 3 proje toplamı + genel toplam)
             var xl = new XlsxYazici();
             new KanalListesi(p).SayfalariEkle(xl, "deneme");

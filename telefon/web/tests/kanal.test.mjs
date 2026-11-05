@@ -48,3 +48,60 @@ test('KL1 · ortak deneme: proje bazında kanal listesi (satırlar, proje toplam
   assert.deepEqual(SH.kanalListesi(p, { proje: 'Merkez' }).satirlar.map((s) => s.kimlik), ['K2', 'K5', 'K1']);
   assert.deepEqual(SH.kanalListesi(p, { hakedis: 2 }).satirlar.map((s) => s.kimlik), ['K1']);
 });
+
+test('KZ3 · telefon kanal zemini: cins + kaplama + bariyer + trencher AutoCAD dosyasına kalem adıyla gider, geri alınınca aynı seçim', async () => {
+  const L = await import('../src/grid/lines.js');
+  // Eski tek seçim (surface) okunur
+  assert.deepEqual(L.kanalZemini({ surface: 'parke' }), { zemin: 'tuvenan', kaplama: 'parke', bariyer: false, trencher: false });
+  assert.equal(L.kanalZeminTanimi({ surface: 'toprak' }), 'TOPRAK');
+  assert.equal(L.kanalZeminTanimi({ surface: 'beton' }), 'TOPRAK (BETON KAPLAMALI)');
+  // Yeni alanlar: her birleşim
+  const c = { zemin: 'micir', kaplama: 'asfalt', bariyer: true, trencher: false };
+  assert.equal(L.kanalZeminTanimi(c), 'MICIR (ASFALT KAPLAMALI) (BARİYERLİ)');
+  assert.equal(L.kanalZeminYazisi(c), 'Mıcır · Asfalt · bariyerli');
+  assert.equal(L.kanalModel(c).surface, 'asfalt', 'poz anahtarı: kaplama');
+  assert.equal(L.kanalModel({ zemin: 'micir', kaplama: '' }).surface, 'micir', 'poz anahtarı: zemin cinsi');
+  // AutoCAD'den gelen ad → alanlar → aynı ad (katalogdaki 19 ad)
+  for (const t of ZEMIN.katalog) {
+    const a = L.zemindenAlanlar(t);
+    assert.equal(a.zeminHam, undefined, 'kural içi: ' + t);
+    assert.equal(L.kanalZeminTanimi(a), t, 'gidiş-dönüş: ' + t);
+  }
+  // Kural dışı ad olduğu gibi korunur; seçim yapılmadıkça aynen geri gider
+  const k = L.zemindenAlanlar('ASFALT');
+  assert.equal(k.zeminHam, 'ASFALT');
+  assert.equal(L.kanalZeminTanimi(k), 'ASFALT');
+  assert.equal(L.kanalLabel(k), 'ASFALT');
+});
+
+test('KL2 · telefon projesi: yeraltı kanalı cins + kaplamayla AutoCAD dosyasına gider, kanal listesi ve Excel sayfaları çıkar; geri alınca aynı seçim', async () => {
+  const { setup, newProject, rtkObs } = await import('./helpers.mjs');
+  const { sebekeYaz, sebekeIceAl } = await import('../src/interop/sebeke.js');
+  const { eklentiModeli, workbookSheets } = await import('../src/export/exporter.js');
+  const { buildExportModel } = await import('../src/export/model.js');
+  const { ps } = await setup();
+  await newProject(ps);
+  const a = await ps.addEquipment('sdk', { attrs: { sdkTypeId: ps.cat.sdkTypes()[0].id } }, { obs: rtkObs(519300, 4282100, 1050) });
+  const b = await ps.addEquipment('sdk', { attrs: { sdkTypeId: ps.cat.sdkTypes()[0].id } }, { obs: rtkObs(519330, 4282140, 1050) });
+  await ps.createLine({ lineType: 'AG', install: 'yeralti', channelOnly: true, circuits: [], nodes: [a.pointId, b.pointId],
+    cable: { zemin: 'tuvenan', kaplama: 'parke', bariyer: true, trencher: false, surface: 'parke', method: 'acik', depth: 1, width: 0.4 } });
+  const dosya = JSON.parse(sebekeYaz(ps));
+  assert.equal(dosya.kanallar.length, 1);
+  assert.equal(dosya.kanallar[0].zemin, 'PARKE TUVENAN (BARİYERLİ)', 'AutoCAD dosyasına katalogdaki ad');
+  const kl = SH.kanalListesi(eklentiModeli(ps));
+  assert.equal(kl.satirlar.length, 1);
+  assert.equal(kl.satirlar[0].cins, 'Tüvenan');
+  assert.equal(kl.satirlar[0].kaplama, 'Parke');
+  assert.equal(kl.satirlar[0].bariyerli, true);
+  assert.equal(kl.satirlar[0].uzunluk, 50, 'uzunluk: 50 m (yukarı yuvarlanmış)');
+  const sayfalar = workbookSheets(buildExportModel(ps), ps).map((s) => s.name);
+  assert.ok(sayfalar.includes('Kanal Listesi') && sayfalar.includes('Kanal Özeti'), 'Excel: kanal sayfaları ' + sayfalar.join(', '));
+  // Dosya başka projeye geri alınınca kanalın zemin seçimi aynı
+  const p2 = await newProject(ps, { name: 'Geri alma' });
+  await sebekeIceAl(ps, SH.projeOku(JSON.stringify(dosya)), { projectId: p2 && p2.id });
+  const kanal = ps.data.lines.find((l) => l.install === 'yeralti' && l.channelOnly);
+  assert.ok(kanal, 'kanal geri alındı');
+  assert.equal(kanal.cable.zemin, 'tuvenan');
+  assert.equal(kanal.cable.kaplama, 'parke');
+  assert.equal(kanal.cable.bariyer, true);
+});

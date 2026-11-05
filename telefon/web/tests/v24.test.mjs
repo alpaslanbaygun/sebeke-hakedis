@@ -134,7 +134,7 @@ test('Y4 · Kanal hesabı: kaplamaya göre kalem (m³), borulu geçişte boru, y
 });
 
 test('Y5 · Kanal modeli: eski kayıtlar okunur; otomatik reçete açıkken yardımcı malzeme yine gelir', async () => {
-  assert.deepEqual(Object.keys(KAPLAMA), ['toprak', 'tuvenan', 'asfalt', 'beton', 'parke']);
+  assert.deepEqual(Object.keys(KAPLAMA), ['toprak', 'tuvenan', 'micir', 'asfalt', 'beton', 'parke']); // v2.6: mıcır (kanal zemini cinsi)
   assert.deepEqual(Object.keys(YONTEM), ['acik', 'borulu', 'sondaj']);
   assert.deepEqual([kanalModel({ channelType: 'borulu' }).surface, kanalModel({ channelType: 'borulu' }).method], ['toprak', 'borulu']);
   assert.equal(kanalModel({ channelType: 'beton' }).surface, 'beton');
