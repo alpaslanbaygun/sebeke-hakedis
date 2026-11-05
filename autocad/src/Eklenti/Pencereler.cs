@@ -1790,12 +1790,20 @@ namespace SebekeHakedis.Eklenti
                     Name = "kanalListesi",
                 };
                 KoyuTablo.Uygula(kg);
-                string[] kBasliklar = { "Proje", "Baş – bit", "Kablolar", "Cins", "Kaplama", "Ölçü (cm)", "Uzunluk (m)", "Hacim (m³)", "Durum", "Hak." };
-                float[] kAgirlik = { 120, 110, 64, 74, 120, 92, 78, 78, 52, 40 };
+                string[] kBasliklar = { "Proje", "Baş – bit", "Kablo", "Cins", "Kaplama", "Ölçü (cm)", "Uzunluk (m)", "Hacim (m³)", "Durum", "Hak." };
+                float[] kAgirlik = { 160, 90, 40, 40, 110, 50, 10, 10, 10, 10 };
+                // Sütun başlıkları kesilmesin: her sütun en az başlığı (Ölçü sütunu "40/40 × 100" yazısı) kadar geniş;
+                // artan genişlik çoğunlukla Proje ve Kaplama'ya gider.
+                var baslikYazisi = kg.ColumnHeadersDefaultCellStyle.Font ?? kg.Font;
+                var hucreYazisi = kg.DefaultCellStyle.Font ?? kg.Font;
+                int pay = Olcu.S(14);
                 for (int i = 0; i < kBasliklar.Length; i++)
                 {
                     var c = new DataGridViewTextBoxColumn { HeaderText = kBasliklar[i], FillWeight = kAgirlik[i], SortMode = DataGridViewColumnSortMode.NotSortable };
                     if (i == 6 || i == 7 || i == 9) c.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+                    int en = i == 0 ? Olcu.S(80)
+                        : Math.Max(TextRenderer.MeasureText(kBasliklar[i], baslikYazisi).Width, i == 5 ? TextRenderer.MeasureText("00/00 × 000", hucreYazisi).Width : 0) + pay;
+                    c.MinimumWidth = Math.Max(Olcu.S(36), en);
                     kg.Columns.Add(c);
                 }
                 var kanalSayfasi = Koy(w, new Cerceve(kg), 332, 186, 692, 386);
