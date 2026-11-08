@@ -271,7 +271,10 @@ Aydınlatma kategorisinde **Armatür**'ü seçip bir **direğin üstüne** tıkl
 eklenen armatürü direkten çıkarır. **Malzeme** penceresinden bir direğe armatür kalemi eklenirse de simgesi
 kendiliğinden çizilir; kalem silinince simge de kalkar. Direği AutoCAD'in komutlarıyla taşır, kopyalar ya da
 silerseniz simgesi de onunla gider (Geri Al dahil). Simgeyi tek başına başka yere çekerseniz o yer direğe göre
-saklanır.
+saklanır. Armatür simgesi küçüktür (8.11.2026): ışınlarıyla 1,1 m — direk simgesinin yarısından küçük; eski çizimlerde
+blok tanımı eklenti çizime dokununca kendiliğinden yenilenir. Katalogda **LED armatür sınıfları S1…S17**
+(`S3 SINIF NUMARALI LED ARMATÜR` …) ve sodyum / cıva armatürler vardır; telefonda aynı sınıflar
+`020.05.03.01-001…017` pozlarıdır.
 
 ### Görünüm: telefondakiyle aynı
 
@@ -345,9 +348,15 @@ değişirse (ör. havai → yer altı) yeni türün metrajı yazılır. Onaylı 
 öneki de (ör. `ŞÇ` → `SC`). Eski adlı (`AGDİR` …) çizimler okunur; eklenti bir katmana yazarken eski adını yenisine
 çevirir, Telefon Görünümü bütün şebeke katmanlarını bir kez çevirir (sizin kendi katmanlarınıza dokunmaz).
 **Cins kodlarındaki yazım hataları** da düzeltildi: `AG_ALÜMİNYUM_KABLO`, `OG_ALÜMİNYUM_KABLO`, `REKORTMAN_ALÜMİNYUM`,
-`ALÜMİNYUM_BAĞ_TELİ`, `TEÇHİZAT_MONTAJ_DEMİRİ`, `KOFRE`; menülerdeki cins adları düzgün Türkçe (ör. "Bakır bara",
-"Ayırıcı (dahili tip)"). Eski kodlu çizim ve telefon dosyaları okunurken yeni koda çevrilir; Telefon Görünümü kayıtları
-da yeni kodla yazar. Eski program bu yeni adları tanımayabilir (artık yalnız Şebeke-M Hakediş kullanılıyor).
+`ALÜMİNYUM_BAĞ_TELİ`, `TEÇHİZAT_MONTAJ_DEMİRİ`, `KOFRE`. Eski kodlu çizim ve telefon dosyaları okunurken yeni koda
+çevrilir; Telefon Görünümü kayıtları da yeni kodla yazar. Eski program bu yeni adları tanımayabilir (artık yalnız
+Şebeke-M Hakediş kullanılıyor).
+
+**Cins adları** (8.11.2026): şeritte, Malzemeler penceresinde, eksik malzeme sorgusunda ve Proje Özeti'nde cinsin kodu
+değil adı görünür; ad alt çizgisiz, her sözcüğün ilk harfi büyük yazılır: `AG_DEMİR_GLV` → **AG Galvaniz Demir Direk**,
+`TRAVERS_VE_KONSOLLAR_GLV` → **Galvaniz Travers ve Konsollar**, kanalın kendi satırında **Kablo Kanalı**. Kodun kendisi
+hücrenin ipucunda; raporlar, Excel ve dosyalar kodu yazmaya devam eder. Katalogda adı olmayan bir kod da aynı kuralla
+çevrilir (`YENİ_BİR_CİNS` → "Yeni Bir Cins").
 
 Beton / ağaç direk daire, demir direk kare. Her durumun simgesi ayrıdır:
 

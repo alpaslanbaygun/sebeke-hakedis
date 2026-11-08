@@ -29,5 +29,33 @@ namespace SebekeHakedis.Cekirdek
             string yeni;
             return Eski.TryGetValue(cins, out yeni) ? yeni : cins;
         }
+
+        /// <summary>Okunur adda büyük kalan kısaltmalar (katalog-aktar.py › KISALTMALAR ile aynı).</summary>
+        private static readonly HashSet<string> Kisaltmalar = new HashSet<string>(StringComparer.Ordinal)
+            { "AG", "OG", "ENH", "BAHH", "ALPEK", "SDK", "XLPE", "NYY", "NAYY", "GLV", "CVT", "PLG", "HT", "DT", "CU", "ALM", "TR" };
+
+        private static readonly HashSet<string> KucukSozcukler = new HashSet<string>(StringComparer.Ordinal) { "ve", "ile", "veya" };
+
+        private static readonly System.Globalization.CultureInfo Tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+
+        /// <summary>
+        /// Katalogda adı olmayan cinsin okunur adı (kullanıcı kuralı, 8.11.2026): alt çizgiler boşluk, her sözcüğün ilk
+        /// harfi büyük, gerisi Türkçe kuralıyla küçük (İ → i, I → ı); kısaltmalar (AG, OG, ENH…) büyük, "ve" küçük kalır.
+        /// Ör. AG_DEMİR_GLV → "AG Demir Glv" değil: katalogdaki ad "AG Galvaniz Demir Direk" önce gelir (Katalog.CinsAdi).
+        /// katalog-aktar.py › okunur_ad ile aynı kural.
+        /// </summary>
+        public static string OkunurAd(string cins)
+        {
+            if (string.IsNullOrEmpty(cins)) return "";
+            var out_ = new List<string>();
+            foreach (var w in cins.Replace('_', ' ').Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (Kisaltmalar.Contains(w)) { out_.Add(w); continue; }
+                string k = w.ToLower(Tr);
+                if (KucukSozcukler.Contains(k)) { out_.Add(k); continue; }
+                out_.Add(k.Substring(0, 1).ToUpper(Tr) + k.Substring(1));
+            }
+            return string.Join(" ", out_);
+        }
     }
 }

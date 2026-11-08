@@ -72,40 +72,46 @@ CINS_DUZELTME = OrderedDict([
     ("KOFRA", "KOFRE"),
 ])
 
-# Cins adının okunur karşılığı (menü ve listelerde). Listede olmayan cins Türkçe kuralıyla küçük harfe çevrilir.
+# Cins adının okunur karşılığı (şerit, pencereler ve listeler). Kullanıcı kuralı (8.11.2026): alt çizgisiz, her sözcüğün
+# ilk harfi büyük ("AG Galvaniz Demir Direk"); AG / OG / ENH / BAHH / ALPEK gibi kısaltmalar büyük, "ve" küçük.
+# Listede olmayan cins okunur_ad ile aynı kurala göre çevrilir. Raporlarda ve dosyalarda kodun kendisi yazılır.
 CINS_ADLARI = {
-    "AG_DEMİR_GLV": "AG galvanizli demir direk", "AG_DEMİR": "AG demir direk", "AG_BETON": "AG beton direk",
-    "AG_AĞAÇ": "AG ağaç direk", "MÜŞ_DEMİR_GLV": "Müşterek galvanizli demir direk", "MÜŞ_DEMİR": "Müşterek demir direk",
-    "MÜŞ_BETON": "Müşterek beton direk", "ENH_DEMİR_GLV": "ENH galvanizli kaynaklı direk", "ENH_GLV_CVT": "ENH galvanizli cıvatalı direk",
-    "ENH_DEMİR": "ENH demir direk", "ENH_BETON": "ENH beton direk", "AYD_GLV_PLG": "Galvanizli poligon aydınlatma direği",
-    "AYD_BETON": "Beton aydınlatma direği", "TR_DİREK_GLV": "Galvanizli trafo direği", "TR_DİREK": "Trafo direği",
-    "BETON_KÖŞKLER": "Beton / prefabrik köşk", "TRAFO_BİNASI": "Trafo binası", "AG_PANO_HT": "AG pano (harici tip)",
-    "AG_PANO_DT": "AG pano (dahili tip)", "BOX_PANO": "Box / SDK", "EK_MUFU_AG_ALM": "AG ek mufu (alüminyum)",
-    "EK_MUFU_AG_BAKIR": "AG ek mufu (bakır)", "EK_MUFU_OG_ALM": "OG ek mufu (alüminyum)", "EK_MUFU_OG_BAKIR": "OG ek mufu (bakır)",
-    "KOFRE": "Kofre", "ARMATÜR": "Armatür", "AG_İLETKEN": "AG çıplak iletken",
-    "OG_İLETKEN": "OG çıplak iletken", "ALPEK_KABLOLAR": "ALPEK (demetli) kablo", "AG_ALÜMİNYUM_KABLO": "AG alüminyum kablo",
-    "AG_BAKIR_KABLO": "AG bakır kablo", "AYDINLATMA_KABLO": "Aydınlatma kablosu", "OG_ALÜMİNYUM_KABLO": "OG alüminyum kablo",
-    "OG_BAKIR_KABLO": "OG bakır kablo", "REKORTMAN_ALÜMİNYUM": "Rekortman (alüminyum)", "REKORTMAN_BAKIR": "Rekortman (bakır)",
-    "TOP_İLETKEN": "Topraklama iletkeni", "KABLO_KANALI": "Kablo kanalı (zemin)", "YATAY_DELGİ": "Yatay sondaj (delgi)",
-    "BAKIR_BARA": "Bakır bara", "TRAVERS_VE_KONSOLLAR": "Travers ve konsollar", "TRAVERS_VE_KONSOLLAR_GLV": "Galvanizli travers ve konsollar",
-    "BAHH_DEMİR_TRAVERS": "BAHH demir travers", "BAHH_DEMİR_TRAVERS_GLV": "BAHH galvanizli demir travers", "AG_BETON_TRAVERS": "AG beton travers",
-    "BAHH_BETON_TRAVERS": "BAHH beton travers", "GALVANİZLİ_GAZ_BORUSU": "Galvanizli gaz borusu", "GALVANİZLİ_KABLO_TAVASI": "Galvanizli kablo tavası",
-    "AG_İZOLATÖR": "AG izolatör", "OG_İZOLATÖR": "OG izolatör", "KOMPOZİT_SİLİKON_ASKI_VE_GERGİ_İZOLATÖRLERİ": "Kompozit silikon askı ve gergi izolatörleri",
-    "KESİCİLER": "Kesiciler", "PARAFUDR": "Parafudr", "AYIRICI_DT": "Ayırıcı (dahili tip)",
-    "AYIRICI_HT": "Ayırıcı (harici tip)", "SİGORTA_BUŞONU": "Sigorta buşonu", "HÜCRELER_METAL": "Metal hücreler",
-    "AKÜ_REDRESÖR_GRUBU": "Akü redresör grubu", "TEHLİKE_LEVHASI": "Tehlike levhası", "TOPRAKLAMA": "Topraklama",
-    "AKIM_TRAFOLARI": "Akım trafoları", "GERİLİM_TRAFOLARI": "Gerilim trafoları", "TRAFO_GENLEŞME_TANKLI": "Trafo (genleşme tanklı)",
-    "TRAFO_HERMETİK": "Trafo (hermetik)", "TRAFO_KURU_TİP": "Trafo (kuru tip)", "OG_KABLO_BAŞLIK_HT_CU": "OG kablo başlığı (harici tip, bakır)",
-    "OG_KABLO_BAŞLIK_HT_ALM": "OG kablo başlığı (harici tip, alüminyum)", "OG_KABLO_BAŞLIK_DT_CU": "OG kablo başlığı (dahili tip, bakır)", "OG_KABLO_BAŞLIK_DT_ALM": "OG kablo başlığı (dahili tip, alüminyum)",
-    "AG_KABLO_BAŞLIK_CU": "AG kablo başlığı (bakır)", "AG_KABLO_BAŞLIK_ALM": "AG kablo başlığı (alüminyum)", "KABLO_MUHAFAZA_BORULARI": "Kablo muhafaza boruları",
-    "EK_YAPIM_İŞLERİ": "Ek yapım işleri", "TUTANAKLI_İŞLER": "Tutanaklı işler", "ENH_YAPIM_İŞLERİ": "ENH yapım işleri",
-    "KOMPANZASYON_SİSTEMİ": "Kompanzasyon sistemi", "İNDİRİCİ_VE_AYIRICI_MERKEZ_PANOLARI": "İndirici ve ayırıcı merkez panoları", "DİĞER_AMBAR_MALZEMELERİ": "Diğer ambar malzemeleri",
-    "OG_İZOLASYON_MALZEMELERİ": "OG izolasyon malzemeleri", "DEMİR_DİREK_VE_TRAVERS_BOYANMASI": "Demir direk ve travers boyanması", "YAĞMURLUK_BETONU_YAPILMASI": "Yağmurluk betonu yapılması",
-    "ALÜMİNYUM_BAĞ_TELİ": "Alüminyum bağ teli", "EK_MANŞONLARI": "Ek manşonları", "ALPEK_KABLO_AKSESUARLARI": "ALPEK kablo aksesuarları",
-    "ŞEFFAF_TÜP_AMPULLER": "Şeffaf tüp ampuller", "İZOLATÖR_DEMİRLERİ": "İzolatör demirleri", "ANAHTARLI_OTOMATİK_SİGORTA": "Anahtarlı otomatik sigorta",
-    "BAKLAVALI_SAC": "Baklavalı sac", "TEL_KAFESLİ_KAPI": "Tel kafesli kapı", "TEL_KAFESLİ_ÇİT": "Tel kafesli çit",
-    "TEÇHİZAT_MONTAJ_DEMİRİ": "Teçhizat montaj demiri", "YOL_KAPLAMASI_SÖKÜMÜ_VE_YAPIMI": "Yol kaplaması sökümü ve yapımı", "KİLOMETRİK_BAKIM_İŞLERİ": "Kilometrik bakım işleri",
+    "AG_DEMİR_GLV": "AG Galvaniz Demir Direk", "AG_DEMİR": "AG Demir Direk", "AG_BETON": "AG Beton Direk",
+    "AG_AĞAÇ": "AG Ağaç Direk", "MÜŞ_DEMİR_GLV": "Müşterek Galvaniz Demir Direk", "MÜŞ_DEMİR": "Müşterek Demir Direk",
+    "MÜŞ_BETON": "Müşterek Beton Direk", "ENH_DEMİR_GLV": "ENH Galvaniz Kaynaklı Direk", "ENH_GLV_CVT": "ENH Galvaniz Cıvatalı Direk",
+    "ENH_DEMİR": "ENH Demir Direk", "ENH_BETON": "ENH Beton Direk", "AYD_GLV_PLG": "Galvaniz Poligon Aydınlatma Direği",
+    "AYD_BETON": "Beton Aydınlatma Direği", "TR_DİREK_GLV": "Galvaniz Trafo Direği", "TR_DİREK": "Trafo Direği",
+    "BETON_KÖŞKLER": "Beton Köşk", "TRAFO_BİNASI": "Trafo Binası", "AG_PANO_HT": "AG Pano (Harici Tip)",
+    "AG_PANO_DT": "AG Pano (Dahili Tip)", "BOX_PANO": "Box Pano (SDK)", "EK_MUFU_AG_ALM": "AG Ek Mufu (Alüminyum)",
+    "EK_MUFU_AG_BAKIR": "AG Ek Mufu (Bakır)", "EK_MUFU_OG_ALM": "OG Ek Mufu (Alüminyum)", "EK_MUFU_OG_BAKIR": "OG Ek Mufu (Bakır)",
+    "KOFRE": "Kofre", "ARMATÜR": "Armatür", "AG_İLETKEN": "AG İletken",
+    "OG_İLETKEN": "OG İletken", "ALPEK_KABLOLAR": "ALPEK Kablolar", "AG_ALÜMİNYUM_KABLO": "AG Alüminyum Kablo",
+    "AG_BAKIR_KABLO": "AG Bakır Kablo", "AYDINLATMA_KABLO": "Aydınlatma Kablosu", "OG_ALÜMİNYUM_KABLO": "OG Alüminyum Kablo",
+    "OG_BAKIR_KABLO": "OG Bakır Kablo", "REKORTMAN_ALÜMİNYUM": "Rekortman Alüminyum", "REKORTMAN_BAKIR": "Rekortman Bakır",
+    "TOP_İLETKEN": "Topraklama İletkeni", "KABLO_KANALI": "Kablo Kanalı", "YATAY_DELGİ": "Yatay Delgi (Sondaj)",
+    "BAKIR_BARA": "Bakır Bara", "TRAVERS_VE_KONSOLLAR": "Travers ve Konsollar", "TRAVERS_VE_KONSOLLAR_GLV": "Galvaniz Travers ve Konsollar",
+    "BAHH_DEMİR_TRAVERS": "BAHH Demir Travers", "BAHH_DEMİR_TRAVERS_GLV": "BAHH Galvaniz Demir Travers", "AG_BETON_TRAVERS": "AG Beton Travers",
+    "BAHH_BETON_TRAVERS": "BAHH Beton Travers", "GALVANİZLİ_GAZ_BORUSU": "Galvanizli Gaz Borusu", "GALVANİZLİ_KABLO_TAVASI": "Galvanizli Kablo Tavası",
+    "AG_İZOLATÖR": "AG İzolatör", "OG_İZOLATÖR": "OG İzolatör", "KOMPOZİT_SİLİKON_ASKI_VE_GERGİ_İZOLATÖRLERİ": "Kompozit Silikon Askı ve Gergi İzolatörleri",
+    "KESİCİLER": "Kesiciler", "PARAFUDR": "Parafudr", "AYIRICI_DT": "Ayırıcı (Dahili Tip)",
+    "AYIRICI_HT": "Ayırıcı (Harici Tip)", "SİGORTA_BUŞONU": "Sigorta Buşonu", "HÜCRELER_METAL": "Metal Hücreler",
+    "AKÜ_REDRESÖR_GRUBU": "Akü Redresör Grubu", "TEHLİKE_LEVHASI": "Tehlike Levhası", "TOPRAKLAMA": "Topraklama",
+    "AKIM_TRAFOLARI": "Akım Trafoları", "GERİLİM_TRAFOLARI": "Gerilim Trafoları", "TRAFO_GENLEŞME_TANKLI": "Trafo (Genleşme Tanklı)",
+    "TRAFO_HERMETİK": "Trafo (Hermetik)", "TRAFO_KURU_TİP": "Trafo (Kuru Tip)", "OG_KABLO_BAŞLIK_HT_CU": "OG Kablo Başlığı (Harici Tip, Bakır)",
+    "OG_KABLO_BAŞLIK_HT_ALM": "OG Kablo Başlığı (Harici Tip, Alüminyum)", "OG_KABLO_BAŞLIK_DT_CU": "OG Kablo Başlığı (Dahili Tip, Bakır)", "OG_KABLO_BAŞLIK_DT_ALM": "OG Kablo Başlığı (Dahili Tip, Alüminyum)",
+    "AG_KABLO_BAŞLIK_CU": "AG Kablo Başlığı (Bakır)", "AG_KABLO_BAŞLIK_ALM": "AG Kablo Başlığı (Alüminyum)", "KABLO_MUHAFAZA_BORULARI": "Kablo Muhafaza Boruları",
+    "EK_YAPIM_İŞLERİ": "Ek Yapım İşleri", "TUTANAKLI_İŞLER": "Tutanaklı İşler", "ENH_YAPIM_İŞLERİ": "ENH Yapım İşleri",
+    "KOMPANZASYON_SİSTEMİ": "Kompanzasyon Sistemi", "İNDİRİCİ_VE_AYIRICI_MERKEZ_PANOLARI": "İndirici ve Ayırıcı Merkez Panoları", "DİĞER_AMBAR_MALZEMELERİ": "Diğer Ambar Malzemeleri",
+    "OG_İZOLASYON_MALZEMELERİ": "OG İzolasyon Malzemeleri", "DEMİR_DİREK_VE_TRAVERS_BOYANMASI": "Demir Direk ve Travers Boyanması", "YAĞMURLUK_BETONU_YAPILMASI": "Yağmurluk Betonu Yapılması",
+    "ALÜMİNYUM_BAĞ_TELİ": "Alüminyum Bağ Teli", "EK_MANŞONLARI": "Ek Manşonları", "ALPEK_KABLO_AKSESUARLARI": "ALPEK Kablo Aksesuarları",
+    "ŞEFFAF_TÜP_AMPULLER": "Şeffaf Tüp Ampuller", "İZOLATÖR_DEMİRLERİ": "İzolatör Demirleri", "ANAHTARLI_OTOMATİK_SİGORTA": "Anahtarlı Otomatik Sigorta",
+    "BAKLAVALI_SAC": "Baklavalı Sac", "TEL_KAFESLİ_KAPI": "Tel Kafesli Kapı", "TEL_KAFESLİ_ÇİT": "Tel Kafesli Çit",
+    "TEÇHİZAT_MONTAJ_DEMİRİ": "Teçhizat Montaj Demiri", "YOL_KAPLAMASI_SÖKÜMÜ_VE_YAPIMI": "Yol Kaplaması Sökümü ve Yapımı", "KİLOMETRİK_BAKIM_İŞLERİ": "Kilometrik Bakım İşleri",
 }
+
+# Okunur adda büyük kalan kısaltmalar (listede olmayan cinsler için).
+KISALTMALAR = {"AG", "OG", "ENH", "BAHH", "ALPEK", "SDK", "XLPE", "NYY", "NAYY", "GLV", "CVT", "PLG", "HT", "DT", "CU", "ALM", "TR"}
+KUCUK_SOZCUKLER = {"ve", "ile", "veya"}
 
 
 def cins_kodu(c):
@@ -114,11 +120,20 @@ def cins_kodu(c):
 
 
 def okunur_ad(c):
-    """Listede adı olmayan cinsin okunur adı: alt çizgiler boşluk, ilk harf büyük, gerisi Türkçe kuralıyla küçük (İ → i, I → ı)."""
-    t = c.replace("_", " ").replace("İ", "i").replace("I", "ı").lower()
-    return t[:1].replace("i", "İ").replace("ı", "I").upper() + t[1:] if t else t
-
-
+    """Listede adı olmayan cinsin okunur adı: alt çizgiler boşluk, her sözcüğün ilk harfi büyük, gerisi Türkçe kuralıyla
+    küçük (İ → i, I → ı); kısaltmalar (AG, OG, ENH…) büyük, "ve" küçük kalır."""
+    out = []
+    for w in c.replace("_", " ").split():
+        if w in KISALTMALAR:
+            out.append(w)
+            continue
+        k = w.replace("İ", "i").replace("I", "ı").lower()
+        if k in KUCUK_SOZCUKLER:
+            out.append(k)
+            continue
+        ilk = k[:1].replace("i", "İ").replace("ı", "I").upper()
+        out.append(ilk + k[1:])
+    return " ".join(out)
 
 
 # Listeden gelen kalem adlarında geçmemesi gereken kurum adları ve yerlerine yazılacaklar.

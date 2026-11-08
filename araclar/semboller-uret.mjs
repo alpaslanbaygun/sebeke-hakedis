@@ -62,17 +62,18 @@ const dikdortgen = (w, h) => [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2],
 const elmas = (r) => [[0, r], [r, 0], [0, -r], [-r, 0]];
 
 // Demontaj işaretleri: simgenin dışına belirgin taşan çizgiler (telefonun haritasındaki sarı çapraz gibi). Taşma payı
-// küçük simgede 1,5 m, büyükte en çok 3 m; böylece içi çarpılı kafes direkte de "mevcut"tan ayrılır.
+// küçük simgede 1,5 m (1 m'den küçük simgede — armatür — 0,8 m), büyükte en çok 3 m; böylece içi çarpılı kafes direkte
+// de "mevcut"tan ayrılır.
 //   DM     "/"   tek çapraz (demontaj)
 //   KESIK  "//"  iki paralel çapraz (kesilerek demontaj)
 //   SOKUK  "X"   iki çapraz (sökülerek demontaj)
-const tasma = (R) => r4(R + Math.min(3, Math.max(1.5, R * 0.8)));
+const tasma = (R) => r4(R + Math.min(3, Math.max(R < 1 ? 0.8 : 1.5, R * 0.8)));
 function dmIsareti(R, varyant) {
   const d = tasma(R);
   if (varyant === 'SOKUK') return [['L', -d, -d, d, d], ['L', -d, d, d, -d]];
   if (varyant === 'KESIK') {
     // Çapraza dik yönde ±h kaydırılmış iki çizgi (aralık simgenin yarısı kadar)
-    const h = r4(Math.max(0.7, R * 0.42));
+    const h = r4(Math.max(R < 1 ? 0.35 : 0.7, R * 0.42));
     return [['L', r4(-d - h), r4(-d + h), r4(d - h), r4(d + h)], ['L', r4(-d + h), r4(-d - h), r4(d + h), r4(d - h)]];
   }
   return [['L', -d, -d, d, d]];
@@ -95,7 +96,8 @@ const AILELER = {
   KOFRE: { ad: 'Kofre', kose: dikdortgen(2.8, 1.76) },
   MENHOL: { ad: 'Menhol', kose: kare(4), herZaman: [['C', 0, 0, 1.2]] },
   ABONE: { ad: 'Abone bağlantısı', daire: 1.5, herZaman: [['L', -1.5, 0, 1.5, 0]] },
-  ARMATUR: { ad: 'Armatür / sokak lambası', daire: 1.5, herZaman: [['L', -3, 0, -2, 0], ['L', 2, 0, 3, 0], ['L', 0, -3, 0, -2], ['L', 0, 2, 0, 3], ['L', -2.1, -2.1, -1.4, -1.4], ['L', 1.4, 1.4, 2.1, 2.1], ['L', -2.1, 2.1, -1.4, 1.4], ['L', 1.4, -1.4, 2.1, -2.1]] },
+  // Armatür direğin yanında durur: kapsamı (1,1 m) AG direk simgesinin (2,25) yarısından küçük (kullanıcı, 8.11.2026)
+  ARMATUR: { ad: 'Armatür / sokak lambası', daire: 0.6, herZaman: [['L', -1.1, 0, -0.8, 0], ['L', 0.8, 0, 1.1, 0], ['L', 0, -1.1, 0, -0.8], ['L', 0, 0.8, 0, 1.1], ['L', -0.78, -0.78, -0.57, -0.57], ['L', 0.57, 0.57, 0.78, 0.78], ['L', -0.78, 0.78, -0.57, 0.57], ['L', 0.57, -0.57, 0.78, -0.78]] },
   DIGER: { ad: 'Diğer', kose: elmas(2.5) }
 };
 

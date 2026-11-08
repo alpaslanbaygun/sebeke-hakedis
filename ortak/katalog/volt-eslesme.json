@@ -156,6 +156,23 @@
   "011.05.01.01-005": { "cins": "İZOLATÖR_DEMİRLERİ", "tanim": "D 95" },
   "011.04.01.01-001": { "cins": "AG_İZOLATÖR", "tanim": "N-80" },
   "011.04.01.01-002": { "cins": "AG_İZOLATÖR", "tanim": "N-95" },
-  "011.04.01.01-003": { "cins": "AG_İZOLATÖR", "tanim": "N-95/2" }
+  "011.04.01.01-003": { "cins": "AG_İZOLATÖR", "tanim": "N-95/2" },
+  "020.05.03.01-001": { "cins": "ARMATÜR", "tanim": "S1 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-002": { "cins": "ARMATÜR", "tanim": "S2 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-003": { "cins": "ARMATÜR", "tanim": "S3 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-004": { "cins": "ARMATÜR", "tanim": "S4 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-005": { "cins": "ARMATÜR", "tanim": "S5 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-006": { "cins": "ARMATÜR", "tanim": "S6 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-007": { "cins": "ARMATÜR", "tanim": "S7 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-008": { "cins": "ARMATÜR", "tanim": "S8 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-009": { "cins": "ARMATÜR", "tanim": "S9 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-010": { "cins": "ARMATÜR", "tanim": "S10 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-011": { "cins": "ARMATÜR", "tanim": "S11 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-012": { "cins": "ARMATÜR", "tanim": "S12 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-013": { "cins": "ARMATÜR", "tanim": "S13 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-014": { "cins": "ARMATÜR", "tanim": "S14 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-015": { "cins": "ARMATÜR", "tanim": "S15 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-016": { "cins": "ARMATÜR", "tanim": "S16 SINIF NUMARALI LED ARMATÜR" },
+  "020.05.03.01-017": { "cins": "ARMATÜR", "tanim": "S17 SINIF NUMARALI LED ARMATÜR" }
  }
 }
