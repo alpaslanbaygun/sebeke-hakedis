@@ -59,6 +59,25 @@ gT / gD müşterek tepe traversleri, T-AG-1…9, D-AG-1…3, N-AG-1, MT-1…4, M
 (seedRev 26: kurulu telefonlarda eksik satırlar kendiliğinden eklenir). `volt-eslesme.json › kalemler`: servis kodu ↔
 eklenti cins / tanım (iki yönde aynı kalem). Denemeler: CekirdekTest, `telefon/web/tests/konsol.test.mjs`.
 
+8.11 akşam (`duzeltmeler-8-11` dalı; geri dönüş: `onceki-main-duzeltmeler-oncesi`): kullanıcının 17:30 listesinin
+düzeltmeleri. **Cins adları**: kullanıcı kuralı "alt çizgisiz, her sözcüğün ilk harfi büyük" (`AG_DEMİR_GLV` → "AG
+Galvaniz Demir Direk"); 93 cinsin adı `katalog-aktar.py › CINS_ADLARI` ile yeniden yazıldı, katalogda olmayan kod aynı
+kuralla çevrilir (`CinsKodu.OkunurAd` = sh-core `cinsOkunurAd`; kısaltma listesi iki tarafta aynı). Şerit zaten adı
+gösteriyordu; Malzemeler penceresi, eksik malzeme sorgusu ve Proje Özeti kod yerine adı gösterir (kod ipucunda; kanalın
+kendi satırında "Kablo Kanalı"). Raporlar ve dosyalar kodu yazar; CBS çıktısının CINS_ADI alanı yeni adlarla (ortak
+deneme beklenenleri `CekirdekTest -- cbs` ile yenilendi). **Direk durumu geri alınamıyor** bildirimi: pencere deneme
+ortamında M → DM → M doğru çalıştı (PencereTest 08b, gerçek açılır liste akışıyla); yine de açılır listeden seçim
+yapılır yapılmaz değer yazılıp düzenleme kapatılıyor (düzenleme açık kalınca aynı hücredeki ikinci seçim bekleyebiliyordu)
+ve demontaj olmayan duruma dönünce KESİK / SÖKÜK kendiliğinden kalkıyor. Kullanıcıdan adımlar / ekran görüntüsü istendi.
+**Armatür simgesi**: daire 0,6 + ışınlar 1,1 m (eskiden 1,5 + 3 m; AG direk 2,25'ten büyüktü); 1 m'den küçük simgede
+demontaj işareti daha az taşar (`semboller-uret.mjs › tasma`); direğin sol üstünde dx = −(R + 1,1 + 0,4), dy =
+max(1,3; 0,55 R) (`NesneYazici.ArmaturBlogu`); blok sürümü 6 (eski çizimlerde blok tanımı yenilenir). Telefonun DXF'i aynı
+simgeyi yazar (tek başına armatür nesnesi); telefon direğin armatürünü haritada ayrı simgeyle çizmiyor (açık iş).
+**LED armatür sınıfları** S1…S17 (eski programın listesinde yalnız S6, S7, S9, S10, S11, S14 vardı): eklenti kataloğuna
+11 sınıf (`kaynak: "ek"`, ARMATÜR, ad/ad, tarife 0108), telefon kataloğuna `020.05.03.01-001…017` "Sınıf-N Led Armatür"
+(seedRev 27), eşleme `volt-eslesme.json › kalemler`. Denemeler: CekirdekTest (cins adları, LED, armatür boyutu),
+`konsol.test.mjs` K3 / K4, `marka.test.mjs` M3.
+
 5.11 (`kanal-listesi` dalı, `kullanici-rolleri` + `cokme-duzeltme` üstüne; geri dönüş: `onceki-main-kanal-oncesi` dalı):
 kullanıcının 5.11 listesi (Karakoçan yeraltı çizimi). **Kanal cinsi ve kaplama ayrı** (kullanıcı kararı: her birleşim
 seçilebilir): cins = zemin (toprak, tüvenan, mıcır, branşman, kablo demontaj), kaplama (yok, parke, asfalt, beton),
