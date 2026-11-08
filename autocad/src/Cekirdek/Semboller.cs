@@ -141,6 +141,13 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Elemanın simgesinin yarı genişliği (metre): hat çizerken tıklamanın elemana yapışma mesafesi buna göre.</summary>
         public static double YariGenislik(Eleman e) => e == null ? 2 : YariGenislik(Aile(e.Tur, e.Cins));
 
+        /// <summary>Ailenin kapsamı: bütün varyantları (demontaj işaretleri dahil) içine alan yarı genişlik (metre).</summary>
+        public static double Kapsam(string aile)
+        {
+            double[] o;
+            return _aileOlculeri != null && _aileOlculeri.TryGetValue(aile ?? "", out o) ? o[1] : YariGenislik(aile) * 1.8;
+        }
+
         public static string AileAdi(string aile)
         {
             Denetle();

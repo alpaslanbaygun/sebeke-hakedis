@@ -302,6 +302,8 @@ namespace SebekeHakedis.PencereTest
                 int r = -1;
                 for (int i = 0; i < g.Rows.Count; i++) if (g.Rows[i].Tag is Kalem k && k.Ana) r = i;
                 Esit(true, r >= 0, "durum geri: direğin kendi satırı listede");
+                // Kullanıcının yaptığı gibi: hücreye tıkla (CellClick → düzenleme + liste açılır), listeden seç; EndEdit çağrılmaz —
+                // seçim yapılır yapılmaz değer yazılmalı ve düzenleme kendiliğinden kapanmalı
                 Action<int, string, string> sec = (sutun, deger, ad) =>
                 {
                     g.CurrentCell = g.Rows[r].Cells[sutun];
@@ -312,9 +314,8 @@ namespace SebekeHakedis.PencereTest
                     if (cb == null) return;
                     Esit(true, cb.Items.Contains(deger), "durum geri: " + ad + " listede '" + deger + "' var");
                     cb.SelectedItem = deger;
-                    Application.DoEvents();
-                    g.EndEdit();
-                    Application.DoEvents();
+                    Bekle(60);
+                    Esit(false, g.IsCurrentCellInEditMode, "durum geri: " + ad + " seçilince düzenleme kapandı");
                 };
                 var ana = (Kalem)g.Rows[r].Tag;
                 sec(2, "DM", "durum");
@@ -325,8 +326,13 @@ namespace SebekeHakedis.PencereTest
                 sec(2, "M", "durum");
                 Esit("M", ana.Durum, "durum geri: DM → M yazıldı");
                 Esit("M", Convert.ToString(g.Rows[r].Cells[2].Value), "durum geri: hücrede M görünür");
-                sec(7, "", "DM durumu");
-                Esit("", ana.DmDurum ?? "", "durum geri: DM durumu boşaltıldı");
+                Esit("", ana.DmDurum ?? "", "durum geri: M'ye dönünce KESİK kendiliğinden kalktı");
+                Esit("", Convert.ToString(g.Rows[r].Cells[7].Value), "durum geri: DM durumu hücresi boş");
+                // Aynı hücrede ikinci kez değiştir (DM → M → DM+M): düzenleme kapanmasaydı ikinci seçim yazılmazdı
+                sec(2, "DM+M", "durum");
+                Esit("DM+M", ana.Durum, "durum geri: üçüncü değişiklik de yazıldı");
+                sec(2, "M", "durum");
+                Esit("M", ana.Durum, "durum geri: yeniden M");
                 Resim(f, "sonra");
             });
             Esit(eskiDurum, direk.Durum, "durum geri: deneme sonunda direk eski durumunda");

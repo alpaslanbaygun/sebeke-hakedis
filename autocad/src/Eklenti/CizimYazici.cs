@@ -25,9 +25,10 @@ namespace SebekeHakedis.Eklenti
         /// <summary>
         /// Blok tanımının sürümü (blok sözlüğünde saklanır). 2: metre cinsinden geometri, 1 ölçek, telefon yazı düzeni;
         /// 3: panoda çıkış şeması öznitelikleri (C_1…C_8); 4: demontaj işaretleri simgeden taşar (DM "/", KESİK "//", SÖKÜK "X"),
-        /// demontajda kafes direğin iç çarpısı yok; 5: öznitelik yazıları eklentinin yazı stilinde (Tahoma).
+        /// demontajda kafes direğin iç çarpısı yok; 5: öznitelik yazıları eklentinin yazı stilinde (Tahoma); 6: armatür
+        /// simgesi küçüldü (direk simgesinin yarısından küçük, 8.11.2026).
         /// </summary>
-        private const string BlokSurumu = "5";
+        private const string BlokSurumu = "6";
 
         /// <summary>Metraj yazısında köşenin bir elemanın üstünde sayılacağı uzaklık (m) ve eleman ızgarasının hücresi.</summary>
         private const double DugumToleransi = 0.5, DugumHucresi = 5.0;

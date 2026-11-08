@@ -3457,9 +3457,14 @@ namespace SebekeHakedis.Eklenti
                     var cb = g.EditingControl as ComboBox;
                     if (cb != null) { try { cb.DroppedDown = true; } catch { } }
                 };
+                // Açılır listeden seçim yapılır yapılmaz değer yazılır ve düzenleme kapanır: bir sonraki tıklama listeyi
+                // yeniden açar (düzenleme açık kalınca ikinci seçim yazılmayabiliyordu — 8.11.2026, "DM'den M'ye dönmüyor").
                 g.CurrentCellDirtyStateChanged += (s, e) =>
                 {
-                    if (g.IsCurrentCellDirty && g.CurrentCell is DataGridViewComboBoxCell) g.CommitEdit(DataGridViewDataErrorContexts.Commit);
+                    if (!g.IsCurrentCellDirty || !(g.CurrentCell is DataGridViewComboBoxCell)) return;
+                    g.CommitEdit(DataGridViewDataErrorContexts.Commit);
+                    // Düzenleme, açılır listenin kendi olayı bittikten sonra kapatılır (olayın içinde kapatmak yeniden giriş hatası verir)
+                    g.BeginInvoke((Action)(() => { if (g.IsCurrentCellInEditMode) g.EndEdit(); }));
                 };
                 g.CellValueChanged += (s, e) =>
                 {
@@ -3470,7 +3475,11 @@ namespace SebekeHakedis.Eklenti
                     string deger = Convert.ToString(row.Cells[e.ColumnIndex].Value, CultureInfo.InvariantCulture) ?? "";
                     switch (e.ColumnIndex)
                     {
-                        case 2: k.Durum = deger; break;
+                        case 2:
+                            k.Durum = deger;
+                            // Demontaj olmayan duruma dönünce kesik / sökük bilgisi kalkar (M direğe KESİK yazılı kalmasın)
+                            if (!Turler.DemontajMi(k.Durum)) k.DmDurum = "";
+                            break;
                         case 3:
                             {
                                 double m = SayiCoz.Coz(deger, double.NaN);

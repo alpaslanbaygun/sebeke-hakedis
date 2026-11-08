@@ -1897,6 +1897,15 @@ namespace SebekeHakedis.Test
                     if (ilk.Length > 0 && char.IsLetter(ilk[0]) && char.IsLower(ilk[0]) && ilk != "ve" && ilk != "ile") bozukAd++;
                 }
             Esit(0, bozukAd, "katalogdaki bütün cins adlarında sözcük başları büyük (ve / ile dışında)");
+            // LED armatür sınıfları S1…S17 (8.11.2026; eski programın listesinde yalnız S6, S7, S9, S10, S11, S14 vardı)
+            int ledSinifi = 0;
+            for (int n = 1; n <= 17; n++)
+            {
+                var led = k.Bul("ARMATÜR", "S" + n + " SINIF NUMARALI LED ARMATÜR");
+                if (led != null && led.Birim == "ad/ad" && led.Rol == "malzeme" && led.Tarife == "0108") ledSinifi++;
+            }
+            Esit(17, ledSinifi, "katalog: LED armatür sınıfları S1…S17");
+            Esit(true, k.Malzemeler("AYD_DIREK").Exists(x => x.Tanim == "S3 SINIF NUMARALI LED ARMATÜR"), "katalog: yeni LED sınıfı aydınlatma direğinin malzeme listesinde");
             Esit(true, k.Bul("AG_ALİMİNYUM_KABLO", "3x95+50 Nyy Alm.") != null && k.Bul("AG_ALİMİNYUM_KABLO", "3x95+50 Nyy Alm.").Cins == "AG_ALÜMİNYUM_KABLO",
                  "katalog: eski kodla aranan kalem yeni koduyla gelir");
             Esit("AG_ALÜMİNYUM_KABLO", NesneOkuyucu.HatKalemiOku("AG_ALİMİNYUM_KABLO;;3x95+50 Nyy Alm.;M;0;10;mt/mt;1;10;0,00;1;0105;7001;").Cins,
@@ -1982,6 +1991,13 @@ namespace SebekeHakedis.Test
             adirek.Kalemler.Add(Katalog.KalemYap(arm, 1, "M", 1, false, "MALZEME", "7100"));
             var va = NesneYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null);
             Esit("SH_ARMATUR_YENI", va.Armatur, "armatür: direğin yanında armatür simgesi");
+            // Armatür simgesi direk simgesinin yarısından küçük (8.11.2026): kapsamı (ışınlar, demontaj işareti dahil) AG direk
+            // yarı genişliğinin (2,25) altında; direğin sol üstünde, simgeye değmeden
+            Esit(true, Semboller.YariGenislik("ARMATUR") <= Semboller.YariGenislik("DIREK_AG") / 2, "armatür: yarı genişliği direğin yarısından küçük (" + Semboller.YariGenislik("ARMATUR") + ")");
+            Esit(true, Semboller.Kapsam("ARMATUR") < Semboller.YariGenislik("DIREK_AG"), "armatür: demontaj işaretiyle bile direk simgesinden küçük (" + Semboller.Kapsam("ARMATUR") + ")");
+            Esit(true, Semboller.YariGenislik("ARMATUR") <= Semboller.YariGenislik("DIREK_AYD") / 2, "armatür: aydınlatma direğinin de yarısından küçük");
+            Esit(true, -va.ArmaturDx > Semboller.YariGenislik("DIREK_AG") + NesneYazici.ArmaturYariGenisligi && va.ArmaturDy > 0, "armatür: direğin sol üstünde, simgeye değmeden (dx=" + va.ArmaturDx + ", dy=" + va.ArmaturDy + ")");
+            Esit(true, Math.Abs(va.ArmaturDx) < 4.5, "armatür: direğe yakın (eski uzaklık 5,15 idi)");
             adirek.Kalemler[1].Durum = "DM";
             Esit("SH_ARMATUR_DM", NesneYazici.Eleman(adirek, "SC", "SH_DIREK_AG_YENI", null).Armatur, "armatür: demontaj armatür simgesi");
             var abox = new Eleman { Id = "B5", Tur = "BOX", Cins = "BOX_PANO", Durum = "M" };

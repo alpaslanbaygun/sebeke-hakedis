@@ -147,12 +147,17 @@ namespace SebekeHakedis.Cekirdek
         public static bool DirekMi(string tur) =>
             tur == "AG_DIREK" || tur == "MUSTEREK_DIREK" || tur == "AYD_DIREK" || tur == "ENH_DIREK" || tur == "TRAFO_DIREGI";
 
+        /// <summary>Armatür simgesinin ışınlarla yarı genişliği (metre): daire 0,6 + ışınlar 1,1 (semboller-uret.mjs › ARMATUR).</summary>
+        public const double ArmaturYariGenisligi = 1.1;
+
         /// <summary>Kalem armatür mü (cinsi ARMATÜR …).</summary>
         public static bool ArmaturMu(Kalem k) => k != null && Semboller.Aile("DIGER", k.Cins) == "ARMATUR";
 
         /// <summary>
         /// Direğin armatür malzemesinden simgenin bloğu ("": armatür yok). Durumu: demontaj olmayan ilk armatürün durumu
-        /// (hepsi demontajsa demontaj). Simge direğin sol üstüne, direğin simgesine değmeden konur.
+        /// (hepsi demontajsa demontaj). Simge direğin sol üstüne, direğin simgesine değmeden konur: armatür simgesi
+        /// (yarı genişliği 0,6 m, ışınlarla 1,1 m) direk simgesinin yarısından küçüktür (kullanıcı, 8.11.2026); direğe
+        /// uzaklığı direğin yarı genişliği + armatürün ışınlı yarı genişliği + 0,4 m.
         /// </summary>
         public static string ArmaturBlogu(Eleman e, out double dx, out double dy, out string durum)
         {
@@ -168,8 +173,9 @@ namespace SebekeHakedis.Cekirdek
             if (secilen == null) return "";
             durum = secilen.Durum ?? "";
             double R = Semboller.Yuklu ? Semboller.YariGenislik(e) : 2.25;
-            dx = -(R + 2.9);
-            dy = R + 0.9;
+            double A = ArmaturYariGenisligi;
+            dx = -(R + A + 0.4);
+            dy = Math.Max(A + 0.2, R * 0.55);
             return Semboller.OnEk + "ARMATUR_" + Semboller.Varyant(durum);
         }
 

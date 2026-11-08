@@ -68,7 +68,7 @@ test('K2 · telefon projesi: GT-60 ve D 80 AutoCAD dosyasına katalogdaki adla g
   assert.equal(mats.find((x) => x.sebeke.tanim === 'D 80').servis, '011.05.01.01-004');
 });
 
-test('K3 · katalog güncellemesi 25 → 26: yeni travers / konsol ve izolatör pozları kurulu kataloğa eklenir', async () => {
+test('K3 · katalog güncellemesi 25 → 27: yeni travers / konsol, izolatör ve LED armatür pozları kurulu kataloğa eklenir', async () => {
   const { setup } = await import('./helpers.mjs');
   const { ds } = await setup({ skipSeed: true });
   const yeni = new Set(ESLEME.map(([s]) => s));
@@ -76,10 +76,27 @@ test('K3 · katalog güncellemesi 25 → 26: yeni travers / konsol ve izolatör 
   old.poz = old.poz.filter((p) => !yeni.has(p.servis) || ['005.02.02.01-001', '005.02.02.01-012', '011.05.01.01-001'].includes(p.servis));
   old.standard = Object.assign({}, old.standard, { seedRev: 25 });
   await importStandard(ds, old);
-  assert.equal(SEED_REV, 26);
+  assert.equal(SEED_REV, 27);
   const r = await upgradeStandard(ds, SEED);
-  assert.ok(r.upgraded >= 38, 'eklenen: ' + r.upgraded);
+  assert.ok(r.upgraded >= 55, 'eklenen: ' + r.upgraded);
   const kayit = await ds.db.get('poz', SEED.standard.id + ':005.02.02.01-017');
   assert.ok(kayit && kayit.name.startsWith('T-AG-1') && kayit.kgPerUnit === 26 && kayit.category === 'Travers', 'T-AG-1 konsol');
-  assert.equal((await ds.db.get('standards', SEED.standard.id)).seedRev, 26);
+  const led = await ds.db.get('poz', SEED.standard.id + ':020.05.03.01-017');
+  assert.ok(led && led.name === 'Sınıf-17 Led Armatür' && led.category === 'Aydınlatma' && led.unit === 'Ad', 'Sınıf-17 LED armatür');
+  assert.equal((await ds.db.get('standards', SEED.standard.id)).seedRev, 27);
+});
+
+test('K4 · LED armatür sınıfları 1–17 (8.11.2026): telefonun armatür listesinde, eklenti kataloğunda ve eşlemede', async () => {
+  const { luminairePoz } = await import('../src/services/survey-service.js');
+  const { setup, newProject } = await import('./helpers.mjs');
+  const { ps } = await setup();
+  await newProject(ps);
+  const liste = luminairePoz(ps.cat);
+  for (let n = 1; n <= 17; n++) {
+    const servis = '020.05.03.01-' + String(n).padStart(3, '0');
+    assert.ok(liste.some((x) => x.servis === servis), 'armatür listesinde: ' + servis);
+    const e = ESLESME.kalemler[servis];
+    assert.ok(e && e.cins === 'ARMATÜR' && e.tanim === 'S' + n + ' SINIF NUMARALI LED ARMATÜR', 'eşleme: ' + servis);
+    assert.ok(KAT.get('ARMATÜR|S' + n + ' SINIF NUMARALI LED ARMATÜR'), 'eklenti kataloğunda S' + n);
+  }
 });
