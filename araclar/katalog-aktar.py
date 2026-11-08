@@ -11,7 +11,8 @@ Kullanım:
   birimleri, standart karakteristik, unsur şehir, unsur köy/bakım), `Sayfa3` (ANA_MALZEMELER: nesnenin kendi
   pozu olan cinsler; hat cinsleri), `Sayfa1` (durum, karakteristik ve unsur kod listeleri).
 - Var olan kalemler.json'daki kullanım sayıları, nesne listeleri ve görülen durumlar korunur (gerçek çizimden
-  çıkarılmıştı); AutoCAD listesinde olmayan eski kalemler de bırakılır (kaynak: "cizim").
+  çıkarılmıştı); AutoCAD listesinde olmayan eski kalemler de bırakılır (kaynak: "cizim"); birim fiyat kitabından elle
+  eklenen kalemler (kaynak: "ek") bütün alanlarıyla korunur.
 - Birim fiyatlar alınmaz (dağıtılan dosyada sıfırdır; kullanıcı girer).
 """
 import json
@@ -291,6 +292,11 @@ def main():
     eklenen_eski = 0
     for anahtar, it in eski.items():
         k = kalemler.get(anahtar)
+        if k is None and it.get("kaynak") == "ek":
+            # Birim fiyat kitabından elle eklenmiş kalem (AG galvaniz travers ve konsollar…): bütün alanlarıyla korunur
+            kalemler[anahtar] = OrderedDict(it)
+            eklenen_eski += 1
+            continue
         if k is None:
             k = OrderedDict()
             k["cins"], k["tanim"] = anahtar

@@ -378,7 +378,7 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 
 | Düğme | Komut | Ne yapar |
 | --- | --- | --- |
-| Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 934 kalemlik katalog). Hatta iletken eklerseniz hattın ikinci iletkeni olur (metrajı hattın boyu). |
+| Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 982 kalemlik katalog; AG galvaniz travers ve konsollar GT-60, GD-80, T-AG-1… ağırlıklarıyla). Hatta iletken eklerseniz hattın ikinci iletkeni olur (metrajı hattın boyu). |
 | Toplu Malzeme | `SH_TOPLUMALZEME` | Seçilen bütün direklere (trafo, SDK…) aynı malzemeleri birden ekler. |
 | Malzeme Hafızası | — | Açıkken son elemanın malzemeleri aynı tipteki yeni elemana kendiliğinden eklenir; tıklayınca kapanır / açılır. |
 | Hat Değiştir | `SH_HATDEGISTIR` | Seçilen hatların iletkenini (tip, cins), türünü, durumunu, hakedişini değiştirir; kablo tipi yazısı ve katman güncellenir, metraj korunur. |

@@ -367,6 +367,23 @@ namespace SebekeHakedis.Test
             Esit(true, ay2.HatKalinligi == 1.5 && ay2.MalzemeYazisi, "çizim ayarları: kalınlık ve malzeme yazısı saklanır");
             Esit(true, ay2.BoyutlariVer().Ayni(by), "çizim ayarları: boyutlar aynı");
             Esit(true, Pencerelerdeki(1.0).Contains("OG 0,5") && Pencerelerdeki(0).StartsWith("İnce çizgi"), "ayar yazısı: kalınlıklar mm ile");
+
+            // AG galvaniz travers ve konsollar, AG izolatör demirleri (8.11.2026; birim fiyat kitabındaki kg/ad; telefonla
+            // aynı kalem: volt-eslesme.json › kalemler, telefondaki tests/konsol.test.mjs)
+            var katalog = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            var bak = new Dictionary<string, double> { { "GT-60", 3.02 }, { "GT-80 (UNP 65)", 5.43 }, { "GD-80", 6.83 }, { "T-AG-1", 26 }, { "D-AG-3", 97 }, { "MN-2", 137 }, { "GTR-200 (2x8U-200)", 37 }, { "gT-240 12m Müş. Tepe Travers", 46 } };
+            foreach (var kv in bak)
+            {
+                var it = katalog.Bul("TRAVERS_VE_KONSOLLAR_GLV", kv.Key);
+                Esit(true, it != null && it.Birim == "ad/kg" && Math.Abs(it.Katsayi - kv.Value) < 1e-9 && it.PozNo == "5.4" && it.Kaynak == "ek", "AG konsol / travers katalogda: " + kv.Key + " " + kv.Value + " kg");
+            }
+            int travers = katalog.Kalemler.FindAll(x => x.Cins == "TRAVERS_VE_KONSOLLAR_GLV" && x.Kaynak == "ek").Count;
+            Esit(45, travers, "AG galvaniz travers ve konsol sayısı");
+            foreach (var t in new[] { "B 95", "D 80", "D 95", "A 80 ", "B 80 " })
+                Esit(true, katalog.Bul("İZOLATÖR_DEMİRLERİ", t) != null, "izolatör demiri katalogda: " + t.Trim());
+            var gd = Katalog.KalemYap(katalog.Bul("TRAVERS_VE_KONSOLLAR_GLV", "GD-80"), 2, "M", 1, false, "MALZEME", "");
+            Esit(13.66, gd.Toplam, "2 × GD-80 = 13,66 kg (rapor birimi kg)");
+            Esit("GD-80=2 (M)", MalzemeEtiketi.Satir(MalzemeYazimi.Duzelt(gd.Tanim), gd.Miktar, gd.Birim, gd.Durum), "çizimde: GD-80=2 (M)");
         }
 
         /// <summary>Çizim Ayarları › Görünüm › Hat kalınlığı seçeneğinin yazısı (eklentideki Pencereler.HatKalinligiYazisi ile aynı biçim).</summary>

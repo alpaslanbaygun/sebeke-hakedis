@@ -256,7 +256,7 @@ test('Y9 · Katalog güncelleme 23 → 24: kaplamalı kanal kalemleri ve kanal t
   const old = JSON.parse(JSON.stringify(SEED));
   old.poz = old.poz.filter((p) => !/^YEREL:KANAL-/.test(p.servis)); delete old.kanal; old.standard = Object.assign({}, old.standard, { seedRev: 23 });
   await importStandard(ds, old);
-  assert.equal(SEED_REV, 25);
+  assert.ok(SEED_REV >= 25);
   const r = await upgradeStandard(ds, SEED);
   assert.ok(r.upgraded >= 4);
   await ps.open((await ps.createProject({ name: 'P', cm: 39 })).id);
@@ -271,7 +271,7 @@ test('Y9b · Katalog güncelleme 24 → 25: katalog başlığından kurum ve kit
   await importStandard(ds, old);
   await upgradeStandard(ds, SEED);
   const st = await ds.db.get('standards', SEED.standard.id);
-  assert.equal(st.seedRev, 25);
+  assert.equal(st.seedRev, SEED_REV);
   assert.equal(st.name, 'Poz kataloğu 2026'); assert.equal(st.code, '2026'); assert.equal(st.book, '2026');
   for (const v of [st.name, st.code, st.book, st.notes || '']) assert.ok(!/26\.23|TEDAŞ|VOLT/.test(v), v);
 });

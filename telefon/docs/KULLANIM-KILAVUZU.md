@@ -891,6 +891,9 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 - Kontrol listesinde hata varken de çıktı alınabilir; uygulama önce sorar ve hatayı teslim paketine yazar.
 - Google Earth ve CBS (MIF / MID) dosyaları AutoCAD eklentisinin dosyalarıyla aynıdır: "ileride" durumundaki nesneler (eklentide olmadıkları için) bu dosyalara yazılmaz, dışa aktarımda uyarı çıkar. Projede AutoCAD'den gelen bölge yoksa proje sınırı yazılmaz; proje adı klasörün adıdır. MIF'te koordinatlar ve `SAGA` / `YUKARI` sütunları seçilen koordinat sistemindedir.
 - Veri değişince önceki çıktılar "Son üretilenler" listesinde `ESKİDİ` olarak işaretlenir; yeniden üretin.
+- Poz kataloğunda AG galvaniz travers ve konsollar (GT-60…GT-80, GD-60…GD-100, T-AG, D-AG, N-AG, MT, MD, MN, müşterek
+  tepe ve trafo traversleri, kg ağırlıklarıyla) ve B 80 · B 95 · D 80 · D 95 izolatör demirleri vardır (katalog sürüm 26;
+  uygulama güncellenince kendiliğinden eklenir). AutoCAD dosyasına eklentinin kataloğundaki adla (GT-60, GD-80…) gider.
 - **Çizim boyutları** kartı (DXF, AutoCAD dosyası ya da teslim paketi seçiliyken): simge ve yazı büyüklükleri, **Hat
   kalınlığı** (İnce çizgi · İnce · Normal · Kalın · Çok kalın; Normal'de 1/1000 baskıda OG 0,5 mm, AG 0,35 mm) ve
   **Malzemeleri çizimde göster** (her elemanın malzemeleri simgenin yanında satır satır: `GT-60=1 (M)`). Kalın hatlar

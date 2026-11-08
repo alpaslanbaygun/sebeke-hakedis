@@ -51,8 +51,13 @@ kaydedilince çizimdekilere uygulanması sorulur. **Yeni logo ve ad**: "Şebeke-
 "HAKKEDİŞ" yazımı `araclar/marka-uret.py` içinde HAKEDİŞ yapılır (kaynak kullanıcının dosyası). **Eski programın adı**:
 depoda hiç yok (taranan kod, belge ve kullanıcının çizimleri); kullanıcının gördüğü satır büyük olasılıkla bilgisayarında
 kurulu eski programın kendi yükleyicisinden (ekran görüntüsü istendi). Kalıcı denetim `telefon/web/tests/marka.test.mjs`
-(yasak adlar parçalardan kurulur). **AG konsolları** (GT-60, GD-80…): katalogda yok; kullanıcı ad + kg listesini
-gönderecek (§6).
+(yasak adlar parçalardan kurulur). **AG konsolları** (kullanıcının yeşil defterinden; yalnız katalog bilgisi: servis
+kodu, ad, kg/ad — proje verisi, yüklenici ve proje adları alınmadı, dosya depoya konmadı): eklenti kataloğuna 45 AG
+galvaniz travers / konsol (TRAVERS_VE_KONSOLLAR_GLV, ad/kg, poz 5.4, tarife 0107: GT-60…GT-80 ve UNP 65'leri, GD-60…GD-100,
+gT / gD müşterek tepe traversleri, T-AG-1…9, D-AG-1…3, N-AG-1, MT-1…4, MD-1…2, MN-1…2, GTR-200…400) ve 3 AG izolatör demiri
+(B 95, D 80, D 95); `kaynak: "ek"` (katalog-aktar.py bunları korur). Telefon kataloğunda eksik 38 poz eklendi
+(seedRev 26: kurulu telefonlarda eksik satırlar kendiliğinden eklenir). `volt-eslesme.json › kalemler`: servis kodu ↔
+eklenti cins / tanım (iki yönde aynı kalem). Denemeler: CekirdekTest, `telefon/web/tests/konsol.test.mjs`.
 
 5.11 (`kanal-listesi` dalı, `kullanici-rolleri` + `cokme-duzeltme` üstüne; geri dönüş: `onceki-main-kanal-oncesi` dalı):
 kullanıcının 5.11 listesi (Karakoçan yeraltı çizimi). **Kanal cinsi ve kaplama ayrı** (kullanıcı kararı: her birleşim
@@ -325,9 +330,10 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
   DWG 2000 kaydedip açma, eski programın blokları (TİP özniteliği olmayanlarda yer); Hat kalınlığı seçenekleriyle baskı
   (PDF) ve Telefon Görünümü'yle eski çizimin kalınlaşması. Telefona taşınamayan: harita ekranındaki çizim görünümünde
   malzeme yazısı ve hat kalınlığı (ekran cihazın kendi boyutlarıyla çizilir; DXF'te ikisi de var).
-- **AG konsolları** (kullanıcı listesi bekleniyor): GT-60, GD-80… adları ve kg ağırlıkları gelince `kalemler.json`'a
-  TRAVERS_VE_KONSOLLAR_GLV (poz 5.4, ad/kg) altına eklenecek; telefon kataloğu (`ortak-tablolar.mjs`) ve iki tarafın
-  malzeme listeleri aynı dosyadan.
+- **Yeşil defterde olup kataloglarda olmayan öteki kalemler**: kullanıcının dosyasında ~3 100 servis kodlu kalem var;
+  eklenti kataloğu eski programın adlarıyla, telefon kataloğu 2 024 pozla. 8.11'de yalnız AG travers / konsol ve AG
+  izolatör demirleri eklendi; OG izolatör demirleri (B 6 / B 15 / C 6…, VKS 35), OG mesnet izolatörleri (VHD, VKS),
+  abone muhafaza borusu ve askı teli çelik halat gibi kalemler kullanıcı isterse aynı yolla eklenir.
 - **Eski programın adı**: kullanıcı komut satırındaki satırın ekran görüntüsünü gönderince kaynağı kesinleştirilecek.
 
 - **5.11 `kanal-listesi` işlerinin AutoCAD'de denemesi**: şeritte Kablo Kanalı › Cins / Kaplama seçip kanal çizme
