@@ -235,6 +235,8 @@ namespace SebekeHakedis.PencereTest
                 Esit(2.5, o.Ayar.ElemanYaziYuksekligi, "ayarlar: eleman yazısı yüksekliği");
                 Esit(2.0, o.Ayar.EtiketYuksekligi, "ayarlar: hat etiketi (kablo tipi) yüksekliği");
                 Esit(1.2, o.Ayar.MetrajYuksekligi, "ayarlar: metraj yazısı yüksekliği");
+                Esit(1.5, o.Ayar.HatKalinligi, "ayarlar: hat kalınlığı (Kalın = 1,5 kat)");
+                Esit(true, o.Ayar.MalzemeYazisi, "ayarlar: malzemeleri çizimde göster");
             }, f =>
             {
                 var dom = Bul<KoyuSecim>(f, r => r.Text == "39°");
@@ -247,6 +249,12 @@ namespace SebekeHakedis.PencereTest
                 Bul<SayiKutusu>(f, k => k.Name == "elemanYaziYuksekligi").Value = 2.5m;
                 Bul<SayiKutusu>(f, k => k.Name == "etiketYuksekligi").Value = 2.0m;
                 Bul<SayiKutusu>(f, k => k.Name == "metrajYuksekligi").Value = 1.2m;
+                var kalin = Bul<KoyuAcilir>(f, k => k.Name == "hatKalinligi");
+                Esit(5, kalin.Items.Count, "ayarlar: hat kalınlığı seçenekleri");
+                Esit(true, Convert.ToString(kalin.SelectedItem).StartsWith("Normal"), "ayarlar: hat kalınlığı varsayılanı Normal");
+                kalin.SelectedIndex = 3;
+                Esit(true, Convert.ToString(kalin.SelectedItem).StartsWith("Kalın"), "ayarlar: hat kalınlığı Kalın seçildi");
+                Bul<KoyuOnay>(f, k => k.Name == "malzemeYazisi").Checked = true;
                 string[] adlar = { "genel", "proje", "tarife", "gorunum", "metraj" };
                 for (int i = 1; i < adlar.Length; i++)
                 {

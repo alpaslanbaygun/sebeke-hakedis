@@ -179,39 +179,56 @@ namespace SebekeHakedis.Cekirdek
     /// <summary>
     /// Çizimin simge ve yazı boyutları (Çizim Ayarları › Görünüm; proje dosyasında proje.boyutlar — telefon da okur, DXF'i
     /// bunlarla çizer): simge büyüklüğü (kat; 1 = telefonla aynı, 1/1000 pafta), hat etiketi (kablo tipi), metraj ve eleman
-    /// yazısı (GIS no, tip) yüksekliği (m).
+    /// yazısı (GIS no, tip) yüksekliği (m); hat kalınlığı (kat: ortak stildeki kalınlıkların çarpanı, 0 = ince çizgi) ve
+    /// elemanın malzemelerinin çizimde yazılıp yazılmayacağı (MalzemeEtiketi).
     /// </summary>
     public sealed class Boyutlar
     {
         public const double VarsayilanSimge = 1, VarsayilanEtiket = 1.8, VarsayilanMetraj = 1.44, VarsayilanEleman = 1.8;
+        public const double VarsayilanKalinlik = 1;
+        public const bool VarsayilanMalzemeYazisi = false;
         public double SimgeOlcegi = VarsayilanSimge, EtiketYuksekligi = VarsayilanEtiket, MetrajYuksekligi = VarsayilanMetraj,
                       ElemanYaziYuksekligi = VarsayilanEleman;
+        /// <summary>Hat (iletken, kablo) çizgi kalınlığının çarpanı: ortak stildeki kalınlık (m, 1/1000 paftada mm) × bu; 0 = ince çizgi.</summary>
+        public double HatKalinligi = VarsayilanKalinlik;
+        /// <summary>Elemanın malzemeleri simgenin yanında satır satır yazılsın ("GT-60=1 (M)").</summary>
+        public bool MalzemeYazisi = VarsayilanMalzemeYazisi;
 
         /// <summary>Hepsi varsayılan mı (dosyaya yalnız farklıysa yazılır).</summary>
         public bool Varsayilan =>
             Math.Abs(SimgeOlcegi - VarsayilanSimge) < 1e-9 && Math.Abs(EtiketYuksekligi - VarsayilanEtiket) < 1e-9 &&
-            Math.Abs(MetrajYuksekligi - VarsayilanMetraj) < 1e-9 && Math.Abs(ElemanYaziYuksekligi - VarsayilanEleman) < 1e-9;
+            Math.Abs(MetrajYuksekligi - VarsayilanMetraj) < 1e-9 && Math.Abs(ElemanYaziYuksekligi - VarsayilanEleman) < 1e-9 &&
+            Math.Abs(HatKalinligi - VarsayilanKalinlik) < 1e-9 && MalzemeYazisi == VarsayilanMalzemeYazisi;
 
-        /// <summary>Makul aralık (simge 0,1–20 kat; yazılar 0,05–50 m); bozuk değer varsayılana döner.</summary>
+        /// <summary>Makul aralık (simge 0,1–20 kat; yazılar 0,05–50 m; hat kalınlığı 0–5 kat); bozuk değer varsayılana döner.</summary>
         public Boyutlar Duzelt()
         {
             if (!(SimgeOlcegi >= 0.1 && SimgeOlcegi <= 20)) SimgeOlcegi = VarsayilanSimge;
             if (!(EtiketYuksekligi >= 0.05 && EtiketYuksekligi <= 50)) EtiketYuksekligi = VarsayilanEtiket;
             if (!(MetrajYuksekligi >= 0.05 && MetrajYuksekligi <= 50)) MetrajYuksekligi = VarsayilanMetraj;
             if (!(ElemanYaziYuksekligi >= 0.05 && ElemanYaziYuksekligi <= 50)) ElemanYaziYuksekligi = VarsayilanEleman;
+            if (!(HatKalinligi >= 0 && HatKalinligi <= 5)) HatKalinligi = VarsayilanKalinlik;
             return this;
         }
 
         public bool Ayni(Boyutlar b) =>
             b != null && Math.Abs(SimgeOlcegi - b.SimgeOlcegi) < 1e-9 && Math.Abs(EtiketYuksekligi - b.EtiketYuksekligi) < 1e-9 &&
-            Math.Abs(MetrajYuksekligi - b.MetrajYuksekligi) < 1e-9 && Math.Abs(ElemanYaziYuksekligi - b.ElemanYaziYuksekligi) < 1e-9;
+            Math.Abs(MetrajYuksekligi - b.MetrajYuksekligi) < 1e-9 && Math.Abs(ElemanYaziYuksekligi - b.ElemanYaziYuksekligi) < 1e-9 &&
+            Math.Abs(HatKalinligi - b.HatKalinligi) < 1e-9 && MalzemeYazisi == b.MalzemeYazisi;
 
-        /// <summary>Kısa yazı: "simge 1,5 kat · kablo tipi 2 m · metraj 1,6 m · eleman 2 m".</summary>
+        public Boyutlar Kopya() => new Boyutlar
+        {
+            SimgeOlcegi = SimgeOlcegi, EtiketYuksekligi = EtiketYuksekligi, MetrajYuksekligi = MetrajYuksekligi,
+            ElemanYaziYuksekligi = ElemanYaziYuksekligi, HatKalinligi = HatKalinligi, MalzemeYazisi = MalzemeYazisi,
+        };
+
+        /// <summary>Kısa yazı: "simge 1,5 kat · kablo tipi 2 m · metraj 1,6 m · eleman yazısı 2 m · hat kalınlığı 1 kat · malzemeler yazılı".</summary>
         public override string ToString()
         {
             var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
             return "simge " + SimgeOlcegi.ToString("0.##", tr) + " kat · kablo tipi " + EtiketYuksekligi.ToString("0.##", tr) + " m · metraj " +
-                   MetrajYuksekligi.ToString("0.##", tr) + " m · eleman yazısı " + ElemanYaziYuksekligi.ToString("0.##", tr) + " m";
+                   MetrajYuksekligi.ToString("0.##", tr) + " m · eleman yazısı " + ElemanYaziYuksekligi.ToString("0.##", tr) + " m · hat kalınlığı " +
+                   (HatKalinligi > 0 ? HatKalinligi.ToString("0.##", tr) + " kat" : "ince") + (MalzemeYazisi ? " · malzemeler yazılı" : "");
         }
     }
 

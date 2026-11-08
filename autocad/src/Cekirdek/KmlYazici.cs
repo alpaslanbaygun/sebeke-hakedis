@@ -53,7 +53,7 @@ namespace SebekeHakedis.Cekirdek
             sb.Append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
             sb.Append("<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n<Document>\n");
             sb.Append("<name>").Append(Kac(p.Ad)).Append("</name>\n");
-            sb.Append("<description>").Append(Kac("Şebeke-M " + surum + " · " + Koordinat.DilimAdi(dom) + " → WGS84 · " +
+            sb.Append("<description>").Append(Kac("Şebeke-M Hakediş " + surum + " · " + Koordinat.DilimAdi(dom) + " → WGS84 · " +
                 DateTime.Now.ToString("dd.MM.yyyy HH:mm", Inv))).Append("</description>\n");
             sb.Append("<open>1</open>\n");
 

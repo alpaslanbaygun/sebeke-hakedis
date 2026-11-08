@@ -88,6 +88,18 @@ export function workbookSheets(model, ps) {
  * Projede AutoCAD'den gelen bölge yoksa dosyaya noktaları kapsayan bir sınır uydurulur (eklenti bölgesiz proje almaz);
  * bu sınır gerçek değildir: CBS çıktısına yazılmaz (proje adı yine klasör adıdır).
  */
+/**
+ * Malzemeleri çizimde gösterme açıksa (Çizim boyutları; eklentide Çizim Ayarları › Görünüm) elemanların malzeme satırları,
+ * telefon kaydının kimliğiyle: { [equipmentId]: ["GT-60=1 (M)", …] } (eklentideki MLZ_ satırlarıyla aynı kural:
+ * sh-core malzemeEtiketi). Kapalıysa null.
+ */
+export function malzemeSatirlari(ps, p) {
+  const by = (ps.p.sebeke || {}).boyutlar;
+  if (!by || by.malzemeYazisi !== true) return null;
+  const m = {};
+  for (const e of (p || eklentiModeli(ps)).elemanlar) if (e.telefonId) { const l = SH.malzemeEtiketi(e); if (l.length) m[e.telefonId] = l; }
+  return m;
+}
 export function eklentiModeli(ps) {
   const p = SH.projeOku(sebekeYaz(ps));
   const sb = ps.p.sebeke || {};
@@ -122,7 +134,7 @@ export async function exportFormat(ps, fmt, opts = {}) {
   const model = buildExportModel(ps, { crs: opts.crs });
   const base = (ps.p.code || ps.p.name || 'proje').replace(/[^\p{L}\p{N}_-]+/gu, '_');
   switch (fmt) {
-    case 'dxf': { const d = buildDXF(model, opts); return [{ name: base + '.dxf', mime: 'application/dxf', data: dxfBytes(d.text), stats: d.stats }]; }
+    case 'dxf': { const d = buildDXF(model, Object.assign({}, opts, { malzemeSatirlari: malzemeSatirlari(ps) })); return [{ name: base + '.dxf', mime: 'application/dxf', data: dxfBytes(d.text), stats: d.stats }]; }
     case 'sebeke': return [{ name: base + '.sebeke.json', mime: 'application/json', data: enc(sebekeYaz(ps)) }];
     case 'voltjson': return [{ name: base + '.volt.json', mime: 'application/json', data: enc(JSON.stringify(voltProjeYaz(ps), null, 1)) }];
     case 'ncn': return [{ name: base + '.ncn', mime: 'text/plain', data: enc(buildNCN(model)) }];
@@ -191,14 +203,14 @@ async function deliveryPackage(ps, model, base, opts) {
   add('HARITA/' + base + '.kmz', await zip([{ name: 'doc.kml', data: enc(googleEarthMetni(ps, model, opts, cbsModeli)) }]));
   for (const f of mifCiktilari(ps, base, opts.crs, cbsModeli)) add('HARITA/mif/' + f.name, f.data);
   // EXPORT: CAD + SHP
-  add('EXPORT/' + base + '.dxf', dxfBytes(buildDXF(model).text));
+  add('EXPORT/' + base + '.dxf', dxfBytes(buildDXF(model, { malzemeSatirlari: malzemeSatirlari(ps, cbsModeli) }).text));
   add('EXPORT/' + base + '.ncn', buildNCN(model));
   for (const L of shapefileLayers(model)) { const s = writeShapefile(L.kind, L.feats, L.fields, model.crs); for (const ext of ['shp', 'shx', 'dbf', 'prj', 'cpg']) add('EXPORT/shp/' + L.name + '.' + ext, s[ext]); }
   // RAPORLAR
   const t = ps.data.periods.length ? ps.periodTable() : null;
   add('RAPORLAR/' + base + '_rapor.html', buildReportHTML(model, { period: t, hesaplar: kayitSatirlari(ps, kullaniciAdi(ps)) }));
   // Manifest (SHA-256)
-  const lines = ['Şebeke-M · proje teslim paketi', 'Proje: ' + ps.p.name + ' (' + (ps.p.code || '-') + ')', 'Standart: ' + ps.cat.std.name, 'CRS: ' + model.crs.label + (model.crs.epsg ? ' · EPSG:' + model.crs.epsg : ''), 'Üretim: ' + new Date().toISOString(), 'Veri imzası: ' + ps.result.signature, 'Kontrol: ' + ps.result.issues.filter((i) => i.severity === 'error').length + ' hata, ' + ps.result.issues.filter((i) => i.severity === 'warn').length + ' uyarı', '', 'SHA-256  boyut  dosya'];
+  const lines = ['Şebeke-M Hakediş · proje teslim paketi', 'Proje: ' + ps.p.name + ' (' + (ps.p.code || '-') + ')', 'Standart: ' + ps.cat.std.name, 'CRS: ' + model.crs.label + (model.crs.epsg ? ' · EPSG:' + model.crs.epsg : ''), 'Üretim: ' + new Date().toISOString(), 'Veri imzası: ' + ps.result.signature, 'Kontrol: ' + ps.result.issues.filter((i) => i.severity === 'error').length + ' hata, ' + ps.result.issues.filter((i) => i.severity === 'warn').length + ' uyarı', '', 'SHA-256  boyut  dosya'];
   for (const f of files) lines.push(((await sha256Hex(f.data)) || '-') + '  ' + f.data.length + '  ' + f.name);
   add('PROJECT_INFO/MANIFEST.txt', lines.join('\r\n') + '\r\n');
   const root = 'PROJECT_' + projectFolder(ps.p) + '/';

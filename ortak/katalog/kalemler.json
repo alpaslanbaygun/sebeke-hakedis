@@ -2,7 +2,7 @@
  "bicim": "sebeke-hakedis.kalem-katalogu",
  "surum": 2,
  "kaynak": "Ortak malzeme listesi (2021, tam) + gerçek bir çizimdeki kullanım sayıları",
- "aciklama": "cins+tanim+birim başına bir kalem. katsayi: giriş biriminden rapor birimine çarpan (ör. kg/m, kg/ad). rol: ana (nesnenin kendi pozu), malzeme, hat, kanal, sondaj. tarife: karakteristik (2 hane) + şehir/yatırım unsuru (2 hane); unsurKoy: köy/bakım unsuru (çizim ayarı 'köy' ise tarife = karakteristik + unsurKoy). pozNo: TEDAŞ poz numarası. onem: AutoCAD rapor sırası. kesit/guc: kablo kesiti, trafo gücü (kVA). temini: AutoCAD temin işareti (T). nesneler/kullanim/durumlar: gerçek bir çizimde hangi nesnelerde kaç kez görüldü. Üretici: araclar/katalog-aktar.py — elle düzenlenmez.",
+ "aciklama": "cins+tanim+birim başına bir kalem. katsayi: giriş biriminden rapor birimine çarpan (ör. kg/m, kg/ad). rol: ana (nesnenin kendi pozu), malzeme, hat, kanal, sondaj. tarife: karakteristik (2 hane) + şehir/yatırım unsuru (2 hane); unsurKoy: köy/bakım unsuru (çizim ayarı 'köy' ise tarife = karakteristik + unsurKoy). pozNo: TEDAŞ poz numarası. onem: AutoCAD rapor sırası. kesit/guc: kablo kesiti, trafo gücü (kVA). temini: AutoCAD temin işareti (T). nesneler/kullanim/durumlar: gerçek bir çizimde hangi nesnelerde kaç kez görüldü. Üretici: araclar/katalog-aktar.py — elle düzenlenmez. kaynak: \"ek\" = eski programın listesinde olmayan, birim fiyat kitabından eklenen kalem (8.11.2026: AG galvaniz travers ve konsollar GT-60, GD-80, T-AG-1…, müşterek tepe traversleri, trafo traversleri; B 95, D 80, D 95 izolatör demirleri).",
  "eskiCinsler": {
   "aciklama": "Yazım hatası düzeltilen cins kodları (31.10.2026): eski kod → yeni kod. Eklenti ve telefon eski kodu okurken yenisine çevirir; yazarken hep yenisini yazar.",
   "AG_ALİMİNYUM_KABLO": "AG_ALÜMİNYUM_KABLO",
@@ -20795,6 +20795,713 @@
    "rol": "malzeme"
   },
   {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GT-60",
+   "birim": "ad/kg",
+   "katsayi": 3.02,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GT-60 (UNP 65)",
+   "birim": "ad/kg",
+   "katsayi": 4.01,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GT-70",
+   "birim": "ad/kg",
+   "katsayi": 3.39,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GT-75",
+   "birim": "ad/kg",
+   "katsayi": 3.58,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GT-75 (UNP 65)",
+   "birim": "ad/kg",
+   "katsayi": 5.07,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GT-80",
+   "birim": "ad/kg",
+   "katsayi": 3.8,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GT-80 (UNP 65)",
+   "birim": "ad/kg",
+   "katsayi": 5.43,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "gT-200 10m Müş. Tepe Travers",
+   "birim": "ad/kg",
+   "katsayi": 38,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "gT-240 10m Müş. Tepe Travers",
+   "birim": "ad/kg",
+   "katsayi": 45,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "gT-200 12m Müş. Tepe Travers",
+   "birim": "ad/kg",
+   "katsayi": 40,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "gT-240 12m Müş. Tepe Travers",
+   "birim": "ad/kg",
+   "katsayi": 46,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GD-60",
+   "birim": "ad/kg",
+   "katsayi": 5.46,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GD-70",
+   "birim": "ad/kg",
+   "katsayi": 6.14,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GD-75",
+   "birim": "ad/kg",
+   "katsayi": 6.49,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GD-80",
+   "birim": "ad/kg",
+   "katsayi": 6.83,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GD-90",
+   "birim": "ad/kg",
+   "katsayi": 7.5,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GD-100",
+   "birim": "ad/kg",
+   "katsayi": 8.2,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "gD-200 Müş. Tepe Travers",
+   "birim": "ad/kg",
+   "katsayi": 48,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "gD-220 Müş. Tepe Travers",
+   "birim": "ad/kg",
+   "katsayi": 49,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "gD-240 Müş. Tepe Travers",
+   "birim": "ad/kg",
+   "katsayi": 54,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "T-AG-1",
+   "birim": "ad/kg",
+   "katsayi": 26,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "T-AG-2",
+   "birim": "ad/kg",
+   "katsayi": 34,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "T-AG-3",
+   "birim": "ad/kg",
+   "katsayi": 44,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "T-AG-5",
+   "birim": "ad/kg",
+   "katsayi": 58,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "T-AG-6",
+   "birim": "ad/kg",
+   "katsayi": 68,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "T-AG-8",
+   "birim": "ad/kg",
+   "katsayi": 67,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "T-AG-9",
+   "birim": "ad/kg",
+   "katsayi": 82,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "D-AG-1",
+   "birim": "ad/kg",
+   "katsayi": 56,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "D-AG-2",
+   "birim": "ad/kg",
+   "katsayi": 73,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "D-AG-3",
+   "birim": "ad/kg",
+   "katsayi": 97,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "N-AG-1",
+   "birim": "ad/kg",
+   "katsayi": 56,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "MT-1",
+   "birim": "ad/kg",
+   "katsayi": 77,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "MT-2",
+   "birim": "ad/kg",
+   "katsayi": 90,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "MT-3",
+   "birim": "ad/kg",
+   "katsayi": 103,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "MT-4",
+   "birim": "ad/kg",
+   "katsayi": 116,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "MD-1",
+   "birim": "ad/kg",
+   "katsayi": 145,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "MD-2",
+   "birim": "ad/kg",
+   "katsayi": 158,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "MN-1",
+   "birim": "ad/kg",
+   "katsayi": 127,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "MN-2",
+   "birim": "ad/kg",
+   "katsayi": 137,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GTR-200 (2x8U-200)",
+   "birim": "ad/kg",
+   "katsayi": 37,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GTR-240 (2x8U-250)",
+   "birim": "ad/kg",
+   "katsayi": 46,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GTR-250 (2x8U-250)",
+   "birim": "ad/kg",
+   "katsayi": 46,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GTR-300 (2x8U-300)",
+   "birim": "ad/kg",
+   "katsayi": 55,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GTR-350 (2x8U-350)",
+   "birim": "ad/kg",
+   "katsayi": 64,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+   "tanim": "GTR-400 (2x8U-400)",
+   "birim": "ad/kg",
+   "katsayi": 73,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "pozNo": "5.4",
+   "onem": 67,
+   "rol": "malzeme",
+   "nesneler": [
+    "TRAFO_DIREGI"
+   ],
+   "kaynak": "ek"
+  },
+  {
    "cins": "BAHH_DEMİR_TRAVERS",
    "tanim": "BAHH_DEMİR_TRAVERS",
    "birim": "kg/kg",
@@ -34805,6 +35512,51 @@
    "unsurKoy": "16",
    "onem": 3816,
    "rol": "malzeme"
+  },
+  {
+   "cins": "İZOLATÖR_DEMİRLERİ",
+   "tanim": "B 95",
+   "birim": "ad/ad",
+   "katsayi": 1.0,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "onem": 3816,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "İZOLATÖR_DEMİRLERİ",
+   "tanim": "D 80",
+   "birim": "ad/ad",
+   "katsayi": 1.0,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "onem": 3816,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "İZOLATÖR_DEMİRLERİ",
+   "tanim": "D 95",
+   "birim": "ad/ad",
+   "katsayi": 1.0,
+   "tarife": "0107",
+   "unsurKoy": "16",
+   "onem": 3816,
+   "rol": "malzeme",
+   "nesneler": [
+    "AG_DIREK",
+    "MUSTEREK_DIREK"
+   ],
+   "kaynak": "ek"
   },
   {
    "cins": "ANAHTARLI_OTOMATİK_SİGORTA",

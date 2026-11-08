@@ -16,7 +16,7 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 - Çıktılara, belgelere ve araçlara kullanıcının istemediği hiçbir firma adı ya da markası yazılmaz.
   **Eski hakediş programının adı ve dağıtım şirketinin adı kullanıcıya görünen hiçbir yerde geçmez** (18.10.2026);
   belgelerde "eski program" denir. Kod kimlikleri (`NesneOkuyucu` vb.) kullanıcıya görünmediği için kaldı.
-- Ürün adı **Şebeke-M** (logo `ortak/marka/`); telefon uygulaması ve eklenti bu adla görünür.
+- Ürün adı **Şebeke-M Hakediş** (8.11.2026; önce Şebeke-M). Logo `ortak/marka/` (kaynak `ortak/marka/kaynak/`, üretici `araclar/marka-uret.py`); telefon uygulaması, eklenti, pencere başlıkları ve çıktılar bu adla görünür. Şeritteki sekme adları kısa kalır (ŞEBEKE-M, ŞEBEKE-M ARAÇLAR). `telefon/web/tests/marka.test.mjs` adı ve yasak adları denetler.
 - Her şey bulutta durur (GitHub, Google Drive); belirli bir bilgisayara bağlı çözüm yapılmaz.
 - **Gerçek proje verisi depoya konmaz** (DWG, gerçek proje dosyası, rapor, proje kodları). Testler uydurma
   örneklerle çalışır (`autocad/test/CekirdekTest/*.json`, `telefon/web/tests/`).
@@ -32,9 +32,32 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 
 | Parça | Sürüm | Durum |
 | --- | --- | --- |
-| Telefon uygulaması (Şebeke-M) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı; Esri ArcGIS, Bing, Azure dâhil), **Hesap Merkezi** (iki hesap: direk cer vektörü, kanal planı), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası), **haritada çizim görünümü**, Google Earth ve CBS (MIF / MID) eklentiyle aynı; telefonda denenmedi |
-| AutoCAD eklentisi (Şebeke-M) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
+| Telefon uygulaması (Şebeke-M Hakediş) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı; Esri ArcGIS, Bing, Azure dâhil), **Hesap Merkezi** (iki hesap: direk cer vektörü, kanal planı), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası), **haritada çizim görünümü**, Google Earth ve CBS (MIF / MID) eklentiyle aynı; telefonda denenmedi |
+| AutoCAD eklentisi (Şebeke-M Hakediş) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
+
+8.11 (`malzeme-yazisi` dalı, `main`'den; geri dönüş: `onceki-main-malzeme-yazisi-oncesi` dalı): kullanıcının 8.11 listesi.
+**Malzemeleri çizimde göster** (kullanıcının örnek PDF'i gibi; isteğe bağlı, Çizim Ayarları › Görünüm, varsayılan kapalı):
+elemanın malzemeleri simgenin öznitelikleri olarak (`MLZ_1…`, tanımsız öznitelik: simgeyle taşınır / kopyalanır / silinir;
+DWG 2000'de de kalır) tip satırının altında "AD=MİKTAR BİRİM (DURUM)" — durum programdaki kodla (kullanıcı kararı), ad
+görünen yazımla, ana poz ve sıfır miktar yok, aynı ad + birim + durum toplanır (`Cekirdek/MalzemeEtiketi.cs` = sh-core
+`malzemeEtiketi`; ortak deneme `ortak/deneme/malzeme-etiketi.json`). "Aynı mı" karşılaştırması `MLZ_` özniteliklerini
+saymaz (Telefondan al). Kullanıcı ilk satırı taşırsa yeri korunur. **Hat kalınlığı** (baskıda çok ince): `cizim-stili.json`
+hat katmanlarına `kalinlik` (m = 1/1000'de mm: OG 0,5, AG 0,35, abone / aydınlatma 0,25) × Çizim Ayarları › Görünüm › Hat
+kalınlığı (0 / 0,6 / 1 / 1,5 / 2 kat, varsayılan 1); eklenti çoklu çizginin genişliği yapar (ekranda ve baskıda görünür,
+AutoCAD'in çizgi kalınlığı ayarına bağlı değil), telefonun DXF'i genişlikli POLYLINE (R12'de çizgi kalınlığı yok; kalın
+hat düz çizilir). Yeni iki ayar `proje.boyutlar`'da (`hatKalinligi`, `malzemeYazisi`) iki yönde taşınır; Çizim Ayarları
+kaydedilince çizimdekilere uygulanması sorulur. **Yeni logo ve ad**: "Şebeke-M Hakediş" (kullanıcı kararı); logodaki
+"HAKKEDİŞ" yazımı `araclar/marka-uret.py` içinde HAKEDİŞ yapılır (kaynak kullanıcının dosyası). **Eski programın adı**:
+depoda hiç yok (taranan kod, belge ve kullanıcının çizimleri); kullanıcının gördüğü satır büyük olasılıkla bilgisayarında
+kurulu eski programın kendi yükleyicisinden (ekran görüntüsü istendi). Kalıcı denetim `telefon/web/tests/marka.test.mjs`
+(yasak adlar parçalardan kurulur). **AG konsolları** (kullanıcının yeşil defterinden; yalnız katalog bilgisi: servis
+kodu, ad, kg/ad — proje verisi, yüklenici ve proje adları alınmadı, dosya depoya konmadı): eklenti kataloğuna 45 AG
+galvaniz travers / konsol (TRAVERS_VE_KONSOLLAR_GLV, ad/kg, poz 5.4, tarife 0107: GT-60…GT-80 ve UNP 65'leri, GD-60…GD-100,
+gT / gD müşterek tepe traversleri, T-AG-1…9, D-AG-1…3, N-AG-1, MT-1…4, MD-1…2, MN-1…2, GTR-200…400) ve 3 AG izolatör demiri
+(B 95, D 80, D 95); `kaynak: "ek"` (katalog-aktar.py bunları korur). Telefon kataloğunda eksik 38 poz eklendi
+(seedRev 26: kurulu telefonlarda eksik satırlar kendiliğinden eklenir). `volt-eslesme.json › kalemler`: servis kodu ↔
+eklenti cins / tanım (iki yönde aynı kalem). Denemeler: CekirdekTest, `telefon/web/tests/konsol.test.mjs`.
 
 5.11 (`kanal-listesi` dalı, `kullanici-rolleri` + `cokme-duzeltme` üstüne; geri dönüş: `onceki-main-kanal-oncesi` dalı):
 kullanıcının 5.11 listesi (Karakoçan yeraltı çizimi). **Kanal cinsi ve kaplama ayrı** (kullanıcı kararı: her birleşim
@@ -301,6 +324,17 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 - Telefondan alma: o çizimden çıkmış, değişmemiş proje 17.837 nesnede 0 iş üretir.
 
 ## 6. Sıradaki işler
+
+- **8.11 `malzeme-yazisi` işlerinin AutoCAD'de denemesi**: Çizim Ayarları › Görünüm › Malzemeleri çizimde göster açıp
+  direğe malzeme ekleme / silme (satırlar yenilenir), direği taşıma / kopyalama, ilk satırı taşıyıp malzeme değiştirme,
+  DWG 2000 kaydedip açma, eski programın blokları (TİP özniteliği olmayanlarda yer); Hat kalınlığı seçenekleriyle baskı
+  (PDF) ve Telefon Görünümü'yle eski çizimin kalınlaşması. Telefona taşınamayan: harita ekranındaki çizim görünümünde
+  malzeme yazısı ve hat kalınlığı (ekran cihazın kendi boyutlarıyla çizilir; DXF'te ikisi de var).
+- **Yeşil defterde olup kataloglarda olmayan öteki kalemler**: kullanıcının dosyasında ~3 100 servis kodlu kalem var;
+  eklenti kataloğu eski programın adlarıyla, telefon kataloğu 2 024 pozla. 8.11'de yalnız AG travers / konsol ve AG
+  izolatör demirleri eklendi; OG izolatör demirleri (B 6 / B 15 / C 6…, VKS 35), OG mesnet izolatörleri (VHD, VKS),
+  abone muhafaza borusu ve askı teli çelik halat gibi kalemler kullanıcı isterse aynı yolla eklenir.
+- **Eski programın adı**: kullanıcı komut satırındaki satırın ekran görüntüsünü gönderince kaynağı kesinleştirilecek.
 
 - **5.11 `kanal-listesi` işlerinin AutoCAD'de denemesi**: şeritte Kablo Kanalı › Cins / Kaplama seçip kanal çizme
   (kalem adı, rapor), kanalın Malzemeler penceresinde zemini değiştirme, Proje Özeti › Kanal listesi ve Excel, Kanal

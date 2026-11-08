@@ -39,6 +39,16 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Çizginin iki yanına çizilecek kenarların arası (m; kanal). 0: kenar yok.</summary>
         public double KenarGenisligi;
         /// <summary>
+        /// Hattın stildeki çizgi kalınlığı (m; 1/1000 paftada kâğıtta mm; CizimStili.HatKalinligi): eklenti ayardaki çarpanla
+        /// çoklu çizginin genişliği yapar. -1: dokunma (hat değil ya da çizimden okundu).
+        /// </summary>
+        public double HatKalinligi = -1;
+        /// <summary>
+        /// Elemanın çizimde yazılacak malzeme satırları (MalzemeEtiketi.Satirlar; ayar açıksa MLZ_ öznitelikleri olarak
+        /// yazılır). null: dokunma (eleman değil ya da çizimden okundu).
+        /// </summary>
+        public List<string> MalzemeSatirlari;
+        /// <summary>
         /// Direğin hemen yanına çizilecek armatür simgesinin bloğu ("": yok). Direkte armatür malzemesi varsa dolar; simge
         /// direğe bağlı bir süsdür (kendi verisi yoktur), direkle birlikte güncellenir ve silinir.
         /// </summary>
@@ -91,13 +101,15 @@ namespace SebekeHakedis.Cekirdek
                 if (Math.Abs(a.Z - b.Z) > tol) { fark = "kot"; return false; }
                 double da = Math.Abs(a.Aci - b.Aci) % (2 * Math.PI);
                 if (Math.Min(da, 2 * Math.PI - da) > 1e-5) { fark = "açı"; return false; }
+                // Sıra no ve malzeme yazısı (MLZ_…; elemanın malzemelerinden üretilen süs) karşılaştırılmaz
+                Func<string, bool> sayilmaz = t => t == "SIRA_NO" || MalzemeEtiketi.SatirMi(t);
                 foreach (var kv in a.Oz)
                 {
-                    if (kv.Key == "SIRA_NO") continue;
+                    if (sayilmaz(kv.Key)) continue;
                     string d;
                     if (!b.Oz.TryGetValue(kv.Key, out d) || d != kv.Value) { fark = "öznitelik " + kv.Key; return false; }
                 }
-                foreach (var kv in b.Oz) if (kv.Key != "SIRA_NO" && !a.Oz.ContainsKey(kv.Key)) { fark = "öznitelik " + kv.Key; return false; }
+                foreach (var kv in b.Oz) if (!sayilmaz(kv.Key) && !a.Oz.ContainsKey(kv.Key)) { fark = "öznitelik " + kv.Key; return false; }
             }
             else if (a.CizgiMi)
             {

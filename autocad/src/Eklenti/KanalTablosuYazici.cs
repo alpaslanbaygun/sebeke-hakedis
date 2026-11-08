@@ -71,7 +71,7 @@ namespace SebekeHakedis.Eklenti
                     bt.Add(btr);
                     tr.AddNewlyCreatedDBObject(btr, true);
                 }
-                btr.Comments = "Şebeke-M kanal listesi (Kanal Listesi komutuyla yenilenir)";
+                btr.Comments = "Şebeke-M Hakediş kanal listesi (Kanal Listesi komutuyla yenilenir)";
                 foreach (var c in t.Cizgiler)
                 {
                     var l = new Line(new Point3d(c.X1, c.Y1, 0), new Point3d(c.X2, c.Y2, 0));

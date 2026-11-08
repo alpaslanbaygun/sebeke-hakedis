@@ -586,9 +586,9 @@ test('A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosya
   const kml = new TextDecoder().decode((await unzip(kmz.data))['doc.kml']);
   const crs = ps.p.crs;
   const asil = kmlMetni(sp, { donustur: (E, N) => { const g = unproject(E, N, crs); return [g.lon, g.lat]; }, surum: 'telefon 9.9.9', sistem: 'ITRF96 / TM 39 (3°)', tarih: 'T' });
-  const govde = (s) => s.replace(/<description>Şebeke-M [^<]*<\/description>/, '').replace(/<Folder><name>3B direk[\s\S]*?<\/Folder>\n/, '');
+  const govde = (s) => s.replace(/<description>Şebeke-M Hakediş [^<]*<\/description>/, '').replace(/<Folder><name>3B direk[\s\S]*?<\/Folder>\n/, '');
   assert.equal(govde(kml), govde(asil), 'KMZ içeriği eklentinin yapısıyla aynı');
-  assert.match(kml, /<description>Şebeke-M telefon 9\.9\.9 · ITRF96 \/ TM 39 \(3°\) → WGS84 · \d\d\.\d\d\.\d{4} \d\d:\d\d<\/description>/);
+  assert.match(kml, /<description>Şebeke-M Hakediş telefon 9\.9\.9 · ITRF96 \/ TM 39 \(3°\) → WGS84 · \d\d\.\d\d\.\d{4} \d\d:\d\d<\/description>/);
   assert.match(kml, /<Folder><name>3B direk ve iletken \(telefon\)<\/name><visibility>0<\/visibility>/, '3B klasörü başta kapalı');
   assert.ok(!kml.includes('<name>' + ileride.no + '</name>'), 'ileride direk ne asıl klasörlerde ne 3B klasöründe');
   assert.ok(kml.includes('<Folder><name>' + ps.p.name + '</name>'), 'proje yine klasör adı');

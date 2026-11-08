@@ -1,13 +1,13 @@
 # GNSS bağlantısı: dosyalar, düzeltme kaynakları, sabit istasyon
 
-Telefon uygulamasının (Şebeke-M) GNSS alıcısına ve düzeltme kaynağına (TUSAGA-Aktif, kendi sabit istasyonunuz, yerel
+Telefon uygulamasının (Şebeke-M Hakediş) GNSS alıcısına ve düzeltme kaynağına (TUSAGA-Aktif, kendi sabit istasyonunuz, yerel
 CORS ağları) nasıl bağlandığı, bu işi yapan dosyalar ve sabit istasyon kurulurken gerekenler. Kullanım adımları:
 [KULLANIM-KILAVUZU.md](KULLANIM-KILAVUZU.md) › "GNSS alıcıyı bağlama".
 
 ## 1. Veri yolu
 
 ```
-GNSS alıcısı (rover) ──Bluetooth──► telefon (Şebeke-M) ──internet──► düzeltme kaynağı
+GNSS alıcısı (rover) ──Bluetooth──► telefon (Şebeke-M Hakediş) ──internet──► düzeltme kaynağı
    NMEA: GGA, GST, GSA, RMC  ───────►  konum, kalite              ◄── RTCM 3 düzeltmesi
    RTCM 3  ◄────────────────────────  düzeltme alıcıya yazılır       (NTRIP ya da doğrudan IP:port)
                                        GGA (yaklaşık konum) ─────────► VRS için yayıncıya

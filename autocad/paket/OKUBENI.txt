@@ -1,4 +1,4 @@
-﻿ŞEBEKE-M — AutoCAD eklentisi
+﻿ŞEBEKE-M HAKEDİŞ — AutoCAD eklentisi
 ============================
 
 Elektrik dağıtım şebekesi proje, hakediş ve durum tespit eklentisi.

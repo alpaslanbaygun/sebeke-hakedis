@@ -1,6 +1,6 @@
 /* Şebeke-M hesap köprüsü — sayfa sonu. Paketleyici bunu her hesap sayfasının sonuna, modülün uyarlamasından
    (window.__SM_UYARLAMA) hemen sonra ekler. Görevleri:
-   1. Şebeke-M üst çubuğu: logo, hesabın adı, hedef (direk / hat / trafo / proje), projeden gelen bilgilerin özeti,
+   1. Şebeke-M Hakediş üst çubuğu: logo, hesabın adı, hedef (direk / hat / trafo / proje), projeden gelen bilgilerin özeti,
       Kaydet düğmesi ve bilgi paneli (projeden alınanlar, eksikler, uyarılar, kayıt bilgisi, hesabın kaynağı).
    2. Bağlam: uygulama (telefon) ya da eklenti (AutoCAD) hesabı açarken seçili direğin / hattın bilgilerini verir;
       uyarlama bunları hesabın kendi giriş alanlarına yazar. Projede olmayan bilgiler işaretlenir, kullanıcıdan istenir.
@@ -166,8 +166,8 @@
     var menu = h('button', { class: 'sm-menu', title: 'Bilgi', 'aria-label': 'Bilgi', onclick: panelAcKapa }, [h('span', { html: '&#9432;' })]);
     ust = h('header', { id: 'sm-ust', role: 'banner' }, [
       geri,
-      h('img', { class: 'sm-logo', src: ortak + 'amblem.png', alt: 'Şebeke-M' }),
-      h('div', { class: 'sm-baslik' }, [h('b', { text: SM.ad || d.title || 'Hesap' }), h('small', { text: 'Şebeke-M · ' + (SM.grupAdi || 'Teknik hesap') })]),
+      h('img', { class: 'sm-logo', src: ortak + 'amblem.png', alt: 'Şebeke-M Hakediş' }),
+      h('div', { class: 'sm-baslik' }, [h('b', { text: SM.ad || d.title || 'Hesap' }), h('small', { text: 'Şebeke-M Hakediş · ' + (SM.grupAdi || 'Teknik hesap') })]),
       h('div', { class: 'sm-cipler' }, [cipHedef, cipDurum]),
       h('span', { class: 'sm-bosluk' }),
       dgmKaydet, menu
@@ -234,7 +234,7 @@
       panel.appendChild(h('ul', { class: 'sm-liste' }, U.notlar.map(function (x) { return h('li', { text: x }); })));
     }
     panel.appendChild(h('h3', { text: 'Kaynak' }));
-    panel.appendChild(h('p', { class: 'sm-not', text: (SM.kaynak ? SM.kaynak + '.' : 'Hesap aracı.') + ' Hesap formülleri ve tabloları değiştirilmeden Şebeke-M\'e eklenmiştir' + (SM.surum ? ' (paket ' + SM.surum + ')' : '') + '.' }));
+    panel.appendChild(h('p', { class: 'sm-not', text: (SM.kaynak ? SM.kaynak + '.' : 'Hesap aracı.') + ' Hesap formülleri ve tabloları değiştirilmeden Şebeke-M Hakediş\'e eklenmiştir' + (SM.surum ? ' (paket ' + SM.surum + ')' : '') + '.' }));
   }
 
   function tarihYazi(t) {
@@ -431,7 +431,7 @@
 
   // ---------------------------------------------------------------- kaydet
   function kaydet() {
-    if (!host) { mesaj('Bağımsız açılışta sonuç kaydedilmez. Hesabı Şebeke-M\'den (telefon ya da AutoCAD) açın.', 'sm-uyarili', 4500); return; }
+    if (!host) { mesaj('Bağımsız açılışta sonuç kaydedilmez. Hesabı Şebeke-M Hakediş\'ten (telefon ya da AutoCAD) açın.', 'sm-uyarili', 4500); return; }
     var s;
     try { s = U.sonuc ? U.sonuc(A) : null; } catch (e) { s = { hata: 'Sonuç okunamadı: ' + e.message }; }
     if (!s || s.hata || !s.ozet) { sor('Sonuç yok', (s && s.hata) || 'Hesap sonucu bulunamadı. Önce hesabı tamamlayın.', 'Tamam', null); return; }

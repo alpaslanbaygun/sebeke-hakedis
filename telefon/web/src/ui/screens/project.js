@@ -80,7 +80,7 @@ export function ProjectsScreen() {
       </div>
       <button class="btn pri huge blk" onClick=${create}>PROJE OLUŞTUR</button>`;
   }
-  return html`<div class="brandrow"><img src="assets/sebeke-m-simge.png" alt="" /><div><b>Şebeke-M</b><span>Elektrik Dağıtım Projesi</span></div></div>
+  return html`<div class="brandrow"><img src="assets/sebeke-m-simge.png" alt="" /><div><b>Şebeke-M Hakediş</b><span>Elektrik Dağıtım Projesi</span></div></div>
     <div class="title"><div class="grow"><h1>Projeler</h1><div class="sub" style="font-family:Inter">${app.ps.p ? 'Açık: ' + app.ps.p.name : 'Proje seçin veya oluşturun'}</div></div>${app.ps.p ? html`<button class="btn sm" onClick=${() => app.nav.go('hub')}>Proje merkezi</button>` : null}</div>
     <button class="btn pri blk" style="height:56px" onClick=${() => setForm({ name: '', code: '', location: '', client: '', contractor: '', stdId: (stds.find((s) => s.status === 'active') || stds[0] || {}).id, datum: 'TUREF', cm: 39, heightSystem: 'ortometrik', enhZone: 'II', mode: 'asbuilt' })}><${Icon} n="plus" s=${20} c="#0b1326" />Yeni proje</button>
     <label class="btn blk" style="height:56px"><${Icon} n="down" s=${20} />AutoCAD dosyasından proje al (.sebeke.json)<input type="file" accept=".json,application/json" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) autocadDosyasiAl(f, null).then((oz) => { if (oz) { app.nav.tab('map'); } load(); }); }} /></label>

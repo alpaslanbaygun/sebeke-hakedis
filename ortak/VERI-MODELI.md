@@ -46,9 +46,12 @@ projenin sistemi dosyanınki olur, var olan projeye alınırken dosyanın koordi
   tarafta da varsa daha yeni `tarih` kazanır. Eklentide kayıtlar çizimin sözlüğünde (`SEBEKE_HAKEDIS › HESAPLAR`),
   telefonda `documents` tablosunda (`kind: 'HESAP'`) durur.
 
-- `proje.boyutlar`: çizimin simge ve yazı boyutları `{ simgeOlcegi, etiketYuksekligi, metrajYuksekligi, elemanYaziYuksekligi }`
-  (simge kat; yazılar metre). Eklentide Çizim Ayarları › Görünüm, telefonda Dışa Aktarım › Çizim boyutları; telefonun DXF'i
-  bunlarla çizer. Hepsi varsayılansa (1 kat · 1,8 · 1,44 · 1,8 m) yazılmaz. Alırken ayarlanmış olan kazanır: çizimde
+- `proje.boyutlar`: çizimin simge ve yazı boyutları `{ simgeOlcegi, etiketYuksekligi, metrajYuksekligi, elemanYaziYuksekligi,
+  hatKalinligi, malzemeYazisi }` (simge kat; yazılar metre; hat kalınlığı kat: `cizim-stili.json` › katmanlar › `kalinlik`
+  × bu, 0 = ince çizgi; malzemeYazisi: elemanın malzemeleri simgenin yanında yazılsın, `MLZ_1…` öznitelikleri, kural
+  `Cekirdek/MalzemeEtiketi.cs` = sh-core `malzemeEtiketi`, ortak deneme `ortak/deneme/malzeme-etiketi.json`). Eklentide
+  Çizim Ayarları › Görünüm, telefonda Dışa Aktarım › Çizim boyutları; telefonun DXF'i bunlarla çizer. Hepsi varsayılansa
+  (1 kat · 1,8 · 1,44 · 1,8 m · kalınlık 1 kat · malzeme yazısı kapalı) yazılmaz. Alırken ayarlanmış olan kazanır: çizimde
   varsayılansa telefondakiler alınır, ikisi de ayarlıysa çizimdeki kalır (telefon da AutoCAD'den gelenleri alır).
 - `proje.onaylar`: hakediş onayları `[{ no, kontrol, hakedis, gis }]` (eski program `HAK_ONAY`; sıra kontrol → hakediş → GIS).
   Hakediş onayı olan hakediş eklentide kilitlidir. Telefonda onaylanan dönem `kontrol + hakedis` olarak yazılır;
@@ -221,7 +224,10 @@ adı (Türkçe, projesizler sonda), hakediş, çizim sırası; her projenin topl
 ## Katalog dosyaları
 
 - `katalog/katsayilar.json` — rapor katsayıları (eski program Durum Tespit dosyasının KATSAYILAR sayfası)
-- `katalog/kalemler.json` — sürüm 2: eski programın tam malzeme listesi (2 934 kalem; cins, tip, poz no, metrik ağırlık,
+- `katalog/kalemler.json` — sürüm 2: eski programın tam malzeme listesi (2 934 kalem) + birim fiyat kitabından eklenenler
+  (`kaynak: "ek"`, 48 kalem, 8.11.2026: AG galvaniz travers ve konsollar GT-60…GD-100, müşterek tepe ve trafo traversleri,
+  T-AG / D-AG / N-AG / MT / MD / MN konsolları, B 95 · D 80 · D 95 izolatör demirleri; telefon kataloğundaki servis koduyla
+  `volt-eslesme.json` › `kalemler`'de eşli) — cins, tip, poz no, metrik ağırlık,
   birimler, karakteristik + şehir / köy unsuru), nesne türü → cins grupları (pencere ve şerit süzgeçleri), durum
   listesi. Üretici `araclar/katalog-aktar.py`. Telefon uygulamasına ve AutoCAD eklentisine gömülür.
 - Tarife: kalemin tarifesi = karakteristik (çizim ayarı; boşsa katalogdaki) + unsur (çizim ayarı köy / bakımsa

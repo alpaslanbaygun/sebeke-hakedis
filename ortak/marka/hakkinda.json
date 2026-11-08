@@ -4,7 +4,7 @@
  "aciklama": "Hakkında metni: telefon uygulamasının Ayarlar › Hakkında ekranı ve AutoCAD eklentisinin Hakkında penceresi aynı metni gösterir (telefona araclar/ortak-tablolar.mjs kopyalar, eklentiye gömülür).",
  "slogan": "Elektrik dağıtım şebekesi için saha, proje ve hakediş; telefonda ve AutoCAD'de tek proje.",
  "amac": [
-  "Şebeke-M, elektrik dağıtım şebekesi işlerinde sahada ölçülen ile masada çizilenin aynı proje olması için yapıldı. Direk, hat, trafo, SDK, pano ve kablo kanalı bir kez girilir; metraj, malzeme listesi ve hakediş bu kayıttan kendiliğinden çıkar.",
+  "Şebeke-M Hakediş, elektrik dağıtım şebekesi işlerinde sahada ölçülen ile masada çizilenin aynı proje olması için yapıldı. Direk, hat, trafo, SDK, pano ve kablo kanalı bir kez girilir; metraj, malzeme listesi ve hakediş bu kayıttan kendiliğinden çıkar.",
   "Telefon uygulaması sahanın aracıdır: santimetre doğruluğunda ölçüm, aplikasyon, fotoğraf ve kayıt. AutoCAD eklentisi masanın aracıdır: çizim, rapor ve teslim dosyaları. İkisi aynı proje dosyasını okur ve yazar; bir tarafta yapılan iş öteki tarafta aynen görünür.",
   "Amaç, hakedişin bilgisayarda sonradan yeniden yazılması yerine sahada doğan kayıttan üretilmesi; böylece eksik, çift ve uyumsuz kalemlerin baştan önlenmesidir."
  ],

@@ -19,7 +19,7 @@ const GRUPLAR = [
   ['ayarHarita', 'map', 'Harita', 'Simge ve yazı büyüklüğü, altlıklar ve anahtarlar, offline harita', false],
   ['ayarVeri', 'folder', 'Veri ve kullanıcılar', 'Senkron, hakediş onayı, projeler, katalog, denetim kaydı, kullanıcı', false],
   ['ayarDeneme', 'star', 'Deneme ve eğitim', 'Alıcısız simülatör', true],
-  ['hakkinda', 'info', 'Hakkında', 'Şebeke-M: amaç, yapabildikler, sürüm', false],
+  ['hakkinda', 'info', 'Hakkında', 'Şebeke-M Hakediş: amaç, yapabildikler, sürüm', false],
 ];
 
 /** Menü satırı. */
@@ -216,9 +216,9 @@ export function HakkindaEkrani() {
   const [ver, setVer] = useState(null);
   useEffect(() => { app.bridge.info().then(setVer).catch(() => {}); }, []);
   const YER = { telefon: 'telefon', autocad: 'AutoCAD', ortak: '' };
-  return html`<${Title} title="Hakkında" sub="Şebeke-M" />
-    <div class="card stack"><div class="aboutlogo"><img src="assets/sebeke-m-logo.png" alt="Şebeke-M" /></div>
-      <div class="note mono">Şebeke-M ${ver ? ver.version || '' : ''} · ${native ? 'Android' : 'Web'}${ps.p ? ' · ' + ps.cat.std.name : ''}</div>
+  return html`<${Title} title="Hakkında" sub="Şebeke-M Hakediş" />
+    <div class="card stack"><div class="aboutlogo"><img src="assets/sebeke-m-logo.png" alt="Şebeke-M Hakediş" /></div>
+      <div class="note mono">Şebeke-M Hakediş ${ver ? ver.version || '' : ''} · ${native ? 'Android' : 'Web'}${ps.p ? ' · ' + ps.cat.std.name : ''}</div>
       <div style="font-size:14px;font-weight:600">${HAKKINDA.slogan}</div></div>
     <div class="sect">Amaç</div>
     <div class="card stack">${(HAKKINDA.amac || []).map((p) => html`<p style="margin:0;font-size:13px;line-height:1.5">${p}</p>`)}</div>

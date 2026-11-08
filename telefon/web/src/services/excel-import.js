@@ -37,7 +37,7 @@ export async function buildTemplates(project) {
   const w = (h) => ({ h, w: /açıklama/i.test(h) ? 36 : /tip|grup|hakediş/i.test(h) ? 20 : 15 });
   const sheets = TEMPLATES.map((t) => ({ name: t.sheet, columns: t.columns.map(w), rows: [] }));
   sheets.push({ name: 'AÇIKLAMA', columns: HELP[0].map((h, i) => ({ h, w: i === 2 ? 100 : 18 })), rows: HELP.slice(1) });
-  const data = await buildXLSX(sheets, { title: 'Şebeke-M · Excel şablonları' });
+  const data = await buildXLSX(sheets, { title: 'Şebeke-M Hakediş · Excel şablonları' });
   return { name: 'Sebeke-M_Excel_Sablonlari' + (project && project.code ? '_' + String(project.code).replace(/[^\w-]+/g, '_') : '') + '.xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data };
 }
 

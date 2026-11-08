@@ -57,6 +57,9 @@ namespace SebekeHakedis.Cekirdek
         /// yüksekliği (m). Yeni çizilenlere hemen, var olanlara Telefon Görünümü ile uygulanır.
         /// </summary>
         public double SimgeOlcegi = 1, MetrajYuksekligi = 1.44, ElemanYaziYuksekligi = 1.8;
+        /// <summary>Hat kalınlığının çarpanı (Boyutlar.HatKalinligi; 0 = ince çizgi) ve malzemelerin çizimde yazılması.</summary>
+        public double HatKalinligi = Boyutlar.VarsayilanKalinlik;
+        public bool MalzemeYazisi = Boyutlar.VarsayilanMalzemeYazisi;
 
         /// <summary>Boyutların varsayılanları (ortak çizim stili).</summary>
         public static double VarsayilanEtiket => CizimStili.Yuklu ? CizimStili.YaziYuksekligi : 1.8;
@@ -88,21 +91,19 @@ namespace SebekeHakedis.Cekirdek
         public Boyutlar BoyutlariVer() => new Boyutlar
         {
             SimgeOlcegi = SimgeOlcegi, EtiketYuksekligi = EtiketYuksekligi, MetrajYuksekligi = MetrajYuksekligi,
-            ElemanYaziYuksekligi = ElemanYaziYuksekligi,
+            ElemanYaziYuksekligi = ElemanYaziYuksekligi, HatKalinligi = HatKalinligi, MalzemeYazisi = MalzemeYazisi,
         }.Duzelt();
 
         public void BoyutlariKoy(Boyutlar b)
         {
             if (b == null) return;
-            b = new Boyutlar
-            {
-                SimgeOlcegi = b.SimgeOlcegi, EtiketYuksekligi = b.EtiketYuksekligi, MetrajYuksekligi = b.MetrajYuksekligi,
-                ElemanYaziYuksekligi = b.ElemanYaziYuksekligi,
-            }.Duzelt();
+            b = b.Kopya().Duzelt();
             SimgeOlcegi = b.SimgeOlcegi;
             EtiketYuksekligi = b.EtiketYuksekligi;
             MetrajYuksekligi = b.MetrajYuksekligi;
             ElemanYaziYuksekligi = b.ElemanYaziYuksekligi;
+            HatKalinligi = b.HatKalinligi;
+            MalzemeYazisi = b.MalzemeYazisi;
         }
 
         public double EkPayi(string hatTuru)
@@ -140,6 +141,8 @@ namespace SebekeHakedis.Cekirdek
                 new KeyValuePair<string, string>("simgeOlcegi", S(SimgeOlcegi)),
                 new KeyValuePair<string, string>("metrajYuksekligi", S(MetrajYuksekligi)),
                 new KeyValuePair<string, string>("elemanYaziYuksekligi", S(ElemanYaziYuksekligi)),
+                new KeyValuePair<string, string>("hatKalinligi", S(HatKalinligi)),
+                new KeyValuePair<string, string>("malzemeYazisi", MalzemeYazisi ? "1" : "0"),
                 new KeyValuePair<string, string>("yakalamaMesafesi", S(YakalamaMesafesi)),
                 new KeyValuePair<string, string>("yukariYuvarla", YukariYuvarla ? "1" : "0"),
                 new KeyValuePair<string, string>("kanalAlt", S(KanalAlt)),
@@ -182,6 +185,8 @@ namespace SebekeHakedis.Cekirdek
                     case "simgeOlcegi": a.SimgeOlcegi = SayiCoz.Coz(v, 1); break;
                     case "metrajYuksekligi": a.MetrajYuksekligi = SayiCoz.Coz(v, 1.44); break;
                     case "elemanYaziYuksekligi": a.ElemanYaziYuksekligi = SayiCoz.Coz(v, 1.8); break;
+                    case "hatKalinligi": a.HatKalinligi = SayiCoz.Coz(v, Boyutlar.VarsayilanKalinlik); break;
+                    case "malzemeYazisi": a.MalzemeYazisi = v == "1"; break;
                     case "yakalamaMesafesi": a.YakalamaMesafesi = SayiCoz.Coz(v, 1.0); break;
                     case "yukariYuvarla": a.YukariYuvarla = v != "0"; break;
                     case "kanalAlt": a.KanalAlt = SayiCoz.Coz(v, 40); break;

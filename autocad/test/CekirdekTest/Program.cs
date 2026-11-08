@@ -301,7 +301,97 @@ namespace SebekeHakedis.Test
             CizimGorunumu(); // ortak çizim stilini yükler: en sonda (önceki denetimler stilsiz yazımı dener)
             CbsOrtakDeneme(); // telefonla aynı CBS dosyaları (stil yüklü olmalı: renkler ortak stilden)
             CbsIceAktarimDene(); // CBS'den şebeke nesnesi olarak alma
+            MalzemeYazisiVeKalinlikDene(); // stil yüklü olmalı (hat kalınlıkları ortak stilden)
             YazmaDenetimiDene();
+        }
+
+        /// <summary>
+        /// Malzemelerin çizimde yazılması (MalzemeEtiketi; ortak deneme ortak/deneme/malzeme-etiketi.json — telefondaki
+        /// tests/malzeme-etiketi.test.mjs aynı dosyayı okur), hat kalınlığı (ortak stil × çarpan) ve iki yeni görünüm ayarının
+        /// proje dosyasında ve çizim ayarlarında taşınması.
+        /// </summary>
+        private static void MalzemeYazisiVeKalinlikDene()
+        {
+            Console.WriteLine("Malzeme yazısı ve hat kalınlığı");
+            string metin = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "malzeme-etiketi.json"), Encoding.UTF8);
+            var kok = Json.Oku(metin) as JsonNesne;
+            var p = ProjeDosyasi.Oku(Json.Yaz(kok.Nesne("girdi")));
+            var beklenen = kok.Nesne("beklenen");
+            foreach (var e in p.Elemanlar)
+            {
+                var b = new List<string>();
+                foreach (var x in beklenen.Dizi(e.Id)) b.Add(Convert.ToString(x, CultureInfo.InvariantCulture));
+                Esit(string.Join(" | ", b), string.Join(" | ", MalzemeEtiketi.Satirlar(e)), "ortak: malzeme satırları · " + e.Id);
+            }
+            foreach (var o in kok.Dizi("tekSatir"))
+            {
+                var t = (JsonNesne)o;
+                Esit(t.Metin("beklenen"), MalzemeEtiketi.Satir(t.Metin("ad"), t.Ondalik("miktar"), t.Metin("birim"), t.Metin("durum")), "ortak: tek satır · " + t.Metin("beklenen"));
+            }
+            int sira;
+            Esit(true, MalzemeEtiketi.SatirMi("MLZ_12", out sira) && sira == 12, "MLZ_12 malzeme satırı");
+            Esit(false, MalzemeEtiketi.SatirMi("MLZ_") || MalzemeEtiketi.SatirMi("MLZ_0") || MalzemeEtiketi.SatirMi("TİP"), "MLZ_, MLZ_0 ve TİP malzeme satırı değil");
+            // Elemanın tarifi satırları taşır; çizimdeki malzeme yazısı "aynı mı" karşılaştırmasına girmez
+            var e1 = p.Elemanlar.Find(x => x.Id == "E1");
+            var v = NesneYazici.Eleman(e1, "SC", NesneYazici.BlokSec(p.Elemanlar, e1), null);
+            Esit(5, v.MalzemeSatirlari != null ? v.MalzemeSatirlari.Count : -1, "eleman tarifinde 5 malzeme satırı");
+            var cizimde = NesneYazici.Eleman(e1, "SC", NesneYazici.BlokSec(p.Elemanlar, e1), null);
+            cizimde.Oz["MLZ_1"] = "GT-60=2 (M)";
+            string fark;
+            Esit(true, CadVarlik.Ayni(cizimde, v, out fark), "malzeme yazısı öznitelikleri karşılaştırılmaz" + (fark != null ? " (" + fark + ")" : ""));
+
+            // Hat kalınlığı: ortak stildeki kalınlık × çarpan (mm'nin yüzde biri; telefonla aynı yuvarlama)
+            Esit(0.5, CizimStili.HatKalinligi("OG_HAVAI", 1), "hat kalınlığı: OG havai 0,5");
+            Esit(0.35, CizimStili.HatKalinligi("AG_HAVAI", 1), "hat kalınlığı: AG havai 0,35");
+            Esit(0.5, CizimStili.HatKalinligi("OG_YERALTI", 1), "hat kalınlığı: OG yeraltı 0,5");
+            Esit(0.25, CizimStili.HatKalinligi("REKORTMAN", 1), "hat kalınlığı: abone 0,25");
+            Esit(0.52, CizimStili.HatKalinligi("AG_YERALTI", 1.5), "hat kalınlığı: AG yeraltı 1,5 kat = 0,52 (0,35 × 1,5 kayan noktada 0,52499…)");
+            Esit(0.0, CizimStili.HatKalinligi("OG_HAVAI", 0), "hat kalınlığı: 0 kat ince çizgi");
+            var hat = new Hat { Id = "H1", Tur = "OG_HAVAI", Durum = "M", Hakedis = 1, AnaKesit = "3x50/16 XLPE" };
+            hat.Kose.Add(new[] { 0.0, 0.0 }); hat.Kose.Add(new[] { 10.0, 0.0 });
+            Esit(0.5, NesneYazici.Hat(hat, "SC", null).HatKalinligi, "hat tarifinde stildeki kalınlık");
+            Esit(-1.0, NesneYazici.Eleman(e1, "SC", "SH_AG_DIREK", null).HatKalinligi, "elemanda hat kalınlığı yok");
+
+            // Görünüm ayarları: varsayılan yazılmaz, değişince proje dosyasında ve çizim ayarlarında taşınır
+            var by = new Boyutlar();
+            Esit(true, by.Varsayilan, "boyutlar: varsayılan");
+            by.HatKalinligi = 1.5; by.MalzemeYazisi = true;
+            Esit(false, by.Varsayilan, "boyutlar: kalınlık ve malzeme yazısı değişince varsayılan değil");
+            var q = new Proje { Ad = "X", KatmanOnEki = "SC", Boyutlar = by };
+            var geri = ProjeDosyasi.Oku(ProjeDosyasi.Yaz(q, "deneme"));
+            Esit(true, geri.Boyutlar != null && geri.Boyutlar.Ayni(by), "boyutlar: proje dosyasında gidiş-dönüş (" + geri.Boyutlar + ")");
+            Esit(true, new Boyutlar { HatKalinligi = 9 }.Duzelt().HatKalinligi == Boyutlar.VarsayilanKalinlik, "boyutlar: aralık dışı kalınlık varsayılana döner");
+            var ay = new CizimAyarlari();
+            ay.BoyutlariKoy(by);
+            var ay2 = CizimAyarlari.Ciftlerden(ay.Ciftler());
+            Esit(true, ay2.HatKalinligi == 1.5 && ay2.MalzemeYazisi, "çizim ayarları: kalınlık ve malzeme yazısı saklanır");
+            Esit(true, ay2.BoyutlariVer().Ayni(by), "çizim ayarları: boyutlar aynı");
+            Esit(true, Pencerelerdeki(1.0).Contains("OG 0,5") && Pencerelerdeki(0).StartsWith("İnce çizgi"), "ayar yazısı: kalınlıklar mm ile");
+
+            // AG galvaniz travers ve konsollar, AG izolatör demirleri (8.11.2026; birim fiyat kitabındaki kg/ad; telefonla
+            // aynı kalem: volt-eslesme.json › kalemler, telefondaki tests/konsol.test.mjs)
+            var katalog = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            var bak = new Dictionary<string, double> { { "GT-60", 3.02 }, { "GT-80 (UNP 65)", 5.43 }, { "GD-80", 6.83 }, { "T-AG-1", 26 }, { "D-AG-3", 97 }, { "MN-2", 137 }, { "GTR-200 (2x8U-200)", 37 }, { "gT-240 12m Müş. Tepe Travers", 46 } };
+            foreach (var kv in bak)
+            {
+                var it = katalog.Bul("TRAVERS_VE_KONSOLLAR_GLV", kv.Key);
+                Esit(true, it != null && it.Birim == "ad/kg" && Math.Abs(it.Katsayi - kv.Value) < 1e-9 && it.PozNo == "5.4" && it.Kaynak == "ek", "AG konsol / travers katalogda: " + kv.Key + " " + kv.Value + " kg");
+            }
+            int travers = katalog.Kalemler.FindAll(x => x.Cins == "TRAVERS_VE_KONSOLLAR_GLV" && x.Kaynak == "ek").Count;
+            Esit(45, travers, "AG galvaniz travers ve konsol sayısı");
+            foreach (var t in new[] { "B 95", "D 80", "D 95", "A 80 ", "B 80 " })
+                Esit(true, katalog.Bul("İZOLATÖR_DEMİRLERİ", t) != null, "izolatör demiri katalogda: " + t.Trim());
+            var gd = Katalog.KalemYap(katalog.Bul("TRAVERS_VE_KONSOLLAR_GLV", "GD-80"), 2, "M", 1, false, "MALZEME", "");
+            Esit(13.66, gd.Toplam, "2 × GD-80 = 13,66 kg (rapor birimi kg)");
+            Esit("GD-80=2 (M)", MalzemeEtiketi.Satir(MalzemeYazimi.Duzelt(gd.Tanim), gd.Miktar, gd.Birim, gd.Durum), "çizimde: GD-80=2 (M)");
+        }
+
+        /// <summary>Çizim Ayarları › Görünüm › Hat kalınlığı seçeneğinin yazısı (eklentideki Pencereler.HatKalinligiYazisi ile aynı biçim).</summary>
+        private static string Pencerelerdeki(double kat)
+        {
+            if (!(kat > 0)) return "İnce çizgi (kalınlık yok)";
+            var tr = CultureInfo.GetCultureInfo("tr-TR");
+            return "Normal — OG " + CizimStili.HatKalinligi("OG_HAVAI", kat).ToString("0.##", tr) + " · AG " + CizimStili.HatKalinligi("AG_HAVAI", kat).ToString("0.##", tr) + " mm";
         }
 
         /// <summary>Çizim görünümü: ortak stil (renkler, yazı tipi, kanal kenarı), açıklık metrajı, hat etiketi.</summary>
@@ -376,7 +466,7 @@ namespace SebekeHakedis.Test
         {
             var d = new SortedDictionary<string, string>(StringComparer.Ordinal);
             string kml = KmlYazici.Metin(p, p.Dom, "test");
-            d["deneme.kml"] = Regex.Replace(kml, "(<description>Şebeke-M test · [^<]*? → WGS84 · )[^<]*(</description>)", "${1}TARIH${2}");
+            d["deneme.kml"] = Regex.Replace(kml, "(<description>Şebeke-M Hakediş test · [^<]*? → WGS84 · )[^<]*(</description>)", "${1}TARIH${2}");
             var hepsi = CbsYapisi.Nesneler(p);
             foreach (var k in CbsYapisi.Katmanlar)
             {

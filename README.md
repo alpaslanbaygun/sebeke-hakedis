@@ -1,7 +1,7 @@
-# Şebeke-M
+# Şebeke-M Hakediş
 
 Elektrik dağıtım şebekesi yapım işlerinde saha ölçümü, metraj, hakediş, Durum Tespit raporu ve teknik hesaplar için
-iki araç: **telefon uygulaması Şebeke-M** (saha) ve **AutoCAD eklentisi Şebeke-M** (büro). İkisi aynı proje
+iki araç: **telefon uygulaması Şebeke-M Hakediş** (saha) ve **AutoCAD eklentisi Şebeke-M Hakediş** (büro). İkisi aynı proje
 dosyasını (`.sebeke.json`) okur ve yazar; dosya Google Drive üzerinden taşınır. Eklenti eski hakediş programının
 yerine geçmek üzere tasarlanmıştır: o programın çizimleri okunur, eklentinin çizdikleri de aynı biçimdedir.
 
@@ -17,7 +17,7 @@ GitHub › **Releases**:
 
 ## Ne yapar?
 
-| | Telefon (Şebeke-M) | AutoCAD (Şebeke-M) |
+| | Telefon (Şebeke-M Hakediş) | AutoCAD (Şebeke-M Hakediş) |
 | --- | --- | --- |
 | Proje dosyasını açma / yazma | Projeler › AutoCAD dosyasından al · Dışa Aktar › AutoCAD proje dosyası | `SH_PROJEAL`, `SH_ICEAL` |
 | Eski programın çizimini okuma | — | ✓ |
@@ -26,12 +26,13 @@ GitHub › **Releases**:
 | Görünüm (simge, renk, çizgi tipi, yazı) | ✓ | telefonla birebir aynı (`SH_GORUNUM` eski çizimi çevirir) |
 | Bölge (alt proje) | AutoCAD'den gelen bölgeler korunur (grup kodu dahil) | `SH_BOLGE` |
 | Ölçü noktaları | ölçerek, CSV / NCN çıktısı | `SH_NOKTAAL` (CSV/TXT) |
-| Malzeme (TEDAŞ poz kataloğu) | ✓ elle ekleme, otomatik reçete seçeneği | `SH_MALZEME` (2 934 kalemlik katalog) |
+| Malzeme (TEDAŞ poz kataloğu) | ✓ elle ekleme, otomatik reçete seçeneği | `SH_MALZEME` (2 982 kalemlik katalog; AG galvaniz travers ve konsollar dâhil) |
 | **Teknik hesaplar (Hesap Merkezi)**: sehim, uplift, ag–aw, Amax, iletken kopma, tepe kuvveti (TEDAŞ / cer vektörü), OG–AG gerilim düşümü, OG–AG kısa devre, Cu ⇄ Al kesit, beton köşk yerleşimi, kanal planı, AG tek hat | ✓ (objeden açılır, bilgiler projeden dolar, sonuç projeye kaydedilir) | ✓ (`SH_HESAP`, `SH_HESAPLAR`; sonuç çizime kaydedilir, raporun HESAPLAR sayfasına yazılır) |
 | Kabin / köşk yerleşimi, tepe kuvveti, enerji kontrolü (eski ekranlar) | ✓ | — |
 | Fotoğraf ve not | ✓ | — |
 | Kanal cinsi (zemin) ve kaplama ayrı (toprak / tüvenan / mıcır; kaplamasız / parke / asfalt / beton; bariyerli, trencher) | ✓ hat formu ve hat kaydı | şeritte Cins / Kaplama, kanal penceresi (`SH_KANAL`) |
 | Proje bazında kanal listesi | ✓ ekran, Excel sayfaları | Proje Özeti sekmesi, Excel, çizime tablo (`SH_KANALLISTESI`) |
+| Malzemeleri çizimde gösterme (simgenin yanında "GT-60=1 (M)"), baskıya uygun hat kalınlığı | ✓ DXF (Dışa Aktar › Çizim boyutları) | Çizim Ayarları › Görünüm (`SH_AYARLAR`; eski çizime `SH_GORUNUM`) |
 | Açılırken çöken çizimi onarma (DWG 2000) | — | `SH_ONAR` |
 | Metraj, Yeşil Defter, hakediş dönemi ve onay | ✓ (Excel; onaylı dönem AutoCAD'e onay olarak gider) | `SH_OZET`, `SH_ONAY` (Kontrol → Hakediş → GIS, onaylı hakediş kilitli) |
 | Kullanıcılar, roller, hakediş yetkisi | ✓ (Kullanıcılar ve onay; yazmaya kapalı hakedişler) | `SH_KULLANICILAR`, `SH_OTURUM` (aynı kullanıcılar ve şifreler; onay aşamaları rolle) |
@@ -47,9 +48,9 @@ renk, çizgi ve yazılarla görünür; çevrimdışı çalışır.
 
 | Klasör | İçerik |
 | --- | --- |
-| `telefon/` | Telefon uygulaması Şebeke-M (Java kabuk + WebView, Preact arayüz, JS hesap motoru, TEDAŞ kataloğu). Ayrıntı: [telefon/README.md](telefon/README.md), kaynak notları [telefon/README_KAYNAK.txt](telefon/README_KAYNAK.txt) |
+| `telefon/` | Telefon uygulaması Şebeke-M Hakediş (Java kabuk + WebView, Preact arayüz, JS hesap motoru, TEDAŞ kataloğu). Ayrıntı: [telefon/README.md](telefon/README.md), kaynak notları [telefon/README_KAYNAK.txt](telefon/README_KAYNAK.txt) |
 | `autocad/` | AutoCAD eklentisi (C#): `src/Cekirdek` AutoCAD'den bağımsız hesap çekirdeği, `src/Eklenti` AutoCAD tarafı (şerit, pencereler, Hesap Merkezi sunucusu), `test/` denemeler, `paket/` kurulum |
-| `ortak/` | Proje dosyası biçimi ([VERI-MODELI.md](ortak/VERI-MODELI.md)), rapor katsayıları, malzeme kataloğu (2 934 kalem), lejant simge takımı (`semboller.json`), ortak çizim stili (`cizim-stili.json`), şerit kategorileri (`kategoriler.json`), telefon ↔ eski program eşlemesi (`volt-eslesme.json`), eski programın inceleme notları ([CIZIM-BICIMI-NOTLARI.md](ortak/CIZIM-BICIMI-NOTLARI.md)), marka (`marka/`), **Hesap Merkezi** (`hesap/`: hesap sayfaları, köprü, tema, uyarlamalar, denemeler; sözleşme [hesap/BAGLAM.md](ortak/hesap/BAGLAM.md)) |
+| `ortak/` | Proje dosyası biçimi ([VERI-MODELI.md](ortak/VERI-MODELI.md)), rapor katsayıları, malzeme kataloğu (2 982 kalem), lejant simge takımı (`semboller.json`), ortak çizim stili (`cizim-stili.json`), şerit kategorileri (`kategoriler.json`), telefon ↔ eski program eşlemesi (`volt-eslesme.json`), eski programın inceleme notları ([CIZIM-BICIMI-NOTLARI.md](ortak/CIZIM-BICIMI-NOTLARI.md)), marka (`marka/`), **Hesap Merkezi** (`hesap/`: hesap sayfaları, köprü, tema, uyarlamalar, denemeler; sözleşme [hesap/BAGLAM.md](ortak/hesap/BAGLAM.md)) |
 | `araclar/` | Geliştirme araçları: AutoCAD olmadan DWG okuma, simge takımı üretimi ve önizlemesi, ortak tabloların telefona kopyalanması, Hesap Merkezi paketleyicisi (`hesap-paketle.mjs`) ve deneme koşucusu (`hesap-dene.py`) |
 
 ## Doğrulama

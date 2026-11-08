@@ -72,8 +72,8 @@ export function buildReportHTML(model, extra = {}) {
       hs.map((x) => [x.hesap, x.hedef, x.ozet, { html: '<span class="' + (x.kayit.durum === 'uygun' ? 'ok' : x.kayit.durum === 'uygun-degil' ? 'err' : '') + '">' + esc(x.durum) + '</span>' },
         { html: '<span class="' + (x.guncel === 'Güncel' ? 'ok' : 'warn') + '">' + esc(x.guncel) + '</span>' }, x.girdiler.join('; '), x.degerler.join('; '), x.uyarilar.join('; '),
         (x.tarih ? new Date(x.tarih).toLocaleString('tr-TR') : '') + ' · ' + x.kaynak]));
-    h += '<p class="muted">Hesap araçlarının formülleri değiştirilmeden Şebeke-M\'e eklenmiştir. "Güncel değil": hesap kaydedildikten sonra projede hesabın kullandığı bir bilgi (açıklık, iletken, kot…) değişti.</p>';
+    h += '<p class="muted">Hesap araçlarının formülleri değiştirilmeden Şebeke-M Hakediş\'e eklenmiştir. "Güncel değil": hesap kaydedildikten sonra projede hesabın kullandığı bir bilgi (açıklık, iletken, kot…) değişti.</p>';
   }
-  h += '<p class="muted">Bu rapor Şebeke-M tarafından proje veritabanından otomatik üretilmiştir. "Doğrulanmamış varsayılan" olarak işaretli standart tabloları (' + esc((model.cat.std.unverifiedTables || []).join(', ')) + ') proje öncesi kontrol edilmelidir.</p>';
+  h += '<p class="muted">Bu rapor Şebeke-M Hakediş tarafından proje veritabanından otomatik üretilmiştir. "Doğrulanmamış varsayılan" olarak işaretli standart tabloları (' + esc((model.cat.std.unverifiedTables || []).join(', ')) + ') proje öncesi kontrol edilmelidir.</p>';
   return h + '</body></html>';
 }

@@ -1,11 +1,11 @@
-# Şebeke-M — Kullanım Kılavuzu
+# Şebeke-M Hakediş — Kullanım Kılavuzu
 
 İki araç var, ikisi aynı proje dosyasını (`.sebeke.json`) kullanır:
 
-- **Telefon uygulaması Şebeke-M** (sahada): direk, trafo, SDK, pano koyma; hat ve kanal çizme; malzeme,
+- **Telefon uygulaması Şebeke-M Hakediş** (sahada): direk, trafo, SDK, pano koyma; hat ve kanal çizme; malzeme,
   fotoğraf, not; metraj, Yeşil Defter, hakediş ve teslim paketi; teknik hesaplar. Ayrıntılı kılavuz:
   [telefon/docs/KULLANIM-KILAVUZU.md](telefon/docs/KULLANIM-KILAVUZU.md).
-- **AutoCAD eklentisi Şebeke-M** (büroda): eski hakediş programının çizimlerini okuma, Durum Tespit raporu,
+- **AutoCAD eklentisi Şebeke-M Hakediş** (büroda): eski hakediş programının çizimlerini okuma, Durum Tespit raporu,
   telefona gönderme, telefondan alma, çizim araçları (direk, hat, kanal, bölge, nokta alma, malzeme) ve
   **Hesap Merkezi** (teknik hesaplar).
 
@@ -20,16 +20,16 @@ Dosya telefon ile bilgisayar arasında **Google Drive** üzerinden taşınır. B
 
 1. Telefondan GitHub'a girin (depo size özeldir; kendi hesabınızla giriş yapın):
    **sebeke-hakedis** deposu › **Releases**.
-2. En üstteki **"Şebeke-M telefon uygulaması 2.5.x"** sürümünü açın, `Sebeke-M-2.5.x.apk` dosyasına dokunun.
+2. En üstteki **"Şebeke-M Hakediş telefon uygulaması 2.5.x"** sürümünü açın, `Sebeke-M-2.5.x.apk` dosyasına dokunun.
 3. İndirme bitince dosyayı açın. Telefon "bilinmeyen kaynak" uyarısı verirse **Ayarlar › Bu kaynağa izin ver**.
-4. **Yükle**. Uygulama "Şebeke-M" adıyla görünür.
+4. **Yükle**. Uygulama "Şebeke-M Hakediş" adıyla görünür.
 
 Telefonda önceki sürüm (2.1.0 ve sonrası, eski adıyla) kuruluysa **silmeyin**: yeni sürüm üzerine kurulur,
 projeleriniz silinmez.
 
 ### AutoCAD (2016–2024 ve 2025 ve sonrası)
 
-1. Bilgisayarda GitHub › **Releases** › en üstteki **"Şebeke-M AutoCAD eklentisi 0.1.x"** › `SebekeHakedis-0.1.x.zip` indirin.
+1. Bilgisayarda GitHub › **Releases** › en üstteki **"Şebeke-M Hakediş AutoCAD eklentisi 0.1.x"** › `SebekeHakedis-0.1.x.zip` indirin.
 2. Zip'e sağ tıklayın › **Tümünü ayıkla**.
 3. AutoCAD açıksa kapatın. Ayıklanan klasördeki **KUR.bat** dosyasına çift tıklayın.
    Windows "bilgisayarınız korundu" derse: **Ek bilgi › Yine de çalıştır**.
@@ -41,7 +41,7 @@ Yönetici izni veremiyorsanız (ör. kurum bilgisayarı) **Hayır** deyin: eklen
 klasörünüze; o zaman AutoCAD ilk açılışta "imzalanmamış dosya" uyarısı gösterir, **Her zaman yükle** deyin.
 
 Güncellemek için yeni zip ile aynı adımları tekrarlayın. Kaldırmak için **KALDIR.bat**. Sürüm ve komut listesi:
-her iki sekmenin başındaki **Şebeke-M › Hakkında** düğmesi (`SH_HAKKINDA`).
+her iki sekmenin başındaki **Şebeke-M Hakediş › Hakkında** düğmesi (`SH_HAKKINDA`).
 
 ---
 
@@ -50,7 +50,7 @@ her iki sekmenin başındaki **Şebeke-M › Hakkında** düğmesi (`SH_HAKKINDA
 ### A. Elinizde eski programla yapılmış bir çizim varsa
 
 1. **AutoCAD**: çizimi açın › **ŞEBEKE-M ARAÇLAR › Telefon › Telefona Gönder**.
-   Dosyayı Google Drive klasörünüze kaydedin (ör. `Google Drive\Şebeke-M\`).
+   Dosyayı Google Drive klasörünüze kaydedin (ör. `Google Drive\Şebeke-M Hakediş\`).
    *Bilgisayarda Google Drive uygulaması yoksa dosyayı drive.google.com'a sürükleyip bırakın.*
 2. **Telefon**: uygulama › **Projeler › AutoCAD dosyasından proje al** › Drive › dosyayı seçin › **Al**.
    Proje, çizimdeki direk, hat, kanal ve bölgeleriyle açılır. Direk tipleri telefonun kataloğundan bulunur;
@@ -137,7 +137,7 @@ o programın çizimleriyle karışık kullanılabilir, raporda aynı okunur, o p
 - **ŞEBEKE-M** (çizim): Kategori, Elemanlar, Ayarlar, Malzeme, Düzenle.
 - **ŞEBEKE-M ARAÇLAR**: Hakediş, Raporlar, Telefon, **Teknik Hesaplamalar**, **Proje ve Yerleşim**.
 
-İkisinin başında **Şebeke-M** paneli (logo, **Hakkında**: sürüm, amaç ve yapabildikler, komut listesi).
+İkisinin başında **Şebeke-M Hakediş** paneli (logo, **Hakkında**: sürüm, amaç ve yapabildikler, komut listesi).
 
 ### Çizim sekmesi (soldan sağa)
 
@@ -224,7 +224,7 @@ başlığından tutup taşınır.
   hesabı yapan, unvan, firma, buz yükü bölgesi — teknik hesaplara ve raporlara buradan yazılır.
 - **Telefondan al**: Yeni eklenecek / Güncellenecek / Değişmeyen kutucukları (listeleriyle) ve uyarılar (kilitli
   hakediş, telefonda silinmiş, onaylar). **Çizime aktar** ile başlar.
-- **Hakkında**: logo, sürüm, AutoCAD ve .NET sürümü; **Hakkında** sekmesinde Şebeke-M'in amacı ve neler yapabildiği (telefonun Ayarlar › Hakkında ekranıyla aynı metin), **Komutlar** sekmesinde komut listesi.
+- **Hakkında**: logo, sürüm, AutoCAD ve .NET sürümü; **Hakkında** sekmesinde Şebeke-M Hakediş'in amacı ve neler yapabildiği (telefonun Ayarlar › Hakkında ekranıyla aynı metin), **Komutlar** sekmesinde komut listesi.
 
 ### Hat, kanal ve sondaj parça parça çizilir
 
@@ -311,6 +311,28 @@ Yeni çizilenler hemen bu ölçülerle çizilir; kaydederken çizimdekilere de u
 Boyutlar "Telefona Gönder" ile telefona gider, telefonun DXF'i de bunlarla çizer; telefonda Dışa Aktarım › Çizim
 boyutları'ndan da değiştirilebilir. Telefondan alırken çizimde boyut ayarlanmamışsa telefondakiler alınır.
 
+**Hat kalınlığı** (8.11.2026; Çizim Ayarları › Görünüm): hatlar baskıda görünsün diye kalın çizilir. Kalınlık
+çizginin kendisindedir, ekranda da görünür; 1/1000 baskıda kâğıtta şu kalınlıktadır:
+
+| Seçenek | OG havai, OG kablo, müşterek, ENH | AG havai, AG kablo | Abone, aydınlatma |
+| --- | --- | --- | --- |
+| İnce çizgi | kalınlık yok (eski görünüm) | | |
+| İnce | 0,3 mm | 0,21 mm | 0,15 mm |
+| **Normal** (varsayılan) | 0,5 mm | 0,35 mm | 0,25 mm |
+| Kalın | 0,75 mm | 0,52 mm | 0,38 mm |
+| Çok kalın | 1 mm | 0,7 mm | 0,5 mm |
+
+Kanal, sondaj, bölge sınırı ve simgeler ince kalır. Eski çizimdeki hatlar bir kez **Telefon Görünümü** ile kalınlaşır.
+
+**Malzemeleri çizimde göster** (8.11.2026; Çizim Ayarları › Görünüm): her elemanın malzemeleri simgenin yanında, tip
+satırının altında satır satır yazılır — `AD=MİKTAR BİRİM (DURUM)`, ör. `GT-60=1 (M)`, `L-65=2,5 mt (DM)`. Elemanın kendi
+tipi (direk tipi) yazılmaz, o tip satırındadır; adet yazılmaz, metre ve kilogram yazılır; durum programdaki kodla
+(M, M+M, MEVCUT, DM, DM+M…); iki hakedişte girilmiş aynı malzeme tek satırda toplanır. Yazı eleman yazısının 0,7'si
+büyüklüğünde, beyaz / siyahtır. Satırlar simgenin parçasıdır: simgeyle taşınır, kopyalanır, silinir. İlk satırı başka
+yere taşırsanız yeri korunur, öteki satırlar güncellemede onun altına dizilir. Malzeme eklenince ya da silinince
+yazı kendiliğinden yenilenir. Kapatınca yazılar silinir. Telefonda Dışa Aktarım › Çizim boyutları › Malzemeleri
+çizimde göster açıksa telefonun DXF'i de aynı satırları yazar.
+
 ### Hat değiştir (iletkenin tipi ve cinsi)
 
 Çizilmiş bir hattın iletkeni sonradan değişebilir: **Hat Değiştir** (`SH_HATDEGISTIR`, şeritte Düzenle). Hatları
@@ -325,7 +347,7 @@ değişirse (ör. havai → yer altı) yeni türün metrajı yazılır. Onaylı 
 **Cins kodlarındaki yazım hataları** da düzeltildi: `AG_ALÜMİNYUM_KABLO`, `OG_ALÜMİNYUM_KABLO`, `REKORTMAN_ALÜMİNYUM`,
 `ALÜMİNYUM_BAĞ_TELİ`, `TEÇHİZAT_MONTAJ_DEMİRİ`, `KOFRE`; menülerdeki cins adları düzgün Türkçe (ör. "Bakır bara",
 "Ayırıcı (dahili tip)"). Eski kodlu çizim ve telefon dosyaları okunurken yeni koda çevrilir; Telefon Görünümü kayıtları
-da yeni kodla yazar. Eski program bu yeni adları tanımayabilir (artık yalnız Şebeke-M kullanılıyor).
+da yeni kodla yazar. Eski program bu yeni adları tanımayabilir (artık yalnız Şebeke-M Hakediş kullanılıyor).
 
 Beton / ağaç direk daire, demir direk kare. Her durumun simgesi ayrıdır:
 
@@ -356,12 +378,12 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 
 | Düğme | Komut | Ne yapar |
 | --- | --- | --- |
-| Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 934 kalemlik katalog). Hatta iletken eklerseniz hattın ikinci iletkeni olur (metrajı hattın boyu). |
+| Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 982 kalemlik katalog; AG galvaniz travers ve konsollar GT-60, GD-80, T-AG-1… ağırlıklarıyla). Hatta iletken eklerseniz hattın ikinci iletkeni olur (metrajı hattın boyu). |
 | Toplu Malzeme | `SH_TOPLUMALZEME` | Seçilen bütün direklere (trafo, SDK…) aynı malzemeleri birden ekler. |
 | Malzeme Hafızası | — | Açıkken son elemanın malzemeleri aynı tipteki yeni elemana kendiliğinden eklenir; tıklayınca kapanır / açılır. |
 | Hat Değiştir | `SH_HATDEGISTIR` | Seçilen hatların iletkenini (tip, cins), türünü, durumunu, hakedişini değiştirir; kablo tipi yazısı ve katman güncellenir, metraj korunur. |
 | Metraj | `SH_METRAJ` | Seçilen hat / kanal / sondajın metrajını çizim uzunluğundan yeniden hesaplar (önce listeyi gösterip sorar). |
-| Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (simge, renk, etiket, metraj yazıları, kanal kenarları, Tahoma yazı tipi); katman adlarını Türkçe karaktersiz, cins kodlarını yazım hatasız yapar. |
+| Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (simge, renk, hat kalınlığı, etiket, metraj ve malzeme yazıları, kanal kenarları, Tahoma yazı tipi); katman adlarını Türkçe karaktersiz, cins kodlarını yazım hatasız yapar. |
 | Aktif Hakediş | `SH_HAKEDIS` | Aktif hakediş: yeni çizilenler bu hakedişin katmanlarına (`SC_3.HAK.…`) konur. Eski programın aktif hakedişiyle ortaktır. |
 | Hakediş Onayı | `SH_ONAY` | Her hakediş için sırayla **Kontrol → Hakediş → GIS** onayı (eski programın onay kaydı; o program aynı işaretleri görür). **Hakediş onayı verilen hakediş kilitlenir**: o hakedişe yeni nesne çizilemez, malzeme satırları gri görünür ve değiştirilemez / silinemez, metraj güncellemesi o nesneleri atlar, telefondan gelen değişiklik o hakedişe dokunuyorsa aktarılmaz. Kilitli direğe açık hakedişte yeni malzeme eklemek serbesttir. **Kullanıcı tanımlıysa** (aşağıda) önce oturum istenir: Kontrol aşamasını Kontrol mühendisi, Hakediş ve GIS aşamasını Onay yetkilisi verir ya da kaldırır (Yönetici hepsini); yetkiniz olmayan kutular soluk ve kapalıdır. |
 | Kullanıcılar | `SH_KULLANICILAR` | **Telefondaki kullanıcılar ve roller** (Yönetici, Kontrol mühendisi, Hakediş sorumlusu, Onay yetkilisi, Saha operatörü) ve **hakediş yetkisi**. İlk kullanıcı Yönetici olur ve onay mekanizması açılır; sonra kullanıcıyı yalnız Yönetici ekler / düzenler. Şifre 4–8 rakam, çizimde yalnız özeti saklanır. **Hakediş yetkisi**: Yönetici işaretlediği hakedişleri yazmaya kapatır; kapalı hakedişe yeni nesne çizilemez, satırları değiştirilemez (Yönetici hariç). Kullanıcılar ve hakediş yetkisi proje dosyasıyla telefona gider ve telefondan gelir (son değişiklik kazanır). Kullanıcı tanımlı değilse her şey eskisi gibi serbesttir. |
@@ -414,7 +436,7 @@ Bu düğmeler çizimin gerçek koordinatını kullanır: **ITRF96, 3° TM**. Çi
 - **CBS'den Al** (`SH_MIFAL`): bir ya da birkaç `.mif` dosyası seçin (yanında aynı adlı `.mid`). **CBS'den al**
   penceresi açılır:
   - Solda seçtiğiniz dosyalar. Her dosya için **Bu dosya ne?**: direk, trafo, SDK, pano, diğer eleman, hat, kablo
-    kanalı, yatay sondaj, bölge, GPS noktası, malzeme tablosu ya da **altlık** (yalnız çizilir). Şebeke-M'in yazdığı
+    kanalı, yatay sondaj, bölge, GPS noktası, malzeme tablosu ya da **altlık** (yalnız çizilir). Şebeke-M Hakediş'in yazdığı
     dosyalar adından kendiliğinden tanınır; başka bir CBS'nin dosyası sütun adlarından tahmin edilir.
   - **Sütunlar**: her bilgi (GIS no, cins, tip, durum, hakediş, iletken…) dosyanın hangi sütununda; yanında ilk
     nesnedeki değer görünür. Bulunamayan bilgi boş kalır, siz seçebilirsiniz.
@@ -422,7 +444,7 @@ Bu düğmeler çizimin gerçek koordinatını kullanır: **ITRF96, 3° TM**. Çi
   - **Al**: şebeke nesneleri **gerçek hakediş nesnesi** olarak çizilir (Telefondan Al gibi; önce özet penceresi):
     direkler, trafolar, SDK'lar, panolar tipi ve malzemeleriyle; hatlar iletkeni, adedi ve metrajıyla, iki ucundaki
     elemana bağlı; kanallar ölçüleriyle. Malzeme tablosu da seçildiyse malzemeler oradan gelir. Dosyada kimlik
-    sütunu varsa aynı dosyayı yeniden almak nesneleri çoğaltmaz, günceller; Şebeke-M'den çıkan dosya aynı çizime geri
+    sütunu varsa aynı dosyayı yeniden almak nesneleri çoğaltmaz, günceller; Şebeke-M Hakediş'ten çıkan dosya aynı çizime geri
     alınınca nesneler kendisiyle eşleşir.
   - Altlık seçilen dosyalar eskisi gibi: noktalar küçük daire, çizgiler ve alanlar çoklu çizgi, yazılar yazı;
     her dosya kendi katmanında (`CBS-dosya adı`), hakediş nesnesi değildir (rapora ve telefona girmez).
@@ -465,7 +487,7 @@ Eklenti eski hakediş programının çizimde tuttuğu kayıtları da okur ve yaz
 ## 5. Teknik hesaplar (Hesap Merkezi)
 
 Hesap araçları bir elektrik-elektronik mühendisinin hazırladığı hesap sayfalarıdır; formülleri ve tabloları
-değiştirilmeden Şebeke-M'e eklenmiştir. Telefonda ve AutoCAD'de **aynı sayfalar** açılır; aradaki tek
+değiştirilmeden Şebeke-M Hakediş'e eklenmiştir. Telefonda ve AutoCAD'de **aynı sayfalar** açılır; aradaki tek
 fark, bilgilerin nereden geldiğidir (telefonda projeden, AutoCAD'de çizimden).
 
 | Hesap | Ne yapar |
@@ -560,6 +582,12 @@ yerleşimi ve AG tek hat hesapları kaldırıldı; eski kayıtları projede bilg
 - **Hat çizip komuttan çıkınca AutoCAD kapanıyor ("INTERNAL ERROR: !dbobji.cpp@8703: eNotOpenForWrite")**:
   0.1.74–0.1.80 sürümlerindeki hata; eklentiyi güncelleyin. Kapanmadan önce kaydedilmemiş iş AutoCAD'in Kurtarma
   penceresindeki yedekten açılır.
+- **Çizim açılırken komut satırında eski programın adı yazıyor**: bu satırı Şebeke-M Hakediş yazmaz (adı programda hiç
+  geçmez; `telefon/web/tests/marka.test.mjs` denetler). Bilgisayarda kurulu kalan eski program her çizim açılışında
+  kendini yükleyip adını yazar. Eski programı artık kullanmıyorsanız AutoCAD'in açılışta yüklediklerinden çıkarılabilir
+  (çoğunlukla komut satırına `APPLOAD` › **Başlangıç Grubu** › **İçindekiler**: eski programın dosyasını seçip **Kaldır**).
+- **Malzeme yazıları simgeleri kapatıyor**: ilk satırı tutup boş bir yere taşıyın; öteki satırlar bir sonraki
+  güncellemede onun altına dizilir. Yazı büyüklüğü eleman yazısıyla birlikte değişir (Çizim Ayarları › Görünüm).
 - **Şerit sekmesi kayboldu**: komut satırına `SH_SERIT`.
 - **Bir hata oldu**: ayrıntı `%TEMP%\SebekeHakedis_hata.txt` dosyasına yazılır. Destek için `SH_DOKUM`
   çizimin teknik dökümünü kaydeder.

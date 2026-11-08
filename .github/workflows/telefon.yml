@@ -115,7 +115,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           s="${{ steps.surum.outputs.surum }}"
-          gh release create "mobil-$s" "cikti/Sebeke-M-$s.apk" --title "Şebeke-M telefon uygulaması $s" \
+          gh release create "mobil-$s" "cikti/Sebeke-M-$s.apk" --title "Şebeke-M Hakediş telefon uygulaması $s" \
             --notes "Kurulum: APK'yı telefona indirin ve açın (bilinmeyen kaynaklara izin verin). Önceki sürümün (VOLT-EDAŞ Saha 2.1.0 ve sonrası) üzerine projeler silinmeden kurulur."
 
       - name: Sonuçları ci-sonuc-android dalına yaz
