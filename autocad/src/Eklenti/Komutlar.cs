@@ -149,6 +149,7 @@ namespace SebekeHakedis.Eklenti
                 var p = CizimdenProje(belge);
                 if (p == null) return;
                 var oz = new ProjeOzeti(p);
+                var katalog = Katalog.Oku(KatalogKaynagi.Json(), p);
                 var son = Pencereler.ProjeOzetiGoster(oz, g =>
                 {
                     string ek = g.Proje == null || g.Proje.Tumu ? "_PROJE_OZETI_" : "_" + g.Proje.GorunenAd + "_MALZEME_";
@@ -158,7 +159,7 @@ namespace SebekeHakedis.Eklenti
                     oz.ExcelYaz(yol, g.Proje, g.Hakedis, g.Durum, g.Ara, Uygulama.Surum);
                     Uygulama.Yaz("Proje özeti Excel'e yazıldı: " + yol);
                     Ac(yol);
-                });
+                }, katalog.CinsAdi);
                 // Kanal listesi sekmesinden "Çizime tablo olarak koy": görünen proje ve hakedişle
                 if (son != null && son.KanalTablosu)
                 {

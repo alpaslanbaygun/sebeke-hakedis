@@ -1609,7 +1609,7 @@ namespace SebekeHakedis.Eklenti
                     switch (e.ColumnIndex)
                     {
                         case 0: e.Value = r.Eleman.GisId; break;
-                        case 1: e.Value = an.Cins; break;
+                        case 1: e.Value = o.Katalog.CinsAdi(an.Cins); break;
                         case 2: e.Value = MalzemeYazimi.Duzelt(an.Tanim); break;
                         case 3: e.Value = an.Durum; break;
                         case 4: e.Value = r.Malzeme != null ? MalzemeYazimi.Duzelt(r.Malzeme.Tanim) + "  ·  " + Bicim(r.Malzeme.Miktar) + " " + BirimAdi(r.Malzeme.Birim) : "yok"; break;
@@ -1700,9 +1700,10 @@ namespace SebekeHakedis.Eklenti
         /// hakediş, durum ve aramayla süzülür. "Excel'e aktar" listeleri yazar (excel), pencere açık kalır. Kanal listesi
         /// sekmesindeki "Çizime tablo olarak koy" pencereyi kapatır (KanalTablosu). Dönen değer: son görünüm.
         /// </summary>
-        public static ProjeOzetiGorunumu ProjeOzetiGoster(ProjeOzeti oz, Action<ProjeOzetiGorunumu> excel)
+        public static ProjeOzetiGorunumu ProjeOzetiGoster(ProjeOzeti oz, Action<ProjeOzetiGorunumu> excel, Func<string, string> cinsAdi = null)
         {
             Hazirla();
+            cinsAdi = cinsAdi ?? CinsKodu.OkunurAd;
             var gorunum = new ProjeOzetiGorunumu { Proje = oz.Projeler.Count > 0 ? oz.Projeler[0] : null };
             using (var w = new KoyuPencere("Proje özeti", 1040, 680, Boya.Simge("ozet", KoyuRenk.Yesil, 20)))
             {
@@ -1874,7 +1875,7 @@ namespace SebekeHakedis.Eklenti
                     {
                         case 0: e.Value = r.Hakedis; break;
                         case 1: e.Value = r.Durum; break;
-                        case 2: e.Value = r.Cins; break;
+                        case 2: e.Value = cinsAdi(r.Cins); break;
                         case 3: e.Value = MalzemeYazimi.Duzelt(r.Tip ?? ""); break;
                         case 4: e.Value = (Bicim(r.Miktar) + " " + giris).Trim(); break;
                         case 5: e.Value = (Bicim(r.Toplam) + " " + rapor).Trim(); break;
@@ -3387,7 +3388,9 @@ namespace SebekeHakedis.Eklenti
                 {
                     yukleniyor = true;
                     var row = g.Rows[r];
-                    row.Cells[0].Value = k.Cins;
+                    // Cins okunur adıyla (AG Galvaniz Demir Direk); kod ipucunda. Kanalın kendi pozunda cins kablo kodudur (12 = OG+AG).
+                    row.Cells[0].Value = kanal != null && ReferenceEquals(k, ana) ? "Kablo Kanalı" : o.Katalog.CinsAdi(k.Cins);
+                    row.Cells[0].ToolTipText = kanal != null && ReferenceEquals(k, ana) ? "Kanaldaki kablolar: " + kanal.Kablolar : k.Cins;
                     row.Cells[1].Value = string.IsNullOrEmpty(k.Aciklama) ? MalzemeYazimi.Duzelt(k.Tanim) : MalzemeYazimi.Duzelt(k.Tanim) + "  (" + MalzemeYazimi.Duzelt(k.Aciklama) + ")";
                     row.Cells[2].Value = k.Durum ?? "";
                     row.Cells[3].Value = Bicim(k.Miktar);

@@ -271,10 +271,14 @@ namespace SebekeHakedis.Cekirdek
             return _cins.TryGetValue(CinsKodu.Duzelt(cins) ?? "", out c) ? c : null;
         }
 
+        /// <summary>
+        /// Cinsin kullanıcıya görünen adı (şerit, pencereler): katalogdaki ad ("AG Galvaniz Demir Direk"); katalogda yoksa
+        /// koddan okunur ad (CinsKodu.OkunurAd). Raporlar ve dosyalar kodun kendisini yazar.
+        /// </summary>
         public string CinsAdi(string cins)
         {
             var c = Cins(cins);
-            return c != null ? c.Ad : (cins ?? "").Replace('_', ' ');
+            return c != null ? c.Ad : CinsKodu.OkunurAd(cins);
         }
 
         private int CinsSirasi(string cins)

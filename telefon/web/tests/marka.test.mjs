@@ -43,3 +43,22 @@ test('M2 · ürün adı Şebeke-M Hakediş: eklenti, paket, Android uygulaması 
   for (const y of ['ortak/marka/kaynak/sebeke-m-hakedis-logo.png', 'ortak/marka/sebeke-m-logo.png', 'ortak/marka/sebeke-m-simge-32.png', 'telefon/web/assets/sebeke-m-logo.png'])
     assert.ok(fs.existsSync(path.join(KOK, y)), y);
 });
+
+test('M3 · cins adları: alt çizgisiz, sözcük başları büyük (AG Galvaniz Demir Direk); katalogda olmayan kod aynı kuralla', async () => {
+  const { default: KALEMLER } = await import('../src/ortak/kalemler.js');
+  const { default: SH } = await import('../src/interop/sh-core.cjs');
+  const { autocadCinsAdi } = await import('../src/interop/sebeke.js');
+  const ad = new Map(KALEMLER.cinsler.map((c) => [c.cins, c.ad]));
+  assert.equal(ad.get('AG_DEMİR_GLV'), 'AG Galvaniz Demir Direk');
+  assert.equal(autocadCinsAdi('REKORTMAN_ALİMİNYUM'), 'Rekortman Alüminyum', 'eski kodla da');
+  assert.equal(autocadCinsAdi('YENİ_BİR_CİNS'), 'Yeni Bir Cins', 'katalogda olmayan kod');
+  assert.equal(SH.cinsOkunurAd('TRAVERS_VE_KONSOLLAR_GLV'), 'Travers ve Konsollar GLV');
+  assert.equal(SH.cinsOkunurAd('İZOLATÖR_DEMİRLERİ'), 'İzolatör Demirleri');
+  for (const c of KALEMLER.cinsler) {
+    assert.ok(!c.ad.includes('_'), 'alt çizgi yok: ' + c.ad);
+    for (const w of c.ad.split(/\s+/)) {
+      const ilk = w.replace(/^\(/, '');
+      if (ilk && /\p{L}/u.test(ilk[0]) && !['ve', 'ile'].includes(ilk)) assert.ok(ilk[0] === ilk[0].toLocaleUpperCase('tr-TR'), 'sözcük başı büyük: ' + c.ad);
+    }
+  }
+});

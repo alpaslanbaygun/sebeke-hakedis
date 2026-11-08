@@ -144,168 +144,168 @@
  "cinsler": [
   {
    "cins": "AG_DEMİR_GLV",
-   "ad": "AG galvanizli demir direk",
+   "ad": "AG Galvaniz Demir Direk",
    "rol": "ana",
    "tip": 19,
    "onem": 142
   },
   {
    "cins": "AG_DEMİR",
-   "ad": "AG demir direk",
+   "ad": "AG Demir Direk",
    "rol": "ana",
    "tip": 19,
    "onem": 121
   },
   {
    "cins": "AG_BETON",
-   "ad": "AG beton direk",
+   "ad": "AG Beton Direk",
    "rol": "ana",
    "tip": 37,
    "onem": 596
   },
   {
    "cins": "AG_AĞAÇ",
-   "ad": "AG ağaç direk",
+   "ad": "AG Ağaç Direk",
    "rol": "ana",
    "tip": 4,
    "onem": 217
   },
   {
    "cins": "MÜŞ_DEMİR_GLV",
-   "ad": "Müşterek galvanizli demir direk",
+   "ad": "Müşterek Galvaniz Demir Direk",
    "rol": "ana",
    "tip": 17,
    "onem": 182
   },
   {
    "cins": "MÜŞ_DEMİR",
-   "ad": "Müşterek demir direk",
+   "ad": "Müşterek Demir Direk",
    "rol": "ana",
    "tip": 17,
    "onem": 163
   },
   {
    "cins": "MÜŞ_BETON",
-   "ad": "Müşterek beton direk",
+   "ad": "Müşterek Beton Direk",
    "rol": "ana",
    "tip": 110,
    "onem": 635
   },
   {
    "cins": "ENH_DEMİR_GLV",
-   "ad": "ENH galvanizli kaynaklı direk",
+   "ad": "ENH Galvaniz Kaynaklı Direk",
    "rol": "ana",
    "tip": 77,
    "onem": 329
   },
   {
    "cins": "ENH_GLV_CVT",
-   "ad": "ENH galvanizli cıvatalı direk",
+   "ad": "ENH Galvaniz Cıvatalı Direk",
    "rol": "ana",
    "tip": 170,
    "onem": 408
   },
   {
    "cins": "ENH_DEMİR",
-   "ad": "ENH demir direk",
+   "ad": "ENH Demir Direk",
    "rol": "ana",
    "tip": 77,
    "onem": 250
   },
   {
    "cins": "ENH_BETON",
-   "ad": "ENH beton direk",
+   "ad": "ENH Beton Direk",
    "rol": "ana",
    "tip": 500,
    "onem": 788
   },
   {
    "cins": "AYD_GLV_PLG",
-   "ad": "Galvanizli poligon aydınlatma direği",
+   "ad": "Galvaniz Poligon Aydınlatma Direği",
    "rol": "ana",
    "tip": 29,
    "onem": 223
   },
   {
    "cins": "AYD_BETON",
-   "ad": "Beton aydınlatma direği",
+   "ad": "Beton Aydınlatma Direği",
    "rol": "ana",
    "tip": 39,
    "onem": 747
   },
   {
    "cins": "TR_DİREK_GLV",
-   "ad": "Galvanizli trafo direği",
+   "ad": "Galvaniz Trafo Direği",
    "rol": "ana",
    "tip": 6,
    "onem": 209
   },
   {
    "cins": "TR_DİREK",
-   "ad": "Trafo direği",
+   "ad": "Trafo Direği",
    "rol": "ana",
    "tip": 6,
    "onem": 201
   },
   {
    "cins": "BETON_KÖŞKLER",
-   "ad": "Beton / prefabrik köşk",
+   "ad": "Beton Köşk",
    "rol": "ana",
    "tip": 14,
    "onem": 1949
   },
   {
    "cins": "TRAFO_BİNASI",
-   "ad": "Trafo binası",
+   "ad": "Trafo Binası",
    "rol": "ana",
    "tip": 9,
    "onem": 1940
   },
   {
    "cins": "AG_PANO_HT",
-   "ad": "AG pano (harici tip)",
+   "ad": "AG Pano (Harici Tip)",
    "rol": "ana",
    "tip": 7,
    "onem": 1301
   },
   {
    "cins": "AG_PANO_DT",
-   "ad": "AG pano (dahili tip)",
+   "ad": "AG Pano (Dahili Tip)",
    "rol": "ana",
    "tip": 11,
    "onem": 1288
   },
   {
    "cins": "BOX_PANO",
-   "ad": "Box / SDK",
+   "ad": "Box Pano (SDK)",
    "rol": "ana",
    "tip": 6,
    "onem": 1279
   },
   {
    "cins": "EK_MUFU_AG_ALM",
-   "ad": "AG ek mufu (alüminyum)",
+   "ad": "AG Ek Mufu (Alüminyum)",
    "rol": "ana",
    "tip": 11,
    "onem": 1876
   },
   {
    "cins": "EK_MUFU_AG_BAKIR",
-   "ad": "AG ek mufu (bakır)",
+   "ad": "AG Ek Mufu (Bakır)",
    "rol": "ana",
    "tip": 19,
    "onem": 1855
   },
   {
    "cins": "EK_MUFU_OG_ALM",
-   "ad": "OG ek mufu (alüminyum)",
+   "ad": "OG Ek Mufu (Alüminyum)",
    "rol": "ana",
    "tip": 10,
    "onem": 1899
   },
   {
    "cins": "EK_MUFU_OG_BAKIR",
-   "ad": "OG ek mufu (bakır)",
+   "ad": "OG Ek Mufu (Bakır)",
    "rol": "ana",
    "tip": 9,
    "onem": 1888
@@ -326,168 +326,168 @@
   },
   {
    "cins": "AG_İLETKEN",
-   "ad": "AG çıplak iletken",
+   "ad": "AG İletken",
    "rol": "hat",
    "tip": 22,
    "onem": 1108
   },
   {
    "cins": "ALPEK_KABLOLAR",
-   "ad": "ALPEK (demetli) kablo",
+   "ad": "ALPEK Kablolar",
    "rol": "hat",
    "tip": 18,
    "onem": 1152
   },
   {
    "cins": "AG_ALÜMİNYUM_KABLO",
-   "ad": "AG alüminyum kablo",
+   "ad": "AG Alüminyum Kablo",
    "rol": "hat",
    "tip": 23,
    "onem": 1554
   },
   {
    "cins": "AG_BAKIR_KABLO",
-   "ad": "AG bakır kablo",
+   "ad": "AG Bakır Kablo",
    "rol": "hat",
    "tip": 87,
    "onem": 0
   },
   {
    "cins": "AYDINLATMA_KABLO",
-   "ad": "Aydınlatma kablosu",
+   "ad": "Aydınlatma Kablosu",
    "rol": "hat",
    "tip": 15,
    "onem": 1689
   },
   {
    "cins": "OG_İLETKEN",
-   "ad": "OG çıplak iletken",
+   "ad": "OG İletken",
    "rol": "hat",
    "tip": 18,
    "onem": 1132
   },
   {
    "cins": "OG_ALÜMİNYUM_KABLO",
-   "ad": "OG alüminyum kablo",
+   "ad": "OG Alüminyum Kablo",
    "rol": "hat",
    "tip": 36,
    "onem": 1738
   },
   {
    "cins": "OG_BAKIR_KABLO",
-   "ad": "OG bakır kablo",
+   "ad": "OG Bakır Kablo",
    "rol": "hat",
    "tip": 34,
    "onem": 1702
   },
   {
    "cins": "REKORTMAN_ALÜMİNYUM",
-   "ad": "Rekortman (alüminyum)",
+   "ad": "Rekortman Alüminyum",
    "rol": "hat",
    "tip": 22,
    "onem": 1666
   },
   {
    "cins": "REKORTMAN_BAKIR",
-   "ad": "Rekortman (bakır)",
+   "ad": "Rekortman Bakır",
    "rol": "hat",
    "tip": 63,
    "onem": 1603
   },
   {
    "cins": "KABLO_KANALI",
-   "ad": "Kablo kanalı (zemin)",
+   "ad": "Kablo Kanalı",
    "rol": "kanal",
    "tip": 19,
    "onem": 1911
   },
   {
    "cins": "YATAY_DELGİ",
-   "ad": "Yatay sondaj (delgi)",
+   "ad": "Yatay Delgi (Sondaj)",
    "rol": "sondaj",
    "tip": 4,
    "onem": 1922
   },
   {
    "cins": "BAKIR_BARA",
-   "ad": "Bakır bara",
+   "ad": "Bakır Bara",
    "rol": "malzeme",
    "tip": 13,
    "onem": 1
   },
   {
    "cins": "TRAVERS_VE_KONSOLLAR",
-   "ad": "Travers ve konsollar",
+   "ad": "Travers ve Konsollar",
    "rol": "malzeme",
    "tip": 44,
    "onem": 15
   },
   {
    "cins": "TRAVERS_VE_KONSOLLAR_GLV",
-   "ad": "Galvanizli travers ve konsollar",
+   "ad": "Galvaniz Travers ve Konsollar",
    "rol": "malzeme",
    "tip": 10,
    "onem": 27
   },
   {
    "cins": "BAHH_DEMİR_TRAVERS",
-   "ad": "BAHH demir travers",
+   "ad": "BAHH Demir Travers",
    "rol": "malzeme",
    "tip": 39,
    "onem": 39
   },
   {
    "cins": "BAHH_DEMİR_TRAVERS_GLV",
-   "ad": "BAHH galvanizli demir travers",
+   "ad": "BAHH Galvaniz Demir Travers",
    "rol": "malzeme",
    "tip": 39,
    "onem": 80
   },
   {
    "cins": "AG_BETON_TRAVERS",
-   "ad": "AG beton travers",
+   "ad": "AG Beton Travers",
    "rol": "malzeme",
    "tip": 17,
    "onem": 580
   },
   {
    "cins": "BAHH_BETON_TRAVERS",
-   "ad": "BAHH beton travers",
+   "ad": "BAHH Beton Travers",
    "rol": "malzeme",
    "tip": 645,
    "onem": 589
   },
   {
    "cins": "GALVANİZLİ_GAZ_BORUSU",
-   "ad": "Galvanizli gaz borusu",
+   "ad": "Galvanizli Gaz Borusu",
    "rol": "malzeme",
    "tip": 7,
    "onem": 1096
   },
   {
    "cins": "GALVANİZLİ_KABLO_TAVASI",
-   "ad": "Galvanizli kablo tavası",
+   "ad": "Galvanizli Kablo Tavası",
    "rol": "malzeme",
    "tip": 1,
    "onem": 1105
   },
   {
    "cins": "AG_İZOLATÖR",
-   "ad": "AG izolatör",
+   "ad": "AG İzolatör",
    "rol": "malzeme",
    "tip": 3,
    "onem": 1172
   },
   {
    "cins": "OG_İZOLATÖR",
-   "ad": "OG izolatör",
+   "ad": "OG İzolatör",
    "rol": "malzeme",
    "tip": 21,
    "onem": 1177
   },
   {
    "cins": "KOMPOZİT_SİLİKON_ASKI_VE_GERGİ_İZOLATÖRLERİ",
-   "ad": "Kompozit silikon askı ve gergi izolatörleri",
+   "ad": "Kompozit Silikon Askı ve Gergi İzolatörleri",
    "rol": "malzeme",
    "tip": 3,
    "onem": 1199
@@ -508,42 +508,42 @@
   },
   {
    "cins": "AYIRICI_DT",
-   "ad": "Ayırıcı (dahili tip)",
+   "ad": "Ayırıcı (Dahili Tip)",
    "rol": "malzeme",
    "tip": 11,
    "onem": 1223
   },
   {
    "cins": "AYIRICI_HT",
-   "ad": "Ayırıcı (harici tip)",
+   "ad": "Ayırıcı (Harici Tip)",
    "rol": "malzeme",
    "tip": 8,
    "onem": 1236
   },
   {
    "cins": "SİGORTA_BUŞONU",
-   "ad": "Sigorta buşonu",
+   "ad": "Sigorta Buşonu",
    "rol": "malzeme",
    "tip": 1,
    "onem": 1246
   },
   {
    "cins": "HÜCRELER_METAL",
-   "ad": "Metal hücreler",
+   "ad": "Metal Hücreler",
    "rol": "malzeme",
    "tip": 34,
    "onem": 1257
   },
   {
    "cins": "AKÜ_REDRESÖR_GRUBU",
-   "ad": "Akü redresör grubu",
+   "ad": "Akü Redresör Grubu",
    "rol": "malzeme",
    "tip": 2,
    "onem": 1310
   },
   {
    "cins": "TEHLİKE_LEVHASI",
-   "ad": "Tehlike levhası",
+   "ad": "Tehlike Levhası",
    "rol": "malzeme",
    "tip": 1,
    "onem": 1314
@@ -557,226 +557,226 @@
   },
   {
    "cins": "TOP_İLETKEN",
-   "ad": "Topraklama iletkeni",
+   "ad": "Topraklama İletkeni",
    "rol": "hat",
    "tip": 4,
    "onem": 1325
   },
   {
    "cins": "AKIM_TRAFOLARI",
-   "ad": "Akım trafoları",
+   "ad": "Akım Trafoları",
    "rol": "malzeme",
    "tip": 19,
    "onem": 1330
   },
   {
    "cins": "GERİLİM_TRAFOLARI",
-   "ad": "Gerilim trafoları",
+   "ad": "Gerilim Trafoları",
    "rol": "malzeme",
    "tip": 2,
    "onem": 1350
   },
   {
    "cins": "TRAFO_GENLEŞME_TANKLI",
-   "ad": "Trafo (genleşme tanklı)",
+   "ad": "Trafo (Genleşme Tanklı)",
    "rol": "malzeme",
    "tip": 52,
    "onem": 1354
   },
   {
    "cins": "TRAFO_HERMETİK",
-   "ad": "Trafo (hermetik)",
+   "ad": "Trafo (Hermetik)",
    "rol": "malzeme",
    "tip": 31,
    "onem": 1399
   },
   {
    "cins": "TRAFO_KURU_TİP",
-   "ad": "Trafo (kuru tip)",
+   "ad": "Trafo (Kuru Tip)",
    "rol": "malzeme",
    "tip": 14,
    "onem": 1431
   },
   {
    "cins": "OG_KABLO_BAŞLIK_HT_CU",
-   "ad": "OG kablo başlığı (harici tip, bakır)",
+   "ad": "OG Kablo Başlığı (Harici Tip, Bakır)",
    "rol": "malzeme",
    "tip": 8,
    "onem": 1776
   },
   {
    "cins": "OG_KABLO_BAŞLIK_HT_ALM",
-   "ad": "OG kablo başlığı (harici tip, alüminyum)",
+   "ad": "OG Kablo Başlığı (Harici Tip, Alüminyum)",
    "rol": "malzeme",
    "tip": 9,
    "onem": 1786
   },
   {
    "cins": "OG_KABLO_BAŞLIK_DT_CU",
-   "ad": "OG kablo başlığı (dahili tip, bakır)",
+   "ad": "OG Kablo Başlığı (Dahili Tip, Bakır)",
    "rol": "malzeme",
    "tip": 10,
    "onem": 1797
   },
   {
    "cins": "OG_KABLO_BAŞLIK_DT_ALM",
-   "ad": "OG kablo başlığı (dahili tip, alüminyum)",
+   "ad": "OG Kablo Başlığı (Dahili Tip, Alüminyum)",
    "rol": "malzeme",
    "tip": 9,
    "onem": 1808
   },
   {
    "cins": "AG_KABLO_BAŞLIK_CU",
-   "ad": "AG kablo başlığı (bakır)",
+   "ad": "AG Kablo Başlığı (Bakır)",
    "rol": "malzeme",
    "tip": 22,
    "onem": 1819
   },
   {
    "cins": "AG_KABLO_BAŞLIK_ALM",
-   "ad": "AG kablo başlığı (alüminyum)",
+   "ad": "AG Kablo Başlığı (Alüminyum)",
    "rol": "malzeme",
    "tip": 11,
    "onem": 1843
   },
   {
    "cins": "KABLO_MUHAFAZA_BORULARI",
-   "ad": "Kablo muhafaza boruları",
+   "ad": "Kablo Muhafaza Boruları",
    "rol": "malzeme",
    "tip": 10,
    "onem": 1928
   },
   {
    "cins": "EK_YAPIM_İŞLERİ",
-   "ad": "Ek yapım işleri",
+   "ad": "Ek Yapım İşleri",
    "rol": "malzeme",
    "tip": 8,
    "onem": 1966
   },
   {
    "cins": "TUTANAKLI_İŞLER",
-   "ad": "Tutanaklı işler",
+   "ad": "Tutanaklı İşler",
    "rol": "malzeme",
    "tip": 27,
    "onem": 1976
   },
   {
    "cins": "ENH_YAPIM_İŞLERİ",
-   "ad": "ENH yapım işleri",
+   "ad": "ENH Yapım İşleri",
    "rol": "malzeme",
    "tip": 1,
    "onem": 1997
   },
   {
    "cins": "KOMPANZASYON_SİSTEMİ",
-   "ad": "Kompanzasyon sistemi",
+   "ad": "Kompanzasyon Sistemi",
    "rol": "malzeme",
    "tip": 5,
    "onem": 2004
   },
   {
    "cins": "İNDİRİCİ_VE_AYIRICI_MERKEZ_PANOLARI",
-   "ad": "İndirici ve ayırıcı merkez panoları",
+   "ad": "İndirici ve Ayırıcı Merkez Panoları",
    "rol": "malzeme",
    "tip": 2,
    "onem": 2011
   },
   {
    "cins": "DİĞER_AMBAR_MALZEMELERİ",
-   "ad": "Diğer ambar malzemeleri",
+   "ad": "Diğer Ambar Malzemeleri",
    "rol": "malzeme",
    "tip": 80,
    "onem": 2015
   },
   {
    "cins": "OG_İZOLASYON_MALZEMELERİ",
-   "ad": "OG izolasyon malzemeleri",
+   "ad": "OG İzolasyon Malzemeleri",
    "rol": "malzeme",
    "tip": 15,
    "onem": 0
   },
   {
    "cins": "DEMİR_DİREK_VE_TRAVERS_BOYANMASI",
-   "ad": "Demir direk ve travers boyanması",
+   "ad": "Demir Direk ve Travers Boyanması",
    "rol": "malzeme",
    "tip": 2,
    "onem": 0
   },
   {
    "cins": "YAĞMURLUK_BETONU_YAPILMASI",
-   "ad": "Yağmurluk betonu yapılması",
+   "ad": "Yağmurluk Betonu Yapılması",
    "rol": "malzeme",
    "tip": 1
   },
   {
    "cins": "ALÜMİNYUM_BAĞ_TELİ",
-   "ad": "Alüminyum bağ teli",
+   "ad": "Alüminyum Bağ Teli",
    "rol": "malzeme",
    "tip": 3
   },
   {
    "cins": "EK_MANŞONLARI",
-   "ad": "Ek manşonları",
+   "ad": "Ek Manşonları",
    "rol": "malzeme",
    "tip": 8
   },
   {
    "cins": "ALPEK_KABLO_AKSESUARLARI",
-   "ad": "ALPEK kablo aksesuarları",
+   "ad": "ALPEK Kablo Aksesuarları",
    "rol": "malzeme",
    "tip": 27
   },
   {
    "cins": "ŞEFFAF_TÜP_AMPULLER",
-   "ad": "Şeffaf tüp ampuller",
+   "ad": "Şeffaf Tüp Ampuller",
    "rol": "malzeme",
    "tip": 4
   },
   {
    "cins": "İZOLATÖR_DEMİRLERİ",
-   "ad": "İzolatör demirleri",
+   "ad": "İzolatör Demirleri",
    "rol": "malzeme",
    "tip": 4
   },
   {
    "cins": "ANAHTARLI_OTOMATİK_SİGORTA",
-   "ad": "Anahtarlı otomatik sigorta",
+   "ad": "Anahtarlı Otomatik Sigorta",
    "rol": "malzeme",
    "tip": 1
   },
   {
    "cins": "BAKLAVALI_SAC",
-   "ad": "Baklavalı sac",
+   "ad": "Baklavalı Sac",
    "rol": "malzeme",
    "tip": 1
   },
   {
    "cins": "TEL_KAFESLİ_KAPI",
-   "ad": "Tel kafesli kapı",
+   "ad": "Tel Kafesli Kapı",
    "rol": "malzeme",
    "tip": 1
   },
   {
    "cins": "TEL_KAFESLİ_ÇİT",
-   "ad": "Tel kafesli çit",
+   "ad": "Tel Kafesli Çit",
    "rol": "malzeme",
    "tip": 2
   },
   {
    "cins": "TEÇHİZAT_MONTAJ_DEMİRİ",
-   "ad": "Teçhizat montaj demiri",
+   "ad": "Teçhizat Montaj Demiri",
    "rol": "malzeme",
    "tip": 9
   },
   {
    "cins": "YOL_KAPLAMASI_SÖKÜMÜ_VE_YAPIMI",
-   "ad": "Yol kaplaması sökümü ve yapımı",
+   "ad": "Yol Kaplaması Sökümü ve Yapımı",
    "rol": "malzeme",
    "tip": 4
   },
   {
    "cins": "KİLOMETRİK_BAKIM_İŞLERİ",
-   "ad": "Kilometrik bakım işleri",
+   "ad": "Kilometrik Bakım İşleri",
    "rol": "malzeme",
    "tip": 3
   }

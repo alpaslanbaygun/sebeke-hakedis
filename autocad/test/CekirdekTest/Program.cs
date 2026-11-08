@@ -1882,8 +1882,21 @@ namespace SebekeHakedis.Test
             Esit(CinsKodu.Eski.Count, eslesen, "cins kodu: eklentinin tablosu katalogdaki eskiCinsler ile aynı");
             Esit(0, k.Kalemler.FindAll(x => CinsKodu.Eski.ContainsKey(x.Cins)).Count, "katalogda eski (yazım hatalı) cins kodu yok");
             Esit(0, k.Cinsler.FindAll(x => x.Ad.Contains("̇") || x.Ad != x.Ad.Trim()).Count, "cins adlarında bozuk harf yok (i̇)");
-            Esit("Bakır bara", k.CinsAdi("BAKIR_BARA"), "cins adı Türkçe yazımla");
-            Esit("Rekortman (alüminyum)", k.CinsAdi("REKORTMAN_ALİMİNYUM"), "cins adı: eski kodla da bulunur");
+            // Cins adları (kullanıcı kuralı, 8.11.2026): alt çizgisiz, her sözcüğün ilk harfi büyük; kısaltmalar büyük, "ve" küçük
+            Esit("Bakır Bara", k.CinsAdi("BAKIR_BARA"), "cins adı Türkçe yazımla, sözcük başları büyük");
+            Esit("AG Galvaniz Demir Direk", k.CinsAdi("AG_DEMİR_GLV"), "cins adı: AG Galvaniz Demir Direk (kullanıcının örneği)");
+            Esit("Rekortman Alüminyum", k.CinsAdi("REKORTMAN_ALİMİNYUM"), "cins adı: eski kodla da bulunur");
+            Esit("Yeni Bir Cins", k.CinsAdi("YENİ_BİR_CİNS"), "cins adı: katalogda olmayan kod okunur ada çevrilir");
+            Esit("Travers ve Konsollar GLV", CinsKodu.OkunurAd("TRAVERS_VE_KONSOLLAR_GLV"), "okunur ad: 've' küçük, kısaltma büyük");
+            Esit("İzolatör Demirleri", CinsKodu.OkunurAd("İZOLATÖR_DEMİRLERİ"), "okunur ad: İ/ı Türkçe kuralıyla");
+            int bozukAd = 0;
+            foreach (var c in k.Cinsler)
+                foreach (var w in c.Ad.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    string ilk = w.TrimStart('(');
+                    if (ilk.Length > 0 && char.IsLetter(ilk[0]) && char.IsLower(ilk[0]) && ilk != "ve" && ilk != "ile") bozukAd++;
+                }
+            Esit(0, bozukAd, "katalogdaki bütün cins adlarında sözcük başları büyük (ve / ile dışında)");
             Esit(true, k.Bul("AG_ALİMİNYUM_KABLO", "3x95+50 Nyy Alm.") != null && k.Bul("AG_ALİMİNYUM_KABLO", "3x95+50 Nyy Alm.").Cins == "AG_ALÜMİNYUM_KABLO",
                  "katalog: eski kodla aranan kalem yeni koduyla gelir");
             Esit("AG_ALÜMİNYUM_KABLO", NesneOkuyucu.HatKalemiOku("AG_ALİMİNYUM_KABLO;;3x95+50 Nyy Alm.;M;0;10;mt/mt;1;10;0,00;1;0105;7001;").Cins,

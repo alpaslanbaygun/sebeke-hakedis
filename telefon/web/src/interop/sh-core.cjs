@@ -75,6 +75,23 @@
   function cinsDuzelt(cins) { return cins && Object.prototype.hasOwnProperty.call(ESKI_CINSLER, cins) ? ESKI_CINSLER[cins] : cins; }
 
   /**
+   * Katalogda adı olmayan cinsin okunur adı (kullanıcı kuralı, 8.11.2026; eklentideki CinsKodu.OkunurAd ile aynı): alt
+   * çizgiler boşluk, her sözcüğün ilk harfi büyük, gerisi Türkçe kuralıyla küçük (İ → i, I → ı); kısaltmalar (AG, OG, ENH…)
+   * büyük, "ve" küçük kalır. Ör. YENİ_BİR_CİNS → "Yeni Bir Cins", AG_PANO_HT → "AG Pano HT".
+   */
+  const CINS_KISALTMALARI = new Set(['AG', 'OG', 'ENH', 'BAHH', 'ALPEK', 'SDK', 'XLPE', 'NYY', 'NAYY', 'GLV', 'CVT', 'PLG', 'HT', 'DT', 'CU', 'ALM', 'TR']);
+  const CINS_KUCUK_SOZCUKLER = new Set(['ve', 'ile', 'veya']);
+  function cinsOkunurAd(cins) {
+    if (!cins) return '';
+    return String(cins).replace(/_/g, ' ').split(/\s+/).filter(Boolean).map((w) => {
+      if (CINS_KISALTMALARI.has(w)) return w;
+      const k = w.toLocaleLowerCase('tr-TR');
+      if (CINS_KUCUK_SOZCUKLER.has(k)) return k;
+      return k.slice(0, 1).toLocaleUpperCase('tr-TR') + k.slice(1);
+    }).join(' ');
+  }
+
+  /**
    * Katman adı Türkçe karaktersiz (31.10.2026): ç ğ ı İ ö ş ü → c g i I o s u (AGDİR → AGDIR, MÜŞTEREK_HAT →
    * MUSTEREK_HAT). Eklentideki KatmanAdlari.Ascii ile aynı.
    */
@@ -1286,7 +1303,7 @@
 
   return {
     BICIM, SURUM, DURUMLAR, DURUM_ADI, ELEMAN_TURLERI, HAT_TURLERI, ZEMINLER, KANAL, DOMLAR, KOLEKSIYONLAR,
-    elemanTuru, hatTuru, cinstenElemanTuru, cinstenHatTuru, cinsDuzelt, katmanAscii, ESKI_CINSLER, boyutlarOku, BOYUT_VARSAYILAN,
+    elemanTuru, hatTuru, cinstenElemanTuru, cinstenHatTuru, cinsDuzelt, cinsOkunurAd, katmanAscii, ESKI_CINSLER, boyutlarOku, BOYUT_VARSAYILAN,
     malzemeEtiketi, malzemeEtiketiSatir,
     temiz, sayi, tr, ordinal, siraKarsilastir,
     tmIleri, tmGeri, domBoylamdan, domTahmin,

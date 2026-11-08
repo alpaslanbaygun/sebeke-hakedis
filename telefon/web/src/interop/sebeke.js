@@ -741,8 +741,8 @@ export function autocadSecenekleri(cat, role, install) {
   return out;
 }
 const CINS_ADLARI = new Map((KALEMLER.cinsler || []).map((c) => [c.cins, c.ad]));
-/** Cinsin adı (ortak katalogdaki ad; yoksa kodun "_" yerine boşluklu yazımı — eklentideki Katalog.CinsAdi). */
-export const autocadCinsAdi = (c) => (c ? CINS_ADLARI.get(SH.cinsDuzelt(c)) ?? String(c).replace(/_/g, ' ') : '');
+/** Cinsin adı (ortak katalogdaki ad "AG Galvaniz Demir Direk"; yoksa koddan okunur ad — eklentideki Katalog.CinsAdi). */
+export const autocadCinsAdi = (c) => (c ? CINS_ADLARI.get(SH.cinsDuzelt(c)) ?? SH.cinsOkunurAd(c) : '');
 
 /**
  * Telefon kataloğunda karşılığı olmayan HAT kalemi eklentinin kataloğundaysa AutoCAD devresi anahtarı ("@CİNS|tanım");

@@ -286,6 +286,52 @@ namespace SebekeHakedis.PencereTest
                 Resim(f, "sonra");
             });
 
+            // Direğin durumu açılır listeyle M → DM (KESİK) → M: gerçek düzenleme denetimiyle (kullanıcının yaptığı gibi).
+            // 8.11.2026: "Yeni direk Demontaj yapılınca tekrar Yeni'ye alınamıyor" bildirimi.
+            string eskiDurum = direk.Durum, eskiDm = direk.DmDurum;
+            Dene("08b-malzeme-durum-geri", () =>
+            {
+                bool ok = Pencereler.Kalemler(o, direk);
+                Esit(true, ok, "durum geri: Kaydet");
+                Esit("M", direk.Durum, "durum geri: direğin durumu yeniden M");
+                Esit("", direk.DmDurum, "durum geri: DM durumu temizlendi");
+                Esit("M", direk.Kalemler.Find(k => k.Ana)?.Durum, "durum geri: direğin kendi pozunun durumu M");
+            }, f =>
+            {
+                var g = Bul<DataGridView>(f, x => true);
+                int r = -1;
+                for (int i = 0; i < g.Rows.Count; i++) if (g.Rows[i].Tag is Kalem k && k.Ana) r = i;
+                Esit(true, r >= 0, "durum geri: direğin kendi satırı listede");
+                Action<int, string, string> sec = (sutun, deger, ad) =>
+                {
+                    g.CurrentCell = g.Rows[r].Cells[sutun];
+                    g.BeginEdit(true);
+                    Application.DoEvents();
+                    var cb = g.EditingControl as ComboBox;
+                    Esit(true, cb != null, "durum geri: " + ad + " açılır liste düzenlemede");
+                    if (cb == null) return;
+                    Esit(true, cb.Items.Contains(deger), "durum geri: " + ad + " listede '" + deger + "' var");
+                    cb.SelectedItem = deger;
+                    Application.DoEvents();
+                    g.EndEdit();
+                    Application.DoEvents();
+                };
+                var ana = (Kalem)g.Rows[r].Tag;
+                sec(2, "DM", "durum");
+                Esit("DM", ana.Durum, "durum geri: M → DM yazıldı");
+                sec(7, "KESİK", "DM durumu");
+                Esit("KESİK", ana.DmDurum, "durum geri: DM durumu KESİK");
+                Resim(f, "dm");
+                sec(2, "M", "durum");
+                Esit("M", ana.Durum, "durum geri: DM → M yazıldı");
+                Esit("M", Convert.ToString(g.Rows[r].Cells[2].Value), "durum geri: hücrede M görünür");
+                sec(7, "", "DM durumu");
+                Esit("", ana.DmDurum ?? "", "durum geri: DM durumu boşaltıldı");
+                Resim(f, "sonra");
+            });
+            Esit(eskiDurum, direk.Durum, "durum geri: deneme sonunda direk eski durumunda");
+            direk.DmDurum = eskiDm;
+
             var hat = o.Proje.Hatlar[0];
             Dene("09-malzeme-hat", () =>
             {

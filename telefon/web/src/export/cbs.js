@@ -130,7 +130,7 @@ export function iletkenAdedi(k) {
 }
 // Cins adları ortak katalogdan (eklentide Katalog.CinsAdi: katalogda yoksa kodun "_" yerine boşluklu yazımı)
 const CINS_ADLARI = new Map((KALEMLER.cinsler || []).map((c) => [c.cins, c.ad]));
-export const cinsAdi = (c) => (c ? CINS_ADLARI.get(SH.cinsDuzelt(c)) ?? metin(c).replace(/_/g, ' ') : '');
+export const cinsAdi = (c) => (c ? CINS_ADLARI.get(SH.cinsDuzelt(c)) ?? SH.cinsOkunurAd(metin(c)) : '');
 
 /** Bölgesi olmayan nesnelerin klasörü (eklentideki ProjeOzeti.ProjesizAdi). */
 export const PROJESIZ = 'Projesi olmayanlar';
