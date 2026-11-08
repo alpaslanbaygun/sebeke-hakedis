@@ -92,6 +92,8 @@
   var K = window.SMKural || {};
   A.iletken = function (ad) { return K.iletkenCoz ? K.iletkenCoz(ad) : { ad: ad, aile: null, devre: null }; };
   A.ruling = function (acikliklar) { return K.ruling ? K.ruling(acikliklar) : null; };
+  // Önerilen direk tipi (TEDAŞ tepe kuvveti tablosu; ortak/hesap/kurallar.mjs › direkOner)
+  A.direkOner = function (g) { return K.direkOner ? K.direkOner(g) : null; };
 
   // ---------------------------------------------------------------- güncellik (ortak/hesap/kurallar.mjs)
   var farklar = K.farklar || function () { return []; };

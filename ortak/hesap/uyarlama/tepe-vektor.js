@@ -10,7 +10,10 @@
    - Açılar, ana hat (doğrusal iki kol ya da en uzun açıklık) 0°–180° ekseninde olacak şekilde döndürülür: kafes
      direkte |Rx|+|Ry| eksen doğrultusuna bağlıdır. Beton ve A tipinde bileşke büyüklüğü dönmeden etkilenmez.
    - Yazdırma: telefonda yazdırma bitince aracın beklediği 'afterprint' olayı gelmez; ekran çizimine dönüş sağlanır.
-   - Çizim (canvas) yalnız ekranda Şebeke-M laciverdine boyanır; yazdırmada aracın beyaz çizimi kalır. */
+   - Çizim (canvas) yalnız ekranda Şebeke-M laciverdine boyanır; yazdırmada aracın beyaz çizimi kalır.
+   - Önerilen direk tipi (8.11.2026): aracın hat satırlarından (kuvvet + açı) eski TEDAŞ tepe kuvveti aracının seçim
+     kuralıyla (ortak/hesap/kurallar.mjs › direkOner: sağlam + kopma senaryoları, boyuna / enine / B30 tablosu) önerilen
+     tip hesaplanır; sonuç kartının altında gösterilir ve kayda yazılır. Aracın formülleri değişmez. */
 (function () {
   'use strict';
   var BOLGE = ['1B', '2B', '3B', '4B'];
@@ -34,7 +37,7 @@
   // Aracın tablosunda bir satır kaymış birleşik müşterek + AER satırları (kullanıcı elle seçerse uyarılır)
   var KAYIK = /^(3x1\/0 AWG|3x3\/0 AWG|3x266 MCM|3x477 MCM)\+.*AER$/;
 
-  var son = { ofset: 0, anaKol: '' };   // son doldurmadaki döndürme (kuzeyden ana hat yönü, °)
+  var son = { ofset: 0, anaKol: '', konum: null, rol: null, tip: '' };   // son doldurmadaki döndürme (kuzeyden ana hat yönü, °), direk bilgisi
 
   function el(id) { return document.getElementById(id); }
   function r2(x) { return Math.round(x * 100) / 100; }
@@ -203,11 +206,53 @@
     yenile();   // aracın açılış çizimi bu renklerden önce yapıldı: yeniden çizilir
   })();
 
+  /** Önerilen direk tipi (TEDAŞ tablosu): aracın son hat satırlarından; hesap yoksa null. */
+  function oneri(A) {
+    if (!A || !A.direkOner || typeof lastVecs === 'undefined' || !lastVecs) return null;
+    var vek = lastVecs.map(function (v, i) { return { guc: v.guc, derece: v.derece, ad: 'Hat ' + (i + 1) + (hatlar[i] && hatlar[i].iletken ? ' (' + hatlar[i].iletken + ')' : '') }; });
+    return A.direkOner({ konum: son.konum, rol: son.rol, vektorler: vek, mevcutTip: son.tip });
+  }
+  function oneriKutusu() {
+    var k = el('sm-oneri');
+    if (k) return k;
+    var kart = el('sonuc-kart');
+    if (!kart || !kart.parentNode) return null;
+    k = document.createElement('div');
+    k.id = 'sm-oneri';
+    k.className = 'sonuc';
+    k.style.cssText = 'margin-top:10px;padding:10px 14px;font-size:13px;line-height:1.5';
+    kart.parentNode.insertBefore(k, kart.nextSibling);
+    return k;
+  }
+  function oneriYaz() {
+    var A = window.__SM && window.__SM.A;
+    var k = oneriKutusu();
+    if (!k) return;
+    var on = oneri(A);
+    if (!on) { k.style.display = 'none'; return; }
+    k.style.display = '';
+    var html = '<div style="font-weight:700;margin-bottom:4px">Önerilen direk tipi (TEDAŞ tepe kuvveti tablosu): <span style="font-size:16px">' +
+      (on.tip || (on.tablo ? '—' : 'tablo yok (AG / müşterek değil)')) + '</span></div>' +
+      '<div>Boyuna L<sub>max</sub> = ' + A.tr(on.maxL, 1) + ' kg · Enine R<sub>max</sub> = ' + A.tr(on.maxR, 1) + ' kg · B30 = ' + A.tr(on.B30, 1) + ' kg · en kötü: ' + on.senaryo + '</div>' +
+      '<div style="opacity:.85">' + (on.trafoDirek ? 'Trafo direği olsaydı: ' + on.trafoDirek + ' · ' : '') + 'Ağaç direk: ' + on.agacDirek +
+      (on.karsilastirma && on.karsilastirma.durum !== 'bilinmiyor' ? ' · Projedeki ' + on.karsilastirma.mevcut + ' tabloya göre <b>' + on.karsilastirma.durum + '</b>' : '') + '</div>';
+    k.innerHTML = html;
+  }
+  // Aracın hesapla()'sı her değişiklikte çağrılır: öneri kutusu da onunla yenilenir (aracın kodu değişmez)
+  var asilHesapla = window.hesapla;
+  if (typeof asilHesapla === 'function') {
+    window.hesapla = function () {
+      var r = asilHesapla.apply(this, arguments);
+      try { oneriYaz(); } catch (e) { /* */ }
+      return r;
+    };
+  }
+
   window.__SM_UYARLAMA = {
     notlar: [
       'Hesap tek bir yükleme durumudur: bütün hatların en büyük çekme kuvvetleri (buz bölgesine göre tablo değeri) aynı anda etkir. Tek yanlı zayıflama (kopma), rüzgâr yükü ve açıklık hesaba girmez.',
       'Beton ve A tipi direkte bileşke R = √(Rx² + Ry²), kafes direkte R = |Rx| + |Ry| alınır. Kafes sonucu eksenlerin doğrultusuna bağlıdır; Şebeke-M açıları ana hat 0°–180° ekseninde olacak şekilde döndürür. A tipi direkte kuvvetli / zayıf eksen ayrımı yapılmaz.',
-      'Araç direk tipi seçmez ve yeterlilik denetimi yapmaz; "Seçilen direk" yalnız çıktıda görünür. Sonuç bilgi amaçlıdır.',
+      'Araç direk tipi seçmez; "Seçilen direk" yalnız çıktıda görünür. Önerilen direk tipi Şebeke-M\'nin eklediği ayrı bir değerlendirmedir: eski TEDAŞ tepe kuvveti aracının tablosu (AG: 9-H, 10I, 10U, 12I, K1–K5; müşterek: 10I\'\'…K5\'\'; trafo direği T-15…T-50; ağaç 9O / 9A) sağlam durum ve her hattın tek tek kopması (kopan hattın kuvveti sıfır; taşıyıcı direkte kopma alınmaz) senaryolarının en büyük boyuna (L), enine (R) ve L + R (B30) değerleriyle okunur. Potans yükü alınmaz; eksenler ana hat doğrultusuna göredir.',
       'Araç tablosunda 3x1/0 AWG, 3x3/0 AWG, 266 MCM ve 477 MCM müşterek + AER birleşik satırları bir satır kaymıştır (ör. "3x1/0 AWG+3x50/16+70 AER" 1. bölgede 662,34 kg; olması gereken 411 + 300,7 = 711,7 kg). Şebeke-M bu yüzden müşterek hatta OG ve AG\'yi ayrı satır girer; bu birleşik satırları elle seçmeyin.',
       'Yazarla doğrulanması gereken tablo değerleri: 1x16/16+25 AER (a≤36 m) 2./3. bölge 112,8 / 149,3 kg (diğer TEDAŞ tablosunda 118,42 / 153); 3x35/16+50 AER 1. bölge 310,3 kg (diğerinde 301,3); müşterek 266 MCM+5R 3. bölge 1687,35 kg (kitapta 1587); 477 MCM+3R 3. bölge 1857,21 kg (kitapta 1897).',
       'Araçta birebir karşılığı olmayan tertipler (ör. telefon kataloğundaki 3P+R = 3 Pansy + 1 Rose, 3P+P, 3Po+P, 3A+P; aydınlatma damarsız 3x50+70 AER; 2x16+25 ve 4x16+25 AER) "Boş Hat" olarak açısıyla eklenir; satırı listeden siz seçersiniz.',
@@ -271,7 +316,9 @@
       var musterek = !!(d && (d.tur === 'MUSTEREK' || kollar.some(function (k) { return k && k.hatTur === 'MUSTEREK'; })));
       var ogVar = kollar.some(function (k) { return k && !yeraltiMi(k.hatTur) && (k.iletkenler || []).some(function (il) { return il && (il.devre === 'OG' || A.iletken(il.ad).devre === 'OG'); }); });
       var konum = musterek ? 'mus' : (ogVar ? null : 'ag');
+      son.konum = konum; son.rol = d && d.rol ? String(d.rol).toUpperCase() : null; son.tip = d && d.tip ? String(d.tip) : '';
       if (d && d.tur) dol('Direk türü', d.tur, '', 'direk.tur', d.tur);
+      if (d && d.rol) dol('Direk görevi', d.rol, '', 'direk.rol', d.rol, d.rol === 'T' ? 'taşıyıcı: kopma senaryosu alınmaz' : 'kopma senaryoları alınır');
       if (musterek) r.uyari.push('Müşterek direk: OG iletkenleri "Müşt.", AG iletkenleri "(x0,81)" satırlarıyla ayrı satır olarak girildi (aracın birleşik satırlarındaki kayma hatası kullanılmadı).');
 
       var satir = [];
@@ -326,17 +373,36 @@
       ];
       var sec = A.deger('#direk-input');
       if (sec) girdiler.push({ ad: 'Seçilen direk', deger: sec, birim: '' });
+      var degerler = [
+        { ad: 'Tepe kuvveti R', deger: R, birim: 'kg' },
+        { ad: 'Rx', deger: r2(lastRx), birim: 'kg' },
+        { ad: 'Ry', deger: r2(lastRy), birim: 'kg' },
+        { ad: 'Bileşke açısı (ana hatta göre)', deger: r2(lastAci), birim: '°' },
+        { ad: 'Bileşke yönü (kuzeyden)', deger: r2(n360(lastAci + (son.ofset || 0))), birim: '°' }
+      ];
+      var on = oneri(A), ozetEk = '', durum = 'bilgi';
+      if (on) {
+        degerler.push({ ad: 'Önerilen direk tipi (TEDAŞ tablosu)', deger: on.tip || (on.tablo ? '—' : 'tablo yok'), birim: '' });
+        degerler.push({ ad: 'En büyük boyuna kuvvet (L)', deger: on.maxL, birim: 'kg' });
+        degerler.push({ ad: 'En büyük enine kuvvet (R)', deger: on.maxR, birim: 'kg' });
+        degerler.push({ ad: 'B30 = en büyük L + R', deger: on.B30, birim: 'kg' });
+        degerler.push({ ad: 'En kötü senaryo', deger: on.senaryo, birim: '' });
+        if (on.trafoDirek) degerler.push({ ad: 'Trafo direği olsaydı', deger: on.trafoDirek, birim: '' });
+        degerler.push({ ad: 'Ağaç direk', deger: on.agacDirek, birim: '' });
+        if (on.tip) ozetEk = ' · önerilen direk ' + on.tip;
+        if (on.karsilastirma && on.karsilastirma.durum !== 'bilinmiyor') {
+          degerler.push({ ad: 'Projedeki tip tabloya göre', deger: on.karsilastirma.durum, birim: '' });
+          durum = on.karsilastirma.durum === 'yeterli' ? 'uygun' : 'uygun-degil';
+        }
+        if (!on.tablo) uy.push('Önerilen direk tipi için tablo yok: direk ne AG ne müşterek (yalnız ENH / OG). Tablolar AG ve müşterek direkler içindir.');
+        else if (son.rol === 'T') uy.push('Direk taşıyıcı (T): önerilen tip için kopma senaryosu alınmadı (eski araçtaki kural).');
+        else uy.push('Önerilen tip sağlam durum ve her hattın tek tek kopması (o hattın kuvveti sıfır) senaryolarından; potans yükü alınmadı.');
+      }
       return {
-        ozet: 'Tepe kuvveti R = ' + A.tr(R, 1) + ' kg (' + (vek ? 'vektörel √(Rx²+Ry²)' : 'skaler |Rx|+|Ry|') + ') · bileşke ' + A.tr(r2(lastAci), 1) + '° · ' + aBolge + ' · ' + etkin + ' hat',
-        durum: 'bilgi',
+        ozet: 'Tepe kuvveti R = ' + A.tr(R, 1) + ' kg (' + (vek ? 'vektörel √(Rx²+Ry²)' : 'skaler |Rx|+|Ry|') + ') · bileşke ' + A.tr(r2(lastAci), 1) + '° · ' + aBolge + ' · ' + etkin + ' hat' + ozetEk,
+        durum: durum,
         girdiler: girdiler,
-        degerler: [
-          { ad: 'Tepe kuvveti R', deger: R, birim: 'kg' },
-          { ad: 'Rx', deger: r2(lastRx), birim: 'kg' },
-          { ad: 'Ry', deger: r2(lastRy), birim: 'kg' },
-          { ad: 'Bileşke açısı (ana hatta göre)', deger: r2(lastAci), birim: '°' },
-          { ad: 'Bileşke yönü (kuzeyden)', deger: r2(n360(lastAci + (son.ofset || 0))), birim: '°' }
-        ],
+        degerler: degerler,
         tablo: {
           basliklar: ['Hat', 'İletken', 'Açı (°)', 'P (kg)', 'Px = P·sin (kg)', 'Py = P·cos (kg)'],
           satirlar: lastVecs.map(function (v, i) { return v.guc > 0 ? ['H' + (i + 1), hatlar[i] ? hatlar[i].iletken : '', v.derece, r2(v.guc), r2(v.x), r2(v.y)] : null; }).filter(Boolean)
@@ -350,7 +416,8 @@
         surum: 1, bolge: aBolge, direk: aDirek,
         hatlar: hatlar.map(function (h) { return { iletken: h.iletken, derece: +h.derece || 0 }; }),
         trafoAdi: A.deger('#trafo-adi') || '', trafoKolu: A.deger('#trafo-kolu') || '', direkNo: A.deger('#direk-no') || '',
-        secilenDirek: A.deger('#direk-input') || '', ofset: son.ofset || 0, anaKol: son.anaKol || ''
+        secilenDirek: A.deger('#direk-input') || '', ofset: son.ofset || 0, anaKol: son.anaKol || '',
+        konum: son.konum || null, rol: son.rol || null, tip: son.tip || ''
       };
     },
 
@@ -363,7 +430,7 @@
       // iki "Seçilen direk" kutusu yalnız elle yazınca eşlenir: ikisi de yazılır
       metinYaz('trafo-adi', s.trafoAdi); metinYaz('trafo-kolu', s.trafoKolu); metinYaz('direk-no', s.direkNo);
       metinYaz('direk-input', s.secilenDirek); metinYaz('direk-input-tesis', s.secilenDirek);
-      son = { ofset: +s.ofset || 0, anaKol: s.anaKol || '' };
+      son = { ofset: +s.ofset || 0, anaKol: s.anaKol || '', konum: s.konum || null, rol: s.rol || null, tip: s.tip || '' };
       hesapla();
     }
   };

@@ -171,6 +171,15 @@ async def calistir(args):
                             os.makedirs(args.ekran, exist_ok=True)
                             ad = re.sub(r'[^\w-]+', '_', modul + '-' + d['ad'])[:80]
                             await sayfa.screenshot(path=os.path.join(args.ekran, ad + '.png'), full_page=False)
+                            # sonuç kartı (ve altındaki Şebeke-M ekleri) görünsün diye çerçevenin içinde de bir görüntü
+                            try:
+                                kart = await fr.query_selector('#sonuc-kart')
+                                if kart:
+                                    await kart.scroll_into_view_if_needed()
+                                    await sayfa.wait_for_timeout(50)
+                                    await sayfa.screenshot(path=os.path.join(args.ekran, ad + '-sonuc.png'), full_page=False)
+                            except Exception:
+                                pass
                         # durum → yeni sayfada geri yükle
                         durum = await fr.evaluate('() => JSON.stringify(window.__SM.durumAl())')
                         kayit = {'id': 'K1', 'modul': modul, 'modulDurumu': durum, 'kullanilan': S.get('kullanilan') or {},
