@@ -732,19 +732,65 @@
 
   /**
    * Simge ve yazı boyutları (proje.boyutlar; eklentideki Boyutlar, Çizim Ayarları › Görünüm): simge büyüklüğü (kat;
-   * 1 = 1/1000 pafta), hat etiketi (kablo tipi), metraj ve eleman yazısı yüksekliği (m). Bozuk değer varsayılana döner;
-   * hepsi varsayılansa null (dosyaya yazılmaz).
+   * 1 = 1/1000 pafta), hat etiketi (kablo tipi), metraj ve eleman yazısı yüksekliği (m), hat kalınlığı (kat: ortak
+   * stildeki kalınlığın çarpanı, 0 = ince çizgi) ve malzemelerin çizimde yazılması (malzemeEtiketi). Bozuk değer
+   * varsayılana döner; hepsi varsayılansa null (dosyaya yazılmaz).
    */
-  const BOYUT_VARSAYILAN = { simgeOlcegi: 1, etiketYuksekligi: 1.8, metrajYuksekligi: 1.44, elemanYaziYuksekligi: 1.8 };
+  const BOYUT_VARSAYILAN = { simgeOlcegi: 1, etiketYuksekligi: 1.8, metrajYuksekligi: 1.44, elemanYaziYuksekligi: 1.8, hatKalinligi: 1, malzemeYazisi: false };
+  const BOYUT_ARALIK = { simgeOlcegi: [0.1, 20], hatKalinligi: [0, 5] };
   function boyutlarOku(b) {
     if (!b || typeof b !== 'object') return null;
     const r = {};
     for (const [k, d] of Object.entries(BOYUT_VARSAYILAN)) {
+      if (typeof d === 'boolean') { r[k] = b[k] === true || b[k] === 'true' || b[k] === 1 || b[k] === '1'; continue; }
       const v = typeof b[k] === 'number' ? b[k] : sayi(b[k]);
-      const [en, cok] = k === 'simgeOlcegi' ? [0.1, 20] : [0.05, 50];
+      const [en, cok] = BOYUT_ARALIK[k] || [0.05, 50];
       r[k] = Number.isFinite(v) && v >= en && v <= cok ? v : d;
     }
-    return Object.keys(r).every((k) => Math.abs(r[k] - BOYUT_VARSAYILAN[k]) < 1e-9) ? null : r;
+    const ayni = (k) => (typeof BOYUT_VARSAYILAN[k] === 'boolean' ? r[k] === BOYUT_VARSAYILAN[k] : Math.abs(r[k] - BOYUT_VARSAYILAN[k]) < 1e-9);
+    return Object.keys(r).every(ayni) ? null : r;
+  }
+
+  // ---------------------------------------------------------------- Malzeme yazısı (elemanın malzemeleri çizimde)
+  // Eklentideki karşılığı Cekirdek/MalzemeEtiketi.cs (aynı kural); ortak deneme ortak/deneme/malzeme-etiketi.json.
+
+  /** Miktarın yazısı: en çok iki ondalık, ondalık virgül, binlik ayraçsız ("5", "2,5", "1250"). */
+  function malzemeMiktari(m) {
+    const v = Math.round((Number(m) || 0) * 100) / 100;
+    return String(Object.is(v, -0) ? 0 : v).replace('.', ',');
+  }
+
+  /** Giriş birimi ("mt/kg" → "mt"); adet (ad) yazılmaz. */
+  function girisBirimi(birim) {
+    const g = String(birim || '').split('/')[0].trim();
+    return !g || g.toLowerCase() === 'ad' ? '' : g;
+  }
+
+  /** Tek satır: "AD=MİKTAR[ BİRİM] (DURUM)" — ör. "GT-60=1 (M)", "1x95 ÇELİK ÖRGÜ=5 mt (M)". */
+  function malzemeEtiketiSatir(ad, miktar, birim, durum) {
+    const b = girisBirimi(birim), d = String(durum || '').trim();
+    return ad + '=' + malzemeMiktari(miktar) + (b ? ' ' + b : '') + (d ? ' (' + d + ')' : '');
+  }
+
+  /**
+   * Elemanın çizimde yazılacak malzeme satırları: kendi pozu (ana) ve miktarı sıfır olan satır yazılmaz; ad görünen
+   * yazımla (malzemeYazisi); durum programdaki kodla (satırınki boşsa elemanınki); aynı ad + birim + durum toplanır,
+   * sıra ilk görülüşe göre.
+   */
+  function malzemeEtiketi(eleman) {
+    const sira = [], toplam = new Map();
+    for (const k of (eleman && eleman.kalemler) || []) {
+      if (!k || k.ana || Math.abs(Number(k.miktar) || 0) < 1e-9) continue;
+      const ad = malzemeYazisi(k.tanim || '').trim();
+      if (!ad) continue;
+      const durum = String(k.durum || '').trim() ? k.durum : (eleman.durum || '');
+      const birim = girisBirimi(k.birim);
+      const anahtar = ad + '\u0001' + birim + '\u0001' + String(durum).trim();
+      if (toplam.has(anahtar)) { toplam.get(anahtar).miktar += Number(k.miktar) || 0; continue; }
+      toplam.set(anahtar, { ad, birim, durum, miktar: Number(k.miktar) || 0 });
+      sira.push(anahtar);
+    }
+    return sira.map((a) => { const t = toplam.get(a); return malzemeEtiketiSatir(t.ad, t.miktar, t.birim, t.durum); });
   }
 
   // ---------------------------------------------------------------- Kullanıcılar ve onay ayarı (proje.kullanicilar, proje.onayAyari)
@@ -796,7 +842,7 @@
   function yeniProje(o) {
     const a = o || {};
     return {
-      bicim: BICIM, surum: SURUM, olusturan: 'Şebeke-M (telefon)', olusturma: zaman(),
+      bicim: BICIM, surum: SURUM, olusturan: 'Şebeke-M Hakediş (telefon)', olusturma: zaman(),
       proje: {
         ad: a.ad || 'Yeni Proje', kaynak: 'telefon',
         koordinat: { sistem: 'TM', datum: 'ITRF96', dom: Number(a.dom) || 0, eksenler: 'saga = doğu (CAD X), yukari = kuzey (CAD Y)' },
@@ -845,7 +891,7 @@
    */
   function projeOku(girdi) {
     const k = typeof girdi === 'string' ? JSON.parse(girdi.replace(/^﻿/, '')) : girdi;
-    if (!k || k.bicim !== BICIM) throw new Error('Bu bir Şebeke-M proje dosyası değil.');
+    if (!k || k.bicim !== BICIM) throw new Error('Bu bir Şebeke-M Hakediş proje dosyası değil.');
     if (num(k.surum) > SURUM) throw new Error('Proje dosyası daha yeni bir sürümle hazırlanmış (' + k.surum + '). Uygulamayı güncelleyin.');
     const pj = k.proje || {};
     const kor = pj.koordinat || {};
@@ -983,7 +1029,7 @@
   function projeYaz(p, olusturan, girintili) {
     const pj = p.proje;
     const k = {
-      bicim: BICIM, surum: SURUM, olusturan: olusturan || p.olusturan || 'Şebeke-M (telefon)', olusturma: zaman(),
+      bicim: BICIM, surum: SURUM, olusturan: olusturan || p.olusturan || 'Şebeke-M Hakediş (telefon)', olusturma: zaman(),
       proje: sirala(pj, [['ad', pj.ad], ['kaynak', pj.kaynak],
         ['koordinat', Object.assign({ sistem: 'TM', datum: 'ITRF96', dom: 0 }, pj.koordinat, { eksenler: 'saga = doğu (CAD X), yukari = kuzey (CAD Y)' })],
         ['aktifHakedis', pj.aktifHakedis], ['katmanOnEki', katmanAscii(pj.katmanOnEki)], ['gisOnEki', pj.gisOnEki],
@@ -1241,6 +1287,7 @@
   return {
     BICIM, SURUM, DURUMLAR, DURUM_ADI, ELEMAN_TURLERI, HAT_TURLERI, ZEMINLER, KANAL, DOMLAR, KOLEKSIYONLAR,
     elemanTuru, hatTuru, cinstenElemanTuru, cinstenHatTuru, cinsDuzelt, katmanAscii, ESKI_CINSLER, boyutlarOku, BOYUT_VARSAYILAN,
+    malzemeEtiketi, malzemeEtiketiSatir,
     temiz, sayi, tr, ordinal, siraKarsilastir,
     tmIleri, tmGeri, domBoylamdan, domTahmin,
     mesafe, uzunluk, ortaNokta, icinde, alan, dogruParcasinaMesafe, cokgeneMesafe, bolgeSec, kutu, projeKutusu,

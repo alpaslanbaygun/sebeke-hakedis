@@ -1,7 +1,7 @@
-# Şebeke-M (telefon uygulaması)
+# Şebeke-M Hakediş (telefon uygulaması)
 
 EDAŞ şebeke işleri için Android saha uygulaması (GNSS ile direk, trafo, hat alımı; malzeme, keşif, metraj, hakediş)
-ve ofis için web sürümü. 17.10.2026'dan beri **Şebeke-M** deposunun telefon tarafıdır: AutoCAD eklentisiyle
+ve ofis için web sürümü. 17.10.2026'dan beri **Şebeke-M Hakediş** deposunun telefon tarafıdır: AutoCAD eklentisiyle
 aynı proje dosyasını (`.sebeke.json`) alır ve verir.
 
 - Güncel sürüm: **2.5.x** (GitHub › Releases, `main` dalındaki her gönderimde derlenir). Önceki: 2.4.0 (6 Ekim 2026). Web sürümü 2.3.0.

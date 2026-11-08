@@ -1,8 +1,8 @@
-# Şebeke-M Kullanım Kılavuzu
+# Şebeke-M Hakediş Kullanım Kılavuzu
 
 6 Ekim 2026
 
-Bu kılavuz, Şebeke-M telefon uygulamasının 2.4.0 ve sonraki (2.5.x) sürümlerini sahada kullanacak kişiler içindir. Uygulama Android telefonda çalışır; internet olmadan da kayıt alır.
+Bu kılavuz, Şebeke-M Hakediş telefon uygulamasının 2.4.0 ve sonraki (2.5.x) sürümlerini sahada kullanacak kişiler içindir. Uygulama Android telefonda çalışır; internet olmadan da kayıt alır.
 
 ## Uygulama ne işe yarar
 
@@ -876,7 +876,7 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 
 | Çıktı | Dosya | İçeriği |
 | --- | --- | --- |
-| AutoCAD proje dosyası | .sebeke.json | Şebeke-M AutoCAD eklentisi "Telefondan Al" ile açar: direk, hat, kanal ve malzemeler eski program biçiminde (Durum Tespit raporu için). Varsayılan seçilidir |
+| AutoCAD proje dosyası | .sebeke.json | Şebeke-M Hakediş AutoCAD eklentisi "Telefondan Al" ile açar: direk, hat, kanal ve malzemeler eski program biçiminde (Durum Tespit raporu için). Varsayılan seçilidir |
 | Telefon proje dosyası | .volt.json | Projenin tam yedeği (tüm kayıtlar) + AutoCAD bölümü; eklenti ve telefon bunu da açar |
 | AutoCAD DXF | .dxf | Katmanlar, semboller (eklentiyle aynı bloklar), yazılar; 1/1000 |
 | Netcad NCN | .ncn | Nokta adı, Y, X, Z, kod. Netcad'e DXF ile birlikte alınır |
@@ -891,10 +891,15 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 - Kontrol listesinde hata varken de çıktı alınabilir; uygulama önce sorar ve hatayı teslim paketine yazar.
 - Google Earth ve CBS (MIF / MID) dosyaları AutoCAD eklentisinin dosyalarıyla aynıdır: "ileride" durumundaki nesneler (eklentide olmadıkları için) bu dosyalara yazılmaz, dışa aktarımda uyarı çıkar. Projede AutoCAD'den gelen bölge yoksa proje sınırı yazılmaz; proje adı klasörün adıdır. MIF'te koordinatlar ve `SAGA` / `YUKARI` sütunları seçilen koordinat sistemindedir.
 - Veri değişince önceki çıktılar "Son üretilenler" listesinde `ESKİDİ` olarak işaretlenir; yeniden üretin.
+- **Çizim boyutları** kartı (DXF, AutoCAD dosyası ya da teslim paketi seçiliyken): simge ve yazı büyüklükleri, **Hat
+  kalınlığı** (İnce çizgi · İnce · Normal · Kalın · Çok kalın; Normal'de 1/1000 baskıda OG 0,5 mm, AG 0,35 mm) ve
+  **Malzemeleri çizimde göster** (her elemanın malzemeleri simgenin yanında satır satır: `GT-60=1 (M)`). Kalın hatlar
+  DXF'te genişlikli çoklu çizgidir (düz çizilir; noktaların kotu ÖLÇÜ katmanında kalır). Ayarlar AutoCAD dosyasıyla
+  eklentiye de gider (eklentide Çizim Ayarları › Görünüm).
 
-### AutoCAD eklentisiyle çalışma (Şebeke-M)
+### AutoCAD eklentisiyle çalışma (Şebeke-M Hakediş)
 
-Büroda eski program çizimleriyle çalışan Şebeke-M AutoCAD eklentisi aynı proje dosyasını kullanır:
+Büroda eski program çizimleriyle çalışan Şebeke-M Hakediş AutoCAD eklentisi aynı proje dosyasını kullanır:
 
 1. AutoCAD'de **ŞEBEKE-M ARAÇLAR › Telefon › Telefona Gönder** ile yazılan dosyayı Drive'a koyun.
 2. Telefonda **Projeler › AutoCAD dosyasından proje al** (ya da açık projede **Proje merkezi › AutoCAD dosyasını bu

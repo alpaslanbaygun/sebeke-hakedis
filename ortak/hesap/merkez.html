@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hesap Merkezi · Şebeke-M</title>
+<title>Hesap Merkezi · Şebeke-M Hakediş</title>
 <link rel="icon" href="ortak/amblem.png">
 <link rel="stylesheet" href="ortak/tema.css">
 <style>
@@ -86,7 +86,7 @@ footer{padding:10px 16px 24px;color:var(--sm-mut);font-size:12px;max-width:1500p
 <body>
 <header id="mk-ust">
   <img class="logo" src="ortak/amblem.png" alt="">
-  <div class="baslik"><b>Hesap Merkezi</b><small id="mk-alt">Şebeke-M · Teknik hesaplar</small></div>
+  <div class="baslik"><b>Hesap Merkezi</b><small id="mk-alt">Şebeke-M Hakediş · Teknik hesaplar</small></div>
   <span id="mk-hedef" class="cip hedef bos">—</span>
   <span class="bosluk"></span>
   <button id="mk-goster" class="dgm" hidden title="Hedefi çizimde seçer ve yaklaşır">Çizimde göster</button>
@@ -103,7 +103,7 @@ footer{padding:10px 16px 24px;color:var(--sm-mut);font-size:12px;max-width:1500p
     <div id="mk-kayitlar" class="kart"><div class="bilgi">Yükleniyor…</div></div>
   </section>
 </main>
-<footer>Hesap araçlarının formülleri ve tabloları değiştirilmeden Şebeke-M'e eklenmiştir; her hesabın içindeki ⓘ düğmesi kaynak ve bilinen sınırları gösterir. Kayıtlar çizimin içinde durur; AutoCAD'de çizimi kaydetmeyi unutmayın.</footer>
+<footer>Hesap araçlarının formülleri ve tabloları değiştirilmeden Şebeke-M Hakediş'e eklenmiştir; her hesabın içindeki ⓘ düğmesi kaynak ve bilinen sınırları gösterir. Kayıtlar çizimin içinde durur; AutoCAD'de çizimi kaydetmeyi unutmayın.</footer>
 <div id="mk-pencere" hidden></div>
 <script src="ortak/kurallar.js"></script>
 <script>
@@ -187,7 +187,7 @@ footer{padding:10px 16px 24px;color:var(--sm-mut);font-size:12px;max-width:1500p
     d.getElementById('mk-hedef').classList.toggle('bos', !hedefli());
     d.getElementById('mk-hedef').title = hedefYazisi(hd, true);
     d.getElementById('mk-goster').hidden = !hedefli();
-    if (V.proje) d.getElementById('mk-alt').textContent = 'Şebeke-M · ' + (V.proje.cizim || V.proje.ad || 'çizim') + (V.proje.ad && V.proje.ad !== V.proje.cizim ? ' · ' + V.proje.ad : '');
+    if (V.proje) d.getElementById('mk-alt').textContent = 'Şebeke-M Hakediş · ' + (V.proje.cizim || V.proje.ad || 'çizim') + (V.proje.ad && V.proje.ad !== V.proje.cizim ? ' · ' + V.proje.ad : '');
     if (!hedefli()) {
       k.appendChild(h('div', { class: 'uyari', text: 'Çizimin tamamı için hesap listesi. Bir direk, hat ya da trafo için hesap açmak isterseniz AutoCAD\'de nesneyi seçip SH_HESAP yazın (ya da şeritteki hesap düğmesine basın): o nesnenin bilgileri hesaba kendiliğinden yazılır.' }));
       return;

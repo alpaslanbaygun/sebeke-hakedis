@@ -268,6 +268,7 @@ namespace SebekeHakedis.Cekirdek
             string armDurum;
             v.Armatur = ArmaturBlogu(e, out v.ArmaturDx, out v.ArmaturDy, out armDurum);
             if (v.Armatur.Length > 0 && CizimStili.Yuklu) v.ArmaturRengi = CizimStili.ElemanRengi("DIGER", "ARMATÜR", armDurum);
+            v.MalzemeSatirlari = MalzemeEtiketi.Satirlar(e);
             return v;
         }
 
@@ -307,6 +308,7 @@ namespace SebekeHakedis.Cekirdek
                 v.Renk = CizimStili.HatRengi(h.Tur, h.Durum);
                 string ct = CizimStili.HatCizgiTipi(h.Tur);
                 v.CizgiTipi = ct.Length == 0 ? "CONTINUOUS" : ct;
+                v.HatKalinligi = CizimStili.HatKalinligi(h.Tur, 1);
             }
             var ilk = h.Kalemler.Find(k => k.Kaynak == "HAT");
             Ekle(v, "KONTROL", Mantik(h.Kontrol ?? (ilk != null ? ilk.Kontrol : null)));

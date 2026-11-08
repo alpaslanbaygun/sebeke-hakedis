@@ -1,0 +1,57 @@
+{
+  "aciklama": "Elemanın malzemeleri çizimde (Çizim Ayarları › Görünüm › Malzemeleri çizimde göster): her eleman için simgenin yanına yazılacak satırlar. Eklentideki MalzemeEtiketi.Satirlar ile telefondaki sh-core malzemeEtiketi aynı sonucu vermeli; iki tarafın denemesi bu dosyayı okur (CekirdekTest, telefon/web/tests/malzeme-etiketi.test.mjs). Kural: elemanın kendi pozu (ana) ve miktarı sıfır olan satır yazılmaz; ad görünen yazımla; miktar giriş biriminde (ad yazılmaz); durum programdaki kodla (satırınki boşsa elemanınki); aynı ad + birim + durum toplanır. Uydurma veri.",
+  "girdi": {
+    "bicim": "sebeke-hakedis.proje",
+    "surum": 1,
+    "proje": { "ad": "DENEME MALZEME YAZISI", "katmanOnEki": "SC" },
+    "elemanlar": [
+      {
+        "id": "E1", "tur": "AG_DIREK", "gisId": "SCB04", "cins": "AG_DEMİR_GLV", "tip": "G-10I", "durum": "M", "hakedis": 1, "saga": 0, "yukari": 0,
+        "kalemler": [
+          { "cins": "AG_DEMİR_GLV", "tanim": "G-10I", "durum": "M", "miktar": 1, "birim": "ad/kg", "katsayi": 250, "hakedis": 1, "ana": true, "kaynak": "NIT" },
+          { "cins": "TRAVERS_VE_KONSOLLAR_GLV", "tanim": "GT-60", "durum": "M", "miktar": 1, "birim": "ad/kg", "katsayi": 1, "hakedis": 1, "kaynak": "MALZEME" },
+          { "cins": "TOPRAKLAMA", "tanim": "GALVANİZLİ ÖRGÜLÜ ÇELİK TEL VE GÖMÜLMESİ", "durum": "M", "miktar": 5, "birim": "mt/mt", "katsayi": 1, "hakedis": 1, "kaynak": "MALZEME" },
+          { "cins": "TOPRAKLAMA", "tanim": "1x50NYY İLE YAPILAN İŞLETME TOP.", "durum": "M", "miktar": 26, "birim": "mt/mt", "katsayi": 1, "hakedis": 1, "kaynak": "MALZEME" },
+          { "cins": "ARMATÜR", "tanim": "70W Sodyum Arm.", "durum": "", "miktar": 1, "birim": "ad/ad", "katsayi": 1, "hakedis": 1, "kaynak": "MALZEME" },
+          { "cins": "TRAVERS_VE_KONSOLLAR_GLV", "tanim": "GT-60", "durum": "M", "miktar": 1, "birim": "ad/kg", "katsayi": 1, "hakedis": 2, "kaynak": "MALZEME" },
+          { "cins": "TRAVERS_VE_KONSOLLAR", "tanim": "L-65", "durum": "DM", "miktar": 2.5, "birim": "mt/kg", "katsayi": 6.83, "hakedis": 1, "kaynak": "MALZEME" },
+          { "cins": "TOPRAKLAMA", "tanim": "TOPRAKLAMA KAZIĞI", "durum": "M", "miktar": 0, "birim": "ad/ad", "katsayi": 1, "hakedis": 1, "kaynak": "MALZEME" }
+        ]
+      },
+      {
+        "id": "E2", "tur": "AG_DIREK", "gisId": "SCB05", "cins": "AG_DEMİR_GLV", "tip": "9-O", "durum": "MEVCUT", "hakedis": 1, "saga": 30, "yukari": 0,
+        "kalemler": [
+          { "cins": "AG_DEMİR_GLV", "tanim": "9-O", "durum": "MEVCUT", "miktar": 1, "birim": "ad/kg", "katsayi": 1, "hakedis": 1, "ana": true, "kaynak": "NIT" }
+        ]
+      },
+      {
+        "id": "E3", "tur": "AG_DIREK", "gisId": "SCB06", "cins": "AG_DEMİR_GLV", "tip": "G-8I", "durum": "DM+M", "hakedis": 1, "saga": 60, "yukari": 0,
+        "kalemler": [
+          { "cins": "AG_DEMİR_GLV", "tanim": "G-8I", "durum": "DM+M", "miktar": 1, "birim": "ad/kg", "katsayi": 152, "hakedis": 1, "ana": true, "kaynak": "NIT" },
+          { "cins": "TRAVERS_VE_KONSOLLAR", "tanim": "L-50", "durum": "", "miktar": 1.256, "birim": "mt/kg", "katsayi": 3.77, "hakedis": 1, "kaynak": "MALZEME" },
+          { "cins": "TRAVERS_VE_KONSOLLAR", "tanim": "L-50", "durum": "MEVCUT", "miktar": 1250, "birim": "mt/kg", "katsayi": 3.77, "hakedis": 1, "kaynak": "MALZEME" }
+        ]
+      }
+    ]
+  },
+  "beklenen": {
+    "E1": [
+      "GT-60=2 (M)",
+      "GALVANİZLİ ÖRGÜLÜ ÇELİK TEL VE GÖMÜLMESİ=5 mt (M)",
+      "1x50NYY İLE YAPILAN İŞLETME TOPRAKLAMASI=26 mt (M)",
+      "70 W SODYUM ARMATÜR=1 (M)",
+      "L-65=2,5 mt (DM)"
+    ],
+    "E2": [],
+    "E3": [
+      "L-50=1,26 mt (DM+M)",
+      "L-50=1250 mt (MEVCUT)"
+    ]
+  },
+  "tekSatir": [
+    { "ad": "GT-60", "miktar": 1, "birim": "ad/kg", "durum": "M", "beklenen": "GT-60=1 (M)" },
+    { "ad": "N80 İZOLATÖR", "miktar": 2, "birim": "", "durum": "MEVCUT", "beklenen": "N80 İZOLATÖR=2 (MEVCUT)" },
+    { "ad": "ABONE ÇELİK HALAT", "miktar": 23.004, "birim": "mt/kg", "durum": "M+M", "beklenen": "ABONE ÇELİK HALAT=23 mt (M+M)" },
+    { "ad": "KABLO", "miktar": 0.5, "birim": "kg/kg", "durum": "", "beklenen": "KABLO=0,5 kg" }
+  ]
+}

@@ -16,7 +16,7 @@ namespace SebekeHakedis.Cekirdek
             // 1) ÖZET
             var oz = x.SayfaEkle("ÖZET");
             oz.UstBilgi.Add("DURUM TESPİT ÖZETİ — " + p.Ad);
-            oz.UstBilgi.Add("Kaynak: " + p.Kaynak + "   ·   Oluşturma: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) + "   ·   Şebeke-M " + surum);
+            oz.UstBilgi.Add("Kaynak: " + p.Kaynak + "   ·   Oluşturma: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) + "   ·   Şebeke-M Hakediş " + surum);
             var onaylar = HakedisOnayi.Ozet(p.Onaylar);
             if (onaylar.Count > 0) oz.UstBilgi.Add("Hakediş onayları: " + string.Join("   ·   ", onaylar.ToArray()));
             oz.Basliklar.AddRange(new[] { "PROJE", "PROJE KODU", "HAK. NO", "DURUM", "CİNS", "TİP", "BİRİM", "MİKTAR", "TOP. MİK.", "TOP. TL.", "SATIR" });
@@ -121,7 +121,7 @@ namespace SebekeHakedis.Cekirdek
         public static void HesapSayfasi(XlsxYazici.Sayfa s, Proje p, ProjeBilgisi bilgi)
         {
             s.UstBilgi.Add("TEKNİK HESAPLAR — " + p.Ad);
-            s.UstBilgi.Add("Hesap araçlarının formülleri değiştirilmeden Şebeke-M'e eklenmiştir. Güncellik: hesap kaydedildikten sonra hesabın kullandığı bir proje bilgisi değiştiyse \"GÜNCEL DEĞİL\".");
+            s.UstBilgi.Add("Hesap araçlarının formülleri değiştirilmeden Şebeke-M Hakediş'e eklenmiştir. Güncellik: hesap kaydedildikten sonra hesabın kullandığı bir proje bilgisi değiştiyse \"GÜNCEL DEĞİL\".");
             s.Basliklar.AddRange(new[] { "HESAP", "HEDEF", "HEDEF NO", "SONUÇ", "DURUM", "GÜNCELLİK", "GİRDİLER", "DEĞERLER", "UYARILAR", "TARİH", "KAYNAK", "YAPAN", "KİMLİK" });
             var sirali = new List<HesapKaydi>(p.Hesaplar);
             sirali.Sort((a, b) => string.CompareOrdinal(b.Tarih, a.Tarih));
@@ -158,7 +158,7 @@ namespace SebekeHakedis.Cekirdek
             var x = new XlsxYazici();
             var s = x.SayfaEkle("DETAY");
             s.UstBilgi.Add("EKSİK MALZEME SORGUSU — " + p.Ad);
-            s.UstBilgi.Add((aciklama ?? "") + "   ·   Oluşturma: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) + "   ·   Şebeke-M " + surum);
+            s.UstBilgi.Add((aciklama ?? "") + "   ·   Oluşturma: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) + "   ·   Şebeke-M Hakediş " + surum);
             DetaySayfasi(s, satirlar);
             x.Kaydet(yol);
         }

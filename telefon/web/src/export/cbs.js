@@ -396,7 +396,7 @@ export function kmlMetni(p, o) {
   }
   let s = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n';
   s += '<name>' + kac((p.proje || {}).ad) + '</name>\n';
-  s += '<description>' + kac('Şebeke-M ' + metin(o.surum) + ' · ' + metin(o.sistem) + ' → WGS84 · ' + metin(o.tarih)) + '</description>\n';
+  s += '<description>' + kac('Şebeke-M Hakediş ' + metin(o.surum) + ' · ' + metin(o.sistem) + ' → WGS84 · ' + metin(o.tarih)) + '</description>\n';
   s += '<open>1</open>\n';
   for (const v of bicimler.values()) s += v;
   return s + govde + (o.ek || '') + '</Document>\n</kml>\n';

@@ -2,7 +2,7 @@
 <kml xmlns="http://www.opengis.net/kml/2.2">
 <Document>
 <name>Deneme Projesi &amp; CBS &lt;aktarım&gt;</name>
-<description>Şebeke-M test · ITRF96 / TM 39 (3°) → WGS84 · TARIH</description>
+<description>Şebeke-M Hakediş test · ITRF96 / TM 39 (3°) → WGS84 · TARIH</description>
 <open>1</open>
 <Style id="alan_fde047"><LineStyle><color>ff47e0fd</color><width>2</width></LineStyle><PolyStyle><color>2247e0fd</color></PolyStyle></Style>
 <Style id="placemark_circle_23a455"><IconStyle><color>ff55a423</color><scale>0.8</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon></IconStyle><LabelStyle><scale>0.7</scale></LabelStyle></Style>

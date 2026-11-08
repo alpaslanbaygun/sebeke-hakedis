@@ -166,14 +166,30 @@ export function enUzunParca(coords) {
 export function boyutlar(proje, textH) {
   const b = (proje && (proje.boyutlar || (proje.sebeke && proje.sebeke.boyutlar))) || {};
   const k = textH ? textH / STIL.yazi.yukseklik : 1;
-  const sayi = (v, d, en, cok) => (Number.isFinite(+v) && +v >= en && +v <= cok ? +v : d);
+  const sayi = (v, d, en, cok) => (v !== null && v !== '' && Number.isFinite(+v) && +v >= en && +v <= cok ? +v : d);
   return {
     simge: sayi(b.simgeOlcegi, 1, 0.1, 20),
     etiket: sayi(b.etiketYuksekligi, STIL.yazi.yukseklik * k, 0.05, 50),
     metraj: sayi(b.metrajYuksekligi, STIL.yazi.parcaMetraji * k, 0.05, 50),
-    eleman: sayi(b.elemanYaziYuksekligi, STIL.yazi.yukseklik * k, 0.05, 50)
+    eleman: sayi(b.elemanYaziYuksekligi, STIL.yazi.yukseklik * k, 0.05, 50),
+    // Hat kalınlığı (kat; 0 = ince çizgi) ve malzemelerin çizimde yazılması (eklentideki Boyutlar.HatKalinligi / MalzemeYazisi)
+    kalinlik: sayi(b.hatKalinligi, 1, 0, 5),
+    malzeme: b.malzemeYazisi === true
   };
 }
+
+/**
+ * Hattın çizgi kalınlığı (m; 1/1000 paftada kâğıtta mm): stildeki kalınlık × kat, mm'nin yüzde birine yuvarlanmış
+ * (eklentideki CizimStili.HatKalinligi ile aynı). Kanal ve sondajda (stilde kalınlık yok) 0.
+ */
+export function hatKalinligi(l, kat) {
+  if (!(kat > 0)) return 0;
+  const k = (STIL.katmanlar[lineKey(l)] || {}).kalinlik || 0;
+  return Math.round(k * kat * 100) / 100;
+}
+
+/** Malzeme yazısının yüksekliği eleman yazısına oranı ve satır aralığı (eklentideki MalzemeEtiketi ile aynı). */
+export const MALZEME_YAZISI = { oran: 0.7, aralik: 1.5 };
 
 /** Demontaj türünden (KESİK / SÖKÜK) demontaj varyantı: DM · KESIK · SOKUK (eklentideki Semboller.Varyant ile aynı). */
 export function dmVaryanti(dmDurum) {
@@ -277,7 +293,7 @@ export function buildDXF(model, opts = {}) {
   const allPts = model.points.filter((p) => p.E != null);
   const ext = allPts.reduce((a, p) => ({ x0: Math.min(a.x0, p.E), y0: Math.min(a.y0, p.N), x1: Math.max(a.x1, p.E), y1: Math.max(a.y1, p.N) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
   if (!Number.isFinite(ext.x0)) Object.assign(ext, { x0: 0, y0: 0, x1: 100, y1: 100 });
-  w.g(999, 'Sebeke-M · ' + (model.project.name || '') + ' · CRS ' + model.crs.label + (model.crs.epsg ? ' EPSG:' + model.crs.epsg : '') + ' · olcek 1/1000 · birim m');
+  w.g(999, 'Sebeke-M Hakedis · ' + (model.project.name || '') + ' · CRS ' + model.crs.label + (model.crs.epsg ? ' EPSG:' + model.crs.epsg : '') + ' · olcek 1/1000 · birim m');
   w.g(0, 'SECTION').g(2, 'HEADER').g(9, '$ACADVER').g(1, 'AC1009').g(9, '$INSBASE').g(10, 0).g(20, 0).g(30, 0)
     .g(9, '$EXTMIN').g(10, f(ext.x0)).g(20, f(ext.y0)).g(30, 0).g(9, '$EXTMAX').g(10, f(ext.x1)).g(20, f(ext.y1)).g(30, 0)
     .g(9, '$DWGCODEPAGE').g(3, 'ANSI_1254').g(9, '$LTSCALE').g(40, 1.0).g(9, '$PDMODE').g(70, 3).g(9, '$PDSIZE').g(40, 0.5).g(0, 'ENDSEC');
@@ -318,15 +334,25 @@ export function buildDXF(model, opts = {}) {
   const insert = (layer, block, x, y, z, color = null, rot = 0) => { w.g(0, 'INSERT').g(8, layer); if (color != null) w.g(62, color); w.g(2, block).g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(41, f(ol)).g(42, f(ol)).g(43, f(ol)).g(50, f(rot)); };
   // Açıklık sınırı olan elemanların noktaları (direk, SDK, pano, trafo…)
   const nodePts = new Set(model.equipment.filter((e) => e.pointId && !ARA_ELEMAN.has(e.kind)).map((e) => e.pointId));
-  let nLines = 0, nIns = 0, nTxt = 0, nKenar = 0;
+  let nLines = 0, nIns = 0, nTxt = 0, nKenar = 0, nKalin = 0, nMalzeme = 0;
   for (const l of model.lines) {
     if (l.coords.length < 2) continue;
     // Çizgi tipi katmandan; ileride yapılacak hat kesikli, yalnız kanal / sondaj kendi çizgisinde (katmanı kabloyla ortak)
     const layer = lineLayer(l), lt = l.state === 'ILERIDE' ? 'DASHED' : l.channelOnly ? STIL.katmanlar[lineKey(l)].cizgi || null : null, aci = lineAci(l);
-    for (let i = 0; i < l.coords.length - 1; i++) {
-      const a = l.coords[i], b = l.coords[i + 1];
-      w.g(0, 'LINE').g(8, layer); if (lt) w.g(6, lt); w.g(62, aci);
-      w.g(10, f(a.E)).g(20, f(a.N)).g(30, f(a.H || 0)).g(11, f(b.E)).g(21, f(b.N)).g(31, f(b.H || 0)); nLines++;
+    const kal = l.channelOnly ? 0 : hatKalinligi(l, B.kalinlik);
+    if (kal > 0) {
+      // Kalın hat: eklentideki gibi genişlikli çoklu çizgi (ekranda ve baskıda görünür; 70 = 128 çizgi tipi köşelerde
+      // bölünmez). Düz (2B) çizilir: noktaların kotu ÖLÇÜ katmanındaki noktalarda ve simgelerde kalır.
+      w.g(0, 'POLYLINE').g(8, layer); if (lt) w.g(6, lt); w.g(62, aci);
+      w.g(66, 1).g(10, 0).g(20, 0).g(30, 0).g(70, 128).g(40, f(kal)).g(41, f(kal));
+      for (const c of l.coords) w.g(0, 'VERTEX').g(8, layer).g(10, f(c.E)).g(20, f(c.N)).g(30, 0);
+      w.g(0, 'SEQEND').g(8, layer); nLines += l.coords.length - 1; nKalin++;
+    } else {
+      for (let i = 0; i < l.coords.length - 1; i++) {
+        const a = l.coords[i], b = l.coords[i + 1];
+        w.g(0, 'LINE').g(8, layer); if (lt) w.g(6, lt); w.g(62, aci);
+        w.g(10, f(a.E)).g(20, f(a.N)).g(30, f(a.H || 0)).g(11, f(b.E)).g(21, f(b.N)).g(31, f(b.H || 0)); nLines++;
+      }
     }
     // Kanal: eksenin iki yanında, genişliğin yarısı kadar uzakta kenar çizgileri (eklentideki KenarlariYaz): kanalın
     // katmanında, sürekli çizgiyle, kanalın renginde (demontajda sarı)
@@ -375,6 +401,14 @@ export function buildDXF(model, opts = {}) {
     insert(layer, block, e.E, e.N, e.H, color); nIns++;
     // Eleman yazısı simgenin sağ üstünde; yeri simgeyle büyür (simgenin dışında kalsın), yüksekliği ayrı ayarlanır
     text(YAZI(), e.E + edx * ol, e.N + edy * ol, e.H, e.no + (e.typeName ? ' ' + e.typeName : ''), th, 0); nTxt++;
+    // Malzemeler (Çizim boyutları › Malzemeleri çizimde göster): eleman yazısının altında satır satır, eleman yazısının
+    // 0,7'si yükseklikte, beyaz / siyah (eklentideki MLZ_ öznitelikleri; satırlar sh-core malzemeEtiketi'nden)
+    const satirlar = B.malzeme && opts.malzemeSatirlari ? opts.malzemeSatirlari[e.id] : null;
+    if (satirlar && satirlar.length) {
+      const hm = th * MALZEME_YAZISI.oran, adim = hm * MALZEME_YAZISI.aralik;
+      const y0 = e.N + edy * ol - (0.45 * th + 1.15 * hm);
+      satirlar.forEach((m, i) => { text(YAZI(), e.E + edx * ol, y0 - i * adim, e.H, m, hm, 0, 7); nTxt++; nMalzeme++; });
+    }
     if (e.role === 'Z' && e.angle) { text(YAZI(), e.E + adx * ol, e.N + ady * ol, e.H, 'α=' + e.angle.toFixed(2) + '°', thKucuk); nTxt++; }
   }
   for (const p of model.points) {
@@ -384,7 +418,7 @@ export function buildDXF(model, opts = {}) {
   }
   w.g(0, 'ENDSEC').g(0, 'EOF');
   const txt = w.text();
-  return { text: txt, stats: { layers: layers.length + 1, lines: nLines, inserts: nIns, texts: nTxt, edges: nKenar } };
+  return { text: txt, stats: { layers: layers.length + 1, lines: nLines, inserts: nIns, texts: nTxt, edges: nKenar, thick: nKalin, materials: nMalzeme } };
 }
 
 // Türkçe karakterler için Windows-1254 kodlaması (R12 DXF); tabloda olmayanlar AutoCAD \U+XXXX kaçışı ile

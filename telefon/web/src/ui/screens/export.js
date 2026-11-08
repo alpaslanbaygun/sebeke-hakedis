@@ -1,5 +1,6 @@
 // 05 · Dışa Aktarım — gerçek dosya üretimi (DXF, NCN, KMZ, SHP, GeoJSON, XLSX, rapor, teslim paketi)
-import { html, useState, useEffect, useBus, Icon, Chip, Badge, Title, fmt, trn, Girdi } from '../kit.js';
+import { html, useState, useEffect, useBus, Icon, Chip, Badge, Title, fmt, trn, Girdi, Toggle } from '../kit.js';
+import STIL from '../../ortak/cizim-stili.js';
 import { app } from '../ctx.js';
 import SH from '../../interop/sh-core.cjs';
 
@@ -7,6 +8,10 @@ import SH from '../../interop/sh-core.cjs';
  * Çizim boyutları: DXF'teki simge büyüklüğü ve yazı yükseklikleri. AutoCAD dosyasıyla da gider gelir (eklentide Çizim
  * Ayarları › Görünüm ile aynı değerler); projede saklanır (sebeke.boyutlar).
  */
+/** Hat kalınlığı seçenekleri (kat; eklentideki Çizim Ayarları › Görünüm › Hat kalınlığı ile aynı). */
+const HAT_KALINLIKLARI = [[0, 'İnce çizgi'], [0.6, 'İnce'], [1, 'Normal'], [1.5, 'Kalın'], [2, 'Çok kalın']];
+const kalinlikMm = (anahtar, kat) => String(Math.round(((STIL.katmanlar[anahtar] || {}).kalinlik || 0) * kat * 100) / 100).replace('.', ',');
+
 function CizimBoyutlari() {
   const ps = app.ps;
   const b = Object.assign({}, SH.BOYUT_VARSAYILAN, (ps.p.sebeke || {}).boyutlar || {});
@@ -21,7 +26,10 @@ function CizimBoyutlari() {
   const varsayilan = !SH.boyutlarOku(b);
   return html`<div class="card"><div class="row"><b class="grow">Çizim boyutları</b>${varsayilan ? html`<${Badge} k="mut">VARSAYILAN</${Badge}>` : html`<button class="btn sm" onClick=${() => kaydet(SH.BOYUT_VARSAYILAN)}>Varsayılana dön</button>`}</div>
     <div class="grid2" style="margin-top:6px">${alan('simgeOlcegi', 'Simge (kat)', 0.1)}${alan('elemanYaziYuksekligi', 'Eleman yazısı (m)', 0.1)}${alan('etiketYuksekligi', 'Kablo tipi yazısı (m)', 0.1)}${alan('metrajYuksekligi', 'Metraj yazısı (m)', 0.1)}</div>
-    <div class="note">DXF bu ölçülerle çizilir; AutoCAD dosyasıyla eklentiye de gider (eklentide Çizim Ayarları › Görünüm). Varsayılan: simge 1 kat, eleman ve kablo tipi yazısı 1,8 m, metraj 1,44 m (1/1000 pafta).</div></div>`;
+    <div class="fld" style="margin-top:6px"><label>Hat kalınlığı (baskı 1/1000)</label><div class="chips">${HAT_KALINLIKLARI.map(([k, ad]) => html`<${Chip} on=${Math.abs((+b.hatKalinligi || 0) - k) < 1e-9} onClick=${() => kaydet(Object.assign({}, b, { hatKalinligi: k }))}>${ad}</${Chip}>`)}</div>
+      <span class="note">${+b.hatKalinligi > 0 ? 'OG ' + kalinlikMm('HAT_OG', b.hatKalinligi) + ' · AG ' + kalinlikMm('HAT_AG', b.hatKalinligi) + ' mm (kâğıtta)' : 'Hatlar ince çizgi'}</span></div>
+    <div class="row" style="margin-top:6px"><span class="grow">Malzemeleri çizimde göster<small class="note" style="display:block">Simgenin yanında, tipin altında: GT-60=1 (M)</small></span><${Toggle} on=${b.malzemeYazisi === true} label="Malzemeleri çizimde göster" onChange=${(v) => kaydet(Object.assign({}, b, { malzemeYazisi: v }))} /></div>
+    <div class="note">DXF bu ölçülerle çizilir; AutoCAD dosyasıyla eklentiye de gider (eklentide Çizim Ayarları › Görünüm). Varsayılan: simge 1 kat, eleman ve kablo tipi yazısı 1,8 m, metraj 1,44 m, hat kalınlığı normal (1/1000 pafta).</div></div>`;
 }
 import { FORMATS, exportFormat } from '../../export/exporter.js';
 import { makeCrs, crsSummary, zoneForLon } from '../../geo/crs.js';

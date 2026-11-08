@@ -65,10 +65,15 @@ test('U3 · simge ve yazı boyutları proje dosyasında (proje.boyutlar): eklent
 
   assert.equal(SH.boyutlarOku(null), null);
   assert.equal(SH.boyutlarOku(Object.assign({}, v)), null, 'hepsi varsayılansa yazılmaz');
-  assert.deepEqual(SH.boyutlarOku({ simgeOlcegi: 2, etiketYuksekligi: '2,5' }), { simgeOlcegi: 2, etiketYuksekligi: 2.5, metrajYuksekligi: 1.44, elemanYaziYuksekligi: 1.8 }, 'eksik alan varsayılan, virgüllü sayı okunur');
-  assert.deepEqual(SH.boyutlarOku({ simgeOlcegi: 99, metrajYuksekligi: -1, elemanYaziYuksekligi: 3 }), { simgeOlcegi: 1, etiketYuksekligi: 1.8, metrajYuksekligi: 1.44, elemanYaziYuksekligi: 3 }, 'aralık dışı değer varsayılana döner');
+  const ek = { hatKalinligi: 1, malzemeYazisi: false };
+  assert.deepEqual(SH.boyutlarOku({ simgeOlcegi: 2, etiketYuksekligi: '2,5' }), Object.assign({ simgeOlcegi: 2, etiketYuksekligi: 2.5, metrajYuksekligi: 1.44, elemanYaziYuksekligi: 1.8 }, ek), 'eksik alan varsayılan, virgüllü sayı okunur');
+  assert.deepEqual(SH.boyutlarOku({ simgeOlcegi: 99, metrajYuksekligi: -1, elemanYaziYuksekligi: 3 }), Object.assign({ simgeOlcegi: 1, etiketYuksekligi: 1.8, metrajYuksekligi: 1.44, elemanYaziYuksekligi: 3 }, ek), 'aralık dışı değer varsayılana döner');
+  assert.deepEqual(SH.boyutlarOku({ hatKalinligi: 0, malzemeYazisi: true }), Object.assign({ simgeOlcegi: 1, etiketYuksekligi: 1.8, metrajYuksekligi: 1.44, elemanYaziYuksekligi: 1.8 }, { hatKalinligi: 0, malzemeYazisi: true }), 'hat kalınlığı 0 (ince çizgi) ve malzeme yazısı');
+  assert.equal(SH.boyutlarOku({ hatKalinligi: 9 }), null, 'aralık dışı kalınlık varsayılana döner (hepsi varsayılan)');
+  assert.ok(cs.includes('"hatKalinligi"') && cs.includes('"malzemeYazisi"'), 'eklenti de hat kalınlığı ve malzeme yazısını yazıyor');
+  assert.ok(model.includes('VarsayilanKalinlik = ' + v.hatKalinligi + ';') && model.includes('VarsayilanMalzemeYazisi = ' + v.malzemeYazisi + ';'), 'yeni varsayılanlar iki tarafta aynı');
 
-  const dosya = { bicim: SH.BICIM, surum: 1, proje: { ad: 'Deneme', katmanOnEki: 'SC', koordinat: { dom: 39 }, boyutlar: { simgeOlcegi: 1.5, etiketYuksekligi: 2, metrajYuksekligi: 1.6, elemanYaziYuksekligi: 2.2 } } };
+  const dosya = { bicim: SH.BICIM, surum: 1, proje: { ad: 'Deneme', katmanOnEki: 'SC', koordinat: { dom: 39 }, boyutlar: { simgeOlcegi: 1.5, etiketYuksekligi: 2, metrajYuksekligi: 1.6, elemanYaziYuksekligi: 2.2, hatKalinligi: 1.5, malzemeYazisi: true } } };
   const p = SH.projeOku(JSON.stringify(dosya));
   assert.deepEqual(p.proje.boyutlar, dosya.proje.boyutlar, 'okunur');
   const geri = JSON.parse(SH.projeYaz(p));

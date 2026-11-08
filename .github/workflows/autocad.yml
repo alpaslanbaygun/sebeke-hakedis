@@ -87,7 +87,7 @@ jobs:
               Where-Object { $_.FullName -like '*\x64\*' } | Sort-Object FullName -Descending | Select-Object -First 1
             if (-not $signtool) { throw "signtool bulunamadı" }
             foreach ($d in $dosyalar) {
-              & $signtool.FullName sign /f $pfx /p $parola /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "Şebeke-M" $d
+              & $signtool.FullName sign /f $pfx /p $parola /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "Şebeke-M Hakediş" $d
               if ($LASTEXITCODE -ne 0) { throw "imzalanamadı: $d" }
             }
           }
@@ -176,7 +176,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $s = "${{ steps.surum.outputs.surum }}"
-          gh release create "v$s" "cikti/SebekeHakedis-$s.zip" --title "Şebeke-M AutoCAD eklentisi $s" --notes "Kurulum: zip'i indirin, bir klasöre çıkarın, KUR.bat'ı çalıştırın ve Windows'un yönetici izni sorusuna Evet deyin (eklenti AutoCAD'in güvenilir klasörüne kurulur, güvenlik uyarısı çıkmaz). AutoCAD'i yeniden başlatın. AutoCAD 2016–2024 ve 2025+ desteklenir."
+          gh release create "v$s" "cikti/SebekeHakedis-$s.zip" --title "Şebeke-M Hakediş AutoCAD eklentisi $s" --notes "Kurulum: zip'i indirin, bir klasöre çıkarın, KUR.bat'ı çalıştırın ve Windows'un yönetici izni sorusuna Evet deyin (eklenti AutoCAD'in güvenilir klasörüne kurulur, güvenlik uyarısı çıkmaz). AutoCAD'i yeniden başlatın. AutoCAD 2016–2024 ve 2025+ desteklenir."
 
       - name: Sonuçları ci-sonuc dalına yaz
         # main: ci-sonuc · diğer dallar: ci-sonuc-dal

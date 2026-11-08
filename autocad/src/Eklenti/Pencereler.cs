@@ -2803,6 +2803,20 @@ namespace SebekeHakedis.Eklenti
 
         // ================= Ayarlar =================
 
+        /// <summary>Çizim Ayarları › Görünüm › Hat kalınlığı seçenekleri (kat; 0 = ince çizgi).</summary>
+        internal static readonly double[] HatKalinlikKatlari = { 0, 0.6, 1, 1.5, 2 };
+
+        /// <summary>Seçeneğin yazısı: "Normal — OG 0,5 · AG 0,35 mm" (1/1000 baskıda kâğıttaki kalınlık).</summary>
+        internal static string HatKalinligiYazisi(double kat)
+        {
+            if (!(kat > 0)) return "İnce çizgi (kalınlık yok)";
+            var tr = CultureInfo.GetCultureInfo("tr-TR");
+            string ad = Math.Abs(kat - 0.6) < 1e-9 ? "İnce" : Math.Abs(kat - 1) < 1e-9 ? "Normal" : Math.Abs(kat - 1.5) < 1e-9 ? "Kalın"
+                      : Math.Abs(kat - 2) < 1e-9 ? "Çok kalın" : kat.ToString("0.##", tr) + " kat";
+            return ad + " — OG " + CizimStili.HatKalinligi("OG_HAVAI", kat).ToString("0.##", tr) + " · AG " +
+                   CizimStili.HatKalinligi("AG_HAVAI", kat).ToString("0.##", tr) + " mm";
+        }
+
         public static bool Ayarlar(OrtamVerisi o)
         {
             Hazirla();
@@ -2868,18 +2882,28 @@ namespace SebekeHakedis.Eklenti
                 var etiket = Koy(gorunum, new SayiKutusu(0.05m, 50, D(a.EtiketYuksekligi), 2, 0.1m) { Name = "etiketYuksekligi" }, 0, 142, 140, 30);
                 Etiket(gorunum, "Metraj yazısı (m)", 316, 122);
                 var metrajYazi = Koy(gorunum, new SayiKutusu(0.05m, 50, D(a.MetrajYuksekligi), 2, 0.1m) { Name = "metrajYuksekligi" }, 316, 142, 140, 30);
-                var varsayilan = Koy(gorunum, new KoyuDugme("Varsayılana dön", DugmeTuru.Ikincil, Boya.Simge("gorunum", KoyuRenk.Ikincil, 16)) { Name = "boyutVarsayilan" }, 0, 186, 170, 32);
-                Aciklama(gorunum, "Simge 1 kat · eleman yazısı 1,8 m · kablo tipi 1,8 m · metraj 1,44 m", 186, 192, 430, 20);
+                // Baskı: hat kalınlığı (çizginin genişliği; ekranda ve baskıda görünür) ve malzeme yazısı
+                Etiket(gorunum, "Hat kalınlığı (baskı: 1/1000)", 0, 182);
+                var kalinlik = Koy(gorunum, new KoyuAcilir { Name = "hatKalinligi" }, 0, 202, 300);
+                var katlar = new List<double>(HatKalinlikKatlari);
+                if (!katlar.Exists(k => Math.Abs(k - a.HatKalinligi) < 1e-9)) { katlar.Add(a.HatKalinligi); katlar.Sort(); }
+                foreach (var k in katlar) kalinlik.Items.Add(HatKalinligiYazisi(k));
+                kalinlik.SelectedIndex = Math.Max(0, katlar.FindIndex(k => Math.Abs(k - a.HatKalinligi) < 1e-9));
+                var malzemeYazisi = Koy(gorunum, new KoyuOnay("Malzemeleri çizimde göster") { Name = "malzemeYazisi", Checked = a.MalzemeYazisi }, 316, 204);
+                Aciklama(gorunum, "Simgenin yanında, tipin altında: GT-60=1 (M)", 316, 230, 300, 20);
+                var varsayilan = Koy(gorunum, new KoyuDugme("Varsayılana dön", DugmeTuru.Ikincil, Boya.Simge("gorunum", KoyuRenk.Ikincil, 16)) { Name = "boyutVarsayilan" }, 0, 254, 170, 32);
+                Aciklama(gorunum, "Simge 1 kat · eleman yazısı 1,8 m · kablo tipi 1,8 m · metraj 1,44 m · hat kalınlığı normal", 186, 254, 430, 34);
                 varsayilan.Click += (s, e) =>
                 {
                     simge.Value = 1;
                     elemanYazi.Value = D(CizimAyarlari.VarsayilanEtiket);
                     etiket.Value = D(CizimAyarlari.VarsayilanEtiket);
                     metrajYazi.Value = D(CizimAyarlari.VarsayilanMetraj);
+                    kalinlik.SelectedIndex = Math.Max(0, katlar.FindIndex(k => Math.Abs(k - Boyutlar.VarsayilanKalinlik) < 1e-9));
                 };
-                Etiket(gorunum, "Direğe yakalama (m)", 0, 238);
-                var yakala = Koy(gorunum, new SayiKutusu(0, 50, D(a.YakalamaMesafesi), 2, 0.5m), 0, 258, 140, 30);
-                Aciklama(gorunum, "Hat ve kanal çizerken elemanın simgesinin üstüne ya da en az bu mesafeye tıklanınca hat elemanın ortasına oturur ve orada parçalanır. 0: yakalama kapalı.", 156, 256, 460, 40);
+                Etiket(gorunum, "Direğe yakalama (m)", 0, 300);
+                var yakala = Koy(gorunum, new SayiKutusu(0, 50, D(a.YakalamaMesafesi), 2, 0.5m), 0, 320, 140, 30);
+                Aciklama(gorunum, "Hat ve kanal çizerken elemanın simgesinin üstüne ya da en az bu mesafeye tıklanınca hat elemanın ortasına oturur ve orada parçalanır. 0: yakalama kapalı.", 156, 318, 460, 40);
 
                 // Metraj
                 var metraj = sayfa();
@@ -2946,6 +2970,8 @@ namespace SebekeHakedis.Eklenti
                 a.SimgeOlcegi = (double)simge.Value;
                 a.ElemanYaziYuksekligi = (double)elemanYazi.Value;
                 a.MetrajYuksekligi = (double)metrajYazi.Value;
+                if (kalinlik.SelectedIndex >= 0) a.HatKalinligi = katlar[kalinlik.SelectedIndex];
+                a.MalzemeYazisi = malzemeYazisi.Checked;
                 a.BoyutlariDuzelt();
                 a.YakalamaMesafesi = (double)yakala.Value;
                 a.YukariYuvarla = yukari.Checked;
@@ -2995,7 +3021,7 @@ namespace SebekeHakedis.Eklenti
                 liste.Alt = x =>
                 {
                     var k = (CbsKaynagi)x;
-                    return (k.Veri != null ? k.Veri.Nesneler.Count : 0) + " " + geometriAdi(k) + " → " + CbsIceAktarim.SecenekAdi(k.Katman) + (k.SebekeM ? " · Şebeke-M" : "");
+                    return (k.Veri != null ? k.Veri.Nesneler.Count : 0) + " " + geometriAdi(k) + " → " + CbsIceAktarim.SecenekAdi(k.Katman) + (k.SebekeM ? " · Şebeke-M Hakediş" : "");
                 };
                 foreach (var k in kaynaklar) liste.Items.Add(k);
                 Koy(f, new Cerceve(liste), 16, 80, 300, icSon - 80);
@@ -3059,7 +3085,7 @@ namespace SebekeHakedis.Eklenti
                     string geo = secili == null ? "" : geometriAdi(secili);
                     bilgi.Text = secili == null ? "" : altlik
                         ? "Altlık: nesneler CBS-" + secili.Ad + " katmanına çizilir; hakediş nesnesi olmaz."
-                        : secili.SebekeM ? "Şebeke-M'in dosyası: sütunlar birebir eşlendi" + (secili.Katman == "MALZEME" ? "; satırlar nesnelerine bağlanır." : "; malzemeler tablosundan gelir.")
+                        : secili.SebekeM ? "Şebeke-M Hakediş'in dosyası: sütunlar birebir eşlendi" + (secili.Katman == "MALZEME" ? "; satırlar nesnelerine bağlanır." : "; malzemeler tablosundan gelir.")
                         : "Başka CBS dosyası (" + geo + "): sütunları denetleyin. Tip ve iletken katalogda aranır.";
                     yukleniyor = false;
                 };

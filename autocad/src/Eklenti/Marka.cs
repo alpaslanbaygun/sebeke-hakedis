@@ -13,7 +13,7 @@ namespace SebekeHakedis.Eklenti
     /// </summary>
     internal static class Marka
     {
-        public const string Ad = "Şebeke-M";
+        public const string Ad = "Şebeke-M Hakediş";
         public const string AltBaslik = "Elektrik Dağıtım Projesi";
         public const string Aciklama = "Elektrik dağıtım şebekesi proje, hakediş ve durum tespit eklentisi";
 

@@ -10,6 +10,8 @@ namespace SebekeHakedis.Cekirdek
         public string Anahtar = "", Telefon = "", Cizgi = "";
         public List<string> KatmanTurleri = new List<string>();
         public short Aci = 7, AciYeni = -1, AciDmm = -1;
+        /// <summary>Çizgi kalınlığı (m; 1/1000 paftada kâğıtta mm): hatlarda çizginin genişliği; 0 = ince çizgi.</summary>
+        public double Kalinlik;
         /// <summary>Kenar çizgileri (kanal): yoksa null.</summary>
         public KenarStil Kenar;
     }
@@ -69,6 +71,7 @@ namespace SebekeHakedis.Cekirdek
                 {
                     Anahtar = kv.Key, Telefon = o.Metin("telefon"), Cizgi = o.Metin("cizgi"),
                     Aci = (short)o.Tam("aci", 7), AciYeni = (short)o.Tam("aciYeni", -1), AciDmm = (short)o.Tam("aciDmm", -1),
+                    Kalinlik = Math.Max(0, o.Ondalik("kalinlik", 0)),
                 };
                 var pd = o.Dizi("katmanTurleri");
                 if (pd != null) foreach (var p in pd) { var s = Convert.ToString(p, CultureInfo.InvariantCulture); if (!string.IsNullOrEmpty(s)) { k.KatmanTurleri.Add(s); katmanTurleri[s] = k; } }
@@ -264,6 +267,17 @@ namespace SebekeHakedis.Cekirdek
         {
             var k = HatStili(tur);
             return k == null || k.Cizgi == "CONTINUOUS" ? "" : (k.Cizgi ?? "");
+        }
+
+        /// <summary>
+        /// Hattın çizgi kalınlığı (m; 1/1000 paftada kâğıtta mm): türün stildeki kalınlığı × çarpan (Çizim Ayarları ›
+        /// Görünüm › Hat kalınlığı; 0 = ince çizgi), mm'nin yüzde birine yuvarlanmış. Telefonun DXF'i aynı kuralla yazar.
+        /// </summary>
+        public static double HatKalinligi(string tur, double kat)
+        {
+            if (!(kat > 0) || !Yuklu) return 0;
+            var k = HatStili(tur);
+            return k == null ? 0 : Math.Round(k.Kalinlik * kat * 100, MidpointRounding.AwayFromZero) / 100; // telefondaki Math.round ile aynı
         }
 
         public static short DemontajRengi => _demontajRengi;

@@ -50,10 +50,12 @@ test('D2 · DXF: hat türüne göre renk, yazılar hattın renginde, Tahoma, kı
   const v = varliklar(text);
   const stil = v.find((x) => x.tur === 'STYLE');
   assert.equal(stil.g['3'][0], 'tahoma.ttf', 'yazı tipi Tahoma');
-  const cizgiler = v.filter((x) => x.tur === 'LINE');
+  // Hatlar (varsayılan hat kalınlığıyla) genişlikli çoklu çizgi: her hat bir POLYLINE
+  const cizgiler = v.filter((x) => x.tur === 'POLYLINE' && x.g['40']);
   const ogKablo = STIL.katmanlar.KABLO_OG.aci, agHat = STIL.katmanlar.HAT_AG.aci;
-  assert.equal(cizgiler.filter((x) => x.g['62'] && +x.g['62'][0] === ogKablo).length, 3, 'OG kablo kendi renginde');
+  assert.equal(cizgiler.filter((x) => x.g['62'] && +x.g['62'][0] === ogKablo).length, 1, 'OG kablo kendi renginde');
   assert.equal(cizgiler.filter((x) => x.g['62'] && +x.g['62'][0] === agHat).length, 1, 'AG havai kendi renginde');
+  assert.equal(+cizgiler.find((x) => +x.g['62'][0] === ogKablo).g['40'][0], STIL.katmanlar.KABLO_OG.kalinlik, 'OG kablo kalınlığı stilden');
   assert.notEqual(ogKablo, STIL.katmanlar.HAT_OG.aci, 'OG kablo OG havaiden ayrı renk');
   const yazilar = v.filter((x) => x.tur === 'TEXT');
   const ogYazilari = yazilar.filter((x) => +(x.g['62'] || [0])[0] === ogKablo);
@@ -137,8 +139,9 @@ test('D4 · yazı sığdırma ve boyutlar: eklentideki YaziDuzeni ile aynı sonu
   assert.equal(+eleman.g['40'][0], 3, 'eleman yazısı yüksekliği projeden');
   assert.equal(+eleman.g['10'][0], 500000 + STIL.etiketler.eleman.kaydirma[0] * 2, 'eleman yazısı simgeyle birlikte dışarı kayar');
   // Varsayılanlar ortak stilden; bozuk değer varsayılana döner
-  assert.deepEqual(boyutlar({}), { simge: 1, etiket: 1.8, metraj: 1.44, eleman: 1.8 });
-  assert.deepEqual(boyutlar({ boyutlar: { simgeOlcegi: 0, etiketYuksekligi: 'x' } }), { simge: 1, etiket: 1.8, metraj: 1.44, eleman: 1.8 });
+  assert.deepEqual(boyutlar({}), { simge: 1, etiket: 1.8, metraj: 1.44, eleman: 1.8, kalinlik: 1, malzeme: false });
+  assert.deepEqual(boyutlar({ boyutlar: { simgeOlcegi: 0, etiketYuksekligi: 'x', hatKalinligi: 9 } }), { simge: 1, etiket: 1.8, metraj: 1.44, eleman: 1.8, kalinlik: 1, malzeme: false });
+  assert.deepEqual(boyutlar({ boyutlar: { hatKalinligi: 0, malzemeYazisi: true } }), { simge: 1, etiket: 1.8, metraj: 1.44, eleman: 1.8, kalinlik: 0, malzeme: true });
 });
 
 test('D5 · kanal kenarları: eksenin iki yanında genişliğin yarısı kadar, sürekli çizgi, kanalın renginde; sondajda ve havai hatta yok', async () => {
@@ -168,7 +171,8 @@ test('D5 · kanal kenarları: eksenin iki yanında genişliğin yarısı kadar, 
   const d = buildDXF(model);
   const v = varliklar(d.text);
   // Bloklardaki POLYLINE'lar katman 0'da; kenarlar kanalın katmanında
-  const kenarlar = v.filter((x) => x.tur === 'POLYLINE' && x.g['8'][0] === STIL.katmanlar.KANAL.telefon);
+  // (genişliği olmayanlar: aynı katmandaki kalın kablo çizgisi kenar değildir)
+  const kenarlar = v.filter((x) => x.tur === 'POLYLINE' && x.g['8'][0] === STIL.katmanlar.KANAL.telefon && !x.g['40']);
   assert.equal(kenarlar.length, 4, 'iki kanal × iki kenar (sondaj ve havai hatta yok)');
   assert.equal(d.stats.edges, 4);
   assert.ok(kenarlar.every((x) => x.g['6'][0] === STIL.katmanlar.KANAL.kenar.cizgi), 'kenar sürekli çizgi (katmanın kesikli çizgisi değil)');

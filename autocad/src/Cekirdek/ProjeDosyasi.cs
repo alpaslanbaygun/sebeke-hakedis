@@ -68,6 +68,8 @@ namespace SebekeHakedis.Cekirdek
                 b["etiketYuksekligi"] = p.Boyutlar.EtiketYuksekligi;
                 b["metrajYuksekligi"] = p.Boyutlar.MetrajYuksekligi;
                 b["elemanYaziYuksekligi"] = p.Boyutlar.ElemanYaziYuksekligi;
+                b["hatKalinligi"] = p.Boyutlar.HatKalinligi;
+                b["malzemeYazisi"] = p.Boyutlar.MalzemeYazisi;
                 pj["boyutlar"] = b;
             }
             var onaylar = new List<object>();
@@ -224,7 +226,7 @@ namespace SebekeHakedis.Cekirdek
                 k = sb;
             }
             if (k == null || k.Metin("bicim") != Bicim)
-                throw new FormatException("Bu bir Şebeke-M proje dosyası değil.");
+                throw new FormatException("Bu bir Şebeke-M Hakediş proje dosyası değil.");
             if (k.Tam("surum") > Surum)
                 throw new FormatException("Proje dosyası daha yeni bir sürümle hazırlanmış (" + k.Tam("surum") + "). Eklentiyi güncelleyin.");
 
@@ -245,6 +247,8 @@ namespace SebekeHakedis.Cekirdek
                     EtiketYuksekligi = by.Ondalik("etiketYuksekligi", Boyutlar.VarsayilanEtiket),
                     MetrajYuksekligi = by.Ondalik("metrajYuksekligi", Boyutlar.VarsayilanMetraj),
                     ElemanYaziYuksekligi = by.Ondalik("elemanYaziYuksekligi", Boyutlar.VarsayilanEleman),
+                    HatKalinligi = by.Ondalik("hatKalinligi", Boyutlar.VarsayilanKalinlik),
+                    MalzemeYazisi = by.Mantik("malzemeYazisi") ?? Boyutlar.VarsayilanMalzemeYazisi,
                 }.Duzelt();
             foreach (var o in Nesneler(pj, "onaylar"))
             {

@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
-"""Şebeke-M marka dosyalarını kaynak logodan üretir (ortak/marka/kaynak/sebeke-m-logo.jpg → ortak/marka, telefon, eklenti).
+"""Şebeke-M Hakediş marka dosyalarını kaynak logodan üretir (ortak/marka/kaynak/sebeke-m-hakedis-logo.png → ortak/marka,
+telefon, eklenti).
 
   python3 araclar/marka-uret.py
 
+Kaynak, kullanıcının gönderdiği logodur (8.11.2026). İçindeki "HAKKEDİŞ" yazımı burada "HAKEDİŞ" yapılır (hakedis_duzelt):
+ikinci K italik eğimine uyan eğik bir kesimle çıkarılır, sağdaki parça sola kaydırılır ve yazı satırı yeniden ortalanır.
+Kaynak düzeltilmiş gelirse (yazı zaten HAKEDİŞ) DUZELT = False yapılır.
+
 Üretilenler:
-  ortak/marka/sebeke-m-logo.png        tam logo (amblem + yazı), beyaz zemin, 720 px genişlik
-  ortak/marka/sebeke-m-amblem.png      amblem, saydam zemin, 512 × 512
+  ortak/marka/sebeke-m-logo.png        tam logo (amblem + "Şebeke-M / HAKEDİŞ"), beyaz zemin, 720 px genişlik
+  ortak/marka/sebeke-m-amblem.png      amblem (yazısız), saydam zemin, 512 × 512
   ortak/marka/sebeke-m-simge.png       uygulama simgesi: beyaz yuvarlak köşeli kare içinde amblem, 512 × 512
+  ortak/marka/sebeke-m-simge-16…64.png eklentinin şerit ve pencere rozetleri
   telefon/android/res/mipmap-*/ic_launcher.png      eski Android simgesi (48–192 px)
   telefon/android/res/mipmap-*/ic_launcher_fg.png   uyarlanabilir simgenin ön yüzü (108 dp, güvenli alan 66 dp)
-  telefon/web/assets/sebeke-m-logo.png, sebeke-m-amblem.png   uygulama içi (açılış, üst çubuk, hakkında)
+  telefon/web/assets/sebeke-m-logo.png, sebeke-m-amblem.png, sebeke-m-simge.png   uygulama içi (açılış, üst çubuk, hakkında)
 
 Saydamlık: logonun dışındaki beyaz, kenardan dolarak bulunur (amblemin içindeki beyaz yollar ve kenarlar korunur);
 kenar pikselleri beyazdan ayrıştırılır (beyaz hare kalmaz, koyu zeminde temiz görünür).
@@ -20,12 +26,37 @@ from PIL import Image, ImageDraw
 from scipy import ndimage
 
 KOK = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-KAYNAK = os.path.join(KOK, 'ortak/marka/kaynak/sebeke-m-logo.jpg')
+KAYNAK = os.path.join(KOK, 'ortak/marka/kaynak/sebeke-m-hakedis-logo.png')
 MARKA = os.path.join(KOK, 'ortak/marka')
 
-# Kaynak logodaki bölgeler (1536 × 1024): amblem ve tam logo
-AMBLEM = (440, 60, 1100, 666)
-TAM = (248, 50, 1288, 935)
+# Kaynak logodaki bölgeler (1448 × 1086): amblem (yazının üstündeki çizim) ve tam logo (beyaz kenar boşluğu kırpılır)
+AMBLEM = (290, 60, 1180, 800)
+DUZELT = True
+
+
+def hakedis_duzelt(im):
+    """"HAKKEDİŞ" → "HAKEDİŞ": ikinci K'yi eğik kesimle çıkarır, sağı sola kaydırır, yazı satırını ortalar (kaynağa özgü ölçüler)."""
+    a = np.asarray(im.convert('RGB')).copy()
+    _, w, _ = a.shape
+    adim = 66                   # bir K'nin adımı: K1 → K2 ve K2 → E gövdeleri arası (px)
+    ust, alt = 800, 971         # yazı satırı: çizimin altı (≤ 798) ile yazının üstü (801) arasındaki boş satırdan
+    k2 = lambda y: 1102 - (y - 838) * (12 / 72)   # ikinci K'nin gövdesinin sol kenarı (italik eğim 1/6)
+    out = a.copy()
+    for y in range(ust, alt):
+        xs = int(round(k2(y) - 3))
+        out[y] = np.concatenate([a[y][:xs], a[y][xs + adim:], np.full((adim, 3), 255, dtype=a.dtype)])
+    s = adim // 2
+    serit = out[ust:alt].copy()
+    out[ust:alt] = np.concatenate([np.full((serit.shape[0], s, 3), 255, dtype=a.dtype), serit[:, :w - s]], axis=1)
+    return Image.fromarray(out)
+
+
+def beyaz_kirp(im, pay=24, esik=235):
+    """Beyaz kenar boşluğunu kırpar (pay px bırakır)."""
+    a = np.asarray(im.convert('L'))
+    ys, xs = np.where(a < esik)
+    x0, y0, x1, y1 = max(0, xs.min() - pay), max(0, ys.min() - pay), min(a.shape[1], xs.max() + pay + 1), min(a.shape[0], ys.max() + pay + 1)
+    return im.crop((x0, y0, x1, y1))
 
 
 def saydam(im, esik=232):
@@ -76,9 +107,11 @@ def kaydet(im, yol, palet=False):
 
 def main():
     kaynak = Image.open(KAYNAK).convert('RGB')
+    if DUZELT:
+        kaynak = hakedis_duzelt(kaynak)
 
     # Tam logo: beyaz zeminde (koyu ekranlarda beyaz kart üstünde gösterilir)
-    tam = kaynak.crop(TAM)
+    tam = beyaz_kirp(kaynak)
     g = 720
     tam = tam.resize((g, round(tam.height * g / tam.width)), Image.LANCZOS)
     kaydet(tam, os.path.join(MARKA, 'sebeke-m-logo.png'), True)

@@ -122,7 +122,7 @@ export function profilDosyasi(st, { sifreler = false, yalnizSecili = false } = {
   const list = (yalnizSecili ? [activeProfile(st)] : st.list).filter((p) => p && p.host);
   return {
     bicim: DOSYA_BICIMI, surum: 1, olusturma: new Date().toISOString(),
-    not: 'Şebeke-M düzeltme (NTRIP / IP) bağlantı bilgileri. Uygulamada Ayarlar › Düzeltme kaynağı › Dosyadan al ile alınır.',
+    not: 'Şebeke-M Hakediş düzeltme (NTRIP / IP) bağlantı bilgileri. Uygulamada Ayarlar › Düzeltme kaynağı › Dosyadan al ile alınır.',
     profiller: list.map((p) => { const o = {}; for (const k of ALANLAR) if (k !== 'pass' || sifreler) o[k] = p[k]; if (!sifreler) o.pass = undefined; return JSON.parse(JSON.stringify(o)); })
   };
 }

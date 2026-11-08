@@ -168,7 +168,7 @@ export function sebekeModel(ps, opts = {}) {
   const cevir = koordinatCevirici(crs, makeCrs({ datum: dosyaDatumu(datum), projection: 'TM3', cm: dom }));
   const dosyaNoktasi = (p) => { if (!cevir || p.E == null) return p; const q = cevir(p.E, p.N, p.H); return Object.assign({}, p, { E: q.E, N: q.N }); };
   const sp = SH.yeniProje({ ad: project.name, dom, hakedis: aktifHakedis(data.periods), katmanOnEki: opts.katmanOnEki || sb.katmanOnEki || 'SC', gisOnEki: opts.gisOnEki || sb.gisOnEki || sb.katmanOnEki || 'SC' });
-  sp.olusturan = 'Şebeke-M (telefon)';
+  sp.olusturan = 'Şebeke-M Hakediş (telefon)';
   sp.proje.kaynak = sb.kaynak || 'telefon';
   sp.proje.koordinat.datum = datum;
   sp.proje.kod = project.code || '';
@@ -412,7 +412,7 @@ async function hesaplariIceAl(ps, sp, eqByKey, lineByKey, ozet) {
 
 /** Açık projeyi .sebeke.json metnine çevirir. */
 export function sebekeYaz(ps, opts = {}) {
-  return SH.projeYaz(sebekeModel(ps, opts), 'Şebeke-M (telefon)', opts.girintili !== false);
+  return SH.projeYaz(sebekeModel(ps, opts), 'Şebeke-M Hakediş (telefon)', opts.girintili !== false);
 }
 
 /** Hattı bağlantı düğümlerinden (ekipmanı olan noktalar) parçalara böler; ekipmansız köşeler parçanın içinde kalır. */
@@ -1226,7 +1226,7 @@ function pozBul(cat, k) {
 
 /** Telefonun tam proje dosyası: ham veri + türetilmiş sonuçlar + AutoCAD için hazır 'sebeke' bölümü. */
 export function voltProjeYaz(ps, opts = {}) {
-  const full = { format: VOLT_BICIM, exportedAt: new Date().toISOString(), app: 'Şebeke-M', standard: ps.cat.std, project: ps.p, data: {} };
+  const full = { format: VOLT_BICIM, exportedAt: new Date().toISOString(), app: 'Şebeke-M Hakediş', standard: ps.cat.std, project: ps.p, data: {} };
   for (const s of ['points', 'equipment', 'lines', 'materials', 'photos', 'periods', 'workPrograms', 'stakeouts', 'revisions', 'surveySessions', 'gnssObservations', 'documents']) full.data[s] = ps.data[s] || [];
   full.derived = { spans: ps.result.spans, quantities: ps.result.quantities, issues: ps.result.issues, signature: ps.result.signature };
   full.sebeke = JSON.parse(sebekeYaz(ps, opts));

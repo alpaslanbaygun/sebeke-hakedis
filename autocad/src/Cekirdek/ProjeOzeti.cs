@@ -176,7 +176,7 @@ namespace SebekeHakedis.Cekirdek
         {
             secili = secili ?? Projeler[0];
             var x = new XlsxYazici();
-            string olusturma = "Oluşturma: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) + "   ·   Şebeke-M " + surum;
+            string olusturma = "Oluşturma: " + DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) + "   ·   Şebeke-M Hakediş " + surum;
 
             var pr = x.SayfaEkle("PROJELER");
             pr.UstBilgi.Add("PROJE LİSTESİ — " + CizimAdi);
