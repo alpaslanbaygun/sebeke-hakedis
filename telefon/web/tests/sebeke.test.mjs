@@ -550,6 +550,38 @@ test('A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef
   assert.equal(geri.hesaplar.find((h) => h.modul === 'amax').ozet, 'güncellenmiş', 'özet güncel');
 });
 
+test('A9b · proje geneli bağlamı (direk listeleri, 8.11.2026): bütün direkler malzemeleriyle, kayıtlı cer hesabı, hat zincirleri, imza', async () => {
+  const { hesapKaydet } = await import('../src/hesap/kayitlar.js');
+  const { baglamKur } = await import('../src/hesap/baglam.js');
+  const { fnv1a } = await import('../../../ortak/hesap/kurallar.mjs');
+  const { ps, agPts } = await ornekProje();
+  await ps.addMaterial('equipment', agPts[1].id, '005.02.02.01-001', 2, 'GT-60');
+  await hesapKaydet(ps, { modul: 'tepe-vektor', hedef: { tur: 'direk', id: agPts[1].id, no: agPts[1].no }, ozet: 'R 123', durum: 'bilgi',
+    ayrinti: { girdiler: [], degerler: [{ ad: 'Tepe kuvveti R', deger: 123.4, birim: 'kg' }, { ad: 'Rx', deger: 100, birim: 'kg' }, { ad: 'Ry', deger: -72.3, birim: 'kg' }, { ad: 'Önerilen direk tipi (TEDAŞ tablosu)', deger: '10I', birim: '' }], uyarilar: [] }, kullanilan: {} }, 'Deneme Kişisi');
+  const b = baglamKur(ps, { tur: 'proje' });
+  assert.equal(b.hedef.ad, 'Proje geneli');
+  const direkler = ps.data.equipment.filter((e) => e.status !== 'deleted' && (e.kind === 'pole' || e.kind === 'lighting'));
+  assert.equal(b.direkler.length, direkler.length, 'bütün direkler');
+  assert.deepEqual(b.bolgeler, [], 'telefonda bölge yok');
+  const d = b.direkler.find((x) => x.id === agPts[1].id);
+  assert.ok(d && d.cins && d.tip, 'direğin cinsi ve tipi: ' + JSON.stringify([d && d.cins, d && d.tip]));
+  assert.equal(d.kollar.length, 2, 'kolları');
+  assert.ok(d.malzemeler.length > 0 && d.malzemeler.every((m) => m.cins && m.tanim && m.birim), 'malzemeleri AutoCAD kalemleri gibi: ' + JSON.stringify(d.malzemeler.slice(0, 2)));
+  assert.ok(d.malzemeler.some((m) => m.cins === 'TRAVERS_VE_KONSOLLAR_GLV' && m.tanim === 'GT-60' && m.miktar === 2 && m.durum === 'M'), 'GT-60 ×2 eklentinin cins / tanımıyla');
+  assert.ok(!d.malzemeler.some((m) => m.tanim === d.tip && /DEM[İI]R|BETON/.test(m.cins)), 'direğin kendi pozu malzemelerde yok');
+  assert.ok(typeof d.saga === 'number' && typeof d.yukari === 'number', 'koordinatlar');
+  assert.deepEqual([d.hesap.tepe.R, d.hesap.tepe.Rx, d.hesap.tepe.Ry, d.hesap.tepe.oneri], [123.4, 100, -72.3, '10I'], 'kayıtlı cer hesabı');
+  assert.equal(b.direkler.find((x) => x.id === agPts[0].id).hesap, null, 'hesabı olmayan direk');
+  assert.equal(b.hatlar.length, ps.data.lines.filter((l) => l.status !== 'deleted' && l.nodes.length >= 2).length, 'hatlar');
+  assert.ok(b.hatlar.every((h) => h.direkler && h.acikliklar && 'bolge' in h && 'durum' in h && Array.isArray(h.parcalar)), 'hat alanları');
+  assert.equal(b.liste.direkler, b.direkler.length); assert.equal(b.liste.hatlar, b.hatlar.length);
+  assert.match(b.liste.imza, /^[0-9a-f]{8}$/);
+  assert.equal(baglamKur(ps, { tur: 'proje' }).liste.imza, b.liste.imza, 'imza kararlı');
+  // Eklentideki HesapBaglami.Fnv1a ile aynı değerler (CekirdekTest'teki sabitler)
+  assert.equal(fnv1a('a'), 'e40c292c');
+  assert.equal(fnv1a('SC77|G-10I|M|||T|24.5|3;H|SC1–SC9|AG_HAVAI|3|120.5'), 'a923c8cd');
+});
+
 test('A10 · katalogda olmayan AutoCAD hattı (rekortman): hesap bağlamında iletken ve hat türü AutoCAD\'deki gibi', async () => {
   const { baglamKur } = await import('../src/hesap/baglam.js');
   const { farklar } = await import('../../../ortak/hesap/kurallar.mjs');

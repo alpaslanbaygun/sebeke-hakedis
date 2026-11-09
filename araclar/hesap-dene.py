@@ -123,6 +123,9 @@ async def calistir(args):
                 for d in tanim['durumlar']:
                     toplam += 1
                     hatalar = []
+                    # "baglam": "$1" → 1. durumun bağlamı (aynı projeyle birden çok durum)
+                    if isinstance(d.get('baglam'), str) and d['baglam'].startswith('$'):
+                        d['baglam'] = tanim['durumlar'][int(d['baglam'][1:]) - 1]['baglam']
                     gen, yuk = (args.boyut or '1280x900').split('x')
                     boyut = d.get('ekran', {'width': int(gen), 'height': int(yuk)})
                     sayfa = await tarayici.new_page(viewport=boyut)

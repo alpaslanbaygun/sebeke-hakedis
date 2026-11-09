@@ -67,6 +67,14 @@ export function ruling(acikliklar) {
   return s1 > 0 ? Math.sqrt(s3 / s1) : null;
 }
 
+/** FNV-1a (32 bit) özeti, 8 haneli onaltılık; UTF-8. Eklentideki HesapBaglami.Fnv1a ile aynı (liste imzası). */
+export function fnv1a(s) {
+  const b = new TextEncoder().encode(String(s == null ? '' : s));
+  let h = 0x811c9dc5;
+  for (let i = 0; i < b.length; i++) { h ^= b[i]; h = Math.imul(h, 16777619) >>> 0; }
+  return h.toString(16).padStart(8, '0');
+}
+
 // ---- Direk seçimi (TEDAŞ tepe kuvveti tablosu) ----
 // Eski "Tepe Kuvveti Hesabı (TEDAŞ)" aracındaki seçim kuralı (kullanıcı kararı, 8.11.2026): kuvvetler ana hat
 // doğrultusunda boyuna (L) ve ona dik enine (R) bileşenlere ayrılır; sağlam durumla birlikte her hattın tek tek

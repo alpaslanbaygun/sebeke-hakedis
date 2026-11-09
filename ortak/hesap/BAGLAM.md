@@ -60,7 +60,17 @@ gerilim kV. Sayılar yuvarlanmış gelir (uzunluk 0,01 m, açı 0,01°) ki günc
   kanal: { id, no, uzunluk, zemin, genislik /* cm */, derinlik /* cm */, kablolar: [ Iletken ] },
 
   // Trafodan çıkan AG / OG zincir (gerilim düşümü, kısa devre): baştan uca sıralı parçalar
-  zincir: [ { bas, bit /* düğüm no */, uzunluk, iletken: Iletken, havai: true|false } ]
+  zincir: [ { bas, bit /* düğüm no */, uzunluk, iletken: Iletken, havai: true|false } ],
+
+  // hedef.tur === 'proje' (8.11.2026 eki; direk listeleri): projedeki bütün direkler ve hat zincirleri
+  bolgeler: [ { id, ad, kod, grup } ],      // AutoCAD bölgeleri (projeler); telefonda [] (tek proje)
+  direkler: [ { ...direk,                   // yukarıdaki direk alanları (kollar dahil)
+                cins, dmDurum, hakedis, bolge /* bölge adı ya da null */, saga, yukari,
+                malzemeler: [ { cins, tanim, durum, miktar, birim } ],   // direğin kendi pozu dışındaki kalemler
+                hesap: { tepe: { R, Rx, Ry, oneri, tarih, durum } } | null } ],   // kayıtlı cer vektörü hesabı
+  hatlar: [ { ...hat, bolge, durum, parcalar: [ id ] } ],   // her zincir bir kez (AutoCAD parçaları zincirlenir)
+  liste: { direkler, hatlar, imza }         // sayılar ve FNV-1a imzası (no, tip, durum, rol, açı, malzeme sayısı;
+                                            // güncellik için: değişince "güncel değil")
 }
 ```
 

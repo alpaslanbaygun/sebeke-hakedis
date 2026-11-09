@@ -507,7 +507,7 @@ namespace SebekeHakedis.Cekirdek
             hd["id"] = hedef == null ? "" : hedef.Id ?? "";
             hd["no"] = ""; hd["ad"] = "";
             b["hedef"] = hd;
-            if (hedef == null || hedef.Tur == "proje" || string.IsNullOrEmpty(hedef.Tur)) { hd["ad"] = "Proje geneli"; return b; }
+            if (hedef == null || hedef.Tur == "proje" || string.IsNullOrEmpty(hedef.Tur)) { hd["ad"] = "Proje geneli"; ProjeListesi(ag, p, b); return b; }
 
             if (hedef.Tur == "direk" || hedef.Tur == "trafo")
             {
@@ -565,6 +565,110 @@ namespace SebekeHakedis.Cekirdek
                 return b;
             }
             return b;
+        }
+
+        // ---------------- Proje geneli: direk listeleri (8.11.2026) ----------------
+
+        /// <summary>
+        /// Proje hedefinde bağlama eklenir (BAGLAM.md "Proje geneli"): bölgeler (projeler), bütün direkler (kolları,
+        /// malzemeleri, kayıtlı cer hesabı) ve havai / yeraltı hat zincirleri. Direk listeleri sayfası bunlardan kurulur.
+        /// Telefondaki karşılığı baglam.js › projeListesi. imza: liste değişti mi (güncellik) — FNV-1a, iki tarafta aynı.
+        /// </summary>
+        private static void ProjeListesi(Ag ag, Proje p, JsonNesne b)
+        {
+            var bolgeler = new List<object>();
+            foreach (var bl in p.Bolgeler)
+            {
+                var o = new JsonNesne();
+                o["id"] = bl.Id; o["ad"] = bl.Ad; o["kod"] = string.IsNullOrEmpty(bl.Kod) ? null : bl.Kod; o["grup"] = string.IsNullOrEmpty(bl.Grup) ? null : bl.Grup;
+                bolgeler.Add(o);
+            }
+            b["bolgeler"] = bolgeler;
+            Func<string, string> bolgeAdi = id => { var bl = p.BolgeBul(id ?? ""); return bl != null ? bl.Ad : (string.IsNullOrEmpty(id) ? null : id); };
+
+            var direkler = new List<object>();
+            var imza = new List<string>();
+            foreach (var e in p.Elemanlar)
+            {
+                if (!DirekMi(e)) continue;
+                var o = Direk(ag, e);
+                o["cins"] = string.IsNullOrEmpty(e.Cins) ? null : e.Cins;
+                o["dmDurum"] = string.IsNullOrEmpty(e.DmDurum) ? null : e.DmDurum;
+                o["hakedis"] = (double)e.Hakedis;
+                o["bolge"] = bolgeAdi(e.Bolge);
+                o["saga"] = R2(e.Saga); o["yukari"] = R2(e.Yukari);
+                var mlz = new List<object>();
+                foreach (var k in e.Kalemler)
+                {
+                    if (k.Ana) continue;
+                    var m = new JsonNesne();
+                    m["cins"] = k.Cins; m["tanim"] = k.Tanim; m["durum"] = k.Durum; m["miktar"] = R2(k.Miktar); m["birim"] = k.Birim;
+                    mlz.Add(m);
+                }
+                o["malzemeler"] = mlz;
+                o["hesap"] = HesapOzeti(p, e.Id);
+                direkler.Add(o);
+                imza.Add(No(e) + "|" + (e.Tip ?? "") + "|" + (e.Durum ?? "") + "|" + (e.DmDurum ?? "") + "|" + Convert.ToString(o["rol"]) + "|" + Convert.ToString(o["aci"], CultureInfo.InvariantCulture) + "|" + mlz.Count);
+            }
+            b["direkler"] = direkler;
+
+            var hatlar = new List<object>();
+            var gorulen = new HashSet<Hat>();
+            foreach (var h in p.Hatlar)
+            {
+                if (gorulen.Contains(h) || h.Kose.Count < 2) continue;
+                var zincir = ZincirKur(ag, h);
+                foreach (var x in zincir) gorulen.Add(x);
+                var hj = HatJson(ag, zincir);
+                hj["bolge"] = bolgeAdi(h.Bolge);
+                hj["durum"] = string.IsNullOrEmpty(h.Durum) ? null : h.Durum;
+                hj["parcalar"] = zincir.ConvertAll(x => (object)x.Id);
+                hatlar.Add(hj);
+                imza.Add("H|" + hj.Metin("no") + "|" + h.Tur + "|" + zincir.Count + "|" + Convert.ToString(hj["toplamUzunluk"], CultureInfo.InvariantCulture));
+            }
+            b["hatlar"] = hatlar;
+            var im = new JsonNesne();
+            im["direkler"] = (double)direkler.Count; im["hatlar"] = (double)hatlar.Count;
+            im["imza"] = Fnv1a(string.Join(";", imza));
+            b["liste"] = im;
+        }
+
+        /// <summary>Direğin kayıtlı cer hesabı (tepe-vektor): R, Rx, Ry, önerilen tip, tarih; kayıt yoksa null.</summary>
+        private static object HesapOzeti(Proje p, string elemanId)
+        {
+            HesapKaydi k = null;
+            foreach (var x in p.Hesaplar)
+                if (x.Modul == "tepe-vektor" && x.HedefTur == "direk" && x.HedefId == elemanId && (k == null || string.CompareOrdinal(x.Tarih, k.Tarih) > 0)) k = x;
+            if (k == null) return null;
+            var t = new JsonNesne();
+            t["R"] = null; t["Rx"] = null; t["Ry"] = null; t["oneri"] = null; t["tarih"] = k.Tarih; t["durum"] = k.Durum;
+            var degerler = k.Ayrinti?.Dizi("degerler");
+            if (degerler != null)
+                foreach (var d in degerler)
+                {
+                    var dn = d as JsonNesne;
+                    if (dn == null) continue;
+                    string ad = dn.Metin("ad");
+                    if (ad == "Tepe kuvveti R") t["R"] = dn["deger"];
+                    else if (ad == "Rx") t["Rx"] = dn["deger"];
+                    else if (ad == "Ry") t["Ry"] = dn["deger"];
+                    else if (ad.StartsWith("Önerilen direk tipi", StringComparison.Ordinal)) t["oneri"] = dn["deger"];
+                }
+            var o = new JsonNesne();
+            o["tepe"] = t;
+            return o;
+        }
+
+        /// <summary>FNV-1a (32 bit) özeti, 8 haneli onaltılık; UTF-8. Telefondaki kurallar.mjs › fnv1a ile aynı.</summary>
+        public static string Fnv1a(string s)
+        {
+            uint h = 2166136261;
+            foreach (byte c in System.Text.Encoding.UTF8.GetBytes(s ?? ""))
+            {
+                h ^= c;
+                h *= 16777619;
+            }
+            return h.ToString("x8", CultureInfo.InvariantCulture);
         }
 
         /// <summary>Trafonun çıkış hat parçaları (kullanıcı hangi kolun hesaplanacağını seçer).</summary>

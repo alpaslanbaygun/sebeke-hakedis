@@ -4,7 +4,9 @@
 // ki aynı proje her açılışta aynı bağlamı versin ve "güncel değil" uyarısı yalnız gerçek değişiklikte çıksın.
 import { circuitParts } from '../grid/lines.js';
 import ESLESME from '../ortak/volt-eslesme.js';
-import { ruling } from '../../../../ortak/hesap/kurallar.mjs';
+import { ruling, fnv1a } from '../../../../ortak/hesap/kurallar.mjs';
+import { sebekeModel, elemanTanimi } from '../interop/sebeke.js';
+import { aktifHakedis, objeHakedisi } from '../core/hakedis-no.js';
 
 const r2 = (v) => (v == null || !Number.isFinite(+v) ? null : Math.round(+v * 100) / 100);
 const ZONE = { I: '1', II: '2', III: '3', IV: '4', V: '5', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5' };
@@ -223,7 +225,7 @@ export class BaglamKurucu {
    */
   kur(hedef) {
     const b = { surum: 1, kaynak: 'telefon', proje: this.proje(), hedef: { tur: (hedef && hedef.tur) || 'proje', id: (hedef && hedef.id) || '', no: '', ad: '' } };
-    if (!hedef || !hedef.tur || hedef.tur === 'proje') { b.hedef.ad = 'Proje geneli'; return b; }
+    if (!hedef || !hedef.tur || hedef.tur === 'proje') { b.hedef.ad = 'Proje geneli'; this.projeListesi(b); return b; }
     if (hedef.tur === 'direk') {
       const e = this.ps.eqById(hedef.id);
       if (!e) return b;
@@ -261,6 +263,62 @@ export class BaglamKurucu {
       return b;
     }
     return b;
+  }
+
+  /**
+   * Proje geneli (8.11.2026, direk listeleri): bütün direkler (kolları, malzemeleri, kayıtlı cer hesabı) ve hatlar.
+   * Eklentideki HesapBaglami.ProjeListesi ile aynı alanlar; malzemeler AutoCAD dosyasına giden kalemlerle aynı
+   * (sebekeModel), böylece iki platform aynı listeyi verir. imza: liste değişti mi (güncellik), FNV-1a.
+   */
+  projeListesi(b) {
+    const ps = this.ps, cat = this.cat;
+    let model = null;
+    try { model = sebekeModel(ps); } catch (e) { model = null; }
+    const kalemlerByTelefon = new Map();
+    for (const el of (model && model.elemanlar) || []) if (el.telefonId) kalemlerByTelefon.set(el.telefonId, el);
+    const metin = (v) => (v == null ? '' : String(v));
+    const kayitlar = (ps.data.documents || []).filter((d) => d.kind === 'HESAP' && d.status !== 'deleted' && d.modul === 'tepe-vektor');
+    b.bolgeler = [];
+    const imza = [];
+    b.direkler = [];
+    for (const e of ps.data.equipment) {
+      if (e.status === 'deleted' || (e.kind !== 'pole' && e.kind !== 'lighting')) continue;
+      const p = ps.pointById(e.pointId) || {};
+      const o = this.direk(e);
+      let tanim = null;
+      try { tanim = elemanTanimi(e, cat); } catch (x) { tanim = null; }
+      o.cins = tanim && tanim.cins ? tanim.cins : null;
+      o.dmDurum = (e.attrs && e.attrs.dmDurum) || null;
+      o.hakedis = (() => { try { const periods = ps.data.periods || []; return +objeHakedisi(e, periods, aktifHakedis(periods)) || null; } catch (x) { return null; } })();
+      o.bolge = null;
+      o.saga = r2(p.E); o.yukari = r2(p.N);
+      const el = kalemlerByTelefon.get(e.id);
+      o.malzemeler = ((el && el.kalemler) || []).filter((k) => !k.ana).map((k) => ({ cins: k.cins, tanim: k.tanim, durum: k.durum, miktar: r2(k.miktar), birim: k.birim }));
+      const kayit = kayitlar.filter((d) => d.hedef && d.hedef.tur === 'direk' && d.hedef.id === e.id).sort((x, y) => String(y.tarih || '').localeCompare(String(x.tarih || '')))[0];
+      o.hesap = null;
+      if (kayit) {
+        const t = { R: null, Rx: null, Ry: null, oneri: null, tarih: kayit.tarih || null, durum: kayit.durum || null };
+        for (const d of (kayit.ayrinti && kayit.ayrinti.degerler) || []) {
+          if (!d) continue;
+          if (d.ad === 'Tepe kuvveti R') t.R = d.deger; else if (d.ad === 'Rx') t.Rx = d.deger; else if (d.ad === 'Ry') t.Ry = d.deger;
+          else if (String(d.ad || '').startsWith('Önerilen direk tipi')) t.oneri = d.deger;
+        }
+        o.hesap = { tepe: t };
+      }
+      b.direkler.push(o);
+      imza.push([metin(o.no), metin(o.tip), metin(o.durum), metin(o.dmDurum), metin(o.rol), metin(o.aci), o.malzemeler.length].join('|'));
+    }
+    b.hatlar = [];
+    for (const l0 of ps.data.lines) {
+      if (l0.status === 'deleted' || (l0.nodes || []).length < 2) continue;
+      const l = this.trafodanBaslat(l0);
+      const h = this.hat(l);
+      if (!h) continue;
+      h.bolge = null; h.durum = l0.state || null; h.parcalar = [];
+      b.hatlar.push(h);
+      imza.push(['H', metin(h.no), metin(h.tur), h.acikliklar.length, metin(h.toplamUzunluk)].join('|'));
+    }
+    b.liste = { direkler: b.direkler.length, hatlar: b.hatlar.length, imza: fnv1a(imza.join(';')) };
   }
 
   /** Trafonun çıkış hatları (AG / OG): kullanıcı hangi kolun hesaplanacağını seçer. */

@@ -1165,6 +1165,26 @@ namespace SebekeHakedis.Test
             Esit("TOPRAK", bk.Nesne("kanal").Metin("zemin"), "bağlam: kanal zemini");
             var pb = HesapBaglami.Kur(tp, new HesapHedefi { Tur = "proje" }, bilgi);
             Esit("Proje geneli", pb.Nesne("hedef").Metin("ad"), "bağlam: proje geneli");
+            // Proje geneli: direk listeleri (8.11.2026) — bölgeler, direkler (malzemeleriyle), hat zincirleri, imza
+            var direkSayisi = tp.Elemanlar.FindAll(e => HesapBaglami.DirekMi(e)).Count;
+            Esit(direkSayisi, pb.Dizi("direkler").Count, "bağlam: proje genelinde bütün direkler");
+            Esit(tp.Bolgeler.Count, pb.Dizi("bolgeler").Count, "bağlam: bölgeler");
+            var pd = pb.Dizi("direkler").ConvertAll(x => (JsonNesne)x).Find(x => x.Metin("no") == "SC101");
+            Esit(true, pd != null && pd.Metin("cins") != "", "bağlam: direğin cinsi (" + (pd != null ? pd.Metin("cins") : "yok") + ")");
+            Esit(true, pd.Dizi("malzemeler").Count > 0 && pd.Dizi("malzemeler").ConvertAll(m => (JsonNesne)m).TrueForAll(m => m.Metin("cins") != "" && m.Metin("tanim") != ""), "bağlam: direğin malzemeleri (ana poz hariç)");
+            Esit(true, pd.Ondalik("saga") > 500000 && pd.Ondalik("yukari") > 4000000, "bağlam: direğin koordinatları");
+            Esit(true, pd.Metin("bolge") != "", "bağlam: direğin bölgesi (proje adı)");
+            var hatSayisi = pb.Dizi("hatlar").Count;
+            Esit(true, hatSayisi > 0 && hatSayisi < tp.Hatlar.Count, "bağlam: hatlar zincir zincir (parçadan az): " + hatSayisi + " / " + tp.Hatlar.Count);
+            int parcaToplam = 0;
+            foreach (JsonNesne h in pb.Dizi("hatlar")) parcaToplam += h.Dizi("parcalar").Count;
+            Esit(tp.Hatlar.FindAll(h => h.Kose.Count >= 2).Count, parcaToplam, "bağlam: her hat parçası tam bir zincirde");
+            var liste = pb.Nesne("liste");
+            Esit((double)direkSayisi, liste.Ondalik("direkler"), "bağlam: liste.direkler");
+            Esit(true, System.Text.RegularExpressions.Regex.IsMatch(liste.Metin("imza"), "^[0-9a-f]{8}$"), "bağlam: liste imzası 8 haneli onaltılık");
+            Esit("e40c292c", HesapBaglami.Fnv1a("a"), "FNV-1a: telefondaki kurallar.mjs ile aynı (a)");
+            Esit("a923c8cd", HesapBaglami.Fnv1a("SC77|G-10I|M|||T|24.5|3;H|SC1–SC9|AG_HAVAI|3|120.5"), "FNV-1a: Türkçe karakterli örnek telefonla aynı");
+            Esit(liste.Metin("imza"), HesapBaglami.Kur(tp, new HesapHedefi { Tur = "proje" }, bilgi).Nesne("liste").Metin("imza"), "bağlam: imza kararlı");
             // Kayıt durumu: hedef silinmişse
             bool hedefYok;
             HesapGuncellik.Durum(tp, new HesapKaydi { Id = "y", Modul = "amax", HedefTur = "direk", HedefId = "YOK" }, bilgi, "autocad", out hedefYok);

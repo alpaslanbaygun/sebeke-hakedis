@@ -1,0 +1,579 @@
+{
+  "modul": "direk-listeleri",
+  "aciklama": "Direk listeleri (8.11.2026): proje geneli bağlamından (direkler, hatlar, bolgeler, liste) dört liste. 1. durum: AutoCAD benzeri iki bölgeli proje — AG listesinde AG / müşterek / trafo direkleri (4; aydınlatma ve ENH direkleri hariç), tepe kuvveti kayıtlı cer hesabından (SC2: Rx 120, Ry −80, R 200, öneri 10I), demontaj kesik direk 'Sökülen' sütununda, konsol / izolatör AG–YG ayrımı (GT-60 AG, GT-200 OG Konsol YG; N-80 AG, VKS-35 YG); ENH cetvelinde tek OG zinciri (3 direk, baştan mesafe 0 / 60 / 130, rüzgâr açıklığı 30 / 65 / 35, köşe açısı 20° = 22,22 grad); aydınlatma listesinde AYD direği + armatürlü AG direk (70 W, LED Sınıf 3); koordinat listesi 5 direk. 2. durum: bölge süzgeci 'Köy' → yalnız o bölgenin direkleri (durumYukle ile).",
+  "durumlar": [
+    {
+      "ad": "iki bölgeli proje: dört liste",
+      "baglam": {
+        "surum": 1,
+        "kaynak": "autocad",
+        "proje": {
+          "ad": "Deneme Mahallesi",
+          "kod": "DN-7",
+          "yapan": "Deneme Mühendis",
+          "firma": "Deneme Müh.",
+          "tarih": "2026-11-08",
+          "buzBolgesi": "2"
+        },
+        "hedef": {
+          "tur": "proje",
+          "id": "",
+          "no": "",
+          "ad": "Proje geneli"
+        },
+        "bolgeler": [
+          {
+            "id": "B1",
+            "ad": "Merkez",
+            "kod": "11.22.33",
+            "grup": null
+          },
+          {
+            "id": "B2",
+            "ad": "Köy",
+            "kod": "11.22.34",
+            "grup": null
+          }
+        ],
+        "direkler": [
+          {
+            "id": "E1",
+            "no": "SC1",
+            "tur": "AG",
+            "cins": "AG_DEMİR_GLV",
+            "malzeme": "demir",
+            "tip": "G-10I",
+            "rol": "T",
+            "rolKaynagi": "geometri",
+            "aci": 0,
+            "kot": 1040.5,
+            "yukseklik": null,
+            "baglanti": null,
+            "durum": "M",
+            "dmDurum": null,
+            "hakedis": 1,
+            "bolge": "Merkez",
+            "saga": 519300,
+            "yukari": 4282100,
+            "kollar": [
+              {
+                "yon": 90,
+                "aciklik": 40,
+                "karsi": {
+                  "id": "E2",
+                  "no": "SC2"
+                },
+                "hatId": "H1",
+                "hatNo": "SC1–SC3",
+                "hatTur": "AG_HAVAI",
+                "gerilimKV": 0.4,
+                "iletkenler": [
+                  {
+                    "ad": "3A+P+R",
+                    "adet": 1,
+                    "devre": "AG"
+                  }
+                ]
+              }
+            ],
+            "malzemeler": [
+              {
+                "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+                "tanim": "GT-60",
+                "durum": "M",
+                "miktar": 1,
+                "birim": "ad/kg"
+              },
+              {
+                "cins": "AG_İZOLATÖR",
+                "tanim": "N-80",
+                "durum": "M",
+                "miktar": 4,
+                "birim": "ad/ad"
+              }
+            ],
+            "hesap": null
+          },
+          {
+            "id": "E2",
+            "no": "SC2",
+            "tur": "MUSTEREK",
+            "cins": "MÜŞ_DEMİR_GLV",
+            "malzeme": "demir",
+            "tip": "G-K1''",
+            "rol": "K",
+            "rolKaynagi": "geometri",
+            "aci": 24.5,
+            "kot": null,
+            "yukseklik": null,
+            "baglanti": null,
+            "durum": "M+M",
+            "dmDurum": null,
+            "hakedis": 1,
+            "bolge": "Merkez",
+            "saga": 519340,
+            "yukari": 4282100,
+            "kollar": [
+              {
+                "yon": 270,
+                "aciklik": 40,
+                "karsi": {
+                  "id": "E1",
+                  "no": "SC1"
+                },
+                "hatId": "H1",
+                "hatNo": "SC1–SC3",
+                "hatTur": "AG_HAVAI",
+                "gerilimKV": 0.4,
+                "iletkenler": [
+                  {
+                    "ad": "3A+P+R",
+                    "adet": 1,
+                    "devre": "AG"
+                  }
+                ]
+              },
+              {
+                "yon": 114.5,
+                "aciklik": 50,
+                "karsi": {
+                  "id": "E3",
+                  "no": "SC3"
+                },
+                "hatId": "H2",
+                "hatNo": "SC1–SC3",
+                "hatTur": "MUSTEREK",
+                "gerilimKV": 34.5,
+                "iletkenler": [
+                  {
+                    "ad": "3xSW",
+                    "adet": 1,
+                    "devre": "OG"
+                  },
+                  {
+                    "ad": "3X50/16+70 ALPEK",
+                    "adet": 1,
+                    "devre": "AG"
+                  }
+                ]
+              }
+            ],
+            "malzemeler": [
+              {
+                "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+                "tanim": "GT-200 OG Konsol",
+                "durum": "M",
+                "miktar": 2,
+                "birim": "ad/kg"
+              },
+              {
+                "cins": "OG_İZOLATÖR",
+                "tanim": "VKS-35",
+                "durum": "M",
+                "miktar": 3,
+                "birim": "ad/ad"
+              },
+              {
+                "cins": "AG_İZOLATÖR",
+                "tanim": "N-95",
+                "durum": "M",
+                "miktar": 4,
+                "birim": "ad/ad"
+              }
+            ],
+            "hesap": {
+              "tepe": {
+                "R": 200,
+                "Rx": 120,
+                "Ry": -80,
+                "oneri": "10I",
+                "tarih": "2026-11-08T10:00:00.000Z",
+                "durum": "bilgi"
+              }
+            }
+          },
+          {
+            "id": "E3",
+            "no": "SC3",
+            "tur": "AG",
+            "cins": "AG_BETON",
+            "malzeme": "beton",
+            "tip": "9,3/2",
+            "rol": "N",
+            "rolKaynagi": "geometri",
+            "aci": null,
+            "kot": null,
+            "yukseklik": null,
+            "baglanti": null,
+            "durum": "DM",
+            "dmDurum": "KESİK",
+            "hakedis": 2,
+            "bolge": "Köy",
+            "saga": 519380,
+            "yukari": 4282140,
+            "kollar": [],
+            "malzemeler": [],
+            "hesap": null
+          },
+          {
+            "id": "E4",
+            "no": "SA1",
+            "tur": "AYD",
+            "cins": "AYD_GLV_PLG",
+            "malzeme": "demir",
+            "tip": "8 m Poligon",
+            "rol": null,
+            "rolKaynagi": null,
+            "aci": null,
+            "kot": null,
+            "yukseklik": 8,
+            "baglanti": null,
+            "durum": "M",
+            "dmDurum": null,
+            "hakedis": 1,
+            "bolge": "Köy",
+            "saga": 519400,
+            "yukari": 4282160,
+            "kollar": [
+              {
+                "yon": 10,
+                "aciklik": 30,
+                "karsi": {
+                  "id": null,
+                  "no": null
+                },
+                "hatId": "H4",
+                "hatNo": "SA1–?",
+                "hatTur": "AYDINLATMA",
+                "gerilimKV": 0.4,
+                "iletkenler": [
+                  {
+                    "ad": "1X16+25 ALPEK",
+                    "adet": 1,
+                    "devre": "AG"
+                  }
+                ]
+              }
+            ],
+            "malzemeler": [
+              {
+                "cins": "TRAVERS_VE_KONSOLLAR_GLV",
+                "tanim": "1.5M AG potans Açma Konsol",
+                "durum": "M",
+                "miktar": 1,
+                "birim": "ad/kg"
+              },
+              {
+                "cins": "ARMATÜR",
+                "tanim": "70W Sodyum Arm.",
+                "durum": "M",
+                "miktar": 2,
+                "birim": "ad/ad"
+              }
+            ],
+            "hesap": null
+          },
+          {
+            "id": "E5",
+            "no": "SC5",
+            "tur": "AG",
+            "cins": "AG_DEMİR_GLV",
+            "malzeme": "demir",
+            "tip": "G-10U",
+            "rol": "T",
+            "rolKaynagi": "geometri",
+            "aci": 0,
+            "kot": null,
+            "yukseklik": null,
+            "baglanti": null,
+            "durum": "MEVCUT",
+            "dmDurum": null,
+            "hakedis": 0,
+            "bolge": "Köy",
+            "saga": 519420,
+            "yukari": 4282180,
+            "kollar": [],
+            "malzemeler": [
+              {
+                "cins": "ARMATÜR",
+                "tanim": "S3 SINIF NUMARALI LED ARMATÜR",
+                "durum": "M",
+                "miktar": 1,
+                "birim": "ad/ad"
+              }
+            ],
+            "hesap": null
+          },
+          {
+            "id": "E6",
+            "no": "D1",
+            "tur": "OG",
+            "cins": "ENH_DEMİR_GLV",
+            "malzeme": "demir",
+            "tip": "G-D-12 (sw)",
+            "rol": "D",
+            "rolKaynagi": "tip",
+            "aci": null,
+            "kot": null,
+            "yukseklik": 12,
+            "baglanti": null,
+            "durum": "M",
+            "dmDurum": null,
+            "hakedis": 1,
+            "bolge": "Merkez",
+            "saga": 520000,
+            "yukari": 4283000,
+            "kollar": [],
+            "malzemeler": [
+              {
+                "cins": "BAHH_DEMİR_TRAVERS_GLV",
+                "tanim": "D-300",
+                "durum": "M",
+                "miktar": 1,
+                "birim": "ad/kg"
+              },
+              {
+                "cins": "OG_İZOLATÖR",
+                "tanim": "K-1 Zincir",
+                "durum": "M",
+                "miktar": 6,
+                "birim": "ad/ad"
+              }
+            ],
+            "hesap": null
+          },
+          {
+            "id": "E7",
+            "no": "D2",
+            "tur": "OG",
+            "cins": "ENH_DEMİR_GLV",
+            "malzeme": "demir",
+            "tip": "G-K-12 (sw)",
+            "rol": "K",
+            "rolKaynagi": "tip",
+            "aci": 20,
+            "kot": null,
+            "yukseklik": 12,
+            "baglanti": null,
+            "durum": "M",
+            "dmDurum": null,
+            "hakedis": 1,
+            "bolge": "Merkez",
+            "saga": 520060,
+            "yukari": 4283000,
+            "kollar": [],
+            "malzemeler": [],
+            "hesap": null
+          },
+          {
+            "id": "E8",
+            "no": "D3",
+            "tur": "OG",
+            "cins": "ENH_DEMİR_GLV",
+            "malzeme": "demir",
+            "tip": "G-N-12 (sw)",
+            "rol": "N",
+            "rolKaynagi": "tip",
+            "aci": null,
+            "kot": null,
+            "yukseklik": 12,
+            "baglanti": null,
+            "durum": "M",
+            "dmDurum": null,
+            "hakedis": 1,
+            "bolge": "Merkez",
+            "saga": 520130,
+            "yukari": 4283000,
+            "kollar": [],
+            "malzemeler": [],
+            "hesap": null
+          }
+        ],
+        "hatlar": [
+          {
+            "id": "H1",
+            "no": "SC1–SC3",
+            "tur": "AG_HAVAI",
+            "havai": true,
+            "gerilimKV": 0.4,
+            "iletkenler": [
+              {
+                "ad": "3A+P+R",
+                "adet": 1,
+                "devre": "AG"
+              }
+            ],
+            "direkler": [
+              {
+                "id": "E1",
+                "no": "SC1",
+                "tip": "G-10I",
+                "rol": "T"
+              },
+              {
+                "id": "E2",
+                "no": "SC2",
+                "tip": "G-K1''",
+                "rol": "K"
+              },
+              {
+                "id": "E3",
+                "no": "SC3",
+                "tip": "9,3/2",
+                "rol": "N"
+              }
+            ],
+            "acikliklar": [
+              {
+                "bas": "SC1",
+                "bit": "SC2",
+                "uzunluk": 40
+              },
+              {
+                "bas": "SC2",
+                "bit": "SC3",
+                "uzunluk": 50
+              }
+            ],
+            "toplamUzunluk": 90,
+            "ruling": 45.6,
+            "bolge": "Merkez",
+            "durum": "M",
+            "parcalar": [
+              "H1",
+              "H2"
+            ]
+          },
+          {
+            "id": "H6",
+            "no": "D1–D3",
+            "tur": "OG_HAVAI",
+            "havai": true,
+            "gerilimKV": 34.5,
+            "iletkenler": [
+              {
+                "ad": "3xSW",
+                "adet": 1,
+                "devre": "OG"
+              }
+            ],
+            "direkler": [
+              {
+                "id": "E6",
+                "no": "D1",
+                "tip": "G-D-12 (sw)",
+                "rol": "D"
+              },
+              {
+                "id": "E7",
+                "no": "D2",
+                "tip": "G-K-12 (sw)",
+                "rol": "K",
+                "aci": 20
+              },
+              {
+                "id": "E8",
+                "no": "D3",
+                "tip": "G-N-12 (sw)",
+                "rol": "N"
+              }
+            ],
+            "acikliklar": [
+              {
+                "bas": "D1",
+                "bit": "D2",
+                "uzunluk": 60
+              },
+              {
+                "bas": "D2",
+                "bit": "D3",
+                "uzunluk": 70
+              }
+            ],
+            "toplamUzunluk": 130,
+            "ruling": 65.6,
+            "bolge": "Merkez",
+            "durum": "M",
+            "parcalar": [
+              "H6",
+              "H7"
+            ]
+          }
+        ],
+        "liste": {
+          "direkler": 8,
+          "hatlar": 2,
+          "imza": "deadbeef"
+        }
+      },
+      "beklenen": {
+        "dolan": 3,
+        "eksik": 0,
+        "durum": "bilgi",
+        "ozet": "^AG Direk Listesi: 4 satır · 4 AG / müşterek, 3 ENH, 2 aydınlatma, 8 koordinat",
+        "degerler": {
+          "AG / müşterek direk": 4,
+          "ENH direği": 3,
+          "ENH hat": 1,
+          "Aydınlatma direği": 2,
+          "Koordinat satırı": 8,
+          "tablo.satirlar[0][1]": "SC1",
+          "tablo.satirlar[0][2]": "T",
+          "tablo.satirlar[0][4]": "3A+P+R",
+          "tablo.satirlar[0][11]": "G-10I",
+          "tablo.satirlar[0][13]": "GT-60",
+          "tablo.satirlar[0][15]": "N-80 ×4",
+          "tablo.satirlar[1][1]": "SC2",
+          "tablo.satirlar[1][2]": "K",
+          "tablo.satirlar[1][3]": "24,5",
+          "tablo.satirlar[1][5]": "120,0",
+          "tablo.satirlar[1][6]": "-80,0",
+          "tablo.satirlar[1][7]": "200,0",
+          "tablo.satirlar[1][12]": "G-K1''",
+          "tablo.satirlar[1][14]": "GT-200 OG Konsol ×2",
+          "tablo.satirlar[1][16]": "VKS-35 ×3",
+          "tablo.satirlar[1][17]": "1. hakediş · önerilen 10I",
+          "tablo.satirlar[2][1]": "SC3",
+          "tablo.satirlar[2][8]": "9,3/2",
+          "tablo.satirlar[2][17]": "Demontaj (kesik) · 2. hakediş",
+          "tablo.satirlar[3][1]": "SC5",
+          "tablo.satirlar[3][10]": "G-10U"
+        }
+      }
+    },
+    {
+      "ad": "ENH cetveli bölümü ve bölge süzgeci",
+      "baglam": "$1",
+      "adimlar": [
+        "window.__SM_UYARLAMA.bolumGoster('enh', window.__SM.A)"
+      ],
+      "beklenen": {
+        "dolan": 3,
+        "eksik": 0,
+        "durum": "bilgi",
+        "ozet": "^ENH Direk Dağıtım Cetveli: 3 satır",
+        "degerler": {
+          "tablo.satirlar[0][0]": "D1–D3 · 3xSW · 34,5 kV · 130,00 m",
+          "tablo.satirlar[0][1]": "D1",
+          "tablo.satirlar[0][2]": "0,00",
+          "tablo.satirlar[0][3]": "60,00",
+          "tablo.satirlar[0][6]": "30,00",
+          "tablo.satirlar[0][10]": "D",
+          "tablo.satirlar[0][11]": "G-D-12 (sw)",
+          "tablo.satirlar[0][14]": "D-300",
+          "tablo.satirlar[0][18]": "12,0",
+          "tablo.satirlar[0][24]": "K-1 Zincir ×6",
+          "tablo.satirlar[1][1]": "D2",
+          "tablo.satirlar[1][2]": "60,00",
+          "tablo.satirlar[1][3]": "70,00",
+          "tablo.satirlar[1][6]": "65,00",
+          "tablo.satirlar[1][7]": "22,22",
+          "tablo.satirlar[2][1]": "D3",
+          "tablo.satirlar[2][2]": "130,00",
+          "tablo.satirlar[2][6]": "35,00",
+          "tablo.satirlar[2][23]": "2"
+        }
+      }
+    }
+  ]
+}
