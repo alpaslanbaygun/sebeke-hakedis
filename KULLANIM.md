@@ -358,7 +358,12 @@ değil adı görünür; ad alt çizgisiz, her sözcüğün ilk harfi büyük yaz
 hücrenin ipucunda; raporlar, Excel ve dosyalar kodu yazmaya devam eder. Katalogda adı olmayan bir kod da aynı kuralla
 çevrilir (`YENİ_BİR_CİNS` → "Yeni Bir Cins").
 
-Beton / ağaç direk daire, demir direk kare. Her durumun simgesi ayrıdır:
+**Simge takımı** (9.11.2026; Çizim Ayarları › Görünüm › Simge takımı): iki takım vardır, çizim başına seçilir.
+Seçim proje dosyasıyla telefona gider; telefonun DXF'i aynı takımla çizer (telefonda Dışa Aktar › Çizim boyutları ›
+Simge takımı). Yeni konan elemanlar seçili takımla çizilir; takımı değiştirince çizimdekilere uygulanması sorulur
+(**Telefon Görünümü**; eski çizimlerin blokları kendiliğinden değişmez).
+
+*Klasik* (varsayılan): beton / ağaç direk daire, demir direk kare. Her durumun simgesi ayrıdır:
 
 | Durum | Simge |
 | --- | --- |
@@ -369,9 +374,27 @@ Beton / ağaç direk daire, demir direk kare. Her durumun simgesi ayrıdır:
 | Demontaj, KESİK | boş + iki paralel çizgi `//` |
 | Demontaj, SÖKÜK | boş + çarpı `X` |
 
-Demontaj simgeleri sarı çizilir. Simgeler metre cinsindendir, ayardaki büyüklükle konur (varsayılan 1 kat). Eski bir çizimi bu görünüme çevirmek
-için **Telefon Görünümü** (`SH_GORUNUM`); değişmeyen eski bloklara dokunulmaz. Eski programın simgeleri istenirse
-**Çizim Ayarları › Görünüm**.
+*Şebeke-M*: her elemanın kendi işareti vardır — AG direk (beton daire / demir kare), OG direk, ENH direği, aydınlatma
+direği, direk tipi trafo (ve özel), köşkler (modüler · kuleli · kule çıkışlı · kulesiz özel · özel), indirici merkez,
+trafo binası, box, SDK (AG / aydınlatma), armatür (LED · cıva · sodyum · floresan). Durum simgenin doluluğundan okunur:
+
+| Durum | Simge |
+| --- | --- |
+| Yeni (M, M+M, KM) | dolu (iç işaret zıt renkte) |
+| Mevcut | kontur (boş) |
+| Sök-tak (DM+M) | sol yarısı dolu |
+| Demontaj (DM) | çift kontur + altında **DM** yazısı |
+| Demontaj, KESİK | çift kontur + **DM** + sağ altta **K** |
+| Demontaj, SÖKÜK | çift kontur + **DM** + sağ altta **S** |
+
+Köşkün türü elemanın **tipindeki** sözcükten tanınır (indirici · bina · kulesiz · kule çıkışlı · kule · özel); hiçbiri
+yoksa modüler beton köşk çizilir. Armatürün lamba türü de tipten (LED · cıva · floresan; yoksa sodyum). Takımda
+olmayan elemanlar (ek mufu, kofre, menhol, abone, diğer) klasik simgesiyle kalır. Bloklar `SH_SM_…` adıyla çizime
+eklenir. İki takımın lejantı: `ortak/lejant/semboller-klasik.svg`, `ortak/lejant/semboller-sebekem.svg`.
+
+Her iki takımda demontaj simgeleri sarı çizilir; simgeler metre cinsindendir, ayardaki büyüklükle konur (varsayılan
+1 kat). Eski bir çizimi bu görünüme çevirmek için **Telefon Görünümü** (`SH_GORUNUM`); değişmeyen eski bloklara
+dokunulmaz.
 
 ### Malzeme adlarının yazımı
 
@@ -392,7 +415,7 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 | Malzeme Hafızası | — | Açıkken son elemanın malzemeleri aynı tipteki yeni elemana kendiliğinden eklenir; tıklayınca kapanır / açılır. |
 | Hat Değiştir | `SH_HATDEGISTIR` | Seçilen hatların iletkenini (tip, cins), türünü, durumunu, hakedişini değiştirir; kablo tipi yazısı ve katman güncellenir, metraj korunur. |
 | Metraj | `SH_METRAJ` | Seçilen hat / kanal / sondajın metrajını çizim uzunluğundan yeniden hesaplar (önce listeyi gösterip sorar). |
-| Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (simge, renk, hat kalınlığı, etiket, metraj ve malzeme yazıları, kanal kenarları, Tahoma yazı tipi); katman adlarını Türkçe karaktersiz, cins kodlarını yazım hatasız yapar. |
+| Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (seçili simge takımıyla simgeler, renk, hat kalınlığı, etiket, metraj ve malzeme yazıları, kanal kenarları, Tahoma yazı tipi); katman adlarını Türkçe karaktersiz, cins kodlarını yazım hatasız yapar. |
 | Aktif Hakediş | `SH_HAKEDIS` | Aktif hakediş: yeni çizilenler bu hakedişin katmanlarına (`SC_3.HAK.…`) konur. Eski programın aktif hakedişiyle ortaktır. |
 | Hakediş Onayı | `SH_ONAY` | Her hakediş için sırayla **Kontrol → Hakediş → GIS** onayı (eski programın onay kaydı; o program aynı işaretleri görür). **Hakediş onayı verilen hakediş kilitlenir**: o hakedişe yeni nesne çizilemez, malzeme satırları gri görünür ve değiştirilemez / silinemez, metraj güncellemesi o nesneleri atlar, telefondan gelen değişiklik o hakedişe dokunuyorsa aktarılmaz. Kilitli direğe açık hakedişte yeni malzeme eklemek serbesttir. **Kullanıcı tanımlıysa** (aşağıda) önce oturum istenir: Kontrol aşamasını Kontrol mühendisi, Hakediş ve GIS aşamasını Onay yetkilisi verir ya da kaldırır (Yönetici hepsini); yetkiniz olmayan kutular soluk ve kapalıdır. |
 | Kullanıcılar | `SH_KULLANICILAR` | **Telefondaki kullanıcılar ve roller** (Yönetici, Kontrol mühendisi, Hakediş sorumlusu, Onay yetkilisi, Saha operatörü) ve **hakediş yetkisi**. İlk kullanıcı Yönetici olur ve onay mekanizması açılır; sonra kullanıcıyı yalnız Yönetici ekler / düzenler. Şifre 4–8 rakam, çizimde yalnız özeti saklanır. **Hakediş yetkisi**: Yönetici işaretlediği hakedişleri yazmaya kapatır; kapalı hakedişe yeni nesne çizilemez, satırları değiştirilemez (Yönetici hariç). Kullanıcılar ve hakediş yetkisi proje dosyasıyla telefona gider ve telefondan gelir (son değişiklik kazanır). Kullanıcı tanımlı değilse her şey eskisi gibi serbesttir. |

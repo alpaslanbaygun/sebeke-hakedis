@@ -62,11 +62,12 @@ namespace SebekeHakedis.Eklenti
         /// <summary>Elemanın malzemeleri simgenin yanında yazılsın (MLZ_ öznitelikleri; Çizim Ayarları › Görünüm).</summary>
         public bool MalzemeYazisi;
 
-        /// <summary>Boyutları çizimin ayarlarından alır (simge, hat etiketi, metraj ve eleman yazısı, hat kalınlığı, malzeme yazısı).</summary>
+        /// <summary>Boyutları çizimin ayarlarından alır (simge, hat etiketi, metraj ve eleman yazısı, hat kalınlığı, malzeme yazısı, simge takımı).</summary>
         public void BoyutlariAl(CizimAyarlari a)
         {
             if (a == null) return;
             a.BoyutlariDuzelt();
+            Semboller.Takim = Boyutlar.TakimDuzelt(a.SimgeTakimi);
             EtiketYuksekligi = a.EtiketYuksekligi;
             MetrajYuksekligi = a.MetrajYuksekligi;
             SimgeOlcegi = a.SimgeOlcegi;
@@ -527,13 +528,15 @@ namespace SebekeHakedis.Eklenti
                 parcalar.Add(new Line(new Point3d(-0.25, 0, 0), new Point3d(0.25, 0, 0)));
                 parcalar.Add(new Line(new Point3d(0, -0.25, 0), new Point3d(0, 0.25, 0)));
             }
-            else
+            var renkler = new Dictionary<Entity, int>();
+            if (ad != "GPS")
             {
                 var sembol = Semboller.Bul(ad);
                 if (sembol != null)
                 {
                     yariGenislik = sembol.YariGenislik * k;
-                    foreach (var i in sembol.Ilkeller) parcalar.AddRange(IlkelVarliklari(i, k));
+                    foreach (var i in sembol.Ilkeller)
+                        foreach (var e in IlkelVarliklari(i, k)) { parcalar.Add(e); if (i.Renk != 0) renkler[e] = i.Renk; }
                 }
                 else
                 {
@@ -545,7 +548,9 @@ namespace SebekeHakedis.Eklenti
             {
                 e.SetDatabaseDefaults(_db);
                 e.LayerId = _db.LayerZero;
-                e.ColorIndex = 0; // BLOĞA GÖRE: elemanın rengini alır
+                int renk;
+                // BLOĞA GÖRE (0): elemanın rengini alır; Şebeke-M takımında dolu simgenin iç çizgileri zıt renk (7)
+                e.ColorIndex = renkler.TryGetValue(e, out renk) ? renk : 0;
                 btr.AppendEntity(e);
                 _tr.AddNewlyCreatedDBObject(e, true);
             }
@@ -573,7 +578,7 @@ namespace SebekeHakedis.Eklenti
         }
 
         /// <summary>Sembol ilkelini AutoCAD varlıklarına çevirir (k: metre → blok birimi çarpanı).</summary>
-        private static IEnumerable<Entity> IlkelVarliklari(SembolIlkeli i, double k)
+        private IEnumerable<Entity> IlkelVarliklari(SembolIlkeli i, double k)
         {
             var d = i.Sayilar;
             switch (i.Tur)
@@ -589,9 +594,25 @@ namespace SebekeHakedis.Eklenti
                         var pl = new Polyline();
                         for (int n = 0; n < i.Noktalar.Count; n++) pl.AddVertexAt(n, new Point2d(i.Noktalar[n][0] * k, i.Noktalar[n][1] * k), 0, 0, 0);
                         pl.Closed = i.Kapali;
+                        if (!string.IsNullOrEmpty(i.CizgiTipi))
+                        {
+                            var lt = CizgiTipi(i.CizgiTipi);
+                            if (!lt.IsNull) { pl.LinetypeId = lt; pl.LinetypeScale = 0.25; }   // simge küçük: desen sıkışık
+                        }
                         yield return pl;
                         break;
                     }
+                case "T": // ortalanmış yazı (Şebeke-M takımı: "DM", "SDK", K / S)
+                    if (d.Length >= 3 && !string.IsNullOrEmpty(i.Metin))
+                    {
+                        var t = new DBText
+                        {
+                            TextString = i.Metin, Height = d[2] * k, HorizontalMode = TextHorizontalMode.TextCenter, VerticalMode = TextVerticalMode.TextVerticalMid,
+                            AlignmentPoint = new Point3d(d[0] * k, d[1] * k, 0), TextStyleId = YaziStili()
+                        };
+                        yield return t;
+                    }
+                    break;
                 case "S":
                     if (i.Noktalar.Count >= 4)
                         yield return new Solid(

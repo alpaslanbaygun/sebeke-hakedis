@@ -7,13 +7,19 @@ namespace SebekeHakedis.Cekirdek
     /// <summary>Sembol geometrisinin bir parçası (ortak/katalog/semboller.json ilkelleri).</summary>
     public sealed class SembolIlkeli
     {
-        /// <summary>L doğru · C daire · P çoklu doğru · S dolu dörtgen · D dolu daire · Y yarım dolu daire</summary>
+        /// <summary>L doğru · C daire · P çoklu doğru · S dolu dörtgen · D dolu daire · Y yarım dolu daire · T ortalanmış yazı</summary>
         public string Tur = "";
-        /// <summary>L: x1 y1 x2 y2 · C: cx cy r · D/Y: r</summary>
+        /// <summary>L: x1 y1 x2 y2 · C: cx cy r · D/Y: r · T: x y yükseklik</summary>
         public double[] Sayilar = new double[0];
         /// <summary>P ve S: köşeler [x, y]</summary>
         public List<double[]> Noktalar = new List<double[]>();
         public bool Kapali;
+        /// <summary>T: yazı.</summary>
+        public string Metin = "";
+        /// <summary>Renk indeksi: 0 bloğa göre (varsayılan), 7 zıt renk (karanlık zeminde beyaz, kâğıtta siyah); tablodaki ["R", n] ilkelinden.</summary>
+        public int Renk;
+        /// <summary>P: çizgi tipi adı ("DASHED"); boşsa sürekli.</summary>
+        public string CizgiTipi = "";
     }
 
     public sealed class Sembol
@@ -45,6 +51,15 @@ namespace SebekeHakedis.Cekirdek
 
         /// <summary>Varyantlar (semboller.json sırası): montaj, mevcut, sök-tak, demontaj, demontaj kesik, demontaj sökük.</summary>
         public static readonly string[] Varyantlar = { "YENI", "MEVCUT", "DMM", "DM", "KESIK", "SOKUK" };
+
+        /// <summary>Şebeke-M takımının aile öneki (SM_DIREK_AG …) ve ayar değeri (Boyutlar.SimgeTakimi).</summary>
+        public const string TakimSM = "SM";
+
+        /// <summary>
+        /// Etkin simge takımı: "" klasik, "SM" Şebeke-M (Çizim Ayarları › Görünüm › Simge takımı; çizimin ayarından
+        /// OrtamVerisi.Doldur / CizimYazici.BoyutlariAl yükler). Blok adları buna göre seçilir.
+        /// </summary>
+        public static string Takim = "";
 
         public static bool Yuklu => _tablo != null;
 
@@ -78,11 +93,17 @@ namespace SebekeHakedis.Cekirdek
                 else { s.YariGenislik = 2; s.Kapsam = 3.6; }
                 var dizi = kv.Value as List<object>;
                 if (dizi != null)
+                {
+                    int renk = 0;
                     foreach (var x in dizi)
                     {
                         var ilkel = IlkelOku(x as List<object>);
-                        if (ilkel != null) s.Ilkeller.Add(ilkel);
+                        if (ilkel == null) continue;
+                        if (ilkel.Tur == "R") { renk = ilkel.Sayilar.Length > 0 ? (int)ilkel.Sayilar[0] : 0; continue; }
+                        ilkel.Renk = renk;
+                        s.Ilkeller.Add(ilkel);
                     }
+                }
                 tablo[kv.Key] = s;
             }
             _tablo = tablo;
@@ -104,6 +125,12 @@ namespace SebekeHakedis.Cekirdek
                         if (xy != null && xy.Count >= 2) p.Noktalar.Add(new[] { Sayi(xy[0]), Sayi(xy[1]) });
                     }
                 p.Kapali = p.Tur == "S" || (d.Count > 2 && d[2] is bool && (bool)d[2]);
+                if (d.Count > 3 && d[3] is string) p.CizgiTipi = (string)d[3];
+            }
+            else if (p.Tur == "T")
+            {
+                p.Sayilar = new[] { d.Count > 1 ? Sayi(d[1]) : 0, d.Count > 2 ? Sayi(d[2]) : 0, d.Count > 3 ? Sayi(d[3]) : 1 };
+                p.Metin = d.Count > 4 ? Convert.ToString(d[4], CultureInfo.InvariantCulture) : "";
             }
             else
             {
@@ -245,9 +272,60 @@ namespace SebekeHakedis.Cekirdek
             }
         }
 
-        /// <summary>Eklentinin bloğu: SH_&lt;aile&gt;_&lt;varyant&gt;, ör. SH_KAFES_AG_YENI, SH_DIREK_AG_KESIK.</summary>
-        public static string BlokAdi(string tur, string cins, string durum, string dmDurum = "") => OnEk + Aile(tur, cins) + "_" + Varyant(durum, dmDurum);
+        private static string Ust(string s) => (s ?? "").ToUpperInvariant().Replace('İ', 'I').Replace('Ş', 'S').Replace('Ç', 'C').Replace('Ü', 'U').Replace('Ö', 'O').Replace('Ğ', 'G');
 
-        public static string BlokAdi(Eleman e) => BlokAdi(e.Tur, e.Cins, e.Durum, e.DmDurum);
+        /// <summary>
+        /// Şebeke-M takımındaki aile (kullanıcı kararları, 9.11.2026): kafes / beton ayrımı klasikteki gibi; ENH direği kendi
+        /// simgesi; trafo merkezi tipten tanınır (indirici · bina · kulesiz özel · kule çıkışlı (özel) · kule (özel) · yoksa
+        /// modüler köşk); direk tipi trafoda "özel"; pano → box, box → SDK (aydınlatma yazısı varsa SDK AYD); armatür
+        /// tipinden lamba türü (LED · cıva · floresan · yoksa sodyum). Takımda olmayan aileler (ek mufu, kofre, menhol,
+        /// abone, diğer) klasik ailesiyle döner.
+        /// </summary>
+        public static string SmAile(string tur, string cins, string tip)
+        {
+            string c = Ust(cins), t = Ust(tip), ct = c + " " + t;
+            switch (tur ?? "")
+            {
+                case "AG_DIREK": return DemirMi(cins) ? "SM_KAFES_AG" : "SM_DIREK_AG";
+                case "MUSTEREK_DIREK": return DemirMi(cins) ? "SM_KAFES_OG" : "SM_DIREK_OG";
+                case "ENH_DIREK": return "SM_DIREK_ENH";
+                case "AYD_DIREK": return "SM_DIREK_AYD";
+                case "TRAFO_DIREGI": return ct.Contains("OZEL") ? "SM_TRAFO_DIREK_OZEL" : "SM_TRAFO_DIREK";
+                case "TRAFO_MERKEZI":
+                    {
+                        bool ozel = ct.Contains("OZEL");
+                        if (ct.Contains("INDIRICI") || ct.Contains("DAGITIM MERKEZ")) return "SM_INDIRICI_MERKEZ";
+                        if (ct.Contains("BINA")) return "SM_TRAFO_BINA";
+                        if (ct.Contains("KULESIZ")) return "SM_KOSK_KULESIZ_OZEL";
+                        if (ct.Contains("KULE") && ct.Contains("CIKIS")) return ozel ? "SM_KOSK_KULE_CIKIS_OZEL" : "SM_KOSK_KULE_CIKIS";
+                        if (ct.Contains("KULE")) return ozel ? "SM_KOSK_KULE_OZEL" : "SM_KOSK_KULE";
+                        return "SM_KOSK_MODULER";
+                    }
+                case "PANO": return "SM_BOX";
+                case "BOX": return ct.Contains("AYD") ? "SM_SDK_AYD" : "SM_SDK_AG";
+                default:
+                    {
+                        string klasik = Aile(tur, cins);
+                        if (klasik != "ARMATUR") return klasik;
+                        if (t.Contains("LED")) return "SM_ARMATUR_LED";
+                        if (t.Contains("CIVA")) return "SM_ARMATUR_CIVA";
+                        if (t.Contains("FLORESAN") || t.Contains("FLUORESAN")) return "SM_ARMATUR_FLORESAN";
+                        return "SM_ARMATUR_SODYUM";
+                    }
+            }
+        }
+
+        /// <summary>Etkin takıma göre aile: klasik (Aile) ya da Şebeke-M (SmAile; tabloda yoksa klasik).</summary>
+        public static string TakimAilesi(string tur, string cins, string tip = null)
+        {
+            if (Takim != TakimSM) return Aile(tur, cins);
+            string sm = SmAile(tur, cins, tip);
+            return _tablo == null || _tablo.ContainsKey(sm + "_YENI") ? sm : Aile(tur, cins);
+        }
+
+        /// <summary>Eklentinin bloğu: SH_&lt;aile&gt;_&lt;varyant&gt;, ör. SH_KAFES_AG_YENI, SH_DIREK_AG_KESIK; Şebeke-M takımında SH_SM_….</summary>
+        public static string BlokAdi(string tur, string cins, string durum, string dmDurum = "", string tip = null) => OnEk + TakimAilesi(tur, cins, tip) + "_" + Varyant(durum, dmDurum);
+
+        public static string BlokAdi(Eleman e) => BlokAdi(e.Tur, e.Cins, e.Durum, e.DmDurum, e.Tip);
     }
 }

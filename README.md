@@ -24,6 +24,7 @@ GitHub › **Releases**:
 | Eleman koyma (direk, trafo, SDK, pano, abone…) | GNSS ile ölçerek (RTK, telefon konumu, elle, haritadan, Excel) | şeritte kategori › öğe, tek tıkla (`SH_HIZLI`); `SH_ELEMAN` |
 | Hat, kablo kanalı, yatay sondaj | ✓ (kaplama + yöntem) | direkten direğe parçalı, her parçanın metrajı ayrı; `SH_HAT`, `SH_KANAL`, `SH_SONDAJ` |
 | Görünüm (simge, renk, çizgi tipi, yazı) | ✓ | telefonla birebir aynı (`SH_GORUNUM` eski çizimi çevirir) |
+| İki simge takımı: Klasik, Şebeke-M (durum doluluktan: dolu · kontur · yarı dolu · çift kontur + DM; köşk ve armatür türü tipten) | ✓ DXF (Dışa Aktar › Çizim boyutları › Simge takımı) | Çizim Ayarları › Görünüm › Simge takımı (`SH_GORUNUM` çizimdekileri çevirir); lejant `ortak/lejant/` |
 | Bölge (alt proje) | AutoCAD'den gelen bölgeler korunur (grup kodu dahil) | `SH_BOLGE` |
 | Ölçü noktaları | ölçerek, CSV / NCN çıktısı | `SH_NOKTAAL` (CSV/TXT) |
 | Malzeme (TEDAŞ poz kataloğu) | ✓ elle ekleme, otomatik reçete seçeneği | `SH_MALZEME` (2 982 kalemlik katalog; AG galvaniz travers ve konsollar dâhil) |
@@ -52,8 +53,8 @@ renk, çizgi ve yazılarla görünür; çevrimdışı çalışır.
 | --- | --- |
 | `telefon/` | Telefon uygulaması Şebeke-M Hakediş (Java kabuk + WebView, Preact arayüz, JS hesap motoru, TEDAŞ kataloğu). Ayrıntı: [telefon/README.md](telefon/README.md), kaynak notları [telefon/README_KAYNAK.txt](telefon/README_KAYNAK.txt) |
 | `autocad/` | AutoCAD eklentisi (C#): `src/Cekirdek` AutoCAD'den bağımsız hesap çekirdeği, `src/Eklenti` AutoCAD tarafı (şerit, pencereler, Hesap Merkezi sunucusu), `test/` denemeler, `paket/` kurulum |
-| `ortak/` | Proje dosyası biçimi ([VERI-MODELI.md](ortak/VERI-MODELI.md)), rapor katsayıları, malzeme kataloğu (2 982 kalem), lejant simge takımı (`semboller.json`), ortak çizim stili (`cizim-stili.json`), şerit kategorileri (`kategoriler.json`), telefon ↔ eski program eşlemesi (`volt-eslesme.json`), eski programın inceleme notları ([CIZIM-BICIMI-NOTLARI.md](ortak/CIZIM-BICIMI-NOTLARI.md)), marka (`marka/`), **Hesap Merkezi** (`hesap/`: hesap sayfaları, köprü, tema, uyarlamalar, denemeler; sözleşme [hesap/BAGLAM.md](ortak/hesap/BAGLAM.md)) |
-| `araclar/` | Geliştirme araçları: AutoCAD olmadan DWG okuma, simge takımı üretimi ve önizlemesi, ortak tabloların telefona kopyalanması, Hesap Merkezi paketleyicisi (`hesap-paketle.mjs`) ve deneme koşucusu (`hesap-dene.py`) |
+| `ortak/` | Proje dosyası biçimi ([VERI-MODELI.md](ortak/VERI-MODELI.md)), rapor katsayıları, malzeme kataloğu (2 982 kalem), iki lejant simge takımı (`semboller.json`; lejant resimleri `lejant/`), ortak çizim stili (`cizim-stili.json`), şerit kategorileri (`kategoriler.json`), telefon ↔ eski program eşlemesi (`volt-eslesme.json`), eski programın inceleme notları ([CIZIM-BICIMI-NOTLARI.md](ortak/CIZIM-BICIMI-NOTLARI.md)), marka (`marka/`), **Hesap Merkezi** (`hesap/`: hesap sayfaları, köprü, tema, uyarlamalar, denemeler; sözleşme [hesap/BAGLAM.md](ortak/hesap/BAGLAM.md)) |
+| `araclar/` | Geliştirme araçları: AutoCAD olmadan DWG okuma, simge takımı üretimi, önizlemesi ve lejant resmi (`lejant-uret.mjs`), ortak tabloların telefona kopyalanması, Hesap Merkezi paketleyicisi (`hesap-paketle.mjs`) ve deneme koşucusu (`hesap-dene.py`) |
 
 ## Doğrulama
 
@@ -80,7 +81,7 @@ renk, çizgi ve yazılarla görünür; çevrimdışı çalışır.
   - `main` dışındaki dallarda yalnız test ve derleme yapılır; günlükler `ci-sonuc-dal` / `ci-sonuc-android-dal` dallarına yazılır.
 - Bilgisayarsız deneme: `dotnet run --project autocad/test/CekirdekTest -- ornek`,
   `cd telefon/web && node --test tests/*.test.mjs`, `python3 araclar/hesap-dene.py [hesap…] [--boyut 390x844]`.
-- Ortak tablolar değişince: `node araclar/semboller-uret.mjs` (simgeler) ve `node araclar/ortak-tablolar.mjs` (telefon kopyaları).
+- Ortak tablolar değişince: `node araclar/semboller-uret.mjs` (simgeler), `node araclar/lejant-uret.mjs` (lejant resimleri) ve `node araclar/ortak-tablolar.mjs` (telefon kopyaları).
   Hesap sayfaları: `node araclar/hesap-paketle.mjs` (çıktı `ortak/hesap/paket/`, depoya konmaz).
 - Gerçek proje dosyaları (DWG, proje verisi) depoya konmaz; testler uydurma örneklerle çalışır.
 - Plan ve fazlar: [PLAN.md](PLAN.md) · Başka hesaba / oturuma devir: [DEVIR.md](DEVIR.md)

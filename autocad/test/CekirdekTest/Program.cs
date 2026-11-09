@@ -133,6 +133,9 @@ namespace SebekeHakedis.Test
                         sb.Append(i.Tur);
                         foreach (var d in i.Sayilar) sb.Append(' ').Append(d.ToString("0.###", CultureInfo.InvariantCulture));
                         foreach (var n in i.Noktalar) sb.Append(" (").Append(n[0].ToString("0.###", CultureInfo.InvariantCulture)).Append(',').Append(n[1].ToString("0.###", CultureInfo.InvariantCulture)).Append(')');
+                        if (i.Metin.Length > 0) sb.Append(" \"").Append(i.Metin).Append('"');
+                        if (i.Renk != 0) sb.Append(" r").Append(i.Renk);
+                        if (i.CizgiTipi.Length > 0) sb.Append(' ').Append(i.CizgiTipi);
                         sb.Append(';');
                     }
                     gorunum.Add(sb.ToString());
@@ -151,6 +154,69 @@ namespace SebekeHakedis.Test
             var orn = Semboller.Bul("SH_KAFES_OG_YENI");
             Esit(3.0, orn != null ? orn.YariGenislik : 0, "simge: KAFES_OG yarı genişliği 3 m");
             Esit(null, Semboller.Bul("SH_DIREK"), "simge: eski SH_DIREK adı tabloda yok (eklenti basit daire çizer)");
+
+            // Şebeke-M takımı (9.11.2026): 23 SM_ ailesi; yazı (T), zıt renk (R) ve kesikli çizgi yalnız bu takımda.
+            // Tasarım kuralı: yeni dolu (iç çizgiler zıt renk), mevcut kontur, DM çift kontur + "DM" yazısı, kesik K / sökük S.
+            int smAile = 0, klasikAile = 0, toplam = 0, klasikteYeniIlkel = 0;
+            foreach (var aile in Semboller.Aileler()) { if (aile.StartsWith("SM_", StringComparison.Ordinal)) smAile++; else klasikAile++; }
+            foreach (var sm in Semboller.Hepsi())
+            {
+                toplam++;
+                if (sm.Ad.StartsWith("SM_", StringComparison.Ordinal)) continue;
+                foreach (var i in sm.Ilkeller) if (i.Tur == "T" || i.Renk != 0 || i.CizgiTipi.Length > 0) klasikteYeniIlkel++;
+            }
+            Esit(23, smAile, "Şebeke-M: 23 aile");
+            Esit(16, klasikAile, "Şebeke-M: klasik takımın 16 ailesi değişmedi");
+            Esit(234, toplam, "Şebeke-M: 39 aile × 6 durum = 234 sembol");
+            Esit(0, klasikteYeniIlkel, "Şebeke-M: klasik simgelerde yazı, zıt renk ya da kesikli çizgi yok");
+            Func<string, string, int> yaziSayisi = (ad, metin) => Semboller.Bul(ad).Ilkeller.FindAll(i => i.Tur == "T" && i.Metin == metin).Count;
+            Func<string, int> zitRenk = ad => Semboller.Bul(ad).Ilkeller.FindAll(i => i.Renk == 7).Count;
+            Esit(true, zitRenk("SH_SM_DIREK_AG_YENI") > 0, "Şebeke-M: yeni direk dolu, iç çizgiler zıt renk");
+            Esit(0, zitRenk("SH_SM_DIREK_AG_MEVCUT"), "Şebeke-M: mevcut direk kontur (zıt renk yok)");
+            Esit(true, zitRenk("SH_SM_DIREK_AG_DMM") > 0 && Semboller.Bul("SH_SM_DIREK_AG_DMM").Ilkeller.Exists(i => i.Tur == "Y"), "Şebeke-M: sök-tak sol yarısı dolu");
+            Esit(1, yaziSayisi("SH_SM_DIREK_AG_DM", "DM"), "Şebeke-M: demontajda DM yazısı");
+            Esit(0, yaziSayisi("SH_SM_DIREK_AG_DM", "K") + yaziSayisi("SH_SM_DIREK_AG_DM", "S"), "Şebeke-M: türü bilinmeyen demontajda harf yok");
+            Esit(1, yaziSayisi("SH_SM_DIREK_AG_KESIK", "K"), "Şebeke-M: kesik demontajda K harfi");
+            Esit(1, yaziSayisi("SH_SM_DIREK_AG_SOKUK", "S"), "Şebeke-M: sökük demontajda S harfi");
+            Esit(1, yaziSayisi("SH_SM_DIREK_AG_SOKUK", "DM"), "Şebeke-M: sökükte DM yazısı da var");
+            Esit(2, Semboller.Bul("SH_SM_DIREK_AG_DM").Ilkeller.FindAll(i => i.Tur == "C").Count, "Şebeke-M: demontaj çift kontur (iki daire)");
+            Esit(true, Semboller.Bul("SH_SM_TRAFO_BINA_MEVCUT").Ilkeller.Exists(i => i.Tur == "P" && i.CizgiTipi == "DASHED"), "Şebeke-M: trafo binası kesikli kontur");
+            Esit(true, Semboller.Bul("SH_SM_SDK_AG_YENI").Ilkeller.Exists(i => i.Tur == "T" && i.Metin == "AG"), "Şebeke-M: SDK simgesinde AG yazısı");
+            Esit(true, Semboller.YariGenislik("SM_DIREK_AG") == Semboller.YariGenislik("DIREK_AG") && Semboller.YariGenislik("SM_KAFES_OG") == Semboller.YariGenislik("KAFES_OG"), "Şebeke-M: yarı genişlikler klasikle aynı (hatlar aynı yere yapışır)");
+            // Takım seçimi: Semboller.Takim = "SM" iken blok adları SH_SM_…; takımda olmayan aile klasik kalır; dönünce eski adlar
+            Esit("SH_DIREK_AG_YENI", Semboller.BlokAdi("AG_DIREK", "AG_BETON", "M", "", "AG BETON 9/300"), "takım: klasikte tip simgeyi değiştirmez");
+            Semboller.Takim = Semboller.TakimSM;
+            try
+            {
+                Esit("SH_SM_DIREK_AG_YENI", Semboller.BlokAdi("AG_DIREK", "AG_BETON", "M"), "takım SM: AG beton direk yeni");
+                Esit("SH_SM_KAFES_AG_KESIK", Semboller.BlokAdi("AG_DIREK", "AG_DEMİR_GLV", "DM", "KESİK"), "takım SM: AG demir direk kesik");
+                Esit("SH_SM_KAFES_OG_DMM", Semboller.BlokAdi("MUSTEREK_DIREK", "MÜŞ_DEMİR_GLV", "DM+M"), "takım SM: müşterek demir direk sök-tak");
+                Esit("SH_SM_DIREK_ENH_MEVCUT", Semboller.BlokAdi("ENH_DIREK", "ENH_GLV_CVT", "MEVCUT"), "takım SM: ENH direği demir de olsa ENH simgesi");
+                Esit("SH_SM_DIREK_AYD_YENI", Semboller.BlokAdi("AYD_DIREK", "AYD_GLV_PLG", "M"), "takım SM: aydınlatma direği");
+                Esit("SH_SM_TRAFO_DIREK_YENI", Semboller.BlokAdi("TRAFO_DIREGI", "TR_DİREK_GLV", "M"), "takım SM: direk tipi trafo");
+                Esit("SH_SM_TRAFO_DIREK_OZEL_YENI", Semboller.BlokAdi("TRAFO_DIREGI", "TR_DİREK_GLV", "M", "", "ÖZEL TRAFO 250 kVA"), "takım SM: özel direk tipi trafo");
+                Esit("SH_SM_KOSK_MODULER_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "M"), "takım SM: tipi yazılmamış köşk → modüler");
+                Esit("SH_SM_KOSK_KULE_CIKIS_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "M", "", "KULE ÇIKIŞLI KÖŞK"), "takım SM: kule çıkışlı köşk");
+                Esit("SH_SM_KOSK_KULE_CIKIS_OZEL_MEVCUT", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "MEVCUT", "", "ÖZEL KULE ÇIKIŞLI"), "takım SM: özel kule çıkışlı köşk");
+                Esit("SH_SM_KOSK_KULE_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "M", "", "KULELİ KÖŞK"), "takım SM: kuleli köşk");
+                Esit("SH_SM_KOSK_KULESIZ_OZEL_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "M", "", "KULESİZ ÖZEL"), "takım SM: kulesiz özel köşk");
+                Esit("SH_SM_TRAFO_BINA_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "TRAFO_BİNASI", "M"), "takım SM: trafo binası cinsten tanınır");
+                Esit("SH_SM_INDIRICI_MERKEZ_MEVCUT", Semboller.BlokAdi("TRAFO_MERKEZI", "", "MEVCUT", "", "İNDİRİCİ MERKEZ"), "takım SM: indirici merkez");
+                Esit("SH_SM_SDK_AG_YENI", Semboller.BlokAdi("BOX", "BOX_PANO", "M"), "takım SM: box → SDK AG");
+                Esit("SH_SM_SDK_AYD_YENI", Semboller.BlokAdi("BOX", "BOX_PANO", "M", "", "AYDINLATMA SDK"), "takım SM: aydınlatma yazılı box → SDK AYD");
+                Esit("SH_SM_BOX_YENI", Semboller.BlokAdi("PANO", "AG_PANO_HT", "M"), "takım SM: pano → box");
+                Esit("SH_SM_ARMATUR_LED_YENI", Semboller.BlokAdi("DIGER", "ARMATÜR", "M", "", "LED ARMATÜR 100 W"), "takım SM: LED armatür");
+                Esit("SH_SM_ARMATUR_CIVA_DM", Semboller.BlokAdi("DIGER", "ARMATÜR", "DM", "", "CIVA BUHARLI 125 W"), "takım SM: cıva buharlı armatür");
+                Esit("SH_SM_ARMATUR_SODYUM_YENI", Semboller.BlokAdi("DIGER", "ARMATÜR", "M"), "takım SM: tipi yazılmamış armatür → sodyum");
+                Esit("SH_MUFU_MEVCUT", Semboller.BlokAdi("EK_MUFU", "EK_MUFU_AG_ALM", "MEVCUT"), "takım SM: takımda olmayan aile (ek mufu) klasik kalır");
+                Esit("SH_MENHOL_MEVCUT", Semboller.BlokAdi("DIGER", "MENHOL", "MEVCUT"), "takım SM: menhol klasik kalır");
+                Esit("SH_SM_DIREK_AG_KESIK", Semboller.BlokAdi(new Eleman { Tur = "AG_DIREK", Cins = "AG_BETON", Durum = "DM", DmDurum = "KESİK", Tip = "AG BETON 9/300" }), "takım SM: elemandan blok adı");
+                Esit(true, Semboller.Bul(Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "M", "", "KULE ÇIKIŞLI KÖŞK")) != null, "takım SM: seçilen blok tabloda var");
+            }
+            finally { Semboller.Takim = ""; }
+            Esit("SH_DIREK_AG_YENI", Semboller.BlokAdi("AG_DIREK", "AG_BETON", "M"), "takım: klasiğe dönünce eski blok adı");
+            Esit("", Boyutlar.TakimDuzelt("x"), "takım: bilinmeyen takım adı klasik sayılır");
+            Esit(Semboller.TakimSM, Boyutlar.TakimDuzelt("sm"), "takım: küçük harfle sm");
         }
 
         /// <summary>Tüm sembolleri ilkel ilkel yazar (telefonun JS tablosuyla karşılaştırmak için).</summary>
@@ -188,6 +254,7 @@ namespace SebekeHakedis.Test
         {
             Console.WriteLine("Örnek döküm: " + yol);
             SembolleriYukle();
+            Semboller_();
             Esit(16.8, SayiCoz.Coz("16,8"), "Türkçe ondalık");
             Esit(0.0, SayiCoz.Coz(",00"), "',00' sıfırdır");
             Esit(10.5, SayiCoz.Coz("10.5"), "noktalı ondalık");
@@ -463,6 +530,20 @@ namespace SebekeHakedis.Test
             var ay2 = CizimAyarlari.Ciftlerden(ay.Ciftler());
             Esit(true, ay2.HatKalinligi == 1.5 && ay2.MalzemeYazisi, "çizim ayarları: kalınlık ve malzeme yazısı saklanır");
             Esit(true, ay2.BoyutlariVer().Ayni(by), "çizim ayarları: boyutlar aynı");
+            // Simge takımı (9.11.2026): varsayılan (klasik) yazılmaz; Şebeke-M proje dosyasında ve çizim ayarlarında taşınır
+            Esit(true, new Boyutlar().SimgeTakimi == "" && new Boyutlar().Varsayilan, "simge takımı: varsayılan klasik");
+            var bsm = new Boyutlar { SimgeTakimi = Semboller.TakimSM };
+            Esit(false, bsm.Varsayilan, "simge takımı: Şebeke-M seçilince boyutlar varsayılan değil");
+            string pj = ProjeDosyasi.Yaz(new Proje { Ad = "T", KatmanOnEki = "SC", Boyutlar = bsm }, "deneme");
+            Esit(true, System.Text.RegularExpressions.Regex.IsMatch(pj, "\"simgeTakimi\"\\s*:\\s*\"SM\""), "simge takımı: proje dosyasına simgeTakimi yazılır");
+            Esit(false, ProjeDosyasi.Yaz(q, "deneme").Contains("simgeTakimi"), "simge takımı: klasikte dosyaya yazılmaz");
+            var gsm = ProjeDosyasi.Oku(pj).Boyutlar;
+            Esit(Semboller.TakimSM, gsm.SimgeTakimi, "simge takımı: dosyadan okunur");
+            Esit(true, gsm.Ayni(bsm) && !gsm.Ayni(by), "simge takımı: karşılaştırmada sayılır");
+            Esit("", ProjeDosyasi.Oku("{\"bicim\":\"sebeke-hakedis.proje\",\"surum\":1,\"proje\":{\"ad\":\"D\",\"boyutlar\":{\"simgeTakimi\":\"BILINMEYEN\"}}}").Boyutlar.SimgeTakimi, "simge takımı: bilinmeyen ad klasiğe döner");
+            var aysm = new CizimAyarlari();
+            aysm.BoyutlariKoy(bsm);
+            Esit(Semboller.TakimSM, CizimAyarlari.Ciftlerden(aysm.Ciftler()).BoyutlariVer().SimgeTakimi, "simge takımı: çizim ayarlarında saklanır");
             Esit(true, Pencerelerdeki(1.0).Contains("OG 0,5") && Pencerelerdeki(0).StartsWith("İnce çizgi"), "ayar yazısı: kalınlıklar mm ile");
 
             // AG galvaniz travers ve konsollar, AG izolatör demirleri (8.11.2026; birim fiyat kitabındaki kg/ad; telefonla

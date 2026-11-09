@@ -51,7 +51,11 @@ function CizimBoyutlari() {
   const alan = (k, ad, adim) => html`<div class="fld"><label>${ad}</label><${Girdi} type="number" inputmode="decimal" step=${adim} value=${b[k]}
     onSave=${(v) => { const x = +String(v).replace(',', '.'); if (Number.isFinite(x)) kaydet(Object.assign({}, b, { [k]: x })); }} /></div>`;
   const varsayilan = !SH.boyutlarOku(b);
+  const takim = b.simgeTakimi === 'SM' ? 'SM' : '';
   return html`<div class="card"><div class="row"><b class="grow">Çizim boyutları</b>${varsayilan ? html`<${Badge} k="mut">VARSAYILAN</${Badge}>` : html`<button class="btn sm" onClick=${() => kaydet(SH.BOYUT_VARSAYILAN)}>Varsayılana dön</button>`}</div>
+    <div class="fld" style="margin-top:6px"><label>Simge takımı (DXF ve AutoCAD dosyası)</label>
+      <select class="inp" value=${takim} onChange=${(e) => kaydet(Object.assign({}, b, { simgeTakimi: e.target.value }))}>
+        <option value="">Klasik (lejant simgeleri)</option><option value="SM">Şebeke-M (dolu · yarı dolu · kontur · çift kontur + DM)</option></select></div>
     <div class="grid2" style="margin-top:6px">${alan('simgeOlcegi', 'Simge (kat)', 0.1)}${alan('elemanYaziYuksekligi', 'Eleman yazısı (m)', 0.1)}${alan('etiketYuksekligi', 'Kablo tipi yazısı (m)', 0.1)}${alan('metrajYuksekligi', 'Metraj yazısı (m)', 0.1)}</div>
     <div class="fld" style="margin-top:6px"><label>Hat kalınlığı (baskı 1/1000)</label><div class="chips">${HAT_KALINLIKLARI.map(([k, ad]) => html`<${Chip} on=${Math.abs((+b.hatKalinligi || 0) - k) < 1e-9} onClick=${() => kaydet(Object.assign({}, b, { hatKalinligi: k }))}>${ad}</${Chip}>`)}</div>
       <span class="note">${+b.hatKalinligi > 0 ? 'OG ' + kalinlikMm('HAT_OG', b.hatKalinligi) + ' · AG ' + kalinlikMm('HAT_AG', b.hatKalinligi) + ' mm (kâğıtta)' : 'Hatlar ince çizgi'}</span></div>

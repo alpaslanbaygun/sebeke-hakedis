@@ -32,8 +32,8 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 
 | Parça | Sürüm | Durum |
 | --- | --- | --- |
-| Telefon uygulaması (Şebeke-M Hakediş) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı; Esri ArcGIS, Bing, Azure dâhil), **Hesap Merkezi** (direk cer vektörü + önerilen direk tipi, kanal planı, proje bazlı direk listeleri), **Birleşik Metraj** (eski programın Excel şablonu; 9.11), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası), **haritada çizim görünümü**, Google Earth ve CBS (MIF / MID) eklentiyle aynı; telefonda denenmedi |
-| AutoCAD eklentisi (Şebeke-M Hakediş) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası), **Birleşik Metraj** (Proje Özeti; 9.11). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
+| Telefon uygulaması (Şebeke-M Hakediş) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı; Esri ArcGIS, Bing, Azure dâhil), **Hesap Merkezi** (direk cer vektörü + önerilen direk tipi, kanal planı, proje bazlı direk listeleri), **Birleşik Metraj** (eski programın Excel şablonu; 9.11), **Şebeke-M simge takımı** (DXF; 9.11), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası), **haritada çizim görünümü**, Google Earth ve CBS (MIF / MID) eklentiyle aynı; telefonda denenmedi |
+| AutoCAD eklentisi (Şebeke-M Hakediş) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası), **Birleşik Metraj** (Proje Özeti; 9.11), **Şebeke-M simge takımı** (Çizim Ayarları › Görünüm; 9.11, AutoCAD'de denenmedi). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
 
 8.11 (`malzeme-yazisi` dalı, `main`'den; geri dönüş: `onceki-main-malzeme-yazisi-oncesi` dalı): kullanıcının 8.11 listesi.
@@ -58,6 +58,25 @@ gT / gD müşterek tepe traversleri, T-AG-1…9, D-AG-1…3, N-AG-1, MT-1…4, M
 (B 95, D 80, D 95); `kaynak: "ek"` (katalog-aktar.py bunları korur). Telefon kataloğunda eksik 38 poz eklendi
 (seedRev 26: kurulu telefonlarda eksik satırlar kendiliğinden eklenir). `volt-eslesme.json › kalemler`: servis kodu ↔
 eklenti cins / tanım (iki yönde aynı kalem). Denemeler: CekirdekTest, `telefon/web/tests/konsol.test.mjs`.
+
+9.11 öğleden sonra (`simge-takimi` dalı, `hesap-metraj` üstüne; PR C): **#89 Şebeke-M simge takımı** — kullanıcının
+SM_* SVG / DXF tasarımı seçilebilir ikinci takım olarak (kararlar: ikinci takım, çizim başına seçilir; demontajda DM
+simgesine K / S harfi; köşk türü tipten, yoksa modüler köşk). `semboller.json` sürüm 3: 23 `SM_` ailesi (`aileler.*.takim`,
+`takimlar`), yeni ilkeller `T` yazı, `R` renk durumu (7 zıt renk), `P` kesikli (`"DASHED"`); klasik geometri aynı. Üretici
+`araclar/semboller-uret.mjs › SM / smUret` (kulak kesme üçgenlemesi `ucgenle` içbükey dolgular için, `yariRenk` sol yarı,
+yazı dizme), lejant resmi `araclar/lejant-uret.mjs` → `ortak/lejant/semboller-{klasik,sebekem}.svg` (kullanıcının zip'indeki
+lejant PDF / PNG'leri depoya konmadı: başlığında yazım hatası var; program kendi lejantını üretir). Seçim `Boyutlar.SimgeTakimi`
+↔ sh-core `simgeTakimi` (proje dosyasında `boyutlar.simgeTakimi: "SM"`, klasik yazılmaz; çizim ayarı `simgeTakimi`).
+Eklenti: `Semboller.Takim` (OrtamVerisi.Doldur ve CizimYazici.BoyutlariAl kurar), `SmAile` / `TakimAilesi` / `BlokAdi(…, tip)`,
+NesneYazici blok seçimi ve armatür bloğu tipi geçirir; `CizimYazici.BlokCiz` ilkel başına renk (ColorIndex 0 / 7), DBText
+ortalı yazı, kesikli polyline (LinetypeScale 0,25); `SeritSimgeleri` yazı ve zıt renk çizer; Çizim Ayarları › Görünüm ›
+**Simge takımı** (Klasik / Şebeke-M; pencere 660×600), kaydedince `SH_GORUNUM` sorusu (bloklar `SH_SM_…`). Telefon:
+`dxf.js › smAilesi / sembolBlogu(e, takim)` (ENH `group === 'bahh'`), bloklarda TEXT (72=1, 73=2), renk 62, çizgi tipi 6;
+Dışa Aktar › Çizim boyutları › **Simge takımı**. Denemeler: `tests/semboller.test.mjs` S4 (23 aile, tasarım kuralı,
+eşleme) ve S5 (DXF'te SH_SM_ blokları, yazı / renk / kesikli), `dxf.test.mjs` D4 `takim`; CekirdekTest `Semboller_`
+(artık `ornek` içinde de koşar: sayılar, ilkeller, `Takim = "SM"` eşlemesi, `simgeTakimi` gidiş-dönüşü); PencereTest 07
+simge takımı açılır listesi. Açık: takımın kendi renk paleti uygulanmadı (katman renkleri kaldı); telefon haritasının
+işaretleri takımdan bağımsız; "Varsayılana dön" takımı değiştirmez.
 
 9.11 (`hesap-metraj` dalı, `duzeltmeler-8-11` üstüne; geri dönüş: `onceki-main-duzeltmeler-oncesi`): kullanıcının 17:30
 listesinin kalanı (#87, #88) ve 17:52 isteği (#91). **Önerilen direk tipi** (Cer Vektörü sayfasında, kullanıcı: eski
@@ -285,8 +304,9 @@ dalı (önceki `main`; eklenti 0.1.16 ve telefon 2.5.8 Releases'te durur).
   Aramayı engellemez, python3 yoksa sessiz kalır. `/harita` becerisi (`skills/harita`) haritayı yeniler ve istenirse
   sayfasını yayımlar (yayımlı sayfa: https://claude.ai/artifact/PJLGVnejxTfozyomQzkGi9).
 - `ortak/` — proje dosyası biçimi (`VERI-MODELI.md`), `katalog/kalemler.json` (eski program malzeme kataloğu),
-  `katalog/katsayilar.json` (rapor katsayıları), `katalog/semboller.json` (lejant simge takımı; üretici
-  `araclar/semboller-uret.mjs`), `katalog/volt-eslesme.json` (telefon kataloğu ↔ eski program eşlemesi).
+  `katalog/katsayilar.json` (rapor katsayıları), `katalog/semboller.json` (iki lejant simge takımı: klasik ve `SM_`
+  Şebeke-M; üretici `araclar/semboller-uret.mjs`, lejant resimleri `araclar/lejant-uret.mjs` → `lejant/`),
+  `katalog/volt-eslesme.json` (telefon kataloğu ↔ eski program eşlemesi).
   Değişince `node araclar/ortak-tablolar.mjs` telefon kopyalarını (`telefon/web/src/ortak/*.js`) yeniler.
 - `autocad/src/Cekirdek/` — AutoCAD'den bağımsız C# çekirdek: `NesneOkuyucu` (XDATA → model), `NesneYazici`
   (model → çizim tarifi, blok seçimi, `ANA`/`CON`/`FIDER` ek verisi, armatür simgesi), `Semboller` (tür + cins + durum +
@@ -389,8 +409,11 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
   eklenir (bugün 90 eşleşme: konsollar, izolatör demirleri, armatür / ampul, bara, topraklama, pano / box / trafo, kablo
   başlıkları, yeraltı kabloları). Açık işler: telefon haritasında direğin armatürü ayrı simgeyle çizilmiyor; AYD direk
   listesi (`LST_AYD_DIREK`) yeni aydınlatma direği tipine kendiliğinden eklenmez (poz 5.5.3 ile dolar).
-- **Yeni simge takımı** (#89, kullanıcının SM_* SVG / DXF zip'i): eklenti blokları, telefon DXF ve harita, lejant — ayrı
-  dalda (PR C) yapılacak.
+- **Şebeke-M simge takımının AutoCAD'de denemesi** (#89, 9.11, PR C): Çizim Ayarları › Görünüm › Simge takımı › Şebeke-M
+  seçip direk / köşk / box / armatür koyma (zıt renkli iç çizgiler karanlık ve beyaz zeminde, "DM" ve K / S yazıları
+  Tahoma ile okunaklı mı, kesikli bina konturu), Telefon Görünümü ile eski çizimin SH_SM_ bloklarına çevrilmesi ve
+  klasiğe geri dönüşü, DWG 2000 kaydedip açma, şeritteki simgeler; telefondan gelen dosyada takımın alınması. Kalanlar:
+  takımın kendi renk paleti (kullanıcı isterse), telefon haritasında Şebeke-M işaretleri, lejant tablosunun çizime konması.
 
 - **5.11 `kanal-listesi` işlerinin AutoCAD'de denemesi**: şeritte Kablo Kanalı › Cins / Kaplama seçip kanal çizme
   (kalem adı, rapor), kanalın Malzemeler penceresinde zemini değiştirme, Proje Özeti › Kanal listesi ve Excel, Kanal

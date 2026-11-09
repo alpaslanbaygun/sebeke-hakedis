@@ -188,8 +188,10 @@ namespace SebekeHakedis.Eklenti
             }
             double c = boyut / 2.0, k = boyut * (zeminli ? 0.38 : 0.44) / enBuyuk;
             Func<double, double, Point> P = (x, y) => new Point(c + x * k, c - y * k);
-            var firca = new SolidColorBrush(renk);
-            var kalem = new Pen(firca, Math.Max(1.0, boyut / 16.0));
+            var anaFirca = new SolidColorBrush(renk);
+            var zitFirca = new SolidColorBrush(Colors.White);   // dolu simgenin iç çizgileri (Şebeke-M takımı, ["R", 7])
+            double kalinlik = Math.Max(1.0, boyut / 16.0);
+            var anaKalem = new Pen(anaFirca, kalinlik);
             var dv = new DrawingVisual();
             using (var dc = dv.RenderOpen())
             {
@@ -197,6 +199,9 @@ namespace SebekeHakedis.Eklenti
                 foreach (var i in s.Ilkeller)
                 {
                     var d = i.Sayilar;
+                    var firca = i.Renk == 7 ? zitFirca : anaFirca;
+                    var kalem = i.Renk == 7 ? new Pen(zitFirca, kalinlik) : anaKalem;
+                    if (!string.IsNullOrEmpty(i.CizgiTipi)) kalem = new Pen(firca, kalinlik) { DashStyle = new DashStyle(new double[] { 3, 2 }, 0) };
                     switch (i.Tur)
                     {
                         case "L":
@@ -204,6 +209,17 @@ namespace SebekeHakedis.Eklenti
                             break;
                         case "C":
                             if (d.Length >= 3) dc.DrawEllipse(null, kalem, P(d[0], d[1]), d[2] * k, d[2] * k);
+                            break;
+                        case "T":
+                            if (d.Length >= 3 && !string.IsNullOrEmpty(i.Metin))
+                            {
+#pragma warning disable CS0618 // PixelsPerDip'li kurucu net46'da yok; şerit simgesi küçük, ölçek farkı önemsiz
+                                var ft = new FormattedText(i.Metin, System.Globalization.CultureInfo.GetCultureInfo("tr-TR"), FlowDirection.LeftToRight,
+                                    new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal), Math.Max(4, d[2] * k * 1.35), firca);
+#pragma warning restore CS0618
+                                var m = P(d[0], d[1]);
+                                dc.DrawText(ft, new Point(m.X - ft.Width / 2, m.Y - ft.Height / 2));
+                            }
                             break;
                         case "D":
                             if (d.Length >= 1) dc.DrawEllipse(firca, null, P(0, 0), d[0] * k, d[0] * k);

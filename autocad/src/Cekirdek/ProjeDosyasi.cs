@@ -70,6 +70,7 @@ namespace SebekeHakedis.Cekirdek
                 b["elemanYaziYuksekligi"] = p.Boyutlar.ElemanYaziYuksekligi;
                 b["hatKalinligi"] = p.Boyutlar.HatKalinligi;
                 b["malzemeYazisi"] = p.Boyutlar.MalzemeYazisi;
+                if (Boyutlar.TakimDuzelt(p.Boyutlar.SimgeTakimi).Length > 0) b["simgeTakimi"] = Boyutlar.TakimDuzelt(p.Boyutlar.SimgeTakimi);
                 pj["boyutlar"] = b;
             }
             var onaylar = new List<object>();
@@ -249,6 +250,7 @@ namespace SebekeHakedis.Cekirdek
                     ElemanYaziYuksekligi = by.Ondalik("elemanYaziYuksekligi", Boyutlar.VarsayilanEleman),
                     HatKalinligi = by.Ondalik("hatKalinligi", Boyutlar.VarsayilanKalinlik),
                     MalzemeYazisi = by.Mantik("malzemeYazisi") ?? Boyutlar.VarsayilanMalzemeYazisi,
+                    SimgeTakimi = by.Metin("simgeTakimi"),
                 }.Duzelt();
             foreach (var o in Nesneler(pj, "onaylar"))
             {
