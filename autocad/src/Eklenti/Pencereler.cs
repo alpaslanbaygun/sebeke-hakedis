@@ -3023,7 +3023,7 @@ namespace SebekeHakedis.Eklenti
                 Etiket(gorunum, "Simge takımı", 0, 366);
                 var takim = Koy(gorunum, new KoyuAcilir { Name = "simgeTakimi" }, 0, 386, 300);
                 takim.Items.Add("Klasik (telefonun lejant simgeleri)");
-                takim.Items.Add("Şebeke-M (dolu · yarı dolu · kontur · çift kontur + DM)");
+                takim.Items.Add("Şebeke-M (durum simgenin doluluğundan)");
                 takim.SelectedIndex = Boyutlar.TakimDuzelt(a.SimgeTakimi) == Semboller.TakimSM ? 1 : 0;
                 Aciklama(gorunum, "Yeni konan elemanlar bu takımla çizilir; kaydedince çizimdekilere uygulanması sorulur (Telefon Görünümü). Telefonun DXF'i aynı takımı kullanır.", 316, 384, 300, 36);
 
