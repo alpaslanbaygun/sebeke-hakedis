@@ -67,6 +67,86 @@ export function ruling(acikliklar) {
   return s1 > 0 ? Math.sqrt(s3 / s1) : null;
 }
 
+/** FNV-1a (32 bit) özeti, 8 haneli onaltılık; UTF-8. Eklentideki HesapBaglami.Fnv1a ile aynı (liste imzası). */
+export function fnv1a(s) {
+  const b = new TextEncoder().encode(String(s == null ? '' : s));
+  let h = 0x811c9dc5;
+  for (let i = 0; i < b.length; i++) { h ^= b[i]; h = Math.imul(h, 16777619) >>> 0; }
+  return h.toString(16).padStart(8, '0');
+}
+
+// ---- Direk seçimi (TEDAŞ tepe kuvveti tablosu) ----
+// Eski "Tepe Kuvveti Hesabı (TEDAŞ)" aracındaki seçim kuralı (kullanıcı kararı, 8.11.2026): kuvvetler ana hat
+// doğrultusunda boyuna (L) ve ona dik enine (R) bileşenlere ayrılır; sağlam durumla birlikte her hattın tek tek
+// kopması (o hattın kuvveti sıfır) senaryo olarak alınır; en büyük L, en büyük R ve en büyük L + R (B30) tabloya
+// bakılır. Taşıyıcı (T) direkte kopma senaryosu yoktur (eski araçta da). Potans yükü girilirse en kötü senaryonun
+// enine kuvvetine eklenir. Tablolar aracın kendisinden aynen alınmıştır; değiştirilmez.
+const AG_TABLO = [['9-H', (L, R) => L < 160 && R < 174], ['10I', (L, R) => L < 160 && R < 500], ['10U', (L, R) => L < 230 && R < 700],
+  ['12I', (L, R) => L < 230 && R < 900], ['K1', (L, R, B) => B <= 1000], ['K2', (L, R, B) => B <= 2000], ['K3', (L, R, B) => B <= 3000],
+  ['K4', (L, R, B) => B <= 4000], ['K5', (L, R, B) => B <= 5000]];
+const MUS_TABLO = [["10I''", (L, R) => L < 121 && R < 350], ["10U''", (L, R) => L < 175 && R < 550], ["12I''", (L, R) => L < 175 && R < 750],
+  ["K1''", (L, R, B) => B <= 831], ["K2''", (L, R, B) => B <= 1330], ["K3''", (L, R, B) => B <= 2004], ["K4''", (L, R, B) => B <= 2783], ["K5''", (L, R, B) => B <= 4432]];
+const TRAFO_TABLO = [['T-15', 1500], ['T-25', 2500], ['T-35', 3500], ['T-50', 5000]];
+export const DIREK_TABLOLARI = { ag: AG_TABLO.map((x) => x[0]), mus: MUS_TABLO.map((x) => x[0]), trafo: TRAFO_TABLO.map((x) => x[0]), agac: ['9O', '9A'] };
+
+const r1 = (v) => Math.round(v * 10) / 10;
+
+/**
+ * Önerilen direk tipi.
+ * g: { konum: 'ag' | 'mus' | null,            // AG direk / müşterek (OG + AG) direk tablosu; null: tablo yok (ör. yalnız ENH)
+ *      rol: 'T' | 'D' | 'N' | 'K' | null,       // T: kopma senaryosu alınmaz
+ *      vektorler: [{ guc, derece }],           // kg ve ana hattan saat yönünde derece (0° = ana hat; araçtaki satırlar)
+ *      potans: kg,                              // isteğe bağlı potans yükü
+ *      mevcutTip }                              // projedeki tip (ör. "G-10I", "G-K2''"): tabloya göre yeterli mi
+ * Döner: { tip, tablo: 'ag'|'mus'|null, trafoDirek, agacDirek, maxL, maxR, maxN, B30, senaryo, senaryolar, karsilastirma }
+ *   karsilastirma: { mevcut, oneri, durum: 'yeterli'|'yetersiz'|'bilinmiyor' }
+ */
+export function direkOner(g) {
+  g = g || {};
+  const aktif = (g.vektorler || []).map((v, i) => {
+    const guc = +v.guc || 0, rad = (+v.derece || 0) * Math.PI / 180;
+    return { i, guc, x: guc * Math.sin(rad), y: guc * Math.cos(rad), ad: v.ad || ('Hat ' + (i + 1)) };
+  }).filter((v) => v.guc > 0);
+  if (!aktif.length) return null;
+  const senaryo = (ad, kopan) => {
+    let Rx = 0, Ry = 0;
+    for (const v of aktif) if (v.i !== kopan) { Rx += v.x; Ry += v.y; }
+    const L = Math.abs(Ry), R = Math.abs(Rx);   // boyuna: ana hat (y) ekseni; enine: x
+    return { ad, L: r1(L), R: r1(R), N: r1(Math.sqrt(Rx * Rx + Ry * Ry)), F: r1(L + R) };
+  };
+  const senaryolar = [senaryo('Sağlam (bütün hatlar)', -1)];
+  if (g.rol !== 'T') for (const v of aktif) senaryolar.push(senaryo(v.ad + ' kopması', v.i));
+  let enKotu = senaryolar[0];
+  for (const s of senaryolar) if (s.F > enKotu.F) enKotu = s;
+  const potans = +g.potans > 0 ? +g.potans : 0;
+  let maxL = 0, maxR = 0, maxN = 0, B30 = 0;
+  for (const s of senaryolar) {
+    const R = s === enKotu ? s.R + potans : s.R;
+    maxL = Math.max(maxL, s.L); maxR = Math.max(maxR, R); maxN = Math.max(maxN, s.N); B30 = Math.max(B30, s.L + R);
+  }
+  maxL = r1(maxL); maxR = r1(maxR); maxN = r1(maxN); B30 = r1(B30);
+  const tablo = g.konum === 'ag' ? AG_TABLO : g.konum === 'mus' ? MUS_TABLO : null;
+  let tip = null;
+  if (tablo) {
+    const bul = tablo.find((t) => t[1](maxL, maxR, B30));
+    tip = bul ? bul[0] : (g.konum === 'ag' ? '5000 kg üzeri — özel proje' : '4432 kg üzeri — özel proje');
+  }
+  let trafoDirek = null;
+  if (g.konum === 'ag') { const t = TRAFO_TABLO.find((x) => B30 <= x[1]); trafoDirek = t ? t[0] : '5000 kg üzeri'; }
+  const agacDirek = maxN < 174 ? '9O' : maxN < 259 ? '9A' : 'demir direk seçiniz';
+  // Projedeki tip tabloya göre yeterli mi: tipin tablodaki sırası önerilenin sırasından küçük değilse yeterli
+  let karsilastirma = null;
+  if (tablo && g.mevcutTip) {
+    const siraBul = (ad) => {
+      const t = String(ad || '').toUpperCase().replace(/^G-?/, '').replace(/\s+/g, '').replace(/"/g, "''").replace(/^(\d+)-?([IUH])/, '$1$2').replace(/^9H$/, '9-H');
+      return tablo.findIndex((x) => x[0].toUpperCase() === t);
+    };
+    const m = siraBul(g.mevcutTip), o = siraBul(tip);
+    karsilastirma = { mevcut: g.mevcutTip, oneri: tip, durum: m < 0 || o < 0 ? 'bilinmiyor' : m >= o ? 'yeterli' : 'yetersiz' };
+  }
+  return { tip, tablo: g.konum === 'ag' ? 'ag' : g.konum === 'mus' ? 'mus' : null, trafoDirek, agacDirek, maxL, maxR, maxN, B30, potans, senaryo: enKotu.ad, senaryolar, karsilastirma };
+}
+
 // ---- Uygunluk ----
 const HEDEF_ADI = { direk: 'direk', hat: 'hat', trafo: 'trafo', kanal: 'kanal', proje: 'proje' };
 const havaiMi = (tur) => /HAVAI|MUSTEREK|AYDINLATMA/.test(String(tur || ''));

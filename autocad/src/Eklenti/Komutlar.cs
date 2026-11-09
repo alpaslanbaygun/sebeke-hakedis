@@ -169,7 +169,43 @@ namespace SebekeHakedis.Eklenti
                     string baslik = "KANAL LİSTESİ — " + (tumu ? (o.Proje.Ad ?? "") : son.Proje.GorunenAd) + (son.Hakedis > 0 ? " · " + son.Hakedis + ". hakediş" : "");
                     KanalTablosuYazici.Koy(o, liste, baslik.Trim(' ', '—'));
                 }
+                // "Birleşik Metraj": eski programın Excel şablonu görünen projeyle doldurulur (ortak/BIRLESIK-METRAJ.md)
+                if (son != null && son.BirlesikMetraj) BirlesikMetrajUret(belge, p, katalog, son);
             });
+        }
+
+        private static string MetrajAyarYolu => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SebekeHakedis", "metraj.json");
+
+        /// <summary>
+        /// Birleşik Metraj: şablon (gömülü ya da kullanıcının dosyası) seçilen bölgeyle doldurulur, .xlsm olarak kaydedilir,
+        /// sonuç penceresi açılan sütunları ve uyarıları gösterir. Kural telefonla ortak (Cekirdek/BirlesikMetraj.cs).
+        /// </summary>
+        private static void BirlesikMetrajUret(Document belge, Proje p, Katalog katalog, Pencereler.ProjeOzetiGorunumu son)
+        {
+            bool tumu = son.Proje == null || son.Proje.Tumu;
+            Bolge bolge = tumu ? null : p.Bolgeler.Find(b => b.Ad == son.Proje.Ad);
+            if (!tumu && bolge == null && son.Proje.Ad.Length > 0) { Pencereler.Uyar("Seçilen projenin bölgesi çizimde bulunamadı: " + son.Proje.GorunenAd); return; }
+            var ayar = MetrajAyari.Oku(MetrajAyarYolu);
+            string hakedisNo;
+            if (!Pencereler.BirlesikMetrajSor(ayar, tumu ? ProjeOzeti.TumuAdi + " (" + Ad(belge) + ")" : son.Proje.GorunenAd, son.Hakedis > 0 ? son.Hakedis : p.AktifHakedis, out hakedisNo)) return;
+            try { ayar.Kaydet(MetrajAyarYolu); } catch (System.Exception ex) { Uygulama.Yaz("Birleşik Metraj ayarı kaydedilemedi: " + ex.Message); }
+            byte[] sablon = ayar.Gomulu ? KatalogKaynagi.MetrajSablonu() : File.ReadAllBytes(ayar.SablonYolu);
+            if (sablon == null) { Pencereler.Uyar("Gömülü şablon bulunamadı; eklenti paketi eksik olabilir."); return; }
+            string ek = tumu ? "_BIRLESIK_METRAJ_" : "_" + son.Proje.GorunenAd + "_BIRLESIK_METRAJ_";
+            string yol = KayitYeriSor("Birleşik Metraj dosyasını kaydet", "Excel (makrolu) (*.xlsm)|*.xlsm", Ad(belge) + ek + DateTime.Now.ToString("dd.MM.yyyy_HH_mm") + ".xlsm", Klasor(belge));
+            if (yol == null) return;
+            var a = new BirlesikMetraj.Ayar
+            {
+                BolgeId = bolge != null ? bolge.Id : "", Firma = ayar.Firma, Il = ayar.Il, Ilce = ayar.Ilce, HakedisNo = hakedisNo,
+                Katsayilar = Katsayilar.Varsayilan, Eslesme = KatalogKaynagi.MetrajEslesme(), Katalog = katalog
+            };
+            MetrajPlani plan; MetrajSablonu st;
+            byte[] cikti = BirlesikMetraj.Uret(p, sablon, a, out plan, out st);
+            File.WriteAllBytes(yol, cikti);
+            int yeni; plan.Ozet.TryGetValue("yeniSutun", out yeni);
+            Uygulama.Yaz("Birleşik Metraj yazıldı: " + yol + " (" + yeni + " yeni sütun, " + plan.Uyarilar.Count + " uyarı)");
+            foreach (var u in plan.Uyarilar) Uygulama.Yaz("  • " + u);
+            Pencereler.BirlesikMetrajSonuc(plan, yol);
         }
 
         /// <summary>

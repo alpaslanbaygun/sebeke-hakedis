@@ -5,6 +5,33 @@ import { app } from '../ctx.js';
 import SH from '../../interop/sh-core.cjs';
 
 /**
+ * Birleşik Metraj ayarları: şablon (gömülü temiz kopya ya da kullanıcının .xlsm dosyası; dosya bu oturumda tutulur), il ve
+ * ilçe (projede saklanır: sebeke.metraj), yüklenici firma projenin yüklenicisinden gelir. Eklentideki Birleşik Metraj
+ * penceresiyle aynı alanlar.
+ */
+function MetrajAyarlari() {
+  const ps = app.ps;
+  const m = (ps.p.sebeke || {}).metraj || {};
+  const sablon = app.state.metrajSablonu || null;
+  const kaydet = async (yeni) => {
+    const sebeke = Object.assign({}, ps.p.sebeke || {}, { metraj: Object.assign({}, m, yeni) });
+    try { await ps.updateProject({ sebeke }, 'Birleşik Metraj başlığı'); } catch (e) { app.toast(e.message, 'err'); }
+  };
+  const dosyaSec = (ev) => {
+    const f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    f.arrayBuffer().then((buf) => { app.state.metrajSablonu = { ad: f.name, bytes: new Uint8Array(buf) }; app.toast('Şablon alındı: ' + f.name, 'ok'); app.bus.emit('project:computed'); }).catch((e) => app.toast(e.message, 'err'));
+  };
+  return html`<div class="card"><div class="row"><b class="grow">Birleşik Metraj</b>${sablon ? html`<${Badge} k="ok">KENDİ ŞABLONUM</${Badge}>` : html`<${Badge} k="mut">GÖMÜLÜ ŞABLON</${Badge}>`}</div>
+    <div class="note">Yüklenici firma projenin yüklenicisinden (${ps.p.contractor || 'girilmemiş'}), grup no / işin adı / proje no bölgeden gelir.</div>
+    <div class="grid2" style="margin-top:6px"><div class="fld"><label>İl</label><${Girdi} type="text" cls="inp" value=${m.il || ''} onSave=${(v) => kaydet({ il: String(v).trim() })} /></div>
+    <div class="fld"><label>İlçe</label><${Girdi} type="text" cls="inp" value=${m.ilce || ''} onSave=${(v) => kaydet({ ilce: String(v).trim() })} /></div></div>
+    <div class="row" style="margin-top:6px"><span class="grow note">${sablon ? 'Şablon: ' + sablon.ad : 'Gömülü temiz şablon (eski programın Birleşik Metraj çalışma kitabı, boş) kullanılır.'}</span>
+    <label class="btn sm">Şablon seç…<input type="file" accept=".xlsm,.xlsx" style="display:none" onChange=${dosyaSec} /></label>
+    ${sablon ? html`<button class="btn sm" onClick=${() => { app.state.metrajSablonu = null; app.bus.emit('project:computed'); }}>Gömülüye dön</button>` : null}</div></div>`;
+}
+
+/**
  * Çizim boyutları: DXF'teki simge büyüklüğü ve yazı yükseklikleri. AutoCAD dosyasıyla da gider gelir (eklentide Çizim
  * Ayarları › Görünüm ile aynı değerler); projede saklanır (sebeke.boyutlar).
  */
@@ -55,11 +82,20 @@ export function ExportScreen() {
     setBusy('Hazırlanıyor…');
     const files = [];
     try {
-      for (const k of keys) { setBusy(FORMATS[k].label + '…'); const out = await exportFormat(ps, k, { crs: crsKey === 'proje' ? null : crsAlt[crsKey], surum: app.web ? 'web' : 'telefon' + (ver ? ' ' + ver : '') }); files.push(...out); }
+      const metraj = { sablon: app.state.metrajSablonu ? app.state.metrajSablonu.bytes : null };
+      for (const k of keys) { setBusy(FORMATS[k].label + '…'); const out = await exportFormat(ps, k, { crs: crsKey === 'proje' ? null : crsAlt[crsKey], surum: app.web ? 'web' : 'telefon' + (ver ? ' ' + ver : ''), metraj }); files.push(...out); }
     } catch (e) { app.toast('Dışa aktarım hatası: ' + e.message, 'err', 6000); setBusy(null); return; }
     // Google Earth / CBS dosyasına yazılamayanlar ("ileride" durumundakiler, konumu olmayanlar): eklentinin dosyasında da yoklar
-    const uy = [...new Set(files.flatMap((f) => f.uyarilar || []))];
+    const uy = [...new Set(files.filter((f) => !f.metraj).flatMap((f) => f.uyarilar || []))];
     if (uy.length) app.toast(uy.length + ' nesne Google Earth / CBS dosyasına yazılmadı: ' + uy.slice(0, 3).join(' · ') + (uy.length > 3 ? ' …' : ''), 'warn', 9000);
+    // Birleşik Metraj: açılan sütunlar ve uyarılar
+    const bm = files.find((f) => f.metraj);
+    if (bm) {
+      const o = bm.metraj.ozet, ys = bm.metraj.yeniSutunlar;
+      app.toast('Birleşik Metraj: ' + o.eleman + ' direk · ' + o.iletkenSatiri + ' açıklık · ' + o.yeraltiSatiri + ' yeraltı satırı · ' + o.eslesen + ' eşleşen malzeme' +
+        (ys.length ? ' · ' + ys.length + ' yeni sütun (' + ys.slice(0, 3).map((y) => y.ad).join(', ') + (ys.length > 3 ? ' …' : '') + ')' : '') + (o.fazla ? ' · ' + o.fazla + ' malzeme şablona sığmadı' : ''), ys.length || o.fazla ? 'warn' : 'ok', 9000);
+      if (bm.uyarilar && bm.uyarilar.length) app.toast('Birleşik Metraj uyarıları: ' + bm.uyarilar.slice(0, 3).join(' · ') + (bm.uyarilar.length > 3 ? ' …' : ''), 'warn', 9000);
+    }
     const saved = [];
     // Web: birden çok çıktı tek zip olarak indirilir (her dosyaya ayrı onay sorulmasın)
     if (app.web && files.length > 1) {
@@ -86,6 +122,7 @@ export function ExportScreen() {
       <span class="grow"><div class="row"><b class="grow" style="font-size:16px">${f.label}</b><span class="badge b-mut">${f.ext}</span></div><div class="note">${f.desc}</div>
       ${k === 'dxf' && sel[k] ? html`<div class="row wrap" style="gap:4px;margin-top:6px">${['ELEKTRIK-DIREK-OG', 'ELEKTRIK-DIREK-AG', 'ELEKTRIK-HAT-OG', 'ELEKTRIK-TRAFO', 'ELEKTRIK-SDK'].map((x) => html`<span class="badge" style=${'background:#0e1730;border:1px solid #334155;color:' + (x.includes('OG') ? '#ff8a8a' : x.includes('AG') ? '#7ee08a' : '#8ea2ff')}>${x}</span>`)}</div>` : null}</span></button>`)}
     ${sel.dxf || sel.sebeke || sel.voltjson || sel.package ? html`<${CizimBoyutlari} />` : null}
+    ${sel.metraj ? html`<${MetrajAyarlari} />` : null}
     ${errs ? html`<div class="alert warn"><${Icon} n="warn" s=${16} /><span>${errs} kontrol hatası var · <a onClick=${() => app.nav.go('checks')}>Kontrol listesi</a></span></div>` : null}
     ${jobs.length ? html`<div class="sect">Son üretilenler</div><div class="card tight list">${jobs.map((j) => html`<div class="li"><div class="grow"><div class="s">${new Date(j.createdAt).toLocaleString('tr-TR')} · ${j.crs}</div><div class="m">${j.formats.join(', ')} · ${(j.files || []).length} dosya</div></div>${j.stale ? html`<${Badge} k="warn">ESKİDİ</${Badge}>` : html`<${Badge} k="ok">GÜNCEL</${Badge}>`}</div>`)}</div><div class="note">Veri değişince önceki çıktılar "ESKİDİ" olarak işaretlenir (DXF/rapor zinciri).</div>` : null}
     <div class="row" style="margin-top:6px"><button class="btn pri huge grow" disabled=${!n || busy} onClick=${() => run(false)}><${Icon} n="down" s=${22} c="#0b1326" w=${2.6} />${busy || 'DIŞA AKTAR · ' + n}</button>${app.web ? null : html`<button class="btn" style="height:64px;flex-direction:column;gap:2px;font-size:11px" disabled=${!n || busy} onClick=${() => run(true)}><${Icon} n="share" s=${20} />PAYLAŞ</button>`}</div>

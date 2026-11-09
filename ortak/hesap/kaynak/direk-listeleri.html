@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Direk Listeleri</title>
+<!-- Şebeke-M Hakediş · Direk listeleri (8.11.2026): AG direk listesi, ENH direk dağıtım cetveli, aydınlatma direk listesi ve
+     direk koordinat listesi. Veri Hesap Merkezi bağlamından (proje geneli: direkler, hatlar) gelir; sayfa yalnız düzenler.
+     Mantık uyarlamadadır (ortak/hesap/uyarlama/direk-listeleri.js). -->
+<style>
+  :root{--dl-tx:#dae2fd;--dl-mut:#94a3b8;--dl-line:#334155;--dl-panel:#131b2e;--dl-panel2:#1e293b;--dl-acc:#f59e0b;--dl-ok:#10b981;--dl-warn:#fbbf24;--dl-err:#ff8a8a}
+  *{box-sizing:border-box}
+  body{margin:0;padding:14px 16px 40px;font:13px/1.45 'SM Inter',Inter,'Segoe UI',Roboto,system-ui,sans-serif;color:var(--dl-tx);background:#0b1326}
+  h1{margin:0 0 6px;font-size:20px;letter-spacing:-.01em}
+  .dl-ust{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:10px}
+  .dl-ust label{display:inline-flex;align-items:center;gap:6px;color:var(--dl-mut);font-size:12px}
+  select,button{font:inherit;color:var(--dl-tx);background:var(--dl-panel2);border:1px solid var(--dl-line);border-radius:8px;padding:6px 10px}
+  button{cursor:pointer}
+  .dl-sekmeler{display:flex;flex-wrap:wrap;gap:6px}
+  .dl-sekmeler button{background:var(--dl-panel)}
+  .dl-sekmeler button.aktif{background:var(--dl-acc);color:#0b1326;border-color:var(--dl-acc);font-weight:700}
+  .dl-kunye{display:flex;flex-wrap:wrap;gap:4px 18px;padding:8px 12px;margin-bottom:10px;border:1px solid var(--dl-line);border-radius:10px;background:var(--dl-panel);font-size:12px;color:var(--dl-mut)}
+  .dl-kunye b{color:var(--dl-tx);font-weight:600}
+  .dl-bolum{display:none}
+  .dl-bolum.aktif{display:block}
+  .dl-bolum h2{margin:8px 0 6px;font-size:15px}
+  .dl-bolum h3{margin:12px 0 4px;font-size:13px;color:var(--dl-acc)}
+  .dl-not{color:var(--dl-mut);font-size:12px;margin:4px 0 8px}
+  .dl-bolum > div{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:12px;margin-bottom:10px}
+  th,td{border:1px solid var(--dl-line);padding:4px 6px;text-align:left;vertical-align:top;white-space:nowrap}
+  td.uzun{white-space:normal;min-width:120px}
+  th{background:var(--dl-panel2);font-weight:600;white-space:nowrap}
+  th.grup{text-align:center;background:var(--dl-panel)}
+  td.sayi,th.sayi{text-align:right;font-family:'SM Mono','JetBrains Mono',Consolas,ui-monospace,monospace;white-space:nowrap}
+  td.no{font-family:'SM Mono','JetBrains Mono',Consolas,ui-monospace,monospace;white-space:nowrap}
+  tr.bos td{color:var(--dl-mut);text-align:center;padding:14px}
+  .dl-yan{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+  .dl-durum-dm{color:var(--dl-warn)}
+  .dl-durum-mevcut{color:var(--dl-mut)}
+  .dl-toplam td{font-weight:700;background:var(--dl-panel)}
+  .dl-ozet{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--dl-mut);margin:4px 0 10px}
+  .dl-ozet b{color:var(--dl-tx)}
+  @media print{
+    body{background:#fff;color:#000;padding:0;font-size:10.5px}
+    :root{--dl-tx:#000;--dl-mut:#333;--dl-line:#555;--dl-panel:#f2f2f2;--dl-panel2:#e6e6e6;--dl-acc:#000}
+    .dl-ust .dl-sekmeler,.dl-ust label,#dl-yazdir,.dl-not .ekran{display:none!important}
+    h1{font-size:16px}
+    .dl-kunye{border-color:#999;background:#f5f5f5;color:#333}
+    .dl-bolum > div{overflow:visible}
+    table{font-size:9px;page-break-inside:auto}
+    th,td{padding:2px 4px}
+    td.uzun{min-width:0}
+    tr{page-break-inside:avoid}
+    th{background:#eee}
+    th.grup{background:#f6f6f6}
+    @page{size:A4 landscape;margin:12mm}
+  }
+</style>
+</head>
+<body>
+  <div class="dl-ust">
+    <h1 id="dl-baslik">Direk Listeleri</h1>
+    <nav class="dl-sekmeler" id="dl-sekmeler">
+      <button type="button" data-bolum="ag">AG Direk Listesi</button>
+      <button type="button" data-bolum="enh">ENH Direk Dağıtım Cetveli</button>
+      <button type="button" data-bolum="ayd">Aydınlatma Direk Listesi</button>
+      <button type="button" data-bolum="koordinat">Direk Koordinat Listesi</button>
+    </nav>
+    <label>Proje <select id="dl-bolge"><option value="">Tümü</option></select></label>
+    <button type="button" id="dl-yazdir">Yazdır / PDF</button>
+  </div>
+  <div class="dl-kunye" id="dl-kunye"></div>
+  <div class="dl-ozet" id="dl-ozet"></div>
+
+  <section class="dl-bolum" id="ag">
+    <h2>AG Direk Listesi</h2>
+    <p class="dl-not">AG, müşterek ve direk tipi trafo direkleri. Tepe kuvveti sütunları o direk için kaydedilmiş Cer Vektörü hesabından gelir (Px = Rx, Py = Ry, P = R); hesap yoksa boştur.</p>
+    <div id="ag-icerik"></div>
+  </section>
+
+  <section class="dl-bolum" id="enh">
+    <h2>ENH Direk Dağıtım Cetveli</h2>
+    <p class="dl-not">Her OG (ENH) hat zinciri ayrı tablo; direkler hat boyunca baştan uca. Rüzgâr açıklığı komşu açıklıkların ortalamasıdır; ağırlık açıklığı, torsiyon, temel tipi ve toprak üstü boy projede yoksa boş bırakılır (elle doldurulur).</p>
+    <div id="enh-icerik"></div>
+  </section>
+
+  <section class="dl-bolum" id="ayd">
+    <h2>Aydınlatma Direk Listesi</h2>
+    <p class="dl-not">Aydınlatma direkleri ve armatür taşıyan öteki direkler. Konsol ve armatür bilgileri direğin malzemelerinden okunur; konsol ve armatür açıları projede olmadığı için boştur.</p>
+    <div id="ayd-icerik"></div>
+  </section>
+
+  <section class="dl-bolum" id="koordinat">
+    <h2>Direk Koordinat Listesi</h2>
+    <p class="dl-not">Bütün direkler; Y sağa (doğu), X yukarı (kuzey) değeri, varsa kot. Koordinat sistemi projenin koordinat sistemidir.</p>
+    <div id="koordinat-icerik"></div>
+  </section>
+</body>
+</html>

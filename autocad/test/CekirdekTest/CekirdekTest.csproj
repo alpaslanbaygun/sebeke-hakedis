@@ -32,6 +32,10 @@
     <None Include="..\..\..\ortak\deneme\kanal-listesi.json" Link="kanal-listesi.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- Telefonla ortak CBS denemesi: girdi ve beklenen KML / MIF / MID (telefon/web/tests/cbs.test.mjs de okur) -->
     <None Include="..\..\..\ortak\deneme\cbs\**\*" LinkBase="cbs" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Telefonla ortak Birleşik Metraj denemesi: gömülü şablon, eşleşme tablosu, deneme projesi ve beklenen plan -->
+    <None Include="..\..\..\ortak\deneme\birlesik-metraj\**\*" LinkBase="birlesik-metraj" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\ortak\sablon\birlesik-metraj.xlsm" Link="birlesik-metraj.xlsm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\ortak\katalog\metraj-sablon.json" Link="metraj-sablon.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

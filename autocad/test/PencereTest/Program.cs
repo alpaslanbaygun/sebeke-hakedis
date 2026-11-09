@@ -674,6 +674,46 @@ namespace SebekeHakedis.PencereTest
                 Bul<Button>(f, b => b.Name == "kanalTablosu").PerformClick();
             });
 
+            Dene("25c-birlesik-metraj-iste", () =>
+            {
+                var gv = Pencereler.ProjeOzetiGoster(poz, null);
+                Esit(true, gv != null && gv.BirlesikMetraj && gv.Proje != null && !gv.Proje.Tumu, "proje özeti: Birleşik Metraj seçili projeyle istenir");
+            }, f =>
+            {
+                var lb = Bul<IkiSatirListe>(f, x => true);
+                lb.SelectedIndex = poz.Projeler.Count - 1;
+                Bul<Button>(f, b => b.Name == "birlesikMetraj").PerformClick();
+            });
+
+            // Birleşik Metraj: ayar penceresi (şablon, başlık bilgileri) ve sonuç penceresi (açılan sütunlar, uyarılar)
+            var metrajAyari = new MetrajAyari { Firma = "Deneme Yüklenici Ltd." };
+            Dene("30-birlesik-metraj", () =>
+            {
+                string hak;
+                Esit(true, Pencereler.BirlesikMetrajSor(metrajAyari, "Deneme Köyü AG-OG Şebekesi", 3, out hak), "birleşik metraj: Oluştur");
+                Esit("3", hak, "birleşik metraj: hakediş no görünen hakedişten");
+                Esit("ELAZIĞ", metrajAyari.Il, "birleşik metraj: il saklanır");
+                Esit(true, metrajAyari.Gomulu, "birleşik metraj: gömülü şablon varsayılan");
+            }, f =>
+            {
+                Bul<MetinKutusu>(f, m => m.Ipucu == "İLİ").Text = "ELAZIĞ";
+                Bul<MetinKutusu>(f, m => m.Ipucu == "İLÇESİ").Text = "MERKEZ";
+                Resim(f, "sonra");
+            });
+            var metrajPlani = new MetrajPlani();
+            foreach (var k in new[] { "eleman", "iletkenSatiri", "yeraltiSatiri", "eslesen", "yeniSutun", "fazla", "atlanan" }) metrajPlani.Ozet[k] = 0;
+            metrajPlani.Ozet["eleman"] = 8; metrajPlani.Ozet["iletkenSatiri"] = 6; metrajPlani.Ozet["eslesen"] = 25; metrajPlani.Ozet["yeniSutun"] = 2; metrajPlani.Ozet["fazla"] = 1;
+            metrajPlani.YeniSutunlar.Add(new MetrajPlani.YeniSutun { Hangi = "direk", Sayfa = "DİREK METRAJI", Blok = "Y", SutunNo = 279, Kod = "YE001", Tip = "G-K5", Ad = "G-K5 Demir Direk", Birim = "ad.", Poz = "5.1" });
+            metrajPlani.YeniSutunlar.Add(new MetrajPlani.YeniSutun { Hangi = "iletken", Sayfa = "İLETKEN METRAJI", Blok = "D", SutunNo = 66, Kod = "DE002", Tip = "OXLIP", Ad = "OXLIP (298.86 Kg/Km)", Birim = "kg", Poz = "109.2.1" });
+            metrajPlani.Fazlalar.Add(new MetrajPlani.Fazla { Hangi = "direk", Blok = "Y", Ad = "VHD-35", Birim = "ad.", Miktar = 3, Nereler = new List<string> { "SC7" } });
+            metrajPlani.Uyarilar.Add("SC2: demontaj direğin kesik / sökük bilgisi yok; \"Kesik\" sayıldı.");
+            Dene("30b-birlesik-metraj-sonuc", () => Pencereler.BirlesikMetrajSonuc(metrajPlani, Path.Combine(_klasor, "Deneme_BIRLESIK_METRAJ.xlsm")), f =>
+            {
+                var kutu = Bul<TextBox>(f, t => t.Multiline);
+                Esit(true, kutu != null && kutu.Text.Contains("YE001") && kutu.Text.Contains("VHD-35") && kutu.Text.Contains("UYARILAR"), "birleşik metraj sonucu: sütunlar, fazlalar ve uyarılar listelenir");
+                Resim(f, "sonra");
+            });
+
             // Koordinat dilimi (Google Earth / CBS / harita altlığı için; çizimde yoksa sorulur)
             Dene("26-koordinat-dilimi", () => Esit(39, Pencereler.DomSec(0, "Google Earth dosyası"), "dilim: seçilen dilim döner"), f =>
             {

@@ -123,6 +123,9 @@ async def calistir(args):
                 for d in tanim['durumlar']:
                     toplam += 1
                     hatalar = []
+                    # "baglam": "$1" → 1. durumun bağlamı (aynı projeyle birden çok durum)
+                    if isinstance(d.get('baglam'), str) and d['baglam'].startswith('$'):
+                        d['baglam'] = tanim['durumlar'][int(d['baglam'][1:]) - 1]['baglam']
                     gen, yuk = (args.boyut or '1280x900').split('x')
                     boyut = d.get('ekran', {'width': int(gen), 'height': int(yuk)})
                     sayfa = await tarayici.new_page(viewport=boyut)
@@ -171,6 +174,15 @@ async def calistir(args):
                             os.makedirs(args.ekran, exist_ok=True)
                             ad = re.sub(r'[^\w-]+', '_', modul + '-' + d['ad'])[:80]
                             await sayfa.screenshot(path=os.path.join(args.ekran, ad + '.png'), full_page=False)
+                            # sonuç kartı (ve altındaki Şebeke-M ekleri) görünsün diye çerçevenin içinde de bir görüntü
+                            try:
+                                kart = await fr.query_selector('#sonuc-kart')
+                                if kart:
+                                    await kart.scroll_into_view_if_needed()
+                                    await sayfa.wait_for_timeout(50)
+                                    await sayfa.screenshot(path=os.path.join(args.ekran, ad + '-sonuc.png'), full_page=False)
+                            except Exception:
+                                pass
                         # durum → yeni sayfada geri yükle
                         durum = await fr.evaluate('() => JSON.stringify(window.__SM.durumAl())')
                         kayit = {'id': 'K1', 'modul': modul, 'modulDurumu': durum, 'kullanilan': S.get('kullanilan') or {},

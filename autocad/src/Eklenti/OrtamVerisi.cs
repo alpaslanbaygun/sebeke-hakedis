@@ -158,6 +158,23 @@ namespace SebekeHakedis.Eklenti
             if (!string.IsNullOrEmpty(json)) Roller.Yukle(json);
         }
 
+        /// <summary>Gömülü Birleşik Metraj şablonu (ortak/sablon/birlesik-metraj.xlsm).</summary>
+        public static byte[] MetrajSablonu()
+        {
+            using (var s = typeof(KatalogKaynagi).Assembly.GetManifestResourceStream("SebekeHakedis.sablon.birlesik-metraj.xlsm"))
+            {
+                if (s == null) return null;
+                using (var ms = new MemoryStream()) { s.CopyTo(ms); return ms.ToArray(); }
+            }
+        }
+
+        /// <summary>Birleşik Metraj eşleşme tablosu (ortak/katalog/metraj-sablon.json).</summary>
+        public static JsonNesne MetrajEslesme()
+        {
+            string json = Kaynak("SebekeHakedis.metraj-sablon.json");
+            return (string.IsNullOrEmpty(json) ? null : SebekeHakedis.Cekirdek.Json.Oku(json) as JsonNesne) ?? new JsonNesne();
+        }
+
         private static string Kaynak(string ad)
         {
             try
