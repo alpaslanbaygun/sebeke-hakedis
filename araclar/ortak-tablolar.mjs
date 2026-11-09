@@ -10,7 +10,7 @@ const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const kaynak = path.join(kok, 'ortak/katalog');
 const hedef = path.join(kok, 'telefon/web/src/ortak');
 fs.mkdirSync(hedef, { recursive: true });
-const dosyalar = ['semboller', 'volt-eslesme', 'kalemler', 'katsayilar', 'cizim-stili', 'roller'];
+const dosyalar = ['semboller', 'volt-eslesme', 'kalemler', 'katsayilar', 'cizim-stili', 'roller', 'metraj-sablon'];
 // Marka metinleri (ortak/marka/hakkinda.json): telefonun Hakkında ekranı ve eklentinin Hakkında penceresi aynı metni gösterir
 const markalar = ['hakkinda'];
 const kopyala = (klasor, ad) => {
@@ -21,4 +21,7 @@ const kopyala = (klasor, ad) => {
 };
 for (const ad of dosyalar) kopyala('ortak/katalog', ad);
 for (const ad of markalar) kopyala('ortak/marka', ad);
-console.log('telefon/web/src/ortak: ' + dosyalar.concat(markalar).join(', '));
+// Birleşik Metraj şablonu (ikili): telefon paketi assets/ altından okur (ortak/sablon/birlesik-metraj.xlsm'nin aynısı)
+fs.mkdirSync(path.join(kok, 'telefon/web/assets'), { recursive: true });
+fs.copyFileSync(path.join(kok, 'ortak/sablon/birlesik-metraj.xlsm'), path.join(kok, 'telefon/web/assets/birlesik-metraj.xlsm'));
+console.log('telefon/web/src/ortak: ' + dosyalar.concat(markalar).join(', ') + ' · assets/birlesik-metraj.xlsm');

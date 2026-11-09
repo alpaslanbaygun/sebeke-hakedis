@@ -16,6 +16,10 @@ import { HAK_STATUSES, HAK_ORDER } from '../core/schema.js';
 import { sebekeYaz, voltProjeYaz } from '../interop/sebeke.js';
 import { kayitSatirlari } from '../hesap/kayitlar.js';
 import { kanalSayfalari } from './kanal.js';
+import { birlesikMetrajUret, planAyari } from './birlesik-metraj.js';
+import KATSAYILAR from '../ortak/katsayilar.js';
+import ESLESME from '../ortak/metraj-sablon.js';
+import KALEMLER from '../ortak/kalemler.js';
 
 // Hesap kayıtlarında "hesabı yapan": uygulamadaki kullanıcı adı (varsayılan ad değilse)
 const kullaniciAdi = (ps) => { const u = (ps.ds && ps.ds.user) || {}; return u.name && u.name !== 'Operatör' ? u.name : null; };
@@ -30,6 +34,7 @@ export const FORMATS = {
   shp: { label: 'CBS Shapefile', ext: '.zip', desc: 'SHP + SHX + DBF + PRJ + CPG · ekipman, hat, açıklık, ölçü katmanları' },
   geojson: { label: 'GeoJSON', ext: '.geojson', desc: 'RFC 7946 (WGS84) + proje CRS sürümü' },
   xlsx: { label: 'Excel (Metraj · Yeşil Defter · Hakediş)', ext: '.xlsx', desc: 'Montaj / Demontaj / DMM sayfaları, poz, malzeme, hakediş' },
+  metraj: { label: 'Birleşik Metraj (eski programın Excel şablonu)', ext: '.xlsm', desc: 'DİREK / İLETKEN / YERALTI METRAJI ve MALZ. LİSTESİ sayfaları projeden doldurulur; şablonda olmayan malzeme için yeni sütun açılır · AutoCAD eklentisiyle aynı kural' },
   report: { label: 'Teknik rapor', ext: '.html', desc: 'Yazdır → PDF' },
   package: { label: 'Teslim paketi', ext: '.zip', desc: 'Proje klasörü: PROJECT_INFO · SAHA_ALIMI · HAKEDIS · GNSS · fotoğraflar (tür/obje) · HARITA · EXPORT · RAPORLAR · SHA-256' }
 };
@@ -149,6 +154,7 @@ export async function exportFormat(ps, fmt, opts = {}) {
     }
     case 'csv': return [{ name: base + '_noktalar.csv', mime: 'text/csv', data: enc(buildPointsCSV(model)) }];
     case 'xlsx': return [{ name: base + '_metraj_hakedis.xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', data: await buildXLSX(workbookSheets(model, ps), { title: ps.p.name }) }];
+    case 'metraj': return [await birlesikMetrajDosyasi(ps, base, opts.metraj || {})];
     case 'report': { const t = ps.data.periods.length ? ps.periodTable() : null; return [{ name: base + '_rapor.html', mime: 'text/html', data: enc(buildReportHTML(model, { period: t, hesaplar: kayitSatirlari(ps, kullaniciAdi(ps)) })) }]; }
     case 'package': return [await deliveryPackage(ps, model, base, opts)];
     default: throw new Error('Bilinmeyen format: ' + fmt);
@@ -156,6 +162,29 @@ export async function exportFormat(ps, fmt, opts = {}) {
 }
 
 // Teslim paketi = proje klasörü (spesifikasyon 10): PROJECT_INFO · HARITA · SAHA_ALIMI · HAKEDIS · GNSS · <TÜR>/<ObjeNo>/ fotoğraflar · FOTOGRAFLAR · EXCEL_IMPORT · RAPORLAR · EXPORT
+/** Gömülü Birleşik Metraj şablonu (ortak/sablon/birlesik-metraj.xlsm'nin kopyası: assets/birlesik-metraj.xlsm). */
+export async function gomuluMetrajSablonu() {
+  const r = await fetch('assets/birlesik-metraj.xlsm');
+  if (!r.ok) throw new Error('Gömülü Birleşik Metraj şablonu bulunamadı (' + r.status + ').');
+  return new Uint8Array(await r.arrayBuffer());
+}
+
+/**
+ * Birleşik Metraj: eski programın Excel şablonu (gömülü ya da kullanıcının dosyası) projeden doldurulur
+ * (ortak/BIRLESIK-METRAJ.md; eklentiyle aynı kural). ayar: { sablon: Uint8Array|null, bolgeId, il, ilce, firma, hakedisNo }.
+ */
+export async function birlesikMetrajDosyasi(ps, base, ayar) {
+  const p = eklentiModeli(ps);
+  const sablon = ayar.sablon || await gomuluMetrajSablonu();
+  const sb = (ps.p.sebeke || {}).metraj || {};
+  const a = planAyari({
+    bolgeId: ayar.bolgeId || '', firma: ayar.firma != null ? ayar.firma : (ps.p.contractor || ''), il: ayar.il != null ? ayar.il : (sb.il || ''), ilce: ayar.ilce != null ? ayar.ilce : (sb.ilce || ''),
+    hakedisNo: ayar.hakedisNo != null ? ayar.hakedisNo : ''
+  }, { katsayilar: KATSAYILAR, eslesme: ESLESME, kalemler: KALEMLER });
+  const { bytes, plan } = await birlesikMetrajUret(p, sablon, a);
+  return { name: base + '_birlesik_metraj.xlsm', mime: 'application/vnd.ms-excel.sheet.macroEnabled.12', data: bytes, uyarilar: plan.uyarilar, metraj: { ozet: plan.ozet, yeniSutunlar: plan.yeniSutunlar.map((y) => ({ sayfa: y.sayfa, kod: y.kod, ad: y.tip || y.ad, birim: y.birim })), fazla: plan.fazla } };
+}
+
 async function deliveryPackage(ps, model, base, opts) {
   const files = [];
   const add = (name, data) => files.push({ name, data: typeof data === 'string' ? enc(data) : data });

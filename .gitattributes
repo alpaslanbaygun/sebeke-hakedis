@@ -9,3 +9,4 @@
 *.xlsx binary
 *.dwg binary
 ortak/deneme/cbs/beklenen/** -text
+*.xlsm binary

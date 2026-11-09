@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Globalization;
+using System.IO;
+using System.Text;
 using System.Windows.Forms;
 using SebekeHakedis.Cekirdek;
 #if AUTOCAD
@@ -1693,6 +1695,8 @@ namespace SebekeHakedis.Eklenti
             public int Sekme;
             /// <summary>"Çizime tablo olarak koy" ile kapandı: kanal listesi (görünen proje ve hakedişle) çizime konacak.</summary>
             public bool KanalTablosu;
+            /// <summary>"Birleşik Metraj" ile kapandı: görünen proje ve hakedişle eski programın Excel şablonu doldurulacak.</summary>
+            public bool BirlesikMetraj;
         }
 
         /// <summary>
@@ -1719,7 +1723,10 @@ namespace SebekeHakedis.Eklenti
                 tabloDugme.SetBounds(kapat.Left - S(10) - S(210), by, S(210), bh);
                 tabloDugme.Visible = false;
                 w.Alt.Controls.Add(tabloDugme);
-                var excelBilgi = Etiket(w.Alt, "Proje listesi, görünen malzeme listesi ve kanal listesi yazılır.", 182, 0, 420, KoyuYazi.Kucuk, KoyuRenk.Soluk);
+                var metrajDugme = new KoyuDugme("Birleşik Metraj…", DugmeTuru.Ikincil, Boya.Simge("excel", KoyuRenk.Ikincil, 16)) { Name = "birlesikMetraj" };
+                metrajDugme.SetBounds(excelDugme.Right + S(10), by, S(170), bh);
+                w.Alt.Controls.Add(metrajDugme);
+                var excelBilgi = Etiket(w.Alt, "Excel: proje, malzeme ve kanal listeleri. Birleşik Metraj: eski programın şablonu görünen projeyle doldurulur.", 350, 0, 440, KoyuYazi.Kucuk, KoyuRenk.Soluk);
                 excelBilgi.Top = (w.Alt.Height - excelBilgi.Height) / 2;
                 w.CancelButton = kapat;
 
@@ -1977,8 +1984,115 @@ namespace SebekeHakedis.Eklenti
                     gorunum.KanalTablosu = true;
                     w.DialogResult = DialogResult.OK;
                 };
+                metrajDugme.Click += (s, e) =>
+                {
+                    zamanlayici.Stop();
+                    yenile();
+                    gorunum.BirlesikMetraj = true;
+                    w.DialogResult = DialogResult.OK;
+                };
                 Goster(w);
                 return gorunum;
+            }
+        }
+
+        /// <summary>
+        /// Birleşik Metraj ayarları: şablon (gömülü temiz kopya ya da kullanıcının dosyası), yüklenici firma, il, ilçe, hakediş no.
+        /// Firma, il, ilçe ve şablon seçimi bu bilgisayarda hatırlanır (a). Dönüş: false = vazgeçildi; hakedisNo dışarı.
+        /// </summary>
+        public static bool BirlesikMetrajSor(MetrajAyari a, string projeAdi, int hakedis, out string hakedisNo)
+        {
+            Hazirla();
+            hakedisNo = hakedis > 0 ? hakedis.ToString(CultureInfo.InvariantCulture) : "";
+            using (var f = new KoyuPencere("Birleşik Metraj", 640, 470, Boya.Simge("excel", KoyuRenk.Yesil, 20)))
+            {
+                var alt = AltKur(f, "Oluştur", false, 120);
+                Etiket(f, "Proje", 16, 56, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                Etiket(f, projeAdi, 16, 78, 592, KoyuYazi.Govde, KoyuRenk.Ikincil);
+                Etiket(f, "Şablon", 16, 112, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var gomulu = Koy(f, new KoyuSecim("Gömülü temiz şablon (eski programın Birleşik Metraj çalışma kitabı, boş)"), 16, 134);
+                var dosya = Koy(f, new KoyuSecim("Kendi dosyam:"), 16, 162);
+                var yol = Koy(f, new MetinKutusu(a.SablonYolu ?? "", "Birleşik Metraj şablonu (.xlsm)"), 150, 158, 360, 30);
+                var sec = new KoyuDugme("Seç…", DugmeTuru.Ikincil);
+                sec.SetBounds(S(520), S(158), S(88), S(30));
+                f.Controls.Add(sec);
+                sec.Click += (s, e) =>
+                {
+                    using (var dlg = new OpenFileDialog { Title = "Birleşik Metraj şablonu", Filter = "Excel (makrolu) (*.xlsm)|*.xlsm|Excel (*.xlsx)|*.xlsx|Bütün dosyalar (*.*)|*.*", CheckFileExists = true })
+                    {
+                        if (!string.IsNullOrEmpty(yol.Text)) { try { dlg.InitialDirectory = Path.GetDirectoryName(yol.Text); } catch { } }
+                        if (dlg.ShowDialog() == DialogResult.OK) { yol.Text = dlg.FileName; dosya.Checked = true; }
+                    }
+                };
+                (a.Gomulu || string.IsNullOrEmpty(a.SablonYolu) ? gomulu : dosya).Checked = true;
+                Etiket(f, "Başlık bilgileri (DİREK METRAJI sayfasının üst kısmı)", 16, 206, 0, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                Etiket(f, "Yüklenici firma", 16, 234);
+                var firma = Koy(f, new MetinKutusu(a.Firma ?? "", "YÜKLENİCİ_FİRMA"), 150, 228, 458, 30);
+                Etiket(f, "İl", 16, 272);
+                var il = Koy(f, new MetinKutusu(a.Il ?? "", "İLİ"), 150, 266, 200, 30);
+                Etiket(f, "İlçe", 370, 272);
+                var ilce = Koy(f, new MetinKutusu(a.Ilce ?? "", "İLÇESİ"), 420, 266, 188, 30);
+                Etiket(f, "Hakediş no", 16, 310);
+                var hak = Koy(f, new MetinKutusu(hakedisNo, "HAK_EDİŞ_NO"), 150, 304, 120, 30);
+                Koy(f, new BilgiCubugu(BilgiTuru.Bilgi, "Grup no, işin adı ve proje no bölgeden gelir. Şablonda olmayan malzemeler için ilgili sayfaya yeni sütun açılır " +
+                    "(MALZ. LİSTESİ'nin EK satırlarına bağlanır); EK satırı bitince kalanlar \"ŞABLONDA OLMAYAN\" sayfasına yazılır. " +
+                    "Dosya Excel'de açılınca formüller yeniden hesaplanır."), 16, 346, 592, 72);
+                alt.Tamam.Click += (s, e) =>
+                {
+                    if (dosya.Checked && (string.IsNullOrEmpty(yol.Text) || !File.Exists(yol.Text.Trim()))) { Uyar("Şablon dosyasını seçin."); return; }
+                    f.DialogResult = DialogResult.OK;
+                };
+                if (Goster(f) != DialogResult.OK) return false;
+                a.Gomulu = gomulu.Checked;
+                a.SablonYolu = yol.Text.Trim();
+                a.Firma = firma.Text.Trim(); a.Il = il.Text.Trim(); a.Ilce = ilce.Text.Trim();
+                hakedisNo = hak.Text.Trim();
+                return true;
+            }
+        }
+
+        /// <summary>Birleşik Metraj sonucu: özet, açılan sütunlar, şablona sığmayanlar ve uyarılar; "Dosyayı aç".</summary>
+        public static void BirlesikMetrajSonuc(MetrajPlani plan, string yol)
+        {
+            Hazirla();
+            using (var f = new KoyuPencere("Birleşik Metraj hazır", 720, 520, Boya.Simge("excel", KoyuRenk.Yesil, 20)))
+            {
+                var kapat = new KoyuDugme("Kapat") { DialogResult = DialogResult.Cancel };
+                int bh = S(34), by = (f.Alt.Height - bh) / 2;
+                kapat.SetBounds(f.Alt.Width - S(16) - S(104), by, S(104), bh);
+                var ac = new KoyuDugme("Dosyayı aç", DugmeTuru.Birincil, Boya.Simge("excel", Color.White, 16));
+                ac.SetBounds(kapat.Left - S(10) - S(140), by, S(140), bh);
+                f.Alt.Controls.Add(ac);
+                f.Alt.Controls.Add(kapat);
+                f.CancelButton = kapat;
+                ac.Click += (s, e) => { try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(yol) { UseShellExecute = true }); } catch (Exception ex) { Uyar("Dosya açılamadı: " + ex.Message); } };
+                Etiket(f, Path.GetFileName(yol), 16, 54, 688, KoyuYazi.Baslik, KoyuRenk.Yazi);
+                int Al(string k) { int v; return plan.Ozet.TryGetValue(k, out v) ? v : 0; }
+                Etiket(f, Al("eleman").ToString("N0", Tr) + " direk / eleman satırı · " + Al("iletkenSatiri").ToString("N0", Tr) + " açıklık · " + Al("yeraltiSatiri").ToString("N0", Tr) +
+                    " yeraltı satırı · " + Al("eslesen").ToString("N0", Tr) + " malzeme şablon sütunuyla eşleşti · " + Al("yeniSutun").ToString("N0", Tr) + " yeni sütun" +
+                    (Al("fazla") > 0 ? " · " + Al("fazla").ToString("N0", Tr) + " malzeme şablona sığmadı" : ""), 16, 82, 688, KoyuYazi.Kucuk, KoyuRenk.Soluk);
+                var sb = new StringBuilder();
+                if (plan.YeniSutunlar.Count > 0)
+                {
+                    sb.AppendLine("AÇILAN SÜTUNLAR (şablonda olmayan malzemeler; MALZ. LİSTESİ EK satırlarına bağlı)");
+                    foreach (var y in plan.YeniSutunlar) sb.AppendLine("  " + y.Sayfa + " › " + XlsmDosyasi.SutunHarfi(y.SutunNo) + "  " + y.Kod + "  " + (y.Tip.Length > 0 ? y.Tip + " — " : "") + y.Ad + "  (" + y.Birim + (y.Poz.Length > 0 ? ", poz " + y.Poz : "") + ")");
+                    sb.AppendLine();
+                }
+                if (plan.Fazlalar.Count > 0)
+                {
+                    sb.AppendLine("ŞABLONDA OLMAYAN sayfasına yazılanlar (EK satırı kalmadı)");
+                    foreach (var x in plan.Fazlalar) sb.AppendLine("  " + x.Ad + ": " + SayiCoz.Temiz(x.Miktar, 3).ToString("N3", Tr) + " " + x.Birim + "  (" + string.Join(", ", x.Nereler.ToArray()) + ")");
+                    sb.AppendLine();
+                }
+                if (plan.Uyarilar.Count > 0)
+                {
+                    sb.AppendLine("UYARILAR");
+                    foreach (var u in plan.Uyarilar) sb.AppendLine("  • " + u);
+                }
+                if (sb.Length == 0) sb.AppendLine("Bütün malzemeler şablonun sütunlarıyla eşleşti; uyarı yok.");
+                var kutu = new TextBox { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BorderStyle = BorderStyle.None, BackColor = KoyuRenk.Kart, ForeColor = KoyuRenk.Yazi, Font = KoyuYazi.Govde, Text = sb.ToString().TrimEnd(), WordWrap = true };
+                Koy(f, new Cerceve(kutu), 16, 110, 688, 336);
+                Goster(f);
             }
         }
 

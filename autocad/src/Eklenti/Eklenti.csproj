@@ -44,6 +44,9 @@
     <EmbeddedResource Include="..\..\..\ortak\katalog\cizim-stili.json" Link="Katalog\cizim-stili.json" LogicalName="SebekeHakedis.cizim-stili.json" />
     <!-- Menü kategorileri (şerit: kategori → hızlı çizim öğeleri) -->
     <EmbeddedResource Include="..\..\..\ortak\katalog\kategoriler.json" Link="Katalog\kategoriler.json" LogicalName="SebekeHakedis.kategoriler.json" />
+    <!-- Birleşik Metraj: eski programın Excel şablonunun temiz kopyası ve malzeme adı eşleşme tablosu (ortak/BIRLESIK-METRAJ.md) -->
+    <EmbeddedResource Include="..\..\..\ortak\sablon\birlesik-metraj.xlsm" Link="Sablon\birlesik-metraj.xlsm" LogicalName="SebekeHakedis.sablon.birlesik-metraj.xlsm" />
+    <EmbeddedResource Include="..\..\..\ortak\katalog\metraj-sablon.json" Link="Katalog\metraj-sablon.json" LogicalName="SebekeHakedis.metraj-sablon.json" />
     <!-- Roller ve yetkiler: telefonla ortak tablo -->
     <EmbeddedResource Include="..\..\..\ortak\katalog\roller.json" Link="Katalog\roller.json" LogicalName="SebekeHakedis.roller.json" />
     <!-- Şebeke-M markası: logo ve simgeler (üretici araclar/marka-uret.py) -->

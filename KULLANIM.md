@@ -404,7 +404,7 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 | Telefona Gönder | `SH_ICEAL` | Bölüm 2. `.sebeke.json` (varsayılan) ya da `.volt.json` olarak kaydeder (onaylar, kullanıcılar, hakediş yetkisi ve hesap kayıtları da gider). |
 | Durum Tespit | `SH_RAPOR` | Bu çizimden Excel rapor (eski programın sayfaları; ayrıca **DETAY** sayfası: her elemanın ara malzemeleri satır satır; **HESAPLAR** sayfası: teknik hesap sonuçları ve güncellikleri). |
 | Dosyadan Rapor | `SH_PROJERAPOR` | Bir proje dosyasından Excel rapor (çizim açmadan; telefon dosyaları da olur). |
-| Proje Özeti | `SH_OZET` | Pencere: solda projeler (bölgeler), sağda seçilen projenin **Malzeme listesi** ya da **Kanal listesi** sekmesi (hakediş, durum ve aramayla süzülür). Kanal listesinde her kanal parçası (baş – bit, kablolar, cins, kaplama, ölçü, uzunluk, hacim, durum, hakediş); "Tüm projeler"de her proje bir başlık satırıyla başlar, altında toplamı. **Excel'e aktar** proje listesini, görünen malzeme listesini ve **KANAL LİSTESİ / KANAL ÖZETİ** sayfalarını yazar. Kanal sekmesindeki **Çizime tablo olarak koy** görünen listeyi çizime tablo olarak koyar. |
+| Proje Özeti | `SH_OZET` | Pencere: solda projeler (bölgeler), sağda seçilen projenin **Malzeme listesi** ya da **Kanal listesi** sekmesi (hakediş, durum ve aramayla süzülür). Kanal listesinde her kanal parçası (baş – bit, kablolar, cins, kaplama, ölçü, uzunluk, hacim, durum, hakediş); "Tüm projeler"de her proje bir başlık satırıyla başlar, altında toplamı. **Excel'e aktar** proje listesini, görünen malzeme listesini ve **KANAL LİSTESİ / KANAL ÖZETİ** sayfalarını yazar. Kanal sekmesindeki **Çizime tablo olarak koy** görünen listeyi çizime tablo olarak koyar. **Birleşik Metraj…** (9.11.2026) eski programın Birleşik Metraj Excel şablonunu (DİREK / İLETKEN / YERALTI METRAJI, MALZ. LİSTESİ) seçili projeyle (ya da "Tüm projeler"le) doldurur: pencerede şablon (gömülü temiz kopya ya da kendi `.xlsm` dosyanız), yüklenici firma, il, ilçe ve hakediş no (bu bilgisayarda hatırlanır); dosya `<çizim>_<proje>_BIRLESIK_METRAJ_<tarih>.xlsm` olarak kaydedilir, sonuç penceresi açılan sütunları ve uyarıları gösterir, **Dosyayı aç** Excel'i açar. Kurallar: her direk / box bir satır (yeni → Yeni Direk, demontaj → Demontaj "tip (K/S)", sök-tak → Demontajdan Montaj, mevcut → Mevcut; malzemeler kendi durumlarıyla), şablonun kendi türetme formülleri yerine çizimdeki malzeme yazılır (olmayan 0), her havai açıklık İLETKEN'de bir satır (sök-tak iki satır: DM + AKTARIM; tel kodları R / P / A / SWLL…), kanallar ve yeraltı kablolar YERALTI'da (kablo metrajı kanal üstünden giden kısım KANAL İÇİN, kalan DİREK İÇİN). Şablonda olmayan direk tipi, tel, kablo ya da malzeme için ilgili sayfaya **yeni sütun** açılır (KOD `YE001`, `DE002`… — MALZ. LİSTESİ'nin EK satırlarına bağlı; 40 EK satırı bitince kalanlar "ŞABLONDA OLMAYAN" sayfasına). Dosya Excel'de açılınca formüller yeniden hesaplanır (makro korunur). Kural telefonla ortak: [ortak/BIRLESIK-METRAJ.md](ortak/BIRLESIK-METRAJ.md). |
 | Kanal Listesi | `SH_KANALLISTESI` | Proje bazında kanal listesini çizime **tablo** olarak koyar (sol üst köşesini gösterin): her proje için başlık, kanallar ve toplamı, en altta genel toplam. Tablo `SH_KANAL_LISTESI` bloğudur (katman `SC_KANAL_LISTESI`); yeniden çalıştırınca yerinde yenilenir. AutoCAD'in tablo nesnesi değildir, DWG 2000 biçiminde de bozulmadan kalır. |
 | Çizim Onar | `SH_ONAR` | Açılırken AutoCAD'i kapatan çizimi **açmadan** onarır (DWG 2000 biçimi): eklentinin eski sürümünün (0.1.57 ve öncesi) bıraktığı boş kayıtlar çıkarılır, onarılmış kopya `…-onarildi.dwg` adıyla yanına yazılır; asıl dosyaya dokunulmaz. Birden çok çizim seçilebilir; çizim AutoCAD'de açık olmamalıdır. |
 | Eksik Malzeme | `SH_DETAY` | Eski programdaki DETAY sorgusu: ör. "topraklaması **olmayan** AG direkleri". Hangi elemanlarda (ana cins, tip, durum, bölge) hangi ara malzemenin (cins, tip, durum, hakediş) aranacağını seçin; **olmayanlar / olanlar / hepsi**. Sonuç pencerede listelenir; **Çizimde seç** bulunan elemanları seçer, **Excel'e yaz** ayrıca DETAY dosyasını yazar. |
@@ -501,12 +501,14 @@ fark, bilgilerin nereden geldiğidir (telefonda projeden, AutoCAD'de çizimden).
 
 | Hesap | Ne yapar |
 | --- | --- |
-| Direk Tepe Kuvveti (Cer Vektörü) | Direğe bağlı bütün hatların çekme kuvvetlerinin vektörel toplamı ve bileşke yönü; direk tipi kontrolü |
+| Direk Tepe Kuvveti (Cer Vektörü) | Direğe bağlı bütün hatların çekme kuvvetlerinin vektörel toplamı ve bileşke yönü; direk tipi kontrolü. Sonucun altında **Önerilen direk tipi** kutusu (8.11.2026): aracın hat satırlarından (kuvvet, açı, iletken) eski TEDAŞ tepe kuvveti tablosuyla uygun en küçük direk tipi (AG 9-H … 12I, K1 … K5; müşterek 10I'' … K5''; trafo direği T-15 … T-50; ağaç 9-O / 9-A), en kötü senaryo (bütün hatlar ya da bir hattın kopması), L / R / B30 değerleri ve projedeki tipin tabloya göre yeterli olup olmadığı. Tablo eski TEDAŞ aracından alınmıştır; sonuç öneridir, projeci karar verir |
 | Kanal Planı | Yeraltı kablo kanalı kesit detayları: kablo dizilişi, kanal genişliği ve derinliği, kazı metrajı, DXF |
+| Direk Listeleri (8.11.2026) | Proje (bölge) bazlı dört liste tek sayfada, sekmelerle: **AG Direk Listesi** (AG / müşterek direkler: fonksiyon, açı, hat tertibi, konsol, izolatör, tepe kuvveti — kayıtlı cer hesabından), **ENH Direk Dağıtım Cetveli** (OG hat zincirleri boyunca: baştan mesafe, ara mesafe, rüzgâr açıklığı, açı (grad), tip, izolatör), **Aydınlatma Direk Listesi** (armatür taşıyan direkler: tertip, tip, konsol, armatür sayısı), **Direk Koordinat Listesi** (Y sağa, X yukarı, kot). Üstte bölge seçimi; yazdırmaya uygun (A4 yatay). Şeritte her liste kendi düğmesiyle de açılır (aynı sayfanın o sekmesi). Hesap Merkezi'nde proje geneli hedefle (nesne seçmeden Enter) listelenir |
 
-1.11.2026'dan beri Hesap Merkezi'nde yalnız bu iki hesap vardır (kullanıcı isteği). Daha önce bulunan sehim, uplift,
-ag–aw, Amax, kopma, tablo yöntemiyle tepe kuvveti, gerilim düşümü, kısa devre, bakır–alüminyum kesit, beton köşk
-yerleşimi ve AG tek hat hesapları kaldırıldı; eski kayıtları projede bilgi olarak durur (sayfası açılmaz).
+1.11.2026'dan 8.11'e kadar Hesap Merkezi'nde yalnız ilk iki hesap vardı (kullanıcı isteği); 8.11'de proje bazlı Direk
+Listeleri eklendi. Daha önce bulunan sehim, uplift, ag–aw, Amax, kopma, tablo yöntemiyle tepe kuvveti, gerilim düşümü,
+kısa devre, bakır–alüminyum kesit, beton köşk yerleşimi ve AG tek hat hesapları kaldırıldı; eski kayıtları projede bilgi
+olarak durur (sayfası açılmaz).
 
 ### Nasıl açılır?
 
@@ -516,7 +518,7 @@ yerleşimi ve AG tek hat hesapları kaldırıldı; eski kayıtları projede bilg
 - **AutoCAD**: nesneyi seçip (ya da düğmeden sonra seçerek) **ŞEBEKE-M ARAÇLAR › Teknik Hesaplamalar**:
   - **Hesap Merkezi**: seçilen nesne için uygun hesaplar ve o nesnenin kayıtlı sonuçları. Nesne seçmeden **Enter**:
     çizimin tamamı.
-  - **Cer Vektörü / Kanal Planı**: hesabı doğrudan açar.
+  - **Cer Vektörü / Kanal Planı / Direk Listeleri (AG, ENH cetveli, aydınlatma, koordinat)**: hesabı doğrudan açar.
   - **Kayıtlı Hesaplar**: çizimdeki bütün kayıtlar.
   - Komut satırından: `SH_HESAP` (hesap kimliği sorar; `merkez`, `tepe-vektor` ya da `kanal`), `SH_HESAPLAR`.
   Sayfa bilgisayarın tarayıcısında açılır (Edge varsa uygulama penceresi, yoksa varsayılan tarayıcı, ör. Chrome);

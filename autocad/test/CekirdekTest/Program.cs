@@ -303,6 +303,103 @@ namespace SebekeHakedis.Test
             CbsIceAktarimDene(); // CBS'den şebeke nesnesi olarak alma
             MalzemeYazisiVeKalinlikDene(); // stil yüklü olmalı (hat kalınlıkları ortak stilden)
             YazmaDenetimiDene();
+            BirlesikMetrajOrtakDeneme(); // telefonla ortak: şablon tanımı, doldurma planı, dosyaya yazma
+        }
+
+        // ---------------- Telefonla ortak Birleşik Metraj denemesi (ortak/deneme/birlesik-metraj) ----------------
+
+        /// <summary>
+        /// Gömülü şablon (ortak/sablon/birlesik-metraj.xlsm) aynı tanımla okunur (sablon.json), deneme projesi aynı planla
+        /// doldurulur (beklenen-plan.json; üretici araclar/metraj-beklenen-uret.mjs) ve plan dosyaya yazılıp geri okunur.
+        /// Telefonun tests/birlesik-metraj.test.mjs'i aynı dosyaları kullanır.
+        /// </summary>
+        private static void BirlesikMetrajOrtakDeneme()
+        {
+            Console.WriteLine("Birleşik Metraj: telefonla ortak deneme (ortak/deneme/birlesik-metraj)");
+            string klasor = Path.Combine(AppContext.BaseDirectory, "birlesik-metraj");
+            byte[] sablonBytes = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "birlesik-metraj.xlsm"));
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var x = XlsmDosyasi.Ac(sablonBytes);
+            var sablon = MetrajSablonu.Oku(x);
+            Console.WriteLine("    şablon okundu: " + sw.ElapsedMilliseconds + " ms, " + sablon.KullanilanKodlar.Count + " KOD sütunu");
+            var beklenenSablon = Json.Oku(File.ReadAllText(Path.Combine(klasor, "sablon.json"), Encoding.UTF8));
+            string fark = JsonFark(beklenenSablon, sablon.JsonYap(), "sablon");
+            Esit("", fark, "Birleşik Metraj ortak: şablon tanımı telefonla aynı" + (fark.Length > 0 ? " — " + fark : ""));
+            Esit(410.0, (double)sablon.KullanilanKodlar.Count, "Birleşik Metraj: şablonda 410 KOD sütunu");
+            Esit(40.0, (double)sablon.MalzListesi.EkSatirlari.Count, "Birleşik Metraj: MALZ. LİSTESİ'nde 40 EK satırı");
+            Esit("C", sablon.Direk.S("yeni"), "Birleşik Metraj: DİREK sabit sütunu 'Yeni Direk' = C");
+            Esit("Q", sablon.Iletken.S("durum"), "Birleşik Metraj: İLETKEN durum sütunu = Q");
+            Esit(7.0, (double)sablon.Listeler["imIletken"].Degerler.Count, "Birleşik Metraj: iletken kodu listesi formülden türetilir (7 kod)");
+
+            var p = ProjeDosyasi.Oku(File.ReadAllText(Path.Combine(klasor, "proje.sebeke.json"), Encoding.UTF8));
+            var ayarJson = (JsonNesne)Json.Oku(File.ReadAllText(Path.Combine(klasor, "ayar.json"), Encoding.UTF8));
+            var katalog = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            var ayar = new BirlesikMetraj.Ayar
+            {
+                BolgeId = ayarJson.Metin("bolgeId"), Firma = ayarJson.Metin("firma"), Il = ayarJson.Metin("il"), Ilce = ayarJson.Metin("ilce"), HakedisNo = ayarJson.Metin("hakedisNo"),
+                Katsayilar = Katsayilar.Varsayilan, Eslesme = (JsonNesne)Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "metraj-sablon.json"), Encoding.UTF8)), Katalog = katalog
+            };
+            sw.Restart();
+            var plan = BirlesikMetraj.Planla(p, sablon, ayar);
+            Console.WriteLine("    plan: " + sw.ElapsedMilliseconds + " ms; " + plan.Uyarilar.Count + " uyarı; " + plan.YeniSutunlar.Count + " yeni sütun");
+            var beklenenPlan = Json.Oku(File.ReadAllText(Path.Combine(klasor, "beklenen-plan.json"), Encoding.UTF8));
+            fark = JsonFark(beklenenPlan, plan.JsonYap(), "plan");
+            Esit("", fark, "Birleşik Metraj ortak: doldurma planı telefonla aynı" + (fark.Length > 0 ? " — " + fark : ""));
+            Esit(8.0, (double)plan.Ozet["eleman"], "Birleşik Metraj: 8 eleman satırı (öteki bölge ve İLERİDE dışarıda)");
+            Esit(6.0, (double)plan.Ozet["iletkenSatiri"], "Birleşik Metraj: 6 açıklık satırı (sök-tak iki satır)");
+            Esit("YE003", plan.YeniSutunlar[2].Kod, "Birleşik Metraj: yeni direk tipi sütunu blok önekli EK koduyla");
+            Esit(0.0, (double)plan.Uyarilar.Count, "Birleşik Metraj: uyarı yok");
+
+            sw.Restart();
+            BirlesikMetraj.PlanUygula(x, sablon, plan);
+            byte[] cikti = x.Yaz();
+            Console.WriteLine("    dosyaya yazma: " + sw.ElapsedMilliseconds + " ms, " + cikti.Length + " bayt");
+            var y = XlsmDosyasi.Ac(cikti);
+            var d = y.Sayfa("DİREK METRAJI");
+            Esit("SC1", d.Metin("A19"), "Birleşik Metraj yazma: direk no");
+            Esit("G-10I", d.Metin("C19"), "Birleşik Metraj yazma: yeni direk tipi");
+            Esit("G-K1 (K)", d.Metin("D20"), "Birleşik Metraj yazma: demontaj direk tipi (Kesik)");
+            Esit("G-10I''", d.Metin("E21"), "Birleşik Metraj yazma: demontajdan montaj tipi şablonun yazımıyla (iki kesme)");
+            Esit("1", d.Metin("JS18"), "Birleşik Metraj yazma: yeni sütuna box adedi");
+            Esit("YE003", d.Metin("JU10"), "Birleşik Metraj yazma: yeni sütunun KOD'u");
+            Esit("G-K5", d.Metin("JU11"), "Birleşik Metraj yazma: yeni sütunun TİP'i");
+            Esit("IF(AND($C18<>\"\",$C18=JU$11),1,0)", d.Formul("JU18"), "Birleşik Metraj yazma: yeni direk sütununa veri formülü örnekten kaydırılır");
+            Esit("SUM(JU18:JU315)", d.Formul("JU316"), "Birleşik Metraj yazma: yeni sütunun toplam formülü");
+            Esit("IF(JU316>0,1,0)", d.Formul("JU12"), "Birleşik Metraj yazma: yeni sütunun gizleme bayrağı");
+            Esit(true, d.SatirGizliMi(29) && !d.SatirGizliMi(27) && !d.SatirGizliMi(19), "Birleşik Metraj yazma: yazılmayan satırlar gizli, yazılanlar ve iki yedek satır açık");
+            var i = y.Sayfa("İLETKEN METRAJI");
+            Esit("OXLIP", i.Metin("BN8"), "Birleşik Metraj yazma: İLETKEN'de yeni tel sütunu (DM bloğu)");
+            Esit("DM", i.Metin("BN6"), "Birleşik Metraj yazma: yeni sütunun DURUM satırı");
+            Esit(true, (i.Formul("BN16") ?? "").Contains("BN$6") && (i.Formul("BN16") ?? "").Contains("BN$8"), "Birleşik Metraj yazma: İLETKEN veri formülü yeni sütuna kaydırılır");
+            Esit("MAX(0,BN118-BN119)", i.Formul("BN120"), "Birleşik Metraj yazma: İLETKEN alt satır formülleri (MALZ. LİSTESİNE AKTARILAN)");
+            var m = y.Sayfa("MALZ. LİSTESİ");
+            Esit("YE001", m.Metin("G472"), "Birleşik Metraj yazma: MALZ. LİSTESİ EK satırının kodu yeni sütunla aynı");
+            Esit("IF($I477=\"\",0,N(INDEX(IM_MALZ_SATIRI,$I477)))", m.Formul("H477"), "Birleşik Metraj yazma: İLETKEN EK satırı MALZ satırından okur");
+            var k = y.Sayfa("KATSAYILAR");
+            Esit("OXLIP", k.Metin("AN11"), "Birleşik Metraj yazma: DM bloğundaki yeni tel iletken kodu listesine eklenir");
+            Esit("4 ÇIKIŞLI H.T", k.Metin("AS4"), "Birleşik Metraj yazma: box cinsi listeye eklenir");
+            Esit(true, y.Dosya("xl/vbaProject.bin") != null && y.Dosya("xl/calcChain.xml") == null && y.Workbook.Contains("fullCalcOnLoad=\"1\""), "Birleşik Metraj yazma: makro korunur, calcChain silinir, açılışta yeniden hesap");
+        }
+
+        /// <summary>İki JSON değerinin ilk farkı ("" = aynı). Sayılar 1e-6 payla, nesnelerde anahtar sırası önemsiz.</summary>
+        private static string JsonFark(object a, object b, string yol)
+        {
+            if (a == null || b == null) return a == b ? "" : yol + ": " + (a == null ? "null" : Json.Yaz(a, false)) + " ≠ " + (b == null ? "null" : Json.Yaz(b, false));
+            if (a is JsonNesne na && b is JsonNesne nb)
+            {
+                foreach (var kv in na) { if (!nb.Var(kv.Key)) return yol + "." + kv.Key + ": eklentide yok"; var f = JsonFark(kv.Value, nb[kv.Key], yol + "." + kv.Key); if (f.Length > 0) return f; }
+                foreach (var kv in nb) if (!na.Var(kv.Key)) return yol + "." + kv.Key + ": beklenende yok (" + Json.Yaz(kv.Value, false) + ")";
+                return "";
+            }
+            if (a is List<object> la && b is List<object> lb)
+            {
+                if (la.Count != lb.Count) return yol + ": " + la.Count + " ≠ " + lb.Count + " öğe";
+                for (int i = 0; i < la.Count; i++) { var f = JsonFark(la[i], lb[i], yol + "[" + i + "]"); if (f.Length > 0) return f; }
+                return "";
+            }
+            if (a is double da && b is double db) return Math.Abs(da - db) < 1e-6 ? "" : yol + ": " + da + " ≠ " + db;
+            if (a is double && b is string sb2) { double v; if (double.TryParse(sb2, NumberStyles.Float, CultureInfo.InvariantCulture, out v) && Math.Abs((double)a - v) < 1e-6) return ""; }
+            return Equals(a, b) ? "" : yol + ": " + Json.Yaz(a, false) + " ≠ " + Json.Yaz(b, false);
         }
 
         /// <summary>

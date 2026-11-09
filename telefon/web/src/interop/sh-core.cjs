@@ -559,6 +559,545 @@
     }
   }
 
+  // ---------------------------------------------------------------- Birleşik Metraj şablonu doldurma planı
+  // Kural ortak/BIRLESIK-METRAJ.md'de; eklentideki Cekirdek/BirlesikMetraj.cs ile aynı. Ortak deneme:
+  // ortak/deneme/birlesik-metraj.json. Girdi: eklenti biçiminde proje (projeOku), şablon tanımı (xlsm.js › sablonTanimi /
+  // XlsmDosyasi.SablonTanimi), ayar { bolgeId, firma, il, ilce, hakedisNo, katsayilar (katsayiHazirla), eslesme (metraj-sablon.json),
+  // poz: (cins, tanim) → poz no }. Çıktı: { sayfalar: { ad: { hucreler: { "A18": deger }, gosterSatirlar, gizle } }, yeniSutunlar,
+  // ekSatirlar, listeEkle, fazla, uyarilar, ozet }. Değer: sayı → sayı, "=…" → formül, metin → metin. Yeni sütunların başlık
+  // hücreleri ve MALZ. LİSTESİ EK satırı formülleri de hücrelerdedir; biçim (stil, genişlik, bayrak / toplam / veri formülleri,
+  // satır gizleme, "ŞABLONDA OLMAYAN" sayfası) yazıcının işidir (xlsm.js › planUygula / XlsmDosyasi.PlanUygula).
+
+  const BM_BLOK_ADI = { Y: 'YENİ', D: 'DEMONTAJ', DM: 'DEMONTAJDAN MONTAJ', A: 'AKTARIM' };
+  const BM_DURUM_YAZISI = { Y: 'YENİ', D: 'DM', DM: 'DM', A: 'AKTARIM' };
+  const BM_SAYFA_SIRASI = ['direk', 'iletken', 'yeralti'];
+
+  /** Karşılaştırma için ad normalleştirme (iki platformda aynı): büyük harf (i → I), '' → ", boşluk / çarpı sadeleşir. */
+  function bmNorm(s) {
+    let t = str(s).normalize('NFC').trim();
+    t = t.replace(/''/g, '"').replace(/[″“”]/g, '"').replace(/\s+/g, ' ');
+    t = t.replace(/İ/g, 'I').replace(/ı/g, 'I').toUpperCase();
+    t = t.replace(/MM²/g, 'MM2').replace(/MM 2\b/g, 'MM2');
+    t = t.replace(/\s*[xX×]\s*(?=[\d(])/g, 'X').replace(/(\d)\s*\+\s*(?=\d)/g, '$1+').replace(/(\d)\s*\/\s*(?=\d)/g, '$1/');
+    t = t.replace(/(\d)\(/g, '$1X(');   // "3(1x150/25)" → "3X(1X150/25)" (şablon yazımı)
+    t = t.replace(/TUVENAN/g, 'TUVANEN').replace(/ALÜMINYUM/g, 'ALUMINYUM');
+    return t;
+  }
+  const bmIlkSozcuk = (s) => bmNorm(s).split(' ')[0] || '';
+
+  /** Eklenti durum kodu → blok: Y (yeni), D (demontaj), DM (demontajdan montaj), 'MEVCUT'; İLERİDE → null (yazılmaz). */
+  function bmBlok(durum) {
+    const d = str(durum).trim().toUpperCase().replace(/İ/g, 'I');
+    if (d === 'DM' || d === 'DEMONTAJ') return 'D';
+    if (d === 'DM+M' || d === 'DMM') return 'DM';
+    if (d === 'MEVCUT') return 'MEVCUT';
+    if (d === 'ILERIDE') return null;
+    return 'Y';
+  }
+  /** Doğal sıra (SC2 < SC10): sayılar sayı olarak, yazılar büyük harf kod sırasıyla; iki platformda aynı (ICU'ya bağlı değil). */
+  const bmParcala = (s) => str(s).toUpperCase().replace(/İ/g, 'I').replace(/ı/g, 'I').match(/\d+|\D+/g) || [];
+  function bmDogalSira(a, b) {
+    const pa = bmParcala(a), pb = bmParcala(b);
+    const n = Math.min(pa.length, pb.length);
+    for (let i = 0; i < n; i++) {
+      const x = pa[i], y = pb[i];
+      const nx = /^\d/.test(x), ny = /^\d/.test(y);
+      if (nx && ny) { const d = Number(x) - Number(y); if (d) return d < 0 ? -1 : 1; if (x.length !== y.length) return x.length - y.length; continue; }
+      if (nx !== ny) return nx ? -1 : 1;
+      if (x !== y) return x < y ? -1 : 1;
+    }
+    return pa.length - pb.length;
+  }
+
+  /** Eklenti birimi ("ad/kg", "mt/mt", "mt/m³") → şablon birimi ("ad.", "mt.", "kg", "m3", "tk."). */
+  function bmBirim(birim) {
+    const g = str(birim).split('/')[0].toLowerCase().trim();
+    if (g === 'kg') return 'kg';
+    if (g === 'mt' || g === 'm') return 'mt.';
+    if (g === 'tk') return 'tk.';
+    if (g === 'm3' || g === 'm³') return 'm3';
+    return 'ad.';
+  }
+  /** Yazılacak miktar: şablon sütunu kg ya da m3 ise ve kalemin rapor birimi öyleyse toplam, yoksa giriş miktarı. */
+  function bmMiktar(k, sablonBirim) {
+    const rapor = str(k.birim).split('/')[1] || '';
+    const sb = str(sablonBirim).toLowerCase();
+    if ((sb.startsWith('kg') && /^kg/i.test(rapor)) || (sb.startsWith('m3') && /^m(3|³)/i.test(rapor))) {
+      return temiz(num(k.toplam) || num(k.miktar) * num(k.katsayi, 1), 3);
+    }
+    return temiz(num(k.miktar), 3);
+  }
+  /** Poz: demontaj "1" + poz, demontajdan montaj / aktarım "2" + poz; ilk bölüm iki haneye tamamlanır (5.5.1 → 105.5.1). */
+  function bmPoz(poz, blok) {
+    const t = str(poz).trim();
+    if (!t || blok === 'Y' || blok === 'MEVCUT') return t;
+    const seg = t.split('.');
+    seg[0] = seg[0].padStart(2, '0');
+    return (blok === 'D' ? '1' : '2') + seg.join('.');
+  }
+
+  /** Noktaya en yakın eleman (varsayılan 3,5 m içinde). */
+  function bmYakinEleman(p, nokta, tol) {
+    let en = null, enD = tol == null ? 3.5 : tol;
+    if (!nokta) return null;
+    for (const e of p.elemanlar) {
+      const d = Math.hypot(e.saga - nokta[0], e.yukari - nokta[1]);
+      if (d <= enD) { enD = d; en = e; }
+    }
+    return en;
+  }
+
+  /** Kırık çizginin kanallardan birinin üstünden giden uzunluğu (m): 0,25 m adımla örnekleme, yanal pay 0,6 m. */
+  function bmKanalUstu(kose, kanallar) {
+    if (!kose || kose.length < 2 || !kanallar || !kanallar.length) return 0;
+    const adim = 0.25, tol = 0.6;
+    const noktaDogru = (q, a, b) => {
+      const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
+      if (l2 === 0) return Math.hypot(q[0] - a[0], q[1] - a[1]);
+      let t = ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / l2; t = Math.max(0, Math.min(1, t));
+      return Math.hypot(q[0] - (a[0] + t * dx), q[1] - (a[1] + t * dy));
+    };
+    const kanaldaMi = (q) => kanallar.some((k) => { const kk = k.kose || []; for (let i = 1; i < kk.length; i++) if (noktaDogru(q, kk[i - 1], kk[i]) <= tol) return true; return false; });
+    let icinde = 0;
+    for (let i = 1; i < kose.length; i++) {
+      const a = kose[i - 1], b = kose[i], L = mesafe(a, b);
+      const n = Math.max(1, Math.ceil(L / adim));
+      for (let j = 0; j < n; j++) {
+        const t = (j + 0.5) / n;
+        if (kanaldaMi([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t])) icinde += L / n;
+      }
+    }
+    return temiz(icinde, 2);
+  }
+
+  function sutunHarfiBM(n) { let s = ''; while (n > 0) { const k = (n - 1) % 26; s = String.fromCharCode(65 + k) + s; n = Math.floor((n - 1) / 26); } return s; }
+  function sutunNoBM(harf) { let n = 0; for (const ch of String(harf).toUpperCase()) n = n * 26 + (ch.charCodeAt(0) - 64); return n; }
+
+  /** Doldurma planı; bkz. bölüm başındaki açıklama. */
+  function birlesikMetraj(p, sablon, ayar) {
+    const a = ayar || {};
+    const es = a.eslesme || {};
+    const esKalemler = es.kalemler || {};
+    const kat = a.katsayilar || katsayiHazirla(null);
+    const pozAl = typeof a.poz === 'function' ? a.poz : (c, t) => str(a.poz && a.poz[c + '|' + t]);
+    const uyarilar = [], listeEkle = [], yeniSutunlar = [], ekKullanilan = [], fazla = [];
+    const ozet = { eleman: 0, iletkenSatiri: 0, yeraltiSatiri: 0, eslesen: 0, yeniSutun: 0, fazla: 0, atlanan: 0 };
+    const sayfalar = {};
+    const sayfa = (ad) => (sayfalar[ad] = sayfalar[ad] || { hucreler: {}, gosterSatirlar: [], gizle: null });
+    const yaz = (ad, ref, deger) => { if (deger !== undefined && deger !== null && deger !== '') sayfa(ad).hucreler[ref] = deger; };
+    const topla = (ad, ref, m) => { const h = sayfa(ad).hucreler; h[ref] = temiz((typeof h[ref] === 'number' ? h[ref] : 0) + m, 3); };
+    const bolgeSuz = (o) => !a.bolgeId || str(o.bolge) === str(a.bolgeId);
+    const elemanlar = (p.elemanlar || []).filter(bolgeSuz), hatlar = (p.hatlar || []).filter(bolgeSuz), kanallar = (p.kanallar || []).filter(bolgeSuz);
+    const bolge = (p.bolgeler || []).find((b) => str(b.id) === str(a.bolgeId)) || null;
+    const hakedisNo = a.hakedisNo != null && a.hakedisNo !== '' ? a.hakedisNo : ((p.proje && p.proje.aktifHakedis) || '');
+    const esl = (k) => esKalemler[str(k.cins) + '|' + str(k.tanim)] || esKalemler[str(k.tanim)] || null;
+    const pozYap = (k, blok) => { const e = esl(k); return bmPoz((e && e.poz) || pozAl(str(k.cins), str(k.tanim)), blok); };
+    const temin = (k, blok) => { if (blok !== 'Y') return ''; const e = esl(k); return (e && e.temin) || (es.temin && es.temin[str(k.cins)]) || 'Ş'; };
+
+    // ---- şablon sayfaları ve yeni sütun yönetimi
+    const T = { direk: sablon.direk || null, iletken: sablon.iletken || null, yeralti: sablon.yeralti || null };
+    const ONEK = { direk: 'DM', iletken: 'IM', yeralti: 'YM' };
+    const sonSutun = {};
+    for (const h of BM_SAYFA_SIRASI) sonSutun[h] = T[h] ? T[h].sonSutun : 0;
+    const kullanilan = new Set(sablon.kullanilanKodlar || []);
+    const ekSatirlar = ((sablon.malz && sablon.malz.ekSatirlari) || []).filter((e) => !kullanilan.has(e.kod));
+    let ekSira = 0;
+    const listeler = sablon.listeler || {};
+    const listeSayac = {};
+    /**
+     * KATSAYILAR'daki seçim listesine değer ekler (varsa eklemez). Şablonun listeleri TİP satırlarından formülle dolar;
+     * yeni sütunun KOD'u blok önekiyle yazıldığından direk listeleri kendiliğinden güncellenir. Buraya yalnız formülün
+     * kapsamadığı değerler gelir: İLETKEN'de DM / AKTARIM bloğunda açılan tel ya da kablo (listeler YENİ bloğundan dolar)
+     * ve elle doldurulan Box listesi.
+     */
+    function listeyeEkle(liste, deger) {
+      const l = listeler[liste];
+      if (!l || !deger) return;
+      const mevcut = (l.degerler || []).some((v) => bmNorm(v) === bmNorm(deger)) || listeEkle.some((x) => x.liste === liste && bmNorm(x.deger) === bmNorm(deger));
+      if (mevcut) return;
+      const sira = (l.degerler || []).length + (listeSayac[liste] || 0);
+      const satir = l.ilk + sira;
+      if (satir > l.son) { uyarilar.push('KATSAYILAR ' + liste + ' listesi dolu; "' + deger + '" eklenemedi.'); return; }
+      listeSayac[liste] = (listeSayac[liste] || 0) + 1;
+      listeEkle.push({ liste, deger, sayfa: l.sayfa, ref: l.sutun + satir });
+      yaz(l.sayfa, l.sutun + satir, deger);
+    }
+    /**
+     * Bloğa yeni sütun açar (aynı anahtarla önce açılmışsa onu döner). EK satırı kalmadıysa null döner.
+     * bilgi: { tip, poz, ad, temin, birim, veriFormulu, kaynak }.
+     */
+    function yeniSutun(hangi, blok, anahtar, bilgi) {
+      const t = T[hangi];
+      const var_ = yeniSutunlar.find((y) => y.hangi === hangi && y.blok === blok && y.anahtar === anahtar);
+      if (var_) return var_;
+      if (ekSira >= ekSatirlar.length) return null;
+      const ek = ekSatirlar[ekSira++];
+      const sutun = ++sonSutun[hangi];
+      const ters = [...t.sutunlar].reverse();
+      const ornek = (bilgi.veriFormulu && hangi === 'direk' ? ters.find((x) => x.blok === blok && x.tip) : null) || ters.find((x) => x.blok === blok) || ters[0] || null;
+      // KOD: blok öneki + EK kodu ("YE001", "DE002", "DME003", "AE004"): şablonun blok süzgeçleri (seçim listeleri,
+      // LEFT(KOD,1)="Y" gibi) yeni sütunu kendi bloğunda sayar; MALZ. LİSTESİ'ndeki EK satırının kodu da aynı yazılır.
+      const kod = blok + ek.kod;
+      const y = {
+        hangi, sayfa: t.sayfa, blok, anahtar, sutun, kod, ekKodu: ek.kod, ekSatiri: ek.satir, ornekSutun: ornek ? ornek.sutun : null,
+        tip: str(bilgi.tip), poz: str(bilgi.poz), ad: str(bilgi.ad), temin: str(bilgi.temin), birim: str(bilgi.birim) || 'ad.',
+        grup: (BM_BLOK_ADI[blok] || blok) + '\nEK (Şebeke-M)', veriFormulu: !!bilgi.veriFormulu, kaynak: bilgi.kaynak || null
+      };
+      yeniSutunlar.push(y);
+      ekKullanilan.push({ satir: ek.satir, kod, ekKodu: ek.kod, hangi, blok, ad: y.ad });
+      const S = sutunHarfiBM(sutun), h = sayfa(t.sayfa).hucreler;
+      h[S + t.kodSatiri] = y.kod;
+      if (t.tipSatiri && y.tip) h[S + t.tipSatiri] = y.tip;
+      if (t.durumSatiri) h[S + t.durumSatiri] = BM_DURUM_YAZISI[blok] || blok;
+      if (t.grupSatiri) h[S + t.grupSatiri] = y.grup;
+      if (y.poz) h[S + t.pozSatiri] = y.poz;
+      h[S + t.adSatiri] = y.ad;
+      if (y.temin) h[S + t.teminSatiri] = y.temin;
+      h[S + t.birimSatiri] = y.birim;
+      // MALZ. LİSTESİ EK satırı: bloğun satırlarındaki formüllerle aynı (temin: Y bloğunda metrajdan, ötekilerde 'Y' sabiti)
+      const m = sablon.malz;
+      if (m) {
+        const mh = sayfa(m.sayfa).hucreler, r = ek.satir, I = '$' + m.kaynakSutunu + r, ON = ONEK[hangi];
+        mh[m.kodSutunu + r] = kod;
+        mh[m.pozSutunu + r] = '=IF(' + I + '="","",INDEX(' + ON + '_POZ_SATIRI,' + I + ')&"")';
+        mh[m.adSutunu + r] = '=IF(' + I + '="","",TRIM(INDEX(' + ON + '_AD_SATIRI,' + I + ')&IFERROR(VLOOKUP(INDEX(' + ON + '_SEC_SATIRI,' + I + '),SECIM_EK,2,FALSE),"")))';
+        mh[m.birimSutunu + r] = '=IF(' + I + '="","",INDEX(' + ON + '_BIRIM_SATIRI,' + I + ')&"")';
+        mh[m.teminSutunu + r] = blok === 'Y' ? '=IF(' + I + '="","",INDEX(' + ON + '_SEC_SATIRI,' + I + ')&"")' : 'Y';
+        // miktar: İLETKEN'de "MALZ. LİSTESİNE AKTARILAN" satırı (DM: hurda = demontaj − aktarım), ötekilerde TOPLAM satırı
+        mh[m.miktarSutunu + r] = '=IF(' + I + '="",0,N(INDEX(' + (t.malzSatiri ? ON + '_MALZ_SATIRI' : ON + '_TOPLAM_SATIRI') + ',' + I + ')))';
+        mh[m.kaynakSutunu + r] = '=IFERROR(MATCH($' + m.kodSutunu + r + ',' + ON + '_KOD_SATIRI,0),"")';
+      }
+      return y;
+    }
+    /** EK satırı kalmayınca: malzeme "ŞABLONDA OLMAYAN" listesine toplanır. */
+    function fazlaya(hangi, blok, anahtar, bilgi, miktar, kim) {
+      let f = fazla.find((x) => x.hangi === hangi && x.blok === blok && x.anahtar === anahtar);
+      if (!f) { f = { hangi, blok, anahtar, ad: str(bilgi.ad), poz: str(bilgi.poz), birim: str(bilgi.birim) || 'ad.', miktar: 0, nereler: [] }; fazla.push(f); }
+      f.miktar = temiz(f.miktar + num(miktar), 3);
+      if (kim && f.nereler.indexOf(kim) < 0) f.nereler.push(kim);
+      return f;
+    }
+    /** Sütun bulur ya da açar; miktarı yazar. Dönüş: bulunan / açılan sütun no (fazlaya gittiyse 0). */
+    function malzemeYaz(hangi, blok, k, r, kim) {
+      const t = T[hangi];
+      let s = sutunBul(t, blok, k), birim;
+      if (s) { ozet.eslesen++; birim = s.birim; }
+      else {
+        const bilgi = { poz: pozYap(k, blok), ad: str(k.tanim), temin: temin(k, blok), birim: bmBirim(k.birim), kaynak: { cins: str(k.cins), tanim: str(k.tanim) } };
+        const y = yeniSutun(hangi, blok, 'AD|' + bmNorm(k.tanim), bilgi);
+        if (!y) { fazlaya(hangi, blok, 'AD|' + bmNorm(k.tanim), bilgi, bmMiktar(k, bilgi.birim), kim); return 0; }
+        s = y; birim = y.birim;
+      }
+      topla(t.sayfa, sutunHarfiBM(s.sutun) + r, bmMiktar(k, birim));
+      return s.sutun;
+    }
+    /** Şablonda kalemi karşılayan sütun: TİP = tanım; AD = tanım; eşleşme tablosu; AD "tanım " ile başlar (tanımda rakam / tire varsa). */
+    function sutunBul(t, blok, k) {
+      const tanim = bmNorm(k.tanim), e = esl(k);
+      const adlar = e && e.adlar ? e.adlar.map(bmNorm) : [];
+      const aday = t.sutunlar.filter((x) => x.blok === blok);
+      let b = aday.find((x) => x.tip && bmNorm(x.tip) === tanim);
+      if (b) return b;
+      b = aday.find((x) => bmNorm(x.ad) === tanim);
+      if (b) return b;
+      if (adlar.length) { b = aday.find((x) => adlar.indexOf(bmNorm(x.ad)) >= 0); if (b) return b; }
+      if (/[\d-]/.test(tanim)) { b = aday.find((x) => bmNorm(x.ad).startsWith(tanim + ' ')); if (b) return b; }
+      return null;
+    }
+    const satirGoster = (ad, r) => { const s = sayfa(ad); if (s.gosterSatirlar.indexOf(r) < 0) s.gosterSatirlar.push(r); };
+    const bitir = (ad, t, r) => { const s = sayfa(ad); for (let i = r; i <= Math.min(r + 1, t.sonVeri); i++) satirGoster(ad, i); s.gizle = r + 2 <= t.sonVeri ? [r + 2, t.sonVeri] : null; };
+
+    // ---- yardımcılar
+    const ustTur = (o) => str(o.tur).replace(/İ/g, 'I').toUpperCase();
+    const direkMi = (e) => /DIREK|DIREGI/.test(ustTur(e));
+    const ucNoOnbellek = new Map();
+    const ucNo = (h) => {
+      if (ucNoOnbellek.has(h)) return ucNoOnbellek.get(h);
+      const k = h.kose || [];
+      const b = k.length ? bmYakinEleman(p, k[0]) : null, s = k.length ? bmYakinEleman(p, k[k.length - 1]) : null;
+      const v = (b ? str(b.gisId) : '?') + '-' + (s ? str(s.gisId) : '?');
+      ucNoOnbellek.set(h, v);
+      return v;
+    };
+    const havaiMi = (h) => { const t = ustTur(h); return !/YERALTI/.test(t) && /HAVAI|MUSTEREK|AYDINLATMA|REKORTMAN|ABONE|ENH/.test(t); };
+    const yeraltiMi = (h) => /YERALTI/.test(ustTur(h));
+    const hatKablosuMu = (k) => k.ana || /ILETKEN|KABLO|ALPEK|REKORTMAN|AYDINLATMA/.test(str(k.cins).replace(/İ/g, 'I').toUpperCase());
+
+    // ======================= DİREK METRAJI
+    const D = T.direk;
+    if (D) {
+      const ad = D.sayfa, sb = D.sabit, b = D.baslik || {};
+      if (b.il && a.il) yaz(ad, b.il, str(a.il));
+      if (b.ilce && a.ilce) yaz(ad, b.ilce, str(a.ilce));
+      if (b.grupNo && bolge) yaz(ad, b.grupNo, str(bolge.grup) || str(bolge.kod));
+      if (b.isinAdi) yaz(ad, b.isinAdi, bolge ? str(bolge.ad) : str(p.proje && p.proje.ad));
+      if (b.projeNo && bolge) yaz(ad, b.projeNo, str(bolge.kod));
+      if (b.yuklenici && a.firma) yaz(ad, b.yuklenici, str(a.firma));
+      if (b.hakedisNo) yaz(ad, b.hakedisNo, hakedisNo);
+      const sira = elemanlar.filter((e) => direkMi(e) || (e.kalemler || []).length).filter((e) => bmBlok(e.durum) !== null)
+        .sort((x, y) => bmDogalSira(x.gisId, y.gisId));
+      const kapasite = D.sonVeri - D.ilkVeri + 1;
+      if (sira.length > kapasite) throw new Error('Şablonun ' + ad + ' sayfası ' + kapasite + ' satır alır; projede ' + sira.length + ' eleman var. Projeyi bölgelere bölün.');
+      let r = D.ilkVeri;
+      for (const e of sira) {
+        const blok = bmBlok(e.durum), direk = direkMi(e);
+        const no = str(e.gisId);
+        satirGoster(ad, r);
+        yaz(ad, sb.no + r, no);
+        const ana = (e.kalemler || []).find((k) => k.ana) || null;
+        if (direk) {
+          const tip = str(e.tip || (ana && ana.tanim));
+          const anaK = ana || { cins: e.cins, tanim: tip, durum: e.durum };
+          if (blok === 'MEVCUT') yaz(ad, sb.mevcut + r, tip);
+          else {
+            let harf = '';
+            if (blok === 'D') {
+              const dm = str((ana && ana.dmDurum) || e.dmDurum).toUpperCase().replace(/İ/g, 'I');
+              harf = dm.startsWith('S') ? 'S' : 'K';
+              if (!dm) uyarilar.push(no + ': demontaj direğin kesik / sökük bilgisi yok; "Kesik" sayıldı.');
+            }
+            const e2 = esl(anaK), adaylar = [bmNorm(tip)];
+            if (e2 && e2.tip) adaylar.push(bmNorm(e2.tip));
+            let s = D.sutunlar.find((x) => x.blok === blok && x.tip && adaylar.indexOf(bmNorm(x.tip)) >= 0 && (blok !== 'D' || bmNorm(x.temin).startsWith(harf)));
+            let tipYazisi = s ? str(s.tip) : (e2 && e2.tip) || tip;
+            if (s) ozet.eslesen++;
+            else {
+              const bilgi = { tip: tipYazisi, poz: pozYap(anaK, blok), ad: tipYazisi + ' ' + (/AĞAÇ|AGAC/.test(str(e.cins).toUpperCase()) ? 'Ağaç Direk' : /BETON/.test(str(e.cins).toUpperCase()) ? 'Beton Direk' : 'Demir Direk'),
+                temin: blok === 'D' ? (harf === 'S' ? 'Sökük' : 'Kesik') : blok === 'DM' ? 'Sökük' : temin(anaK, 'Y'), birim: 'ad.', veriFormulu: true, kaynak: { cins: str(e.cins), tanim: tip } };
+              const y = yeniSutun('direk', blok, 'TIP|' + bmNorm(tipYazisi) + (blok === 'D' ? '|' + harf : ''), bilgi);
+              if (!y) { fazlaya('direk', blok, 'TIP|' + bmNorm(tipYazisi), bilgi, 1, no); uyarilar.push(no + ': direk tipi "' + tip + '" şablonda yok ve EK satırı kalmadı.'); }
+            }
+            const secim = blok === 'D' ? tipYazisi + ' (' + harf + ')' : tipYazisi;
+            yaz(ad, (blok === 'Y' ? sb.yeni : blok === 'D' ? sb.demontaj : sb.dmm) + r, secim);
+          }
+        }
+        // malzemeler: her kalem kendi durumuyla (mevcut direğe yeni armatür gibi)
+        const yazilan = new Set();
+        for (const k of e.kalemler || []) {
+          if (k.ana && direk) continue;
+          const kb = bmBlok(str(k.durum) || str(e.durum));
+          if (kb === null || kb === 'MEVCUT') continue;
+          const s = malzemeYaz('direk', kb, k, r, no);
+          if (s) yazilan.add(s);
+        }
+        // programın sayısı olmayan formüllü malzeme sütunları (direk tipi sütunları hariç) → 0 (programın malzemesi esas)
+        for (const x of D.sutunlar) if (!x.tip && x.formullu && !yazilan.has(x.sutun)) sayfa(ad).hucreler[sutunHarfiBM(x.sutun) + r] = 0;
+        r++;
+        ozet.eleman++;
+      }
+      bitir(ad, D, r);
+    }
+
+    // ======================= İLETKEN METRAJI
+    const I = T.iletken;
+    if (I) {
+      const ad = I.sayfa, sb = I.sabit;
+      const kapasite = I.sonVeri - I.ilkVeri + 1;
+      let r = I.ilkVeri, doldu = false;
+      const parcalar = hatlar.filter(havaiMi).filter((h) => { const b2 = bmBlok(h.durum); return b2 !== null && b2 !== 'MEVCUT'; })
+        .sort((x, y) => bmDogalSira(ucNo(x), ucNo(y)) || bmDogalSira(x.id, y.id));
+      /** Tel adı → şablondaki TİP KODU (AD'ın ilk sözcüğü tel adı olan kg sütunu); yoksa yeni sütun (TİP KODU = tel adı). */
+      const telKodu = (blok, telAdi, kgM, og, kim, adet, metraj) => {
+        const n = bmNorm(telAdi);
+        const s = I.sutunlar.find((x) => x.blok === blok && str(x.birim).toLowerCase().startsWith('kg') && bmIlkSozcuk(x.ad) === n);
+        if (s) { ozet.eslesen++; return str(s.tip); }
+        const pozKok = og ? '9.3.1' : '9.2.1';
+        const bilgi = { tip: telAdi, poz: bmPoz(pozKok, blok), ad: telAdi + (kgM ? ' (' + temiz(kgM * 1000, 2) + ' Kg/Km)' : ''), temin: blok === 'Y' ? 'Ş' : '', birim: 'kg', veriFormulu: true, kaynak: { cins: og ? 'OG_İLETKEN' : 'AG_İLETKEN', tanim: telAdi } };
+        const y = yeniSutun('iletken', blok, 'TEL|' + n, bilgi);
+        if (!y) { fazlaya('iletken', blok, 'TEL|' + n, bilgi, temiz(metraj * adet * kgM, 3), kim); uyarilar.push(kim + ': iletken "' + telAdi + '" için sütun açılamadı (EK satırı kalmadı).'); return null; }
+        if (blok !== 'Y' && !I.sutunlar.some((x) => x.blok === 'Y' && x.tip && bmNorm(x.tip) === n)) listeyeEkle('imIletken', telAdi);
+        return telAdi;
+      };
+      /** Hat kablosu (ALPEK / AER, aydınlatma, rekortman) → şablondaki "Kablo tipi" yazısı; yoksa yeni sütun. */
+      const kabloTipi = (blok, k, kim, adet, metraj) => {
+        const kok = bmIlkSozcuk(k.tanim), tanim = bmNorm(k.tanim), e = esl(k);
+        const adaylar = [tanim]; if (e && e.tip) adaylar.push(bmNorm(e.tip));
+        let s = I.sutunlar.find((x) => x.blok === blok && x.tip && adaylar.indexOf(bmNorm(x.tip)) >= 0);
+        if (!s && /ALPEK|AER/.test(tanim)) s = I.sutunlar.find((x) => x.blok === blok && x.tip && /AER/.test(bmNorm(x.tip)) && bmIlkSozcuk(x.tip) === kok);
+        if (s) { ozet.eslesen++; return str(s.tip); }
+        const adi = (e && e.tip) || (/ALPEK/.test(tanim) ? kok.toLowerCase() + ' AER Kablo' : str(k.tanim));
+        const bilgi = { tip: adi, poz: pozYap(k, blok) || bmPoz('9.5.1', blok), ad: adi, temin: temin(k, blok), birim: 'mt.', veriFormulu: true, kaynak: { cins: str(k.cins), tanim: str(k.tanim) } };
+        const y = yeniSutun('iletken', blok, 'KABLO|' + bmNorm(adi), bilgi);
+        if (!y) { fazlaya('iletken', blok, 'KABLO|' + bmNorm(adi), bilgi, temiz(metraj * adet, 3), kim); uyarilar.push(kim + ': "' + k.tanim + '" için sütun açılamadı (EK satırı kalmadı).'); return null; }
+        if (blok !== 'Y' && !I.sutunlar.some((x) => x.blok === 'Y' && x.tip && bmNorm(x.tip) === bmNorm(adi))) listeyeEkle('imAer', adi);
+        return adi;
+      };
+      for (const h of parcalar) {
+        const hb = bmBlok(h.durum), kim = ucNo(h);
+        const bloklar = hb === 'DM' ? ['D', 'A'] : [hb];   // sök-tak: DM + AKTARIM (kullanıcı kararı)
+        const ana = (h.kalemler || []).find((k) => k.ana) || null;
+        const metraj = temiz((ana && num(ana.miktar)) || num(h.cizimUzunlugu), 2);
+        for (const blok of bloklar) {
+          if (r > I.sonVeri) { if (!doldu) uyarilar.push(ad + ' ' + kapasite + ' satır alır; kalan açıklıklar yazılmadı.'); doldu = true; break; }
+          satirGoster(ad, r);
+          yaz(ad, sb.direkler + r, kim);
+          yaz(ad, sb.aramesafe + r, metraj);
+          yaz(ad, sb.durum + r, BM_DURUM_YAZISI[blok]);
+          let agSira = 0;
+          for (const k of h.kalemler || []) {
+            const c = str(k.cins).replace(/İ/g, 'I').toUpperCase();
+            if (c === 'AG_ILETKEN' || c === 'OG_ILETKEN') {
+              const og = c === 'OG_ILETKEN';
+              const acilim = (og ? kat.ogAcilim : kat.agAcilim)[str(k.tanim).trim()];
+              const adlar = og ? kat.ogAdlar : kat.agAdlar, agirlik = og ? kat.ogAgirlik : kat.agAgirlik;
+              if (!acilim) { uyarilar.push(kim + ': iletken tertibi "' + k.tanim + '" açılamadı.'); ozet.atlanan++; continue; }
+              const teller = adlar.map((t, i) => ({ ad: t, adet: acilim[i], kg: agirlik[i] })).filter((t) => t.adet > 0);
+              if (og) {
+                if (teller.length > 1) uyarilar.push(kim + ': OG tertibinde birden çok tel türü; ilki yazıldı.');
+                if (teller[0]) { const kodu = telKodu(blok, teller[0].ad, teller[0].kg, true, kim, teller[0].adet, metraj); yaz(ad, sb.og[0] + r, teller[0].adet); if (kodu) yaz(ad, sb.og[1] + r, kodu); }
+              } else {
+                for (const t of teller) {
+                  if (agSira >= sb.ag.length) { uyarilar.push(kim + ': AG tertibinde ' + sb.ag.length + '\'ten çok tel türü; "' + t.ad + '" yazılamadı.'); ozet.atlanan++; break; }
+                  const kodu = telKodu(blok, t.ad, t.kg, false, kim, t.adet, metraj);
+                  yaz(ad, sb.ag[agSira][0] + r, t.adet);
+                  if (kodu) yaz(ad, sb.ag[agSira][1] + r, kodu);
+                  agSira++;
+                }
+              }
+            } else if (hatKablosuMu(k)) {
+              const demet = /^(\d+)\(/.exec(bmNorm(k.tanim));
+              const adet = demet ? +demet[1] : 1;
+              const tipi = kabloTipi(blok, k, kim, adet, metraj);
+              yaz(ad, sb.aer[0] + r, adet);
+              if (tipi) yaz(ad, sb.aer[1] + r, tipi);
+            } else {
+              uyarilar.push(kim + ': hat malzemesi "' + k.tanim + '" ' + ad + ' sayfasına yazılamaz; atlandı.');
+              ozet.atlanan++;
+            }
+          }
+          r++;
+          ozet.iletkenSatiri++;
+        }
+      }
+      bitir(ad, I, r);
+    }
+
+    // ======================= YERALTI METRAJI
+    const Yt = T.yeralti;
+    if (Yt) {
+      const ad = Yt.sayfa, sb = Yt.sabit;
+      let r = Yt.ilkVeri;
+      const kapasite = Yt.sonVeri - Yt.ilkVeri + 1;
+      const satirAl = (kim) => { if (r > Yt.sonVeri) { uyarilar.push(ad + ' ' + kapasite + ' satır alır; "' + kim + '" yazılmadı.'); return false; } satirGoster(ad, r); return true; };
+      const ucEleman = (h) => { const k = h.kose || []; return [k.length ? bmYakinEleman(p, k[0]) : null, k.length ? bmYakinEleman(p, k[k.length - 1]) : null].filter(Boolean); };
+      const cinsYaz = (eler) => {
+        for (const e of eler) {
+          const tur = ustTur(e);
+          if (/BOX|PANO|SDK/.test(tur)) { if (sb.box) { yaz(ad, sb.box + r, str(e.tip)); listeyeEkle('box', str(e.tip)); } }
+          else if (/AYD/.test(tur)) { if (sb.aydDirek) yaz(ad, sb.aydDirek + r, str(e.tip)); }
+          else if (/BETON/.test(str(e.cins).toUpperCase())) { if (sb.betonDirek) yaz(ad, sb.betonDirek + r, str(e.tip)); }
+          else if (/DIREK|DIREGI/.test(tur)) { if (sb.direkCinsi) yaz(ad, sb.direkCinsi + r, str(e.tip)); }
+        }
+      };
+      // kanallar
+      const kanalSira = kanallar.filter((k) => { const b2 = bmBlok(k.durum); return b2 !== null && b2 !== 'MEVCUT'; })
+        .sort((x, y) => bmDogalSira(str(x.basNo) + '-' + str(x.bitNo), str(y.basNo) + '-' + str(y.bitNo)) || bmDogalSira(x.id, y.id));
+      for (const k of kanalSira) {
+        const blok = bmBlok(k.durum);
+        const kim = (str(k.basNo) || '?') + '-' + (str(k.bitNo) || '?');
+        if (!satirAl(kim)) break;
+        const ana = (k.kalemler || []).find((x) => x.ana) || null;
+        const zeminAdi = str(k.zemin || (ana && ana.tanim));
+        const z = kanalZeminiCoz(zeminAdi) || { cins: 'TOPRAK', kaplama: '', bariyerli: false, trencher: false };
+        yaz(ad, sb.no + r, kim);
+        yaz(ad, sb.aramesafe + r, temiz(num(k.cizimUzunlugu), 2));
+        if (sb.tertip) yaz(ad, sb.tertip + r, 'Kanal ' + str(k.kablolar || kanalKablolari(k.kod)).replace(/^\//, ''));
+        if (sb.taban) yaz(ad, sb.taban + r, temiz(num(k.altGenislik), 1));
+        if (sb.tavan) yaz(ad, sb.tavan + r, temiz(num(k.ustGenislik), 1));
+        if (sb.derinlik) yaz(ad, sb.derinlik + r, temiz(num(k.derinlik), 1));
+        if (sb.dolgu) yaz(ad, sb.dolgu + r, zeminAdi);
+        if (sb.kaplama && z.kaplama) yaz(ad, sb.kaplama + r, z.kaplama);
+        const hacim = temiz((ana && num(ana.toplam)) || kanalHacmi(k.altGenislik, k.ustGenislik, k.derinlik, k.cizimUzunlugu), 3);
+        if (sb.toplamM3) yaz(ad, sb.toplamM3 + r, hacim);
+        const ozel = z.cins === 'BRANŞMAN KANAL' || z.cins === 'KANAL (KABLO DEMONTAJ)';
+        const dolgu = z.cins === 'TUVENAN' ? 'TUVANEN' : z.cins === 'MICIR' ? 'MICIR' : 'TOPRAK';
+        const kaplama = z.kaplama || 'KAPLAMASIZ';
+        let s = null;
+        if (!ozel) {
+          s = Yt.sutunlar.find((x) => x.blok === blok && str(x.birim).toLowerCase().startsWith('m3') && bmNorm(x.ad).indexOf(kaplama) >= 0 && bmNorm(x.ad).indexOf(dolgu) >= 0
+            && (z.bariyerli === /BARIYER/.test(bmNorm(x.ad))) && (z.trencher === /TRENCHER/.test(bmNorm(x.ad))));
+        }
+        if (s) { ozet.eslesen++; yaz(ad, sutunHarfiBM(s.sutun) + r, hacim); }
+        else {
+          const kalem = ana || { cins: 'KABLO_KANALI', tanim: zeminAdi, birim: 'mt/m³', miktar: num(k.cizimUzunlugu), toplam: hacim };
+          const kaplamaAdi = kaplama === 'KAPLAMASIZ' ? '' : kaplama[0] + kaplama.slice(1).toLowerCase() + ' Kaplamalı ';
+          const dolguAdi = dolgu === 'TOPRAK' ? 'Toprak' : dolgu === 'MICIR' ? 'Mıcır Dolgulu' : 'Tuvanen Dolgulu';
+          const adi = ozel ? (z.cins === 'BRANŞMAN KANAL' ? 'Branşman Kablo Kanalı Yapılması' : 'Kablo Demontaj Kanalı Açılması')
+            : kaplamaAdi + dolguAdi + ' Kablo Kanalı Yapılması' + (kaplama === 'KAPLAMASIZ' ? ' - Kaplamasız' : '') + (z.bariyerli ? ' (Bariyerli)' : '') + (z.trencher ? ' (Trencher)' : '');
+          const bilgi = { poz: pozYap(kalem, blok) || bmPoz('32.12.1', blok), ad: adi, temin: blok === 'Y' ? 'Y' : '', birim: 'm3', kaynak: { cins: str(kalem.cins), tanim: str(kalem.tanim) } };
+          const anahtar = 'KANAL|' + bmNorm(adi);
+          const y = yeniSutun('yeralti', blok, anahtar, bilgi);
+          if (y) yaz(ad, sutunHarfiBM(y.sutun) + r, hacim);
+          else { fazlaya('yeralti', blok, anahtar, bilgi, hacim, kim); uyarilar.push(kim + ': kanal türü "' + adi + '" şablonda yok ve EK satırı kalmadı.'); }
+        }
+        for (const x of k.kalemler || []) {
+          if (x.ana) continue;
+          const kb = bmBlok(str(x.durum) || str(k.durum));
+          if (kb === null || kb === 'MEVCUT') continue;
+          malzemeYaz('yeralti', kb, x, r, kim);
+        }
+        r++;
+        ozet.yeraltiSatiri++;
+      }
+      // yeraltı kablo parçaları: metraj kanal üstü (KANAL İÇİN) ve geri kalan (DİREK İÇİN) diye bölünür (kullanıcı kararı)
+      const kablolar = hatlar.filter(yeraltiMi).filter((h) => { const b2 = bmBlok(h.durum); return b2 !== null && b2 !== 'MEVCUT'; })
+        .sort((x, y) => bmDogalSira(ucNo(x), ucNo(y)) || bmDogalSira(x.id, y.id));
+      const kanalCizgileri = kanallar.map((k) => ({ kose: k.kose }));
+      for (const h of kablolar) {
+        const blok = bmBlok(h.durum), kim = ucNo(h);
+        if (!satirAl(kim)) break;
+        yaz(ad, sb.no + r, kim);
+        yaz(ad, sb.aramesafe + r, temiz(num(h.cizimUzunlugu), 2));
+        const kalem = (h.kalemler || []).find((x) => x.ana) || (h.kalemler || []).find(hatKablosuMu) || null;
+        if (sb.tertip) yaz(ad, sb.tertip + r, kalem ? str(kalem.tanim) : str(h.anaKesit));
+        cinsYaz(ucEleman(h));
+        if (kalem) {
+          const metraj = temiz(num(kalem.miktar) || num(h.cizimUzunlugu), 2);
+          const cizim = num(h.cizimUzunlugu);
+          const kanalUstu = bmKanalUstu(h.kose, kanalCizgileri);
+          const kanalIcin = cizim > 0 ? temiz(metraj * Math.min(1, kanalUstu / cizim), 2) : 0;
+          const direkIcin = temiz(metraj - kanalIcin, 2);
+          const kb = bmBlok(str(kalem.durum) || str(h.durum)) || blok;
+          const tanim = bmNorm(kalem.tanim), e = esl(kalem);
+          const adlar = e && e.adlar ? e.adlar.map(bmNorm) : [];
+          const alm = /ALM|ALUMINYUM|NAYY|\bAL\b/.test(tanim) || /ALÜMİNYUM|_ALM/.test(str(kalem.cins).toUpperCase());
+          const cu = /\bCU\b|BAKIR|NYY(?!.*NAYY)/.test(tanim) && !alm || /BAKIR/.test(str(kalem.cins).toUpperCase());
+          const uyumlu = (adN) => { const t = adN.replace(/\(.*$/, ''); const tAlm = /NAYY|ALM|ALUMINYUM/.test(t), tCu = /\bNYY\b|\bCU\b|BAKIR/.test(t) && !tAlm; return !((alm && tCu) || (cu && tAlm)); };
+          const nereler = [['KANAL', kanalIcin, 'KANAL İÇİN'], ['DIREK', direkIcin, 'DİREK İÇİN']];
+          const yeri = (adN) => (/\(KANAL IÇIN\)/.test(adN) ? 'KANAL' : /\((DIREK|BOX) IÇIN\)/.test(adN) ? 'DIREK' : '');
+          const govde = (adN) => adN.replace(/\s*\((DIREK|KANAL|BOX) IÇIN\)\s*$/, '');
+          for (const [nerede, m, ek] of nereler) {
+            if (!(m > 0)) continue;
+            const aday = Yt.sutunlar.filter((x) => x.blok === kb && yeri(bmNorm(x.ad)) === nerede);
+            let s = aday.find((x) => govde(bmNorm(x.ad)) === tanim) || aday.find((x) => adlar.indexOf(govde(bmNorm(x.ad))) >= 0);
+            if (!s) s = aday.find((x) => govde(bmNorm(x.ad)).startsWith(tanim + ' ')) || aday.find((x) => bmIlkSozcuk(x.ad) === bmIlkSozcuk(tanim) && uyumlu(bmNorm(x.ad)));
+            if (s) { ozet.eslesen++; yaz(ad, sutunHarfiBM(s.sutun) + r, m); continue; }
+            const adi = ((e && e.adlar && e.adlar[0]) || str(kalem.tanim)) + ' (' + ek + ')';
+            const bilgi = { poz: pozYap(kalem, kb) || bmPoz(nerede === 'KANAL' ? '32.16' : '32.12', kb), ad: adi, temin: temin(kalem, kb), birim: 'mt.', kaynak: { cins: str(kalem.cins), tanim: str(kalem.tanim) } };
+            const anahtar = 'KABLO|' + tanim + '|' + nerede;
+            const y = yeniSutun('yeralti', kb, anahtar, bilgi);
+            if (y) yaz(ad, sutunHarfiBM(y.sutun) + r, m);
+            else { fazlaya('yeralti', kb, anahtar, bilgi, m, kim); uyarilar.push(kim + ': "' + kalem.tanim + '" şablonda yok ve EK satırı kalmadı.'); }
+          }
+        }
+        for (const x of h.kalemler || []) {
+          if (x === kalem || x.ana) continue;
+          const kb = bmBlok(str(x.durum) || str(h.durum));
+          if (kb === null || kb === 'MEVCUT') continue;
+          malzemeYaz('yeralti', kb, x, r, kim);
+        }
+        r++;
+        ozet.yeraltiSatiri++;
+      }
+      bitir(ad, Yt, r);
+    }
+
+    ozet.yeniSutun = yeniSutunlar.length;
+    ozet.fazla = fazla.length;
+    if (fazla.length) uyarilar.push(fazla.length + ' malzeme için EK satırı kalmadı; "ŞABLONDA OLMAYAN" sayfasına yazıldı.');
+    return { sayfalar, yeniSutunlar, ekSatirlar: ekKullanilan, listeEkle, fazla, uyarilar, ozet };
+  }
+
   // ---------------------------------------------------------------- Malzeme adlarının görünen yazımı
   // Eklentideki MalzemeYazimi.Duzelt ile aynı kurallar, aynı sıra: kelimeler BÜYÜK (Türkçe), birimler standart (kV, kVA,
   // kA, mm…; sayıdan sonra, aralarında boşluk), kablo kodları büyük, metaller Cu / Al ("Alm." → "Al"), boyut çarpısı x,
@@ -1309,6 +1848,7 @@
     tmIleri, tmGeri, domBoylamdan, domTahmin,
     mesafe, uzunluk, ortaNokta, icinde, alan, dogruParcasinaMesafe, cokgeneMesafe, bolgeSec, kutu, projeKutusu,
     katsayiHazirla, kanalUnsurlari, kanalKodu, kanalKablolari, kanalHacmi, hatMetraji, metrajYazisi, hatEtiketi, malzemeYazisi,
+    birlesikMetraj, bmNorm, bmBlok, bmBirim, bmMiktar, bmPoz, bmDogalSira, bmKanalUstu, bmYakinEleman, sutunHarfiBM, sutunNoBM,
     KANAL_ZEMIN, kanalZeminiTanim, kanalZeminiYazi, kanalZeminiCoz, kanalListesi, projeSirasi,
     sonrakiGis, enBuyukSira,
     katalogHazirla, anaTipler, hatKesitleri, malzemeler, kalemYap, kalemToplami, birimler,

@@ -32,8 +32,8 @@ Telefon tarafının kendi notları: [telefon/DEVAM-NOTU.md](telefon/DEVAM-NOTU.m
 
 | Parça | Sürüm | Durum |
 | --- | --- | --- |
-| Telefon uygulaması (Şebeke-M Hakediş) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı; Esri ArcGIS, Bing, Azure dâhil), **Hesap Merkezi** (iki hesap: direk cer vektörü, kanal planı), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası), **haritada çizim görünümü**, Google Earth ve CBS (MIF / MID) eklentiyle aynı; telefonda denenmedi |
-| AutoCAD eklentisi (Şebeke-M Hakediş) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
+| Telefon uygulaması (Şebeke-M Hakediş) | 2.5.N (APK, Releases) | AutoCAD dosya uyumu, eski program durum kodları, INDEX / KONTROL / onayların korunması, harita altlıkları (anahtarlı; Esri ArcGIS, Bing, Azure dâhil), **Hesap Merkezi** (direk cer vektörü + önerilen direk tipi, kanal planı, proje bazlı direk listeleri), **Birleşik Metraj** (eski programın Excel şablonu; 9.11), **düzeltme kaynakları** (TUSAGA-Aktif / sabit istasyon / yerel CORS; NTRIP ya da doğrudan IP, akış denemesi, istasyon uzaklığı, bağlantı bilgisi dosyası), **haritada çizim görünümü**, Google Earth ve CBS (MIF / MID) eklentiyle aynı; telefonda denenmedi |
+| AutoCAD eklentisi (Şebeke-M Hakediş) | 0.1.N (zip, Releases) | İki şerit sekmesi, telefonla aynı görünüm, parçalı hat, tam katalog, eski program ortak kayıtları, eksik malzeme, hakediş onayı, **Hesap Merkezi** (yerel sunucu + tarayıcı sayfaları, kayıt çizimde, HESAPLAR rapor sayfası), **Birleşik Metraj** (Proje Özeti; 9.11). 25.10: AutoCAD 2027'de canlı denendi (aşağıda) |
 | Belgeler | KULLANIM, README, PLAN, VERI-MODELI, CIZIM-BICIMI-NOTLARI, DEVIR, ortak/hesap/BAGLAM, HARITA (otomatik), CLAUDE | Güncel |
 
 8.11 (`malzeme-yazisi` dalı, `main`'den; geri dönüş: `onceki-main-malzeme-yazisi-oncesi` dalı): kullanıcının 8.11 listesi.
@@ -58,6 +58,36 @@ gT / gD müşterek tepe traversleri, T-AG-1…9, D-AG-1…3, N-AG-1, MT-1…4, M
 (B 95, D 80, D 95); `kaynak: "ek"` (katalog-aktar.py bunları korur). Telefon kataloğunda eksik 38 poz eklendi
 (seedRev 26: kurulu telefonlarda eksik satırlar kendiliğinden eklenir). `volt-eslesme.json › kalemler`: servis kodu ↔
 eklenti cins / tanım (iki yönde aynı kalem). Denemeler: CekirdekTest, `telefon/web/tests/konsol.test.mjs`.
+
+9.11 (`hesap-metraj` dalı, `duzeltmeler-8-11` üstüne; geri dönüş: `onceki-main-duzeltmeler-oncesi`): kullanıcının 17:30
+listesinin kalanı (#87, #88) ve 17:52 isteği (#91). **Önerilen direk tipi** (Cer Vektörü sayfasında, kullanıcı: eski
+TEDAŞ tepe kuvveti aracı): `ortak/hesap/kurallar.mjs › direkOner` (tablolar AG 9-H…K5 / müşterek 10I''…K5'' / trafo
+T-15…T-50 / ağaç; senaryolar: bütün hatlar + her hattın kopması; L = ana hat ekseni, R = dik, B30; `karsilastirma`
+projedeki tipin yeterliliği), köprü `A.direkOner`, uyarlama `tepe-vektor.js › oneriKutusu` (sonuç kartının altında;
+kayıtta değerler ve durum), aracın formülleri değişmedi. **Direk Listeleri** (proje bazlı; kullanıcı isteği): yeni hesap
+sayfası `ortak/hesap/kaynak/direk-listeleri.html` + `uyarlama/direk-listeleri.js` (AG listesi 18 sütun, ENH dağıtım cetveli
+zincir başına, aydınlatma listesi, koordinat listesi; bölge seçimi, sekmeler, A4 yatay baskı); `moduller.json`'da sayfa +
+dört kısayol (`sayfa` / `bolum`), şeritte dört düğme kendiliğinden. Bunun için proje geneli bağlam genişledi
+(`HesapBaglami.ProjeListesi` ↔ `baglam.js › projeListesi`: bölgeler, direkler (cins, dmDurum, hakediş, bölge,
+koordinat, malzemeler, kayıtlı cer özeti), hat zincirleri, `liste.imza` FNV-1a — BAGLAM.md). Denemeler
+`ortak/hesap/dene/direk-listeleri.json`, `tepe-vektor.json` güncel, `direk-oner.test.mjs`, `sebeke.test.mjs` A9b,
+CekirdekTest bağlam. **Birleşik Metraj** (kullanıcının `.xlsm` şablonu projeden doldurulur; kararlar: gömülü temiz kopya +
+kendi dosyası, şablonda olmayan malzemeye yeni sütun, her açıklık ayrı satır, programın malzemesi esas, yeraltı kablo
+kanala göre bölünür, sök-tak hat DM + AKTARIM): kural [ortak/BIRLESIK-METRAJ.md](ortak/BIRLESIK-METRAJ.md);
+`Cekirdek/XlsmDosyasi.cs` ↔ `export/xlsm.js` (zip içinde sayfa XML'i: hücre yazma, paylaşılan formül açma, stil /
+genişlik kopyalama, satır gizleme, fullCalcOnLoad), `Cekirdek/BirlesikMetraj.cs` ↔ sh-core `birlesikMetraj` + `export/
+birlesik-metraj.js` (şablon tanımı tanımlı adlardan ve başlık yazılarından; plan; planı dosyaya işleme), eşleme tablosu
+`ortak/katalog/metraj-sablon.json`, gömülü şablon `ortak/sablon/birlesik-metraj.xlsm` (kullanıcının dosyasından
+`araclar/metraj-sablon-temizle.mjs` ile: proje verisi, formül önbellekleri, artık dizeler, kişi adı, bilgisayar yolu,
+Office eklenti kaydı atıldı; makro ve formüller kaldı; telefon paketine `assets/` kopyası). Yeni sütunun KOD'u blok
+önekli EK kodu (`YE001`, `DE002`, `DME003`, `AE004`; MALZ. LİSTESİ EK satırının G'si de öyle) — şablonun seçim listeleri
+ve denetimleri kendiliğinden kapsar; DM / AKTARIM bloğundaki yeni tel KATSAYILAR kod listesine eklenir. Arayüz: eklentide
+Proje Özeti › **Birleşik Metraj…** (ayar penceresi: şablon, firma, il, ilçe, hakediş no — `%APPDATA%\SebekeHakedis\
+metraj.json`; sonuç penceresi), telefonda Dışa Aktarım › **Birleşik Metraj** (il / ilçe projede `sebeke.metraj`, firma
+= yüklenici, `Şablon seç…`). Ortak deneme `ortak/deneme/birlesik-metraj/` (proje + ayar → `sablon.json`,
+`beklenen-plan.json`; `araclar/metraj-beklenen-uret.mjs`; CekirdekTest ve `tests/birlesik-metraj.test.mjs` birebir, dosya
+yazıp geri okuma; PencereTest 25c / 30 / 30b). LibreOffice ile hesaplatılan doldurulmuş dosyada MALZ. LİSTESİ ve
+denetimler ("TAMAM") doğrulandı. Kullanıcının gerçek şablon + çizimiyle deneme kullanıcıda.
 
 8.11 akşam (`duzeltmeler-8-11` dalı; geri dönüş: `onceki-main-duzeltmeler-oncesi`): kullanıcının 17:30 listesinin
 düzeltmeleri. **Cins adları**: kullanıcı kuralı "alt çizgisiz, her sözcüğün ilk harfi büyük" (`AG_DEMİR_GLV` → "AG
@@ -354,6 +384,13 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
   izolatör demirleri eklendi; OG izolatör demirleri (B 6 / B 15 / C 6…, VKS 35), OG mesnet izolatörleri (VHD, VKS),
   abone muhafaza borusu ve askı teli çelik halat gibi kalemler kullanıcı isterse aynı yolla eklenir.
 - **Eski programın adı**: kullanıcı komut satırındaki satırın ekran görüntüsünü gönderince kaynağı kesinleştirilecek.
+- **Birleşik Metraj'ın gerçek dosyayla denemesi** (9.11): kullanıcı kendi çizimi ve kendi şablonuyla (Proje Özeti ›
+  Birleşik Metraj… › Kendi dosyam) dener; eşleşmeyen malzeme adları için `ortak/katalog/metraj-sablon.json`'a takma ad
+  eklenir (bugün 90 eşleşme: konsollar, izolatör demirleri, armatür / ampul, bara, topraklama, pano / box / trafo, kablo
+  başlıkları, yeraltı kabloları). Açık işler: telefon haritasında direğin armatürü ayrı simgeyle çizilmiyor; AYD direk
+  listesi (`LST_AYD_DIREK`) yeni aydınlatma direği tipine kendiliğinden eklenmez (poz 5.5.3 ile dolar).
+- **Yeni simge takımı** (#89, kullanıcının SM_* SVG / DXF zip'i): eklenti blokları, telefon DXF ve harita, lejant — ayrı
+  dalda (PR C) yapılacak.
 
 - **5.11 `kanal-listesi` işlerinin AutoCAD'de denemesi**: şeritte Kablo Kanalı › Cins / Kaplama seçip kanal çizme
   (kalem adı, rapor), kanalın Malzemeler penceresinde zemini değiştirme, Proje Özeti › Kanal listesi ve Excel, Kanal

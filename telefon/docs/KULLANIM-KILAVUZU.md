@@ -586,11 +586,12 @@ AutoCAD eklentisinde de aynı sayfalar açılır. İki hesap vardır:
 
 | Hesap | Ne yapar |
 | --- | --- |
-| Direk Tepe Kuvveti (Cer Vektörü) | Direğe bağlı bütün hatların çekme kuvvetlerinin vektörel toplamı ve bileşke yönü; direk tipi kontrolü |
+| Direk Tepe Kuvveti (Cer Vektörü) | Direğe bağlı bütün hatların çekme kuvvetlerinin vektörel toplamı ve bileşke yönü; direk tipi kontrolü. Sonucun altındaki **Önerilen direk tipi** kutusu eski TEDAŞ tepe kuvveti tablosuyla uygun en küçük direk tipini (AG 9-H … K5, müşterek 10I'' … K5'', trafo T-15 … T-50, ağaç 9-O / 9-A), en kötü senaryoyu (hat kopması) ve projedeki tipin yeterli olup olmadığını gösterir; öneridir |
 | Kanal Planı | Yeraltı kablo kanalı kesit detayları: kablo dizilişi, kanal genişliği ve derinliği, kazı metrajı, DXF |
+| Direk Listeleri | Proje bazlı dört liste (`Hesaplar › Teknik hesaplar`'dan, proje geneli): AG Direk Listesi, ENH Direk Dağıtım Cetveli, Aydınlatma Direk Listesi, Direk Koordinat Listesi; üstte bölge seçimi, sekmelerle geçiş, yazdırmaya uygun |
 
 (1.11.2026'dan önceki sürümlerde bulunan sehim, uplift, gerilim düşümü, kısa devre gibi hesaplar kaldırıldı; eski
-kayıtları projede bilgi olarak durur.)
+kayıtları projede bilgi olarak durur. Direk Listeleri 8.11.2026'da eklendi.)
 
 **Nereden açılır:** bir direğin, trafonun ya da hattın kendi ekranındaki `Hesaplar` düğmesi; haritada objenin
 balonundaki `Teknik hesaplar`; hat listesindeki `Hesaplar`; ya da `Hesaplar › Teknik hesaplar` (proje geneli).
@@ -885,6 +886,7 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 | CBS Shapefile | .zip | Ekipman, hat, açıklık ve ölçü katmanları |
 | GeoJSON | .geojson | CBS yazılımları için |
 | Excel | .xlsx | Metraj, Yeşil Defter ve hakediş sayfaları |
+| Birleşik Metraj | .xlsm | Eski programın Birleşik Metraj Excel şablonu (DİREK / İLETKEN / YERALTI METRAJI, MALZ. LİSTESİ) projeyle doldurulur — AutoCAD eklentisinin Proje Özeti › Birleşik Metraj çıktısıyla aynı kural. Seçilince açılan kartta il / ilçe (projede saklanır) ve şablon: gömülü temiz kopya ya da `Şablon seç…` ile kendi `.xlsm` dosyanız (bu oturumda tutulur); yüklenici firma projenin yüklenicisinden, grup no / işin adı / proje no AutoCAD'den gelen bölgeden gelir (bölge yoksa proje adı). Her direk / box bir satır (yeni, demontaj "tip (K/S)", sök-tak, mevcut), her havai açıklık İLETKEN'de bir satır (sök-tak iki satır), kanallar ve yeraltı kablolar YERALTI'da; şablonda olmayan direk tipi / tel / malzeme için yeni sütun açılır (MALZ. LİSTESİ'nin EK satırlarına bağlı; bitince "ŞABLONDA OLMAYAN" sayfası). Dışa aktarım sonunda açılan sütunlar ve uyarılar bildirilir; dosya Excel'de açılınca formüller hesaplanır (makro korunur) |
 | Teknik rapor | .html | Tarayıcıda açılır; yazdırılır ya da PDF olarak kaydedilir |
 | Teslim paketi | .zip | Proje klasörü: saha alımı, hakediş, GNSS kayıtları, fotoğraflar, harita, rapor |
 
