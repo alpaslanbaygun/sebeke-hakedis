@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import SEMBOLLER from '../src/ortak/semboller.js';
 import { sembolBlogu, sembolAilesi, sembolVaryanti } from '../src/export/dxf.js';
+import { exportFormat } from '../src/export/exporter.js';
+import { setup, newProject, buildPoleLine, route } from './helpers.mjs';
 
 const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -20,12 +22,15 @@ test('S1 · telefondaki ortak tablolar (src/ortak/*.js) depodaki ortak/katalog/*
 });
 
 test('S2 · her aile için YENI · MEVCUT · DMM · DM · KESIK · SOKUK varyantları var ve geometrisi boş değil', () => {
-  const aileler = Object.keys(SEMBOLLER.aileler);
+  const butun = Object.keys(SEMBOLLER.aileler);
+  const aileler = butun.filter((a) => !SEMBOLLER.aileler[a].takim);   // klasik takım
   assert.ok(aileler.length >= 16);
-  for (const a of aileler) for (const v of ['YENI', 'MEVCUT', 'DMM', 'DM', 'KESIK', 'SOKUK']) {
+  for (const a of butun) for (const v of ['YENI', 'MEVCUT', 'DMM', 'DM', 'KESIK', 'SOKUK']) {
     const s = SEMBOLLER.semboller[a + '_' + v];
     assert.ok(Array.isArray(s) && s.length > 0, a + '_' + v);
-    for (const i of s) assert.ok(['L', 'C', 'P', 'S', 'D', 'Y'].includes(i[0]), 'ilkel türü ' + i[0]);
+    for (const i of s) assert.ok(['L', 'C', 'P', 'S', 'D', 'Y', 'T', 'R'].includes(i[0]), 'ilkel türü ' + i[0]);
+    // klasik takımda yazı ve renk ilkeli yok (eski eklentiler de okuyabilir)
+    if (!SEMBOLLER.aileler[a].takim) for (const i of s) assert.ok(i[0] !== 'T' && i[0] !== 'R', a + ': klasik takımda ' + i[0]);
   }
   // Dolu varyantta dolgu, mevcutta dolgu yok, demontajda çapraz çizgi
   assert.ok(SEMBOLLER.semboller.DIREK_AG_YENI.some((i) => i[0] === 'D'));
@@ -78,6 +83,76 @@ test('S3 · blok adları eklentiyle aynı kurala göre seçilir (SH_<aile>_<vary
   assert.equal(sembolBlogu(direk({ state: 'DMM', attrs: { dmDurum: 'KESİK' } })), 'SH_KAFES_AG_DMM');
   assert.equal(sembolVaryanti('YENI', 'DM', 'kesik'), 'KESIK');
   assert.equal(sembolVaryanti('', 'DM', 'sökük'), 'SOKUK');
+});
+
+test('S4 · Şebeke-M takımı (SM_*): 23 aile, tasarım kuralı (dolu / yarı dolu / kontur / çift kontur + DM, kesik K · sökük S), blok adları', () => {
+  const sm = Object.keys(SEMBOLLER.aileler).filter((a) => SEMBOLLER.aileler[a].takim === 'SM');
+  assert.equal(sm.length, 23);
+  assert.equal(SEMBOLLER.aileler.SM_DIREK_AG.yariGenislik, SEMBOLLER.aileler.DIREK_AG.yariGenislik, 'yarı genişlik klasikle aynı: yazı yerleri ve yakalama değişmez');
+  assert.equal(SEMBOLLER.aileler.SM_DIREK_OG.yariGenislik, SEMBOLLER.aileler.DIREK_OG.yariGenislik);
+  const S = SEMBOLLER.semboller;
+  assert.ok(S.SM_DIREK_AG_YENI.some((i) => i[0] === 'D') && S.SM_DIREK_AG_YENI.some((i) => i[0] === 'R' && i[1] === 7), 'yeni: dolu, iç çizgiler zıt renk');
+  assert.ok(S.SM_DIREK_AG_DMM.some((i) => i[0] === 'Y'), 'sök-tak: sol yarı dolu');
+  assert.ok(!S.SM_DIREK_AG_MEVCUT.some((i) => i[0] === 'D' || i[0] === 'S' || i[0] === 'T'), 'mevcut: yalnız kontur ve iç çizgi');
+  assert.equal(S.SM_DIREK_AG_DM.filter((i) => i[0] === 'C').length, 2, 'demontaj: çift kontur');
+  assert.deepEqual(S.SM_DIREK_AG_DM.filter((i) => i[0] === 'T').map((i) => i[4]), ['DM']);
+  assert.deepEqual(S.SM_DIREK_AG_KESIK.filter((i) => i[0] === 'T').map((i) => i[4]), ['DM', 'K']);
+  assert.deepEqual(S.SM_DIREK_AG_SOKUK.filter((i) => i[0] === 'T').map((i) => i[4]), ['DM', 'S']);
+  assert.ok(S.SM_KOSK_KULESIZ_OZEL_YENI.some((i) => i[0] === 'P' && i[3] === 'DASHED'), 'kulesiz özel: kesikli kontur');
+  assert.ok(S.SM_KOSK_KULE_YENI.filter((i) => i[0] === 'S').length >= 4, 'içbükey köşk üçgenlenerek dolar');
+  assert.deepEqual(S.SM_SDK_AG_DM.filter((i) => i[0] === 'T').map((i) => i[4]), ['SDK', 'AG', 'DM'], 'yazılı simgede DM alta eklenir');
+  // Blok adları: takım '' → klasik; 'SM' → SM_ aile (takımda olmayan aile klasik kalır)
+  const direk = (ek) => Object.assign({ kind: 'pole', group: 'sehir', symbol: 'c', volt: 'AG', state: 'YENI' }, ek);
+  assert.equal(sembolBlogu(direk({}), ''), 'SH_DIREK_AG_YENI');
+  assert.equal(sembolBlogu(direk({}), 'SM'), 'SH_SM_DIREK_AG_YENI');
+  assert.equal(sembolBlogu(direk({ symbol: 's' }), 'SM'), 'SH_SM_KAFES_AG_YENI');
+  assert.equal(sembolBlogu(direk({ volt: 'OG', group: 'bahh', state: 'DEMONTAJ', attrs: { dmDurum: 'KESİK' } }), 'SM'), 'SH_SM_DIREK_ENH_KESIK', 'BAHH direği ENH simgesi');
+  assert.equal(sembolBlogu(direk({ volt: 'OG', group: 'mus', symbol: 's' }), 'SM'), 'SH_SM_KAFES_OG_YENI');
+  assert.equal(sembolBlogu({ kind: 'lighting', group: 'ayd', symbol: 'c', state: 'DMM' }, 'SM'), 'SH_SM_DIREK_AYD_DMM');
+  assert.equal(sembolBlogu({ kind: 'transformer', state: 'yeni', attrs: { post: 'direk' }, typeName: '100 kVA' }, 'SM'), 'SH_SM_TRAFO_DIREK_YENI');
+  assert.equal(sembolBlogu({ kind: 'transformer', state: 'yeni', attrs: { post: 'direk' }, typeName: 'Özel 100 kVA' }, 'SM'), 'SH_SM_TRAFO_DIREK_OZEL_YENI');
+  assert.equal(sembolBlogu({ kind: 'kiosk', state: 'yeni', attrs: { post: 'mbk' }, typeName: 'Modüler beton köşk' }, 'SM'), 'SH_SM_KOSK_MODULER_YENI');
+  assert.equal(sembolBlogu({ kind: 'kiosk', state: 'yeni', attrs: { post: 'mono' }, typeName: 'Kule çıkışlı özel' }, 'SM'), 'SH_SM_KOSK_KULE_CIKIS_OZEL_YENI');
+  assert.equal(sembolBlogu({ kind: 'kiosk', state: 'mevcut', attrs: { post: 'mono' }, typeName: 'Kule tipi' }, 'SM'), 'SH_SM_KOSK_KULE_MEVCUT');
+  assert.equal(sembolBlogu({ kind: 'substation', state: 'yeni', attrs: { post: 'bina' }, typeName: 'İndirici merkez' }, 'SM'), 'SH_SM_INDIRICI_MERKEZ_YENI');
+  assert.equal(sembolBlogu({ kind: 'transformer', state: 'mevcut', attrs: { post: 'bina' } }, 'SM'), 'SH_SM_TRAFO_BINA_MEVCUT');
+  assert.equal(sembolBlogu({ kind: 'sdk', state: 'YENI' }, 'SM'), 'SH_SM_SDK_AG_YENI');
+  assert.equal(sembolBlogu({ kind: 'sdk', state: 'YENI', typeName: 'Aydınlatma SDK' }, 'SM'), 'SH_SM_SDK_AYD_YENI');
+  assert.equal(sembolBlogu({ kind: 'panel', state: 'MEVCUT' }, 'SM'), 'SH_SM_BOX_MEVCUT');
+  assert.equal(sembolBlogu({ kind: 'luminaire', state: 'YENI', typeName: 'S3 Sınıf LED armatür' }, 'SM'), 'SH_SM_ARMATUR_LED_YENI');
+  assert.equal(sembolBlogu({ kind: 'luminaire', state: 'YENI', typeName: '70W Sodyum Arm.' }, 'SM'), 'SH_SM_ARMATUR_SODYUM_YENI');
+  assert.equal(sembolBlogu({ kind: 'luminaire', state: 'YENI', typeName: 'Cıva buharlı 125 W' }, 'SM'), 'SH_SM_ARMATUR_CIVA_YENI');
+  assert.equal(sembolBlogu({ kind: 'manhole', state: 'MEVCUT' }, 'SM'), 'SH_MENHOL_MEVCUT', 'takımda olmayan aile klasik kalır');
+  assert.equal(sembolBlogu({ kind: 'subscriber', state: 'YENI' }, 'SM'), 'SH_ABONE_YENI');
   for (const e of [direk({}), { kind: 'transformer', state: 'yeni', attrs: { post: 'direk' } }, { kind: 'sdk', state: 'YENI' }])
     assert.ok(SEMBOLLER.semboller[sembolBlogu(e).slice(3)], 'tabloda var: ' + sembolBlogu(e));
+});
+
+test('S5 · DXF: projenin simge takımı Şebeke-M ise SH_SM_ blokları konur (yazı, zıt renk, kesikli çizgi); klasikte eski bloklar', async () => {
+  const { ps } = await setup(); await newProject(ps);
+  const ROUTE = route({ E: 519300.0, N: 4282100.0, H: 1050.0 }, [[60, 98.412, 4.3], [60, 102.775, 2.14]]);
+  await buildPoleLine(ps, ROUTE, { group: 'bahh', typeNames: ['GD-12 (3 AWG)', 'GT-12 (3 AWG)', 'GN-12 (3 AWG)'], circuits: [{ role: 'OG', key: '3xSwallow', count: 1 }] });
+  const satirlar = (u8) => new TextDecoder().decode(u8).split(/\r?\n/);
+  // INSERT varlıklarının blok adları (kod 2) — ENTITIES bölümünde
+  const konulanlar = (sat) => {
+    const bas = sat.indexOf('ENTITIES'), out = [];
+    for (let i = bas; i < sat.length - 3; i++) if (sat[i] === 'INSERT') { for (let j = i; j < i + 12; j++) if (sat[j] === '2') { out.push(sat[j + 1]); break; } }
+    return out;
+  };
+  const [klasik] = await exportFormat(ps, 'dxf');
+  const k = konulanlar(satirlar(klasik.data));
+  assert.ok(k.length >= 3 && k.every((b) => b.startsWith('SH_KAFES_OG_')), 'klasik takım: BAHH direği SH_KAFES_OG_… ' + k.join(','));
+  await ps.updateProject({ sebeke: { boyutlar: { simgeTakimi: 'SM' } } }, 'deneme');
+  const [sm] = await exportFormat(ps, 'dxf');
+  const sat = satirlar(sm.data), d = sat.join('\n');
+  const s2 = konulanlar(sat);
+  assert.ok(s2.length >= 3 && s2.every((b) => b.startsWith('SH_SM_DIREK_ENH_')), 'Şebeke-M: BAHH direği SH_SM_DIREK_ENH_… ' + s2.join(','));
+  const blok = (ad) => { const b = d.indexOf('\n3\n' + ad + '\n'); return d.slice(b, d.indexOf('ENDBLK', b)); };
+  const kesik = blok('SH_SM_DIREK_AG_KESIK');
+  assert.ok(/\nTEXT\n[\s\S]*?\n1\nDM\n/.test(kesik) && /\nTEXT\n[\s\S]*?\n1\nK\n/.test(kesik), 'kesik demontaj: DM ve K yazıları');
+  assert.ok(!/\n1\nK\n/.test(blok('SH_SM_DIREK_AG_DM')), 'DM (durumu bilinmeyen): harf yok');
+  assert.ok(/\n62\n7\n/.test(blok('SH_SM_DIREK_AG_YENI')), 'dolu simgenin iç çizgileri zıt renk (7)');
+  assert.ok(!/\n62\n7\n/.test(blok('SH_SM_DIREK_AG_MEVCUT')), 'kontur simgede zıt renk yok');
+  assert.ok(/\n6\nDASHED\n/.test(blok('SH_SM_TRAFO_BINA_MEVCUT')), 'bina tipi: kesikli kontur');
+  assert.ok(/\nDASHED\n/.test(d.slice(0, d.indexOf('BLOCKS'))), 'DASHED çizgi tipi LTYPE tablosunda tanımlı');
 });

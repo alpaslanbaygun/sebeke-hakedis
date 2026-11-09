@@ -60,6 +60,8 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Hat kalınlığının çarpanı (Boyutlar.HatKalinligi; 0 = ince çizgi) ve malzemelerin çizimde yazılması.</summary>
         public double HatKalinligi = Boyutlar.VarsayilanKalinlik;
         public bool MalzemeYazisi = Boyutlar.VarsayilanMalzemeYazisi;
+        /// <summary>Simge takımı: "" klasik, "SM" Şebeke-M (Boyutlar.SimgeTakimi).</summary>
+        public string SimgeTakimi = Boyutlar.VarsayilanTakim;
 
         /// <summary>Boyutların varsayılanları (ortak çizim stili).</summary>
         public static double VarsayilanEtiket => CizimStili.Yuklu ? CizimStili.YaziYuksekligi : 1.8;
@@ -91,7 +93,7 @@ namespace SebekeHakedis.Cekirdek
         public Boyutlar BoyutlariVer() => new Boyutlar
         {
             SimgeOlcegi = SimgeOlcegi, EtiketYuksekligi = EtiketYuksekligi, MetrajYuksekligi = MetrajYuksekligi,
-            ElemanYaziYuksekligi = ElemanYaziYuksekligi, HatKalinligi = HatKalinligi, MalzemeYazisi = MalzemeYazisi,
+            ElemanYaziYuksekligi = ElemanYaziYuksekligi, HatKalinligi = HatKalinligi, MalzemeYazisi = MalzemeYazisi, SimgeTakimi = SimgeTakimi,
         }.Duzelt();
 
         public void BoyutlariKoy(Boyutlar b)
@@ -104,6 +106,7 @@ namespace SebekeHakedis.Cekirdek
             ElemanYaziYuksekligi = b.ElemanYaziYuksekligi;
             HatKalinligi = b.HatKalinligi;
             MalzemeYazisi = b.MalzemeYazisi;
+            SimgeTakimi = b.SimgeTakimi;
         }
 
         public double EkPayi(string hatTuru)
@@ -143,6 +146,7 @@ namespace SebekeHakedis.Cekirdek
                 new KeyValuePair<string, string>("elemanYaziYuksekligi", S(ElemanYaziYuksekligi)),
                 new KeyValuePair<string, string>("hatKalinligi", S(HatKalinligi)),
                 new KeyValuePair<string, string>("malzemeYazisi", MalzemeYazisi ? "1" : "0"),
+                new KeyValuePair<string, string>("simgeTakimi", Boyutlar.TakimDuzelt(SimgeTakimi)),
                 new KeyValuePair<string, string>("yakalamaMesafesi", S(YakalamaMesafesi)),
                 new KeyValuePair<string, string>("yukariYuvarla", YukariYuvarla ? "1" : "0"),
                 new KeyValuePair<string, string>("kanalAlt", S(KanalAlt)),
@@ -187,6 +191,7 @@ namespace SebekeHakedis.Cekirdek
                     case "elemanYaziYuksekligi": a.ElemanYaziYuksekligi = SayiCoz.Coz(v, 1.8); break;
                     case "hatKalinligi": a.HatKalinligi = SayiCoz.Coz(v, Boyutlar.VarsayilanKalinlik); break;
                     case "malzemeYazisi": a.MalzemeYazisi = v == "1"; break;
+                    case "simgeTakimi": a.SimgeTakimi = Boyutlar.TakimDuzelt(v); break;
                     case "yakalamaMesafesi": a.YakalamaMesafesi = SayiCoz.Coz(v, 1.0); break;
                     case "yukariYuvarla": a.YukariYuvarla = v != "0"; break;
                     case "kanalAlt": a.KanalAlt = SayiCoz.Coz(v, 40); break;

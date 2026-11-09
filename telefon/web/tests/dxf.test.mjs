@@ -139,9 +139,9 @@ test('D4 · yazı sığdırma ve boyutlar: eklentideki YaziDuzeni ile aynı sonu
   assert.equal(+eleman.g['40'][0], 3, 'eleman yazısı yüksekliği projeden');
   assert.equal(+eleman.g['10'][0], 500000 + STIL.etiketler.eleman.kaydirma[0] * 2, 'eleman yazısı simgeyle birlikte dışarı kayar');
   // Varsayılanlar ortak stilden; bozuk değer varsayılana döner
-  assert.deepEqual(boyutlar({}), { simge: 1, etiket: 1.8, metraj: 1.44, eleman: 1.8, kalinlik: 1, malzeme: false });
-  assert.deepEqual(boyutlar({ boyutlar: { simgeOlcegi: 0, etiketYuksekligi: 'x', hatKalinligi: 9 } }), { simge: 1, etiket: 1.8, metraj: 1.44, eleman: 1.8, kalinlik: 1, malzeme: false });
-  assert.deepEqual(boyutlar({ boyutlar: { hatKalinligi: 0, malzemeYazisi: true } }), { simge: 1, etiket: 1.8, metraj: 1.44, eleman: 1.8, kalinlik: 0, malzeme: true });
+  assert.deepEqual(boyutlar({}), { simge: 1, etiket: 1.8, metraj: 1.44, eleman: 1.8, kalinlik: 1, malzeme: false, takim: '' });
+  assert.deepEqual(boyutlar({ boyutlar: { simgeOlcegi: 0, etiketYuksekligi: 'x', hatKalinligi: 9, simgeTakimi: 'yok' } }), { simge: 1, etiket: 1.8, metraj: 1.44, eleman: 1.8, kalinlik: 1, malzeme: false, takim: '' });
+  assert.deepEqual(boyutlar({ boyutlar: { hatKalinligi: 0, malzemeYazisi: true, simgeTakimi: 'sm' } }), { simge: 1, etiket: 1.8, metraj: 1.44, eleman: 1.8, kalinlik: 0, malzeme: true, takim: 'SM' });
 });
 
 test('D5 · kanal kenarları: eksenin iki yanında genişliğin yarısı kadar, sürekli çizgi, kanalın renginde; sondajda ve havai hatta yok', async () => {

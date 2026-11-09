@@ -193,12 +193,18 @@ namespace SebekeHakedis.Cekirdek
         public double HatKalinligi = VarsayilanKalinlik;
         /// <summary>Elemanın malzemeleri simgenin yanında satır satır yazılsın ("GT-60=1 (M)").</summary>
         public bool MalzemeYazisi = VarsayilanMalzemeYazisi;
+        /// <summary>Simge takımı: "" klasik, "SM" Şebeke-M (kullanıcının SM_* tasarımı; Çizim Ayarları › Görünüm). Telefonla ortak alan.</summary>
+        public string SimgeTakimi = VarsayilanTakim;
+        public const string VarsayilanTakim = "";
+
+        /// <summary>Geçerli takım adı: "" ya da "SM"; başka değer klasiğe döner.</summary>
+        public static string TakimDuzelt(string t) => string.Equals((t ?? "").Trim(), "SM", StringComparison.OrdinalIgnoreCase) ? "SM" : "";
 
         /// <summary>Hepsi varsayılan mı (dosyaya yalnız farklıysa yazılır).</summary>
         public bool Varsayilan =>
             Math.Abs(SimgeOlcegi - VarsayilanSimge) < 1e-9 && Math.Abs(EtiketYuksekligi - VarsayilanEtiket) < 1e-9 &&
             Math.Abs(MetrajYuksekligi - VarsayilanMetraj) < 1e-9 && Math.Abs(ElemanYaziYuksekligi - VarsayilanEleman) < 1e-9 &&
-            Math.Abs(HatKalinligi - VarsayilanKalinlik) < 1e-9 && MalzemeYazisi == VarsayilanMalzemeYazisi;
+            Math.Abs(HatKalinligi - VarsayilanKalinlik) < 1e-9 && MalzemeYazisi == VarsayilanMalzemeYazisi && TakimDuzelt(SimgeTakimi) == VarsayilanTakim;
 
         /// <summary>Makul aralık (simge 0,1–20 kat; yazılar 0,05–50 m; hat kalınlığı 0–5 kat); bozuk değer varsayılana döner.</summary>
         public Boyutlar Duzelt()
@@ -208,18 +214,19 @@ namespace SebekeHakedis.Cekirdek
             if (!(MetrajYuksekligi >= 0.05 && MetrajYuksekligi <= 50)) MetrajYuksekligi = VarsayilanMetraj;
             if (!(ElemanYaziYuksekligi >= 0.05 && ElemanYaziYuksekligi <= 50)) ElemanYaziYuksekligi = VarsayilanEleman;
             if (!(HatKalinligi >= 0 && HatKalinligi <= 5)) HatKalinligi = VarsayilanKalinlik;
+            SimgeTakimi = TakimDuzelt(SimgeTakimi);
             return this;
         }
 
         public bool Ayni(Boyutlar b) =>
             b != null && Math.Abs(SimgeOlcegi - b.SimgeOlcegi) < 1e-9 && Math.Abs(EtiketYuksekligi - b.EtiketYuksekligi) < 1e-9 &&
             Math.Abs(MetrajYuksekligi - b.MetrajYuksekligi) < 1e-9 && Math.Abs(ElemanYaziYuksekligi - b.ElemanYaziYuksekligi) < 1e-9 &&
-            Math.Abs(HatKalinligi - b.HatKalinligi) < 1e-9 && MalzemeYazisi == b.MalzemeYazisi;
+            Math.Abs(HatKalinligi - b.HatKalinligi) < 1e-9 && MalzemeYazisi == b.MalzemeYazisi && TakimDuzelt(SimgeTakimi) == TakimDuzelt(b.SimgeTakimi);
 
         public Boyutlar Kopya() => new Boyutlar
         {
             SimgeOlcegi = SimgeOlcegi, EtiketYuksekligi = EtiketYuksekligi, MetrajYuksekligi = MetrajYuksekligi,
-            ElemanYaziYuksekligi = ElemanYaziYuksekligi, HatKalinligi = HatKalinligi, MalzemeYazisi = MalzemeYazisi,
+            ElemanYaziYuksekligi = ElemanYaziYuksekligi, HatKalinligi = HatKalinligi, MalzemeYazisi = MalzemeYazisi, SimgeTakimi = SimgeTakimi,
         };
 
         /// <summary>Kısa yazı: "simge 1,5 kat · kablo tipi 2 m · metraj 1,6 m · eleman yazısı 2 m · hat kalınlığı 1 kat · malzemeler yazılı".</summary>
@@ -228,7 +235,8 @@ namespace SebekeHakedis.Cekirdek
             var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
             return "simge " + SimgeOlcegi.ToString("0.##", tr) + " kat · kablo tipi " + EtiketYuksekligi.ToString("0.##", tr) + " m · metraj " +
                    MetrajYuksekligi.ToString("0.##", tr) + " m · eleman yazısı " + ElemanYaziYuksekligi.ToString("0.##", tr) + " m · hat kalınlığı " +
-                   (HatKalinligi > 0 ? HatKalinligi.ToString("0.##", tr) + " kat" : "ince") + (MalzemeYazisi ? " · malzemeler yazılı" : "");
+                   (HatKalinligi > 0 ? HatKalinligi.ToString("0.##", tr) + " kat" : "ince") + (MalzemeYazisi ? " · malzemeler yazılı" : "") +
+                   (TakimDuzelt(SimgeTakimi) == "SM" ? " · Şebeke-M simgeleri" : "");
         }
     }
 

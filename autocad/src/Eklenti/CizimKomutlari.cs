@@ -1321,15 +1321,16 @@ namespace SebekeHakedis.Eklenti
                 o.Ed.WriteMessage("\nAyarlar bu çizime kaydedildi.");
                 // Simge / yazı boyutları değiştiyse çizimde olanlara da uygulanabilir (Telefon Görünümü)
                 int nesne = o.Proje.Elemanlar.Count + o.Proje.Hatlar.Count + o.Proje.Kanallar.Count + o.Proje.Sondajlar.Count;
+                Semboller.Takim = SebekeHakedis.Cekirdek.Boyutlar.TakimDuzelt(a.SimgeTakimi);
                 if (Boyutlar(a) != onceki && nesne > 0 &&
-                    Pencereler.Onay("Görünüm ayarları değişti (simge ve yazı boyutları, hat kalınlığı ya da malzeme yazısı). Çizimdeki " + nesne + " nesneye de uygulansın mı?\n\n(Telefon Görünümü: simgeler, renkler, hat kalınlıkları, hat etiketleri, metraj ve malzeme yazıları yeniden düzenlenir; veriye dokunulmaz.)"))
+                    Pencereler.Onay("Görünüm ayarları değişti (simge takımı, simge ve yazı boyutları, hat kalınlığı ya da malzeme yazısı). Çizimdeki " + nesne + " nesneye de uygulansın mı?\n\n(Telefon Görünümü: simgeler, renkler, hat kalınlıkları, hat etiketleri, metraj ve malzeme yazıları yeniden düzenlenir; veriye dokunulmaz.)"))
                     GorunumuUygula(o);
             });
         }
 
         private static string Boyutlar(CizimAyarlari a) =>
             string.Join(";", new[] { a.SimgeOlcegi, a.EtiketYuksekligi, a.MetrajYuksekligi, a.ElemanYaziYuksekligi, a.HatKalinligi, a.MalzemeYazisi ? 1 : 0 }
-                .Select(d => d.ToString("0.###", CultureInfo.InvariantCulture)));
+                .Select(d => d.ToString("0.###", CultureInfo.InvariantCulture))) + ";" + SebekeHakedis.Cekirdek.Boyutlar.TakimDuzelt(a.SimgeTakimi);
 
         [CommandMethod("SH_HAKEDIS", CommandFlags.Modal)]
         public void Hakedis()

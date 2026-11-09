@@ -152,9 +152,171 @@ function kapsam(ilkeller) {
     if (i[0] === 'L') { k(i[1], i[2]); k(i[3], i[4]); }
     else if (i[0] === 'C') k(Math.abs(i[1]) + i[3], Math.abs(i[2]) + i[3]);
     else if (i[0] === 'D' || i[0] === 'Y') k(i[1], i[1]);
+    else if (i[0] === 'T') k(Math.abs(i[1]) + i[3] * 0.4 * String(i[4]).length, Math.abs(i[2]) + i[3] / 2);
+    else if (i[0] === 'R') continue;
     else for (const p of i[1]) k(p[0], p[1]);
   }
   return m;
+}
+
+// ---- Şebeke-M simge takımı (SM_*; kullanıcının 8.11.2026 tasarım paketinden, 9.11.2026) ----------------------------
+// Çizim Ayarları › Görünüm › Simge takımı: Şebeke-M seçilince eklenti SH_SM_<aile>_<varyant> bloklarını koyar; telefonun
+// DXF'i aynı adlarla yazar. Tasarımın kuralı (değiştirilmez): YENİ = dolu (iç çizgiler zıt renkte), DM+M = sol yarısı
+// dolu, MEVCUT = yalnız kontur, DEMONTAJ = çift kontur + "DM" yazısı. Kullanıcı kararı: kesik / sökük ayrımı için
+// simgenin sağ altında küçük K / S harfi. Yarı genişlikler klasik takımla aynı: yazı yerleri ve hat yapışması değişmez.
+// Yeni ilkeller: ["T", x, y, h, metin] ortalanmış yazı · ["R", n] renk (sonraki ilkeller; 0 bloğa göre, 7 zıt renk:
+// karanlık zeminde beyaz, kâğıtta siyah) · ["P", köşeler, kapalı, "DASHED"] kesikli çoklu doğru.
+const olcekle = (k, f) => k.map((p) => [r4(p[0] * f), r4(p[1] * f)]);
+const yay = (cx, cy, r, a0, a1, adim = 15) => {
+  const out = [];
+  for (let a = a0; a0 < a1 ? a <= a1 + 1e-9 : a >= a1 - 1e-9; a += a0 < a1 ? adim : -adim) out.push([r4(cx + r * Math.cos((a * Math.PI) / 180)), r4(cy + r * Math.sin((a * Math.PI) / 180))]);
+  return out;
+};
+const G = {
+  // direk gövdesi + konsol (AG: tek, OG: iki)
+  direkAG: (R) => [['L', 0, r4(-0.6 * R), 0, r4(0.55 * R)], ['L', r4(-0.45 * R), r4(0.3 * R), r4(0.45 * R), r4(0.3 * R)], ['L', r4(-0.2 * R), r4(-0.6 * R), r4(0.2 * R), r4(-0.6 * R)]],
+  direkOG: (R) => [['L', 0, r4(-0.6 * R), 0, r4(0.55 * R)], ['L', r4(-0.5 * R), r4(0.35 * R), r4(0.5 * R), r4(0.35 * R)], ['L', r4(-0.35 * R), r4(0.05 * R), r4(0.35 * R), r4(0.05 * R)], ['L', r4(-0.2 * R), r4(-0.6 * R), r4(0.2 * R), r4(-0.6 * R)]],
+  // kafes (demir) direk: daralan gövde, iki çapraz, tepe travers
+  kafes: (R) => [
+    ['P', [[r4(-0.22 * R), r4(-0.62 * R)], [r4(0.22 * R), r4(-0.62 * R)], [r4(0.09 * R), r4(0.55 * R)], [r4(-0.09 * R), r4(0.55 * R)]], true],
+    ['L', r4(-0.22 * R), r4(-0.62 * R), r4(0.155 * R), r4(-0.035 * R)], ['L', r4(0.22 * R), r4(-0.62 * R), r4(-0.155 * R), r4(-0.035 * R)],
+    ['L', r4(-0.155 * R), r4(-0.035 * R), r4(0.09 * R), r4(0.55 * R)], ['L', r4(0.155 * R), r4(-0.035 * R), r4(-0.09 * R), r4(0.55 * R)],
+    ['L', r4(-0.38 * R), r4(0.38 * R), r4(0.38 * R), r4(0.38 * R)]
+  ],
+  // aydınlatma direği: gövde + sağa kıvrılan kol + kısa uç
+  ayd: (R) => [['L', 0, r4(-0.6 * R), 0, r4(0.2 * R)], ['P', yay(0.3 * R, 0.2 * R, 0.3 * R, 180, 0), false], ['L', r4(0.6 * R), r4(0.2 * R), r4(0.6 * R), r4(0.02 * R)]],
+  // şimşek (özel trafo)
+  simsek: (R) => [['P', [[r4(0.12 * R), r4(0.5 * R)], [r4(-0.22 * R), r4(0.04 * R)], [r4(0.02 * R), r4(0.04 * R)], [r4(-0.12 * R), r4(-0.5 * R)], [r4(0.22 * R), r4(-0.06 * R)], [r4(-0.02 * R), r4(-0.06 * R)]], true]],
+  kuleCikis: () => [['L', 5, -2, 7.5, -2], ['L', 7.5, -2, 7.5, -4.5]],
+  kapi: () => [['P', [[-1.5, -6], [-1.5, -1.5], [1.5, -1.5], [1.5, -6]], false]],
+  moduler: () => [['L', -2, -4, -2, 4], ['L', 2, -4, 2, 4], ['L', -4, -0.8, -4, 0.8], ['L', 0, -0.8, 0, 0.8], ['L', 4, -0.8, 4, 0.8]],
+  bina: () => [['L', -2.5, 2, -2.5, 3.5], ['L', 0, 2, 0, 3.5], ['L', 2.5, 2, 2.5, 3.5]],
+  box: () => [['L', -4, -2.5, 4, 2.5]],
+  civa: () => [['L', -0.35, -0.35, 0.35, 0.35], ['L', -0.35, 0.35, 0.35, -0.35]],
+  sodyum: () => [['L', -0.35, -0.35, 0.35, 0.35], ['L', -0.35, 0.35, 0.35, -0.35], ['L', 0, -0.42, 0, 0.42]],
+  led: () => [['C', 0, 0.25, 0.1], ['C', -0.22, -0.13, 0.1], ['C', 0.22, -0.13, 0.1]],
+  floresan: () => [['L', -0.15, -0.35, -0.15, 0.35], ['L', 0.15, -0.35, 0.15, 0.35]]
+};
+const kosk = [[-6, 2], [0, 7], [6, 2], [5, 2], [5, -6], [-5, -6], [-5, 2]];
+// daire: {r} ya da kose: [...]; kesik: kesikli kontur; glif: iç çizgiler (R → ilkeller); yazi: satırlar ['SDK', 'AG']
+const SM = {
+  SM_DIREK_AG: { ad: 'AG direği', daire: 2.25, glif: G.direkAG },
+  SM_KAFES_AG: { ad: 'AG kafes direk', daire: 2.25, glif: G.kafes },
+  SM_DIREK_OG: { ad: 'Müşterek / OG direği', daire: 3, glif: G.direkOG },
+  SM_KAFES_OG: { ad: 'Müşterek / OG kafes direk', daire: 3, glif: G.kafes },
+  SM_DIREK_ENH: { ad: 'ENH / BAHH direği', daire: 3, glif: G.kafes },
+  SM_DIREK_AYD: { ad: 'Aydınlatma direği', daire: 2, glif: G.ayd },
+  SM_TRAFO_DIREK: { ad: 'Direk tipi trafo postası', kose: [[0, 5.5], [5, -3], [-5, -3]] },
+  SM_TRAFO_DIREK_OZEL: { ad: 'Direk tipi özel trafo postası', kose: [[0, 5.5], [5, -3], [-5, -3]], glif: (R) => G.simsek(R * 0.6).map((i) => [i[0], i[1].map((p) => [p[0], r4(p[1] - 0.8)]), i[2]]) },
+  SM_INDIRICI_MERKEZ: { ad: 'İndirici / dağıtım merkezi', kose: kosk, glif: G.kapi },
+  SM_KOSK_KULE: { ad: 'Kule tipi trafo postası', kose: kosk },
+  SM_KOSK_KULE_CIKIS: { ad: 'Kule çıkışlı trafo postası', kose: kosk, glif: G.kuleCikis },
+  SM_KOSK_KULESIZ_OZEL: { ad: 'Kulesiz tip özel trafo postası', kose: kosk, kesik: true, glif: (R) => G.simsek(R * 0.7) },
+  SM_KOSK_KULE_OZEL: { ad: 'Kule tipi özel trafo postası', kose: kosk, glif: (R) => G.simsek(R * 0.7) },
+  SM_KOSK_KULE_CIKIS_OZEL: { ad: 'Kule çıkışlı tip özel trafo', kose: kosk, glif: (R) => [...G.simsek(R * 0.7), ...G.kuleCikis()] },
+  SM_KOSK_MODULER: { ad: 'Modüler beton köşk', kose: dikdortgen(12, 8), glif: G.moduler },
+  SM_TRAFO_BINA: { ad: 'Bina tipi trafo postası', kose: kare(10), kesik: true, glif: G.bina },
+  SM_BOX: { ad: 'Dağıtım / ölçüm box (pano)', kose: dikdortgen(8, 5), glif: G.box },
+  SM_SDK_AG: { ad: 'Saha dağıtım kutusu · AG', kose: dikdortgen(5, 7), yazi: ['SDK', 'AG'] },
+  SM_SDK_AYD: { ad: 'Saha dağıtım kutusu · aydınlatma', kose: dikdortgen(5, 7), yazi: ['SDK', 'AYD'] },
+  SM_ARMATUR_CIVA: { ad: 'Cıva buharlı sokak lambası', daire: 0.6, glif: G.civa },
+  SM_ARMATUR_SODYUM: { ad: 'Sodyum buharlı sokak lambası', daire: 0.6, glif: G.sodyum },
+  SM_ARMATUR_LED: { ad: 'LED sokak lambası', daire: 0.6, glif: G.led },
+  SM_ARMATUR_FLORESAN: { ad: 'Floresan sokak lambası', daire: 0.6, glif: G.floresan }
+};
+
+/** Basit (kendini kesmeyen) çokgeni kulak kesmeyle üçgenler: içbükey köşk gibi biçimler de doğru dolar (yelpaze yalnız dışbükeye uyar). */
+function ucgenle(kose) {
+  const k = kose.filter((p, i) => i === 0 || Math.abs(p[0] - kose[i - 1][0]) > 1e-9 || Math.abs(p[1] - kose[i - 1][1]) > 1e-9);
+  if (k.length < 3) return [];
+  let alan = 0;
+  for (let i = 0; i < k.length; i++) { const a = k[i], b = k[(i + 1) % k.length]; alan += a[0] * b[1] - b[0] * a[1]; }
+  const idx = k.map((_, i) => i);
+  if (alan < 0) idx.reverse();   // saat yönünün tersine
+  const carpim = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  const icinde = (p, a, b, c) => carpim(a, b, p) >= -1e-9 && carpim(b, c, p) >= -1e-9 && carpim(c, a, p) >= -1e-9;
+  const out = [];
+  let guard = 0;
+  while (idx.length > 3 && guard++ < 1000) {
+    let kesildi = false;
+    for (let i = 0; i < idx.length; i++) {
+      const a = k[idx[(i + idx.length - 1) % idx.length]], b = k[idx[i]], c = k[idx[(i + 1) % idx.length]];
+      if (carpim(a, b, c) <= 1e-9) continue;   // içbükey köşe
+      let bos = true;
+      for (const j of idx) { const p = k[j]; if (p === a || p === b || p === c) continue; if (icinde(p, a, b, c)) { bos = false; break; } }
+      if (!bos) continue;
+      out.push(['S', [pt(a), pt(b), pt(c), pt(c)]]);
+      idx.splice(i, 1);
+      kesildi = true;
+      break;
+    }
+    if (!kesildi) break;
+  }
+  if (idx.length === 3) out.push(['S', [pt(k[idx[0]]), pt(k[idx[1]]), pt(k[idx[2]]), pt(k[idx[2]])]]);
+  return out;
+}
+
+/** Doğru ilkellerini x = 0'da böler: sol parçalar zıt renk (dolu yarının üstünde), sağ parçalar bloğa göre. */
+function yariRenk(ilkeller) {
+  const sol = [], sag = [];
+  const dogru = (x1, y1, x2, y2) => {
+    if (x1 <= 0 && x2 <= 0) sol.push(['L', r4(x1), r4(y1), r4(x2), r4(y2)]);
+    else if (x1 >= 0 && x2 >= 0) sag.push(['L', r4(x1), r4(y1), r4(x2), r4(y2)]);
+    else {
+      const t = -x1 / (x2 - x1), ym = y1 + t * (y2 - y1);
+      (x1 < 0 ? sol : sag).push(['L', r4(x1), r4(y1), 0, r4(ym)]);
+      (x1 < 0 ? sag : sol).push(['L', 0, r4(ym), r4(x2), r4(y2)]);
+    }
+  };
+  for (const i of ilkeller) {
+    if (i[0] === 'L') dogru(i[1], i[2], i[3], i[4]);
+    else if (i[0] === 'P') { const k = i[1]; for (let n = 1; n < k.length; n++) dogru(k[n - 1][0], k[n - 1][1], k[n][0], k[n][1]); if (i[2]) dogru(k[k.length - 1][0], k[k.length - 1][1], k[0][0], k[0][1]); }
+    else if (i[0] === 'C') (i[1] < 0 ? sol : sag).push(i.slice());
+    else sag.push(i.slice());
+  }
+  return [...(sol.length ? [['R', 7], ...sol, ['R', 0]] : []), ...sag];
+}
+
+function smUret(aile, varyant) {
+  const a = SM[aile], out = [];
+  const lt = a.kesik ? 'DASHED' : null;
+  let R, kontur, icKontur;
+  if (a.daire) {
+    R = a.daire;
+    kontur = ['C', 0, 0, r4(R)];
+    icKontur = ['C', 0, 0, r4(R * 0.8)];
+  } else {
+    R = Math.max(...a.kose.map((p) => Math.max(Math.abs(p[0]), Math.abs(p[1]))));
+    kontur = lt ? ['P', a.kose.map(pt), true, lt] : ['P', a.kose.map(pt), true];
+    icKontur = lt ? ['P', olcekle(a.kose, 0.8), true, lt] : ['P', olcekle(a.kose, 0.8), true];
+  }
+  out.push(kontur);
+  const glif = a.glif ? a.glif(R) : [];
+  // Yazılı simge (SDK AG …): satırlar dikeyde ortalı istiflenir; demontajda "DM" alta eklenir; sök-takta sağ yarıya küçülür
+  const yazilar = (satirlar, dx = 0, kat = 1) => {
+    if (!satirlar.length) return [];
+    const Ry = a.daire ? R : Math.max(...a.kose.map((p) => Math.abs(p[1])));
+    const h = r4(Math.min(1.3, (Ry * 1.5) / (satirlar.length * 1.35)) * kat);
+    return satirlar.map((m, i) => ['T', r4(dx), r4(((satirlar.length - 1) / 2 - i) * h * 1.35), h, m]);
+  };
+  const yazi = a.yazi || [];
+  if (varyant === 'YENI') {
+    out.push(...(a.daire ? [['D', r4(R)]] : ucgenle(a.kose)));
+    if (glif.length || yazi.length) out.push(['R', 7], ...glif, ...yazilar(yazi), ['R', 0]);
+  } else if (varyant === 'DMM') {
+    out.push(...(a.daire ? [['Y', r4(R)]] : ucgenle(solYari(a.kose))));
+    out.push(...yariRenk(glif), ...yazilar(yazi, R * 0.5, 0.7));
+  } else if (varyant === 'MEVCUT') {
+    out.push(...glif, ...yazilar(yazi));
+  } else {
+    // demontaj: çift kontur + "DM"; kesik / sökük: sağ altta K / S (kullanıcı kararı)
+    out.push(icKontur, ...glif);
+    if (yazi.length) out.push(...yazilar([...yazi, 'DM']));
+    else out.push(['T', 0, r4(-0.55 * R), r4(0.4 * R), 'DM']);
+    if (varyant === 'KESIK') out.push(['T', r4(0.95 * R), r4(-0.95 * R), r4(0.35 * R), 'K']);
+    if (varyant === 'SOKUK') out.push(['T', r4(0.95 * R), r4(-0.95 * R), r4(0.35 * R), 'S']);
+  }
+  return { yariGenislik: r4(R), ilkeller: out };
 }
 
 const semboller = {};
@@ -169,22 +331,37 @@ for (const aile of Object.keys(AILELER)) {
   // kapsam: bütün varyantları içine alan yarı genişlik (şerit ve pencere simgeleri aynı ölçekte çizilsin diye)
   aileler[aile] = { ad: AILELER[aile].ad, yariGenislik: r4(AILELER[aile].daire || Math.max(...AILELER[aile].kose.map((p) => Math.max(Math.abs(p[0]), Math.abs(p[1]))))), kapsam: r4(enBuyuk) };
 }
+for (const aile of Object.keys(SM)) {
+  let enBuyuk = 0, yg = 0;
+  for (const v of VARYANTLAR) {
+    const s = smUret(aile, v);
+    semboller[aile + '_' + v] = s.ilkeller;
+    yg = s.yariGenislik;
+    enBuyuk = Math.max(enBuyuk, kapsam(s.ilkeller));
+  }
+  aileler[aile] = { ad: SM[aile].ad, takim: 'SM', yariGenislik: yg, kapsam: r4(enBuyuk) };
+}
 
 const cikti = {
   bicim: 'sebeke-hakedis.semboller',
-  surum: 2,
-  aciklama: 'Lejant simge takımı. Boyutlar metre (1/1000 pafta). AutoCAD eklentisi blokları SH_<ad> adıyla metre cinsinden tanımlar ve 1 ölçekle koyar; telefonun DXF çıktısı aynı blokları aynı adla yazar. Üretici: araclar/semboller-uret.mjs — bu dosya elle düzenlenmez.',
+  surum: 3,
+  aciklama: 'Lejant simge takımları (klasik ve Şebeke-M). Boyutlar metre (1/1000 pafta). AutoCAD eklentisi blokları SH_<ad> adıyla metre cinsinden tanımlar ve 1 ölçekle koyar; telefonun DXF çıktısı aynı blokları aynı adla yazar. Üretici: araclar/semboller-uret.mjs — bu dosya elle düzenlenmez.',
   ilkeller: {
-    L: 'doğru: x1 y1 x2 y2', C: 'daire: cx cy r', P: 'çoklu doğru: [[x,y],...] kapali',
-    S: 'dolu dörtgen: 4 köşe, AutoCAD SOLID sırası (1 2 4 3)', D: 'dolu daire: r', Y: 'yarım dolu daire (sol yarı): r'
+    L: 'doğru: x1 y1 x2 y2', C: 'daire: cx cy r', P: 'çoklu doğru: [[x,y],...] kapali [, çizgiTipi ("DASHED")]',
+    S: 'dolu dörtgen: 4 köşe, AutoCAD SOLID sırası (1 2 4 3)', D: 'dolu daire: r', Y: 'yarım dolu daire (sol yarı): r',
+    T: 'ortalanmış yazı: x y yükseklik metin', R: 'renk (sonraki ilkeller için): 0 bloğa göre, 7 zıt renk (karanlık zeminde beyaz, kâğıtta siyah)'
+  },
+  takimlar: {
+    '': 'Klasik: aile adı öneksiz (DIREK_AG …); eklenti bloğu SH_<aile>_<varyant>',
+    SM: 'Şebeke-M (kullanıcının SM_* tasarımı): aile adı SM_ önekli; YENİ dolu (iç çizgiler zıt renk), DM+M sol yarısı dolu, MEVCUT kontur, demontaj çift kontur + "DM" (kesik / sökük: sağ altta K / S)'
   },
   varyantlar: {
     YENI: 'montaj (M, M+M, KM, ENH, ME): dolu',
     MEVCUT: 'mevcut: boş',
     DMM: 'sök-tak (DM+M): yarım dolu',
-    DM: 'demontaj: boş + simgeden taşan çapraz "/"',
-    KESIK: 'demontaj, kesik (DM · KESİK): boş + iki paralel çapraz "//"',
-    SOKUK: 'demontaj, sökük (DM · SÖKÜK): boş + taşan çarpı "X"'
+    DM: 'demontaj: boş + simgeden taşan çapraz "/" (Şebeke-M: çift kontur + DM)',
+    KESIK: 'demontaj, kesik (DM · KESİK): boş + iki paralel çapraz "//" (Şebeke-M: + K)',
+    SOKUK: 'demontaj, sökük (DM · SÖKÜK): boş + taşan çarpı "X" (Şebeke-M: + S)'
   },
   aileler,
   semboller

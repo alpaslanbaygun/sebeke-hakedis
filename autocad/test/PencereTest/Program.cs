@@ -237,6 +237,7 @@ namespace SebekeHakedis.PencereTest
                 Esit(1.2, o.Ayar.MetrajYuksekligi, "ayarlar: metraj yazısı yüksekliği");
                 Esit(1.5, o.Ayar.HatKalinligi, "ayarlar: hat kalınlığı (Kalın = 1,5 kat)");
                 Esit(true, o.Ayar.MalzemeYazisi, "ayarlar: malzemeleri çizimde göster");
+                Esit(Semboller.TakimSM, o.Ayar.SimgeTakimi, "ayarlar: simge takımı Şebeke-M seçildi");
             }, f =>
             {
                 var dom = Bul<KoyuSecim>(f, r => r.Text == "39°");
@@ -255,6 +256,11 @@ namespace SebekeHakedis.PencereTest
                 kalin.SelectedIndex = 3;
                 Esit(true, Convert.ToString(kalin.SelectedItem).StartsWith("Kalın"), "ayarlar: hat kalınlığı Kalın seçildi");
                 Bul<KoyuOnay>(f, k => k.Name == "malzemeYazisi").Checked = true;
+                var takim = Bul<KoyuAcilir>(f, k => k.Name == "simgeTakimi");
+                Esit(2, takim.Items.Count, "ayarlar: simge takımı seçenekleri (Klasik, Şebeke-M)");
+                Esit(true, Convert.ToString(takim.SelectedItem).StartsWith("Klasik"), "ayarlar: simge takımı varsayılanı Klasik");
+                takim.SelectedIndex = 1;
+                Esit(true, Convert.ToString(takim.SelectedItem).StartsWith("Şebeke-M"), "ayarlar: simge takımı Şebeke-M seçildi");
                 string[] adlar = { "genel", "proje", "tarife", "gorunum", "metraj" };
                 for (int i = 1; i < adlar.Length; i++)
                 {

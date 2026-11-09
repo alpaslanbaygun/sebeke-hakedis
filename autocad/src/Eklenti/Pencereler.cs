@@ -2936,13 +2936,13 @@ namespace SebekeHakedis.Eklenti
         {
             Hazirla();
             var a = o.Ayar;
-            using (var w = new KoyuPencere("Çizim ayarları", 660, 560, Boya.Simge("ayarlar", KoyuRenk.Ikincil, 20)))
+            using (var w = new KoyuPencere("Çizim ayarları", 660, 600, Boya.Simge("ayarlar", KoyuRenk.Ikincil, 20)))
             {
                 var alt = AltKur(w, "Kaydet");
                 alt.Ozet.Text = "Ayarlar bu çizimin içine kaydedilir.";
                 alt.Ozet.Simge = Boya.Simge("kilit", KoyuRenk.Soluk, 16);
                 var sekme = Koy(w, new Sekmeler(), 16, 56, 628, 34);
-                Func<Panel> sayfa = () => Koy(w, new Panel { BackColor = KoyuRenk.Arka }, 16, 104, 628, 380);
+                Func<Panel> sayfa = () => Koy(w, new Panel { BackColor = KoyuRenk.Arka }, 16, 104, 628, 420);
 
                 // Genel
                 var genel = sayfa();
@@ -3019,6 +3019,13 @@ namespace SebekeHakedis.Eklenti
                 Etiket(gorunum, "Direğe yakalama (m)", 0, 300);
                 var yakala = Koy(gorunum, new SayiKutusu(0, 50, D(a.YakalamaMesafesi), 2, 0.5m), 0, 320, 140, 30);
                 Aciklama(gorunum, "Hat ve kanal çizerken elemanın simgesinin üstüne ya da en az bu mesafeye tıklanınca hat elemanın ortasına oturur ve orada parçalanır. 0: yakalama kapalı.", 156, 318, 460, 40);
+                // Simge takımı: klasik ya da Şebeke-M (kullanıcının SM_* tasarımı, 9.11.2026); telefon dosyasıyla taşınır
+                Etiket(gorunum, "Simge takımı", 0, 366);
+                var takim = Koy(gorunum, new KoyuAcilir { Name = "simgeTakimi" }, 0, 386, 300);
+                takim.Items.Add("Klasik (telefonun lejant simgeleri)");
+                takim.Items.Add("Şebeke-M (dolu · yarı dolu · kontur · çift kontur + DM)");
+                takim.SelectedIndex = Boyutlar.TakimDuzelt(a.SimgeTakimi) == Semboller.TakimSM ? 1 : 0;
+                Aciklama(gorunum, "Yeni konan elemanlar bu takımla çizilir; kaydedince çizimdekilere uygulanması sorulur (Telefon Görünümü). Telefonun DXF'i aynı takımı kullanır.", 316, 384, 300, 36);
 
                 // Metraj
                 var metraj = sayfa();
@@ -3087,6 +3094,7 @@ namespace SebekeHakedis.Eklenti
                 a.MetrajYuksekligi = (double)metrajYazi.Value;
                 if (kalinlik.SelectedIndex >= 0) a.HatKalinligi = katlar[kalinlik.SelectedIndex];
                 a.MalzemeYazisi = malzemeYazisi.Checked;
+                a.SimgeTakimi = takim.SelectedIndex == 1 ? Semboller.TakimSM : "";
                 a.BoyutlariDuzelt();
                 a.YakalamaMesafesi = (double)yakala.Value;
                 a.YukariYuvarla = yukari.Checked;

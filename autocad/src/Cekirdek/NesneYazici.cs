@@ -135,7 +135,7 @@ namespace SebekeHakedis.Cekirdek
         public static string BlokSec(IEnumerable<Eleman> cizim, Eleman e)
         {
             if (!string.IsNullOrEmpty(e.Blok) && e.Blok.StartsWith("*", StringComparison.Ordinal)) return e.Blok;
-            return Semboller.BlokAdi(e.Tur, e.Cins, e.Durum, e.DmDurum);
+            return Semboller.BlokAdi(e.Tur, e.Cins, e.Durum, e.DmDurum, e.Tip);
         }
 
         /// <summary>Durumu değişen elemanın bloğu (eski durum bilgisi artık gerekmez: simge her zaman güncel duruma göre).</summary>
@@ -176,7 +176,8 @@ namespace SebekeHakedis.Cekirdek
             double A = ArmaturYariGenisligi;
             dx = -(R + A + 0.4);
             dy = Math.Max(A + 0.2, R * 0.55);
-            return Semboller.OnEk + "ARMATUR_" + Semboller.Varyant(durum);
+            // Şebeke-M takımında lamba türü armatürün tanımından (LED · cıva · floresan · sodyum)
+            return Semboller.OnEk + Semboller.TakimAilesi("DIGER", secilen.Cins, secilen.Tanim) + "_" + Semboller.Varyant(durum);
         }
 
         /// <summary>Yeni bloğun ölçeği: çizimde aynı bloğun en çok kullanılan ölçeği, yoksa elemanların en çok kullanılan ölçeği.</summary>

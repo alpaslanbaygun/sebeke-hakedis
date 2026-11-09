@@ -29,6 +29,7 @@ namespace SebekeHakedis.Eklenti
             Varliklar = varliklar ?? new List<CadVarlik>();
             Proje = proje ?? new Proje();
             Ayar = ayar ?? new CizimAyarlari();
+            Semboller.Takim = Boyutlar.TakimDuzelt(Ayar.SimgeTakimi);   // blok adları çizimin simge takımına göre
             OnEk = Ilk(Ayar.KatmanOnEki, Proje.KatmanOnEki, yedekOnEk, "SC");
             GisOnEki = Ilk(Ayar.GisOnEki, Proje.GisOnEki, OnEk);
             Hakedis = Ayar.AktifHakedis > 0 ? Ayar.AktifHakedis : Math.Max(1, Proje.AktifHakedis);

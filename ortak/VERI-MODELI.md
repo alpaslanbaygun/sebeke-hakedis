@@ -127,20 +127,45 @@ Telefonun kataloğu TEDAŞ poz kodlarıyla (ör. `005.01.02.01-008`), eklentinin
   kendisidir (tüm noktaları kapsayan kutu). Hakediş: hakedişe girmiş objede iş tarihinin düştüğü dönem, diğerlerinde
   aktif (taslak) dönem.
 
-### Lejant simge takımı (`katalog/semboller.json`)
+### Lejant simge takımları (`katalog/semboller.json`)
 
 Eklentinin kendi blokları (`SH_<aile>_<varyant>`) ve telefonun DXF çıktısı aynı tablodan çizilir; üretici
-`araclar/semboller-uret.mjs`, önizleme `araclar/semboller-onizle.mjs`. Aileler: `DIREK_AG` (beton / ağaç AG,
-daire 2,25 m), `KAFES_AG` (demir AG, kare 4,6 m), `DIREK_OG` / `KAFES_OG` (OG, müşterek, ENH; topraklama işaretli),
-`DIREK_AYD`, `TRAFO_DIREK` (üçgen), `TRAFO_BINA` (kare), `TRAFO_KOSK` (ev), `SDK`, `PANO`, `MUFU`, `KOFRE`, `MENHOL`,
-`ABONE`, `ARMATUR`, `DIGER`. Varyantlar (sürüm 2, telefonun haritasıyla aynı): `YENI` dolu, `MEVCUT` boş (kafes
-direkte içi çarpı, SDK'da çapraz), `DMM` yarım dolu, `DM` boş + simgeden taşan `/`, `KESIK` boş + taşan `//`,
-`SOKUK` boş + taşan `X`. Taşma payı `R + min(3, max(1,5; 0,8 R))`; demontaj varyantlarında iç işaret (kafes çarpısı)
-yoktur. Varyant durumdan gelir: M, M+M, KM, ENH, ME → `YENI`; DM → elemanın demontaj türüne (`dmDurum`) göre `DM` / `KESIK` /
+`araclar/semboller-uret.mjs`, önizleme `araclar/semboller-onizle.mjs`, lejant resimleri `araclar/lejant-uret.mjs`
+(`lejant/semboller-klasik.svg`, `lejant/semboller-sebekem.svg`). İki takım vardır (sürüm 3; `takimlar`,
+`aileler.<aile>.takim`: yoksa klasik, `"SM"` Şebeke-M). Seçim çizim başınadır ve `boyutlar.simgeTakimi` ile proje
+dosyasında taşınır (`"SM"`; klasik yazılmaz): eklentide Çizim Ayarları › Görünüm › Simge takımı, telefonda Dışa Aktar ›
+Çizim boyutları › Simge takımı.
+
+**Klasik** aileler: `DIREK_AG` (beton / ağaç AG, daire 2,25 m), `KAFES_AG` (demir AG, kare 4,6 m), `DIREK_OG` /
+`KAFES_OG` (OG, müşterek, ENH; topraklama işaretli), `DIREK_AYD`, `TRAFO_DIREK` (üçgen), `TRAFO_BINA` (kare),
+`TRAFO_KOSK` (ev), `SDK`, `PANO`, `MUFU`, `KOFRE`, `MENHOL`, `ABONE`, `ARMATUR`, `DIGER`. Varyantlar (telefonun
+haritasıyla aynı): `YENI` dolu, `MEVCUT` boş (kafes direkte içi çarpı, SDK'da çapraz), `DMM` yarım dolu, `DM` boş +
+simgeden taşan `/`, `KESIK` boş + taşan `//`, `SOKUK` boş + taşan `X`. Taşma payı `R + min(3, max(1,5; 0,8 R))`;
+demontaj varyantlarında iç işaret (kafes çarpısı) yoktur.
+
+**Şebeke-M** aileleri (`SM_` önekli, 23 aile; kullanıcının 9.11.2026 tasarımı; yarı genişlikler klasik karşılığıyla
+aynı, hatlar aynı yere yapışır): `SM_DIREK_AG`, `SM_KAFES_AG`, `SM_DIREK_OG`, `SM_KAFES_OG`, `SM_DIREK_ENH`,
+`SM_DIREK_AYD`, `SM_TRAFO_DIREK`, `SM_TRAFO_DIREK_OZEL`, `SM_INDIRICI_MERKEZ`, `SM_KOSK_KULE`, `SM_KOSK_KULE_CIKIS`,
+`SM_KOSK_KULESIZ_OZEL`, `SM_KOSK_KULE_OZEL`, `SM_KOSK_KULE_CIKIS_OZEL`, `SM_KOSK_MODULER`, `SM_TRAFO_BINA`, `SM_BOX`,
+`SM_SDK_AG`, `SM_SDK_AYD`, `SM_ARMATUR_CIVA`, `SM_ARMATUR_SODYUM`, `SM_ARMATUR_LED`, `SM_ARMATUR_FLORESAN`. Durum
+simgenin doluluğundan okunur: `YENI` dolu (iç işaret zıt renkte), `MEVCUT` kontur, `DMM` sol yarısı dolu, `DM` çift
+kontur (iç çizgi 0,8 R) + altında `DM` yazısı, `KESIK` / `SOKUK` ayrıca sağ altta `K` / `S` harfi (tür bilinmiyorsa
+harf yok). Aile seçimi (`Semboller.SmAile` ↔ `dxf.js › smAilesi`) tür + cins + **tip** yazısından: köşkte indirici ·
+bina · kulesiz · kule çıkışlı · kule · özel sözcükleri aranır, hiçbiri yoksa modüler beton köşk; direk tipi trafoda
+"özel"; armatürde LED · cıva · floresan, yoksa sodyum; box'ta "AYD" varsa SDK AYD; pano → box. Takımda olmayan aileler
+(mufu, kofre, menhol, abone, diğer) klasik ailesiyle çizilir. Bloklar `SH_SM_<aile>_<varyant>` adıyla konur.
+
+İlkeller (`semboller.<ad>`): `L` doğru `[x1,y1,x2,y2]`, `C` daire `[cx,cy,r]`, `P` çoklu doğru `[noktalar, kapalı,
+"DASHED"?]`, `S` dolu dörtgen `[4 köşe]`, `D` dolu daire `[r]`, `Y` sol yarım dolu daire `[r]`, `T` ortalanmış yazı
+`[x, y, yükseklik, metin]`, `R` renk durumu `[0 | 7]` (sonraki ilkellere uygulanır: 0 bloğa göre, 7 zıt renk —
+karanlık ekranda beyaz, kâğıtta siyah). Yazı, zıt renk ve kesikli çizgi yalnız Şebeke-M takımında kullanılır; klasik
+takımın geometrisi sürüm 2 ile aynıdır.
+
+Varyant durumdan gelir: M, M+M, KM, ENH, ME → `YENI`; DM → elemanın demontaj türüne (`dmDurum`) göre `DM` / `KESIK` /
 `SOKUK`; DM+M → `DMM`. `aileler.<aile>.kapsam`: bütün varyantları içine alan yarı genişlik (şerit simgeleri).
-Boyutlar metre; bloklar 1 ölçekle konur (telefonun DXF'iyle aynı). Varsayılan "telefon simgeleri": her yeni eleman
-SH_ simgesiyle çizilir; çizimdeki değişmeyen eski program bloklarına dokunulmaz (`SH_GORUNUM` istenirse çevirir).
-Ayarlardan "eski program simgeleri" seçilirse çizimde o tür ve durumda eski program bloğu varsa o kullanılır.
+Boyutlar metre; bloklar 1 ölçekle konur (telefonun DXF'iyle aynı). Her yeni eleman seçili takımın SH_ simgesiyle
+çizilir; çizimdeki değişmeyen eski program bloklarına dokunulmaz. Takım değiştirilince ya da eski bir çizim yeni görünüme
+alınacaksa `SH_GORUNUM` bütün elemanların simgesini yeniden seçer.
 
 ### Çizim stili (`katalog/cizim-stili.json`) ve şerit kategorileri (`katalog/kategoriler.json`)
 

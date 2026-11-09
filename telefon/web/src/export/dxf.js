@@ -174,7 +174,9 @@ export function boyutlar(proje, textH) {
     eleman: sayi(b.elemanYaziYuksekligi, STIL.yazi.yukseklik * k, 0.05, 50),
     // Hat kalınlığı (kat; 0 = ince çizgi) ve malzemelerin çizimde yazılması (eklentideki Boyutlar.HatKalinligi / MalzemeYazisi)
     kalinlik: sayi(b.hatKalinligi, 1, 0, 5),
-    malzeme: b.malzemeYazisi === true
+    malzeme: b.malzemeYazisi === true,
+    // Simge takımı: '' klasik, 'SM' Şebeke-M (eklentideki Boyutlar.SimgeTakimi)
+    takim: String(b.simgeTakimi || '').toUpperCase() === 'SM' ? 'SM' : ''
   };
 }
 
@@ -234,24 +236,65 @@ export function sembolAilesi(e) {
   if (e.kind === 'other') return 'DIGER';
   return 'ABONE';
 }
-/** Ekipmanın blok adı: SH_<aile>_<varyant> (eklentiyle aynı); demontajda türü (KESİK / SÖKÜK) ayrı simgedir. */
-export function sembolBlogu(e) {
+const ust = (s) => String(s || '').toLocaleUpperCase('tr').replace(/İ/g, 'I').replace(/Ş/g, 'S').replace(/Ç/g, 'C').replace(/Ü/g, 'U').replace(/Ö/g, 'O').replace(/Ğ/g, 'G');
+
+/**
+ * Şebeke-M takımındaki aile (eklentideki Semboller.SmAile ile aynı kural): kafes / beton ayrımı klasikteki gibi, ENH direği
+ * kendi simgesi, trafo merkezi tipten (indirici · bina · kulesiz özel · kule çıkışlı (özel) · kule (özel) · yoksa modüler
+ * köşk), direk tipi trafoda "özel", pano → box, SDK → SDK AG / AYD, armatür tipinden lamba (LED · cıva · floresan · sodyum).
+ * Takımda olmayan aileler (menhol, abone, diğer) klasik ailesiyle döner.
+ */
+export function smAilesi(e) {
+  const klasik = sembolAilesi(e);
+  const ct = ust((e.typeName || '') + ' ' + ((e.attrs || {}).post || '') + ' ' + (e.name || ''));
+  if (klasik === 'DIREK_AG' || klasik === 'KAFES_AG' || klasik === 'DIREK_OG' || klasik === 'KAFES_OG' || klasik === 'DIREK_AYD') {
+    if ((klasik === 'DIREK_OG' || klasik === 'KAFES_OG') && e.group === 'bahh') return 'SM_DIREK_ENH';   // BAHH = ENH direği
+    return 'SM_' + klasik;
+  }
+  if (klasik === 'TRAFO_DIREK') return ct.includes('OZEL') ? 'SM_TRAFO_DIREK_OZEL' : 'SM_TRAFO_DIREK';
+  if (klasik === 'TRAFO_BINA' || klasik === 'TRAFO_KOSK') {
+    const ozel = ct.includes('OZEL');
+    if (ct.includes('INDIRICI') || ct.includes('DAGITIM MERKEZ')) return 'SM_INDIRICI_MERKEZ';
+    if (klasik === 'TRAFO_BINA' || ct.includes('BINA')) return 'SM_TRAFO_BINA';
+    if (ct.includes('KULESIZ')) return 'SM_KOSK_KULESIZ_OZEL';
+    if (ct.includes('KULE') && ct.includes('CIKIS')) return ozel ? 'SM_KOSK_KULE_CIKIS_OZEL' : 'SM_KOSK_KULE_CIKIS';
+    if (ct.includes('KULE')) return ozel ? 'SM_KOSK_KULE_OZEL' : 'SM_KOSK_KULE';
+    return 'SM_KOSK_MODULER';
+  }
+  if (klasik === 'PANO') return 'SM_BOX';
+  if (klasik === 'SDK') return ct.includes('AYD') ? 'SM_SDK_AYD' : 'SM_SDK_AG';
+  if (klasik === 'ARMATUR') {
+    if (ct.includes('LED')) return 'SM_ARMATUR_LED';
+    if (ct.includes('CIVA')) return 'SM_ARMATUR_CIVA';
+    if (ct.includes('FLORESAN') || ct.includes('FLUORESAN')) return 'SM_ARMATUR_FLORESAN';
+    return 'SM_ARMATUR_SODYUM';
+  }
+  return klasik;
+}
+
+/** Ekipmanın blok adı: SH_<aile>_<varyant> (eklentiyle aynı); demontajda türü (KESİK / SÖKÜK) ayrı simgedir. takim: '' | 'SM'. */
+export function sembolBlogu(e, takim = '') {
   const st = e.kind === 'transformer' || e.kind === 'kiosk' || e.kind === 'substation' ? { yeni: 'YENI', tasinan: 'DMM', demontaj: 'DEMONTAJ' }[e.state] || 'MEVCUT' : e.state;
-  return 'SH_' + sembolAilesi(e) + '_' + sembolVaryanti(st, e.cizimDurumu, (e.attrs || {}).dmDurum);
+  let aile = sembolAilesi(e);
+  if (takim === 'SM') { const sm = smAilesi(e); if (SEMBOLLER.semboller[sm + '_YENI']) aile = sm; }
+  return 'SH_' + aile + '_' + sembolVaryanti(st, e.cizimDurumu, (e.attrs || {}).dmDurum);
 }
 
 function blocks(w) {
   const defs = {};
   for (const [name, ilkeller] of Object.entries(SEMBOLLER.semboller)) {
     const ents = [];
+    let renk = 0;   // ["R", n]: sonraki ilkellerin rengi (0 bloğa göre, 7 zıt renk)
     for (const i of ilkeller) {
       const t = i[0];
-      if (t === 'L') ents.push(['LINE', [i[1], i[2], i[3], i[4]]]);
-      else if (t === 'C') ents.push(['CIRCLE', { 10: i[1], 20: i[2], 30: 0, 40: i[3] }]);
-      else if (t === 'P') ents.push(['PLINE', i[1], !!i[2]]);
-      else if (t === 'S') ents.push(['SOLID', i[1]]);
-      else if (t === 'D') ents.push(['DONUT', i[1]]);
-      else if (t === 'Y') ents.push(['HALFDONUT', i[1]]);
+      if (t === 'R') { renk = +i[1] || 0; continue; }
+      if (t === 'L') ents.push(['LINE', [i[1], i[2], i[3], i[4]], null, renk]);
+      else if (t === 'C') ents.push(['CIRCLE', { 10: i[1], 20: i[2], 30: 0, 40: i[3] }, null, renk]);
+      else if (t === 'P') ents.push(['PLINE', i[1], !!i[2], renk, i[3] || null]);
+      else if (t === 'S') ents.push(['SOLID', i[1], null, renk]);
+      else if (t === 'D') ents.push(['DONUT', i[1], null, renk]);
+      else if (t === 'Y') ents.push(['HALFDONUT', i[1], null, renk]);
+      else if (t === 'T') ents.push(['TEXT', { x: i[1], y: i[2], h: i[3], metin: i[4] }, null, renk]);
     }
     defs['SH_' + name] = ents;
   }
@@ -266,15 +309,17 @@ function blocks(w) {
   return Object.keys(defs);
 }
 function writeEnt(w, e) {
-  const [t, a, b] = e;
-  if (t === 'CIRCLE') { w.g(0, 'CIRCLE').g(8, '0').g(62, 0).g(10, f(a[10])).g(20, f(a[20])).g(30, 0).g(40, f(a[40])); return; }
-  if (t === 'LINE') { w.g(0, 'LINE').g(8, '0').g(62, 0).g(10, f(a[0])).g(20, f(a[1])).g(30, 0).g(11, f(a[2])).g(21, f(a[3])).g(31, 0); return; }
-  if (t === 'SOLID') { w.g(0, 'SOLID').g(8, '0').g(62, 0); a.forEach((p, i) => w.g(10 + i, f(p[0])).g(20 + i, f(p[1])).g(30 + i, 0)); return; }
-  if (t === 'PLINE') { w.g(0, 'POLYLINE').g(8, '0').g(62, 0).g(66, 1).g(10, 0).g(20, 0).g(30, 0).g(70, b ? 1 : 0); for (const p of a) w.g(0, 'VERTEX').g(8, '0').g(10, f(p[0])).g(20, f(p[1])).g(30, 0); w.g(0, 'SEQEND').g(8, '0'); return; }
+  const [t, a, b, renk = 0, cizgi = null] = e;
+  const c = renk || 0;   // 0: bloğa göre (elemanın rengi); 7: zıt renk (Şebeke-M dolu simgenin iç çizgileri)
+  if (t === 'CIRCLE') { w.g(0, 'CIRCLE').g(8, '0').g(62, c).g(10, f(a[10])).g(20, f(a[20])).g(30, 0).g(40, f(a[40])); return; }
+  if (t === 'LINE') { w.g(0, 'LINE').g(8, '0').g(62, c).g(10, f(a[0])).g(20, f(a[1])).g(30, 0).g(11, f(a[2])).g(21, f(a[3])).g(31, 0); return; }
+  if (t === 'SOLID') { w.g(0, 'SOLID').g(8, '0').g(62, c); a.forEach((p, i) => w.g(10 + i, f(p[0])).g(20 + i, f(p[1])).g(30 + i, 0)); return; }
+  if (t === 'TEXT') { w.g(0, 'TEXT').g(8, '0').g(62, c).g(10, f(a.x)).g(20, f(a.y)).g(30, 0).g(40, f(a.h)).g(1, a.metin).g(72, 1).g(11, f(a.x)).g(21, f(a.y)).g(31, 0).g(73, 2); return; }
+  if (t === 'PLINE') { w.g(0, 'POLYLINE').g(8, '0').g(62, c); if (cizgi) w.g(6, cizgi); w.g(66, 1).g(10, 0).g(20, 0).g(30, 0).g(70, b ? 1 : 0); for (const p of a) w.g(0, 'VERTEX').g(8, '0').g(10, f(p[0])).g(20, f(p[1])).g(30, 0); w.g(0, 'SEQEND').g(8, '0'); return; }
   if (t === 'DONUT' || t === 'HALFDONUT') {
     // kalın yay polyline (genişlik = r) ile dolu daire / yarım daire (eklentideki blok çizimiyle aynı)
     const r = a / 2;
-    w.g(0, 'POLYLINE').g(8, '0').g(62, 0).g(66, 1).g(10, 0).g(20, 0).g(30, 0).g(70, t === 'DONUT' ? 1 : 0).g(40, f(a)).g(41, f(a));
+    w.g(0, 'POLYLINE').g(8, '0').g(62, c).g(66, 1).g(10, 0).g(20, 0).g(30, 0).g(70, t === 'DONUT' ? 1 : 0).g(40, f(a)).g(41, f(a));
     if (t === 'DONUT') { w.g(0, 'VERTEX').g(8, '0').g(10, f(-r)).g(20, 0).g(30, 0).g(42, 1); w.g(0, 'VERTEX').g(8, '0').g(10, f(r)).g(20, 0).g(30, 0).g(42, 1); }
     else { w.g(0, 'VERTEX').g(8, '0').g(10, 0).g(20, f(r)).g(30, 0).g(42, 1); w.g(0, 'VERTEX').g(8, '0').g(10, 0).g(20, f(-r)).g(30, 0); }
     w.g(0, 'SEQEND').g(8, '0'); return;
@@ -387,7 +432,7 @@ export function buildDXF(model, opts = {}) {
   for (const e of model.equipment) {
     if (e.E == null) continue;
     let layer, color = null;
-    const block = sembolBlogu(e); // demontajda çapraz çizgi bloğun içindedir (SH_…_DM)
+    const block = sembolBlogu(e, B.takim); // demontajda çapraz çizgi bloğun içindedir (SH_…_DM); takım projenin ayarından
     if (e.kind === 'pole' || e.kind === 'lighting') {
       const volt = e.kind === 'lighting' || e.group === 'ayd' ? 'AYD' : e.volt === 'OG' ? 'OG' : 'AG';
       layer = poleLayer(e);

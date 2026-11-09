@@ -900,9 +900,13 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
   NUMARALI LED ARMATÜR…) gider.
 - **Çizim boyutları** kartı (DXF, AutoCAD dosyası ya da teslim paketi seçiliyken): simge ve yazı büyüklükleri, **Hat
   kalınlığı** (İnce çizgi · İnce · Normal · Kalın · Çok kalın; Normal'de 1/1000 baskıda OG 0,5 mm, AG 0,35 mm) ve
-  **Malzemeleri çizimde göster** (her elemanın malzemeleri simgenin yanında satır satır: `GT-60=1 (M)`). Kalın hatlar
-  DXF'te genişlikli çoklu çizgidir (düz çizilir; noktaların kotu ÖLÇÜ katmanında kalır). Ayarlar AutoCAD dosyasıyla
-  eklentiye de gider (eklentide Çizim Ayarları › Görünüm).
+  **Malzemeleri çizimde göster** (her elemanın malzemeleri simgenin yanında satır satır: `GT-60=1 (M)`) ve **Simge
+  takımı** (Klasik ya da Şebeke-M; 9.11.2026). Şebeke-M takımında her elemanın kendi işareti vardır (ENH direği,
+  köşk türleri, indirici merkez, box / SDK, armatür lamba türü) ve durum doluluktan okunur: yeni dolu, mevcut kontur,
+  sök-tak sol yarısı dolu, demontaj çift kontur + "DM" (kesik K, sökük S). Köşkün ve armatürün türü direğin / köşkün tip
+  yazısından tanınır; yazılmamışsa modüler köşk, sodyum armatür. Kalın hatlar DXF'te genişlikli çoklu çizgidir (düz
+  çizilir; noktaların kotu ÖLÇÜ katmanında kalır). Ayarlar AutoCAD dosyasıyla eklentiye de gider (eklentide Çizim
+  Ayarları › Görünüm); eklentide seçilen takım da telefona gelir. Haritadaki işaretler takımdan bağımsızdır.
 
 ### AutoCAD eklentisiyle çalışma (Şebeke-M Hakediş)
 

@@ -1292,19 +1292,24 @@
    * stildeki kalınlığın çarpanı, 0 = ince çizgi) ve malzemelerin çizimde yazılması (malzemeEtiketi). Bozuk değer
    * varsayılana döner; hepsi varsayılansa null (dosyaya yazılmaz).
    */
-  const BOYUT_VARSAYILAN = { simgeOlcegi: 1, etiketYuksekligi: 1.8, metrajYuksekligi: 1.44, elemanYaziYuksekligi: 1.8, hatKalinligi: 1, malzemeYazisi: false };
+  // simgeTakimi: '' klasik, 'SM' Şebeke-M (eklentideki Boyutlar.SimgeTakimi; 9.11.2026)
+  const BOYUT_VARSAYILAN = { simgeOlcegi: 1, etiketYuksekligi: 1.8, metrajYuksekligi: 1.44, elemanYaziYuksekligi: 1.8, hatKalinligi: 1, malzemeYazisi: false, simgeTakimi: '' };
   const BOYUT_ARALIK = { simgeOlcegi: [0.1, 20], hatKalinligi: [0, 5] };
+  const simgeTakimiDuzelt = (t) => (String(t || '').trim().toUpperCase() === 'SM' ? 'SM' : '');
   function boyutlarOku(b) {
     if (!b || typeof b !== 'object') return null;
     const r = {};
     for (const [k, d] of Object.entries(BOYUT_VARSAYILAN)) {
       if (typeof d === 'boolean') { r[k] = b[k] === true || b[k] === 'true' || b[k] === 1 || b[k] === '1'; continue; }
+      if (typeof d === 'string') { r[k] = simgeTakimiDuzelt(b[k]); continue; }
       const v = typeof b[k] === 'number' ? b[k] : sayi(b[k]);
       const [en, cok] = BOYUT_ARALIK[k] || [0.05, 50];
       r[k] = Number.isFinite(v) && v >= en && v <= cok ? v : d;
     }
-    const ayni = (k) => (typeof BOYUT_VARSAYILAN[k] === 'boolean' ? r[k] === BOYUT_VARSAYILAN[k] : Math.abs(r[k] - BOYUT_VARSAYILAN[k]) < 1e-9);
-    return Object.keys(r).every(ayni) ? null : r;
+    const ayni = (k) => (typeof BOYUT_VARSAYILAN[k] === 'number' ? Math.abs(r[k] - BOYUT_VARSAYILAN[k]) < 1e-9 : r[k] === BOYUT_VARSAYILAN[k]);
+    if (Object.keys(r).every(ayni)) return null;
+    if (!r.simgeTakimi) delete r.simgeTakimi;   // varsayılan takım dosyaya yazılmaz (eklentiyle aynı)
+    return r;
   }
 
   // ---------------------------------------------------------------- Malzeme yazısı (elemanın malzemeleri çizimde)
