@@ -501,7 +501,7 @@ Katmanlar penceresinde her satır bir katmanı açar ya da kapatır: A.G. şebek
 Harita, AutoCAD eklentisinin çizimiyle aynı görünür (renkler ve çizgiler ortak çizim stilinden; `Lejant ve katman ayrıntıları` ekranında hepsi listelenir):
 
 - **Hat renkleri**: A.G. havai yeşil, O.G. havai kırmızı, aydınlatma açık mavi, E.N.H. pembe-mor, abone turuncu kesik, müşterek mor, A.G. yeraltı kablo mavi kesik-nokta, O.G. yeraltı kablo pembe kesik-nokta, kanal gri eksen çizgisi, yatay sondaj sarı-turuncu noktalı. İleride yapılacak hat kesikli, demontaj hattı sarı, mevcut hat soluk.
-- **Metraj**: her açıklığa bir kez yazılır (havai hatta iki direk, yer altında iki bağlantı elemanı arası; elemansız kırılma köşesinde bölünmez), açıklığın en uzun parçasının üst yanında, hattın renginde. Kanal ve sondaj metrajı, içindeki kablonun metrajıyla çakışmasın diye bir satır yukarıdadır.
+- **Metraj**: her açıklığa bir kez yazılır (havai hatta iki direk, yer altında iki bağlantı elemanı arası; elemansız kırılma köşesinde bölünmez), açıklığın en uzun parçasının üst yanında, hattın renginde. Havai hatta yazılan sayı açıklığın **iletken metrajıdır** (3B uzunluk × ek pay; 13.11.2026 — AutoCAD eklentisinde iletken kaleminin metrajı ÷ adet), yer altında ve kanalda çizim uzunluğu. Kanal ve sondaj metrajı, içindeki kablonun metrajıyla çakışmasın diye bir satır yukarıdadır.
 - **Hat etiketi**: "hat no kesit" (ör. `H1 3P+R/P`; mevcutta `(…)`, ileride `<…>`), orta parçanın alt yanında. Etiketler yakınlaşınca görünür.
 - **Kanal**: yakınlaşınca eksenin iki yanında kanal genişliğinde iki kenar çizgisi görünür (genişlik girilmemişse 0,4 m). Yatay sondajla geçen kablonun altında sondajın noktalı çizgisi vardır.
 
@@ -900,7 +900,8 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
   NUMARALI LED ARMATÜR…) gider.
 - **Çizim boyutları** kartı (DXF, AutoCAD dosyası ya da teslim paketi seçiliyken): simge ve yazı büyüklükleri, **Hat
   kalınlığı** (İnce çizgi · İnce · Normal · Kalın · Çok kalın; Normal'de 1/1000 baskıda OG 0,5 mm, AG 0,35 mm) ve
-  **Malzemeleri çizimde göster** (her elemanın malzemeleri simgenin yanında satır satır: `GT-60=1 (M)`) ve **Simge
+  **Malzemeleri çizimde göster** (her elemanın malzemeleri simgenin yanında tek bir çok satırlı yazı — AutoCAD'de tek
+  nesne olarak taşınır; `GT-60=1 (M)`) ve **Simge
   takımı** (Klasik ya da Şebeke-M; 9.11.2026). Şebeke-M takımında her elemanın kendi işareti vardır (ENH direği,
   köşk türleri, indirici merkez, box / SDK, armatür lamba türü) ve durum doluluktan okunur: yeni dolu, mevcut kontur,
   sök-tak sol yarısı dolu, demontaj çift kontur + "DM" (kesik K, sökük S). Köşkün ve armatürün türü direğin / köşkün tip

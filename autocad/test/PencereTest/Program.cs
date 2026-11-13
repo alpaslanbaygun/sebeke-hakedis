@@ -344,6 +344,45 @@ namespace SebekeHakedis.PencereTest
             Esit(eskiDurum, direk.Durum, "durum geri: deneme sonunda direk eski durumunda");
             direk.DmDurum = eskiDm;
 
+            // Direk tipi sonradan değiştirilir (13.11.2026): "Tipi değiştir…" katalogdan tip seçtirir (denemede listenin ilki),
+            // direğin kendi pozu ve tipi değişir; malzemeler, durum ve hakediş kalır
+            string eskiTip = direk.Tip, eskiCins = direk.Cins;
+            int eskiSayi = direk.Kalemler.Count;
+            var ilkTip = o.Katalog.AnaTipler(direk.Tur)[0];
+            Dene("08c-malzeme-tip-degistir", () =>
+            {
+                bool ok = Pencereler.Kalemler(o, direk);
+                Esit(true, ok, "tip değiştir: Kaydet");
+                var ana = direk.Kalemler.Find(k => k.Ana);
+                Esit(ilkTip.Tanim, ana?.Tanim, "tip değiştir: direğin kendi pozu seçilen tip");
+                Esit(ilkTip.Cins, ana?.Cins, "tip değiştir: cins de seçilenden");
+                Esit(ilkTip.Katsayi, ana?.Katsayi ?? -1, "tip değiştir: katsayı (kg) yeni tipten");
+                Esit(ilkTip.Tanim, direk.Tip, "tip değiştir: elemanın tipi");
+                Esit(ilkTip.Cins, direk.Cins, "tip değiştir: elemanın cinsi");
+                Esit(eskiDurum, direk.Durum, "tip değiştir: durum değişmedi");
+                Esit(eskiSayi, direk.Kalemler.Count, "tip değiştir: malzemeler kaldı");
+            }, f =>
+            {
+                var dugme = Bul<Button>(f, b => b.Text.StartsWith("Tipi değiştir", StringComparison.Ordinal));
+                Esit(true, dugme != null, "tip değiştir: düğme var");
+                Esit(true, (f.Text ?? "").Contains(eskiTip), "tip değiştir: başlıkta eski tip");
+                dugme.PerformClick();
+                Esit(true, (f.Text ?? "").Contains(ilkTip.Tanim), "tip değiştir: başlık yeni tiple");
+                var g = Bul<DataGridView>(f, x => true);
+                int r = -1;
+                for (int i = 0; i < g.Rows.Count; i++) if (g.Rows[i].Tag is Kalem k && k.Ana) r = i;
+                Esit(MalzemeYazimi.Duzelt(ilkTip.Tanim), Convert.ToString(g.Rows[r].Cells[1].Value), "tip değiştir: ilk satırda yeni tip");
+                Resim(f, "sonra");
+            });
+            // Eski tipe geri (sonraki denemeler eski tipi bekler)
+            {
+                var ana = direk.Kalemler.Find(k => k.Ana);
+                var eskiKalem = o.Katalog.Bul(eskiCins, eskiTip);
+                if (ana != null && eskiKalem != null) { ana.Cins = eskiKalem.Cins; ana.Tanim = eskiKalem.Tanim; ana.Birim = eskiKalem.Birim; ana.Katsayi = eskiKalem.Katsayi; }
+                direk.Tip = eskiTip;
+                direk.Cins = eskiCins;
+            }
+
             var hat = o.Proje.Hatlar[0];
             Dene("09-malzeme-hat", () =>
             {

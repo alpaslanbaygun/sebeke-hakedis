@@ -36,6 +36,12 @@ namespace SebekeHakedis.Cekirdek
         /// (CizimStili.KaziBosluk).
         /// </summary>
         public bool KaziMetraji;
+        /// <summary>
+        /// Metraj yazısında gösterilecek toplam uzunluk (m): hatta iletken kaleminin metrajı ÷ adet, kanal ve sondajda kendi
+        /// pozunun metrajı (13.11.2026: Malzemeler'de değiştirilen metraj yazıya da gider). 0: çizim uzunluğu yazılır.
+        /// Birden çok açıklıkta her açıklığa çizim uzunluğundaki payı kadar düşer.
+        /// </summary>
+        public double MetrajUzunlugu;
         /// <summary>Çizginin iki yanına çizilecek kenarların arası (m; kanal). 0: kenar yok.</summary>
         public double KenarGenisligi;
         /// <summary>

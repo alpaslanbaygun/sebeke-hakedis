@@ -2,7 +2,7 @@
 // Eklentideki karşılıkları: CizimStili (renkler), CizimYazici.ParcaMetrajlariYaz + Geometri.Acikliklar (metraj).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildDXF, spanTexts, yaziKonumu, yaziGenisligi, yaziSigdir, enUzunParca, boyutlar } from '../src/export/dxf.js';
+import { buildDXF, spanTexts, yaziKonumu, yaziGenisligi, yaziSigdir, enUzunParca, boyutlar, aciklikMetraji, malzemeMetni } from '../src/export/dxf.js';
 import STIL from '../src/ortak/cizim-stili.js';
 
 /** DXF metnini (grup kodu, değer) çiftlerine ayırıp varlıklara böler. */
@@ -181,4 +181,46 @@ test('D5 · kanal kenarları: eksenin iki yanında genişliğin yarısı kadar, 
   const i = v.indexOf(kenarlar[0]);
   const koseler = v.slice(i + 1, i + 3).map((x) => [+x.g['10'][0], +x.g['20'][0]]);
   assert.deepEqual(koseler, [[500000, 4400000.25], [500040, 4400000.25]]);
+});
+
+test('D6 · malzeme yazısı tek MTEXT (13.11.2026), havai açıklık metrajı iletken metrajı (3B × ek pay), yer altında çizim uzunluğu', () => {
+  const points = [{ id: 'p1', no: '1', E: 0, N: 0, H: 100 }, { id: 'p2', no: '2', E: 30, N: 0, H: 140 }, { id: 'p3', no: '3', E: 60, N: 0, H: 140 }];
+  const coords = points.map((p) => ({ id: p.id, E: p.E, N: p.N, H: p.H }));
+  const model = {
+    project: { name: 'Deneme', conductorPayPct: 2, sebeke: { boyutlar: { malzemeYazisi: true } } }, crs: { label: 'TM30' }, cat: null, points,
+    equipment: [
+      { id: 'e1', no: 'SC1', kind: 'pole', group: 'sehir', pointId: 'p1', E: 0, N: 0, H: 100, state: 'YENI', attrs: {}, typeName: 'G-8I' },
+      { id: 'e2', no: 'SC2', kind: 'pole', group: 'sehir', pointId: 'p2', E: 30, N: 0, H: 140, state: 'YENI', attrs: {} },
+      { id: 'e3', no: 'SC3', kind: 'pole', group: 'sehir', pointId: 'p3', E: 60, N: 0, H: 140, state: 'YENI', attrs: {} },
+    ],
+    lines: [
+      { id: 'l1', no: 'H1', lineType: 'AG', install: 'havai', state: 'YENI', label: '3x50 Alm.', coords, payPct: null },
+      { id: 'l2', no: 'H2', lineType: 'AG', install: 'yeralti', state: 'YENI', label: '3x(1x240/25) Xlpe', coords: coords.slice(1), payPct: 5 },
+    ],
+  };
+  const uzun = 'Çok uzun malzeme satırı {özel} \\ '.repeat(12);
+  const { text, stats } = buildDXF(model, { malzemeSatirlari: { e1: ['GT-60=1 (M)', 'B 95 İzolatör Demiri=4 (M)', uzun] } });
+  const v = varliklar(text);
+  const mt = v.filter((x) => x.tur === 'MTEXT');
+  assert.equal(mt.length, 1, 'bir elemanın malzemeleri tek MTEXT');
+  assert.equal(stats.materials, 3);
+  assert.equal(mt[0].g['62'][0], '7', 'beyaz / siyah');
+  assert.equal(mt[0].g['71'][0], '1', 'sol üst köşeden');
+  assert.equal(+mt[0].g['44'][0], 0.9, 'satır aralığı 1,5 yazı yüksekliği (tam: 0,9 × 5/3)');
+  const metin = (mt[0].g['3'] || []).join('') + mt[0].g['1'][0];
+  assert.equal(metin, malzemeMetni(['GT-60=1 (M)', 'B 95 İzolatör Demiri=4 (M)', uzun]), '250 karakterlik parçalar birleşince metin aynı');
+  assert.ok(metin.startsWith('GT-60=1 (M)\\PB 95'), 'satırlar \\P ile');
+  assert.ok(metin.includes('\\{özel\\}') && metin.includes('\\\\'), 'özel karakterler kaçırılmış');
+  assert.ok((mt[0].g['3'] || []).every((x) => x.length === 250) && mt[0].g['1'][0].length <= 250, 'parça boyları');
+  assert.equal(+mt[0].g['40'][0], 1.8 * 0.7, 'yükseklik eleman yazısının 0,7\'si');
+  assert.equal(v.filter((x) => x.tur === 'TEXT' && /^GT-60/.test(x.g['1'][0])).length, 0, 'satır satır TEXT yok');
+  // Havai açıklıklar: 3B uzunluk (30 yatay + 40 kot = 50) × 1,02; ikinci açıklık 30 × 1,02; yer altı: çizim uzunluğu 30
+  const yazilar = v.filter((x) => x.tur === 'TEXT').map((x) => x.g['1'][0]);
+  assert.ok(yazilar.includes('51.00'), 'ilk açıklık 50 m × 1,02: ' + yazilar.join(','));
+  assert.ok(yazilar.includes('30.60'), 'ikinci açıklık 30 × 1,02');
+  assert.ok(yazilar.includes('30.00'), 'yer altı kablo: çizim uzunluğu');
+  const sp = spanTexts(coords, () => true);
+  assert.equal(sp[0].length3D, 50);
+  assert.ok(Math.abs(aciklikMetraji({ install: 'havai', payPct: 10 }, sp[0], 2) - 55) < 1e-9, 'hattın kendi payı projeninkinden önce');
+  assert.equal(aciklikMetraji({ install: 'havai' }, { length: 30 }, 0), 30, '3B uzunluk yoksa 2B');
 });

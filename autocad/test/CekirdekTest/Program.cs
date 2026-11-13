@@ -1208,6 +1208,17 @@ namespace SebekeHakedis.Test
             Esit(true, NesneYazici.Kanal(kanal, "SC", null).KaziMetraji, "kanal metrajı kazı metrajı");
             Esit(true, NesneYazici.Sondaj(new Sondaj { Id = "S1", Durum = "M", Kose = { new[] { 0.0, 0.0 }, new[] { 8.0, 0.0 } } }, "SC", null).KaziMetraji, "sondaj metrajı kazı metrajı");
             Esit(false, NesneYazici.Hat(new Hat { Id = "H2", Tur = "AG_YERALTI", Durum = "M", Kose = { new[] { 0.0, 0.0 }, new[] { 5.0, 0.0 } } }, "SC", null).KaziMetraji, "hat metrajı kazı metrajı değil");
+            // Metraj yazısı iletken metrajını gösterir (13.11.2026): HAT kaleminin miktarı ÷ adet; iletkeni olmayan hatta 0 (çizim uzunluğu)
+            var mh = new Hat { Id = "H3", Tur = "AG_HAVAI", Durum = "M", CizimUzunlugu = 98.41, Kose = { new[] { 0.0, 0.0 }, new[] { 98.41, 0.0 } } };
+            Esit(0.0, NesneYazici.Hat(mh, "SC", null).MetrajUzunlugu, "metraj yazısı: iletkensiz hatta çizim uzunluğu (0)");
+            mh.Kalemler.Add(new Kalem { Cins = "AG_ALPEK", Tanim = "3X50/16+70 ALPEK", Aciklama = "3x(3X50/16+70 ALPEK)", Durum = "M", Miktar = 304.2, Birim = "mt/mt", Katsayi = 1, Toplam = 304.2, Kaynak = "HAT" });
+            Esit(101.4, NesneYazici.Hat(mh, "SC", null).MetrajUzunlugu, "metraj yazısı: iletken metrajı ÷ adet (304,2 / 3)");
+            mh.Kalemler[0].Miktar = 300;
+            Esit(100.0, NesneYazici.Hat(mh, "SC", null).MetrajUzunlugu, "metraj yazısı: Malzemeler'de değişen metraj yazıya gider");
+            var mk = new Kanal { Id = "K9", Kod = 12, Zemin = "TOPRAK", Durum = "M", Kose = { new[] { 0.0, 0.0 }, new[] { 40.0, 0.0 } }, AltGenislik = 40, UstGenislik = 60, Derinlik = 80 };
+            mk.Kalemler.Add(new Kalem { Cins = "12", Tanim = "TOPRAK", Durum = "M", Miktar = 42.5, Birim = "mt/m³", Katsayi = 1, Ana = true, Kaynak = "NIT" });
+            Esit(42.5, NesneYazici.Kanal(mk, "SC", null).MetrajUzunlugu, "metraj yazısı: kanalda kendi pozunun metrajı");
+            Esit(0.0, NesneYazici.Sondaj(new Sondaj { Id = "S2", Durum = "M", Kose = { new[] { 0.0, 0.0 }, new[] { 8.0, 0.0 } } }, "SC", null).MetrajUzunlugu, "metraj yazısı: pozu olmayan sondajda çizim uzunluğu");
         }
 
         private static string Konum2(double a, double b) =>
