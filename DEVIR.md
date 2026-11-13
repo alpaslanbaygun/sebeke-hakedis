@@ -77,6 +77,28 @@ cins / tanım / birim / katsayı / tarife değişir, kaydedince `el.Cins / Tip` 
 Denemeler: CekirdekTest (MetrajUzunlugu), PencereTest 08c, `tests/dxf.test.mjs` D6. Belgeler: KULLANIM (malzeme yazısı,
 yazı rengi, metraj yazısı, tip değiştirme), telefon kılavuzu, VERI-MODELI (`SH_MLZ`), README.
 
+13.11 öğleden sonra (`metraj-cins-sayfalari` dalı, `duzeltmeler-13-11` üstüne; PR E): **6 Birleşik Metraj: cins başına
+ayrı sayfa** (kullanıcı kararı "Cins başına ayrı sayfa"; "ek" kalemi yok). Şablonun DİREK METRAJI'nda temsil edilmeyen
+cinsten direkler (`cinsTemsilEdiliyor`: TİP satırındaki tip o cinsin katalogdaki ana pozu ya da eşleme `tip` takma adı;
+`metraj-sablon.json › anaSayfaAileleri` = `ENH_DEMİR_GLV|SW`) **DİREK METRAJI'nın kopyası** olan sayfaya yazılır
+(`bmAile` cins + ENH iletken eki; `bmKopyaAdi` "DİREK AG BETON", "DİREK ENH GALV. CIVATALI", "DİREK ENH GALV. KAYNAKLI
+RAVEN", 31 karakter; başlık hücreleri kopyaya da; tipleri KATSAYILAR listelerine `listeyeEkle`). Yeni sütunların KOD'u
+şablonun kendi dizisinden (`kodUret`: Y175, D120, DM072, A017), örnek sütun ana sayfada (`ornekSayfa`), grup başlığı
+"MALZEMELER / … DİREKLER / İLETKENLER / KABLOLAR / KANALLAR". MALZ. LİSTESİ'nde EK KALEMLER bölümü yerine sayfa başına
+bölüm: başlık satırı (B = sayfa adı, A = COUNTIF bayrağı) + kalem satırları (şablonun formülleri; kopya sayfada açık
+aralık `'DİREK AG BETON'!$G$10:$ZZ$10`), eski EK KOD / miktarları silinir, biçim örnek satırlardan (`satirBicimKopyala`).
+Şablon tanımına `adlar`, MALZ `toplamSutunu / bayrakSutunu / kalemOrnekSatiri / grupOrnekSatiri / ekBaslikSatiri`;
+plana `kopyaSayfalar`, `malzSatirlari`, `yeniSutunlar[].ornekSayfa`, `ozet.kopyaSayfa`; hücre `null` = boşalt. Xlsm:
+`sayfaKopyala` (rels'e bağlı parçalar atılır, birleşik hücreler kaldırılır, `kopyasi` sırası), `sutunlariBosalt`,
+`hucreSil`, `satirBicimKopyala`, `stilKopyala(…, kaynakSayfa)`. Poz araması boşluk / harf farkını da aşar (telefon
+`planAyari › poz` işlevi, eklenti `Katalog.Bul`). Eklenti: `BirlesikMetraj.cs` (Hedef, Aile, KopyaAdi, SayfaRef…),
+`XlsmDosyasi.cs` (SayfaKopyala, SutunlariBosalt, HucreSil, SatirBicimKopyala, StilKopyala), sonuç penceresi "AÇILAN
+DİREK SAYFALARI". Ortak deneme: proje.sebeke.json'a SC11–SC14 (AG beton 9,3/3 yeni, 9,3/8 kesik DM, ENH cıvatalı BER-8,
+ENH kaynaklı G-T-12 (rv)) → 17 yeni sütun, 3 kopya sayfa, 23 MALZ satırı; iki platform birebir (CekirdekTest,
+BM4–BM10); LibreOffice yeniden hesabında kopya sayfa toplamları, MALZ. LİSTESİ miktarları ve denetim hücreleri (I3 / J3
+= 0) doğru. `SH_BM_CIKTI=<yol>` eklentinin dosyasını kaydeder. Belgeler: ortak/BIRLESIK-METRAJ.md, KULLANIM, telefon
+kılavuzu, README.
+
 9.11 öğleden sonra (`simge-takimi` dalı, `hesap-metraj` üstüne; PR C): **#89 Şebeke-M simge takımı** — kullanıcının
 SM_* SVG / DXF tasarımı seçilebilir ikinci takım olarak (kararlar: ikinci takım, çizim başına seçilir; demontajda DM
 simgesine K / S harfi; köşk türü tipten, yoksa modüler köşk). `semboller.json` sürüm 3: 23 `SM_` ailesi (`aileler.*.takim`,
@@ -420,9 +442,9 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
     düzeltilen eşleme tablosu `birim-fiyat-eslesme.json`), keşif raporu üç bölüm (montaj: malzeme + montaj; demontaj: yalnız
     demontaj bedeli; demontajdan montaj) poz / cins / birim / miktar / birim fiyatlar / tutar ve toplamlar, Excel'e (eklenti
     Proje Özeti › Keşif…, telefon Dışa Aktar). HTML'deki firma adı hiçbir yere yazılmaz.
-  - **6 Birleşik Metraj: cins başına ayrı sayfa** — şablonda olmayan direk cinsleri (beton, ENH cıvatalı…) ve iletkenler
-    (Raven…) EK sütunu yerine DİREK METRAJI / İLETKEN METRAJI biçiminde kopya sayfalarda ("DİREK METRAJI - BETON"…),
-    malzemeler normal sütun, MALZ. LİSTESİ'ne normal satır (EK KALEMLER kullanılmaz). Kural telefonla ortak.
+  - ~~6 Birleşik Metraj: cins başına ayrı sayfa~~ — 13.11 öğleden sonra yapıldı (PR E, §2). AutoCAD'de denemesi: beton
+    ve cıvatalı ENH direkli bir projede Birleşik Metraj… → kopya sayfalar, MALZ. LİSTESİ bölümleri, Excel'de yeniden hesap
+    (makro sütun gizle / göster kopya sayfada da çalışıyor mu?).
   - **7 Önerilen malzeme** — telefonun reçete kuralları (`telefon/tools/build_seed.mjs › rules`, direk grubu + rol + iletken
     sınıfı) ortak dosyaya alınıp eklentiye: direk konunca ve Malzemeler penceresinde "Önerilen malzemeler" listesi
     (rol bağlı hatlardan: taşıyıcı / durdurucu / köşe / nihayet; poz → eski program kalemi `volt-eslesme.json` ile),

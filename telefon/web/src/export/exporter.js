@@ -182,7 +182,7 @@ export async function birlesikMetrajDosyasi(ps, base, ayar) {
     hakedisNo: ayar.hakedisNo != null ? ayar.hakedisNo : ''
   }, { katsayilar: KATSAYILAR, eslesme: ESLESME, kalemler: KALEMLER });
   const { bytes, plan } = await birlesikMetrajUret(p, sablon, a);
-  return { name: base + '_birlesik_metraj.xlsm', mime: 'application/vnd.ms-excel.sheet.macroEnabled.12', data: bytes, uyarilar: plan.uyarilar, metraj: { ozet: plan.ozet, yeniSutunlar: plan.yeniSutunlar.map((y) => ({ sayfa: y.sayfa, kod: y.kod, ad: y.tip || y.ad, birim: y.birim })), fazla: plan.fazla } };
+  return { name: base + '_birlesik_metraj.xlsm', mime: 'application/vnd.ms-excel.sheet.macroEnabled.12', data: bytes, uyarilar: plan.uyarilar, metraj: { ozet: plan.ozet, kopyaSayfalar: plan.kopyaSayfalar.map((k) => ({ ad: k.ad, aile: k.aile })), yeniSutunlar: plan.yeniSutunlar.map((y) => ({ sayfa: y.sayfa, kod: y.kod, ad: y.tip || y.ad, birim: y.birim })), fazla: plan.fazla } };
 }
 
 async function deliveryPackage(ps, model, base, opts) {

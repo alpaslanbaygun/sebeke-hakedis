@@ -12,6 +12,15 @@
   "toplamSatiri": 316,
   "malzSatiri": null,
   "ilkKodSutunu": 7,
+  "adlar": {
+   "KOD": "$G$10:$ZZ$10",
+   "TIP": "$G$11:$ZZ$11",
+   "POZ": "$G$14:$ZZ$14",
+   "AD": "$G$15:$ZZ$15",
+   "SEC": "$G$16:$ZZ$16",
+   "BIRIM": "$G$17:$ZZ$17",
+   "TOPLAM": "$G$316:$ZZ$316"
+  },
   "bayrakSatirlari": [
    12
   ],
@@ -3319,6 +3328,17 @@
   "toplamSatiri": 116,
   "malzSatiri": 120,
   "ilkKodSutunu": 18,
+  "adlar": {
+   "KOD": "$R$7:$AAA$7",
+   "TIP": "$R$8:$AAA$8",
+   "DURUM": "$R$6:$AAA$6",
+   "POZ": "$R$12:$AAA$12",
+   "AD": "$R$13:$AAA$13",
+   "SEC": "$R$14:$AAA$14",
+   "BIRIM": "$R$15:$AAA$15",
+   "MALZ": "$R$120:$AAA$120",
+   "TOPLAM": "$R$116:$AAA$116"
+  },
   "bayrakSatirlari": [
    9,
    10
@@ -3955,6 +3975,14 @@
   "toplamSatiri": 116,
   "malzSatiri": null,
   "ilkKodSutunu": 15,
+  "adlar": {
+   "KOD": "$O$9:$ZZ$9",
+   "POZ": "$O$12:$ZZ$12",
+   "AD": "$O$13:$ZZ$13",
+   "SEC": "$O$14:$ZZ$14",
+   "BIRIM": "$O$15:$ZZ$15",
+   "TOPLAM": "$O$116:$ZZ$116"
+  },
   "bayrakSatirlari": [
    10
   ],
@@ -5077,6 +5105,11 @@
   "birimSutunu": "D",
   "teminSutunu": "E",
   "miktarSutunu": "H",
+  "toplamSutunu": "F",
+  "bayrakSutunu": "A",
+  "kalemOrnekSatiri": 7,
+  "grupOrnekSatiri": 6,
+  "ekBaslikSatiri": 471,
   "ekSatirlari": [
    {
     "satir": 472,

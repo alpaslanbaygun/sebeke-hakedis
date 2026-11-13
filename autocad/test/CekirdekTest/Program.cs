@@ -412,15 +412,22 @@ namespace SebekeHakedis.Test
             var beklenenPlan = Json.Oku(File.ReadAllText(Path.Combine(klasor, "beklenen-plan.json"), Encoding.UTF8));
             fark = JsonFark(beklenenPlan, plan.JsonYap(), "plan");
             Esit("", fark, "Birleşik Metraj ortak: doldurma planı telefonla aynı" + (fark.Length > 0 ? " — " + fark : ""));
-            Esit(8.0, (double)plan.Ozet["eleman"], "Birleşik Metraj: 8 eleman satırı (öteki bölge ve İLERİDE dışarıda)");
+            Esit(12.0, (double)plan.Ozet["eleman"], "Birleşik Metraj: 12 eleman satırı (öteki bölge ve İLERİDE dışarıda)");
+            Esit(3.0, (double)plan.Ozet["kopyaSayfa"], "Birleşik Metraj: temsil edilmeyen 3 cins için kopya sayfa (AG beton, ENH cıvatalı, ENH kaynaklı raven)");
+            Esit("DİREK AG BETON", plan.KopyaSayfalar[0].Ad, "Birleşik Metraj: kopya sayfa adı cinsin okunur adıyla");
+            Esit("DİREK ENH GALV. KAYNAKLI RAVEN", plan.KopyaSayfalar[2].Ad, "Birleşik Metraj: ENH kopyası iletken ekiyle ayrılır (SW ana sayfada)");
             Esit(6.0, (double)plan.Ozet["iletkenSatiri"], "Birleşik Metraj: 6 açıklık satırı (sök-tak iki satır)");
-            Esit("YE003", plan.YeniSutunlar[2].Kod, "Birleşik Metraj: yeni direk tipi sütunu blok önekli EK koduyla");
+            Esit("Y177", plan.YeniSutunlar[2].Kod, "Birleşik Metraj: yeni direk tipi sütunu şablonun KOD dizisiyle (EK kodu yok)");
+            Esit("DİREK AG BETON", plan.YeniSutunlar[5].Sayfa, "Birleşik Metraj: beton direğin tipi kopya sayfada açılır");
+            Esit(23.0, (double)plan.MalzSatirlari.Count, "Birleşik Metraj: MALZ. LİSTESİ'ne 6 bölüm başlığı + 17 kalem satırı");
             Esit(0.0, (double)plan.Uyarilar.Count, "Birleşik Metraj: uyarı yok");
 
             sw.Restart();
             BirlesikMetraj.PlanUygula(x, sablon, plan);
             byte[] cikti = x.Yaz();
             Console.WriteLine("    dosyaya yazma: " + sw.ElapsedMilliseconds + " ms, " + cikti.Length + " bayt");
+            var kayit = Environment.GetEnvironmentVariable("SH_BM_CIKTI");   // elle inceleme / LibreOffice hesabı için dosyayı kaydet
+            if (!string.IsNullOrEmpty(kayit)) File.WriteAllBytes(kayit, cikti);
             var y = XlsmDosyasi.Ac(cikti);
             var d = y.Sayfa("DİREK METRAJI");
             Esit("SC1", d.Metin("A19"), "Birleşik Metraj yazma: direk no");
@@ -428,7 +435,7 @@ namespace SebekeHakedis.Test
             Esit("G-K1 (K)", d.Metin("D20"), "Birleşik Metraj yazma: demontaj direk tipi (Kesik)");
             Esit("G-10I''", d.Metin("E21"), "Birleşik Metraj yazma: demontajdan montaj tipi şablonun yazımıyla (iki kesme)");
             Esit("1", d.Metin("JS18"), "Birleşik Metraj yazma: yeni sütuna box adedi");
-            Esit("YE003", d.Metin("JU10"), "Birleşik Metraj yazma: yeni sütunun KOD'u");
+            Esit("Y177", d.Metin("JU10"), "Birleşik Metraj yazma: yeni sütunun KOD'u");
             Esit("G-K5", d.Metin("JU11"), "Birleşik Metraj yazma: yeni sütunun TİP'i");
             Esit("IF(AND($C18<>\"\",$C18=JU$11),1,0)", d.Formul("JU18"), "Birleşik Metraj yazma: yeni direk sütununa veri formülü örnekten kaydırılır");
             Esit("SUM(JU18:JU315)", d.Formul("JU316"), "Birleşik Metraj yazma: yeni sütunun toplam formülü");
@@ -440,13 +447,26 @@ namespace SebekeHakedis.Test
             Esit(true, (i.Formul("BN16") ?? "").Contains("BN$6") && (i.Formul("BN16") ?? "").Contains("BN$8"), "Birleşik Metraj yazma: İLETKEN veri formülü yeni sütuna kaydırılır");
             Esit("MAX(0,BN118-BN119)", i.Formul("BN120"), "Birleşik Metraj yazma: İLETKEN alt satır formülleri (MALZ. LİSTESİNE AKTARILAN)");
             var m = y.Sayfa("MALZ. LİSTESİ");
-            Esit("YE001", m.Metin("G472"), "Birleşik Metraj yazma: MALZ. LİSTESİ EK satırının kodu yeni sütunla aynı");
-            Esit("IF($I477=\"\",0,N(INDEX(IM_MALZ_SATIRI,$I477)))", m.Formul("H477"), "Birleşik Metraj yazma: İLETKEN EK satırı MALZ satırından okur");
-            var k = y.Sayfa("KATSAYILAR");
+            Esit("DİREK METRAJI", m.Metin("B471"), "Birleşik Metraj yazma: MALZ. LİSTESİ bölüm başlığı sayfa adıyla (EK KALEMLER yerine)");
+            Esit("Y175", m.Metin("G472"), "Birleşik Metraj yazma: MALZ. LİSTESİ kalem satırının kodu yeni sütunla aynı");
+            Esit("IF($I489=\"\",0,N(INDEX(IM_MALZ_SATIRI,$I489)))", m.Formul("H489"), "Birleşik Metraj yazma: İLETKEN satırı MALZ satırından okur");
+            Esit("IFERROR(MATCH($G478,'DİREK AG BETON'!$G$10:$ZZ$10,0),\"\")", m.Formul("I478"), "Birleşik Metraj yazma: kopya sayfanın kalemi açık aralıkla okunur");
+            Esit("", m.Metin("G490") == "A017" ? "" : m.Metin("G490"), "Birleşik Metraj yazma: AKTARIM sütununun kodu listede");
+            var kb = y.Sayfa("DİREK AG BETON");
+            Esit("SC11", kb.Metin("A18"), "Birleşik Metraj yazma: kopya sayfada beton direk");
+            Esit("9,3/3", kb.Metin("C18"), "Birleşik Metraj yazma: kopya sayfada yeni direk tipi");
+            Esit("Y180", kb.Metin("G10"), "Birleşik Metraj yazma: kopya sayfanın ilk sütunu şablonun KOD dizisinden");
+            Esit("", kb.Metin("L10"), "Birleşik Metraj yazma: kopya sayfada kaynağın KOD sütunları boş");
+            Esit("IF(AND($C18<>\"\",$C18=G$11),1,0)", kb.Formul("G18"), "Birleşik Metraj yazma: kopya sayfada veri formülü ana sayfanın örneğinden");
+            Esit("DENEME", kb.Metin("C3"), "Birleşik Metraj yazma: kopya sayfada başlık (il)");
+            Esit("9,3/3", k0(y).Metin("AD23"), "Birleşik Metraj yazma: kopya sayfanın direk tipi KATSAYILAR listesine eklenir");
+            var k = k0(y);
             Esit("OXLIP", k.Metin("AN11"), "Birleşik Metraj yazma: DM bloğundaki yeni tel iletken kodu listesine eklenir");
             Esit("4 ÇIKIŞLI H.T", k.Metin("AS4"), "Birleşik Metraj yazma: box cinsi listeye eklenir");
             Esit(true, y.Dosya("xl/vbaProject.bin") != null && y.Dosya("xl/calcChain.xml") == null && y.Workbook.Contains("fullCalcOnLoad=\"1\""), "Birleşik Metraj yazma: makro korunur, calcChain silinir, açılışta yeniden hesap");
         }
+
+        private static XlsmSayfa k0(XlsmDosyasi y) => y.Sayfa("KATSAYILAR");
 
         /// <summary>İki JSON değerinin ilk farkı ("" = aynı). Sayılar 1e-6 payla, nesnelerde anahtar sırası önemsiz.</summary>
         private static string JsonFark(object a, object b, string yol)

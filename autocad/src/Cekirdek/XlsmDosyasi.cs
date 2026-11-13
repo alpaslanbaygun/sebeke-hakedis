@@ -22,7 +22,7 @@ namespace SebekeHakedis.Cekirdek
     /// </summary>
     public sealed class XlsmDosyasi
     {
-        public sealed class SayfaKaydi { public string Ad, Yol, SheetId, Durum; }
+        public sealed class SayfaKaydi { public string Ad, Yol, SheetId, Durum; public string Kopyasi; }
         public sealed class TanimliAdBilgisi { public string Sayfa; public int BasSutun, BasSatir, BitSutun, BitSatir; }
 
         private readonly Dictionary<string, byte[]> _dosyalar;
@@ -158,6 +158,51 @@ namespace SebekeHakedis.Cekirdek
             Sayfalar.Add(new SayfaKaydi { Ad = ad, Yol = yol, SheetId = sheetId.ToString(CultureInfo.InvariantCulture), Durum = "visible" });
             Rel[rid] = yol.Substring(3);
             return Sayfa(ad);
+        }
+
+        /// <summary>
+        /// Sayfayı kopyalar (biçim, formüller, değerler, birleşik hücreler, sütun genişlikleri, koruma); yorum, çizim, yazıcı
+        /// ayarı ve VBA kod adı gibi bağlı parçalar kopyaya alınmaz. Yeni sayfa kaynağın (ve önceki kopyalarının) hemen sağına
+        /// konur. Telefondaki xlsm.js › sayfaKopyala.
+        /// </summary>
+        public XlsmSayfa SayfaKopyala(string kaynakAd, string yeniAd)
+        {
+            SayfaKaydi k = null;
+            foreach (var x in Sayfalar) if (x.Ad == kaynakAd) { k = x; break; }
+            if (k == null) throw new InvalidDataException("Sayfa yok: " + kaynakAd);
+            foreach (var x in Sayfalar) if (x.Ad == yeniAd) return Sayfa(yeniAd);
+            var kaynak = Sayfa(kaynakAd);
+            string xml = kaynak.Degisti ? kaynak.Xml() : Dec(_dosyalar[k.Yol]);
+            xml = Regex.Replace(xml, "\\s+xr:uid=\"[^\"]*\"", "");
+            xml = Regex.Replace(xml, "\\s+codeName=\"[^\"]*\"", "");
+            xml = Regex.Replace(xml, "\\s+tabSelected=\"1\"", "");
+            foreach (var desen in new[] { @"<legacyDrawing\b[^>]*/>", @"<legacyDrawingHF\b[^>]*/>", @"<drawing\b[^>]*/>", @"<picture\b[^>]*/>", @"<tableParts\b[^>]*>[\s\S]*?</tableParts>", @"<tableParts\b[^>]*/>",
+                                         @"<oleObjects\b[^>]*>[\s\S]*?</oleObjects>", @"<controls\b[^>]*>[\s\S]*?</controls>", @"<hyperlinks\b[^>]*>[\s\S]*?</hyperlinks>" })
+                xml = Regex.Replace(xml, desen, "");
+            xml = Regex.Replace(xml, "(<pageSetup\\b[^>]*?)\\s+r:id=\"[^\"]*\"", "$1");
+            int n = Sayfalar.Count + 1;
+            string yol = "xl/worksheets/sheet" + n + ".xml";
+            while (_dosyalar.ContainsKey(yol)) { n++; yol = "xl/worksheets/sheet" + n + ".xml"; }
+            string rid = "rIdSM" + n;
+            int sheetId = 0;
+            foreach (var x in Sayfalar) { int v; if (int.TryParse(x.SheetId ?? "", out v) && v > sheetId) sheetId = v; }
+            sheetId++;
+            _dosyalar[yol] = Enc(xml);
+            string giris = "<sheet name=\"" + XmlKac(yeniAd) + "\" sheetId=\"" + sheetId + "\" r:id=\"" + rid + "\"/>";
+            SayfaKaydi onceki = k;
+            foreach (var x in Sayfalar) if (x.Kopyasi == kaynakAd) onceki = x;
+            var oncekiGiris = new Regex("<sheet\\b[^>]*name=\"" + Regex.Escape(XmlKac(onceki.Ad)) + "\"[^>]*/>");
+            Workbook = oncekiGiris.IsMatch(Workbook) ? oncekiGiris.Replace(Workbook, m => m.Value + giris, 1) : Workbook.Replace("</sheets>", giris + "</sheets>");
+            const string relYol = "xl/_rels/workbook.xml.rels";
+            _dosyalar[relYol] = Enc(Dec(_dosyalar[relYol]).Replace("</Relationships>", "<Relationship Id=\"" + rid + "\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"" + yol.Substring(3) + "\"/></Relationships>"));
+            string ct = Dec(_dosyalar["[Content_Types].xml"]);
+            if (ct.IndexOf("PartName=\"/" + yol + "\"", StringComparison.Ordinal) < 0)
+                ct = ct.Replace("</Types>", "<Override PartName=\"/" + yol + "\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/></Types>");
+            _dosyalar["[Content_Types].xml"] = Enc(ct);
+            var yeni = new SayfaKaydi { Ad = yeniAd, Yol = yol, SheetId = sheetId.ToString(CultureInfo.InvariantCulture), Durum = "visible", Kopyasi = kaynakAd };
+            Sayfalar.Insert(Sayfalar.IndexOf(onceki) + 1, yeni);
+            Rel[rid] = yol.Substring(3);
+            return Sayfa(yeniAd);
         }
 
         /// <summary>Paketi yazar: değişen sayfalar, workbook (fullCalcOnLoad), calcChain silinir.</summary>
@@ -539,10 +584,65 @@ namespace SebekeHakedis.Cekirdek
 
         public void Temizle(string ref_) { var h = _Hazirla(ref_); h.Ic = ""; }
 
-        /// <summary>Hücrenin stilini başka hücreden alır (yeni sütun başlıkları için).</summary>
-        public void StilKopyala(string kaynakRef, string hedefRef)
+        /// <summary>Sayfanın sheetData dışındaki XML'i (deneme ve denetim için).</summary>
+        public string On => _on;
+        public string Son => _son;
+
+        /// <summary>Hücreyi bütünüyle kaldırır (stil de gider).</summary>
+        public void HucreSil(string ref_)
         {
-            var k = HucreAl(kaynakRef);
+            int sutun, satir; XlsmDosyasi.HucreCoz(ref_, out sutun, out satir);
+            Satir s;
+            if (Satirlar.TryGetValue(satir, out s) && s.Hucreler.Remove(sutun)) Degisti = true;
+        }
+
+        /// <summary>Satırın niteliklerini (yükseklik…) ve hücre stillerini (sütun sütun) örnek satırdan alır; değerlere dokunmaz.</summary>
+        public void SatirBicimKopyala(int kaynakSatir, int hedefSatir, int sonSutun = 0)
+        {
+            Satir k;
+            if (!Satirlar.TryGetValue(kaynakSatir, out k)) return;
+            var h = _Satir(hedefSatir);
+            h.Nitelik = k.Nitelik;
+            foreach (var kv in k.Hucreler)
+            {
+                if (sonSutun > 0 && kv.Key > sonSutun) continue;
+                var stil = XlsmDosyasi.Grup(kv.Value.Nitelik, "\\bs=\"(\\d+)\"");
+                Hucre hh;
+                if (!h.Hucreler.TryGetValue(kv.Key, out hh)) { hh = new Hucre(); h.Hucreler[kv.Key] = hh; }
+                hh.Nitelik = Regex.Replace(hh.Nitelik, "\\bs=\"\\d+\"", "").Trim();
+                if (stil != null) hh.Nitelik = ("s=\"" + stil + "\" " + hh.Nitelik).Trim();
+            }
+            Degisti = true;
+        }
+
+        /// <summary>ilkSutun'dan sağdaki bütün hücreleri (verilen satır aralığında) kaldırır; o sütunlardaki birleşik hücre tanımlarını da.</summary>
+        public void SutunlariBosalt(int ilkSutun, int ilkSatir, int sonSatir)
+        {
+            foreach (var rk in Satirlar)
+            {
+                if (rk.Key < ilkSatir || rk.Key > sonSatir) continue;
+                var silinecek = new List<int>();
+                foreach (var c in rk.Value.Hucreler.Keys) if (c >= ilkSutun) silinecek.Add(c);
+                foreach (var c in silinecek) rk.Value.Hucreler.Remove(c);
+            }
+            var m = Regex.Match(_son, @"<mergeCells\b[^>]*>([\s\S]*?)</mergeCells>");
+            if (m.Success)
+            {
+                var kalan = new List<string>();
+                foreach (Match x in Regex.Matches(m.Groups[1].Value, "<mergeCell\\b[^>]*ref=\"([^\"]+)\"[^>]*/>"))
+                {
+                    int sutun, satir; XlsmDosyasi.HucreCoz(x.Groups[1].Value.Split(':')[0], out sutun, out satir);
+                    if (sutun < ilkSutun) kalan.Add(x.Value);
+                }
+                _son = _son.Replace(m.Value, kalan.Count > 0 ? "<mergeCells count=\"" + kalan.Count + "\">" + string.Join("", kalan.ToArray()) + "</mergeCells>" : "");
+            }
+            Degisti = true;
+        }
+
+        /// <summary>Hücrenin stilini başka hücreden alır (yeni sütun başlıkları için); kaynakSayfa verilirse o sayfadan (stiller çalışma kitabında ortak).</summary>
+        public void StilKopyala(string kaynakRef, string hedefRef, XlsmSayfa kaynakSayfa = null)
+        {
+            var k = (kaynakSayfa ?? this).HucreAl(kaynakRef);
             var stil = k != null ? XlsmDosyasi.Grup(k.Nitelik, "\\bs=\"(\\d+)\"") : null;
             int sutun, satir; XlsmDosyasi.HucreCoz(hedefRef, out sutun, out satir);
             var s = _Satir(satir);

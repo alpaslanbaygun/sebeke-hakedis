@@ -6,9 +6,9 @@ KATSAYILAR sayfaları) proje (bölge) bazında programdan doldurulur. Kural iki 
 | | AutoCAD eklentisi | Telefon |
 |---|---|---|
 | Şablonu okuma, hücre yazma, sütun ekleme (zip içinde sayfa XML'i) | `Cekirdek/XlsmDosyasi.cs` | `telefon/web/src/export/xlsm.js` |
-| Şablon tanımı (tanımlı adlar, KOD sütunları, sabit sütunlar, EK satırları, listeler) | `Cekirdek/BirlesikMetraj.cs › MetrajSablonu.Oku` | `export/birlesik-metraj.js › sablonTanimi` |
-| Doldurma planı (proje + şablon tanımı → hücreler, yeni sütunlar, uyarılar) | `Cekirdek/BirlesikMetraj.cs › Planla` | `sh-core.cjs › birlesikMetraj` |
-| Planı dosyaya işleme (biçim, formül kopyalama, satır gizleme, fazla sayfası) | `Cekirdek/BirlesikMetraj.cs › PlanUygula` | `export/birlesik-metraj.js › planUygula` |
+| Şablon tanımı (tanımlı adlar, KOD sütunları, sabit sütunlar, MALZ. LİSTESİ örnek satırları, listeler) | `Cekirdek/BirlesikMetraj.cs › MetrajSablonu.Oku` | `export/birlesik-metraj.js › sablonTanimi` |
+| Doldurma planı (proje + şablon tanımı → hücreler, kopya sayfalar, yeni sütunlar, MALZ. LİSTESİ satırları, uyarılar) | `Cekirdek/BirlesikMetraj.cs › Planla` | `sh-core.cjs › birlesikMetraj` |
+| Planı dosyaya işleme (sayfa kopyalama, biçim ve formül kopyalama, satır gizleme, fazla sayfası) | `Cekirdek/BirlesikMetraj.cs › PlanUygula` | `export/birlesik-metraj.js › planUygula` |
 | Ad eşleme tablosu ve temin varsayılanları | `ortak/katalog/metraj-sablon.json` (eklentide gömülü, telefonda `src/ortak/metraj-sablon.js`) | |
 | Gömülü temiz şablon | `ortak/sablon/birlesik-metraj.xlsm` (eklentide gömülü kaynak, telefonda `telefon/web/assets/`; `araclar/ortak-tablolar.mjs` kopyalar) | |
 | Ortak deneme | `ortak/deneme/birlesik-metraj/` — aynı şablondan aynı tanım, aynı projeden aynı plan (`CekirdekTest › BirlesikMetrajOrtakDeneme`, `tests/birlesik-metraj.test.mjs`) | |
@@ -51,8 +51,13 @@ Tanımlı adlar yapının çapasıdır; sütun ve satır konumları bunlardan ve
   demontajdan montaj (DM önce denenir), `D` demontaj, `A` aktarım; başka önek DURUM satırından (YENİ / DM / AKTARIM),
   o da yoksa soldaki sütunun bloğu. `formullu`: ilk veri satırında formül var (şablonun türetme formülleri).
 - MALZ. LİSTESİ: `MATCH($G7,DM_KOD_SATIRI,0)` biçimli ilk formül bulunur → KOD sütunu (G) ve kaynak (I); aynı satırdaki
-  formüllerden poz (B), ad (C), birim (D), temin (E), miktar (H) sütunları. `E001…E040` olan satırlar **EK KALEMLER**
-  satırlarıdır (program bunları yeni sütunlara bağlar).
+  formüllerden poz (B), ad (C), birim (D), temin (E), miktar (H) sütunları; `=H` olan sütun toplam (F), 1/0 bayrağı (A).
+  Örnek satırlar (biçim kopyalamak için): ilk KOD'lu satır (kalem), KOD'suz yazılı satırı KOD'lu satır izleyen ilk satır
+  (grup başlığı). `E001…E040` olan satırlar şablonun **EK KALEMLER** bölümüdür: program bu bölümü kullanmaz, yerine
+  kendi bölümlerini yazar (aşağıda); bölüm başlığı satırı (`ekBaslikSatiri`: ilk EK satırının üstündeki KOD'suz yazılı
+  satır) ilk yeni bölümün başlığı olur.
+- Sayfanın tanımlı ad aralıkları (`adlar`: KOD `$G$10:$ZZ$10`, TIP, POZ, AD, SEC, BIRIM, TOPLAM, MALZ) saklanır: kopya
+  sayfaların MALZ. LİSTESİ formülleri aynı aralığı kopya sayfasında açık yazar (`'DİREK AG BETON'!$G$10:$ZZ$10`).
 - Proje başlığı: DİREK METRAJI'nda `İLİ`, `İLÇESİ`, `GRUP_NO`, `İŞİN_ADI`, `PROJE_NO`, `YÜKLENİCİ_FİRMA`, `HAK_EDİŞ_NO`,
   `PROJE_TÜRÜ` etiketleri; değer sütunu etiketlerin sağındaki ilk dolu hücrelerin en sık sütunu (C). Öteki sayfalar
   buraya bağlıdır.
@@ -74,12 +79,28 @@ bölge kodu), İŞİN_ADI ← bölge adı (tümü: proje adı), PROJE_NO ← bö
 Kalemler kendi durumlarıyla değerlendirilir: mevcut direğe takılan yeni armatür Y bloğuna yazılır.
 
 **DİREK METRAJI** — her direk (AG, müşterek, aydınlatma, ENH, trafo direği) ve malzemesi olan her öteki eleman (box,
-pano, ek mufu…) bir satır, numaraya göre doğal sıralı (SC2 < SC10); 298 satırı aşarsa hata (bölgeyi bölün).
+pano, ek mufu…) bir satır, numaraya göre doğal sıralı (SC2 < SC10); bir sayfada 298 satırı aşarsa hata (bölgeyi bölün).
+- **Cins başına sayfa** (kullanıcı kararı 13.11.2026): direğin cinsi şablonun DİREK METRAJI sayfasında *temsil
+  ediliyorsa* (TİP satırındaki bir tip o cinsin katalogdaki ana pozlarından ya da eşleme tablosundaki `tip` takma
+  adından biri; ya da cins / aile `metraj-sablon.json › anaSayfaAileleri`'nde — `ENH_DEMİR_GLV|SW`: şablonun G-N12 /
+  G-T25 tipleri kataloga uymaz) direk ana sayfaya yazılır; yoksa **DİREK METRAJI'nın kopyası** olan kendi sayfasına.
+  Aile = cins + ENH tipindeki iletken eki (`G-T-12 (rv)` → `ENH_DEMİR_GLV|RV`); sayfa adı `DİREK ` + cinsin katalog adı
+  (büyük; "DİREK / DİREĞİ" sözü atılır; GALVANİZ → GALV., AYDINLATMA → AYD., MÜŞTEREK → MÜŞ.) + iletken eki (SW → SWLL,
+  RV → RAVEN, PG → PİGEON…), en çok 31 karakter: `DİREK AG BETON`, `DİREK ENH GALV. CIVATALI`, `DİREK ENH GALV.
+  KAYNAKLI RAVEN`. Kopya sayfalar ilk görüldükleri sırayla, ana sayfanın hemen ardına açılır; kaynağın bütün biçimi,
+  sabit sütunları, başlık hücreleri (il, ilçe, grup, işin adı, proje no, yüklenici, hakediş no), bayrak / toplam
+  satırları ve makro bağları kalır; KOD sütunları (G'den sağa, KOD satırından TOPLAM satırına) boşaltılır, birleşik
+  hücreler kaldırılır. Direğin tipi ve malzemeleri bu sayfada **normal sütun** olarak açılır (aşağıdaki "yeni sütun"
+  kuralı; malzeme ana sayfada varsa aynı başlıkla); malzeme / tip sütunu olmayan direğe hiçbir "ek" kalem yazılmaz.
+  Kopya sayfadaki direk tipleri KATSAYILAR seçim listelerine (`LST_YENI_DIREK`, `LST_DEMONTAJ` "tip (K)",
+  `LST_DMONTAJ`) elle eklenir (listeler yalnız ana sayfadan formülle dolar). Mevcut direk de cinsine göre yönlenir.
 - `A` eleman no. Direğin kendi pozu: yeni → `C` = tip; demontaj → `D` = tip + ` (K)` (KESİK) / ` (S)` (SÖKÜK); kesik /
   sökük bilgisi yoksa Kesik sayılır ve uyarılır; demontajdan montaj → `E` = tip; mevcut → `F` = tip. Tip yazımı
   şablonun TİP satırındaki gibi (`G-10I''`; `''` ↔ `"` eşdeğer); demontaj sütunu Kesik / Sökük'e göre de seçilir.
-  Direk tipi şablonda yoksa (eşleme tablosundaki `tip` de denenir) yeni sütun açılır: TİP = tip, AD = "tip Demir /
-  Beton / Ağaç Direk", veri formülü bloğun direk tipi sütunundan kopyalanır; `C/D/E`'ye yine tip yazılır.
+  Direk tipi sayfada yoksa (eşleme tablosundaki `tip` de denenir) yeni sütun açılır: TİP = tip, AD = "tip " + cinsin
+  katalog adı (AG / OG / ENH öneki atılmış: `9,3/3 Beton Direk`, `BER-8 Galvaniz Cıvatalı Direk`; katalogda yoksa Demir
+  / Beton / Ağaç Direk), grup başlığı "YENİ\nAG BETON DİREKLER" gibi, veri formülü bloğun direk tipi sütunundan
+  kopyalanır; `C/D/E`'ye yine tip yazılır.
 - Öteki kalemler: bloğun sütunu bulunur (aşağıdaki eşleme), miktar toplanarak yazılır: şablon birimi `kg` (`m3`) ve
   kalemin rapor birimi öyleyse toplam, yoksa giriş miktarı (adet, m, tk).
 - Doldurulan satırda şablonun kendi türetme formülleri (ör. G-10I ise GT-60 = 1, levha = 1) yerine programın sayısı
@@ -124,18 +145,28 @@ Tuvenan → Tuvanen):
 Bulunamazsa yeni sütun. Tablo ayrıca `tip` (şablonun TİP yazımı: ağaç `9mt` → `9-O`), `poz`, `temin` ve cins başına
 varsayılan temin (`temin`; yoksa Ş) verir.
 
-**Yeni sütun**: sayfanın kullanılan son sütununun sağına, bloğun son sütunu (direk tipi için TİP'li son sütun) örnek
-alınarak: sütun genişliği, hücre biçimleri, bayrak ve alt satır formülleri (TOPLAM; İLETKEN'de 117–120) sütuna
-kaydırılarak kopyalanır, veri formülü gerekiyorsa (direk tipi, İLETKEN) bütün veri satırlarına yazılır; KOD, TİP,
-DURUM, grup başlığı ("… \nEK (Şebeke-M)"), POZ, AD, TEMİN, BİRİM yazılır. **KOD = blok öneki + EK kodu** (`YE001`,
-`DE002`, `DME003`, `AE004`) ve MALZ. LİSTESİ'ndeki EK satırının KOD'u da aynı yazılır: şablonun blok süzgeçleri
-(`LEFT(KOD,1)="Y"` gibi seçim listeleri, denetimler) yeni sütunu kendi bloğunda sayar, listeler kendiliğinden güncellenir.
-TEMİN: eşleme tablosu (yoksa Ş); demontaj / DMM direk tipinde Kesik / Sökük. BİRİM: `ad/…` → `ad.`, `mt/…` → `mt.`,
-`kg/…` → `kg`, `m3` → `m3`, `tk/…` → `tk.`. POZ: katalog poz no; demontaj `1` + poz, DMM / aktarım `2` + poz, ilk bölüm
-iki haneye tamamlanır (`5.5.1` → `105.5.1`). MALZ. LİSTESİ EK satırı: B/C/D/E/H/I formülleri bloğun kendi satırlarındaki
-gibi (`INDEX(xx_POZ_SATIRI,$I)`; D / DM / A bloklarında E = `Y` sabiti; İLETKEN'de H `IM_MALZ_SATIRI`, ötekilerde
-`xx_TOPLAM_SATIRI`). EK satırı (40) biterse malzeme miktarıyla (tel kilogramıyla) **ŞABLONDA OLMAYAN** adlı yeni sayfaya
-yazılır (sayfa, blok, poz, malzeme, birim, miktar, nerede) ve uyarılır.
+**Yeni sütun**: sayfanın (ana ya da kopya) kullanılan son sütununun sağına — kopya sayfada ilk KOD sütunundan (G)
+başlayarak —, **ana sayfadaki** bloğun son sütunu (direk tipi için TİP'li son sütun) örnek alınarak: sütun genişliği
+(aynı sayfadaysa), hücre biçimleri, bayrak ve alt satır formülleri (TOPLAM; İLETKEN'de 117–120) sütuna kaydırılarak
+kopyalanır, veri formülü gerekiyorsa (direk tipi, İLETKEN) bütün veri satırlarına yazılır; KOD, TİP, DURUM, grup
+başlığı ("blok adı \n MALZEMELER / … DİREKLER / İLETKENLER / KABLOLAR / KANALLAR"), POZ, AD, TEMİN, BİRİM yazılır.
+**KOD = şablonun kendi KOD dizisinin devamı** (blok öneki + en büyük numara + 1: `Y175`, `D120`, `DM072`, `A017`;
+"ek" kodu yok): şablonun blok süzgeçleri (`LEFT(KOD,1)="Y"` gibi seçim listeleri, denetimler) yeni sütunu kendi bloğunda
+sayar, ana sayfanın listeleri kendiliğinden güncellenir. TEMİN: eşleme tablosu (yoksa Ş); demontaj / DMM direk tipinde
+Kesik / Sökük. BİRİM: `ad/…` → `ad.`, `mt/…` → `mt.`, `kg/…` → `kg`, `m3` → `m3`, `tk/…` → `tk.`. POZ: katalog poz no
+(boşluk ve büyük / küçük harf farkıyla da bulunur); demontaj `1` + poz, DMM / aktarım `2` + poz, ilk bölüm iki haneye
+tamamlanır (`5.5.1` → `105.5.1`).
+
+**MALZ. LİSTESİ**: yeni sütunlar EK KALEMLER bölümünün yerine **normal satır** olarak yazılır (kullanıcı kararı
+13.11.2026). Eski EK satırlarının KOD'u (`E001…`) ve miktarı silinir; EK KALEMLER başlığından başlayarak her sayfa
+için bir bölüm: başlık satırı (A = alt satırların F'sinde 0'dan büyük varsa 1, B = sayfa adı, ötekiler boş; biçimi
+şablonun grup başlığı satırından), ardından sayfanın yeni sütunları sütun sırasıyla (biçimi şablonun ilk kalem
+satırından): G = KOD, B/C/D/E/H/I formülleri şablonun kendi satırlarındaki gibi (`INDEX(DM_POZ_SATIRI,$I)`; D / DM / A
+bloklarında E = `Y` sabiti; İLETKEN'de H `IM_MALZ_SATIRI`, ötekilerde `xx_TOPLAM_SATIRI`), F = `=H`, A = `IF(F>0,1,0)`.
+Kopya sayfanın bölümünde aralıklar açık yazılır (`'DİREK AG BETON'!$G$14:$ZZ$14`). Bölüm sırası: DİREK METRAJI, DİREK
+kopyaları (açılış sırasıyla), İLETKEN, YERALTI. Şablonun 40 EK satırı yeter; sığmayan malzeme (sütun açılamadı)
+miktarıyla (tel kilogramıyla) **ŞABLONDA OLMAYAN** adlı yeni sayfaya yazılır (sayfa, blok, poz, malzeme, birim,
+miktar, nerede) ve uyarılır.
 
 **Dosya**: şablon zip olarak açılır, yalnız dokunulan sayfa XML'leri ve `workbook.xml` değiştirilir; her şey (makro,
 stiller, listeler, koşullu biçimler) aynen kalır. Metinler `inlineStr`, sayılar `<v>`; formül hücresine değer
@@ -148,14 +179,18 @@ yeniden hesaplar, MALZ. LİSTESİ ve toplamlar o anda dolar. Çıktı adı: ekle
 ## Denemeler
 
 - `ortak/deneme/birlesik-metraj/`: `proje.sebeke.json` (eklenti biçiminde küçük proje: iki bölge; yeni / kesik demontaj /
-  sök-tak / mevcut / ağaç / şablonda olmayan direk tipleri, ENH direği, box, AG — OG — ALPEK — rekortman açıklıkları,
-  sök-tak AG parçası (OXLIP), iki kanal ve kanal üstünden giden yeraltı kablolar), `ayar.json` (bölge B1, firma, il,
-  ilçe), `sablon.json` (temiz şablonun okunan tanımı), `beklenen-plan.json` (plan). İkisini
+  sök-tak / mevcut / ağaç / şablonda olmayan direk tipleri, ENH direği (sw: ana sayfa), box, AG — OG — ALPEK — rekortman
+  açıklıkları, sök-tak AG parçası (OXLIP), iki kanal ve kanal üstünden giden yeraltı kablolar; ana sayfada temsil
+  edilmeyen cinsler: AG beton 9,3/3 yeni ve 9,3/8 kesik demontaj, ENH cıvatalı BER-8, ENH kaynaklı raven G-T-12 (rv) →
+  üç kopya sayfa), `ayar.json` (bölge B1, firma, il, ilçe), `sablon.json` (temiz şablonun okunan tanımı),
+  `beklenen-plan.json` (plan: 17 yeni sütun, 3 kopya sayfa, 23 MALZ. LİSTESİ satırı). İkisini
   `node araclar/metraj-beklenen-uret.mjs` yazar; eklenti (`CekirdekTest -- ornek`) ve telefon
   (`tests/birlesik-metraj.test.mjs`) aynı dosyaları okuyup birebir karşılaştırır (sayılarda 1e-6 pay).
-- Her platform planı dosyaya yazıp yeniden açar: hücreler, yeni sütunun KOD / TİP / formülleri, gizli satırlar, MALZ.
-  LİSTESİ EK satırı, KATSAYILAR liste eki, makro ve `fullCalcOnLoad`. Telefon ayrıca şablonun temizliğini (BM5), EK
-  satırı bitince fazla sayfasını (BM8), bölge süzgecini ve sığmayan projeyi (BM9), telefon projesinden dışa aktarımı
-  (BM10) dener; eklenti pencere testleri (`PencereTest` 25c, 30, 30b) ayar ve sonuç pencerelerini açar.
+- Her platform planı dosyaya yazıp yeniden açar: hücreler, yeni sütunun KOD / TİP / formülleri, gizli satırlar, kopya
+  sayfa (başlık, direk, KOD sütunları boş, veri formülü ana sayfanın örneğinden), MALZ. LİSTESİ bölüm başlığı ve kalem
+  satırları (açık aralıklı formül), KATSAYILAR liste eki, makro ve `fullCalcOnLoad`. Telefon ayrıca şablonun temizliğini
+  (BM5), sütun açılamayınca fazla sayfasını (BM8), bölge süzgecini ve sığmayan projeyi (BM9), telefon projesinden dışa
+  aktarımı (BM10) dener; eklenti pencere testleri (`PencereTest` 25c, 30, 30b) ayar ve sonuç pencerelerini açar.
+  `SH_BM_CIKTI=<yol> dotnet run … -- ornek` eklentinin ürettiği dosyayı kaydeder (LibreOffice ile hesap denetimi).
 - Elle doğrulama: doldurulmuş dosya LibreOffice ile `--convert-to xlsx` yapılınca formüller hesaplanır; MALZ. LİSTESİ
   miktarları ve denetim hücreleri ("TAMAM") okunabilir.
