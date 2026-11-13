@@ -744,6 +744,8 @@ Pano ve "Diğer" türü objelerde kayıt ekranındaki `Poz (hakediş kalemi)` li
 
 ### Otomatik reçeteyi açmak
 
+Reçete kuralları AutoCAD eklentisiyle ortaktır (`ortak/katalog/onerilen-malzeme.json`): eklentide Malzemeler penceresinin **Önerilen…** düğmesi aynı kurallarla aynı kalemleri önerir; kural değişince iki taraf birlikte değişir.
+
 Proje merkezi › "Proje akışı" › `Proje oluştur` adımı Proje bilgileri ekranını açar. Buradaki `Otomatik malzeme reçetesi` anahtarı açılırsa yardımcı malzemeler önceki sürümdeki gibi kurala göre kendiliğinden gelir; o zaman miktar düzeltme ve `Sahada ilave talebi` kullanılır.
 
 Önceki sürümde oluşturulmuş bir projeyi güncellemeden sonra ilk açtığınızda uygulama bir kez sorar: `Bu projede açık kalsın` ya da `Kapat (yeni düzen)`. Siz seçene kadar o projenin metrajı değişmez. Kapatırsanız kurala göre gelmiş yardımcı malzemeler metrajdan çıkar.

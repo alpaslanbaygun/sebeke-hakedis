@@ -1,0 +1,19 @@
+{
+ "bicim": "sebeke-hakedis.deneme.onerilen-malzeme",
+ "aciklama": "Önerilen malzeme kurallarının (ortak/katalog/onerilen-malzeme.json) ortak denemesi: her durum bir direğin bağlamıdır (grup, rol, iletken sınıfı, çıplak AG). beklenen.json'u araclar/onerilen-beklenen-uret.mjs telefonun motoruyla yazar; telefon (tests/onerilen-malzeme.test.mjs) ve eklenti (CekirdekTest) aynı bağlamdan aynı listeyi üretmek zorundadır. Direğin kendisi (kaynak: kendisi) listede yoktur; miktarlar varsayılan parametrelerle.",
+ "durumlar": [
+  { "ad": "Şehir içi AG taşıyıcı, çıplak AG hat", "baglam": { "grup": "sehir", "rol": "T", "agCiplak": true } },
+  { "ad": "Şehir içi AG durdurucu, demetli (ALPEK) hat", "baglam": { "grup": "sehir", "rol": "D", "agCiplak": false } },
+  { "ad": "Müşterek taşıyıcı, çıplak AG", "baglam": { "grup": "mus", "rol": "T", "agCiplak": true } },
+  { "ad": "Müşterek köşe, demetli AG", "baglam": { "grup": "mus", "rol": "Z", "agCiplak": false } },
+  { "ad": "ENH kaynaklı (bahh) nihayet, swallow", "baglam": { "grup": "bahh", "rol": "N", "iletkenBuyuk": false, "iletkenCift": false } },
+  { "ad": "ENH kaynaklı (bahh) köşe, çift devre", "baglam": { "grup": "bahh", "rol": "Z", "iletkenBuyuk": false, "iletkenCift": true } },
+  { "ad": "ENH cıvatalı (civ) taşıyıcı, 477 MCM", "baglam": { "grup": "civ", "rol": "T", "iletkenBuyuk": true, "iletkenCift": false } },
+  { "ad": "ENH cıvatalı (civ) durdurucu, swallow", "baglam": { "grup": "civ", "rol": "D", "iletkenBuyuk": false, "iletkenCift": false } },
+  { "ad": "AG beton durdurucu, çıplak AG", "baglam": { "grup": "beton", "rol": "D", "agCiplak": true } },
+  { "ad": "OG beton (5.6.2) taşıyıcı", "baglam": { "grup": "beton562", "rol": "T", "iletkenBuyuk": false, "iletkenCift": false } },
+  { "ad": "Ağaç nihayet, demetli AG", "baglam": { "grup": "agac", "rol": "N", "agCiplak": false } },
+  { "ad": "Aydınlatma direği", "baglam": { "grup": "ayd", "rol": "T" } },
+  { "ad": "Trafo direği (G-T)", "baglam": { "grup": "trafo", "rol": "N" } }
+ ]
+}

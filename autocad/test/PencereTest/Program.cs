@@ -383,6 +383,30 @@ namespace SebekeHakedis.PencereTest
                 direk.Cins = eskiCins;
             }
 
+            // Önerilen malzemeler (13.11.2026): SC77 şehir içi AG direk, bağlı hattı yok → taşıyıcı; çıplak AG yok → yalnız GT-70 travers
+            int oncekiSayi = direk.Kalemler.Count;
+            Dene("08d-malzeme-onerilen", () =>
+            {
+                bool ok = Pencereler.Kalemler(o, direk);
+                Esit(true, ok, "önerilen: Kaydet");
+                Esit(oncekiSayi + 1, direk.Kalemler.Count, "önerilen: işaretli öneri kalem olarak eklendi");
+                var yeni = direk.Kalemler.Find(k => k.Cins == "TRAVERS_VE_KONSOLLAR_GLV" && k.Tanim == "GT-70");
+                Esit(true, yeni != null && !yeni.Ana && yeni.Miktar == 1 && yeni.Durum == "M" && yeni.Kaynak == "MALZEME", "önerilen: GT-70 travers, 1 adet, direğin durumuyla");
+            }, f =>
+            {
+                var dugme = Bul<Button>(f, b => b.Text.StartsWith("Önerilen", StringComparison.Ordinal));
+                Esit(true, dugme != null, "önerilen: düğme var");
+                Esit("Önerilen (1)…", dugme?.Text, "önerilen: düğme eksik öneri sayısını gösterir");
+                dugme.PerformClick();   // iç pencere: Seçilenleri ekle (varsayılan işaretli)
+                Esit("Önerilen…", dugme?.Text, "önerilen: eklenince sayı düşer");
+                var g = Bul<DataGridView>(f, x => true);
+                bool var_ = false;
+                for (int i = 0; i < g.Rows.Count; i++) if (g.Rows[i].Tag is Kalem k && k.Tanim == "GT-70") var_ = true;
+                Esit(true, var_, "önerilen: tabloda yeni satır");
+                Resim(f, "sonra");
+            });
+            direk.Kalemler.RemoveAll(k => k.Cins == "TRAVERS_VE_KONSOLLAR_GLV" && k.Tanim == "GT-70");   // sonraki denemeler eski listeyi bekler
+
             var hat = o.Proje.Hatlar[0];
             Dene("09-malzeme-hat", () =>
             {

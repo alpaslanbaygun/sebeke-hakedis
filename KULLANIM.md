@@ -353,6 +353,21 @@ tıklayın) katalogdan yeni tipi seçtirir — aynı cinsten başka tip (9,30/3 
 simge de değişir). Durum, hakediş, DM durumu ve malzemeler kalır; tip yazısı ve raporlar yeni tiple gider. Onaylı
 (kilitli) hakedişteki direğin tipi değiştirilemez.
 
+**Önerilen malzemeler** (13.11.2026): Malzemeler penceresinde **Önerilen…** düğmesi (eksik öneri sayısını gösterir:
+"Önerilen (3)…") telefon uygulamasının reçete kurallarıyla direğe uygun malzemeleri listeler — kurallar iki tarafta
+ortak dosyadadır (`ortak/katalog/onerilen-malzeme.json`). Bağlam çizimden okunur: direğin **grubu** cinsinden (şehir içi
+AG, müşterek, ENH kaynaklı / cıvatalı, beton, ağaç…), **rolü** bağlı havai hatlardan (hat yok ya da düz geçiş → taşıyıcı,
+hat sonu → nihayet, 3°'den çok sapma → köşe, üç ve çok yön → durdurucu), **iletken sınıfı** tipin parantezinden ya da
+bağlı OG hattın kesitinden (477 → büyük, 2x… → çift devre), **çıplak AG** bağlı AG / müşterek / aydınlatma hatta
+AG_İLETKEN kalemi varsa. Pencerede rol ve bu işaretler değiştirilebilir, liste yenilenir. Satırlar: travers (GT-70 /
+GD-70, müşterek tepe traversi, OG G-T-250 (sw)…), mesnet izolatörü ve izolatör demiri (çıplak AG'de 4 / 8), OG askı ya da
+gergi izolatörü ve tertibatı (rol ve iletken sınıfına göre 3 / 6), topraklama (kazık, iletken, tehlike levhası);
+miktarlar telefonun varsayılan parametreleri, satırda değiştirilebilir. Direkte zaten olan kalemler soluk ve
+işaretsiz ("2 var"), telefon poz kodunun AutoCAD karşılığı yoksa satır eklenemez ("eşleme yok";
+`volt-eslesme.json › kalemler`). **Seçilenleri ekle** işaretli satırları direğin durumuyla ve etkin hakedişle kalem
+yapar; Malzeme hafızası açıksa sonraki aynı tipteki direklere de gider. Kural telefonla ortak denenir
+(`ortak/deneme/onerilen-malzeme`).
+
 ### Hat değiştir (iletkenin tipi ve cinsi)
 
 Çizilmiş bir hattın iletkeni sonradan değişebilir: **Hat Değiştir** (`SH_HATDEGISTIR`, şeritte Düzenle). Hatları
@@ -427,7 +442,7 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 
 | Düğme | Komut | Ne yapar |
 | --- | --- | --- |
-| Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 982 kalemlik katalog; AG galvaniz travers ve konsollar GT-60, GD-80, T-AG-1… ağırlıklarıyla). Hatta iletken eklerseniz hattın ikinci iletkeni olur (metrajı hattın boyu). |
+| Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 982 kalemlik katalog; AG galvaniz travers ve konsollar GT-60, GD-80, T-AG-1… ağırlıklarıyla). Hatta iletken eklerseniz hattın ikinci iletkeni olur (metrajı hattın boyu). Direkte **Önerilen…** telefonun reçete kurallarıyla eksik travers / izolatör / topraklama kalemlerini önerir (aşağıda). |
 | Toplu Malzeme | `SH_TOPLUMALZEME` | Seçilen bütün direklere (trafo, SDK…) aynı malzemeleri birden ekler. |
 | Malzeme Hafızası | — | Açıkken son elemanın malzemeleri aynı tipteki yeni elemana kendiliğinden eklenir; tıklayınca kapanır / açılır. |
 | Hat Değiştir | `SH_HATDEGISTIR` | Seçilen hatların iletkenini (tip, cins), türünü, durumunu, hakedişini değiştirir; kablo tipi yazısı ve katman güncellenir, metraj korunur. |

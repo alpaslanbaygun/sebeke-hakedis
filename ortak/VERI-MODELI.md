@@ -96,6 +96,15 @@ Telefonun kendi biçimi: ham kayıtlar (`data`), türetilmiş sonuçlar (`derive
 üç dosyayı da açar: `.sebeke.json`, `.volt.json`, teslim paketi `.zip`. Eklenti "Telefona Gönder"de istenirse
 `.volt.json` yazar (`data` boş, `sebeke` dolu); telefon ikisini de alır.
 
+### Önerilen malzeme kuralları (`katalog/onerilen-malzeme.json`)
+
+Telefonun otomatik reçete kuralları (direk: grup + rol + iletken sınıfı + çıplak AG → travers, izolatör, topraklama;
+trafo, SDK, abone kuralları da burada) ve parametreleri (topraklama kazığı sayısı, mesnet adedi…) tek dosyadadır.
+Telefon tohumunu `telefon/tools/build_seed.mjs` bu dosyadan üretir (`src/grid/onerilen-malzeme.js › kurallariCevir`;
+motor `src/grid/recipe.js`), eklenti dosyayı gömülü okur (`Cekirdek/OnerilenMalzeme.cs`; Malzemeler › **Önerilen…**).
+Kalemler telefon servis koduyladır; AutoCAD cins / tanımı aşağıdaki `volt-eslesme.json › kalemler` eşlemesinden gelir.
+Ortak deneme `ortak/deneme/onerilen-malzeme` (durumlar + beklenen; üretici `araclar/onerilen-beklenen-uret.mjs`).
+
 ### Telefon ↔ eski program eşlemesi (`katalog/volt-eslesme.json`)
 
 Telefonun kataloğu TEDAŞ poz kodlarıyla (ör. `005.01.02.01-008`), eklentinin raporu eski program cins / tanım ile
