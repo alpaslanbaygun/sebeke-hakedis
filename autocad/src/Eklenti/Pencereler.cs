@@ -3488,6 +3488,8 @@ namespace SebekeHakedis.Eklenti
                 cift.CheckedChanged += (s, e) => yenile();
                 yenile();
                 g.CellContentClick += (s, e) => { if (e.RowIndex >= 0 && e.ColumnIndex == 0) g.EndEdit(); };
+                // "Seçilenleri ekle" pencereyi kapatmıyordu (PencereTest 08d yakaladı): Tamam olarak kapanır
+                alt.Tamam.Click += (s, e) => { g.EndEdit(); w.DialogResult = DialogResult.OK; };
                 if (Goster(w, sahip) != DialogResult.OK) return null;
                 g.EndEdit();
                 var secilen = new List<Kalem>();
