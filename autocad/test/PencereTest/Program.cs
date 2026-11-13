@@ -510,6 +510,7 @@ namespace SebekeHakedis.PencereTest
                 Esit(true, kutular[5].Items.Count > 1, "eksik malzeme: tip listesi aranan cinsin tipleriyle dolar");
                 var olan = Bul<RadioButton>(f, r => r.Text.StartsWith("Bu malzemesi OLAN", StringComparison.Ordinal));
                 if (olan != null) olan.Checked = true;
+                Esit(true, Bul<Button>(f, b => b.Text == "Bulunanlara malzeme ekle") != null, "eksik malzeme: bulunanlara malzeme ekle düğmesi");
                 Bekle(450);
                 Resim(f, "sonra");
             });
@@ -646,13 +647,31 @@ namespace SebekeHakedis.PencereTest
             Dene("23-toplu-malzeme", () =>
             {
                 var l = Pencereler.TopluMalzeme(o, direkler);
-                Esit(1, l != null ? l.Count : 0, "toplu malzeme: bir satır döner");
+                Esit(3, l != null ? l.Count : 0, "toplu malzeme: üç satır döner (birden çok malzeme)");
                 Esit(2.0, l != null && l.Count > 0 ? l[0].Miktar : 0, "toplu malzeme: miktar düzenlendi");
+                Esit(true, l != null && l.TrueForAll(x => x.VarsaAtla), "toplu malzeme: elemanda olanı ekleme (varsayılan açık)");
             }, f =>
             {
                 Bul<Button>(f, b => b.Text == "Ekle").PerformClick();
                 var g = Bul<DataGridView>(f, x => true);
                 Esit(1, g.Rows.Count, "toplu malzeme: listeye eklendi");
+                Bul<Button>(f, b => b.Text == "Ekle").PerformClick();
+                Esit(1, g.Rows.Count, "toplu malzeme: listedeki malzeme ikinci kez eklenmez");
+                // İşaret kutulu katalog: tıklanan her malzeme eklenir, bir daha tıklamak çıkarır
+                var lb = Bul<IkiSatirListe>(f, x => true);
+                var kalemSatirlari = new List<int>();
+                for (int i = 0; i < lb.Items.Count && kalemSatirlari.Count < 4; i++) if (lb.Items[i] is KatalogKalemi) kalemSatirlari.Add(i);
+                Esit(true, lb.Isaretli != null && kalemSatirlari.Count >= 4, "toplu malzeme: katalog işaret kutulu");
+                int ilk = kalemSatirlari.Find(i => !lb.Isaretli(lb.Items[i]));
+                lb.Isaretle(ilk);
+                Esit(2, g.Rows.Count, "toplu malzeme: tıklanan ikinci malzeme eklendi");
+                Esit(true, lb.Isaretli(lb.Items[ilk]), "toplu malzeme: eklenen malzeme işaretli görünür");
+                int ikinci = kalemSatirlari.Find(i => !lb.Isaretli(lb.Items[i]));
+                lb.Isaretle(ikinci);
+                lb.Isaretle(ikinci);
+                Esit(2, g.Rows.Count, "toplu malzeme: ikinci tıklama malzemeyi çıkarır");
+                lb.Isaretle(ikinci);
+                Esit(3, g.Rows.Count, "toplu malzeme: üç malzeme");
                 g.Rows[0].Cells[1].Value = "2";
                 Resim(f, "sonra");
             });

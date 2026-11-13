@@ -1,7 +1,7 @@
 // Cer vektör hesabı ve direk tepe kuvveti. Kollar (yön + açıklık) çizimden ya da uygulamadaki hatlardan gelir;
 // iletken tertibi katman adından tanınır ya da kol başına seçilir (seçim katmanla eşleştirilip hatırlanır).
 // Yöntem: calc/tepe.js ("AG-OG Direk Tepe Kuvveti Simülatörü"nden birebir taşınan tablolar ve varsayımlar).
-import { html, useState, useEffect, Icon, Chip, Seg, Sel, Badge, Title, trn } from '../kit.js';
+import { html, useState, useEffect, Icon, Chip, Seg, Sel, Badge, Title, SayiGirdi, trn } from '../kit.js';
 import { app } from '../ctx.js';
 import { TABLES, tertipler, hesapT, hesapKT, hesapD, hesapKD, hesapN, hesapG, gorevOner } from '../../calc/tepe.js';
 import { devreYazisi } from '../../grid/lines.js';
@@ -113,7 +113,7 @@ export function TepeScreen({ E, N, arms, title, pointId }) {
     <div class="sect">Kollar <span class="r mono">${rows.length} kol</span></div>
     ${rows.map((r, i) => html`<div class="card stack" style="gap:8px">
       <div class="row"><span class="badge b-mut" style="height:24px">${i + 1}</span><b class="grow mono" style="font-size:13px">${r.layer || 'elle eklenen kol'}</b><button class="btn xs dang" aria-label="Kolu sil" onClick=${() => setRows((rs) => rs.filter((_, k) => k !== i))}><${Icon} n="trash" s=${14} /></button></div>
-      <div class="grid2"><div class="fld"><label>Yön (° · doğu 0, saat tersi)</label><input class="inp mono" type="number" step="0.1" value=${Math.round((+r.az || 0) * 10) / 10} onChange=${(e) => setRow(i, { az: +e.target.value })} /></div><div class="fld"><label>Açıklık (m)</label><input class="inp mono" type="number" step="0.1" value=${Math.round((+r.len || 0) * 10) / 10} onChange=${(e) => setRow(i, { len: +e.target.value })} /></div></div>
+      <div class="grid2"><div class="fld"><label>Yön (° · doğu 0, saat tersi)</label><${SayiGirdi} value=${Math.round((+r.az || 0) * 10) / 10} onSave=${(v) => setRow(i, { az: v ?? 0 })} /></div><div class="fld"><label>Açıklık (m)</label><${SayiGirdi} value=${Math.round((+r.len || 0) * 10) / 10} onSave=${(v) => setRow(i, { len: v ?? 0 })} /></div></div>
       <div class="grid2"><div class="fld"><label style="color:var(--og)">OG iletkeni</label><${Sel} mono value=${r.yg || ''} options=${[['', 'yok'], ...TABLES.YG_SIRA.map((k) => [k, k])]} onChange=${(v) => setRow(i, { yg: v }, true)} /></div>
         <div class="fld"><label style="color:#7ee08a">AG tertibi</label><${Sel} mono value=${r.ag || ''} options=${[['', 'yok'], ...agList.map((t) => [t.key, t.label || t.key])]} onChange=${(v) => setRow(i, { ag: v }, true)} /></div></div>
       ${!(r.yg || r.ag) ? html`<div class="note hw">İletken tanınmadı: OG iletkeni ya da AG tertibini seçin. Seçiminiz "${r.layer || 'bu katman'}" için hatırlanır.</div>` : null}

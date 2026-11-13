@@ -213,16 +213,20 @@ başlığından tutup taşınır.
   - Eleman penceresinde **Son malzemeleri ekle (malzeme hafızası)** kutusu: hafızada ne varsa yanında yazar.
   - Hat penceresinde **1. iletken** ve **2. iletken** yuvaları, her birinin **Adet** kutusu (1–12). 2. iletkeni
     kaldırmak için yanındaki **Boşalt**.
-- **Toplu malzeme**: solda katalog (arama kutusuyla), **Ekle** ile sağdaki tabloya; tabloda miktar ve durum
-  ("elemana göre" ya da bir durum), altta hakediş. **Hafızadakiler** son konan elemanın malzemelerini tabloya getirir.
-  **Malzemeleri ekle** seçilen bütün direklere yazar.
+- **Toplu malzeme**: solda işaret kutulu katalog (arama kutusuyla): malzemeye **tıklayınca işaretlenir** ve sağdaki
+  tabloya girer, bir daha tıklamak çıkarır; böylece **birden çok malzeme** tek pencerede seçilir (**Ekle** düğmesi ve
+  boşluk tuşu da işaretler). Tabloda miktar ve durum ("elemana göre" ya da bir durum), altta hakediş. **Elemanda zaten
+  olan malzemeyi ekleme** (açık gelir): aynı cins ve tipte malzemesi olan elemana o satır eklenmez. **Hafızadakiler**
+  son konan elemanın malzemelerini tabloya getirir. **Malzemeleri ekle** seçilen bütün elemanlara yazar.
 - **Kablo kanalı çiz**: kanaldaki kablolar, **kanal cinsi (zemin)** ve **kaplama** ayrı ayrı (+ Bariyerli, Trencher;
   altında kalem adı), ölçüler ve **hızlı seçim** düğmeleri (40×40×80 …). Aynı seçici kanalın **Malzemeler**
   penceresinde ve **Çizim Ayarları › Metraj**'daki kanal varsayılanında da vardır.
 - **Yatay sondaj çiz**: tip listesi, durum, hakediş.
 - **Malzemeler**: nesnenin kendi pozu en üstte (kalın, simgeli); hücreye tıklayıp durum, miktar, hakediş, DM
   durumu değişir; altta toplam ağırlık. Onaylı hakedişin satırları gri ve kilit simgelidir.
-- **Eksik malzeme bul**: süzgeç değiştikçe sonuç pencerede listelenir; **Çizimde seç** ya da **Excel'e yaz**.
+- **Eksik malzeme bul**: süzgeç değiştikçe sonuç pencerede listelenir; **Çizimde seç**, **Excel'e yaz** ya da
+  **Bulunanlara malzeme ekle** (bulunan elemanlar için Toplu malzeme penceresi açılır; aranan tip seçiliyse o malzeme
+  listede hazır gelir — ör. "topraklaması olmayan AG direkleri"ni bulup hepsine topraklamayı tek seferde ekleyin).
 - **Hakediş onayı**: her hakediş için Kontrol → Hakediş → GIS işaretleri; aktif hakediş vurgulu, onaylı olan kilitli.
 - **Çizim ayarları**: Genel, Tarife, Görünüm, Metraj ve **Proje** sekmeleri. Proje sekmesi: proje adı, kodu,
   hesabı yapan, unvan, firma, buz yükü bölgesi — teknik hesaplara ve raporlara buradan yazılır.
@@ -265,8 +269,11 @@ Yakalama mesafesinin alt sınırı **Çizim Ayarları › Genel › Direğe yaka
   Kapatmak için düğmeye bir kez tıklayın. Hafıza AutoCAD kapanınca da kalır.
 - Malzemenin durumu elemanla aynıysa yeni elemanın durumunu alır (ör. yeni direğe M, sök-tak direğe DM+M);
   farklı seçilmişse (ör. mevcut direğe yeni travers) olduğu gibi kalır.
-- **Toplu Malzeme** (`SH_TOPLUMALZEME`): direkleri seçin (ya da önce seçip düğmeye basın), pencerede malzemeleri
-  ve miktarlarını girin, **Malzemeleri ekle**. Hepsine birden eklenir; onaylı (kilitli) hakedişe eklenmez.
+- **Toplu Malzeme** (`SH_TOPLUMALZEME`): direkleri seçin (ya da önce seçip düğmeye basın), pencerede malzemelere
+  tıklayıp işaretleyin (birden çok), miktarlarını girin, **Malzemeleri ekle**. Hepsine birden eklenir; elemanda zaten
+  olan malzeme (istenirse) atlanır; onaylı (kilitli) hakedişe eklenmez.
+- **Eksik malzemeden toplu ekleme**: **Eksik Malzeme** penceresinde süzgeçle elemanları bulun (ör. topraklaması
+  olmayan AG direkleri), **Bulunanlara malzeme ekle** deyin; aynı Toplu malzeme penceresi bulunan elemanlar için açılır.
 
 ### Armatür
 
@@ -467,7 +474,7 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 | Proje Özeti | `SH_OZET` | Pencere: solda projeler (bölgeler), sağda seçilen projenin **Malzeme listesi** ya da **Kanal listesi** sekmesi (hakediş, durum ve aramayla süzülür). Kanal listesinde her kanal parçası (baş – bit, kablolar, cins, kaplama, ölçü, uzunluk, hacim, durum, hakediş); "Tüm projeler"de her proje bir başlık satırıyla başlar, altında toplamı. **Excel'e aktar** proje listesini, görünen malzeme listesini ve **KANAL LİSTESİ / KANAL ÖZETİ** sayfalarını yazar. Kanal sekmesindeki **Çizime tablo olarak koy** görünen listeyi çizime tablo olarak koyar. **Birleşik Metraj…** (9.11.2026) eski programın Birleşik Metraj Excel şablonunu (DİREK / İLETKEN / YERALTI METRAJI, MALZ. LİSTESİ) seçili projeyle (ya da "Tüm projeler"le) doldurur: pencerede şablon (gömülü temiz kopya ya da kendi `.xlsm` dosyanız), yüklenici firma, il, ilçe ve hakediş no (bu bilgisayarda hatırlanır); dosya `<çizim>_<proje>_BIRLESIK_METRAJ_<tarih>.xlsm` olarak kaydedilir, sonuç penceresi açılan sütunları ve uyarıları gösterir, **Dosyayı aç** Excel'i açar. Kurallar: her direk / box bir satır (yeni → Yeni Direk, demontaj → Demontaj "tip (K/S)", sök-tak → Demontajdan Montaj, mevcut → Mevcut; malzemeler kendi durumlarıyla), şablonun kendi türetme formülleri yerine çizimdeki malzeme yazılır (olmayan 0), her havai açıklık İLETKEN'de bir satır (sök-tak iki satır: DM + AKTARIM; tel kodları R / P / A / SWLL…), kanallar ve yeraltı kablolar YERALTI'da (kablo metrajı kanal üstünden giden kısım KANAL İÇİN, kalan DİREK İÇİN). Şablonun DİREK METRAJI sayfasında temsil edilmeyen cinsten direkler (beton, cıvatalı ENH, raven kaynaklı ENH…) **cins başına ayrı sayfaya** yazılır (13.11.2026): DİREK METRAJI'nın aynı biçimde kopyası, adı `DİREK AG BETON`, `DİREK ENH GALV. CIVATALI` gibi; direğin tipi ve malzemeleri orada normal sütun olur. Şablonda olmayan direk tipi, tel, kablo ya da malzeme için ilgili sayfaya **yeni sütun** açılır (KOD şablonun dizisinden sürer: `Y175`, `D120`…) ve MALZ. LİSTESİ'ne EK KALEMLER yerine sayfa başlığı altında **normal satır** yazılır ("ek" kalemi yok; sığmayan "ŞABLONDA OLMAYAN" sayfasına). Dosya Excel'de açılınca formüller yeniden hesaplanır (makro korunur). Kural telefonla ortak: [ortak/BIRLESIK-METRAJ.md](ortak/BIRLESIK-METRAJ.md). |
 | Kanal Listesi | `SH_KANALLISTESI` | Proje bazında kanal listesini çizime **tablo** olarak koyar (sol üst köşesini gösterin): her proje için başlık, kanallar ve toplamı, en altta genel toplam. Tablo `SH_KANAL_LISTESI` bloğudur (katman `SC_KANAL_LISTESI`); yeniden çalıştırınca yerinde yenilenir. AutoCAD'in tablo nesnesi değildir, DWG 2000 biçiminde de bozulmadan kalır. |
 | Çizim Onar | `SH_ONAR` | Açılırken AutoCAD'i kapatan çizimi **açmadan** onarır (DWG 2000 biçimi): eklentinin eski sürümünün (0.1.57 ve öncesi) bıraktığı boş kayıtlar çıkarılır, onarılmış kopya `…-onarildi.dwg` adıyla yanına yazılır; asıl dosyaya dokunulmaz. Birden çok çizim seçilebilir; çizim AutoCAD'de açık olmamalıdır. |
-| Eksik Malzeme | `SH_DETAY` | Eski programdaki DETAY sorgusu: ör. "topraklaması **olmayan** AG direkleri". Hangi elemanlarda (ana cins, tip, durum, bölge) hangi ara malzemenin (cins, tip, durum, hakediş) aranacağını seçin; **olmayanlar / olanlar / hepsi**. Sonuç pencerede listelenir; **Çizimde seç** bulunan elemanları seçer, **Excel'e yaz** ayrıca DETAY dosyasını yazar. |
+| Eksik Malzeme | `SH_DETAY` | Eski programdaki DETAY sorgusu: ör. "topraklaması **olmayan** AG direkleri". Hangi elemanlarda (ana cins, tip, durum, bölge) hangi ara malzemenin (cins, tip, durum, hakediş) aranacağını seçin; **olmayanlar / olanlar / hepsi**. Sonuç pencerede listelenir; **Çizimde seç** bulunan elemanları seçer, **Excel'e yaz** ayrıca DETAY dosyasını yazar, **Bulunanlara malzeme ekle** bulunanlara Toplu malzeme penceresini açar. |
 | Google Earth | `SH_KML` | Aşağıda: CBS ve harita. |
 | CBS'ye Aktar / CBS'den Al / CBS Bilgisi | `SH_MIFVER` / `SH_MIFAL` / `SH_CBSBILGI` | Aşağıda: CBS ve harita. |
 | Harita Altlığı | `SH_ALTLIK` | Aşağıda: CBS ve harita. |

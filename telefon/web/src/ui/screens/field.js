@@ -1,5 +1,6 @@
 // Saha operasyonu ekranları (v2.2): Excel toplu aktarım · Saha objeleri listesi · Sabit Base + Rover rehberi
-import { html, useState, useEffect, useBus, Icon, Chip, Seg, Sel, Badge, Title, fmt } from '../kit.js';
+import { html, useState, useEffect, useBus, Icon, Chip, Seg, Sel, Badge, Title, Toggle, Isaret, SayiGirdi, fmt, trn } from '../kit.js';
+import { autoRecipeOn } from '../../grid/recipe.js';
 import { app } from '../ctx.js';
 import { EQUIPMENT_KINDS, HAK_STATUSES, HAK_ORDER, hakOf } from '../../core/schema.js';
 import { sourceInfo, SRC, SRC_CODES } from '../../core/source.js';
@@ -128,6 +129,42 @@ export async function renumberDialog(lineId) {
 }
 
 // ---------------- Saha objeleri listesi (kaynak etiketi + hakediş durumu) ----------------
+// ---------------- Toplu malzeme (13.11.2026) ----------------
+// AutoCAD'deki Toplu malzeme ve Eksik malzeme › Bulunanlara malzeme ekle ile aynı iş: Saha objeleri listesinde süzülen
+// (ya da işaretlenen) ekipmanların her birine aynı malzemeler eklenir. Malzemelere dokunmak işaretler / kaldırır.
+function TopluMalzemeForm({ close, n, baslangic }) {
+  const ps = app.ps, cat = ps.cat;
+  const auto = autoRecipeOn(ps.p);
+  const [q, setQ] = useState('');
+  const [sec, setSec] = useState(() => (baslangic || []).map((x) => ({ servis: x.servis, qty: x.qty || 1 })));
+  const [varsaAtla, setVarsaAtla] = useState(true);
+  const [why, setWhy] = useState('');
+  const hits = cat.searchPoz(q, { limit: 40 }).filter((x) => !x.isKgGroup);
+  const on = (s) => sec.some((x) => x.servis === s);
+  const toggle = (s) => setSec((l) => (l.some((x) => x.servis === s) ? l.filter((x) => x.servis !== s) : l.concat({ servis: s, qty: 1 })));
+  const setQty = (s, v) => setSec((l) => l.map((x) => (x.servis === s ? { servis: s, qty: v } : x)));
+  const hazir = sec.length > 0 && sec.every((x) => x.qty > 0) && (!auto || why.trim());
+  return html`<div class="mh"><h3>Toplu malzeme · ${n} obje</h3></div><div class="mb">
+    <div class="note">Malzemelere dokunun: işaretlenen her malzeme ${n} objenin her birine eklenir. Bir daha dokunmak çıkarır.</div>
+    <input class="inp" value=${q} placeholder="Ara: topraklama, izolatör, 011.04…" onInput=${(e) => setQ(e.target.value)} />
+    <div class="card tight list" style="max-height:32vh;overflow:auto">${hits.map((x) => html`<button class="li" style="width:100%;text-align:left;color:inherit;background:none;border:0" onClick=${() => toggle(x.servis)}><${Isaret} on=${on(x.servis)} /><div class="grow"><div style="font-size:14px;font-weight:600">${x.name}</div><div class="m">${x.servis} · ${x.unit}</div></div></button>`)}
+      ${!hits.length ? html`<div class="empty">Sonuç yok</div>` : null}</div>
+    ${sec.length ? html`<div class="sect">Eklenecek (${sec.length})</div><div class="card tight list">${sec.map((x) => { const pz = cat.poz(x.servis) || {}; return html`<div class="li"><div class="grow"><div style="font-size:13px;font-weight:600">${pz.name || x.servis}</div><div class="m">${x.servis}</div></div><${SayiGirdi} canli style="width:84px;text-align:right" value=${x.qty} onSave=${(v) => setQty(x.servis, v)} /><span class="note" style="width:28px">${pz.unit || ''}</span><button class="btn xs" aria-label="Çıkar" onClick=${() => toggle(x.servis)}><${Icon} n="x" s=${16} /></button></div>`; })}</div>` : null}
+    <div class="row card" style="padding:8px 10px"><span class="grow" style="font-size:13px">Objede zaten olan malzemeyi ekleme</span><${Toggle} on=${varsaAtla} onChange=${setVarsaAtla} label="Olanı atla" /></div>
+    ${auto ? html`<div class="fld"><label>Gerekçe (sahada ilave · onay bekler) *</label><input class="inp" value=${why} placeholder="ör. topraklama eksikti" onInput=${(e) => setWhy(e.target.value)} /></div>` : null}
+  </div><div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn pri grow" disabled=${!hazir} onClick=${() => close({ kalemler: sec, varsaAtla, reason: why })}>${sec.length ? n + ' OBJEYE ' + sec.length + ' MALZEME' : 'MALZEME SEÇİN'}</button></div>`;
+}
+
+function MalzemeSecForm({ close }) {
+  const cat = app.ps.cat;
+  const [q, setQ] = useState('');
+  const hits = cat.searchPoz(q, { limit: 40 }).filter((x) => !x.isKgGroup);
+  return html`<div class="mh"><h3>Hangi malzeme aranacak?</h3></div><div class="mb">
+    <input class="inp" autofocus value=${q} placeholder="Ara: topraklama, izolatör, 011.04…" onInput=${(e) => setQ(e.target.value)} />
+    <div class="card tight list" style="max-height:46vh;overflow:auto">${hits.map((x) => html`<button class="li" style="width:100%;text-align:left;color:inherit;background:none;border:0" onClick=${() => close(x.servis)}><div class="grow"><div style="font-size:14px;font-weight:600">${x.name}</div><div class="m">${x.servis} · ${x.unit}</div></div></button>`)}</div>
+  </div><div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button></div>`;
+}
+
 export function ObjectsScreen() {
   useBus(['project:computed']);
   const ps = app.ps;
@@ -135,6 +172,9 @@ export function ObjectsScreen() {
   const [kind, setKind] = useState('');
   const [hak, setHak] = useState('');
   const [src, setSrc] = useState('');
+  const [mz, setMz] = useState({ servis: '', kapsam: 'yok' });   // malzeme süzgeci: olmayanlar / olanlar
+  const [secMod, setSecMod] = useState(false);
+  const [secim, setSecim] = useState(() => new Set());
   const low = (s) => String(s || '').toLocaleLowerCase('tr-TR');
   const photos = new Map();
   for (const ph of ps.data.photos) photos.set(ph.ownerId, (photos.get(ph.ownerId) || 0) + 1);
@@ -144,7 +184,24 @@ export function ObjectsScreen() {
   const eqPts = new Set(ps.data.equipment.map((e) => e.pointId));
   for (const p of ps.data.points) if (!eqPts.has(p.id)) rows.push({ id: p.id, type: 'point', no: p.pointNo, kind: 'point', kindLabel: p.cls === 'HAT' ? 'Hat köşe noktası' : p.cls === 'TASARIM' ? 'Tasarım noktası' : 'Detay noktası', sub: p.note || '', p, hak: null, si: sourceInfo(p), rec: p, photos: photos.get(p.id) || 0 });
   const kinds = [...new Map(rows.map((r) => [r.kind, r.kindLabel])).entries()];
-  const list = rows.filter((r) => (!kind || r.kind === kind) && (!hak || r.hak === hak) && (!src || (r.si && r.si.code === src)) && (!q || low(r.no + ' ' + r.kindLabel + ' ' + r.sub).includes(low(q)))).sort((a, b) => String(a.no).localeCompare(String(b.no), 'tr', { numeric: true }));
+  const list = rows.filter((r) => (!kind || r.kind === kind) && (!hak || r.hak === hak) && (!src || (r.si && r.si.code === src)) && (!q || low(r.no + ' ' + r.kindLabel + ' ' + r.sub).includes(low(q)))
+    && (!mz.servis || (r.type === 'equipment' && ps.hasMaterial(r.id, mz.servis) === (mz.kapsam === 'var')))).sort((a, b) => String(a.no).localeCompare(String(b.no), 'tr', { numeric: true }));
+  const ekipmanlar = list.filter((r) => r.type === 'equipment');
+  const hedef = secMod && secim.size ? ekipmanlar.filter((r) => secim.has(r.id)) : ekipmanlar;
+  const mzPoz = mz.servis ? ps.cat.poz(mz.servis) : null;
+  const isaretle = (id) => setSecim((s) => { const y = new Set(s); if (y.has(id)) y.delete(id); else y.add(id); return y; });
+  const malzemeSuz = async () => { const s = await app.modal((close) => html`<${MalzemeSecForm} close=${close} />`); if (s) setMz({ servis: s, kapsam: mz.kapsam }); };
+  const topluMalzeme = async () => {
+    if (!hedef.length) return;
+    const r = await app.modal((close) => html`<${TopluMalzemeForm} close=${close} n=${hedef.length} baslangic=${mz.servis && mz.kapsam === 'yok' ? [{ servis: mz.servis, qty: 1 }] : []} />`);
+    if (!r) return;
+    try {
+      const o = await ps.addMaterialsBulk(hedef.map((x) => x.id), r.kalemler, { varsaAtla: r.varsaAtla, reason: r.reason });
+      const ek = [o.atlanan ? o.atlanan + ' satır objede zaten vardı' : '', o.kilitli ? o.kilitli + ' obje kilitli' : '', o.issiz ? o.issiz + ' obje mevcut / ileride (malzeme eklenmez)' : ''].filter(Boolean);
+      app.toast(o.ekipman + ' objeye ' + o.eklenen + ' malzeme satırı eklendi' + (ek.length ? ' · ' + ek.join(' · ') : ''), o.eklenen ? 'ok' : 'warn', 6000);
+      setSecim(new Set());
+    } catch (err) { app.toast(err.message, 'err', 6000); }
+  };
   const counts = ps.hakCounts();
   const open = (r) => { if (r.type === 'equipment') app.nav.go('equipment', { id: r.id }); else if (r.type === 'line') app.nav.go('line', { id: r.id }); else app.nav.go('point', { id: r.id }); };
   const show = (r) => { app.state.sel = r.type === 'line' ? { type: 'line', id: r.id, seg: 0 } : { type: 'point', id: r.type === 'equipment' ? r.rec.pointId : r.id }; app.state.follow = false; const p = r.p || (r.type === 'line' ? ps.pointById(r.rec.nodes[0]) : null); if (p && p.E != null) app.state.view = { cE: p.E, cN: p.N, res: Math.min((app.state.view || {}).res || 0.3, 0.3) }; app.nav.tab('map'); };
@@ -152,9 +209,14 @@ export function ObjectsScreen() {
     <div class="hakrow">${HAK_ORDER.map((k) => html`<button class=${hak === k ? 'on' : ''} style=${'--c:' + HAK_STATUSES[k].color} onClick=${() => setHak(hak === k ? '' : k)}><i></i>${HAK_STATUSES[k].short} ${counts[k] || 0}</button>`)}</div>
     <input class="inp" placeholder="Ara: D-017, trafo, armatür…" value=${q} onInput=${(e) => setQ(e.target.value)} />
     <div class="grid2"><${Sel} value=${kind} options=${[['', 'Tüm türler'], ...kinds]} onChange=${setKind} /><${Sel} value=${src} options=${[['', 'Tüm kaynaklar'], ...SRC_CODES.map((c) => [c, '[' + SRC[c].tag + ']'])]} onChange=${setSrc} /></div>
-    <div class="note">${list.length} kayıt${hak || kind || src || q ? ' (süzülmüş)' : ''}</div>
+    <div class="row wrap" style="gap:6px"><button class="btn sm" style="max-width:100%;overflow:hidden" onClick=${malzemeSuz}><${Icon} n="search" s=${16} /><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${mzPoz ? mzPoz.name : 'Malzeme süzgeci (eksik malzeme bul)'}</span></button>
+      ${mz.servis ? html`<${Seg} value=${mz.kapsam} options=${[['yok', 'Olmayanlar'], ['var', 'Olanlar']]} onChange=${(v) => setMz({ servis: mz.servis, kapsam: v })} /><button class="btn xs" aria-label="Süzgeci kaldır" onClick=${() => setMz({ servis: '', kapsam: 'yok' })}><${Icon} n="x" s=${16} /></button>` : null}</div>
+    <div class="note">${list.length} kayıt${hak || kind || src || q || mz.servis ? ' (süzülmüş)' : ''}${mz.servis ? ' · ' + (mz.kapsam === 'yok' ? 'bu malzemesi olmayan' : 'bu malzemesi olan') + ' ekipmanlar' : ''}</div>
+    <div class="row" style="gap:6px"><button class=${'btn' + (secMod ? ' on' : '')} onClick=${() => { setSecMod(!secMod); setSecim(new Set()); }}><${Icon} n=${secMod ? 'x' : 'check'} s=${18} />${secMod ? 'Seçimi kapat' : 'Seç'}</button>
+      <button class="btn pri grow" disabled=${!hedef.length} onClick=${topluMalzeme}><${Icon} n="plus" s=${18} c="#0b1326" />Toplu malzeme · ${hedef.length} obje${secMod && !secim.size ? ' (hepsi)' : ''}</button></div>
     <div class="card tight list">${list.slice(0, 300).map((r) => html`<div class="li" style="align-items:flex-start">
-      <button class="grow" style="background:none;border:0;text-align:left;color:inherit;padding:0" onClick=${() => open(r)}>
+      ${secMod && r.type === 'equipment' ? html`<button style="background:none;border:0;padding:4px 6px 0 0" aria-label="İşaretle" onClick=${() => isaretle(r.id)}><${Isaret} on=${secim.has(r.id)} /></button>` : null}
+      <button class="grow" style="background:none;border:0;text-align:left;color:inherit;padding:0" onClick=${() => (secMod && r.type === 'equipment' ? isaretle(r.id) : open(r))}>
         <div class="row wrap" style="gap:6px"><b style="font-size:14px">${r.no}</b><span class="note">${r.kindLabel}</span>${r.si ? html`<span class="srctag" style=${'color:' + r.si.color}>[${r.si.tag}]</span>` : null}${r.hak ? html`<span class="srctag" style=${'color:' + HAK_STATUSES[r.hak].color}>● ${HAK_STATUSES[r.hak].short}</span>` : null}</div>
         <div class="s">${r.sub}${r.p && r.p.E != null ? ' · Y ' + fmt(r.p.E, 2) + ' X ' + fmt(r.p.N, 2) + (r.p.H != null ? ' Z ' + fmt(r.p.H, 2) : ' Z ?') : ''}${r.photos ? ' · ' + r.photos + ' foto' : ''}</div>
       </button>

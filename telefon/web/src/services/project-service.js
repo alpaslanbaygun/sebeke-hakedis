@@ -7,6 +7,7 @@ import { makeCrs, project as projectLL, unproject } from '../geo/crs.js';
 import { ROLES, approvalOn, strictOn, canHak, canDo, activeMembers, checkPin, pinHash, validPin } from '../core/roles.js';
 import { buildWorkProgram, periodTable, approveSnapshot } from '../qty/hakedis.js';
 import { aktifHakedis, objeHakedisi } from '../core/hakedis-no.js';
+import { autoRecipeOn, jobOf } from '../grid/recipe.js';
 
 // Onay açıkken kilitlenen durumlar ve kilit dışı alanlar
 const LOCKED = new Set(['KONTROL', 'HAKEDISTE', 'ONAYLI']);
@@ -285,6 +286,41 @@ export class ProjectService {
     this.data.materials.push(x);
     await this.recompute('Malzeme eklendi');
     return x;
+  }
+  /** Ekipmanın malzeme listesinde (reçete ya da elle) bu servis var mı. */
+  hasMaterial(eqId, servis) {
+    return ((this.result && this.result.matsByEq.get(eqId)) || { items: [] }).items.some((m) => m.servis === servis);
+  }
+  /**
+   * Toplu malzeme (13.11.2026; AutoCAD'deki Toplu malzeme ve Eksik malzeme › Bulunanlara malzeme ekle ile aynı iş):
+   * her ekipmana aynı kalemler ({ servis, qty }). Otomatik reçete açıksa "sahada ilave" (gerekçe zorunlu, onay bekler),
+   * kapalıysa elle malzeme. varsaAtla: ekipmanda aynı servis zaten varsa o satır eklenmez. Kilitli ya da işi olmayan
+   * (mevcut, ileride) ekipman atlanır. Tek yeniden hesap. Döner: { eklenen, ekipman, atlanan, kilitli, issiz }.
+   */
+  async addMaterialsBulk(eqIds, kalemler, { varsaAtla = true, reason = '' } = {}) {
+    const auto = autoRecipeOn(this.p);
+    if (auto && !String(reason || '').trim()) throw new Error('Sahada ilave için gerekçe zorunlu');
+    const k = (kalemler || []).filter((x) => x && this.cat.poz(x.servis) && +x.qty > 0);
+    if (!k.length) throw new Error('Eklenecek malzeme yok');
+    const r = { eklenen: 0, ekipman: 0, atlanan: 0, kilitli: 0, issiz: 0 };
+    for (const id of new Set(eqIds || [])) {
+      const e = this.eqById(id);
+      if (!e || e.status === 'deleted') continue;
+      if (!jobOf(e)) { r.issiz++; continue; }
+      if (this.editLock(e)) { r.kilitli++; continue; }
+      let n = 0;
+      for (const x of k) {
+        if (varsaAtla && this.hasMaterial(id, x.servis)) { r.atlanan++; continue; }
+        const pz = this.cat.poz(x.servis);
+        const ek = auto ? { origin: 'SAHADA_ILAVE', reason: reason.trim(), approved: false } : { origin: 'MANUEL', reason: String(reason || '').trim() || 'Toplu malzeme', approved: true };
+        const m = await this.ds.create('materials', Object.assign({ projectId: this.p.id, ownerId: id, ownerType: 'equipment', servis: x.servis, qty: +x.qty, unit: pz.unit, grp: pz.kgGroup || '' }, ek), { reason: 'Toplu malzeme: ' + (e.no || '') + ' · ' + pz.name + ' × ' + x.qty });
+        this.data.materials.push(m);
+        n++;
+      }
+      if (n) { r.eklenen += n; r.ekipman++; }
+    }
+    if (r.eklenen) await this.recompute('Toplu malzeme');
+    return r;
   }
   async setMaterialRowQty(id, qty) {
     if (!(+qty > 0)) throw new Error('Miktar sıfırdan büyük olmalı');

@@ -18,9 +18,11 @@ export function buildGeoJSON(model, opts = {}) {
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 /**
- * Google Earth dosyasının telefona özgü ek klasörü (başta kapalı): direkler gerçek yükseklikleriyle dikey çizgi, havai
- * iletkenler direk tepelerinden (mutlak yükseklik). Asıl içerik eklentiyle aynıdır (export/cbs.js › kmlMetni); bu klasör
- * belgenin sonuna eklenir.
+ * Google Earth dosyasının telefona özgü ek klasörü (başta kapalı): direkler gerçek boylarıyla dikey çizgi, havai
+ * iletkenler direk tepelerinden. Yükseklikler ZEMİNE GÖREDİR (relativeToGround): ölçülen kot (ortometrik, TUDKA) ile
+ * Google Earth'ün arazi modeli birkaç metre (elipsoit yüksekliğinde ~36 m) farklı olduğundan mutlak yükseklikle direkler
+ * havada kalıyor ya da gömülüyordu (kullanıcı bildirimi 13.11.2026). Asıl içerik eklentiyle aynıdır
+ * (export/cbs.js › kmlMetni); bu klasör belgenin sonuna eklenir.
  */
 export function kml3BKlasoru(model) {
   const styles = '<Style id="t3b_direk"><IconStyle><scale>0.6</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon></IconStyle><LineStyle><color>ff9ca3af</color><width>3</width></LineStyle></Style>' +
@@ -31,18 +33,18 @@ export function kml3BKlasoru(model) {
   // "İleride" durumundakiler asıl klasörlerde yoktur (eklentinin dosyasında da yok): burada da çizilmez
   const ileride = (s) => String(s || '').toUpperCase() === 'ILERIDE';
   for (const e of model.equipment) {
-    if (e.lat == null || e.H == null || !e.heightM || ileride(e.state)) continue;
+    if (e.lat == null || !e.heightM || ileride(e.state)) continue;
     const top = e.heightM - (e.heightM / 10 + 0.6);
     if (top <= 0) continue;
-    body += '<Placemark><name>' + esc(e.no) + '</name><styleUrl>#t3b_direk</styleUrl><MultiGeometry><Point><altitudeMode>absolute</altitudeMode><coordinates>' + r9(e.lon) + ',' + r9(e.lat) + ',' + (e.H + top).toFixed(3) + '</coordinates></Point><LineString><altitudeMode>absolute</altitudeMode><coordinates>' + r9(e.lon) + ',' + r9(e.lat) + ',' + e.H.toFixed(3) + ' ' + r9(e.lon) + ',' + r9(e.lat) + ',' + (e.H + top).toFixed(3) + '</coordinates></LineString></MultiGeometry></Placemark>\n';
+    body += '<Placemark><name>' + esc(e.no) + '</name><styleUrl>#t3b_direk</styleUrl><MultiGeometry><Point><altitudeMode>relativeToGround</altitudeMode><coordinates>' + r9(e.lon) + ',' + r9(e.lat) + ',' + top.toFixed(3) + '</coordinates></Point><LineString><altitudeMode>relativeToGround</altitudeMode><coordinates>' + r9(e.lon) + ',' + r9(e.lat) + ',0 ' + r9(e.lon) + ',' + r9(e.lat) + ',' + top.toFixed(3) + '</coordinates></LineString></MultiGeometry></Placemark>\n';
   }
   for (const l of model.lines) {
-    if (l.coords.length < 2 || l.install !== 'havai' || ileride(l.state) || !l.coords.every((c) => c.H != null && eqById.get(c.id))) continue;
-    const coords = l.coords.map((c) => r9(c.lon) + ',' + r9(c.lat) + ',' + ((c.H || 0) + att(eqById.get(c.id))).toFixed(3)).join(' ');
-    body += '<Placemark><name>' + esc(l.no + ' ' + l.label) + '</name><styleUrl>#t3b_hat</styleUrl><LineString><altitudeMode>absolute</altitudeMode><coordinates>' + coords + '</coordinates></LineString></Placemark>\n';
+    if (l.coords.length < 2 || l.install !== 'havai' || ileride(l.state) || !l.coords.every((c) => c.lat != null && eqById.get(c.id))) continue;
+    const coords = l.coords.map((c) => r9(c.lon) + ',' + r9(c.lat) + ',' + att(eqById.get(c.id)).toFixed(3)).join(' ');
+    body += '<Placemark><name>' + esc(l.no + ' ' + l.label) + '</name><styleUrl>#t3b_hat</styleUrl><LineString><altitudeMode>relativeToGround</altitudeMode><coordinates>' + coords + '</coordinates></LineString></Placemark>\n';
   }
   if (!body) return '';
-  return '<Folder><name>3B direk ve iletken (telefon)</name><visibility>0</visibility><description>Direkler gerçek yükseklikleriyle, havai iletkenler direk tepelerinden; açmak için işaretleyin.</description>\n' + styles + '\n' + body + '</Folder>\n';
+  return '<Folder><name>3B direk ve iletken (telefon)</name><visibility>0</visibility><description>Direkler gerçek boylarıyla zemine oturur, havai iletkenler direk tepelerinden; açmak için işaretleyin.</description>\n' + styles + '\n' + body + '</Folder>\n';
 }
 
 // Netcad NCN (ASCII nokta dosyası): Nokta_Adı  Y(Sağa)  X(Yukarı)  Z  Kod

@@ -158,6 +158,26 @@ perde / toast…), seçili düğme yazısı `color-mix` ile koyulaşır; ekranla
 (WebView'in prefers-color-scheme'i uygulamanın koyu temasını izlediğinden). Playwright ile web sürümünde iki temada
 proje, harita ve ayarlar görüntüsü denetlendi. Belgeler: KULLANIM (Pencereler), telefon kılavuzu (Ekranlar), README.
 
+13.11 akşam (`saha-duzeltmeleri-13-11` dalı, `acik-tema` üstüne; PR J): kullanıcının 13.11 14:04 bildiriminin hızlı
+düzeltmeleri. **Toplu malzeme** (kullanıcı: "seçili direklere yalnızca tek bir malzeme eklenebiliyor gibi"; sorgulama
+ekranından da toplu ekleme): eklenti Toplu malzeme penceresinde katalog **işaret kutulu** (`IkiSatirListe.Isaretli` /
+`Isaret` / `Isaretle`; tıklama ve boşluk tuşu işaretler, bir daha tıklama çıkarır), **Elemanda zaten olan malzemeyi
+ekleme** (`TopluMalzemeSatiri.VarsaAtla`, `CizimKomutlari.ZatenVar`: aynı cins + `DetaySorgu.Sade` tip), yazma işi
+`CizimKomutlari.TopluMalzemeUygula`'da; **Eksik Malzeme** penceresine **Bulunanlara malzeme ekle** (`DetayIslemi.Malzeme`;
+aranan cins + tip katalogda bulunursa satır hazır gelir). PencereTest 18 / 23 genişletildi. Telefon: Saha objeleri
+ekranında **Malzeme süzgeci** (olmayanlar / olanlar; `ps.hasMaterial`) ve **Toplu malzeme** (listedeki ya da `Seç` ile
+işaretlenen ekipmanlar; `ps.addMaterialsBulk`: otomatik reçete açıksa sahada ilave + gerekçe, kapalıysa elle; mevcut /
+ileride ve kilitli obje atlanır; tek yeniden hesap), deneme `tests/toplu-malzeme.test.mjs`. **KMZ 3B direkler havada**:
+3B klasörü `relativeToGround` (direk 0 → boy, tel bağlantı yüksekliğinde; ölçülen Z Google Earth'ün zeminiyle tutmadığı
+için), deneme cbs. **AG direği rengi** ACI 108 → **102** (kullanıcı seçimi; `cizim-stili.json › direkRenkleri.AG`,
+`DIREK_AG.aciYeni`; iki taraf bu tablodan okur). **El konsolunda kanal derinliği girilemiyordu**:
+`type="number"` alanı kimi Android klavyelerinde virgülü reddedip boşaltıyor, "change" olayı da gelmiyordu → `kit.js ›
+SayiGirdi` (yazı alanı + `inputmode="decimal"`, `sayiOku` virgül / nokta, `canli` her tuşta kaydeder); hat penceresi
+ve Hat kaydı'nda derinlik / genişlik / boru, ayrıca hazır derinlik düğmeleri (`KANAL_DERINLIKLERI` 0,7–1,2 m); bütün
+ondalık alanlar (anten, eşikler, geoit N, direk boyu / bağlantı yüksekliği, gerilim, köşe eşiği, tepe yön / uzunluk,
+çizim boyutları) aynı alana geçti, deneme `tests/sayi-girdi.test.mjs` (ondalık `type="number"` kalmasın). Cihazda
+denenmedi. Bekleyen: hat etiketi metrajının iki haneli yazılması (kullanıcıdan ekran görüntüsü bekleniyor).
+
 9.11 öğleden sonra (`simge-takimi` dalı, `hesap-metraj` üstüne; PR C): **#89 Şebeke-M simge takımı** — kullanıcının
 SM_* SVG / DXF tasarımı seçilebilir ikinci takım olarak (kararlar: ikinci takım, çizim başına seçilir; demontajda DM
 simgesine K / S harfi; köşk türü tipten, yoksa modüler köşk). `semboller.json` sürüm 3: 23 `SM_` ailesi (`aileler.*.takim`,
@@ -493,6 +513,13 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
+- **13.11 14:04 bildirimi** (7 madde): ~~toplu malzeme~~, ~~KMZ 3B~~, ~~AG rengi ACI 102~~, ~~el konsolunda kanal
+  derinliği~~ — PR J (§2). Kalan: **hat etiketi metrajı iki haneli** (kullanıcı "Hat etiketi metrajı (/341m)" dedi; hat
+  etiketinde bugün metraj yok — hangi yazı olduğu için ekran görüntüsü istendi), **Aplikasyon ekranı** (haritada anlık
+  yön, haritadan nokta seçip hızlı aplikasyon) ve **genel arayüz sadeleştirme** (saha alım pencereleri ekranı az kaplasın;
+  teknolojiye uzak personel için sade ekranlar) — kullanıcı kararı: Stitch yok, önce ekran taslakları gösterilir, onaydan
+  sonra yapılır. AutoCAD'de denemesi: Toplu malzeme'de birden çok malzeme işaretleme, Eksik Malzeme › Bulunanlara
+  malzeme ekle; ACI 102 AG direklerin baskıda görünürlüğü. Telefonda: el konsolunda derinlik girişi, Google Earth'te 3B klasör.
 - **13.11 bildiriminin kalan maddeleri** (kullanıcı kararları 13.11 04:40):
   - **5 Birim fiyatlı keşif** — kullanıcı birim fiyat dosyasını verecek: gönderdiği "Genel Keşif Simülatörü" HTML'inin
     içinde 2026 TEDAŞ birim fiyat kitabı gömülü (4 773 kalem: yeni poz `85.105.1101`, eski poz grubu `5.1`, ad, birim, malzeme

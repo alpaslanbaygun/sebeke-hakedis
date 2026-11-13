@@ -79,6 +79,32 @@ export function Girdi({ value, onSave, cls = 'inp mono', ...rest }) {
   const yazili = value === null || value === undefined ? '' : String(value);
   return html`<input class=${cls} ...${rest} value=${taslak !== null ? taslak : yazili} onInput=${(e) => setTaslak(e.target.value)} onBlur=${(e) => { const v = e.target.value; setTaslak(null); if (v !== yazili) onSave(v); }} onKeyDown=${(e) => { if (e.key === 'Enter') e.target.blur(); }} />`;
 }
+/**
+ * Ondalık sayı yazısını okur: virgül ya da nokta kabul eder ("0,8" = "0.8"), boşlukları atar. Boş → null,
+ * okunamayan → undefined (kaydedilmez).
+ */
+export function sayiOku(s) {
+  const t = String(s ?? '').replace(/\s+/g, '').replace(',', '.');
+  if (t === '') return null;
+  return /^[-+]?(\d+\.?\d*|\.\d+)$/.test(t) ? +t : undefined;
+}
+/**
+ * Sayı alanı (13.11.2026, el konsolu bildirimi): type="number" bazı Android klavyelerinde virgülü reddedip alanı
+ * boşaltıyor, "change" olayı da kimi cihazda hiç gelmiyordu (kanal derinliği girilemiyordu). Bu alan yazı alanıdır,
+ * ondalık klavyeyi açar, virgül ve noktayı kabul eder; canli ise her tuşta, değilse alandan çıkınca kaydeder.
+ */
+export function SayiGirdi({ value, onSave, cls = 'inp mono', canli = false, style = '', ...rest }) {
+  const [taslak, setTaslak] = useState(null);
+  const yazili = value === null || value === undefined || value === '' ? '' : String(value);
+  const eski = yazili === '' ? null : +yazili;
+  const kaydet = (v) => { const n = sayiOku(v); if (n !== undefined && n !== eski) onSave(n); };
+  const hatali = taslak !== null && sayiOku(taslak) === undefined;
+  return html`<input class=${cls} type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" ...${rest} style=${style + (hatali ? ';border-color:var(--err)' : '')} value=${taslak !== null ? taslak : yazili} onInput=${(e) => { setTaslak(e.target.value); if (canli) kaydet(e.target.value); }} onBlur=${(e) => { kaydet(e.target.value); setTaslak(null); }} onKeyDown=${(e) => { if (e.key === 'Enter') e.target.blur(); }} />`;
+}
+/** İşaret kutusu (görünüm): seçili satırlarda yeşil, içinde onay işareti. */
+export function Isaret({ on }) {
+  return html`<span aria-hidden="true" style=${'width:26px;height:26px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2px solid ' + (on ? 'var(--ok)' : 'var(--line3)') + ';background:' + (on ? 'var(--ok)' : 'var(--bg2)')}>${on ? html`<${Icon} n="check" s=${18} c="#fff" w=${3} />` : null}</span>`;
+}
 export function Badge({ k = 'mut', children }) { return html`<span class=${'badge b-' + k}>${children}</span>`; }
 export function Title({ title, sub, back = true, right }) {
   if (app.web && (app.state.depth || 1) <= 1) back = false;   // web: menüden açılan ekranda geri düğmesi olmaz
