@@ -94,6 +94,11 @@ public final class VoltBridge {
     @JavascriptInterface public void keepScreenOn(String reqId, String json) {
         try { boolean on = new JSONObject(json).optBoolean("on", true); act.runOnUiThread(() -> act.setKeepScreenOn(on)); reply(reqId, true); } catch (Exception e) { fail(reqId, e.getMessage()); }
     }
+    /** Lisans için cihaz kimliği: { id } (Settings.Secure.ANDROID_ID; uygulamanın imzasına ve kullanıcıya bağlı, yeniden
+     *  kurulunca aynı kalır; 13.11.2026, web tarafı services/lisans-service.js). */
+    @JavascriptInterface public void cihazKimligi(String reqId, String json) {
+        try { JSONObject o = new JSONObject(); o.put("id", Settings.Secure.getString(act.getContentResolver(), Settings.Secure.ANDROID_ID)); reply(reqId, o); } catch (Exception e) { fail(reqId, e.getMessage()); }
+    }
     /** Cihazın teması: { acik } (13.11.2026; web tarafı ui/tema.js). */
     @JavascriptInterface public void sistemTemasi(String reqId, String json) {
         try { org.json.JSONObject o = new org.json.JSONObject(); o.put("acik", act.cihazAcikTemada()); reply(reqId, o); } catch (Exception e) { fail(reqId, e.getMessage()); }

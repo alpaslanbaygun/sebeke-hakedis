@@ -2,6 +2,7 @@
 import { html, useState, useEffect, useBus, Icon, FIXCOL, fmt } from './kit.js';
 import { app } from './ctx.js';
 import { SCREENS } from './screens/index.js';
+import { LisansScreen } from './screens/lisans.js';
 
 const TABS = [['map', 'Harita', 'map'], ['stake', 'Aplikasyon', 'target'], ['calc', 'Hesaplar', 'calc'], ['export', 'Dışa Aktar', 'share'], ['settings', 'Ayarlar', 'sliders']];
 // Web (ofis) sürümü: ölçüm yok; veri inceleme, düzeltme, toplu giriş ve çıktı
@@ -74,7 +75,7 @@ function Modals() {
 export function App() {
   const [stack, setStack] = useState([{ name: app.ps.p ? 'map' : 'projects', params: {} }]);
   const [tab, setTab] = useState(app.ps.p ? 'map' : null);
-  useBus(['project:open', 'project:deleted']);
+  useBus(['project:open', 'project:deleted', 'lisans:change']);
   useEffect(() => {
     app.nav = {
       go: (name, params = {}) => setStack((s) => [...s, { name, params }]),
@@ -85,6 +86,9 @@ export function App() {
     };
     window.__voltBack = () => { if (app.backHook && app.backHook()) return true; let handled = false; setStack((s) => { if (s.length > 1) { handled = true; return s.slice(0, -1); } return s; }); return handled; };
   });
+  // Lisans (13.11.2026): deneme süresi dolmuşsa ya da lisans geçersizse yalnız Lisans ekranı (services/lisans-service.js)
+  const lis = app.state.lisans;
+  if (lis && lis.durum && !lis.durum.kullanilabilir) return html`<div id="app"><main class="screen"><${LisansScreen} kilit /></main><${Toasts} /><${Modals} /></div>`;
   const top = stack[stack.length - 1];
   app.state.depth = stack.length;
   const web = !!app.web;

@@ -21,7 +21,9 @@ const kopyala = (klasor, ad) => {
 };
 for (const ad of dosyalar) kopyala('ortak/katalog', ad);
 for (const ad of markalar) kopyala('ortak/marka', ad);
+// Lisans doğrulama açık anahtarı (ortak/lisans/acik-anahtar.json; eklenti gömülü kaynak olarak okur, ortak/LISANS.md)
+kopyala('ortak/lisans', 'acik-anahtar');
 // Birleşik Metraj şablonu (ikili): telefon paketi assets/ altından okur (ortak/sablon/birlesik-metraj.xlsm'nin aynısı)
 fs.mkdirSync(path.join(kok, 'telefon/web/assets'), { recursive: true });
 fs.copyFileSync(path.join(kok, 'ortak/sablon/birlesik-metraj.xlsm'), path.join(kok, 'telefon/web/assets/birlesik-metraj.xlsm'));
-console.log('telefon/web/src/ortak: ' + dosyalar.concat(markalar).join(', ') + ' · assets/birlesik-metraj.xlsm');
+console.log('telefon/web/src/ortak: ' + dosyalar.concat(markalar, ['acik-anahtar']).join(', ') + ' · assets/birlesik-metraj.xlsm');

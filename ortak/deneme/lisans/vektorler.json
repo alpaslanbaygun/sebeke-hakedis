@@ -1,0 +1,354 @@
+{
+ "bicim": "sebeke-hakedis.lisans-deneme",
+ "surum": 1,
+ "aciklama": "Ortak lisans denemeleri: araclar/lisans/lisans-deneme-uret.mjs üretir (her seferinde yeni deneme anahtarı; gizli anahtar yazılmaz). Eklenti (Cekirdek/Lisans.cs, CekirdekTest) ve telefon (core/lisans.js, tests/lisans.test.mjs) aynı sonucu vermeli. Bu anahtar yalnız denemeler içindir; programlar ortak/lisans/acik-anahtar.json ile doğrular.",
+ "anahtar": {
+  "bicim": "sebeke-hakedis.lisans-anahtari",
+  "surum": 1,
+  "n": "vwsWsbQmrDiFXY-K9Jd1nTngrORjL7vSVGrwygtcA7kxzQLfimfkDwGUkRlRba_Rg3WLEzKeSQ6aQ_rCnNZwt7Qt0wqd8RQ-W2NXqre6vX3FgduUHkTaQDrvuwhEcI-7APJ1YWOrzW3MOQHNKFOCe8W_vEeS0H7r4CKxjysbFooQ51OHcrn2ULp0Bybp2LBq_N3YP1lIqKIgxYnT2s30nbHDU2ZveDnqKk7NTIZJdVHZmfqbg77sefklkmKAvbH2JrB71DInV6f2K8mKDDPkIqCCdmdUENt-TnK6uLh_M-Wek3AojNxSb0KaqWZld6XplZhuaaU527Hx_kVSeubdNw",
+  "e": 65537,
+  "parmakIzi": "3070-0BA6-4497-79C9"
+ },
+ "cihazlar": [
+  {
+   "onek": "PC",
+   "ham": "6f1c2b3a-4d5e-4f60-8a9b-0c1d2e3f4a5b",
+   "kod": "PC-WPHF-XR08-7MYZ-X477"
+  },
+  {
+   "onek": "TL",
+   "ham": "9774d56d682e549c",
+   "kod": "TL-EQ56-TWYH-GGAY-7JTM"
+  },
+  {
+   "onek": "WB",
+   "ham": "  Web-Rastgele-Kimlik-1234  ",
+   "kod": "WB-XJXQ-WHTF-AMZV-4RB5"
+  }
+ ],
+ "durumlar": [
+  {
+   "ad": "süreli geçerli",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IkQtMSIsImFkIjoiRGVuZW1lIEt1bGxhbsSxY8Sxc8SxIiwiY2loYXoiOiJQQy1XUEhGLVhSMDgtN01ZWi1YNDc3IiwidXJ1biI6ImVrbGVudGkiLCJ2ZXJpbGRpIjoiMjAyNi0xMS0xMyIsImJpdGlzIjoiMjAyNy0xMS0xMyJ9.Xo_O84AVxtPCJtZlhC1ClWEUD-Pu92V39vdW51txwlvgjaClFhSb3MJfrheEN8Zm6qDDTzIZnEf8zwWEL8OU-BhCuoHoON7jwhlrwm2QEN_KJE0Tja-Xqt0VsPwbKoKvkS_SmFPkqmmoOjFz_yZWntNZe-AlMymMUErpzvlxhE69sUcHCcmJyKrze6l_ftQLi3TOXGrjbJQPNDfZQmqmJpBed9uE4iOohN9bXMgKTu4gOOlDTYH2koCKUNUv-khyUZGgvlxrgneId9ol3Br6fEKA6GUzIOSsPV2Tj-Hh3kVB8rxVxXvbCUksI_40y0n734ZdncJjjHjBr1kK0ZYJ1Q",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-10-01",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "lisansli",
+    "kullanilabilir": true,
+    "kalanGun": 365,
+    "uyari": false,
+    "hataKodu": "",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "süresiz",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IkQtMSIsImFkIjoiRGVuZW1lIEt1bGxhbsSxY8Sxc8SxIiwiY2loYXoiOiJQQy1XUEhGLVhSMDgtN01ZWi1YNDc3IiwidXJ1biI6ImVrbGVudGkiLCJ2ZXJpbGRpIjoiMjAyNi0xMS0xMyIsImJpdGlzIjoiIn0.EnLV4HjzcBs1eArAK7cSsU5iSieKp9WkdaDtUkL2ZDcfXGTztPZFQW6J5FmB2x_kHEzEfcobqtboiKrp-vjpbwQurFEFIVFrM6tl4XwVI4xaORPIc_4An5RKt9k2zu_h3_WKtKLEsontgEoBPE0_NOJTBKy6MMLybeke6PlJGEx7exgfQwBY3rGd_XIu1K61eo7b6C9qPNm7jKn5kkpwDYOXZX4IQTpktQdg_y4PLJ1a-ehuJAColpyMxvz2gijvPBWVyw9U7cNm02DggkeV9q5VtWmpBGSQHSSsHp4BfCu5Hg0g3YxIX6aZ8N7PBsSui1wwjXza8uYMX3MHMVGE4w",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-01-01",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "lisansli",
+    "kullanilabilir": true,
+    "kalanGun": null,
+    "uyari": false,
+    "hataKodu": "",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "15 gün kala uyarı",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IkQtMSIsImFkIjoiRGVuZW1lIEt1bGxhbsSxY8Sxc8SxIiwiY2loYXoiOiJQQy1XUEhGLVhSMDgtN01ZWi1YNDc3IiwidXJ1biI6ImVrbGVudGkiLCJ2ZXJpbGRpIjoiMjAyNi0xMS0xMyIsImJpdGlzIjoiMjAyNi0xMS0yOCJ9.vOAfoKG0xg_IJv2oO163vjX4xMg15u0f9qZx1fOvhGYB_21NKlnxamJS_T8XaKrlYU7m3B4D0onC84SYQ3TkU04uPlVgscuE9JzFkeFOGm9abj_szPOKVpOGK1rQRMuJ4kKetTm7Zh0DxNkddKxIfuX9o-XhHipKRiakh__QiHkRZ7WB_iTRpsKatj1lBcNdFEIkA3vQDZwX2YZX1f8-Lmc0RwT4pG7rk5KDQ5Chn3eRbN8X-ouMw45MQq7e3OsA_k2kCONKq_iRgjRphEz9H0zNc8ZsNoXtWTR8eyv8_XdKD7oqKvlxhcmj6Vd9huKSqm2c5s8ql-XIXnIK4iECuQ",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-11-13",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "lisansli",
+    "kullanilabilir": true,
+    "kalanGun": 15,
+    "uyari": true,
+    "hataKodu": "",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "bitiş günü hâlâ geçerli",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IkQtMSIsImFkIjoiRGVuZW1lIEt1bGxhbsSxY8Sxc8SxIiwiY2loYXoiOiJQQy1XUEhGLVhSMDgtN01ZWi1YNDc3IiwidXJ1biI6ImVrbGVudGkiLCJ2ZXJpbGRpIjoiMjAyNi0xMS0xMyIsImJpdGlzIjoiMjAyNi0xMS0xMyJ9.uJjrt8WmtmAE67HwPR99p5D2eyPcHCRHFGkhfp16vEDkzAfNUTv0nB5gS2whdJAy7jawiabqDK6QmoksxRx4APHp8_rf_FvTcdndl3qIERWtBGVZy6zLdv4a_ePY1--tthCpnKtCvtw9VjhM2NKLz_Cys-ZUeMX_iz7_LJr0xfTodfQHGzCu7XpOhl3dJrzy_nJduTLrsEWHfWDaSgNCU4zeF-nM6K1aooox2w-_r6OHsIaUkSkUR13cGaZSYVKRx796UvWlxztNn0PviYnduS6_OLQr4OkwAS_gjdvOQoDwH2q3RgGJGC0VsXySS7I6H0ceAM0RhN5IZL_7FhE31g",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-01-01",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "lisansli",
+    "kullanilabilir": true,
+    "kalanGun": 0,
+    "uyari": true,
+    "hataKodu": "",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "süresi dolmuş, deneme de bitmiş",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IkQtMSIsImFkIjoiRGVuZW1lIEt1bGxhbsSxY8Sxc8SxIiwiY2loYXoiOiJQQy1XUEhGLVhSMDgtN01ZWi1YNDc3IiwidXJ1biI6ImVrbGVudGkiLCJ2ZXJpbGRpIjoiMjAyNi0xMS0xMyIsImJpdGlzIjoiMjAyNi0xMS0xMiJ9.ZdxiamvS-r8KjbtEE5WQL8gypW2VgIVjpSKXQ1tk7U-2TMb0mz8F-uiILwVOuKjvF-sF-L3lMUv0yO-2qXcQROKeodLt408mKz5k5wWagyMH5wdxC0fDcv8MtMKrg6xwo2KFOs84QPCDd7Nbyw9gV3BPxn9koky1n0uUl-31d_CVlQemVf-ebxg8JEh2O0j-HilBq5XoE4JPEUtGYxvWPpJbXdRslwG51mzQJw1b6mK13auC_CsfY8jayXt5ex-7acsPqABkfeu5Ds1ghjzie_PZZEZrKlhMSFM04XFaNJhkFLQxE-DjCIu77EtmPzZ-l3waOn_RKG7tA7LQ3Kui_w",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-10-01",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "bitti",
+    "kullanilabilir": false,
+    "kalanGun": 0,
+    "uyari": true,
+    "hataKodu": "sure",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "süresi dolmuş, deneme sürüyor",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IkQtMSIsImFkIjoiRGVuZW1lIEt1bGxhbsSxY8Sxc8SxIiwiY2loYXoiOiJQQy1XUEhGLVhSMDgtN01ZWi1YNDc3IiwidXJ1biI6ImVrbGVudGkiLCJ2ZXJpbGRpIjoiMjAyNi0xMS0xMyIsImJpdGlzIjoiMjAyNi0xMS0xMiJ9.ZdxiamvS-r8KjbtEE5WQL8gypW2VgIVjpSKXQ1tk7U-2TMb0mz8F-uiILwVOuKjvF-sF-L3lMUv0yO-2qXcQROKeodLt408mKz5k5wWagyMH5wdxC0fDcv8MtMKrg6xwo2KFOs84QPCDd7Nbyw9gV3BPxn9koky1n0uUl-31d_CVlQemVf-ebxg8JEh2O0j-HilBq5XoE4JPEUtGYxvWPpJbXdRslwG51mzQJw1b6mK13auC_CsfY8jayXt5ex-7acsPqABkfeu5Ds1ghjzie_PZZEZrKlhMSFM04XFaNJhkFLQxE-DjCIu77EtmPzZ-l3waOn_RKG7tA7LQ3Kui_w",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-11-11",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "deneme",
+    "kullanilabilir": true,
+    "kalanGun": 5,
+    "uyari": true,
+    "hataKodu": "sure",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "başka cihaz",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IkQtMSIsImFkIjoiRGVuZW1lIEt1bGxhbsSxY8Sxc8SxIiwiY2loYXoiOiJUTC1FUTU2LVRXWUgtR0dBWS03SlRNIiwidXJ1biI6ImhlcHNpIiwidmVyaWxkaSI6IjIwMjYtMTEtMTMiLCJiaXRpcyI6IiJ9.Vk2IUWqKwugjX0pt6FLqsT8ig8OujJB63ZkQRZ84nYxT729-XVwAhVk7UIGuz17k3kkE7hTRI9A8DznwTohuPggI0aDfcHs4JmH3krjBdelpuVhOrg_syOZ658ZCJu90cy-sj58KaYXZzUBdgdByLqWYQmS0Y7d4YouV_kBizfwmY9Y4sKTYxmUqGRVdyE9ixBnGex7QCb4vV_2387vAu7gnr-K953qJsPslEf_zMpXmmi6p1iBf5n3xhA55kiKX_kLs7IPbUUjiX9KtbGZBz65lErPWxypOxim9V3qZiHz1THlYS16Lq_BJoP-FJQsdz6aZRk5mZXJUtz7FeQFDqw",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-11-13",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "deneme",
+    "kullanilabilir": true,
+    "kalanGun": 7,
+    "uyari": true,
+    "hataKodu": "cihaz",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "başka anahtarla imzalı",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IlgiLCJhZCI6IlNhaHRlIiwiY2loYXoiOiJQQy1XUEhGLVhSMDgtN01ZWi1YNDc3IiwidXJ1biI6ImVrbGVudGkiLCJ2ZXJpbGRpIjoiMjAyNi0xMS0xMyIsImJpdGlzIjoiIn0.dv910Hr7kUpZ8bVVXgI_bQcBASQ4ukAP1qZ-WN1Ca-wjavOBAPp4OWQ2dF07KeAnXjqETkXM8L2LWiVkyA0mAT2JLVsNlyBs8FBSfbka-mbSLi28aFQgZd0YAXfp3unfI4Q0GyiNCCl3JmrDdyRl8gVDKbEcPRGDV45XvTJzt22L5B9JWgTkEQshHaZbiR7gBQaYFoUjmXaUn7JxNmVQfg-Bi8XAFzGksibY9jUF0qOkEhOcP6gjvCFnYbg7XLslW0p15Ctjp_GYJQwpVOr4xwsRjcMKu1cPpB4lDsn3taE-e42r-7gqXtmDVdX5Z_cc0_nqeG66fGDpw3ZqSliSXQ",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-10-01",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "bitti",
+    "kullanilabilir": false,
+    "kalanGun": 0,
+    "uyari": true,
+    "hataKodu": "imza",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "yükü değiştirilmiş (bitiş uzatılmış)",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IkQtMSIsImFkIjoiRGVuZW1lIEt1bGxhbsSxY8Sxc8SxIiwiY2loYXoiOiJQQy1XUEhGLVhSMDgtN01ZWi1YNDc3IiwidXJ1biI6ImVrbGVudGkiLCJ2ZXJpbGRpIjoiMjAyNi0xMS0xMyIsImJpdGlzIjoiMjA5OS0xMi0zMSJ9.cmRZ8kNP8rUEAssytJZqUj-gMYdUCVproImNFxsFgHu3QjIJ4HaVkT5DDFom45WIao9akp87BMB-FtIJ11g2h1hVP39bnW4Eq4Enf4rUxyAf0mkoxTgoYVdfBOQEe0wo8iZADEJyJ1xvBngGL0AuKn4exbBJT3vMLihPmoU3KhnH7rXLMuBDX0INU8PNSUbsTzBZ91djOLW9s5QnP6WeRx8ACPrB2r_3JEdd67acQl6tcM4HmvlUO2bxvoQoNCaKQVMkFuB_Z8IXKXMb3Gzqrz5gCMHXfybeIP6jVzLAoX5UG7uEytcnrTHQVfsSa0V5AY7n_5EHVtxiF8rLARDBJQ",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-10-01",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "bitti",
+    "kullanilabilir": false,
+    "kalanGun": 0,
+    "uyari": true,
+    "hataKodu": "imza",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "bozuk metin",
+   "lisans": "SHL1.YWJj.ZGVm",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-11-13",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "deneme",
+    "kullanilabilir": true,
+    "kalanGun": 7,
+    "uyari": true,
+    "hataKodu": "okunamadi",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "başka ürün (telefon lisansı eklentide)",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IkQtMSIsImFkIjoiRGVuZW1lIEt1bGxhbsSxY8Sxc8SxIiwiY2loYXoiOiJQQy1XUEhGLVhSMDgtN01ZWi1YNDc3IiwidXJ1biI6InRlbGVmb24iLCJ2ZXJpbGRpIjoiMjAyNi0xMS0xMyIsImJpdGlzIjoiIn0.f3TBUGFDMuCMrEtNhtxWhd3Ch60KlydQldWXebZxtbTKfypAE913PrLLz0B4x8fXj0kCUX8wfndj2M0qqYBKd1XwPh5hV8V81FdYmZu_7voLZUwaQxLMxvve_NXeXppol8oQW0lkT7HTwjfcJC2aphaGo9SK4v-InP4tYyJec3ZOPvWnyuCUyfOLgKAqv9tSKmQyas2YCHlfMmT3aI1Y6EUwSdsJWSEe65I_P8CN9x3xoi4la9wrdtbDYoXEZlh-vr6BVAMTzxTrA086LKB7186Md1Nl7IAGOurWcc9YqGy1tQhsk0ldxrNnWku9UjDugROQjXrOJeLrMf-e4iHPpQ",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-10-01",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "bitti",
+    "kullanilabilir": false,
+    "kalanGun": 0,
+    "uyari": true,
+    "hataKodu": "urun",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "\"hepsi\" lisansı telefonda",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IkQtMSIsImFkIjoiRGVuZW1lIEt1bGxhbsSxY8Sxc8SxIiwiY2loYXoiOiJUTC1FUTU2LVRXWUgtR0dBWS03SlRNIiwidXJ1biI6ImhlcHNpIiwidmVyaWxkaSI6IjIwMjYtMTEtMTMiLCJiaXRpcyI6IjIwMjctMDEtMTIifQ.bwwMquZBM5pismbZQD7827Er93OJLxCwmmWGcKCA3wR768dAek5YYTYlygoG_8hPvEoW9K37VSj7yTQKwISQNWM9A5FwLdifla5Mt-5Vg2X7cB1r1iAiKa_FedyUVDtsjrPmnb20YW4sqLzEmKrDWDIAtQA22wO1n7sSa_Y5rOBb3_rwC1X6VekQarvL5IUdFKP_womm4p0zlZu4ElZEUIRJQfohzd2lRPcfHBGVTHkWIYtiz_oFx0sj288j0o6VqeIAGmdQG8EmidRLpLatbBzP9U-Ucgh6JTLe63FQRAnZ2uluaxNLVL7ev-7GT6nQZRBYevBsp5I80poQ1TYbqw",
+   "cihaz": "TL-EQ56-TWYH-GGAY-7JTM",
+   "urun": "telefon",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-10-01",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "lisansli",
+    "kullanilabilir": true,
+    "kalanGun": 60,
+    "uyari": false,
+    "hataKodu": "",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "lisanssız ilk gün",
+   "lisans": "",
+   "cihaz": "TL-EQ56-TWYH-GGAY-7JTM",
+   "urun": "telefon",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-11-13",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "deneme",
+    "kullanilabilir": true,
+    "kalanGun": 7,
+    "uyari": true,
+    "hataKodu": "",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "lisanssız son gün",
+   "lisans": "",
+   "cihaz": "TL-EQ56-TWYH-GGAY-7JTM",
+   "urun": "telefon",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-11-07",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "deneme",
+    "kullanilabilir": true,
+    "kalanGun": 1,
+    "uyari": true,
+    "hataKodu": "",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "lisanssız 8. gün kapanır",
+   "lisans": "",
+   "cihaz": "TL-EQ56-TWYH-GGAY-7JTM",
+   "urun": "telefon",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-11-06",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "bitti",
+    "kullanilabilir": false,
+    "kalanGun": 0,
+    "uyari": true,
+    "hataKodu": "",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "saat geri alınmış (deneme son görülmeden sayılır)",
+   "lisans": "",
+   "cihaz": "TL-EQ56-TWYH-GGAY-7JTM",
+   "urun": "telefon",
+   "bugun": "2026-11-10",
+   "ilkAcilis": "2026-11-15",
+   "sonGorulme": "2026-11-20",
+   "beklenen": {
+    "tur": "deneme",
+    "kullanilabilir": true,
+    "kalanGun": 2,
+    "uyari": true,
+    "hataKodu": "",
+    "saatGeri": true
+   }
+  },
+  {
+   "ad": "saat geri alınmış (süresi geçmiş lisans geçmez)",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IkQtMSIsImFkIjoiRGVuZW1lIEt1bGxhbsSxY8Sxc8SxIiwiY2loYXoiOiJQQy1XUEhGLVhSMDgtN01ZWi1YNDc3IiwidXJ1biI6ImVrbGVudGkiLCJ2ZXJpbGRpIjoiMjAyNi0xMS0xMyIsImJpdGlzIjoiMjAyNi0xMS0xNSJ9.fO9es65NPPvqZEY2mPfNJMJrjINIw1aP4y2K5FYe5xfklZx1zCk2NainvAPaQRjAberB759EX32b0rxlY_1hnXINCMnjp6r4ADoctfVeTSrI4dk7TaY-cojBFa38VSeeGLrLb0l-0J11wXdgomReD4VGRiE1haAh-wwt5Uh2fyFG_hQXZ5P9Wvra2Bx01vczDqcIYnr3aXGvsZxHTb117RXooIdbJwhACDrS2ieDp9fWWHcfB1F6eg45kxwVU31JNhs_qvZRdxoN1xMtxKEBjT7RFHZVp3hNzohCAsjuSMFHl-ono4HB-OEq4XJ9_i8OWo92GlGpPDTtXeYRVNJkSw",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-10",
+   "ilkAcilis": "2026-10-01",
+   "sonGorulme": "2026-11-20",
+   "beklenen": {
+    "tur": "bitti",
+    "kullanilabilir": false,
+    "kalanGun": 0,
+    "uyari": true,
+    "hataKodu": "sure",
+    "saatGeri": true
+   }
+  },
+  {
+   "ad": ".lisans dosyası (açıklama satırları, satır sonları)",
+   "lisans": "# Şebeke-M Hakediş lisansı\n# Kime: Dosya\n# Cihaz: PC-WPHF-XR08-7MYZ-X477\n# Ürün: eklenti\n# Bitiş: 2027-05-13\n# Lisans no: D-2\n\nSHL1.eyJ2IjoxLCJubyI6IkQtMiIsImFkIjoiRG9zeWEiLCJjaWhheiI6IlBDLVdQSEYtWFIwOC03TVlaLVg0NzciLCJ1cnVuIjoiZWtsZW50aSIsInZlcml\nsZGkiOiIyMDI2LTExLTEzIiwiYml0aXMiOiIyMDI3LTA1LTEzIn0.acUy8eFSmwzHe4_ojRmWkrQInlGleAUr5SkXCiMLxE4EGvAeOxOyPJ6WfEqZdLT4XWjHbEzEplayuFezmY_i7FqQFfGeBaE8FWu7Zt-YWFtZ_dpbMleUgFApTJ1i1qJRLx2cBnmySqIWSW72EcPT_FWNs6ett0ZQuSdxmiGLVRvYxgNJiFooTysTkPBFLlFDt1818uAe-AqobMDocTFGhRbwTxC_3RoOUr6EtayqdaGLY4F-2DuG5IXUsNjVOpvUns0Mrno348StrliNPiqPcYCBuVKfb3iB1xxlfktpm27WK6fQbbWP5FF2Kvp6HQATZ_cPSTOMy-DJ5qP4G1RmpQ\n",
+   "cihaz": "PC-WPHF-XR08-7MYZ-X477",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-11-13",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "lisansli",
+    "kullanilabilir": true,
+    "kalanGun": 181,
+    "uyari": false,
+    "hataKodu": "",
+    "saatGeri": false
+   }
+  },
+  {
+   "ad": "cihaz kodu küçük harf ve boşluklu girilmiş",
+   "lisans": "SHL1.eyJ2IjoxLCJubyI6IkQtMSIsImFkIjoiRGVuZW1lIEt1bGxhbsSxY8Sxc8SxIiwiY2loYXoiOiJQQy1XUEhGLVhSMDgtN01ZWi1YNDc3IiwidXJ1biI6ImVrbGVudGkiLCJ2ZXJpbGRpIjoiMjAyNi0xMS0xMyIsImJpdGlzIjoiIn0.EnLV4HjzcBs1eArAK7cSsU5iSieKp9WkdaDtUkL2ZDcfXGTztPZFQW6J5FmB2x_kHEzEfcobqtboiKrp-vjpbwQurFEFIVFrM6tl4XwVI4xaORPIc_4An5RKt9k2zu_h3_WKtKLEsontgEoBPE0_NOJTBKy6MMLybeke6PlJGEx7exgfQwBY3rGd_XIu1K61eo7b6C9qPNm7jKn5kkpwDYOXZX4IQTpktQdg_y4PLJ1a-ehuJAColpyMxvz2gijvPBWVyw9U7cNm02DggkeV9q5VtWmpBGSQHSSsHp4BfCu5Hg0g3YxIX6aZ8N7PBsSui1wwjXza8uYMX3MHMVGE4w",
+   "cihaz": " pc-wphf-xr08-7myz-x477 ",
+   "urun": "eklenti",
+   "bugun": "2026-11-13",
+   "ilkAcilis": "2026-11-13",
+   "sonGorulme": "2026-11-13",
+   "beklenen": {
+    "tur": "lisansli",
+    "kullanilabilir": true,
+    "kalanGun": null,
+    "uyari": false,
+    "hataKodu": "",
+    "saatGeri": false
+   }
+  }
+ ]
+}

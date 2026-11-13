@@ -379,6 +379,39 @@ namespace SebekeHakedis.Test
             YazmaDenetimiDene();
             BirlesikMetrajOrtakDeneme(); // telefonla ortak: şablon tanımı, doldurma planı, dosyaya yazma
             OnerilenMalzemeOrtakDeneme(); // telefonla ortak: direk bağlamından önerilen kalemler
+            LisansOrtakDeneme();          // telefonla ortak: cihaz kodu, imza, deneme süresi, bitiş
+        }
+
+        // ---------------- Telefonla ortak lisans denemesi (ortak/deneme/lisans) ----------------
+
+        /// <summary>Lisans (Cekirdek/Lisans.cs) telefondaki core/lisans.js ile aynı sonucu vermeli (vektorler.json).</summary>
+        private static void LisansOrtakDeneme()
+        {
+            Console.WriteLine("Lisans: telefonla ortak deneme (ortak/deneme/lisans)");
+            var v = (JsonNesne)Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "lisans", "vektorler.json"), Encoding.UTF8));
+            var an = v.Nesne("anahtar");
+            var a = new Lisans.AcikAnahtar { N = an.Metin("n"), E = an.Tam("e", 65537) };
+            foreach (JsonNesne c in v.Dizi("cihazlar")) Esit(c.Metin("kod"), Lisans.CihazKodu(c.Metin("onek"), c.Metin("ham")), "lisans: cihaz kodu " + c.Metin("onek"));
+            int n = 0;
+            foreach (JsonNesne d in v.Dizi("durumlar"))
+            {
+                var r = Lisans.Durum(d.Metin("lisans"), d.Metin("cihaz"), d.Metin("urun"), d.Metin("bugun"), d.Metin("ilkAcilis"), d.Metin("sonGorulme"), a);
+                var b = d.Nesne("beklenen");
+                string ad = "lisans: " + d.Metin("ad");
+                Esit(b.Metin("tur"), r.Tur, ad + " · tür");
+                Esit(b.Mantik("kullanilabilir") == true, r.Kullanilabilir, ad + " · kullanılabilir");
+                Esit(b["kalanGun"] == null ? "null" : b.Tam("kalanGun").ToString(CultureInfo.InvariantCulture), r.KalanGun == null ? "null" : r.KalanGun.Value.ToString(CultureInfo.InvariantCulture), ad + " · kalan gün");
+                Esit(b.Mantik("uyari") == true, r.Uyari, ad + " · uyarı");
+                Esit(b.Metin("hataKodu"), r.HataKodu, ad + " · hata kodu");
+                Esit(b.Mantik("saatGeri") == true, r.SaatGeri, ad + " · saat geri");
+                n++;
+            }
+            var gercek = Lisans.AcikAnahtar.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "lisans", "acik-anahtar.json"), Encoding.UTF8));
+            Esit(256, Lisans.B64uCoz(gercek.N).Length, "lisans: gerçek açık anahtar 2048 bit");
+            var ilk = (JsonNesne)v.Dizi("durumlar")[0];
+            Esit(false, Lisans.ImzaDogru(ilk.Metin("lisans"), gercek), "lisans: deneme anahtarının lisansı gerçek anahtarla geçmez");
+            Esit(true, Lisans.ImzaDogru(ilk.Metin("lisans"), a), "lisans: deneme anahtarıyla doğru");
+            Esit(true, n >= 19, "lisans: ortak durum sayısı " + n);
         }
 
         // ---------------- Telefonla ortak önerilen malzeme denemesi (ortak/deneme/onerilen-malzeme) ----------------

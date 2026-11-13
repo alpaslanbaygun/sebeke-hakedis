@@ -1,7 +1,7 @@
 # Kod haritası
 
-Otomatik üretilir, elle düzenlenmez: `python3 araclar/kod-haritasi/kod_haritasi.py` (356 dosya · 36 AutoCAD komutu ·
-1.905 bağ). Dosya, komut ya da konu ararken önce burada arayın (`grep -i "kelime" HARITA.md`).
+Otomatik üretilir, elle düzenlenmez: `python3 araclar/kod-haritasi/kod_haritasi.py` (371 dosya · 37 AutoCAD komutu ·
+1.983 bağ). Dosya, komut ya da konu ararken önce burada arayın (`grep -i "kelime" HARITA.md`).
 Bağlar dosyaların içinden çıkarılır: içe aktarma, tür kullanımı, komut tanımı, belge bağlantısı, dosya / tür adı
 anma. Ad anmasına dayanan birkaç bağ yanlış olabilir; bir dosyayı değiştirmeden önce kendisini okuyun.
 
@@ -28,6 +28,7 @@ değiştirin ve iki tarafın denemelerini çalıştırın (`CekirdekTest`, `tele
 | `autocad/src/Cekirdek/Kullanicilar.cs` | `telefon/web/src/core/roles.js` | <summary>Şifre geçerli mi: yalnız 0–9 rakamları, en az / en çok hane (telefondaki validPin).</summary> |
 | `autocad/src/Cekirdek/Kullanicilar.cs` | `telefon/web/src/interop/sh-core.cjs` | Kullanıcı ve yetki kuralları — telefondaki core/roles.js ve sh-core.cjs (kullanicilariBirlestir, onayAyariBirlestir) |
 | `autocad/src/Cekirdek/Kullanicilar.cs` | `telefon/web/src/services/project-service.js` | ProjectService.addMember / updateMember / closeApproval / setClosedHakedis ile aynı: ilk kullanıcı Yönetici olur ve |
+| `autocad/src/Cekirdek/Lisans.cs` | `telefon/web/src/core/lisans.js` | Lisans durumu (telefondaki lisansDurumu ile aynı). urun: "eklenti" \| "telefon"; tarihler YYYY-AA-GG. Saat geri |
 | `autocad/src/Cekirdek/MalzemeEtiketi.cs` | `telefon/web/src/interop/sh-core.cjs` | telefonun DXF'i aynı satırları yazı olarak yazar. Telefondaki karşılığı: sh-core.cjs › malzemeEtiketi (aynı kural); |
 | `autocad/src/Cekirdek/MalzemeYazimi.cs` | `telefon/web/src/grid/lines.js` | Telefondaki karşılığı: telefon/web/src/interop/sh-core.cjs › malzemeYazisi (aynı kurallar, aynı sıra). |
 | `autocad/src/Cekirdek/MalzemeYazimi.cs` | `telefon/web/src/interop/sh-core.cjs` | Telefondaki karşılığı: telefon/web/src/interop/sh-core.cjs › malzemeYazisi (aynı kurallar, aynı sıra). |
@@ -36,6 +37,7 @@ değiştirin ve iki tarafın denemelerini çalıştırın (`CekirdekTest`, `tele
 | `autocad/src/Cekirdek/OnerilenMalzeme.cs` | `telefon/web/src/grid/recipe.js` | <summary>Direğin bağlamı (telefon recipeContext ile aynı alanlar).</summary> |
 | `autocad/src/Cekirdek/XlsmDosyasi.cs` | `telefon/web/src/export/xlsm.js` | listeler, koşullu biçimler ve tanımlı adlar aynen kalır. Telefondaki karşılığı telefon/web/src/export/xlsm.js; |
 | `autocad/src/Cekirdek/YaziDuzeni.cs` | `telefon/web/src/export/dxf.js` | yazıcıyla aynı kural ve aynı tablo (telefon/web/src/export/dxf.js › yaziGenisligi, yaziSigdir; tablo ortak |
+| `autocad/src/Eklenti/Pencereler.cs` | `telefon/web/src/core/lisans.js` | public static bool Lisans(LisansDurumu d, string cihazKodu, Func<string, bool, LisansDurumu> dene, bool kilitli) |
 | `autocad/src/Eklenti/Pencereler.cs` | `telefon/web/src/export/kanal.js` | public static bool BirlesikMetrajSor(MetrajAyari a, string projeAdi, int hakedis, out string hakedisNo) |
 | `autocad/src/Eklenti/Pencereler.cs` | `telefon/web/src/grid/lines.js` | var malzemeYazisi = Koy(gorunum, new KoyuOnay("Malzemeleri çizimde göster") { Name = "malzemeYazisi", Checked = a.Malze… |
 | `autocad/test/CekirdekTest/CekirdekTest.csproj` | `telefon/web/tests/cbs.test.mjs` | Telefonla ortak CBS denemesi: girdi ve beklenen KML / MIF / MID (telefon/web/tests/cbs.test.mjs de okur) --> |
@@ -117,11 +119,11 @@ değiştirin ve iki tarafın denemelerini çalıştırın (`CekirdekTest`, `tele
 
 ## 2. Değişince en çok yeri etkileyenler
 
-Kod (bağ sayısı): `autocad/test/CekirdekTest/Program.cs` 84, `autocad/src/Eklenti/Serit.cs` 50, `autocad/src/Eklenti/CizimKomutlari.cs` 49, `autocad/src/Cekirdek/Model.cs` 47, `autocad/src/Eklenti/Pencereler.cs` 47, `autocad/src/Eklenti/Komutlar.cs` 45, `telefon/web/src/interop/sh-core.cjs` 45, `autocad/src/Cekirdek/Turler.cs` 42, `autocad/src/Cekirdek/KomutRehberi.cs` 39, `autocad/test/PencereTest/Program.cs` 33, `autocad/src/Eklenti/OrtamVerisi.cs` 32, `autocad/src/Cekirdek/Katalog.cs` 31.
+Kod (bağ sayısı): `autocad/test/CekirdekTest/Program.cs` 87, `autocad/src/Eklenti/Serit.cs` 51, `autocad/src/Eklenti/Pencereler.cs` 50, `autocad/src/Eklenti/CizimKomutlari.cs` 49, `autocad/src/Eklenti/Komutlar.cs` 49, `autocad/src/Cekirdek/Model.cs` 47, `telefon/web/src/interop/sh-core.cjs` 45, `autocad/src/Cekirdek/Turler.cs` 44, `autocad/src/Cekirdek/KomutRehberi.cs` 39, `autocad/test/PencereTest/Program.cs` 35, `autocad/src/Eklenti/OrtamVerisi.cs` 32, `autocad/src/Cekirdek/Katalog.cs` 31.
 
-Belgeler (kodu en çok anan; kod değişince bakılır): `DEVIR.md` 151, `README.md` 47, `KULLANIM.md` 46, `ortak/VERI-MODELI.md` 42, `autocad/paket/OKUBENI.txt` 33.
+Belgeler (kodu en çok anan; kod değişince bakılır): `DEVIR.md` 161, `KULLANIM.md` 48, `README.md` 47, `ortak/VERI-MODELI.md` 42, `autocad/paket/OKUBENI.txt` 33.
 
-Köprüler (kümeler arası yolların çoğu buradan geçer): `autocad/test/CekirdekTest/Program.cs` %5,3, `telefon/web/src/grid/lines.js` %3,6, `telefon/web/src/export/exporter.js` %2,8, `telefon/web/tests/helpers.mjs` %2,8, `telefon/web/src/ui/kit.js` %2,7, `ortak/hesap/moduller.json` %2,4.
+Köprüler (kümeler arası yolların çoğu buradan geçer): `autocad/test/CekirdekTest/Program.cs` %5,9, `telefon/web/src/grid/lines.js` %2,9, `telefon/web/src/ui/kit.js` %2,6, `telefon/web/tests/helpers.mjs` %2,5, `ortak/hesap/moduller.json` %2,5, `.github/workflows/telefon.yml` %2,5.
 
 ## 3. AutoCAD komutları
 
@@ -148,6 +150,7 @@ Köprüler (kümeler arası yolların çoğu buradan geçer): `autocad/test/Ceki
 | `SH_KANALLISTESI` | `autocad/src/Eklenti/Komutlar.cs` | DEVIR.md, KULLANIM.md, KanalTablosuYazici.cs, KomutRehberi.cs, README.md |
 | `SH_KML` | `autocad/src/Eklenti/CbsKomutlari.cs` | DEVIR.md, KULLANIM.md, KomutRehberi.cs, OKUBENI.txt, README.md |
 | `SH_KULLANICILAR` | `autocad/src/Eklenti/CizimKomutlari.cs` | CIZIM-BICIMI-NOTLARI.md, DEVIR.md, HakedisOnayi.cs, KULLANIM.md, KomutRehberi.cs |
+| `SH_LISANS` | `autocad/src/Eklenti/Komutlar.cs` | DEVIR.md, KULLANIM.md, LISANS.md, LisansDenetimi.cs, Serit.cs |
 | `SH_MALZEME` | `autocad/src/Eklenti/CizimKomutlari.cs` | KULLANIM.md, KomutRehberi.cs, OKUBENI.txt, README.md, Serit.cs |
 | `SH_METRAJ` | `autocad/src/Eklenti/CizimKomutlari.cs` | KULLANIM.md, KomutRehberi.cs, OKUBENI.txt, Serit.cs |
 | `SH_MIFAL` | `autocad/src/Eklenti/CbsKomutlari.cs` | DEVIR.md, KULLANIM.md, KomutRehberi.cs, OKUBENI.txt, README.md |
@@ -196,7 +199,7 @@ dosyada geçmez (Android ayarları gibi bazıları yine de kullanılır).
 - `autocad/src/Cekirdek/HesapSunucu.cs` — Hesap Merkezi'nin yerel web sunucusu. Hesap sayfaları bilgisayarın tarayıcısında (Edge uygulama pen… · 277 satır · 6 bağ · Json.cs, Turler.cs, HesapMerkezi.cs
 - `autocad/src/Cekirdek/Hesaplar.cs` — Hesap Merkezi'nde kaydedilen bir hesap sonucu: hangi hesap (modül), hangi direk / hat / trafo / pro… · 340 satır · 14 bağ · Json.cs, Program.cs, HesapBaglami.cs
 - `autocad/src/Cekirdek/Iletkenler.cs` — Bir hattaki bir iletken / kablo (çizim penceresinde ve şeritte seçilen): katalog kalemi ve adedi. · 227 satır · 24 bağ · Pencereler.cs, Program.cs, Model.cs
-- `autocad/src/Cekirdek/Json.cs` — Küçük, bağımlılıksız JSON okuyucu/yazıcı. .NET Framework 4.6 ve .NET 8'de aynı çalışır. Nesneler: J… · 313 satır · 27 bağ · BirlesikMetraj.cs, HesapMerkezi.cs, Hesaplar.cs
+- `autocad/src/Cekirdek/Json.cs` — Küçük, bağımlılıksız JSON okuyucu/yazıcı. .NET Framework 4.6 ve .NET 8'de aynı çalışır. Nesneler: J… · 313 satır · 30 bağ · BirlesikMetraj.cs, HesapMerkezi.cs, Hesaplar.cs
 - `autocad/src/Cekirdek/KanalListesi.cs` — Proje bazında kanal listesi: her kanal parçası bir satır (proje, baş–bit numarası, kablolar, cins,… · 214 satır · 20 bağ · Model.cs, ProjeOzeti.cs, sh-core.cjs
 - `autocad/src/Cekirdek/KanalTablosu.cs` — Kanal listesinin çizime konan tablosu (AutoCAD'den bağımsız düzen): yazılar ve çizgiler, sol üst kö… · 145 satır · 13 bağ · Turler.cs, Pencereler.cs, KanalListesi.cs
 - `autocad/src/Cekirdek/KanalZemini.cs` — Kanal zemini: cins (dolgu: toprak, tüvenan, mıcır; ya da branşman / kablo demontaj kanalı), kaplama… · 203 satır · 12 bağ · Pencereler.cs, sh-core.cjs, Program.cs
@@ -208,6 +211,7 @@ dosyada geçmez (Android ayarları gibi bazıları yine de kullanılır).
 - `autocad/src/Cekirdek/KomutRehberi.cs` — Eklentinin komutları ve kısa açıklamaları (Hakkında penceresi ve komut satırı listesi aynı listeden… · 47 satır · 39 bağ · SH_ALTLIK, SH_AYARLAR, SH_BOLGE
 - `autocad/src/Cekirdek/Koordinat.cs` — Çizim koordinatı ile enlem-boylam arasında çeviri. Çizim: ITRF96 / TUREF, 3° TM (dilim orta meridye… · 105 satır · 6 bağ · Program.cs, MifDosyasi.cs, CbsKomutlari.cs
 - `autocad/src/Cekirdek/Kullanicilar.cs` — Proje kullanıcısı (telefondaki üye): ad, rol, şifre özeti. Proje dosyasında proje.kullanicilar; çiz… · 421 satır · 25 bağ · CizimKomutlari.cs, Json.cs, KullaniciDeposu.cs
+- `autocad/src/Cekirdek/Lisans.cs` — Lisansın yükü (imzalı JSON): kime, hangi cihaz, hangi ürün, bitiş (boş: süresiz). · 217 satır · 10 bağ · LisansDenetimi.cs, Program.cs, Pencereler.cs
 - `autocad/src/Cekirdek/MalzemeEtiketi.cs` — Elemanın malzemeleri çizimde (Çizim Ayarları › Görünüm › Malzemeleri çizimde göster): simgenin yanı… · 95 satır · 14 bağ · Program.cs, CizimYazici.cs, malzeme-etiketi.json
 - `autocad/src/Cekirdek/MalzemeHafizasi.cs` — Malzeme hafızasındaki bir satır (elemana bağlı malzeme: travers, izolatör, armatür …). · 171 satır · 14 bağ · Model.cs, Turler.cs, Json.cs
 - `autocad/src/Cekirdek/MalzemeYazimi.cs` — Malzeme adlarının görünen yazımı: katalogdaki adlar eski programdan geldiği gibi karışık yazılmıştı… · 161 satır · 13 bağ · sh-core.cjs, Pencereler.cs, Program.cs
@@ -223,7 +227,7 @@ dosyada geçmez (Android ayarları gibi bazıları yine de kullanılır).
 - `autocad/src/Cekirdek/RaporYazici.cs` — Durum Tespit raporunu Excel dosyası olarak yazar (AutoCAD raporuyla aynı sayfa ve sütunlar). · 205 satır · 13 bağ · Model.cs, DetaySorgu.cs, Hesaplar.cs
 - `autocad/src/Cekirdek/SayiCoz.cs` — AutoCAD verisindeki sayılar Türkçe biçimde yazılır ("16,8", ",00") ama bazı alanlarda nokta da görü… · 42 satır · 30 bağ · BirlesikMetraj.cs, CizimAyarlari.cs, NesneOkuyucu.cs
 - `autocad/src/Cekirdek/Semboller.cs` — Sembol geometrisinin bir parçası (ortak/katalog/semboller.json ilkelleri). · 352 satır · 21 bağ · Program.cs, CizimYazici.cs, NesneYazici.cs
-- `autocad/src/Cekirdek/Turler.cs` — Eleman ya da hat türü: kod (veri), ad (ekranda), GIS numarası biçimi. · 93 satır · 42 bağ · CbsIceAktarim.cs, CizimKomutlari.cs, Pencereler.cs
+- `autocad/src/Cekirdek/Turler.cs` — Eleman ya da hat türü: kod (veri), ad (ekranda), GIS numarası biçimi. · 93 satır · 44 bağ · CbsIceAktarim.cs, CizimKomutlari.cs, Pencereler.cs
 - `autocad/src/Cekirdek/XlsmDosyasi.cs` — Excel (.xlsx / .xlsm) paketini zip içinde hücre düzeyinde düzenler: Birleşik Metraj şablonunu doldu… · 723 satır · 9 bağ · BirlesikMetraj.cs, Program.cs, Turler.cs
 - `autocad/src/Cekirdek/XlsxYazici.cs` — Excel (.xlsx) dosyası yazan küçük, bağımlılıksız yazıcı. Bilgisayarda Excel kurulu olması gerekmez.… · 307 satır · 5 bağ · RaporYazici.cs, ProjeOzeti.cs, KanalListesi.cs
 - `autocad/src/Cekirdek/YaziDuzeni.cs` — Hat yazılarının düzeni (31.10.2026): metraj ve hat bilgisi (kablo tipi) parçanın ortasına ortalı ya… · 101 satır · 11 bağ · dxf.js, Program.cs, cizim-stili.json
@@ -237,40 +241,42 @@ dosyada geçmez (Android ayarları gibi bazıları yine de kullanılır).
 - `autocad/src/Eklenti/CizimKomutlari.cs` — Çizim araçları: eleman, hat, kanal, sondaj, bölge, nokta alma, malzeme düzenleme, metraj, ayarlar v… · 1.862 satır · 49 bağ · Kullanicilar.cs, Model.cs, Pencereler.cs
 - `autocad/src/Eklenti/CizimSozlugu.cs` — AutoCAD'in çizim sözlüğündeki kayıtlar (Named Objects Dictionary → sözlük → Xrecord, metin değerler… · 183 satır · 4 bağ · CizimKomutlari.cs, Ortam.cs, Komutlar.cs
 - `autocad/src/Eklenti/CizimYazici.cs` — Çekirdeğin ürettiği tarifleri (CadVarlik) çizime yazar: katman, blok, öznitelik, köşe, genişletilmi… · 1.898 satır · 29 bağ · CizimStili.cs, Semboller.cs, NesneYazici.cs
-- `autocad/src/Eklenti/Eklenti.csproj` · 84 satır · 4 bağ · autocad.yml, hesap-paketle.mjs, marka-uret.py
+- `autocad/src/Eklenti/Eklenti.csproj` · 88 satır · 5 bağ · autocad.yml, hesap-paketle.mjs, marka-uret.py
 - `autocad/src/Eklenti/HesapMerkezi.cs` — Hesap kayıtlarının çizimde saklanması: Named Objects Dictionary → SEBEKE_HAKEDIS → HESAPLAR → kayıt… · 943 satır · 21 bağ · HesapBaglami.cs, Json.cs, Komutlar.cs
 - `autocad/src/Eklenti/HizliSecim.cs` — Şeritteki hızlı çizimin seçimi: kategori, etkin öğe (ör. AG Havai › AG Direk), öğe başına cins ve t… · 625 satır · 22 bağ · Katalog.cs, Kategoriler.cs, Turler.cs
 - `autocad/src/Eklenti/KanalTablosuYazici.cs` — Kanal listesini çizime tablo olarak koyar (KanalTablosu düzeni): SH_KANAL_LISTESI bloğu, çizgiler v… · 129 satır · 7 bağ · KanalTablosu.cs, Komutlar.cs, SH_KANALLISTESI
 - `autocad/src/Eklenti/KenarTakibi.cs` — Hattın, kanalın ve sondajın süslerini AutoCAD komutlarında çizgiyle birlikte tutar (süs takibi): çi… · 247 satır · 9 bağ · NesneYazici.cs, CizimAyarlari.cs, SayiCoz.cs
-- `autocad/src/Eklenti/Komutlar.cs` — Proje özeti: projeler (bölgeler) ve seçilen projenin malzeme listesi bir pencerede; listeler Excel'… · 553 satır · 45 bağ · CbsKomutlari.cs, DetaySorgu.cs, Model.cs
+- `autocad/src/Eklenti/Komutlar.cs` — Proje özeti: projeler (bölgeler) ve seçilen projenin malzeme listesi bir pencerede; listeler Excel'… · 567 satır · 49 bağ · CbsKomutlari.cs, DetaySorgu.cs, Model.cs
 - `autocad/src/Eklenti/KoyuTema.cs` — Arayüz renkleri: koyu (telefonun koyu lacivert zemini) ve açık tema (13.11.2026); vurgu her ikisind… · 1.790 satır · 13 bağ · Pencereler.cs, Program.cs, KanalListesi.cs
 - `autocad/src/Eklenti/KullaniciDeposu.cs` — Kullanıcılar ve onay ayarı çizimin içinde: Named Objects Dictionary → SEBEKE_HAKEDIS → KULLANICILAR… · 149 satır · 7 bağ · Kullanicilar.cs, CizimKomutlari.cs, Json.cs
+- `autocad/src/Eklenti/LisansDenetimi.cs` — Eklentinin lisans denetimi (13.11.2026; kurallar Cekirdek/Lisans.cs, biçim ortak/LISANS.md). Cihaz… · 161 satır · 9 bağ · Lisans.cs, Komutlar.cs, Json.cs
 - `autocad/src/Eklenti/Marka.cs` — Şebeke-M markası: ad, logo ve simge. Görseller eklentiye gömülüdür (ortak/marka; üretici araclar/ma… · 115 satır · 10 bağ · Json.cs, Program.cs, Pencereler.cs
 - `autocad/src/Eklenti/Ortam.cs` — Bir komutun çalışma ortamı: çizimden okunan proje, çizimin ayarları, katalog, ön ekler, aktif haked… · 164 satır · 16 bağ · CizimKomutlari.cs, HesapMerkezi.cs, Komutlar.cs
 - `autocad/src/Eklenti/OrtamVerisi.cs` — Komut ortamının AutoCAD'e bağlı olmayan kısmı: çizimden okunan proje, ayarlar, katalog, ön ekler, a… · 211 satır · 32 bağ · Kullanicilar.cs, Pencereler.cs, Model.cs
-- `autocad/src/Eklenti/Pencereler.cs` — Toplu malzeme penceresinden çıkan satır: her seçili elemana eklenecek malzeme. · 3.954 satır · 47 bağ · CbsIceAktarim.cs, CizimKomutlari.cs, DetaySorgu.cs
-- `autocad/src/Eklenti/Serit.cs` — AutoCAD şerit menüsüne "ŞEBEKE-M" (çizim) ve "ŞEBEKE-M ARAÇLAR" sekmelerini ekler (Google Stitch ta… · 1.062 satır · 50 bağ · Kategoriler.cs, HizliSecim.cs, Komutlar.cs
+- `autocad/src/Eklenti/Pencereler.cs` — Toplu malzeme penceresinden çıkan satır: her seçili elemana eklenecek malzeme. · 4.022 satır · 50 bağ · CbsIceAktarim.cs, CizimKomutlari.cs, DetaySorgu.cs
+- `autocad/src/Eklenti/Serit.cs` — AutoCAD şerit menüsüne "ŞEBEKE-M" (çizim) ve "ŞEBEKE-M ARAÇLAR" sekmelerini ekler (Google Stitch ta… · 1.063 satır · 51 bağ · Kategoriler.cs, HizliSecim.cs, Komutlar.cs
 - `autocad/src/Eklenti/SeritSimgeleri.cs` — Şerit ve pencere simgeleri (AutoCAD'e bağlı değil; denemede de çizilir). Kategori ve öğeler ince çi… · 272 satır · 20 bağ · Kategoriler.cs, Serit.cs, Semboller.cs
 - `autocad/src/Eklenti/Toplayici.cs` — Açık çizimin model alanındaki nesneleri çekirdeğin anladığı yalın biçime (CadVarlik) çevirir. Yalnı… · 272 satır · 12 bağ · CizimYazici.cs, CizimKomutlari.cs, CadVarlik.cs
 
 ### AutoCAD çekirdek denemesi — `autocad/test/CekirdekTest`
 
-- `autocad/test/CekirdekTest/CekirdekTest.csproj` · 45 satır · 21 bağ · autocad.yml, cbs.test.mjs, kanal.test.mjs
-- `autocad/test/CekirdekTest/Program.cs` — Çekirdek testleri. ornek : depodaki örnek dökümle birim testleri (CI'da çalışır) dogrula dokum.json… · 2.736 satır · 84 bağ · CbsIceAktarim.cs, CizimAyarlari.cs, DetaySorgu.cs
+- `autocad/test/CekirdekTest/CekirdekTest.csproj` · 47 satır · 21 bağ · autocad.yml, cbs.test.mjs, kanal.test.mjs
+- `autocad/test/CekirdekTest/Program.cs` — Çekirdek testleri. ornek : depodaki örnek dökümle birim testleri (CI'da çalışır) dogrula dokum.json… · 2.769 satır · 87 bağ · CbsIceAktarim.cs, CizimAyarlari.cs, DetaySorgu.cs
 - `autocad/test/CekirdekTest/ornek-dokum.json` · 47 satır · 4 bağ · CekirdekTest.csproj, PencereTest.csproj, Program.cs
 - `autocad/test/CekirdekTest/telefon-proje.sebeke.json` · 1 satır · 4 bağ · CekirdekTest.csproj, PencereTest.csproj, Program.cs
 - `autocad/test/CekirdekTest/volt-telefon.sebeke.json` · 718 satır · 2 bağ · CekirdekTest.csproj, Program.cs
 
 ### AutoCAD pencere denemesi — `autocad/test/PencereTest`
 
-- `autocad/test/PencereTest/PencereTest.csproj` · 49 satır · 8 bağ · autocad.yml, marka-uret.py, ArayuzSimgeleri.cs
-- `autocad/test/PencereTest/Program.cs` — Pencereleri örnek verilerle kurar, ekran görüntüsünü PNG olarak kaydeder ve Tamam'a basıldığında dö… · 976 satır · 33 bağ · KoyuTema.cs, Kullanicilar.cs, Model.cs
+- `autocad/test/PencereTest/PencereTest.csproj` · 50 satır · 8 bağ · autocad.yml, marka-uret.py, ArayuzSimgeleri.cs
+- `autocad/test/PencereTest/Program.cs` — Pencereleri örnek verilerle kurar, ekran görüntüsünü PNG olarak kaydeder ve Tamam'a basıldığında dö… · 1.008 satır · 35 bağ · KoyuTema.cs, Kullanicilar.cs, Model.cs
 - `autocad/test/PencereTest/SeritOnizleme.cs` — Şerit menünün önizlemesi (AutoCAD olmadan): eklentinin şeridiyle aynı veri (kategoriler, öğeler, kı… · 481 satır · 16 bağ · Kategoriler.cs, Turler.cs, HizliSecim.cs
 
 ### Ortak belgeler — `ortak`
 
 - `ortak/BIRLESIK-METRAJ.md` — Birleşik Metraj şablonunun doldurulması — Kullanıcının **Birleşik Metraj** Excel şablonu (`.xlsm`;… · 196 satır · 23 bağ · exporter.js, metraj-sablon-temizle.mjs, metraj-sablon.json
 - `ortak/CIZIM-BICIMI-NOTLARI.md` — Eski program incelemesi — neyi nasıl yapıyor, bizde ne var, ne alınabilir — 17.10.2026'da eski prog… · 200 satır · 13 bağ · kalemler.json, CinsKodu.cs, KatmanAdlari.cs
+- `ortak/LISANS.md` — Lisans — AutoCAD eklentisi ve telefon uygulaması için internetsiz, cihaza bağlı lisans (13.11.2026)… · 62 satır · 16 bağ · Lisans.cs, lisans-araci.html, lisans-uret.mjs
 - `ortak/VERI-MODELI.md` — Ortak veri modeli — Telefon uygulaması (Şebeke-M) ve AutoCAD eklentisi aynı **proje dosyasını** kul… · 353 satır · 42 bağ · ProjeDosyasi.cs, sebeke.js, sh-core.cjs
 
 ### Ortak belgeler — `ortak/deneme`
@@ -306,6 +312,7 @@ dosyada geçmez (Android ayarları gibi bazıları yine de kullanılır).
 - `ortak/deneme/kanal-listesi.json` — Proje bazında kanal listesi. Eklenti (Cekirdek/KanalListesi.cs, CekirdekTest) ve telefon (sh-core.c… · 52 satır · 8 bağ · KanalListesi.cs, sh-core.cjs, kanal.test.mjs
 - `ortak/deneme/kanal-zemini.json` — Kanal zemini: cins (dolgu), kaplama, bariyer ve trencher ayrı seçilir, kalem adı tek yazıdır. Eklen… · 47 satır · 8 bağ · KanalZemini.cs, sh-core.cjs, Program.cs
 - `ortak/deneme/kullanicilar.json` — Kullanıcılar ve onay ayarları için ortak deneme: AutoCAD eklentisi (CekirdekTest) ve telefon (tests… · 65 satır · 7 bağ · Kullanicilar.cs, kullanicilar.test.mjs, sh-core.cjs
+- `ortak/deneme/lisans/vektorler.json` — Ortak lisans denemeleri: araclar/lisans/lisans-deneme-uret.mjs üretir (her seferinde yeni deneme an… · 354 satır · 9 bağ · lisans-deneme-uret.mjs, Lisans.cs, acik-anahtar.json
 - `ortak/deneme/malzeme-etiketi.json` — Elemanın malzemeleri çizimde (Çizim Ayarları › Görünüm › Malzemeleri çizimde göster): her eleman iç… · 57 satır · 7 bağ · malzeme-etiketi.test.mjs, MalzemeEtiketi.cs, Program.cs
 - `ortak/deneme/malzeme-yazimi.json` — Malzeme adlarının görünen yazımı: girdi → beklenen. Eklentideki MalzemeYazimi.Duzelt ile telefondak… · 61 satır · 5 bağ · malzeme-yazimi.test.mjs, Program.cs, CekirdekTest.csproj
 - `ortak/deneme/onerilen-malzeme/beklenen.json` · 397 satır · 4 bağ · onerilen-beklenen-uret.mjs, onerilen-malzeme.test.mjs, Program.cs
@@ -354,6 +361,10 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 - `ortak/lejant/semboller-klasik.svg` · 1 satır · 3 bağ · lejant-uret.mjs, semboller.json, KULLANIM.md
 - `ortak/lejant/semboller-sebekem.svg` · 1 satır · 3 bağ · semboller.json, lejant-uret.mjs, KULLANIM.md
 
+### Ortak belgeler — `ortak/lisans`
+
+- `ortak/lisans/acik-anahtar.json` — Lisans doğrulama açık anahtarı (araclar/lisans/lisans-uret.mjs anahtar). Gizli eşi depoda yoktur. · 9 satır · 11 bağ · lisans-uret.mjs, LisansDenetimi.cs, acik-anahtar.js
+
 ### Marka — `ortak/marka`
 
 - `ortak/marka/hakkinda.json` — Hakkında metni: telefon uygulamasının Ayarlar › Hakkında ekranı ve AutoCAD eklentisinin Hakkında pe… · 52 satır · 9 bağ · ortak-tablolar.mjs, Marka.cs, Pencereler.cs
@@ -384,7 +395,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 - `telefon/android/src/tr/voltedas/saha/NtripClient.java` · 399 satır · 5 bağ · NtripTest.java, VoltBridge.java, GnssHub.java
 - `telefon/android/src/tr/voltedas/saha/PhoneGnss.java` · 70 satır · 2 bağ · GnssHub.java, GNSS-BAGLANTI.md
 - `telefon/android/src/tr/voltedas/saha/Rtcm3Parser.java` · 72 satır · 3 bağ · NtripTest.java, NtripClient.java, GNSS-BAGLANTI.md
-- `telefon/android/src/tr/voltedas/saha/VoltBridge.java` · 294 satır · 7 bağ · NtripClient.java, MainActivity.java, GnssHub.java
+- `telefon/android/src/tr/voltedas/saha/VoltBridge.java` · 299 satır · 7 bağ · NtripClient.java, MainActivity.java, GnssHub.java
 - `telefon/android/src/tr/voltedas/saha/VoltFileProvider.java` · 40 satır · 1 bağ · VoltBridge.java
 - `telefon/android/stubs/java/lang/invoke/LambdaMetafactory.java` · 7 satır · bağsız
 - `telefon/android/test/NtripTest.java` · 122 satır · 4 bağ · NtripClient.java, Rtcm3Parser.java, mock_caster.py
@@ -393,7 +404,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 ### Telefon belgeleri — `telefon/docs`
 
 - `telefon/docs/GNSS-BAGLANTI.md` — GNSS bağlantısı: dosyalar, düzeltme kaynakları, sabit istasyon — Telefon uygulamasının (Şebeke-M Ha… · 108 satır · 16 bağ · AndroidManifest.xml, NtripClient.java, NtripTest.java
-- `telefon/docs/KULLANIM-KILAVUZU.md` — Şebeke-M Hakediş Kullanım Kılavuzu — 6 Ekim 2026 · 1.078 satır · 5 bağ · onerilen-malzeme.json, KULLANIM.md, README.md
+- `telefon/docs/KULLANIM-KILAVUZU.md` — Şebeke-M Hakediş Kullanım Kılavuzu — 6 Ekim 2026 · 1.084 satır · 6 bağ · onerilen-malzeme.json, KULLANIM.md, LISANS.md
 
 ### Telefon — `telefon/seed`
 
@@ -426,7 +437,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 
 ### Telefon · uygulama — `telefon/web/src`
 
-- `telefon/web/src/main.js` — Uygulama başlatıcı: offline veritabanı, standart paketi, servisler, arayüz. · 138 satır · 18 bağ · app.js, bridge.js, bus.js
+- `telefon/web/src/main.js` — Uygulama başlatıcı: offline veritabanı, standart paketi, servisler, arayüz. · 148 satır · 19 bağ · app.js, bridge.js, bus.js
 
 ### Telefon · CAD dosyaları — `telefon/web/src/cad`
 
@@ -447,6 +458,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 - `telefon/web/src/core/db.js` — Depolama adaptörleri: IndexedDB (cihaz, offline-first) ve bellek (test). Üst katman yalnızca bu ara… · 83 satır · 4 bağ · helpers.mjs, main.js, scenarios.test.mjs
 - `telefon/web/src/core/hakedis-no.js` — AutoCAD hakediş numarası (1, 2, 3…): telefondaki obje hangi hakedişe yazılır. AutoCAD dosyasına akt… · 23 satır · 6 bağ · baglam.js, kullanicilar.test.mjs, project-service.js
 - `telefon/web/src/core/ids.js` — Zaman sıralı benzersiz kimlik (ULID benzeri, 26 karakter Crockford base32). · 43 satır · 7 bağ · cad-service.js, data-service.js, main.js
+- `telefon/web/src/core/lisans.js` — Lisans (13.11.2026, kullanıcı kararları: AutoCAD eklentisi ve telefon; internetsiz, cihaza bağlı; b… · 154 satır · 9 bağ · lisans-service.js, lisans-uret.mjs, lisans.js
 - `telefon/web/src/core/roles.js` — Hakediş onay mekanizması (v2.3): roller, yetkiler, PIN. Projede en az bir etkin Yönetici tanımlanın… · 100 satır · 10 bağ · compute.js, kullanicilar.test.mjs, project-service.js
 - `telefon/web/src/core/schema.js` — Merkezi proje veri modeli — tek kaynak. Her proje kaydı ortak alanları taşır (BASE); tablo tanımlar… · 167 satır · 27 bağ · exporter.js, calc.js, catalog.js
 - `telefon/web/src/core/source.js` — Veri kaynağı takibi — tek kaynak. Kayıtta saklanan dahili kod (points.source) + ölçüm kalitesi → sp… · 37 satır · 9 bağ · checks.js, equipment.js, field.js
@@ -511,10 +523,11 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 
 ### Telefon · yerel köprü — `telefon/web/src/native`
 
-- `telefon/web/src/native/bridge.js` — Yerel (Android) köprü soyutlaması. APK içinde window.VoltNative (Java @JavascriptInterface) kullanı… · 108 satır · 4 bağ · bus.js, gnss-service.js, main.js
+- `telefon/web/src/native/bridge.js` — Yerel (Android) köprü soyutlaması. APK içinde window.VoltNative (Java @JavascriptInterface) kullanı… · 109 satır · 4 bağ · bus.js, gnss-service.js, main.js
 
 ### Telefon · ortak tablolar — `telefon/web/src/ortak`
 
+- `telefon/web/src/ortak/acik-anahtar.js` — Bu dosya araclar/ortak-tablolar.mjs ile ortak/lisans/acik-anahtar.json dosyasından üretilir. Elle d… · 2 satır · 4 bağ · lisans-service.js, acik-anahtar.json, lisans-uret.mjs
 - `telefon/web/src/ortak/cizim-stili.js` — Bu dosya araclar/ortak-tablolar.mjs ile ortak/katalog/cizim-stili.json dosyasından üretilir. Elle d… · 2 satır · 12 bağ · dxf.js, catalog.js, cbs.js
 - `telefon/web/src/ortak/hakkinda.js` — Bu dosya araclar/ortak-tablolar.mjs ile ortak/marka/hakkinda.json dosyasından üretilir. Elle düzenl… · 2 satır · 3 bağ · settings.js, hakkinda.json, ortak-tablolar.mjs
 - `telefon/web/src/ortak/kalemler.js` — Bu dosya araclar/ortak-tablolar.mjs ile ortak/katalog/kalemler.json dosyasından üretilir. Elle düze… · 2 satır · 13 bağ · birlesik-metraj.test.mjs, cbs.js, exporter.js
@@ -533,18 +546,19 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 
 - `telefon/web/src/services/cad-service.js` — CAD çizimi (DXF / NCZ) servisi: dosyayı oku, projeye kaydet, haritada katman olarak göster, noktaya… · 86 satır · 6 bağ · ids.js, index.js, map.js
 - `telefon/web/src/services/excel-import.js` — Excel Import Service — şablon üretimi, XLSX/CSV okuma, doğrulama (önizleme) ve toplu aktarım. Akış:… · 259 satır · 6 bağ · field.js, scenarios.test.mjs, schema.js
+- `telefon/web/src/services/lisans-service.js` — Telefonun lisans denetimi (13.11.2026; kurallar core/lisans.js, biçim ortak/LISANS.md). Cihaz kodu… · 67 satır · 6 bağ · acik-anahtar.js, lisans.js, lisans.js
 - `telefon/web/src/services/photo-service.js` — Photo Service — fotoğraf adlandırma ({ObjeNo}_{Sıra}.jpg), proje klasör yolu, görüntü üstü bilgi sa… · 145 satır · 5 bağ · exporter.js, records.js, scenarios.test.mjs
 - `telefon/web/src/services/project-service.js` — Proje servisi: veritabanı ile hesap zincirini bağlar. UI yalnızca bu servisi çağırır. · 749 satır · 15 bağ · catalog.js, compute.js, crs.js
 - `telefon/web/src/services/survey-service.js` — Survey Service — saha objesi oluşturma (veri kaynağından bağımsız tek giriş noktası) ve koordinat g… · 180 satır · 10 bağ · crs.js, equipment.js, excel-import.js
 
 ### Telefon · arayüz — `telefon/web/src/ui`
 
-- `telefon/web/src/ui/app.js` — Uygulama kabuğu: HUD, alt sekme çubuğu, gezinme yığını, bildirimler, modal pencereler. · 101 satır · 4 bağ · ctx.js, index.js, kit.js
+- `telefon/web/src/ui/app.js` — Uygulama kabuğu: HUD, alt sekme çubuğu, gezinme yığını, bildirimler, modal pencereler. · 105 satır · 5 bağ · ctx.js, index.js, kit.js
 - `telefon/web/src/ui/arayuz-modu.js` — Arayüz modu (13.11.2026, kullanıcı kararı: "basit mod olarak yapalım", Basit varsayılan, Ayrıntılı… · 19 satır · 6 bağ · arayuz-modu.test.mjs, ctx.js, map.js
 - `telefon/web/src/ui/cizim-gorunumu.js` — Telefon haritasının çizim görünümü: hat renkleri, çizgi desenleri, kanal kenarları, açıklık metrajı… · 105 satır · 14 bağ · map-engine.js, NesneYazici.cs, aci.js
-- `telefon/web/src/ui/ctx.js` — Uygulama bağlamı: servis örnekleri ve gezinme. UI bileşenleri iş kurallarına yalnız bu nesne üzerin… · 5 satır · 23 bağ · app.js, arayuz-modu.js, arayuz-modu.test.mjs
+- `telefon/web/src/ui/ctx.js` — Uygulama bağlamı: servis örnekleri ve gezinme. UI bileşenleri iş kurallarına yalnız bu nesne üzerin… · 5 satır · 24 bağ · app.js, arayuz-modu.js, arayuz-modu.test.mjs
 - `telefon/web/src/ui/durum-kodu.js` — AutoCAD / AutoCAD alanları: kaydın çizim durum kodu (M, M+M, KM, DM, DM+M, MEVCUT, ENH, ME) ve demo… · 18 satır · 7 bağ · equipment.js, kit.js, map.js
-- `telefon/web/src/ui/kit.js` — UI yapı taşları (Preact + htm). İş kuralı içermez; yalnız görünüm ve etkileşim. · 119 satır · 24 bağ · app.js, cabin.js, calc.js
+- `telefon/web/src/ui/kit.js` — UI yapı taşları (Preact + htm). İş kuralı içermez; yalnız görünüm ve etkileşim. · 119 satır · 25 bağ · app.js, cabin.js, calc.js
 - `telefon/web/src/ui/map-engine.js` — Canvas tabanlı GIS motoru: proje CRS (TM, metre) düzleminde çizim, XYZ altlık (TM'ye affine büküler… · 496 satır · 12 bağ · cizim-gorunumu.js, tema.js, aci.js
 - `telefon/web/src/ui/screens/cabin.js` — Kabin düzenleyici: köşk / trafo binası tipi, içindeki hücreler (ekle · çıkar · sırala), kablo kanal… · 145 satır · 8 bağ · cabin-recipe.js, cabin.js, ctx.js
 - `telefon/web/src/ui/screens/calc.js` — 04 · Hesaplar (açıklık/sehim, köşe açıları, direk tipi kontrolü, Yeşil Defter özeti) + ENH · Metraj… · 148 satır · 9 bağ · checks.js, ctx.js, geom.js
@@ -554,18 +568,19 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 - `telefon/web/src/ui/screens/export.js` — 05 · Dışa Aktarım — gerçek dosya üretimi (DXF, NCN, KMZ, SHP, GeoJSON, XLSX, rapor, teslim paketi) · 135 satır · 8 bağ · cizim-stili.js, crs.js, ctx.js
 - `telefon/web/src/ui/screens/field.js` — Saha operasyonu ekranları (v2.2): Excel toplu aktarım · Saha objeleri listesi · Sabit Base + Rover… · 300 satır · 10 bağ · ctx.js, excel-import.js, index.js
 - `telefon/web/src/ui/screens/hesap.js` — Teknik hesaplar (Hesap Merkezi): hesap listesi, seçili direğe / hatta / trafoya uygun hesaplar, kay… · 125 satır · 7 bağ · baglam.js, ctx.js, index.js
-- `telefon/web/src/ui/screens/index.js` — Ekran kayıt defteri · 27 satır · 16 bağ · app.js, cabin.js, calc.js
+- `telefon/web/src/ui/screens/index.js` — Ekran kayıt defteri · 28 satır · 17 bağ · app.js, cabin.js, calc.js
 - `telefon/web/src/ui/screens/kanallar.js` — Kanal listesi (proje bazında): AutoCAD eklentisinin Proje Özeti › Kanal listesi ve çizime konan kan… · 35 satır · 8 bağ · ctx.js, exporter.js, index.js
+- `telefon/web/src/ui/screens/lisans.js` — Lisans ekranı (13.11.2026): durum (lisanslı / deneme / süresi doldu), bu cihazın kodu (kopyala, pay… · 63 satır · 6 bağ · app.js, ctx.js, index.js
 - `telefon/web/src/ui/screens/map.js` — 01 · Harita & Nokta Alımı — gerçek GIS motoru + tek elle hızlı ekipman/hat alımı. · 930 satır · 24 bağ · arayuz-modu.js, cabin-recipe.js, cabin.js
 - `telefon/web/src/ui/screens/matpick.js` — Katalogdan malzeme seçme kutusu (ekipman ve hat kayıtlarında ortak) · 13 satır · 3 bağ · ctx.js, kit.js, records.js
 - `telefon/web/src/ui/screens/project.js` — Proje merkezi (akış: PROJE → GNSS → SAHA → ALIM → HAT → BAĞLANTI → REÇETE → METRAJ → HAKEDİŞ → KONT… · 210 satır · 11 bağ · crs.js, ctx.js, index.js
 - `telefon/web/src/ui/screens/records.js` — Nokta kaydı · Hat kaydı · Fotoğraf (kanıt) ekranları · 271 satır · 16 bağ · crs.js, ctx.js, durum-kodu.js
-- `telefon/web/src/ui/screens/settings.js` — 06 · Ayarlar — gruplu menü (1.11.2026): her grup kendi ekranında açılır. Ölçüm (konum kaynağı, yönt… · 248 satır · 12 bağ · crs.js, arayuz-modu.js, ctx.js
+- `telefon/web/src/ui/screens/settings.js` — 06 · Ayarlar — gruplu menü (1.11.2026): her grup kendi ekranında açılır. Ölçüm (konum kaynağı, yönt… · 249 satır · 12 bağ · crs.js, arayuz-modu.js, ctx.js
 - `telefon/web/src/ui/screens/stakeout.js` — 02 · Aplikasyon — gerçek hedef noktadan canlı yönlendirme (ileri/sağ-sol, kot, semt, eksen ofseti,… · 325 satır · 10 bağ · arayuz-modu.js, cad-service.js, ctx.js
 - `telefon/web/src/ui/screens/team.js` — Kullanıcılar, roller ve hakediş onayı (v2.3) Ortak parçalar: HakRow (durum düğmeleri, yetkiye göre)… · 190 satır · 8 bağ · ctx.js, equipment.js, index.js
 - `telefon/web/src/ui/screens/tepe.js` — Cer vektör hesabı ve direk tepe kuvveti. Kollar (yön + açıklık) çizimden ya da uygulamadaki hatlard… · 158 satır · 6 bağ · ctx.js, index.js, kit.js
 - `telefon/web/src/ui/services.js` — UI tarafı yardımcı servisler: ölçüm oturumu, nokta alma akışı, karo önbelleği, son kullanılanlar. · 255 satır · 11 bağ · altlik.test.mjs, ctx.js, ids.js
-- `telefon/web/src/ui/tema.js` — Arayüz teması (13.11.2026): Otomatik (cihazın teması), Koyu ya da Açık. AutoCAD eklentisinde aynı s… · 108 satır · 7 bağ · map-engine.js, main.js, settings.js
+- `telefon/web/src/ui/tema.js` — Arayüz teması (13.11.2026): Otomatik (cihazın teması), Koyu ya da Açık. AutoCAD eklentisinde aynı s… · 108 satır · 8 bağ · map-engine.js, main.js, settings.js
 - `telefon/web/src/ui/theme.css` · 375 satır · 2 bağ · main.js, DEVIR.md
 
 ### Telefon · web yardımcıları — `telefon/web/src/web`
@@ -592,6 +607,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 - `telefon/web/tests/kilit.test.mjs` — Onay kilidi (hata 3): onay açıkken kontrol edilmiş / hakedişteki / onaylı kaydın miktarı, malzemesi… · 116 satır · 1 bağ · helpers.mjs
 - `telefon/web/tests/konsol.test.mjs` — AG galvaniz travers ve konsollar (GT-60, GD-80, T-AG-1…), müşterek tepe ve trafo traversleri, AG iz… · 102 satır · 11 bağ · helpers.mjs, kalemler.js, sebeke.js
 - `telefon/web/tests/kullanicilar.test.mjs` — Kullanıcılar, roller ve hakediş yetkisi: telefon ↔ AutoCAD ortak kuralları (ortak/katalog/roller.js… · 150 satır · 10 bağ · Kullanicilar.cs, ProjeDosyasi.cs, hakedis-no.js
+- `telefon/web/tests/lisans.test.mjs` — Lisans (13.11.2026): ortak denemeler (ortak/deneme/lisans/vektorler.json; eklentide CekirdekTest ay… · 67 satır · 3 bağ · lisans-service.js, lisans.js, vektorler.json
 - `telefon/web/tests/malzeme-etiketi.test.mjs` — Malzemelerin çizimde yazılması ve hat kalınlığı: telefon ↔ AutoCAD ortak kurallar (ortak/deneme/mal… · 106 satır · 9 bağ · malzeme-etiketi.json, MalzemeEtiketi.cs, cizim-stili.js
 - `telefon/web/tests/malzeme-yazimi.test.mjs` — Malzeme adlarının görünen yazımı (sh-core malzemeYazisi): eklentideki MalzemeYazimi.Duzelt ile aynı… · 33 satır · 5 bağ · malzeme-yazimi.json, kalemler.js, sh-core.cjs
 - `telefon/web/tests/marka.test.mjs` — Marka kuralları (DEVIR §1): ürün adı "Şebeke-M Hakediş"; eski hakediş programının adı ve dağıtım şi… · 64 satır · 10 bağ · kalemler.js, sebeke.js, sh-core.cjs
@@ -604,6 +620,7 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 - `telefon/web/tests/toplu-malzeme.test.mjs` — Toplu malzeme (13.11.2026): seçilen / süzülen ekipmanların her birine aynı anda birden çok malzeme.… · 53 satır · 1 bağ · helpers.mjs
 - `telefon/web/tests/ui/esitleme_ui.py` — Arayüz denemesi: eklentiyle eşitleme (31.10.2026) — haritanın çizim görünümü (hat renkleri, metraj,… · 228 satır · 2 bağ · hakkinda.json, telefon.yml
 - `telefon/web/tests/ui/gnss_ui.py` — Arayüz denemesi: Ayarlar › Düzeltme kaynağı (TUSAGA-Aktif, sabit istasyon, yerel CORS; NTRIP / doğr… · 179 satır · 1 bağ · telefon.yml
+- `telefon/web/tests/ui/lisans_ui.py` — Arayüz denemesi: lisans (13.11.2026). Yerel köprü taklit edilir (cihazKimligi = ANDROID_ID); ilk aç… · 80 satır · 3 bağ · telefon.yml, tema.js, vektorler.json
 - `telefon/web/tests/ui/native_mock.py` — Yerel köprü protokol testi: window.VoltNative taklidi (Java yanıtları + NMEA/NTRIP olayları) ile JS… · 80 satır · bağsız
 - `telefon/web/tests/ui/smoke.py` — Arayüz duman testi: Chromium (mobil 390x844) + simülatör GNSS ile uçtan uca saha akışı · 222 satır · bağsız
 - `telefon/web/tests/ui/upgrade.py` — Sürüm geçiş testi: 2.1.0 ile oluşturulan veritabanı (IndexedDB) 2.2.0 ile açılır, sonra tekrar 2.1.… · 89 satır · bağsız
@@ -624,15 +641,15 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 ### Proje belgeleri — `kök`
 
 - `.gitattributes` · 12 satır · 1 bağ · DEVIR.md
-- `DEVIR.md` — Devir notu — Bu proje başka bir hesaba (GitHub ya da Claude) geçerken sohbet geçmişi taşınmaz. Deva… · 686 satır · 151 bağ · metraj-beklenen-uret.mjs, onerilen-beklenen-uret.mjs, kurallar.mjs
-- `KULLANIM.md` — Şebeke-M Hakediş — Kullanım Kılavuzu — İki araç var, ikisi aynı proje dosyasını (`.sebeke.json`) ku… · 679 satır · 46 bağ · cizim-stili.json, marka.test.mjs, onerilen-malzeme.json
+- `DEVIR.md` — Devir notu — Bu proje başka bir hesaba (GitHub ya da Claude) geçerken sohbet geçmişi taşınmaz. Deva… · 705 satır · 161 bağ · metraj-beklenen-uret.mjs, onerilen-beklenen-uret.mjs, kurallar.mjs
+- `KULLANIM.md` — Şebeke-M Hakediş — Kullanım Kılavuzu — İki araç var, ikisi aynı proje dosyasını (`.sebeke.json`) ku… · 686 satır · 48 bağ · cizim-stili.json, marka.test.mjs, onerilen-malzeme.json
 - `PLAN.md` — Plan — telefon uygulaması bırakıldı, geri dönüş: `telefon-eski-0.2.3` dalı). Kataloğu TEDAŞ pozları… · 112 satır · 16 bağ · ArayuzSimgeleri.cs, cizim-stili.json, kategoriler.json
 - `README.md` — Şebeke-M Hakediş — Elektrik dağıtım şebekesi yapım işlerinde saha ölçümü, metraj, hakediş, Durum Te… · 88 satır · 47 bağ · hesap-dene.py, hesap-paketle.mjs, lejant-uret.mjs
 
 ### Otomatik derleme (CI) — `.github`
 
 - `.github/workflows/autocad.yml` — AutoCAD eklentisi — Her gönderimde: çekirdek testleri → iki derleme (AutoCAD 2016–2024 ve 2025+) →… · 198 satır · 9 bağ · CekirdekTest.csproj, Eklenti.csproj, KALDIR.bat
-- `.github/workflows/telefon.yml` — Telefon uygulaması — Her gönderimde: JavaScript testleri → web paketi → APK (Gradle'sız; aapt2 + ec… · 139 satır · 9 bağ · HaritaAltligi.cs, AndroidManifest.xml, build_apk.sh
+- `.github/workflows/telefon.yml` — Telefon uygulaması — Her gönderimde: JavaScript testleri → web paketi → APK (Gradle'sız; aapt2 + ec… · 141 satır · 10 bağ · HaritaAltligi.cs, AndroidManifest.xml, build_apk.sh
 
 ### Geliştirme araçları — `araclar`
 
@@ -644,12 +661,16 @@ Her hesap: `kaynak/<id>.html` (aracın özgün sayfası, formüllere dokunulmaz)
 - `araclar/hesap-paketle.mjs` · 135 satır · 13 bağ · kopru-bas.js, kurallar.mjs, build.mjs
 - `araclar/katalog-aktar.py` — Cins listesi (menü sırası: ana türler, hatlar, kanal, sondaj, sonra AutoCAD sırasıyla diğerleri) · 386 satır · 5 bağ · kalemler.json, kalemler.js, CinsKodu.cs
 - `araclar/lejant-uret.mjs` · 76 satır · 8 bağ · cizim-stili.json, semboller-klasik.svg, semboller.json
+- `araclar/lisans/lisans-araci.html` — Şebeke-M Lisans Aracı · 206 satır · 4 bağ · lisans-uret.mjs, acik-anahtar.json, LISANS.md
+- `araclar/lisans/lisans-deneme-uret.mjs` · 65 satır · 5 bağ · vektorler.json, lisans-ortak.mjs, acik-anahtar.json
+- `araclar/lisans/lisans-ortak.mjs` — Lisans üretiminin ortak parçaları (Node): anahtar çifti, açık anahtar JSON'u, lisans imzalama. Biçi… · 49 satır · 4 bağ · lisans-deneme-uret.mjs, lisans-uret.mjs, acik-anahtar.json
+- `araclar/lisans/lisans-uret.mjs` · 65 satır · 8 bağ · acik-anahtar.json, lisans-araci.html, lisans-ortak.mjs
 - `araclar/marka-uret.py` — Telefonun web paketi · 159 satır · 5 bağ · Eklenti.csproj, Marka.cs, PencereTest.csproj
 - `araclar/metraj-beklenen-uret.mjs` · 29 satır · 15 bağ · birlesik-metraj.js, sh-core.cjs, xlsm.js
 - `araclar/metraj-sablon-temizle.mjs` · 150 satır · 5 bağ · birlesik-metraj.js, xlsm.js, birlesik-metraj.xlsm
 - `araclar/onerilen-beklenen-uret.mjs` · 25 satır · 9 bağ · onerilen-malzeme.js, recipe.js, durumlar.json
-- `araclar/ortak-tablolar.mjs` · 27 satır · 18 bağ · hakkinda.json, semboller-uret.mjs, birlesik-metraj.xlsm
+- `araclar/ortak-tablolar.mjs` · 29 satır · 22 bağ · hakkinda.json, semboller-uret.mjs, acik-anahtar.js
 - `araclar/semboller-onizle.mjs` · 41 satır · 2 bağ · semboller.json, VERI-MODELI.md
 - `araclar/semboller-uret.mjs` · 384 satır · 8 bağ · ortak-tablolar.mjs, semboller.js, semboller.json
 
-<!-- dosya-listesi: cb0241c35973eee6 -->
+<!-- dosya-listesi: b01562438892b87e -->

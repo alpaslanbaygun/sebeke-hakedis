@@ -377,10 +377,22 @@ namespace SebekeHakedis.Eklenti
             });
         }
 
+        /// <summary>Lisans penceresi (13.11.2026): durum, bu bilgisayarın cihaz kodu, lisans girme. Lisanssız da çalışır.</summary>
+        [CommandMethod("SH_LISANS", CommandFlags.Modal)]
+        public void LisansKomutu()
+        {
+            Calistir("Lisans", () =>
+            {
+                var d = LisansDenetimi.Durum();
+                bool yeni = Pencereler.Lisans(d, LisansDenetimi.CihazKodu, LisansDenetimi.Dene, false);
+                Uygulama.Yaz((yeni ? "Lisans kaydedildi. " : "") + LisansDenetimi.Durum().Mesaj);
+            }, true);
+        }
+
         [CommandMethod("SH_HAKKINDA", CommandFlags.Modal)]
         public void Hakkinda()
         {
-            Calistir("Hakkında", () => Pencereler.Hakkinda(Uygulama.Surum, OrtamBilgisi(), KomutlariYaz));
+            Calistir("Hakkında", () => Pencereler.Hakkinda(Uygulama.Surum, OrtamBilgisi(), KomutlariYaz), true);
         }
 
         private static string OrtamBilgisi()
@@ -439,8 +451,10 @@ namespace SebekeHakedis.Eklenti
             return p;
         }
 
-        internal static void Calistir(string islem, Action is_)
+        internal static void Calistir(string islem, Action is_, bool lisanssiz = false)
         {
+            // Lisans (13.11.2026): deneme süresi dolmuş ya da lisans geçersizse komut çalışmaz, Lisans penceresi açılır
+            if (!lisanssiz && !LisansDenetimi.Izinli()) { Uygulama.Yaz(islem + ": lisans gerekli (SH_LISANS)."); return; }
             try { is_(); }
             catch (System.Exception ex)
             {

@@ -1149,6 +1149,74 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
+        // ================= Lisans =================
+
+        /// <summary>
+        /// Lisans penceresi (13.11.2026): durum (lisanslı / deneme / süresi doldu), bu bilgisayarın cihaz kodu (kopyala), lisans
+        /// metni (yapıştır ya da .lisans dosyasından aç) ve Kaydet. dene(metin, kaydet): durumu hesaplar, kaydet ise geçerli
+        /// lisansı yazar. kilitli: deneme süresi dolmuş ya da lisans geçersizken komuttan açıldı (yalnız lisans girilebilir).
+        /// Geçerli lisans kaydedilirse true.
+        /// </summary>
+        public static bool Lisans(LisansDurumu d, string cihazKodu, Func<string, bool, LisansDurumu> dene, bool kilitli)
+        {
+            Hazirla();
+            using (var f = new KoyuPencere("Lisans", 640, 560, Boya.Simge("anahtar", KoyuRenk.Yesil, 20)))
+            {
+                var alt = AltKur(f, "Lisansı kaydet", true, 150);
+                alt.Vazgec.Text = kilitli ? "Kapat" : "Vazgeç";
+                Color renk = d.Tur == "lisansli" ? KoyuRenk.Yesil : d.Tur == "deneme" ? KoyuRenk.UyariYazi : KoyuRenk.HataYazi;
+                var kart = Koy(f, new Kart(d.Tur == "lisansli" ? "LİSANSLI" : d.Tur == "deneme" ? "DENEME SÜRÜMÜ" : "LİSANS GEREKLİ") { KenarRengi = renk }, 16, 56, 608, 120);
+                Etiket(kart, d.Mesaj, 14, 40, 580, KoyuYazi.Baslik, renk);
+                string ayrinti = d.Tur == "lisansli" && d.Bilgi != null
+                    ? "Lisans no: " + (d.Bilgi.No.Length > 0 ? d.Bilgi.No : "-") + "  ·  Ürün: " + d.Bilgi.Urun + "  ·  Verildiği gün: " + d.Bilgi.Verildi
+                    : kilitli ? "Programı kullanmaya devam etmek için lisans girin. Lisans için aşağıdaki cihaz kodunu lisans verene gönderin."
+                    : "Lisans için aşağıdaki cihaz kodunu lisans verene gönderin; gelen lisansı yapıştırıp kaydedin.";
+                Aciklama(kart, ayrinti + (d.SaatGeri ? "  Bilgisayarın saati geri alınmış görünüyor; tarih düzeltilmeli." : ""), 14, 68, 580, 44);
+
+                Etiket(f, "Bu bilgisayarın cihaz kodu", 16, 190, 300, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var kod = Koy(f, new MetinKutusu(cihazKodu), 16, 212, 440, 34);
+                kod.Kutu.ReadOnly = true;
+                kod.Kutu.Font = new Font("Consolas", 12F, FontStyle.Bold);
+                var kopyala = Koy(f, new KoyuDugme("Kopyala", DugmeTuru.Ikincil, Boya.Simge("ozet", KoyuRenk.Ikincil, 16)), 466, 212, 158, 34);
+                kopyala.Click += (s, e) => { try { Clipboard.SetText(cihazKodu); alt.Ozet.Text = "Cihaz kodu panoya kopyalandı."; } catch { } };
+
+                Etiket(f, "Lisans (gelen metni yapıştırın ya da dosyadan açın)", 16, 260, 440, KoyuYazi.Kalin, KoyuRenk.Yazi);
+                var ac = Koy(f, new KoyuDugme("Dosyadan aç…", DugmeTuru.Ikincil, Boya.Simge("ara", KoyuRenk.Ikincil, 16)), 466, 254, 158, 30);
+                var metin = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical, BorderStyle = BorderStyle.None, BackColor = KoyuRenk.Kutu, ForeColor = KoyuRenk.Yazi, Font = new Font("Consolas", 9F), WordWrap = true, Name = "lisansMetni" };
+                Koy(f, new Cerceve(metin), 16, 290, 608, 150);
+                var sonuc = Etiket(f, "", 16, 448, 608, KoyuYazi.Govde, KoyuRenk.Ikincil);
+                sonuc.Height = S(40);
+                ac.Click += (s, e) =>
+                {
+                    using (var dlg = new OpenFileDialog { Title = "Lisans dosyası", Filter = "Lisans (*.lisans;*.txt)|*.lisans;*.txt|Tüm dosyalar (*.*)|*.*" })
+                        if (dlg.ShowDialog(f) == DialogResult.OK) { try { metin.Text = File.ReadAllText(dlg.FileName, Encoding.UTF8); } catch (Exception ex) { sonuc.Text = ex.Message; } }
+                };
+                Action denetle = () =>
+                {
+                    if (Cekirdek.Lisans.Ayikla(metin.Text).Length == 0) { sonuc.Text = metin.Text.Trim().Length == 0 ? "" : "Metinde lisans bulunamadı (SHL1. ile başlar)."; sonuc.ForeColor = KoyuRenk.HataYazi; alt.Tamam.Enabled = false; return; }
+                    var y = dene(metin.Text, false);
+                    bool iyi = y.Tur == "lisansli";
+                    sonuc.Text = iyi ? "Geçerli: " + y.Mesaj : (y.Hata.Length > 0 ? y.Hata : y.Mesaj);
+                    sonuc.ForeColor = iyi ? KoyuRenk.Yesil : KoyuRenk.HataYazi;
+                    alt.Tamam.Enabled = iyi;
+                };
+                metin.TextChanged += (s, e) => denetle();
+                alt.Tamam.Enabled = false;
+                alt.Ozet.Text = kilitli ? "Lisanssız kullanım süresi doldu." : "";
+                LisansDurumu kayitli = null;
+                alt.Tamam.Click += (s, e) =>
+                {
+                    var y = dene(metin.Text, true);
+                    if (y.Tur != "lisansli") { denetle(); return; }
+                    kayitli = y;
+                    f.DialogResult = DialogResult.OK;
+                };
+                f.Shown += (s, e) => metin.Focus();
+                Goster(f);
+                return kayitli != null;
+            }
+        }
+
         /// <summary>
         /// Hakkında: Şebeke-M logosu, sürüm, slogan; "Hakkında" sekmesinde amaç ve yapabildikler (ortak/marka/hakkinda.json,
         /// telefonla aynı metin), "Komutlar" sekmesinde komut listesi (gruplu). "Komut satırına yaz" listeyi AutoCAD'in komut
@@ -3488,6 +3556,8 @@ namespace SebekeHakedis.Eklenti
                 cift.CheckedChanged += (s, e) => yenile();
                 yenile();
                 g.CellContentClick += (s, e) => { if (e.RowIndex >= 0 && e.ColumnIndex == 0) g.EndEdit(); };
+                // "Seçilenleri ekle" pencereyi kapatmıyordu (PencereTest 08d yakaladı): Tamam olarak kapanır
+                alt.Tamam.Click += (s, e) => { g.EndEdit(); w.DialogResult = DialogResult.OK; };
                 if (Goster(w, sahip) != DialogResult.OK) return null;
                 g.EndEdit();
                 var secilen = new List<Kalem>();

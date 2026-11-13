@@ -61,6 +61,7 @@ export const bridge = {
   keepScreenOn: (on) => (N() ? call('keepScreenOn', { on }) : Promise.resolve()),
   // Cihazın teması ({ acik }); yerel uygulama eskiyse ya da web'de: hata (tema.js tarayıcının prefers-color-scheme'ine düşer)
   sistemTemasi: () => call('sistemTemasi', {}),
+  cihazKimligi: () => call('cihazKimligi', {}),   // lisans: { id } (ANDROID_ID)
   vibrate: (ms = 40) => { if (N()) return call('vibrate', { ms }).catch(() => {}); try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* */ } return Promise.resolve(); },
   openSettings: (what) => call('openSettings', { what })
 };

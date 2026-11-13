@@ -17,3 +17,8 @@ autocad/test/CekirdekTest/nuget.config
 # Hesap Merkezi paketi derlemede üretilir (araclar/hesap-paketle.mjs)
 ortak/hesap/paket/
 __pycache__/
+
+# Lisans: gizli anahtar ve üretilen lisanslar depoya konmaz (ortak/LISANS.md)
+*.pem
+*.lisans
+*gizli-anahtar*

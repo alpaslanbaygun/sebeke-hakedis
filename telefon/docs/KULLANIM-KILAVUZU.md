@@ -30,6 +30,12 @@ Uygulama bir kurulum dosyasıyla (APK) kurulur; mağazadan indirilmez. Android 8
 4. İlk açılışta sorulan izinleri verin: konum, yakındaki cihazlar (Bluetooth), kamera ve bildirim.
 5. "Projeler" ekranı açılır. İlk projenizi oluşturun.
 
+**Lisans** (13.11.2026): uygulama lisanssız **7 gün** tam çalışır; açılışta "Deneme sürümü: N gün kaldı" yazar. Süre
+dolunca yalnız Lisans ekranı açılır. **Ayarlar › Lisans** bu telefonun **cihaz kodunu** (`TL-…`; `Kopyala`, `Gönder`)
+ve lisans durumunu gösterir. Kodu lisans verene gönderin; gelen lisansı yapıştırın ya da `Lisans dosyasından aç` ile
+`.lisans` dosyasını seçin, `LİSANSI KAYDET` deyin. Uygulamayı silip yeniden kurmak cihaz kodunu değiştirmez. Bitişe 15
+gün kala açılışta uyarı çıkar. Lisans üretme: [ortak/LISANS.md](../../ortak/LISANS.md).
+
 Eski sürüm kuruluysa silmeyin; yeni dosyayı üzerine kurun. Projeleriniz yerinde kalır.
 
 | Kurulu sürüm | 2.4.0 üzerine kurulur mu |
