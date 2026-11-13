@@ -10,6 +10,7 @@ import { BASEMAPS, ALTLIK_GRUPLARI, basemapById, basemapReady, prefetchArea } fr
 import { unproject } from '../../geo/crs.js';
 import HAKKINDA from '../../ortak/hakkinda.js';
 import { TEMA_SECENEKLERI, temaSecimi, temaUygula } from '../tema.js';
+import { ARAYUZ_MODLARI, arayuzModu, arayuzModuSec } from '../arayuz-modu.js';
 
 /** Ayarlar menüsü: [ekran, simge, başlık, açıklama, yalnız telefonda mı]. */
 const GRUPLAR = [
@@ -44,7 +45,9 @@ export function SettingsScreen() {
     <div class="sect">Görünüm</div>
     <div class="card stack"><div class="fld"><label>Tema</label><${Seg} value=${temaSecimi()} options=${TEMA_SECENEKLERI}
       onChange=${(v) => { temaUygula(v); app.ds.setting('tema', v); app.bus.emit('settings:change', { key: 'tema' }); }} /></div>
-      <div class="note">Otomatik: cihazın açık / koyu temasını izler. Yalnız bu cihazda saklanır. AutoCAD eklentisinde aynı seçim Çizim ayarları › Genel › Arayüz teması'ndadır.</div></div>`;
+      <div class="note">Otomatik: cihazın açık / koyu temasını izler. Yalnız bu cihazda saklanır. AutoCAD eklentisinde aynı seçim Çizim ayarları › Genel › Arayüz teması'ndadır.</div>
+      <div class="fld"><label>Arayüz</label><${Seg} value=${arayuzModu()} options=${ARAYUZ_MODLARI} onChange=${(v) => arayuzModuSec(v)} /></div>
+      <div class="note">Basit: saha için sade ekranlar — büyük AL düğmesi, kısa seçim pencereleri, haritalı aplikasyon. Ayrıntılı: bütün seçenekler (ölçüm aracı, düğüm düzenleme, CAD, enerji kontrolü, kaynak seçimi). Yalnız bu cihazda saklanır.</div></div>`;
 }
 
 /** Ölçüm: konum kaynağı, yöntem, GNSS alıcı (Bluetooth), anten. */

@@ -83,6 +83,7 @@ async function boot() {
     app.state.basemap = (await ds.setting('basemap')) || 'none';
     app.state.mapKeys = (await ds.setting('mapKeys')) || {};
     app.state.haritaOlcek = (await ds.setting('haritaOlcek')) || { simge: 1, yazi: 1 };
+    app.state.arayuzModu = (await ds.setting('arayuzModu')) || null;   // Basit / Ayrıntılı (ui/arayuz-modu.js)
     if (WEB) {
       app.state.srcMode = 'map';                                         // ofiste varsayılan kaynak: haritadan seç
       probeTiles().then((ok) => { app.state.tilesOk = ok; if (!ok) app.state.basemap = 'none'; bus.emit('settings:change', { key: 'tilesOk' }); });

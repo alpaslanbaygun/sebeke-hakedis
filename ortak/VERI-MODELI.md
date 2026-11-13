@@ -126,7 +126,9 @@ Telefonun kataloğu TEDAŞ poz kodlarıyla (ör. `005.01.02.01-008`), eklentinin
   değeridir (katalogda birebir eş varsa onun alanları). Diğer malzemelerde cins poz kategorisinden (`Travers → TRAVERS_VE_KONSOLLAR_GLV`,
   `İzolatör|OG → OG_İZOLATÖR` …), tanım poz adından gelir. Telefona alınan ve telefon kataloğunda eşi olmayan kalemler
   için kataloğa `AUTOCAD:…` kodlu kalem açılır; eski program alanları kalemde saklanır ve geri yazımda aynen döner.
-- Hat metrajı tam metreye yukarı yuvarlanır (eski program gibi); yeraltında telefonun payları (dikey iniş, çıkış, trafo,
+- Hat metrajı çizimin ayarıyla yuvarlanır (`proje.metrajYuvarlama`: yok — 2 hane, varsayılan 13.11.2026 / `yukari` tam
+  metreye, eski program gibi / `yakin`; yalnız varsayılandan farklıysa yazılır; `Metraj.Hat` ↔ sh-core `metrajYuvarla`);
+  yeraltında telefonun payları (dikey iniş, çıkış, trafo,
   SDK, rezerv) dahildir ve `3(1x…)` kablolarda üç damarın toplamı yazılır.
 - Yeraltı hattın kazı kanalı ayrı **Kanal** nesnesi olur: kod kablo türlerinden (OG 8, AG 4, AYD 2, REK 1), zemin
   telefonun cins / kaplama / bariyer / trencher seçiminden kalem adı olarak (aşağıda **Kanal zemini**), genişlik ve

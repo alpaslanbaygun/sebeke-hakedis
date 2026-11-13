@@ -160,6 +160,7 @@ export function sebekeModel(ps, opts = {}) {
   if (!project || !result) throw new Error('Açık proje yok');
   const uyarilar = [];
   const sb = project.sebeke || {};
+  const tamMetre = SH.yuvarlamaDuzelt(sb.metrajYuvarlama) !== 'yok';   // parça payları tam metre mi (yoksa 2 hane)
   const crs = project.crs || {};
   const act = (a) => (a || []).filter((x) => x.status !== 'deleted');
   const dom = dosyaDilimi(crs, sb, act(data.points));
@@ -175,6 +176,7 @@ export function sebekeModel(ps, opts = {}) {
   // Simge ve yazı boyutları (eklentide Çizim Ayarları › Görünüm; telefonda Dışa Aktarım › Çizim boyutları)
   const by = SH.boyutlarOku(sb.boyutlar);
   if (by) sp.proje.boyutlar = by;
+  if (SH.yuvarlamaDuzelt(sb.metrajYuvarlama) !== 'yok') sp.proje.metrajYuvarlama = SH.yuvarlamaDuzelt(sb.metrajYuvarlama);
   const onaylar = onaylariHazirla(sb.onaylar, data.periods);
   if (onaylar.length) sp.proje.onaylar = onaylar;
   // Kullanıcılar, roller ve onay ayarı (hakediş yetkisi dahil): eklentide de geçerlidir
@@ -258,7 +260,7 @@ export function sebekeModel(ps, opts = {}) {
     const tekDevre = (l.circuits || []).length === 1 ? l.circuits[0] : null;
     const kesit = tekDevre && autocadDevresi(tekDevre) ? { tanim: circuitLabel(tekDevre, cat), aciklama: '' } : cizimKesit(etiketTam, l.lineType, l.install);
     if (kablolu) {
-      hatKalemleri = iletkenKalemleri(l, li, iletkenler, hatTuru, kesit, durum, hak, cat);
+      hatKalemleri = iletkenKalemleri(l, li, iletkenler, hatTuru, kesit, durum, hak, cat, project.sebeke && project.sebeke.metrajYuvarlama);
       if (!hatKalemleri.length && Array.isArray(sb.kalemler)) hatKalemleri = sb.kalemler.map((k) => Object.assign({}, k, { hakedis: hak }));
       // Çok iletkenli hat (müşterek OG + AG, iki kablo): ana kesit eklentideki gibi "OG + … / AG + …"
       const satirlar = hatKalemleri.filter((k) => k.kaynak === 'HAT');
@@ -283,7 +285,7 @@ export function sebekeModel(ps, opts = {}) {
           parca: parcalar.length > 1 ? { sira: k + 1, toplam: parcalar.length } : undefined
         };
         // İletken / kablo (HAT) kalemleri parçalara uzunlukla bölünür; hattın malzemeleri (ek mufu, boru dışı malzeme…) ilk parçada
-        for (const kl of hatKalemleri) { if (kl.kaynak === 'HAT') hat.kalemler.push(kalemPayi(kl, pay, son, paylar, k)); else if (k === 0) hat.kalemler.push(Object.assign({}, kl)); }
+        for (const kl of hatKalemleri) { if (kl.kaynak === 'HAT') hat.kalemler.push(kalemPayi(kl, pay, son, paylar, k, tamMetre)); else if (k === 0) hat.kalemler.push(Object.assign({}, kl)); }
         if (k === 0) hat.kalemler.push(...manuel); // elle eklenen malzemeler ilk parçaya
         // Telefonda metrajı değişmeyen AutoCAD hattı: eklentinin metrajı döner (ek pay, elle düzeltme korunur)
         autocadMetraji(hat.kalemler, sb.ilkMetraj && sb.ilkMetraj[kimlik], kayitliBilgi(sb, kimlik));
@@ -432,12 +434,12 @@ function parcaPaylari(uzunluklar) { const t = uzunluklar.reduce((a, b) => a + b,
  * sayı parçalara dağıtılır (en büyük kalan yöntemi: kalan metreler payı en çok kesilen parçalara gider); ondalıklı
  * miktar 2 ondalıkla bölünür, son parça kalanı alır.
  */
-function kalemPayi(k, pay, son, paylar, sira) {
+function kalemPayi(k, pay, son, paylar, sira, tamMetre = true) {
   const n = paylar.length;
   if (n === 1) return Object.assign({}, k);
   const toplam = Number(k.miktar) || 0;
   let miktar;
-  if (Number.isInteger(toplam)) {
+  if (tamMetre && Number.isInteger(toplam)) {
     const ham = paylar.map((p) => toplam * p);
     const taban = ham.map((x) => Math.floor(x + 1e-9));
     let kalan = toplam - taban.reduce((a, b) => a + b, 0);
@@ -571,7 +573,7 @@ export function etiketKesiti(satirlar) {
 }
 
 /** Hattın iletken / kablo kalemleri. Havai çıplakta: tek kalem (3xSW) metre cinsinden, rapor tel tel açar. Demetli ve kabloda: metre, kg katsayısı bilinmiyorsa 1. */
-function iletkenKalemleri(l, li, items, hatTuru, kesit, durum, hak, cat) {
+function iletkenKalemleri(l, li, items, hatTuru, kesit, durum, hak, cat, yuvarlama) {
   const out = [];
   const circuits = l.circuits || [];
   if (!circuits.length) return out;
@@ -590,12 +592,13 @@ function iletkenKalemleri(l, li, items, hatTuru, kesit, durum, hak, cat) {
     const cins = ac ? ac.cins : iletkenCinsi(ks.tanim, c.role, l.install) || (yeralti ? hatTuru.kablo : ogDevre ? ESLESME.hatlar['OG:havai'].ciplak : ciplak ? hatTuru.ciplak : hatTuru.demetli);
     const parca = items.filter((x) => x.role === c.role && (x.conductor === c.key || x.conductor === label || (cp && cp.parts.some((p) => p.conductor === x.conductor))));
     // Metre: yeraltında tüm damarların toplamı (3(1x150/25) = 3 kablo), havai demetlide hattın boyu (pay dahil),
-    // çıplakta hattın boyu (rapor tel tel açar). AutoCAD gibi tam metreye yukarı yuvarlanır.
+    // çıplakta hattın boyu (rapor tel tel açar). AutoCAD'deki çizimin kuralıyla yuvarlanır (Çizim Ayarları › Metraj; dosyada
+    // proje.metrajYuvarlama, yoksa yuvarlama yok — 2 hane, 13.11.2026; öncesinde hep tam metreye yukarı).
     let metre = 0, kg = 0;
     if (yeralti) { const x = parca[0]; metre = x ? x.meters / n : li.length2D; }
     else if (ciplak) { metre = li.length3D; for (const x of parca) kg += x.unit === 'Kg' ? x.qty : 0; }
     else { const x = parca[0]; metre = x ? x.meters / n : li.length3D; }
-    metre = Math.ceil(metre - 1e-6);
+    metre = SH.metrajYuvarla(metre, yuvarlama);
     const kat = katalogKalemi(cins, ks.tanim);
     const kgM = ciplak && metre > 0 && kg > 0 ? kg / metre : 0;
     const it = kat || { cins, tanim: ks.tanim, birim: kgM ? 'mt/kg' : 'mt/mt', katsayi: kgM || 1, tarife: cinsTarifesi(cins, hatTuru.tarife) };
@@ -780,6 +783,8 @@ export async function sebekeIceAl(ps, proje, opts = {}) {
   // Boyutlar: AutoCAD'de ayarlanmışsa onlar alınır; dosyada yoksa (varsayılan) telefondaki kalır
   const by = SH.boyutlarOku(pj.boyutlar);
   if (by) sebeke.boyutlar = by;
+  // Hat metrajının yuvarlanması AutoCAD'deki çizimin ayarından (yoksa varsayılan: yuvarlama yok)
+  if (SH.yuvarlamaDuzelt(pj.metrajYuvarlama) !== 'yok') sebeke.metrajYuvarlama = SH.yuvarlamaDuzelt(pj.metrajYuvarlama); else delete sebeke.metrajYuvarlama;
   await ps.updateProject({ sebeke, autoRecipe: project.autoRecipe === true }, 'AutoCAD dosyası alındı');
   if (opts.dry) return ozet;
 

@@ -57,7 +57,11 @@ açılır. Ayarlar ekranının altındaki **Görünüm › Tema** uygulamanın r
 teması; telefonun teması değişince uygulama da değişir), **Koyu** ya da **Açık**. Seçim yalnız bu cihazda saklanır.
 Açık temada harita da açık zeminle çizilir; çizgi ve yazı renkleri açık zeminde okunacak biçimde koyulaştırılır. Köşk
 planı çizimi her iki temada koyu zeminde kalır. AutoCAD eklentisinde aynı seçim Çizim ayarları › Genel › Arayüz
-teması'ndadır. **Hakkında** grubunda uygulamanın amacı, neler yapabildiği ve sürümü yazar (AutoCAD eklentisinin Hakkında
+teması'ndadır. **Görünüm › Arayüz** ekranların ne kadar ayrıntılı olacağını seçer: **Basit** (varsayılan; sahada
+teknolojiye uzak personel için sade ekranlar — harita ekranında tek satırlık seçim ve büyük AL düğmesi, ekranın yarısını
+pek geçmeyen "Ne alıyorsunuz?" ve direk pencereleri, haritalı aplikasyon) ya da **Ayrıntılı** (bütün seçenekler: ölçüm
+aracı, düğüm düzenleme, CAD, enerji kontrolü, kaynak seçimi, hakediş renkleri). Web (ofis) sürümü Ayrıntılı açılır.
+Seçim yalnız bu cihazda saklanır; iki mod da açık ve koyu temada çalışır. **Hakkında** grubunda uygulamanın amacı, neler yapabildiği ve sürümü yazar (AutoCAD eklentisinin Hakkında
 penceresiyle aynı metin).
 
 ### Üst durum çubuğu
@@ -96,6 +100,10 @@ Sağ üstteki Bluetooth simgesi Ayarlar'ı açar; alıcı bağlıyken mavi yanar
 | Alt çubuk | `KAYNAK` | Konumun nereden geleceği |
 | Alt çubuk | Büyük düğme | Alım (ör. `DİREK AL`) |
 | Alt çubuk | Geri ok | Son alımı geri alır |
+
+Basit modda (varsayılan) `CAD`, `ϟ`, cetvel, kalem, `₺`, hakediş renk açıklaması ve koordinat satırı görünmez; `+ HAT`
+haritanın soluna, nesne seçici tek satıra (`Değiştir`) geçer, `KAYNAK` yalnız GNSS dışı bir kaynak seçiliyse görünür.
+Hepsi Ayarlar › Görünüm › Arayüz › Ayrıntılı ile geri gelir.
 
 ## Proje oluşturma
 
@@ -266,9 +274,27 @@ Bir obje üç dokunuşla alınır: ne alacağınızı seçersiniz, konumun nered
 
 ![Solda harita ve alt çubuk, sağda Alınacak nesne penceresi; direk için armatür seçimi en altta](kilavuz/01-obje-alma-v24.png)
 
+### Basit modda alım
+
+Basit modda (Ayarlar › Görünüm › Arayüz › Basit, varsayılan) harita ekranının altında yalnız iki şey vardır: **ne
+alınacağı** (tek satır, ör. "AG DİREK · G-10I · YENİ") ve büyük **AL** düğmesi; solunda son alımı geri alma.
+
+1. Satırdaki `Değiştir`e dokunun: **Ne alıyorsunuz?** penceresi açılır. Son kullandığınız üç direk tek dokunuşla seçilir;
+   altında büyük düğmeler: `Direk`, `Trafo / Köşk`, `Pano / SDK`, `Abone`, `Hat köşesi`, `Diğer`.
+2. `Direk`e dokununca kısa direk penceresi açılır: üstte `AG` / `OG` / `Müşterek` / `Aydınlatma`, sonra en çok kullanılan
+   üç **tip** büyük düğme olarak (`Başka tip…` bütün listeyi ve alt tipi açar), sonra **durum**: `Yeni`, `Mevcut`,
+   `Sökülecek` (`Diğer durumlar` sök-tak ve ileride'yi açar). `Armatür` kapalı bölümdedir. `TAMAM` deyin.
+3. Büyük `DİREK AL` düğmesine basın.
+
+Hat başlatmak ya da süren hattı görmek için haritanın solundaki `+ HAT` düğmesi kullanılır (hat çizilirken hattın numarası
+ve düğüm sayısı yazar). Konum kaynağı GNSS dışında bir şeyse (elle, haritadan) AL düğmesinin yanında `KAYNAK` görünür;
+kaynak Ayrıntılı modda ya da Ayarlar › Ölçüm'de değiştirilir.
+
+![Basit mod: harita ve büyük AL düğmesi, "Ne alıyorsunuz?" penceresi, kısa direk penceresi (açık tema)](kilavuz/01b-basit-mod.png)
+
 ### 1. Alınacak objeyi seçin
 
-Alt çubuğun sol üstündeki nesne seçiciye dokunun. "Alınacak nesne" penceresi açılır; üstte üç sekme vardır.
+Ayrıntılı modda: alt çubuğun sol üstündeki nesne seçiciye dokunun. "Alınacak nesne" penceresi açılır; üstte üç sekme vardır.
 
 | Sekme | Seçilenler |
 | --- | --- |
@@ -367,10 +393,13 @@ Hat, sırayla alınan direklerin kendiliğinden birbirine bağlanmasıyla çizil
 1. Alt çubukta `+ HAT` düğmesine basın. "Yeni hat" penceresi açılır.
 2. `Hat tipi` seçin: `AG`, `OG`, `AYD.`, `ENH` ya da `ABONE`.
 3. `Tesis` seçin: `Havai` ya da `Yeraltı`.
-4. `İLETKEN / KABLO` satırını açıp iletkeni ve devre sayısını seçin. Bunu sonradan Hat kaydından da değiştirebilirsiniz.
-5. `HAT BAŞLAT` düğmesine basın.
-6. Direkleri sırayla alın. Her direk hatta eklenir; açıklık, köşe açısı ve direk rolü kendiliğinden hesaplanır.
-7. Bitince hat düğmesine dokunup `HATTI BİTİR` deyin.
+4. `Durum` seçin: `Yeni`, `Mevcut`, `Demontaj`, `DM+M (sök-tak)` ya da `İleride` (iletken ve kablonun durumu). Ayrıntılı
+   hakediş kodu (M+M, KM, DM, DM+M …) `İLETKEN / KABLO` açılınca `Hakediş durum kodu` listesindedir; seçilmezse durumdan
+   üretilir. Çizilmekte olan hattın durumu hat düğmesine dokununca açılan pencereden de değiştirilir.
+5. `İLETKEN / KABLO` satırını açıp iletkeni ve devre sayısını seçin. Bunu sonradan Hat kaydından da değiştirebilirsiniz.
+6. `HAT BAŞLAT` düğmesine basın.
+7. Direkleri sırayla alın. Her direk hatta eklenir; açıklık, köşe açısı ve direk rolü kendiliğinden hesaplanır.
+8. Bitince hat düğmesine dokunup `HATTI BİTİR` deyin.
 
 Hat çizilirken haritanın sol üstünde "H-01 çiziliyor · alınanlar hatta eklenir" yazar ve son direkten bulunduğunuz yere kesik bir çizgi uzanır.
 
@@ -546,18 +575,40 @@ Harita, AutoCAD eklentisinin çizimiyle aynı görünür (renkler ve çizgiler o
 
 Aplikasyon ekranı sizi seçtiğiniz hedef noktaya yürütür ve toleransın içine girince zemine işaret çakmanızı ister.
 
+Ekranın iki görünümü vardır: **Harita** (Basit modda açılır) ve **Radar** (Ayrıntılı modda açılır). Harita görünümünün
+sağ üstündeki `RADAR` düğmesi radara, radar görünümünün üstündeki `Harita` düğmesi haritaya geçirir.
+
+### Harita görünümü
+
+Ekranın çoğu haritadır. Mavi nokta sizin konumunuzdur; önündeki açık mavi **yön konisi** o anda ilerlediğiniz yönü
+gösterir, arkasındaki soluk noktalar geçtiğiniz yoldur. Hedef sarı halkalıdır; konumunuzdan hedefe yeşil kesikli çizgi
+gider. Harita kendiliğinden siz ve hedef birlikte görünecek biçimde yaklaşır; haritayı elle kaydırırsanız bu durur, sağ
+alttaki konum düğmesi yeniden başlatır.
+
+- **Hedef seçme:** hedef yokken üstte "Aplikasyon için haritada bir noktaya dokunun" yazar. Haritada bir direğe ya da
+  noktaya dokunun: küçük bir kart (numara, tür, uzaklık) ve büyük `APLİKASYONU BAŞLAT` düğmesi çıkar. Altta **en yakın üç
+  nokta** hazır durur; `Liste` bütün noktaları açar.
+- **Yürürken:** alttaki küçük panelde hedef, büyük harflerle kalan mesafe ve "… ileri / … sağa" yazar. 1 metrenin altında
+  `cm` ile yazılır.
+- **Hedefe gelince (1 m altı):** ekranın ortasında büyük hedef halkaları çıkar (dıştan içe 10 cm, 5 cm, 2 cm; kuzey
+  yukarı); mavi nokta sizsiniz. 2 cm'lik halkanın içine girince her şey yeşil olur, telefon titrer, `İŞARETLE` açılır.
+  Zemin işareti (`Kazık`, `Çelik çivi`, `Röper boya`) panelde seçilir.
+
+![Aplikasyon haritası: noktaya dokununca açılan kart, yürürken yön konisi ve hedef çizgisi, hedefte İŞARETLE](kilavuz/06b-aplikasyon-harita.png)
+
 ### Hedef seçme
 
 | Yol | Nasıl |
 | --- | --- |
-| Listeden | Aplikasyon ekranında `Hedef nokta` kartına dokunun. En yakın noktalar üstte sıralanır |
+| Haritadan (Aplikasyon) | Harita görünümünde noktaya dokunup `APLİKASYONU BAŞLAT`; ya da alttaki en yakın noktalardan biri |
+| Listeden | Aplikasyon ekranında `Hedef nokta` kartına (haritada `Değiştir` ya da `Liste`) dokunun. En yakın noktalar üstte sıralanır |
 | Haritadan | Bir objeye dokunup `Aplikasyon` deyin, ya da haritaya uzun basıp `Buraya aplikasyon yap` deyin |
 | Çizimden | `Ayrıntılar` bölümündeki `CAD çizimi aç` ile çizimi açın, çizimde bir uca dokunun, `Aplikasyon yap` deyin |
 | Sıradaki | `SONRAKİ` düğmesi aynı hattaki bir sonraki düğüme geçer |
 
-### Hedefe yürüme
+### Hedefe yürüme (radar görünümü)
 
-Ekran (1.11.2026 tasarımı) tek bakışta okunacak şekilde düzenlenmiştir: solda radar (hedefin yürüyüş yönünüze göre yeri;
+Radar görünümü (1.11.2026 tasarımı) tek bakışta okunacak şekilde düzenlenmiştir: solda radar (hedefin yürüyüş yönünüze göre yeri;
 pusula yoksa kuzeye göre), sağda büyük harflerle **kalan mesafe** ve altında **ileri / geri** ve **sağa / sola** ne kadar
 yürüyeceğiniz. Altındaki mavi satır ne yapacağınızı söyler: "Hedef önünüzde · ileri yürüyün", "Hedef sağınızda · sağa
 dönün", 20 cm'den yakında "küçük adımlarla yaklaşın". Yaklaştıkça radar halkalarının ölçeği küçülür. `İŞARETLE` ve

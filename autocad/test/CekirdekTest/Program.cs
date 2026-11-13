@@ -2131,11 +2131,19 @@ namespace SebekeHakedis.Test
             Esit(341.0, Metraj.Hat(340.2, true, 0), "metraj yukarı yuvarlanır");
             Esit(340.0, Metraj.Hat(340.0000001, true, 0), "metraj: kayan nokta kırıntısı yuvarlatmaz");
             Esit(13.0, Metraj.Hat(10.5, false, 2), "metraj: en yakına yuvarla + ek pay");
+            Esit(45.25, Metraj.Hat(45.2499999, Metraj.YuvarlamaYok, 0), "metraj: yuvarlama yok (2 hane), 45,25 kalır");
+            Esit(47.75, Metraj.Hat(45.254, Metraj.YuvarlamaYok, 2.5), "metraj: yuvarlama yok + ek pay");
+            Esit(46.0, Metraj.Hat(45.25, Metraj.YuvarlamaYukari, 0), "metraj: yukarı tam metre");
+            Esit(45.0, Metraj.Hat(45.25, Metraj.YuvarlamaYakin, 0), "metraj: en yakın tam metre");
+            Esit(Metraj.YuvarlamaYok, new CizimAyarlari().MetrajYuvarlama, "ayar: yuvarlama varsayılanı yok");
+            Esit(Metraj.YuvarlamaYok, CizimAyarlari.Ciftlerden(new[] { new KeyValuePair<string, string>("yukariYuvarla", "1") }).MetrajYuvarlama, "ayar: eski varsayılan (yukarı) yeni varsayılana döner");
+            Esit(Metraj.YuvarlamaYakin, CizimAyarlari.Ciftlerden(new[] { new KeyValuePair<string, string>("yukariYuvarla", "0") }).MetrajYuvarlama, "ayar: eski 'en yakın' seçimi korunur");
+            Esit(Metraj.YuvarlamaYukari, CizimAyarlari.Ciftlerden(new[] { new KeyValuePair<string, string>("metrajYuvarlama", "yukari"), new KeyValuePair<string, string>("yukariYuvarla", "0") }).MetrajYuvarlama, "ayar: yeni anahtar eskisinden önce gelir");
             Esit("10,5", Metraj.Yazi(10.5), "metraj yazımı ondalıklı");
             Esit("341", Metraj.Yazi(341), "metraj yazımı tam");
             Esit(10.0, Metraj.KanalHacmi(40, 40, 100, 25), "kanal hacmi");
 
-            var a = new CizimAyarlari { KatmanOnEki = "XY", AktifHakedis = 3, Dom = 39, SembolOlcegi = 4, YukariYuvarla = false, KanalZemin = "TUVENAN" };
+            var a = new CizimAyarlari { KatmanOnEki = "XY", AktifHakedis = 3, Dom = 39, SembolOlcegi = 4, MetrajYuvarlama = Metraj.YuvarlamaYakin, KanalZemin = "TUVENAN" };
             a.EkPay["AG_HAVAI"] = 2.5;
             a.Son["eleman.tur"] = "BOX";
             var b = CizimAyarlari.Ciftlerden(a.Ciftler());
@@ -2143,7 +2151,7 @@ namespace SebekeHakedis.Test
             Esit(3, b.AktifHakedis, "ayar: hakediş");
             Esit(39, b.Dom, "ayar: DOM");
             Esit(4.0, b.SembolOlcegi, "ayar: sembol ölçeği");
-            Esit(false, b.YukariYuvarla, "ayar: yuvarlama");
+            Esit(Metraj.YuvarlamaYakin, b.MetrajYuvarlama, "ayar: yuvarlama");
             Esit(2.5, b.EkPayi("AG_HAVAI"), "ayar: ek pay");
             Esit("BOX", b.SonDeger("eleman.tur"), "ayar: son seçim");
             Esit(12.5, b.HatMetraji(10.4, "AG_HAVAI"), "ayar ile hat metrajı (en yakına + ek pay)");

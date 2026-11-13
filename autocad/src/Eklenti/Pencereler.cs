@@ -3075,7 +3075,12 @@ namespace SebekeHakedis.Eklenti
 
                 // Metraj
                 var metraj = sayfa();
-                var yukari = Koy(metraj, new KoyuOnay("Çizim uzunluğunu yukarı yuvarla") { Checked = a.YukariYuvarla }, 0, 0);
+                Etiket(metraj, "Hat metrajının yuvarlanması", 0, 6, 200, KoyuYazi.Kalin);
+                var yuvarla = Koy(metraj, new KoyuAcilir { Name = "metrajYuvarlama" }, 210, 0, 300);
+                yuvarla.Items.Add("Yuvarlama yok (cm, 2 hane: 45,25)");
+                yuvarla.Items.Add("Yukarı tam metreye (45,25 → 46)");
+                yuvarla.Items.Add("En yakın tam metreye (45,25 → 45)");
+                yuvarla.SelectedIndex = Math.Max(0, Array.IndexOf(Metraj.Yuvarlamalar, Metraj.YuvarlamaDuzelt(a.MetrajYuvarlama)));
                 Etiket(metraj, "Hat metrajına eklenecek pay (m)", 0, 36, 0, KoyuYazi.Kalin);
                 var paylar = new Dictionary<string, SayiKutusu>();
                 for (int i = 0; i < Turler.Hatlar.Length; i++)
@@ -3144,7 +3149,7 @@ namespace SebekeHakedis.Eklenti
                 if (tema.SelectedIndex >= 0 && Tema.Secenekler[tema.SelectedIndex] != Tema.Secim) Tema.Secim = Tema.Secenekler[tema.SelectedIndex];
                 a.BoyutlariDuzelt();
                 a.YakalamaMesafesi = (double)yakala.Value;
-                a.YukariYuvarla = yukari.Checked;
+                a.MetrajYuvarlama = Metraj.Yuvarlamalar[Math.Max(0, yuvarla.SelectedIndex)];
                 foreach (var kv in paylar)
                 {
                     double v = (double)kv.Value.Value;

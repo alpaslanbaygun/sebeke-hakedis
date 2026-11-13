@@ -17,6 +17,8 @@ import { armsOfPoint } from './tepe.js';
 import { HakRow } from './team.js';
 import { energize, levelsOf } from '../../grid/energize.js';
 import { cadDocs, importCad, visibleCad, setCad, removeCad, cadModel, snapCad, cadArms } from '../../services/cad-service.js';
+import { basitMi } from '../arayuz-modu.js';
+import { CizimDurum } from '../durum-kodu.js';
 
 const GEN = { AG: ['sehir', 'beton', 'agac'], OG: ['bahh', 'civ', 'beton562', 'agac'], MUS: ['mus', 'beton', 'agac'], AYD: ['ayd'] };
 // Hat türü / direk grubu renkleri ortak çizim stilinden (haritadaki ve AutoCAD şeridindeki renklerle aynı)
@@ -68,8 +70,9 @@ export function MapScreen() {
   const [busy, setBusy] = useState(false);
   const [lastCap, setLastCap] = useState(app.state.lastCap || null);
   const [, force] = useState(0);
-  useBus(['project:computed', 'project:open', 'ui:sel', 'cad:change', 'tiles:error']);
+  useBus(['project:computed', 'project:open', 'ui:sel', 'cad:change', 'tiles:error', 'settings:change']);
   useBus('gnss:state', 300);
+  const [adim, setAdim] = useState('tur');   // Basit mod seçim penceresi: 'tur' (Ne alıyorsunuz?) | 'ayar' (seçilenin bilgileri)
   // CAD çizimleri: görünür olanları belleğe al, haritaya ver
   const refreshCad = async () => { try { app.state.cadLayers = await visibleCad(ps); } catch (err) { app.state.cadLayers = []; } if (eng.current) eng.current.invalidate(); force((x) => x + 1); };
   useEffect(() => { refreshCad(); const off = app.bus.on('cad:reload', refreshCad); return off; }, []);
@@ -238,27 +241,30 @@ export function MapScreen() {
   const hakOn = eng.current ? eng.current.layers.hak !== false : true;
   const SM = { gnss: g.source === 'phone' ? ['TELEFON', '#38bdf8'] : g.source === 'none' ? ['GNSS', 'var(--mut)'] : ['GNSS', '#10b981'], manual: ['ELLE', '#fbbf24'], map: ['HARİTA', '#c084fc'] }[srcMode];
   const closePanel = () => setPanel(null);
+  const basit = basitMi();
+  const secimAc = () => { setAdim('tur'); setPanel('pick'); };
+  const baslatHat = (preset) => { app.state.forms = Object.assign({}, app.state.forms, { line: Object.assign({}, (app.state.forms || {}).line || {}, preset) }); setPanel('line'); };
   return html`<div class="mapwrap"><canvas ref=${cv} aria-label="Harita"></canvas></div>
     <div class="fabl">
       <button aria-label="Proje merkezi" onClick=${() => app.nav.go('hub')}><${Icon} n="folder" /></button>
       <button aria-label="Tümünü sığdır" onClick=${() => { setFollow(false); app.state.follow = false; eng.current.fit(ps.data.points); }}><${Icon} n="north" s=${18} c="var(--tx)" fill="var(--line)" /></button>
-      <button class=${cadDocs(ps).length ? 'on' : ''} aria-label="CAD çizimleri" onClick=${() => setPanel('cad')}><b style="font:800 11px var(--mono)">CAD</b></button>
-      <button class=${app.state.energyCfg && (app.state.energyCfg.og || app.state.energyCfg.ag) ? 'on' : ''} aria-label="Enerji kontrolü" onClick=${() => setPanel('energy')}><b style="font:800 15px var(--mono)">ϟ</b></button>
+      ${basit ? html`<button class="hatdugme" style=${active ? '--c:' + hatRengi(active) : ''} aria-label="Hat" onClick=${() => setPanel('line')}>${active ? html`<b>${active.lineNo}</b><small>${active.nodes.length} düğüm · hat</small>` : html`<b>+ HAT</b><small>başlat</small>`}</button>` : html`<button class=${cadDocs(ps).length ? 'on' : ''} aria-label="CAD çizimleri" onClick=${() => setPanel('cad')}><b style="font:800 11px var(--mono)">CAD</b></button>
+      <button class=${app.state.energyCfg && (app.state.energyCfg.og || app.state.energyCfg.ag) ? 'on' : ''} aria-label="Enerji kontrolü" onClick=${() => setPanel('energy')}><b style="font:800 15px var(--mono)">ϟ</b></button>`}
     </div>
     <div class="fab" style="top:12px">
       <button class=${layersOpen ? 'on' : ''} aria-label="Katmanlar" onClick=${() => setLayersOpen(!layersOpen)}><${Icon} n="layers" /></button>
-      <button class=${tool === 'measure' || tool === 'area' ? 'on' : ''} aria-label="Ölçüm" onClick=${() => setTool(tool === 'measure' ? 'area' : tool === 'area' ? null : 'measure')}><${Icon} n="ruler" /></button>
+      ${basit ? null : html`<button class=${tool === 'measure' || tool === 'area' ? 'on' : ''} aria-label="Ölçüm" onClick=${() => setTool(tool === 'measure' ? 'area' : tool === 'area' ? null : 'measure')}><${Icon} n="ruler" /></button>
       <button class=${tool === 'edit' ? 'on' : ''} aria-label="Düğüm düzenle" onClick=${() => setTool(tool === 'edit' ? null : 'edit')}><${Icon} n="edit" /></button>
-      <button class=${hakOn ? 'on' : ''} aria-label="Hakediş görünümü" onClick=${() => { const e = eng.current; e.layers.hak = !e.layers.hak; app.state.layers = Object.assign({}, e.layers); e.invalidate(); force((x) => x + 1); }}><b style="font:800 14px var(--mono)">₺</b></button>
+      <button class=${hakOn ? 'on' : ''} aria-label="Hakediş görünümü" onClick=${() => { const e = eng.current; e.layers.hak = !e.layers.hak; app.state.layers = Object.assign({}, e.layers); e.invalidate(); force((x) => x + 1); }}><b style="font:800 14px var(--mono)">₺</b></button>`}
     </div>
-    ${hakOn && visH > 400 && ps.data.equipment.length + ps.data.lines.length > 0 ? html`<div class="haklegend" style=${'top:' + (active ? 268 : 236) + 'px'}>${HAK_ORDER.map((k) => html`<span><i style=${'background:' + HAK_STATUSES[k].color}></i>${HAK_STATUSES[k].short}</span>`)}</div>` : null}
+    ${!basit && hakOn && visH > 400 && ps.data.equipment.length + ps.data.lines.length > 0 ? html`<div class="haklegend" style=${'top:' + (active ? 268 : 236) + 'px'}>${HAK_ORDER.map((k) => html`<span><i style=${'background:' + HAK_STATUSES[k].color}></i>${HAK_STATUSES[k].short}</span>`)}</div>` : null}
     <div class="fab" style=${'bottom:' + (padB + 10) + 'px'}>
       ${visH > 380 ? html`<button aria-label="Yakınlaş" onClick=${() => eng.current.zoom(0.6)}><${Icon} n="plus" /></button>
       <button aria-label="Uzaklaş" onClick=${() => eng.current.zoom(1.6)}><${Icon} n="minus" /></button>` : null}
       ${app.web ? null : html`<button class=${'loc' + (follow ? ' on' : '')} aria-label="Konumuma git" onClick=${locate}><${Icon} n="locate" s=${24} /></button>`}
     </div>
-    <div class="maptag coord" hidden=${!!app.web && g.E == null} style=${'left:12px;bottom:' + (padB + 10) + 'px'}>Y ${g.E != null ? g.E.toFixed(3) : '—'}  X ${g.N != null ? g.N.toFixed(3) : '—'}  Z ${g.H != null ? g.H.toFixed(3) : '—'}</div>
-    ${active ? html`<button class="maptag" style=${'left:12px;top:124px;color:var(--tx);border-color:' + hatRengi(active)} onClick=${() => setPanel('line')}>${active.lineNo} çiziliyor · ${toLine ? 'alınanlar hatta eklenir' : 'otomatik ekleme kapalı'}</button>` : null}
+    <div class="maptag coord" hidden=${(!!app.web && g.E == null) || basit} style=${'left:12px;bottom:' + (padB + 10) + 'px'}>Y ${g.E != null ? g.E.toFixed(3) : '—'}  X ${g.N != null ? g.N.toFixed(3) : '—'}  Z ${g.H != null ? g.H.toFixed(3) : '—'}</div>
+    ${active && !basit ? html`<button class="maptag" style=${'left:12px;top:124px;color:var(--tx);border-color:' + hatRengi(active)} onClick=${() => setPanel('line')}>${active.lineNo} çiziliyor · ${toLine ? 'alınanlar hatta eklenir' : 'otomatik ekleme kapalı'}</button>` : null}
     ${tool === 'edit' ? html`<div class="maptag" style=${'left:12px;top:' + (active ? 156 : 124) + 'px;color:var(--warn2)'}>Düğüm düzenleme: noktayı sürükleyin</div>` : null}
     ${tool === 'measure' || tool === 'area' ? html`<div class="maptag" style=${'left:12px;top:' + (active ? 156 : 124) + 'px;color:var(--cy2)'}>${tool === 'area' ? 'Alan ölçümü' : 'Mesafe ölçümü'}: haritaya dokunun</div>` : null}
     ${layersOpen ? html`<${LayerPop} eng=${eng.current} close=${() => setLayersOpen(false)} />` : null}
@@ -267,6 +273,18 @@ export function MapScreen() {
       ${m ? html`<${MeasurePanel} m=${m} clear=${() => { m.pts = []; eng.current.invalidate(); force((x) => x + 1); }} undo=${() => { m.pts.pop(); eng.current.invalidate(); force((x) => x + 1); }} close=${() => setTool(null)} />`
         : sel && sel.type === 'cad' ? html`<${CadPointPanel} sel=${sel} select=${select} curLabel=${cur.label} take=${async () => { app.state.forceCoord = { E: sel.x, N: sel.y }; select(null); await doTake(); }} />`
         : sel ? html`<${SelectionPanel} sel=${sel} select=${select} eng=${eng.current} openLine=${() => setPanel('line')} />`
+        : basit ? html`<div class="dock basit" aria-label="Alım">
+            <button class="what tek" aria-label="Alınacak nesneyi seç" onClick=${secimAc}>
+              <i style=${'background:' + cur.color}></i>
+              <span class="grow" style="min-width:0"><b>${cur.title} · ${cur.sub}</b></span>
+              <span class="degis">Değiştir</span>
+            </button>
+            <div class="dock-take">
+              <button class="undo" aria-label="Son alımı geri al" disabled=${!lastCap || busy} onClick=${undoLast}><${Icon} n="undo" s=${22} /></button>
+              <${TakeBtn} label=${cur.label} mode=${srcMode} measuring=${measuring} busy=${busy} disabled=${!cur.ok} onTake=${doTake} />
+              ${srcMode !== 'gnss' ? html`<button class="srcbtn" style=${'--c:' + SM[1]} aria-label="Veri kaynağı" onClick=${() => setPanel('src')}><small>KAYNAK</small><b>${SM[0]}</b></button>` : null}
+            </div>
+          </div>`
         : html`<div class="dock" aria-label="Alım">
             <div class="dock-top">
               <button class="what" aria-label="Alınacak nesneyi seç" onClick=${() => setPanel('pick')}>
@@ -286,7 +304,17 @@ export function MapScreen() {
           </div>`}
     </div>
     ${panel ? html`<div class="scrim" onClick=${closePanel}></div>` : null}
-    ${panel === 'pick' ? html`<section class="sheet" aria-label="Alınacak nesne">
+    ${panel === 'pick' && basit ? html`<section class="sheet basit" aria-label="Alınacak nesne">
+        <div class="grab" onClick=${closePanel}><i></i></div>
+        <div class="body">
+          ${adim === 'tur' ? html`<${NeAliyorsunuz} pole=${pole} other=${other} setKind=${setKind} setAdim=${setAdim} close=${closePanel} />`
+            : kind === 'direk' ? html`<${BasitDirek} m=${pole} geri=${() => setAdim('tur')} />`
+            : html`<div class="row"><button class="btn xs" aria-label="Geri" onClick=${() => setAdim('tur')}><${Icon} n="back" s=${18} /></button><b class="grow" style="font-size:18px">${kind === 'trafo' ? 'Trafo / köşk' : 'Diğer nesneler'}</b></div>
+              ${kind === 'trafo' ? html`<${TrafoFields} m=${trafo} />` : html`<${OtherFields} m=${other} active=${active} startLine=${baslatHat} />`}`}
+        </div>
+        ${adim === 'tur' ? null : html`<div class="foot"><button class="btn pri grow" style="height:56px;font-size:17px" onClick=${closePanel}><${Icon} n="check" s=${20} c="#0b1326" />TAMAM</button></div>`}
+      </section>` : null}
+    ${panel === 'pick' && !basit ? html`<section class="sheet" aria-label="Alınacak nesne">
         <div class="grab" onClick=${closePanel}><i></i></div>
         <div class="body">
           <div class="seg">${[['direk', 'DİREK'], ['trafo', 'TRAFO'], ['diger', 'DİĞER']].map(([k, l]) => html`<button class=${'chip' + (kind === k ? ' on' : '')} style="min-height:46px;font-size:14px;letter-spacing:.04em" onClick=${() => setKind(k)}>${l}</button>`)}</div>
@@ -598,6 +626,9 @@ function SourceSheet({ mode, setMode, close }) {
     </div></section>`;
 }
 const ST_LBL = { YENI: 'YENİ', MEVCUT: 'MEVCUT', DMM: 'DMM', DEMONTAJ: 'DEMONTAJ', ILERIDE: 'İLERİDE' };
+// Hat (iletken / kablo) durumu (13.11.2026, kullanıcı: "iletken ve kabloya yeni, demontaj, DM+M giremiyorum"): hat başlatırken
+// ve çizilen hatta; ayrıntılı kod (M+M, KM, DM+M …) İLETKEN / KABLO bölümünde ya da Hat kaydı'nda
+const HAT_DURUMLARI = [['YENI', 'Yeni'], ['MEVCUT', 'Mevcut'], ['DEMONTAJ', 'Demontaj'], ['DMM', 'DM+M (sök-tak)'], ['ILERIDE', 'İleride']];
 const GEN_LBL = { AG: 'AG DİREK', OG: 'OG DİREK', MUS: 'MÜŞTEREK DİREK', AYD: 'AYDINLATMA DİREĞİ' };
 
 function usePole() {
@@ -650,6 +681,63 @@ function PoleFields({ m, close }) {
     <div class="note">Armatür direğin malzemesi olarak kaydedilir. Rol (taşıyıcı / durdurucu / köşe / nihayet) ve köşe açısı hat geometrisinden otomatik hesaplanır; tip harfiyle uyuşmazsa uyarı verilir.</div>`;
 }
 
+// ---------------- Basit mod: "Ne alıyorsunuz?" ve sade direk penceresi (13.11.2026) ----------------
+// Saha personeli için: en çok kullanılan seçimler tek dokunuşla, altında büyük resimli düğmeler; direkte önce yalnız tip
+// ve durum, seyrek seçenekler (DMM, ileride, armatür, başka tip) kapalı bölümlerde. Ekranın yarısından biraz fazlası.
+const TUR_SIMGE = {
+  direk: html`<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--ag)" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v20M6 6h12M8 10h8"/></svg>`,
+  trafo: html`<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2.2" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M13 7l-3 5h4l-3 5"/></svg>`,
+  sdk: html`<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" stroke-width="2.2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h6"/></svg>`,
+  subscriber: html`<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--abone)" stroke-width="2.2" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-6h4v6"/></svg>`,
+  linept: html`<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--tx)" stroke-width="2.2" stroke-linecap="round"><path d="M4 18L12 6l8 12"/><circle cx="12" cy="6" r="2.5" fill="var(--tx)"/></svg>`,
+  diger: html`<svg width="30" height="30" viewBox="0 0 24 24" fill="var(--mut)"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>`,
+};
+const TUR_KAROLARI = [['direk', 'Direk'], ['trafo', 'Trafo / Köşk'], ['sdk', 'Pano / SDK'], ['subscriber', 'Abone'], ['linept', 'Hat köşesi'], ['diger', 'Diğer']];
+
+function NeAliyorsunuz({ pole, other, setKind, setAdim, close }) {
+  const cat = app.ps.cat;
+  const son = pole.recents.map((r) => ({ r, t: cat.poleType(r.typeId) })).filter((x) => x.t).slice(0, 3);
+  const sec = (k) => {
+    if (k === 'direk' || k === 'trafo') { setKind(k); setAdim('ayar'); return; }
+    setKind('diger');
+    if (k === 'diger') { setAdim('ayar'); return; }
+    other.set({ kind: k });
+    if (k === 'linept') { close(); return; }
+    setAdim('ayar');
+  };
+  return html`<div class="row"><b class="grow" style="font-size:19px">Ne alıyorsunuz?</b><button class="btn sm" onClick=${close}>Kapat</button></div>
+    ${son.length ? html`<div class="lbl">Son kullanılanlar · tek dokunuş</div>
+      <div class="stack" style="gap:6px">${son.map(({ r, t }) => { const on = pole.f.gen === r.gen && pole.typeId === r.typeId && pole.f.state === r.state; return html`<button class=${'sonsatir' + (on ? ' on' : '')} onClick=${() => { setKind('direk'); pole.set({ gen: r.gen, group: r.group, typeId: r.typeId, state: r.state }); close(); }}><i style=${'background:' + (GCOL[r.gen] || 'var(--ag)')}></i><b class="grow">${({ AG: 'AG direk', OG: 'OG direk', MUS: 'Müşterek direk', AYD: 'Aydınlatma direği' })[r.gen] || 'Direk'} · ${t.name}</b><span style=${'color:' + (ST_COL[r.state] || 'var(--mut)')}>${ST_LBL[r.state] || r.state}</span></button>`; })}</div>` : null}
+    <div class="lbl">${son.length ? 'Ya da seçin' : 'Seçin'}</div>
+    <div class="grid3 turkaro">${TUR_KAROLARI.map(([k, l]) => html`<button onClick=${() => sec(k)}>${TUR_SIMGE[k]}<span>${l}</span></button>`)}</div>`;
+}
+
+function BasitDirek({ m, geri }) {
+  const cat = app.ps.cat, f = m.f, set = m.set;
+  const [tumu, setTumu] = useState(false);
+  const [ek, setEk] = useState(!!(f.arm && cat.poz(f.arm)));
+  const [digerDurum, setDigerDurum] = useState(f.state === 'DMM' || f.state === 'ILERIDE');
+  // Hızlı tipler: seçili, favoriler, son kullanılanlar, sonra listenin başı (en çok 3; dördüncü düğme "Başka tip…")
+  const ids = [];
+  const ekle = (id) => { if (id && ids.length < 3 && !ids.includes(id) && m.types.some((t) => t.id === id)) ids.push(id); };
+  ekle(m.typeId); m.favs.forEach(ekle); m.recents.forEach((r) => ekle(r.typeId)); m.types.forEach((t) => ekle(t.id));
+  const hizli = ids.map((id) => cat.poleType(id)).filter(Boolean);
+  const nm = (x) => x.name + (x.kg ? ' · ' + x.kg + ' kg' : '');
+  return html`<div class="row"><button class="btn xs" aria-label="Geri" onClick=${geri}><${Icon} n="back" s=${18} /></button><i style=${'width:14px;height:14px;border-radius:50%;flex-shrink:0;background:' + (GCOL[f.gen] || 'var(--ag)')}></i><b class="grow" style="font-size:18px">${GEN_LBL[f.gen] || 'DİREK'}</b><span class="note">${m.gr ? m.gr.material + ' · ' + m.gr.joint : ''}</span></div>
+    <div class="chips">${['AG', 'OG', 'MUS', 'AYD'].map((k) => html`<${Chip} c=${GCOL[k]} on=${f.gen === k} onClick=${() => set({ gen: k, group: GEN[k][0], typeId: null })}>${k === 'MUS' ? 'Müşterek' : k === 'AYD' ? 'Aydınlatma' : k}</${Chip}>`)}</div>
+    <div class="lbl">Tip</div>
+    <div class="grid2">${hizli.map((t) => html`<button class=${'buyuksec mono' + (m.typeId === t.id ? ' on' : '')} onClick=${() => set({ typeId: t.id })}>${t.name}</button>`)}
+      <button class="buyuksec" style="color:var(--cy)" onClick=${() => setTumu(!tumu)}>${tumu ? 'Listeyi kapat' : 'Başka tip…'}</button></div>
+    ${tumu ? html`<div class="chips">${m.groups.map((gid) => { const gg = cat.poleGroup(gid); return html`<${Chip} on=${m.group === gid} onClick=${() => set({ group: gid, typeId: null })}>${gg.material}<small>${gg.joint}</small></${Chip}>`; })}</div>
+      <${Sel} mono value=${m.typeId} options=${m.types.map((x) => [x.id, nm(x)])} onChange=${(v) => set({ typeId: v })} />` : null}
+    <div class="lbl">Durum</div>
+    <div class="grid3">${[['YENI', 'Yeni'], ['MEVCUT', 'Mevcut'], ['DEMONTAJ', 'Sökülecek']].map(([k, l]) => html`<button class=${'buyuksec' + (f.state === k ? ' on' : '')} style=${f.state === k ? '--c:' + ST_COL[k] : ''} onClick=${() => { set({ state: k }); setDigerDurum(false); }}>${l}</button>`)}</div>
+    ${digerDurum ? html`<div class="grid2">${[['DMM', 'Sök-tak (DMM)'], ['ILERIDE', 'İleride']].map(([k, l]) => html`<button class=${'buyuksec' + (f.state === k ? ' on' : '')} onClick=${() => set({ state: k })}>${l}</button>`)}</div>` : null}
+    <div class="grid2">${digerDurum ? null : html`<button class="acilir" onClick=${() => setDigerDurum(true)}>Diğer durumlar <${Icon} n="down" s=${16} /></button>`}
+      <button class="acilir" style=${digerDurum ? 'grid-column:1 / -1' : ''} onClick=${() => setEk(!ek)}>Armatür <${Icon} n=${ek ? 'up' : 'down'} s=${16} /></button></div>
+    ${ek ? html`<div class="row"><div class="grow"><${Sel} value=${f.arm && cat.poz(f.arm) ? f.arm : ''} options=${[['', 'Armatür yok'], ...luminairePoz(cat).map((x) => [x.servis, x.name])]} onChange=${(v) => set({ arm: v, armN: f.armN || 1 })} /></div>${f.arm && cat.poz(f.arm) ? html`<select class="inp mono" style="width:64px" aria-label="Armatür adedi" value=${f.armN || 1} onChange=${(e) => set({ armN: +e.target.value })}>${[1, 2, 3, 4].map((n) => html`<option value=${n}>${n}×</option>`)}</select>` : null}</div>` : null}`;
+}
+
 // ---------------- Hat: başlat / devam / bitir tek pencerede ----------------
 function circuitOpts(role, install) {
   const cat = app.ps.cat;
@@ -657,7 +745,7 @@ function circuitOpts(role, install) {
 }
 function LineSheet({ active, close, rerender }) {
   const ps = app.ps, cat = ps.cat;
-  const [f, set] = useForm('line', { lt: 'OG', install: 'havai', og: cat.lineDefault('OG', 'havai'), ogN: 1, ag: cat.lineDefault('AG', 'havai'), agN: 1, mus: false, bare: false, bf: 'P', bn: 'R', ba: '', phase: 'uc', channel: 'toprak', depth: null, width: 0.4, channelOnly: false });
+  const [f, set] = useForm('line', { lt: 'OG', install: 'havai', og: cat.lineDefault('OG', 'havai'), ogN: 1, ag: cat.lineDefault('AG', 'havai'), agN: 1, mus: false, bare: false, bf: 'P', bn: 'R', ba: '', phase: 'uc', channel: 'toprak', depth: null, width: 0.4, channelOnly: false, state: 'YENI', kod: '' });
   const [more, setMore] = useState(() => ((app.state.forms || {}).line || {}).install === 'yeralti');
   const wrap = (body, foot) => html`<section class="sheet" aria-label="Hat"><div class="grab" onClick=${close}><i></i></div><div class="body">${body}</div>${foot ? html`<div class="foot">${foot}</div>` : null}</section>`;
   if (active) {
@@ -670,6 +758,7 @@ function LineSheet({ active, close, rerender }) {
         <div class="mono" style="font-size:12px;margin:4px 0">${lineLabelText(active, cat) || 'iletken tanımsız'}</div>
         <div class="note">${active.nodes.length} düğüm · ${trn(li.length3D || 0, 2)} m (3B)${last ? ' · son: ' + last.pointNo : ''}</div>
       </div>
+      <div class="row" style="align-items:flex-start"><span class="lbl" style="width:64px;margin-top:10px">Durum</span><div class="chips grow">${HAT_DURUMLARI.map(([k, l]) => html`<${Chip} c=${ST_COL[k]} on=${active.state === k} onClick=${async () => { if (active.state === k) return; try { await ps.updateLine(active.id, { state: k, sebeke: Object.assign({}, active.sebeke || {}, { durum: undefined }) }, active.lineNo + ' durumu: ' + l); rerender(); } catch (err) { app.toast(err.message, 'err', 6000); } }}>${l}</${Chip}>`)}</div></div>
       <div class="row card" style="padding:10px 12px"><span class="grow" style="font-size:14px"><b>Alınanları bu hatta ekle</b><div class="note">Açıkken aldığın her direk, trafo ve SDK sırayla bu hatta bağlanır.</div></span><${Toggle} on=${toLine} onChange=${(v) => { app.state.toLine = v; rerender(); }} label="Alınanları hatta ekle" /></div>
       <div class="grid2">
         <button class="btn" disabled=${!active.nodes.length} onClick=${async () => { await ps.removeNode(active.id, active.nodes.length - 1); app.toast('Son düğüm hattan çıkarıldı', 'warn'); }}><${Icon} n="undo" s=${18} />Son düğümü çıkar</button>
@@ -692,7 +781,8 @@ function LineSheet({ active, close, rerender }) {
     const chOnly = f.install === 'yeralti' && !!f.channelOnly;
     if (ogOn && !chOnly) circuits.push({ role: f.lt, key: f.og, count: f.ogN });
     if (agShow && !chOnly) circuits.push(f.bare && f.install === 'havai' && agRole !== 'ABONE' ? { role: agRole, custom: { f: f.bf, nt: f.bn, ay: f.ba || '' }, count: f.agN } : { role: agRole, key: f.ag, count: f.agN });
-    const d = { lineType: f.lt, install: f.install, circuits, musterek: ogOn && f.mus, nodes: startPt ? [startPt.id] : [] };
+    const d = { lineType: f.lt, install: f.install, circuits, musterek: ogOn && f.mus, nodes: startPt ? [startPt.id] : [], state: HAT_DURUMLARI.some(([k]) => k === f.state) ? f.state : 'YENI' };
+    if (f.kod) d.sebeke = { durum: f.kod };
     if (f.lt === 'ABONE') { d.abonePhase = f.phase; d.aboneCount = 1; }
     if (f.install === 'yeralti') { d.cable = { zemin: zem.zemin, kaplama: zem.kaplama, bariyer: zem.bariyer, trencher: zem.trencher, surface: surf, method: meth, depth: f.depth, width: f.width }; if (meth !== 'acik') { d.cable.pipeDia = +f.pipeDia || 110; d.cable.pipeCount = meth === 'borulu' ? Math.max(1, +f.pipeCount || 1) : (+f.pipeCount || 0); } if (chOnly) d.channelOnly = true; }
     const l = await ps.createLine(d);
@@ -703,11 +793,13 @@ function LineSheet({ active, close, rerender }) {
   };
   const agOptions = f.lt === 'ABONE' ? circuitOpts('ABONE', f.install).filter(([k]) => /2x16|3x16|4x16|NYY 2x|NYY 4x|NAYY 4x|3x25\+|4x25/.test(k)) : circuitOpts(agRole, f.install);
   const others = ps.data.lines.slice().sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')).slice(0, 5);
-  const sumr = f.lt + ' · ' + (f.install === 'havai' ? 'havai' : 'yeraltı') + ' · ' + (ogOn ? (f.ogN > 1 ? f.ogN + '× ' : '') + f.og + (f.mus ? ' + AG' : '') : (f.agN > 1 ? f.agN + '× ' : '') + (f.bare && f.install === 'havai' && f.lt !== 'ABONE' ? '3' + f.bf + '+' + f.bn : f.ag));
+  const sumr = f.lt + ' · ' + (ST_LBL[f.state] || 'YENİ') + (f.kod ? ' (' + f.kod + ')' : '') + ' · ' + (f.install === 'havai' ? 'havai' : 'yeraltı') + ' · ' + (ogOn ? (f.ogN > 1 ? f.ogN + '× ' : '') + f.og + (f.mus ? ' + AG' : '') : (f.agN > 1 ? f.agN + '× ' : '') + (f.bare && f.install === 'havai' && f.lt !== 'ABONE' ? '3' + f.bf + '+' + f.bn : f.ag));
   return wrap(html`
     <div class="row"><b class="grow" style="font-size:17px">Yeni hat</b>${startPt ? html`<${Badge} k="cy">İLK DÜĞÜM ${startPt.pointNo}</${Badge}>` : null}</div>
     <div class="row"><span class="lbl" style="width:64px">Hat tipi</span><div class="chips grow">${['AG', 'OG', 'AYD', 'ENH', 'ABONE'].map((k) => html`<${Chip} c=${GCOL[k]} on=${f.lt === k} onClick=${() => set({ lt: k, og: cat.lineDefault(k, f.install) || f.og, ag: cat.lineDefault(k === 'ABONE' ? 'ABONE' : 'AG', f.install) || f.ag })}>${k === 'AYD' ? 'AYD.' : k}</${Chip}>`)}</div></div>
     <div class="row"><span class="lbl" style="width:64px">Tesis</span><div class="grow"><${Seg} value=${f.install} options=${[['havai', 'Havai'], ['yeralti', 'Yeraltı']]} onChange=${(v) => { set({ install: v, og: cat.lineDefault('OG', v), ag: cat.lineDefault(f.lt === 'ABONE' ? 'ABONE' : 'AG', v) }); if (v === 'yeralti') setMore(true); }} /></div></div>
+    <div class="row" style="align-items:flex-start"><span class="lbl" style="width:64px;margin-top:10px">Durum</span><div class="chips grow">${HAT_DURUMLARI.map(([k, l]) => html`<${Chip} c=${ST_COL[k]} on=${(f.state || 'YENI') === k} onClick=${() => set({ state: k, kod: '' })}>${l}</${Chip}>`)}</div></div>
+    ${more ? html`<${CizimDurum} d=${{ state: f.state || 'YENI', sebeke: { durum: f.kod || undefined } }} set=${(p) => set({ kod: (p.sebeke && p.sebeke.durum) || '' })} />` : null}
     ${f.install === 'yeralti' ? html`<div class="row card" style="padding:8px 10px"><span class="grow" style="font-size:13px"><b>Yalnız kanal / kazı</b><div class="note">Kablo yok; yalnız kanal metrajı çıkar.</div></span><${Toggle} on=${!!f.channelOnly} onChange=${(v) => set({ channelOnly: v })} label="Yalnız kanal" /></div>` : null}
     <button class="what" style="height:auto;min-height:52px;padding:8px 10px" onClick=${() => setMore(!more)}><span class="grow"><b>${f.install === 'yeralti' && f.channelOnly ? 'KANAL' : 'İLETKEN / KABLO'}</b><small style="white-space:normal">${f.install === 'yeralti' && f.channelOnly ? f.lt + ' · ' + kanalZeminYazisi(zem) + (meth !== 'acik' ? ' · ' + YONTEM[meth] : '') + ' · ' + (f.depth ?? '?') + ' × ' + f.width + ' m' : sumr}</small></span><${Icon} n=${more ? 'up' : 'down'} s=${18} c="var(--mut)" /></button>
     ${more ? html`

@@ -93,7 +93,7 @@ async def main():
 
             # Harita: genel görünüm ve kanal kenarları (yakın)
             async def harita(ad, cE, cN, res):
-                await pg.evaluate("([e, n, r]) => { const a = window.__app; a.state.follow = false; a.state.view = { cE: e, cN: n, res: r }; a.nav.tab('stake'); }", [cE, cN, res])
+                await pg.evaluate("([e, n, r]) => { const a = window.__app; a.state.follow = false; a.state.view = { cE: e, cN: n, res: r }; a.nav.tab('settings'); }", [cE, cN, res])
                 await pg.wait_for_timeout(400)
                 await pg.evaluate("() => window.__app.nav.tab('map')")
                 await pg.wait_for_timeout(1200)
@@ -110,6 +110,7 @@ async def main():
             kontrol(var('255,255,0'), 'demontaj sarı')
             kontrol(var('156,163,175', 10), 'kanal gri (#9ca3af)')
             kontrol(var('251,191,36', 5), 'sondaj sarı-turuncu (#fbbf24)')
+            kontrol(await pg.locator('.dock.basit .btn.take').count() == 1 and await pg.locator('.dock.basit .what.tek').count() == 1, 'harita: Basit mod alt paneli (tek satır seçim + büyük AL)')
             await harita('02_kanal_yakin', 519320, 4282070, 0.04)
             # Katmanlar penceresi
             await pg.get_by_role('button', name='Katmanlar').click(); await pg.wait_for_timeout(400)
@@ -139,7 +140,7 @@ async def main():
             await pg.evaluate("() => window.__app.nav.back()"); await pg.wait_for_timeout(400)
 
             # Aplikasyon (1.11.2026 tasarımı): hedef seçili, simülatörle yaklaşınca İŞARETLE açılır, kayıt düşer
-            await pg.evaluate("""() => { const a = window.__app, ps = a.ps; const e = ps.data.equipment.find((x) => x.kind === 'pole'); a.state.target = { id: e.pointId }; a.bus.emit('ui:target'); a.nav.tab('stake'); }""")
+            await pg.evaluate("""() => { const a = window.__app, ps = a.ps; const e = ps.data.equipment.find((x) => x.kind === 'pole'); a.state.aplGorunum = 'radar'; a.state.target = { id: e.pointId }; a.bus.emit('ui:target'); a.nav.tab('stake'); }""")
             await pg.wait_for_timeout(600)
             kontrol(await pg.locator('.apl-hedef-ad').inner_text() == 'A-01' and await pg.locator('.apl-alt .btn.huge').is_disabled(), 'aplikasyon: hedef A-01, konum yokken İŞARETLE kapalı')
             await pg.evaluate("""() => { const a = window.__app, ps = a.ps, g = a.gnss; const t = ps.pointById(a.state.target.id); const k = 111320, kl = k * Math.cos(t.lat * Math.PI / 180);
@@ -158,6 +159,32 @@ async def main():
             kayit = await pg.evaluate("() => window.__app.ps.data.stakeouts.map((s) => [s.targetNo, s.accepted, s.mark])")
             kontrol(len(kayit) == 1 and kayit[0][0] == 'A-01' and kayit[0][1] is True and kayit[0][2] == 'kazik', 'aplikasyon kaydı: ' + json.dumps(kayit, ensure_ascii=False))
             await pg.evaluate("() => window.__app.gnss.stopAll()"); await pg.wait_for_timeout(300)
+
+            # Aplikasyon haritası (13.11.2026, Basit modun varsayılanı): hedefsizken ipucu ve en yakın noktalar; haritada
+            # noktaya dokununca kart, "APLİKASYONU BAŞLAT"; yaklaşınca hedef halkaları, tolerans içinde İŞARETLE
+            await pg.evaluate("""() => { const a = window.__app, ps = a.ps, g = a.gnss; const e = ps.data.equipment.filter((x) => x.kind === 'pole')[1]; const t = ps.pointById(e.pointId); const k = 111320, kl = k * Math.cos(t.lat * Math.PI / 180);
+              a.state.aplGorunum = 'harita'; a.state.target = null; a.__aplHedef = e.pointId; g.startSimulator({ profile: 'FIX', base: { lat: t.lat + 8 / k, lon: t.lon - 3 / kl, alt: t.H } }); a.nav.tab('stake'); }""")
+            await pg.wait_for_timeout(1500)
+            kontrol(await pg.locator('.aplh-ipucu').count() == 1 and await pg.locator('.aplh-yakin').count() >= 2, 'aplikasyon haritası: hedefsizken ipucu ve en yakın noktalar')
+            await pg.screenshot(path=f'{OUT}/esitleme_04f_aplikasyon_harita.png')
+            xy = await pg.evaluate("() => { const a = window.__app, e = a.state.aplEngine, p = a.ps.pointById(a.__aplHedef); const s = e.toScreen(p.E, p.N); const r = e.c.getBoundingClientRect(); return [r.left + s.x, r.top + s.y]; }")
+            await pg.mouse.click(xy[0], xy[1]); await pg.wait_for_timeout(500)
+            kontrol(await pg.locator('.aplh-kart').count() == 1, 'aplikasyon haritası: noktaya dokununca kart')
+            await pg.get_by_role('button', name='APLİKASYONU BAŞLAT').click(); await pg.wait_for_timeout(300)
+            kontrol(await pg.evaluate("() => { const a = window.__app; return !!a.state.target && a.state.target.id === a.__aplHedef; }"), 'aplikasyon haritası: dokunulan nokta hedef oldu')
+            await pg.evaluate("() => { const a = window.__app, t = a.ps.pointById(a.__aplHedef); a.gnss.simWalkTo({ lat: t.lat, lon: t.lon }); }")
+            await pg.wait_for_timeout(1500)
+            yon = await pg.locator('.aplh-yon').inner_text()
+            kontrol(('ileri' in yon or 'geri' in yon) and ('sağa' in yon or 'sola' in yon), 'aplikasyon haritası: ileri / sağa: ' + yon.replace('\n', ' / '))
+            await pg.screenshot(path=f'{OUT}/esitleme_04g_aplikasyon_harita_yururken.png')
+            for _ in range(200):
+                if await pg.locator('.aplh-alt .btn.huge').is_enabled(): break
+                await pg.wait_for_timeout(300)
+            kontrol(await pg.locator('.aplh-hedef').count() == 1 and await pg.locator('.aplh-alt .btn.huge').is_enabled(), 'aplikasyon haritası: yakında hedef halkaları, tolerans içinde İŞARETLE açık')
+            await pg.screenshot(path=f'{OUT}/esitleme_04h_aplikasyon_harita_yakin.png')
+            await pg.locator('.aplh-alt .btn.huge').click(); await pg.wait_for_timeout(500)
+            kontrol(await pg.evaluate("() => window.__app.ps.data.stakeouts.length") == 2, 'aplikasyon haritası: kayıt düştü')
+            await pg.evaluate("() => { window.__app.gnss.stopAll(); window.__app.state.aplGorunum = null; }"); await pg.wait_for_timeout(300)
 
             # Ayarlar: gruplu menü (1.11.2026); Harita grubunda altlık anahtar kutuları
             await pg.evaluate("() => window.__app.nav.tab('settings')"); await pg.wait_for_timeout(700)
