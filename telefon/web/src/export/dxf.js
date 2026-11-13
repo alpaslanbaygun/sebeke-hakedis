@@ -102,16 +102,34 @@ export function spanTexts(coords, isNode) {
   let bas = 0;
   for (let i = 1; i < coords.length; i++) {
     if (i < coords.length - 1 && !isNode(coords[i], i)) continue;
-    let len = 0, best = -1, bestLen = 0;
+    let len = 0, len3 = 0, best = -1, bestLen = 0;
     for (let k = bas; k < i; k++) {
-      const d = Math.hypot(coords[k + 1].E - coords[k].E, coords[k + 1].N - coords[k].N);
+      const a = coords[k], b = coords[k + 1];
+      const d = Math.hypot(b.E - a.E, b.N - a.N);
       len += d;
+      // 3B uzunluk (iletken metrajının temeli; kotu bilinmeyen noktada 2B)
+      len3 += a.H != null && b.H != null ? Math.hypot(d, b.H - a.H) : d;
       if (d > bestLen + 1e-9) { bestLen = d; best = k; }
     }
-    if (best >= 0 && len > 1e-6) out.push({ from: bas, to: i, seg: best, length: len });
+    if (best >= 0 && len > 1e-6) out.push({ from: bas, to: i, seg: best, length: len, length3D: len3 });
     bas = i;
   }
   return out;
+}
+
+/**
+ * Açıklığın metraj yazısında gösterilecek uzunluk: havai hatta iletken metrajı (3B uzunluk × (1 + ek pay); eklentide
+ * iletken kaleminin metrajı ÷ adet, 13.11.2026), yer altı / kanalda çizim uzunluğu. payPct: hattın kendi payı, yoksa projenin.
+ */
+export function aciklikMetraji(line, sp, projectPayPct = 0) {
+  if (line.install === 'yeralti' || line.channelOnly) return sp.length;
+  const pay = (line.payPct ?? projectPayPct ?? 0) / 100;
+  return (sp.length3D ?? sp.length) * (1 + pay);
+}
+
+/** MText metni: satırlar \\P ile, MText'in özel karakterleri (\\ { }) kaçırılmış (eklentideki CizimYazici.MalzemeMetni). */
+export function malzemeMetni(satirlar) {
+  return satirlar.map((s) => String(s ?? '').replace(/[\\{}]/g, (c) => '\\' + c)).join('\\P');
 }
 /**
  * Parça yazısının (metraj, hat etiketi) yeri ve açısı: parçanın (a→b) ortasından parçanın kendi ekseninde kaydırılır —
@@ -191,7 +209,7 @@ export function hatKalinligi(l, kat) {
 }
 
 /** Malzeme yazısının yüksekliği eleman yazısına oranı ve satır aralığı (eklentideki MalzemeEtiketi ile aynı). */
-export const MALZEME_YAZISI = { oran: 0.7, aralik: 1.5 };
+export const MALZEME_YAZISI = { oran: 0.7, aralik: 1.5, mtextAralik: 0.9 };   // mtextAralik: MTEXT "tam" satır aralığı çarpanı (1,0 = 5/3 yükseklik → 1,5 h)
 
 /** Demontaj türünden (KESİK / SÖKÜK) demontaj varyantı: DM · KESIK · SOKUK (eklentideki Semboller.Varyant ile aynı). */
 export function dmVaryanti(dmDurum) {
@@ -418,7 +436,7 @@ export function buildDXF(model, opts = {}) {
     if (opts.spanText !== false) {
       const mdy = l.channelOnly ? kdy : pdy;
       for (const sp of spanTexts(l.coords, (c) => nodePts.has(c.id))) {
-        const a = l.coords[sp.seg], b = l.coords[sp.seg + 1], metin = sp.length.toFixed(2);
+        const a = l.coords[sp.seg], b = l.coords[sp.seg + 1], metin = aciklikMetraji(l, sp, model.project.conductorPayPct || 0).toFixed(2);
         const k = yaziKonumu(a, b, 0, mdy), s = yaziSigdir(metin, thParca, Math.hypot(b.E - a.E, b.N - a.N));
         ortaliText(YAZI(), k.x, k.y, metin, s.h, k.ang, aci, false, s.gk); nTxt++;
       }
@@ -446,13 +464,18 @@ export function buildDXF(model, opts = {}) {
     insert(layer, block, e.E, e.N, e.H, color); nIns++;
     // Eleman yazısı simgenin sağ üstünde; yeri simgeyle büyür (simgenin dışında kalsın), yüksekliği ayrı ayarlanır
     text(YAZI(), e.E + edx * ol, e.N + edy * ol, e.H, e.no + (e.typeName ? ' ' + e.typeName : ''), th, 0); nTxt++;
-    // Malzemeler (Çizim boyutları › Malzemeleri çizimde göster): eleman yazısının altında satır satır, eleman yazısının
-    // 0,7'si yükseklikte, beyaz / siyah (eklentideki MLZ_ öznitelikleri; satırlar sh-core malzemeEtiketi'nden)
+    // Malzemeler (Çizim boyutları › Malzemeleri çizimde göster): eleman yazısının altında tek bir çok satırlı yazı
+    // (MTEXT; AutoCAD'de tek nesne olarak taşınır — eklentideki SH_MLZ bağlı yazı, 13.11.2026), eleman yazısının
+    // 0,7'si yükseklikte, satır aralığı 1,5, beyaz / siyah; satırlar sh-core malzemeEtiketi'nden
     const satirlar = B.malzeme && opts.malzemeSatirlari ? opts.malzemeSatirlari[e.id] : null;
     if (satirlar && satirlar.length) {
-      const hm = th * MALZEME_YAZISI.oran, adim = hm * MALZEME_YAZISI.aralik;
-      const y0 = e.N + edy * ol - (0.45 * th + 1.15 * hm);
-      satirlar.forEach((m, i) => { text(YAZI(), e.E + edx * ol, y0 - i * adim, e.H, m, hm, 0, 7); nTxt++; nMalzeme++; });
+      const hm = th * MALZEME_YAZISI.oran;
+      const ust = e.N + edy * ol - (0.45 * th + 0.15 * hm);   // sol üst köşe (ilk satırın taban çizgisi bir yazı yüksekliği altta)
+      w.g(0, 'MTEXT').g(8, YAZI()).g(62, 7).g(10, f(e.E + edx * ol)).g(20, f(ust)).g(30, f(e.H || 0)).g(40, f(hm)).g(41, 0).g(71, 1).g(72, 1);
+      const metin = malzemeMetni(satirlar);
+      for (let i = 0; i + 250 < metin.length; i += 250) w.g(3, metin.slice(i, i + 250));   // 250 karakterlik parçalar (3), son parça (1)
+      w.g(1, metin.slice(Math.floor(Math.max(0, metin.length - 1) / 250) * 250)).g(73, 2).g(44, MALZEME_YAZISI.mtextAralik);
+      nTxt++; nMalzeme += satirlar.length;
     }
     if (e.role === 'Z' && e.angle) { text(YAZI(), e.E + adx * ol, e.N + ady * ol, e.H, 'α=' + e.angle.toFixed(2) + '°', thKucuk); nTxt++; }
   }

@@ -35,7 +35,7 @@ GitHub › **Releases**:
 | Proje bazında kanal listesi | ✓ ekran, Excel sayfaları | Proje Özeti sekmesi, Excel, çizime tablo (`SH_KANALLISTESI`) |
 | **Birleşik Metraj**: eski programın Excel şablonu (DİREK / İLETKEN / YERALTI METRAJI, MALZ. LİSTESİ) projeden doldurulur; şablonda olmayan malzeme için yeni sütun ([ortak/BIRLESIK-METRAJ.md](ortak/BIRLESIK-METRAJ.md)) | ✓ Dışa Aktar › Birleşik Metraj (gömülü şablon ya da kendi dosyanız) | Proje Özeti › Birleşik Metraj… |
 | Direk listeleri (AG, ENH dağıtım cetveli, aydınlatma, koordinat) ve cer hesabında önerilen direk tipi (eski TEDAŞ tablosu) | ✓ Hesaplar › Teknik hesaplar | Teknik Hesaplamalar › Direk Listeleri; Cer Vektörü sayfasında öneri |
-| Malzemeleri çizimde gösterme (simgenin yanında "GT-60=1 (M)"), baskıya uygun hat kalınlığı | ✓ DXF (Dışa Aktar › Çizim boyutları) | Çizim Ayarları › Görünüm (`SH_AYARLAR`; eski çizime `SH_GORUNUM`) |
+| Malzemeleri çizimde gösterme (simgenin yanında tek yazı "GT-60=1 (M)", ayrıca taşınır), baskıya uygun hat kalınlığı, eleman yazıları beyaz / siyah | ✓ DXF (Dışa Aktar › Çizim boyutları) | Çizim Ayarları › Görünüm (`SH_AYARLAR`; eski çizime `SH_GORUNUM`) |
 | Açılırken çöken çizimi onarma (DWG 2000) | — | `SH_ONAR` |
 | Metraj, Yeşil Defter, hakediş dönemi ve onay | ✓ (Excel; onaylı dönem AutoCAD'e onay olarak gider) | `SH_OZET`, `SH_ONAY` (Kontrol → Hakediş → GIS, onaylı hakediş kilitli) |
 | Kullanıcılar, roller, hakediş yetkisi | ✓ (Kullanıcılar ve onay; yazmaya kapalı hakedişler) | `SH_KULLANICILAR`, `SH_OTURUM` (aynı kullanıcılar ve şifreler; onay aşamaları rolle) |

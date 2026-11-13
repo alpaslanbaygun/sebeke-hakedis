@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -26,9 +27,10 @@ namespace SebekeHakedis.Eklenti
         /// Blok tanımının sürümü (blok sözlüğünde saklanır). 2: metre cinsinden geometri, 1 ölçek, telefon yazı düzeni;
         /// 3: panoda çıkış şeması öznitelikleri (C_1…C_8); 4: demontaj işaretleri simgeden taşar (DM "/", KESİK "//", SÖKÜK "X"),
         /// demontajda kafes direğin iç çarpısı yok; 5: öznitelik yazıları eklentinin yazı stilinde (Tahoma); 6: armatür
-        /// simgesi küçüldü (direk simgesinin yarısından küçük, 8.11.2026).
+        /// simgesi küçüldü (direk simgesinin yarısından küçük, 8.11.2026); 7: görünen öznitelik yazıları (GIS no, tip)
+        /// beyaz / siyah (7), bloğun renginde değil (13.11.2026).
         /// </summary>
-        private const string BlokSurumu = "6";
+        private const string BlokSurumu = "7";
 
         /// <summary>Metraj yazısında köşenin bir elemanın üstünde sayılacağı uzaklık (m) ve eleman ızgarasının hücresi.</summary>
         private const double DugumToleransi = 0.5, DugumHucresi = 5.0;
@@ -59,7 +61,7 @@ namespace SebekeHakedis.Eklenti
         /// </summary>
         public double HatKalinligiKati = Boyutlar.VarsayilanKalinlik;
 
-        /// <summary>Elemanın malzemeleri simgenin yanında yazılsın (MLZ_ öznitelikleri; Çizim Ayarları › Görünüm).</summary>
+        /// <summary>Elemanın malzemeleri simgenin yanında yazılsın (SH_MLZ bağlı çok satırlı yazı; Çizim Ayarları › Görünüm).</summary>
         public bool MalzemeYazisi;
 
         /// <summary>Boyutları çizimin ayarlarından alır (simge, hat etiketi, metraj ve eleman yazısı, hat kalınlığı, malzeme yazısı, simge takımı).</summary>
@@ -654,6 +656,9 @@ namespace SebekeHakedis.Eklenti
             ad.Height = yukseklik;
             ad.Invisible = gizli;
             ad.LayerId = _db.LayerZero;
+            // Görünen yazı (GIS no, tip) beyaz / siyah (7): koyu direk renklerinde (yeşil 120, kırmızı 16…) siyah ekranda
+            // okunmuyordu (13.11.2026); telefonun DXF'i de eleman yazısını 7 ile yazar. Gizli öznitelikler bloğun renginde.
+            if (!gizli) ad.ColorIndex = 7;
             ad.TextStyleId = YaziStili();
             btr.AppendEntity(ad);
             _tr.AddNewlyCreatedDBObject(ad, true);
@@ -710,7 +715,7 @@ namespace SebekeHakedis.Eklenti
             v.H = h;
             NesneYazici.TaniticiYaz(v, h);
             XdataYaz(pl, v);
-            if (v.ParcaMetraji) ParcaMetrajlariYaz(pl, v.Kose, v.KaziMetraji);
+            if (v.ParcaMetraji) ParcaMetrajlariYaz(pl, v.Kose, v.KaziMetraji, v.MetrajUzunlugu);
             if (etiket != null) EtiketYaz(pl, etiket.Replace(NesneYazici.Tanitici, h), v.Kose);
             if (v.KenarGenisligi > 0) KenarlariYaz(pl, v.KenarGenisligi);
             return id;
@@ -750,87 +755,150 @@ namespace SebekeHakedis.Eklenti
         // ---------------- Malzeme yazısı (elemanın malzemeleri simgenin yanında) ----------------
 
         /// <summary>
-        /// Elemanın malzeme satırlarını simgenin öznitelikleri olarak yazar (MLZ_1, MLZ_2…; MalzemeEtiketi): simgeyle taşınır,
-        /// kopyalanır, silinir. Ayar kapalıysa (ya da satır yoksa) var olanlar silinir. İlk satır tip satırının altında, eleman
-        /// yazısının 0,7'si yükseklikte; kullanıcı ilk satırı taşımışsa yeri korunur, öteki satırlar onun altına dizilir.
-        /// Yazı rengi beyaz / siyah (7), elemanın katmanında, eklentinin yazı stilinde.
+        /// Direğin malzeme yazısı (SH_MLZ bağındaki tanıtıcıyla; yazının sahibi bu direk olmalı — AutoCAD'le kopyalanmış
+        /// direk asıl direğin yazısını almasın); yoksa null. dx, dy: yazının direğe göre saklı yeri (konumlu: yazılı mı).
+        /// </summary>
+        private MText MalzemeYazisiBul(BlockReference direk, out double dx, out double dy, out bool konumlu)
+        {
+            string tanitici;
+            if (!ArmaturBagi.DirekVerisi(direk, out tanitici, out dx, out dy, out konumlu, NesneYazici.MalzemeYazisiUygulamasi)) return null;
+            ObjectId id;
+            if (!Toplayici.TaniticiylaBul(_db, tanitici, out id) || id.IsErased) return null;
+            var mt = _tr.GetObject(id, OpenMode.ForRead, false) as MText;
+            if (mt == null || mt.IsErased) return null;
+            return ArmaturBagi.SimgeSahibi(mt, NesneYazici.MalzemeYazisiUygulamasi) == direk.Handle.ToString() ? mt : null;
+        }
+
+        private MText MalzemeYazisiBul(BlockReference direk)
+        {
+            double dx, dy;
+            bool konumlu;
+            return MalzemeYazisiBul(direk, out dx, out dy, out konumlu);
+        }
+
+        /// <summary>Çok satırlı yazıya yazılacak metin: satırlar \P ile, MText'in özel karakterleri kaçırılmış.</summary>
+        internal static string MalzemeMetni(List<string> satirlar)
+        {
+            var sb = new StringBuilder();
+            for (int i = 0; i < satirlar.Count; i++)
+            {
+                if (i > 0) sb.Append("\\P");
+                foreach (char c in satirlar[i] ?? "")
+                {
+                    if (c == '\\' || c == '{' || c == '}') sb.Append('\\');
+                    sb.Append(c);
+                }
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Elemanın malzeme satırlarını simgenin yanında tek bir çok satırlı yazı (MText) olarak yazar (13.11.2026; önce
+        /// MLZ_ öznitelikleriydi): ayrı nesnedir, Taşı ile tek başına taşınır (yeri direğe göre saklanır, güncellemede
+        /// korunur), direkle birlikte kopyalanır ve silinir (ArmaturTakibi, SH_MLZ bağı). Ayar kapalıysa (ya da satır
+        /// yoksa) yazı silinir. Varsayılan yeri tip satırının altı; eleman yazısının 0,7'si yükseklikte, satır aralığı
+        /// 1,5; beyaz / siyah (7), elemanın katmanında, eklentinin yazı stilinde. Eski MLZ_ öznitelikleri silinir, ilk
+        /// satırının (kullanıcı taşımış olabilir) yeri yeni yazıya geçer.
         /// </summary>
         private void MalzemeYazisiYaz(BlockReference br, List<string> satirlar)
         {
-            var mevcut = new SortedDictionary<int, AttributeReference>();
-            AttributeReference tip = null;
+            AttributeReference tip = null, eskiIlk = null;
+            var eskiler = new List<AttributeReference>();
             foreach (ObjectId aid in br.AttributeCollection)
             {
                 if (aid.IsNull || aid.IsErased) continue;
                 var ar = _tr.GetObject(aid, OpenMode.ForRead, false) as AttributeReference;
                 if (ar == null) continue;
                 int sira;
-                if (MalzemeEtiketi.SatirMi(ar.Tag, out sira)) mevcut[sira] = ar;
+                if (MalzemeEtiketi.SatirMi(ar.Tag, out sira)) { eskiler.Add(ar); if (sira == 1) eskiIlk = ar; }
                 else if (ar.Tag == "TİP" && !ar.Invisible) tip = ar;
             }
-            var yazilacak = MalzemeYazisi && satirlar != null ? satirlar : new List<string>();
-            foreach (var kv in mevcut)
-                if (kv.Key > yazilacak.Count)
-                {
-                    var fazla = kv.Value;
-                    if (!fazla.IsWriteEnabled) fazla.UpgradeOpen();
-                    fazla.Erase();
-                }
-            if (yazilacak.Count == 0) return;
-
+            double dx, dy;
+            bool konumlu;
+            var mevcut = MalzemeYazisiBul(br, out dx, out dy, out konumlu);
             double h0 = CizimStili.Yuklu ? CizimStili.YaziYuksekligi : 1.8;
             double h = (ElemanYaziYuksekligi > 0 ? ElemanYaziYuksekligi : h0) * MalzemeEtiketi.YukseklikOrani;
-            double adim = h * MalzemeEtiketi.SatirAraligi;
-            AttributeReference ilkSatir;
-            Point3d ilk;
-            double aci;
-            if (mevcut.TryGetValue(1, out ilkSatir))
-            {
-                ilk = ilkSatir.Position;
-                aci = ilkSatir.Rotation;
-            }
-            else if (tip != null)
-            {
-                aci = tip.Rotation;
-                ilk = tip.Position + new Vector3d(Math.Sin(aci), -Math.Cos(aci), 0) * (0.45 * tip.Height + 1.15 * h);
-            }
-            else
-            {
-                // Tip satırı olmayan blok (AutoCAD bloğu): simgenin sağında, eleman yazısının yerinde
-                aci = br.Rotation;
-                double x = CizimStili.Yuklu ? CizimStili.ElemanKaydirma[0] : 3.5, y = CizimStili.Yuklu ? CizimStili.ElemanKaydirma[1] : 3.0;
-                double s = Math.Abs(br.ScaleFactors.X) > 1e-9 ? Math.Abs(br.ScaleFactors.X) : 1;
-                ilk = br.Position + new Vector3d(x * s, y * s - 2 * adim, 0).RotateBy(aci, Vector3d.ZAxis);
-            }
+            double aci = tip != null ? tip.Rotation : br.Rotation;
             var asagi = new Vector3d(Math.Sin(aci), -Math.Cos(aci), 0);
-            var stil = YaziStili();
-            for (int i = 0; i < yazilacak.Count; i++)
+            // Eski özniteliklerden geçiş: ilk satırın yeri (taban çizgisi) yeni yazının sol üst köşesi olur
+            if (mevcut == null && !konumlu && eskiIlk != null)
             {
-                var yer = ilk + asagi * (adim * i);
-                AttributeReference ar;
-                if (mevcut.TryGetValue(i + 1, out ar))
-                {
-                    bool yeriDegisti = i > 0 && ar.Position.DistanceTo(yer) > 1e-6;
-                    if (ar.TextString == yazilacak[i] && Math.Abs(ar.Height - h) < 1e-9 && !yeriDegisti) continue;
-                    if (!ar.IsWriteEnabled) ar.UpgradeOpen();
-                    if (ar.TextString != yazilacak[i]) ar.TextString = yazilacak[i];
-                    if (Math.Abs(ar.Height - h) > 1e-9) ar.Height = h;
-                    if (yeriDegisti) ar.Position = yer;
-                    continue;
-                }
-                ar = new AttributeReference();
-                ar.SetDatabaseDefaults(_db);
-                ar.Tag = MalzemeEtiketi.Etiket(i + 1);
-                ar.TextString = yazilacak[i];
-                ar.Position = yer;
-                ar.Height = h;
-                ar.Rotation = aci;
-                if (!stil.IsNull) ar.TextStyleId = stil;
-                ar.LayerId = br.LayerId;
-                ar.ColorIndex = 7;
-                br.AttributeCollection.AppendAttribute(ar);
-                _tr.AddNewlyCreatedDBObject(ar, true);
+                var ust = eskiIlk.Position - asagi * h;
+                dx = ust.X - br.Position.X;
+                dy = ust.Y - br.Position.Y;
+                konumlu = true;
+                aci = eskiIlk.Rotation;
             }
+            foreach (var ar in eskiler)
+            {
+                if (!ar.IsWriteEnabled) ar.UpgradeOpen();
+                ar.Erase();
+            }
+            var yazilacak = MalzemeYazisi && satirlar != null ? satirlar : new List<string>();
+            UygulamalariKaydet();
+            if (yazilacak.Count == 0)
+            {
+                if (mevcut != null)
+                {
+                    if (!mevcut.IsWriteEnabled) mevcut.UpgradeOpen();
+                    mevcut.Erase();
+                }
+                string eski;
+                double ex, ey;
+                bool ek;
+                if (ArmaturBagi.DirekVerisi(br, out eski, out ex, out ey, out ek, NesneYazici.MalzemeYazisiUygulamasi))
+                    ArmaturBagi.DirekVerisiYaz(br, null, 0, 0, NesneYazici.MalzemeYazisiUygulamasi);
+                return;
+            }
+            if (!konumlu)
+            {
+                Point3d ust;
+                if (tip != null) ust = tip.Position + asagi * (0.45 * tip.Height + 0.15 * h);
+                else
+                {
+                    // Tip satırı olmayan blok (AutoCAD bloğu): simgenin sağında, eleman yazısının altında
+                    double x = CizimStili.Yuklu ? CizimStili.ElemanKaydirma[0] : 3.5, y = CizimStili.Yuklu ? CizimStili.ElemanKaydirma[1] : 3.0;
+                    double sk = Math.Abs(br.ScaleFactors.X) > 1e-9 ? Math.Abs(br.ScaleFactors.X) : 1;
+                    ust = br.Position + new Vector3d(x * sk, y * sk - 2 * h * MalzemeEtiketi.SatirAraligi + h, 0).RotateBy(aci, Vector3d.ZAxis);
+                }
+                dx = ust.X - br.Position.X;
+                dy = ust.Y - br.Position.Y;
+            }
+            var konum = new Point3d(br.Position.X + dx, br.Position.Y + dy, br.Position.Z);
+            string metin = MalzemeMetni(yazilacak);
+            double aralik = MalzemeEtiketi.SatirAraligi * 0.6; // "tam" aralık: 1,0 = 5/3 yazı yüksekliği → 1,5 h için 0,9
+            var stil = YaziStili();
+            if (mevcut == null)
+            {
+                var mt = new MText();
+                mt.SetDatabaseDefaults(_db);
+                mt.Location = konum;
+                mt.Attachment = AttachmentPoint.TopLeft;
+                mt.TextHeight = h;
+                mt.Width = 0;
+                mt.Rotation = aci;
+                mt.LineSpacingStyle = LineSpacingStyle.Exactly;
+                mt.LineSpacingFactor = aralik;
+                if (!stil.IsNull) mt.TextStyleId = stil;
+                mt.LayerId = br.LayerId;
+                mt.ColorIndex = 7;
+                mt.Contents = metin;
+                Ms.AppendEntity(mt);
+                _tr.AddNewlyCreatedDBObject(mt, true);
+                ArmaturBagi.SahibiYaz(mt, br.Handle.ToString(), NesneYazici.MalzemeYazisiUygulamasi);
+                ArmaturBagi.SahipVerisiYaz(mt, br.Handle.ToString());
+                ArmaturBagi.DirekVerisiYaz(br, mt.Handle.ToString(), dx, dy, NesneYazici.MalzemeYazisiUygulamasi);
+                return;
+            }
+            if (!mevcut.IsWriteEnabled) mevcut.UpgradeOpen();
+            if (!konumlu) ArmaturBagi.DirekVerisiYaz(br, mevcut.Handle.ToString(), dx, dy, NesneYazici.MalzemeYazisiUygulamasi);
+            if (mevcut.Location.DistanceTo(konum) > 1e-6) mevcut.Location = konum;
+            if (mevcut.Contents != metin) mevcut.Contents = metin;
+            if (Math.Abs(mevcut.TextHeight - h) > 1e-9) mevcut.TextHeight = h;
+            if (Math.Abs(mevcut.LineSpacingFactor - aralik) > 1e-9) { mevcut.LineSpacingStyle = LineSpacingStyle.Exactly; mevcut.LineSpacingFactor = aralik; }
+            if (mevcut.LayerId != br.LayerId) mevcut.LayerId = br.LayerId;
+            if (mevcut.ColorIndex != 7) mevcut.ColorIndex = 7;
+            if (!stil.IsNull && mevcut.TextStyleId != stil) mevcut.TextStyleId = stil;
         }
 
         private void OznitelikleriKur(BlockReference br, ObjectId btrId, Dictionary<string, string> oz)
@@ -846,7 +914,11 @@ namespace SebekeHakedis.Eklenti
                 if (tanim == null || tanim.Constant) continue;
                 var ar = new AttributeReference();
                 ar.SetAttributeFromBlock(tanim, br.BlockTransform);
-                if (sh && !tanim.Invisible) ElemanYazisiBoyutu(ar, tanim, br);
+                if (sh && !tanim.Invisible)
+                {
+                    ElemanYazisiBoyutu(ar, tanim, br);
+                    if (ar.ColorIndex != 7) ar.ColorIndex = 7;
+                }
                 string d;
                 if (degerler.TryGetValue(tanim.Tag, out d)) ar.TextString = d ?? "";
                 br.AttributeCollection.AppendAttribute(ar);
@@ -938,7 +1010,7 @@ namespace SebekeHakedis.Eklenti
             StilUygula(ent, v);
             XdataYaz(ent, v);
             if (br != null) { ArmaturYaz(br, v); DugumEkle(br); }
-            if (br == null && v.ParcaMetraji) ParcaMetrajlariYaz(ent, v.Kose, v.KaziMetraji);
+            if (br == null && v.ParcaMetraji) ParcaMetrajlariYaz(ent, v.Kose, v.KaziMetraji, v.MetrajUzunlugu);
             if (etiket != null) EtiketYaz(ent, etiket.Replace(NesneYazici.Tanitici, h), v.Kose);
             if (br == null) KenarlariYaz(ent, v.KenarGenisligi);
         }
@@ -996,10 +1068,17 @@ namespace SebekeHakedis.Eklenti
                 SimgeBoyutunuKur(br, degerler);
                 return;
             }
+            bool sh = Semboller.EklentininBlogu(EtkinAd(br));
             foreach (ObjectId aid in br.AttributeCollection)
             {
                 var ar = _tr.GetObject(aid, OpenMode.ForRead, false) as AttributeReference;
                 if (ar == null) continue;
+                // Eklentinin simgesinde görünen yazı beyaz / siyah (7): önceki sürümün bloğun renginde bıraktığı yazılar da
+                if (sh && !ar.Invisible && !MalzemeEtiketi.SatirMi(ar.Tag) && ar.ColorIndex != 7)
+                {
+                    if (!ar.IsWriteEnabled) ar.UpgradeOpen();
+                    ar.ColorIndex = 7;
+                }
                 string d;
                 if (!degerler.TryGetValue(ar.Tag, out d) || ar.TextString == (d ?? "")) continue;
                 if (!ar.IsWriteEnabled) ar.UpgradeOpen();
@@ -1102,7 +1181,7 @@ namespace SebekeHakedis.Eklenti
 
         // ---------------- Silme ----------------
 
-        /// <summary>Nesneyi, yalnız ona ait hat etiketini ve parça metrajı yazılarını siler.</summary>
+        /// <summary>Nesneyi, yalnız ona ait hat etiketini, parça metrajı yazılarını, armatür simgesini ve malzeme yazısını siler.</summary>
         public void Sil(ObjectId id)
         {
             if (id.IsNull || id.IsErased) return;
@@ -1121,6 +1200,12 @@ namespace SebekeHakedis.Eklenti
             {
                 if (!arm.IsWriteEnabled) arm.UpgradeOpen();
                 arm.Erase();
+            }
+            var mlz = ent is BlockReference ? MalzemeYazisiBul((BlockReference)ent) : null;
+            if (mlz != null)
+            {
+                if (!mlz.IsWriteEnabled) mlz.UpgradeOpen();
+                mlz.Erase();
             }
             ent.Erase();
         }
@@ -1328,12 +1413,27 @@ namespace SebekeHakedis.Eklenti
         /// telefondaki gibi); parçaya sığmazsa daraltılır (YaziDuzeni). Elemansız kırılma köşelerine ayrıca yazılmaz.
         /// Eski yazılar silinir; tanıtıcılar nesnenin SH_PARCA verisinde (önce çizginin izi), sahibi yazının SH_SAHIP
         /// verisinde. kazi: kanal / sondaj metrajı — içindeki kablonun metrajıyla üst üste binmesin diye bir satır yukarıda.
+        /// toplam: yazılacak toplam uzunluk (iletken / kanal metrajı; 0: çizim uzunluğu) — açıklıklara çizim uzunluğundaki
+        /// payları oranında dağıtılır (13.11.2026). AutoCAD'le değiştirilen çizgide (süs takibi) çizim uzunluğu yazılır;
+        /// Metraj komutu ya da Malzemeler kaydı metrajı yeniden yazar.
         /// </summary>
-        public void ParcaMetrajlariYaz(Entity cizgi, List<double[]> kose, bool kazi = false)
+        public void ParcaMetrajlariYaz(Entity cizgi, List<double[]> kose, bool kazi = false, double toplam = 0)
         {
             UygulamalariKaydet();
             ParcaMetrajlariSil(cizgi);
             if (kose == null || kose.Count < 2) return;
+            double oran = 1;
+            if (toplam > 0)
+            {
+                double cizim = 0;
+                foreach (var a in Geometri.Acikliklar(kose, i => DugumVar(kose[i][0], kose[i][1])))
+                {
+                    int pr;
+                    double dd;
+                    if (Geometri.AciklikYazisi(kose, a[0], a[1], out pr, out dd)) cizim += dd;
+                }
+                if (cizim > 1e-9) oran = toplam / cizim;
+            }
             double yh = MetrajYuksekligi > 0 ? MetrajYuksekligi : (CizimStili.Yuklu ? CizimStili.ParcaMetraji : 1.44);
             double dik = (CizimStili.Yuklu ? CizimStili.ParcaKaydirma[1] : 0.8) + (kazi ? yh + (CizimStili.Yuklu ? CizimStili.KaziBosluk : 0.46) : 0);
             string bicim = CizimStili.Yuklu ? CizimStili.ParcaBicimi : "0.00";
@@ -1346,7 +1446,7 @@ namespace SebekeHakedis.Eklenti
                 int parca;
                 double d;
                 if (!Geometri.AciklikYazisi(kose, a[0], a[1], out parca, out d)) continue;
-                string metin = d.ToString(bicim, CultureInfo.InvariantCulture);
+                string metin = (d * oran).ToString(bicim, CultureInfo.InvariantCulture);
                 double x, y, aci, h, gk;
                 YaziDuzeni.Yerlestir(kose[parca], kose[parca + 1], dik, metin, yh, out x, out y, out aci, out h, out gk);
                 var yazi = YaziYap(metin, x, y, aci, h, katman, renk, TextHorizontalMode.TextCenter, TextVerticalMode.TextBase, gk);
@@ -1695,10 +1795,53 @@ namespace SebekeHakedis.Eklenti
             var kose = Koseler(cizgi);
             if (kose.Count < 2) return;
             double yh = MetrajYuksekligi > 0 ? MetrajYuksekligi : (CizimStili.Yuklu ? CizimStili.ParcaMetraji : 1.44);
-            if (Toplayici.XdataOku(cizgi).ContainsKey(NesneYazici.ParcaUygulamasi) && !ParcaMetrajlariGuncel(cizgi, yh))
-                ParcaMetrajlariYaz(cizgi, kose, kazi);
+            var xd = Toplayici.XdataOku(cizgi);
+            List<string> parca;
+            if (xd.TryGetValue(NesneYazici.ParcaUygulamasi, out parca) && !ParcaMetrajlariGuncel(cizgi, yh))
+            {
+                // Uzunluğu değişmeyen çizgi (taşındı, döndü, kopyalandı): metraj yazısı kalemin metrajını göstermeyi sürdürür;
+                // uzatılan / kısaltılan çizgide çizim uzunluğu yazılır (kalemin metrajı eskidir: Metraj komutu yeniler)
+                double toplam = 0, eski;
+                if (EskiUzunluk(parca, out eski))
+                {
+                    double simdi;
+                    try { simdi = cizgi.GetDistanceAtParameter(cizgi.EndParam); } catch { simdi = -1; }
+                    if (simdi >= 0 && Math.Abs(simdi - eski) < 0.0015) toplam = MetrajUzunluguOku(xd);
+                }
+                ParcaMetrajlariYaz(cizgi, kose, kazi, toplam);
+            }
             var etk = Etiket(cizgi);
             if (etk != null && !etk.IsErased) EtiketYaz(cizgi, etk.TextString, kose);
+        }
+
+        /// <summary>SH_PARCA verisindeki izden (I:uzunluk,…) çizginin metraj yazıları yazıldığı andaki uzunluğu.</summary>
+        private static bool EskiUzunluk(List<string> parca, out double uzunluk)
+        {
+            uzunluk = 0;
+            if (parca == null || parca.Count == 0 || !parca[0].StartsWith("I:", StringComparison.Ordinal)) return false;
+            int v = parca[0].IndexOf(',');
+            string ilk = v > 2 ? parca[0].Substring(2, v - 2) : parca[0].Substring(2);
+            return double.TryParse(ilk, NumberStyles.Float, CultureInfo.InvariantCulture, out uzunluk);
+        }
+
+        /// <summary>
+        /// Çizginin metraj yazısında gösterilecek uzunluk (CadVarlik.MetrajUzunlugu'nun çizimdeki veriden okunanı): hatta ilk
+        /// HAT kaleminin metrajı ÷ adet, kanal / sondajda NIT kaleminin metrajı; yoksa 0 (çizim uzunluğu).
+        /// </summary>
+        internal static double MetrajUzunluguOku(Dictionary<string, List<string>> xd)
+        {
+            List<string> l;
+            if (xd.TryGetValue("HAT", out l) && l.Count > 0)
+            {
+                var k = NesneOkuyucu.HatKalemiOku(l[0]);
+                return k.Miktar > 0 ? SayiCoz.Temiz(k.Miktar / Math.Max(1, Iletkenler.Adet(k))) : 0;
+            }
+            if (xd.TryGetValue("NIT", out l) && l.Count > 0)
+            {
+                var k = NesneOkuyucu.AnaKalemOku(l[0]);
+                return k.Miktar > 0 ? k.Miktar : 0;
+            }
+            return 0;
         }
 
         /// <summary>Çizginin köşeleri (2B; yay parçaları kirişiyle).</summary>

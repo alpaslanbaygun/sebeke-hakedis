@@ -59,6 +59,24 @@ gT / gD müşterek tepe traversleri, T-AG-1…9, D-AG-1…3, N-AG-1, MT-1…4, M
 (seedRev 26: kurulu telefonlarda eksik satırlar kendiliğinden eklenir). `volt-eslesme.json › kalemler`: servis kodu ↔
 eklenti cins / tanım (iki yönde aynı kalem). Denemeler: CekirdekTest, `telefon/web/tests/konsol.test.mjs`.
 
+13.11 (`duzeltmeler-13-11` dalı, main üstüne; PR D): kullanıcının 13.11 04:31 bildirimi (7 madde; 1–4 bu dalda, 5–7
+§6'da). **1 Eleman yazıları** (GIS no, tip) blok tanımında ve özniteliklerde renk 7 (beyaz / siyah; direk rengi 120 /
+16 siyah ekranda okunmuyordu); `BlokSurumu` 7; eski çizimin yazıları `BlokGuncelle`'deki döngüde çevrilir. **2 Malzeme
+yazısı** `MLZ_` öznitelikleri yerine `SH_MLZ` bağlı tek **MText** (`CizimYazici.MalzemeYazisiYaz / MalzemeYazisiBul /
+MalzemeMetni`; sol üst köşeden, "tam" satır aralığı 0,9, renk 7, direğin katmanında, `SH_SAHIP` ile komutlar direğe
+gider); `ArmaturBagi` / `ArmaturTakibi` uygulama adı parametresiyle genelleştirildi (SH_ARM ve SH_MLZ, blok ve MText;
+`Not.Susler`, `Aday.Tur / Uygulama`, `Konum / KonumYaz`), `Sil` yazıyı da siler; eski öznitelikler güncellemede silinir,
+taşınmış ilk satırın yeri geçer. Telefon DXF'i de tek MTEXT yazar (`dxf.js › malzemeMetni`, 250 karakterlik 3 / 1
+parçaları, `MALZEME_YAZISI.mtextAralik`). **3 Metraj yazısı = iletken metrajı** (kullanıcı kararı: ÷ adet; kanal /
+sondajda kendi pozunun metrajı): `CadVarlik.MetrajUzunlugu` (NesneYazici.Hat / Kanal / Sondaj), `ParcaMetrajlariYaz(…,
+toplam)` açıklıklara orantılı dağıtır; süs takibinde (`YazilariGuncelle`) uzunluğu değişmeyen çizgide kalemin metrajı
+(`MetrajUzunluguOku`, SH_PARCA izindeki eski uzunlukla karşılaştırma), uzatılan çizgide çizim uzunluğu. Telefon DXF'i
+havai açıklıkta 3B uzunluk × (1 + ek pay) yazar (`aciklikMetraji`; `model.js › payPct`). **4 Direk tipi değiştirme**:
+Malzemeler penceresinde **Tipi değiştir…** / ilk satıra çift tıklama → `KatalogdanSec(AnaTipler(tür))`, ana kalemin
+cins / tanım / birim / katsayı / tarife değişir, kaydedince `el.Cins / Tip` ve `NesneyiYaz` bloğu + TİP yazısını yeniler.
+Denemeler: CekirdekTest (MetrajUzunlugu), PencereTest 08c, `tests/dxf.test.mjs` D6. Belgeler: KULLANIM (malzeme yazısı,
+yazı rengi, metraj yazısı, tip değiştirme), telefon kılavuzu, VERI-MODELI (`SH_MLZ`), README.
+
 9.11 öğleden sonra (`simge-takimi` dalı, `hesap-metraj` üstüne; PR C): **#89 Şebeke-M simge takımı** — kullanıcının
 SM_* SVG / DXF tasarımı seçilebilir ikinci takım olarak (kararlar: ikinci takım, çizim başına seçilir; demontajda DM
 simgesine K / S harfi; köşk türü tipten, yoksa modüler köşk). `semboller.json` sürüm 3: 23 `SM_` ailesi (`aileler.*.takim`,
@@ -394,6 +412,24 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
+- **13.11 bildiriminin kalan maddeleri** (kullanıcı kararları 13.11 04:40):
+  - **5 Birim fiyatlı keşif** — kullanıcı birim fiyat dosyasını verecek: gönderdiği "Genel Keşif Simülatörü" HTML'inin
+    içinde 2026 TEDAŞ birim fiyat kitabı gömülü (4 773 kalem: yeni poz `85.105.1101`, eski poz grubu `5.1`, ad, birim, malzeme
+    / montaj / demontaj / demontajdan montaj fiyatları; HTML'deki `<script id="bfkVeri">` JSON'u — `gruplar[] {eski, ad}`, `kalemler[] {g, poz, cins, birim, m, mo, de, dm, ac}`).
+    Yapılacak: `ortak/katalog/birim-fiyat.json` (yıl, kaynak), kalem → poz eşlemesi (`pozNo` grubu + ad benzerliği + elle
+    düzeltilen eşleme tablosu `birim-fiyat-eslesme.json`), keşif raporu üç bölüm (montaj: malzeme + montaj; demontaj: yalnız
+    demontaj bedeli; demontajdan montaj) poz / cins / birim / miktar / birim fiyatlar / tutar ve toplamlar, Excel'e (eklenti
+    Proje Özeti › Keşif…, telefon Dışa Aktar). HTML'deki firma adı hiçbir yere yazılmaz.
+  - **6 Birleşik Metraj: cins başına ayrı sayfa** — şablonda olmayan direk cinsleri (beton, ENH cıvatalı…) ve iletkenler
+    (Raven…) EK sütunu yerine DİREK METRAJI / İLETKEN METRAJI biçiminde kopya sayfalarda ("DİREK METRAJI - BETON"…),
+    malzemeler normal sütun, MALZ. LİSTESİ'ne normal satır (EK KALEMLER kullanılmaz). Kural telefonla ortak.
+  - **7 Önerilen malzeme** — telefonun reçete kuralları (`telefon/tools/build_seed.mjs › rules`, direk grubu + rol + iletken
+    sınıfı) ortak dosyaya alınıp eklentiye: direk konunca ve Malzemeler penceresinde "Önerilen malzemeler" listesi
+    (rol bağlı hatlardan: taşıyıcı / durdurucu / köşe / nihayet; poz → eski program kalemi `volt-eslesme.json` ile),
+    işaretlenenler eklenir.
+  - 1–4'ün AutoCAD'de denemesi: eleman yazılarının beyaz görünmesi (eski çizimde Telefon Görünümü), malzeme yazısını Taşı
+    ile taşıma / direği kopyalama ve silme / Geri Al, eski çizimdeki MLZ_ satırlarının tek yazıya dönmesi, Malzemeler'de
+    iletken metrajını değiştirince hat yazısı, hattı taşıma ve uzatma, Tipi değiştir… ile 9,30/3 → 9,30/8 ve beton → demir.
 - **8.11 `malzeme-yazisi` işlerinin AutoCAD'de denemesi**: Çizim Ayarları › Görünüm › Malzemeleri çizimde göster açıp
   direğe malzeme ekleme / silme (satırlar yenilenir), direği taşıma / kopyalama, ilk satırı taşıyıp malzeme değiştirme,
   DWG 2000 kaydedip açma, eski programın blokları (TİP özniteliği olmayanlarda yer); Hat kalınlığı seçenekleriyle baskı

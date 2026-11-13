@@ -331,10 +331,27 @@ Kanal, sondaj, bölge sınırı ve simgeler ince kalır. Eski çizimdeki hatlar 
 satırının altında satır satır yazılır — `AD=MİKTAR BİRİM (DURUM)`, ör. `GT-60=1 (M)`, `L-65=2,5 mt (DM)`. Elemanın kendi
 tipi (direk tipi) yazılmaz, o tip satırındadır; adet yazılmaz, metre ve kilogram yazılır; durum programdaki kodla
 (M, M+M, MEVCUT, DM, DM+M…); iki hakedişte girilmiş aynı malzeme tek satırda toplanır. Yazı eleman yazısının 0,7'si
-büyüklüğünde, beyaz / siyahtır. Satırlar simgenin parçasıdır: simgeyle taşınır, kopyalanır, silinir. İlk satırı başka
-yere taşırsanız yeri korunur, öteki satırlar güncellemede onun altına dizilir. Malzeme eklenince ya da silinince
-yazı kendiliğinden yenilenir. Kapatınca yazılar silinir. Telefonda Dışa Aktarım › Çizim boyutları › Malzemeleri
-çizimde göster açıksa telefonun DXF'i de aynı satırları yazar.
+büyüklüğünde, beyaz / siyahtır. Yazı **ayrı bir nesnedir** (13.11.2026; önce simgenin öznitelikleriydi): **Taşı** ile
+direğin tipinden bağımsız istediğiniz yere alırsınız (başka direklerin ve hatların üstüne gelmesin diye), yeri direğe
+göre saklanır ve güncellemede korunur; direği taşır, kopyalar ya da silerseniz yazı da onunla gider. Yazının üstüne
+tıklayıp Malzeme komutunu verirseniz direğin malzemeleri açılır. Malzeme eklenince ya da silinince yazı kendiliğinden
+yenilenir; kapatınca yazılar silinir. Eski çizimlerdeki satır satır yazılar güncellemede (ya da Telefon Görünümü ile)
+tek yazıya çevrilir, taşınmış ilk satırın yeri kalır. Telefonda Dışa Aktarım › Çizim boyutları › Malzemeleri çizimde
+göster açıksa telefonun DXF'i de aynı yazıyı (tek çok satırlı yazı) yazar.
+
+**Eleman yazıları beyaz / siyah** (13.11.2026): GIS numarası ve tip yazısı direğin renginde değil, 7 numaralı renkte
+yazılır (siyah ekranda beyaz, kâğıtta siyah) — koyu yeşil / kırmızı yazılar siyah ekranda okunmuyordu. Telefonun DXF'i
+zaten öyleydi. Eski çizimdeki yazılar güncellemede ya da Telefon Görünümü ile çevrilir.
+
+**Metraj yazısı iletken metrajını gösterir** (13.11.2026): hattın üstündeki uzunluk, iletken kaleminin metrajı ÷ adet
+(kanal ve sondajda kendi pozunun metrajı). Malzemeler penceresinde metrajı değiştirince yazı da değişir; iletkeni
+olmayan hatta çizim uzunluğu yazılır. Hattı AutoCAD'le **taşırsanız** yazı aynı kalır; **uzatır / kısaltırsanız** yeni
+çizim uzunluğu yazılır (kalemin metrajı eskimiştir: **Metraj** komutu ya da Malzemeler kaydı yeniden yazar).
+
+**Direk tipini sonradan değiştirme** (13.11.2026): Malzemeler penceresinde **Tipi değiştir…** (ya da ilk satıra çift
+tıklayın) katalogdan yeni tipi seçtirir — aynı cinsten başka tip (9,30/3 → 9,30/8) ya da başka cins (beton → demir;
+simge de değişir). Durum, hakediş, DM durumu ve malzemeler kalır; tip yazısı ve raporlar yeni tiple gider. Onaylı
+(kilitli) hakedişteki direğin tipi değiştirilemez.
 
 ### Hat değiştir (iletkenin tipi ve cinsi)
 

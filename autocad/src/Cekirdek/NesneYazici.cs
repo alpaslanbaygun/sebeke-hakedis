@@ -25,6 +25,12 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Direğin yanındaki armatür simgesinin tanıtıcısı (direkte armatür malzemesi varken).</summary>
         public const string ArmaturUygulamasi = "SH_ARM";
 
+        /// <summary>
+        /// Direğin yanındaki malzeme yazısının (çok satırlı yazı nesnesi) tanıtıcısı ve direğe göre yeri (13.11.2026; önce MLZ_
+        /// öznitelikleriydi). Yazıda "@" + direğin tanıtıcısı. Armatür simgesiyle aynı bağ biçimi (ArmaturBagi), aynı takip.
+        /// </summary>
+        public const string MalzemeYazisiUygulamasi = "SH_MLZ";
+
         /// <summary>Kanalın iki kenar çizgisinin tanıtıcıları (kanal ekseninde; AutoCAD tanıtıcı türüyle, kopyada çevrilir).</summary>
         public const string KenarUygulamasi = "SH_KENAR";
 
@@ -32,13 +38,13 @@ namespace SebekeHakedis.Cekirdek
         public const string SahipUygulamasi = "SH_SAHIP";
 
         /// <summary>Yalnız bunları taşıyan nesneler başka bir nesnenin süsüdür (kendi verisi yoktur; okunurken atlanır).</summary>
-        public static readonly string[] SusUygulamalari = { ArmaturUygulamasi, SahipUygulamasi };
+        public static readonly string[] SusUygulamalari = { ArmaturUygulamasi, MalzemeYazisiUygulamasi, SahipUygulamasi };
 
         /// <summary>AutoCAD'in eklentinin düzenlemediği verileri: pano çıkış şeması (ANA, CON), bina tipi trafo hücreleri (FIDER).</summary>
         public static readonly string[] EkUygulamalar = { "ANA", "CON", "FIDER" };
 
         /// <summary>XDATA uygulama adları (çizimde kayıtlı olmalı).</summary>
-        public static readonly string[] Uygulamalar = { "GIS", "NIT", "MALZEME", "HAT", "ANAKESIT", "ETK", "KONTROL", "FULLREG", "HAKNO", "ZKOORD", KimlikUygulamasi, ParcaUygulamasi, ArmaturUygulamasi, KenarUygulamasi, SahipUygulamasi, "ANA", "CON", "FIDER" };
+        public static readonly string[] Uygulamalar = { "GIS", "NIT", "MALZEME", "HAT", "ANAKESIT", "ETK", "KONTROL", "FULLREG", "HAKNO", "ZKOORD", KimlikUygulamasi, ParcaUygulamasi, ArmaturUygulamasi, MalzemeYazisiUygulamasi, KenarUygulamasi, SahipUygulamasi, "ANA", "CON", "FIDER" };
 
 
         // ---------------- Sayı ve alan yazımı (AutoCAD: Türkçe ondalık virgül) ----------------
@@ -310,6 +316,7 @@ namespace SebekeHakedis.Cekirdek
             };
             foreach (var k in h.Kose) v.Kose.Add(new[] { k[0], k[1] });
             v.ParcaMetraji = true;
+            v.MetrajUzunlugu = Iletkenler.GuzergahMetraji(h);   // iletken metrajı (÷ adet); iletken yoksa 0 → çizim uzunluğu
             if (CizimStili.Yuklu)
             {
                 v.Renk = CizimStili.HatRengi(h.Tur, h.Durum);
@@ -388,6 +395,7 @@ namespace SebekeHakedis.Cekirdek
             v.KenarGenisligi = KanalGenisligi(c);
             Stil(v, "KANAL", c.Durum);
             var ana = c.Kalemler.Find(k => k.Ana) ?? new Kalem { Cins = c.Kod.ToString(CultureInfo.InvariantCulture), Tanim = c.Zemin, Durum = c.Durum, Hakedis = c.Hakedis, Birim = "mt/m³", Katsayi = 1, Ana = true };
+            v.MetrajUzunlugu = ana.Miktar > 0 ? ana.Miktar : 0;   // kanalın metrajı (m); yoksa çizim uzunluğu
             var nit = ana.Kopya();
             nit.Cins = c.Kod.ToString(CultureInfo.InvariantCulture);
             nit.Tanim = c.Zemin;
@@ -407,6 +415,7 @@ namespace SebekeHakedis.Cekirdek
             v.KaziMetraji = true;
             Stil(v, "SONDAJ", s.Durum);
             var ana = s.Kalemler.Find(k => k.Ana) ?? new Kalem { Cins = "YATAY_DELGİ", Tanim = s.Tip, Durum = s.Durum, Hakedis = s.Hakedis, Birim = "mt/mt", Katsayi = 1, Ana = true };
+            v.MetrajUzunlugu = ana.Miktar > 0 ? ana.Miktar : 0;   // sondajın metrajı (m); yoksa çizim uzunluğu
             Ekle(v, "GIS", A(s.BasNo) + ";" + A(s.BitNo) + ";" + Sayi(ana.Miktar));
             Ekle(v, "KONTROL", Mantik(s.Kontrol ?? ana.Kontrol));
             Ekle(v, "NIT", MalzemeSatiri(ana));

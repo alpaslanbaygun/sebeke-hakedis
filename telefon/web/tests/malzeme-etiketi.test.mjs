@@ -76,14 +76,20 @@ test('ME3 · DXF: kalın hat genişlikli çoklu çizgi, ince çizgide eski LINE;
   assert.equal(+cizgi[0].g['30'][0], 1000, 'ince çizgide kot korunur');
   assert.equal(d.stats.materials, 2);
   const yazilar = v.filter((x) => x.tur === 'TEXT');
-  const eleman = yazilar.find((x) => x.g['1'][0] === 'B1 G-10I'), m1 = yazilar.find((x) => x.g['1'][0] === 'GT-60=1 (M)'), m2 = yazilar.find((x) => x.g['1'][0] === 'N80 İZOLATÖR=2 (M)');
-  assert.ok(eleman && m1 && m2, 'eleman yazısı ve iki malzeme satırı');
+  const eleman = yazilar.find((x) => x.g['1'][0] === 'B1 G-10I');
+  // Malzeme satırları tek bir çok satırlı yazıdır (13.11.2026; eklentideki SH_MLZ bağlı MText): satırlar \P ile
+  const m = v.filter((x) => x.tur === 'MTEXT');
+  assert.ok(eleman && m.length === 1, 'eleman yazısı ve tek malzeme yazısı');
+  assert.equal(m[0].g['1'][0], 'GT-60=1 (M)\\PN80 İZOLATÖR=2 (M)', 'iki satır tek yazıda');
   const th = STIL.yazi.yukseklik, hm = th * MALZEME_YAZISI.oran;
-  assert.equal(+m1.g['40'][0], +hm.toFixed(4), 'malzeme yazısı eleman yazısının 0,7si');
-  assert.equal(+m1.g['10'][0], +eleman.g['10'][0], 'eleman yazısıyla aynı hizada');
-  assert.ok(Math.abs(+eleman.g['20'][0] - (0.45 * th + 1.15 * hm) - +m1.g['20'][0]) < 1e-3, 'ilk satır eleman yazısının altında');
-  assert.ok(Math.abs(+m1.g['20'][0] - hm * MALZEME_YAZISI.aralik - +m2.g['20'][0]) < 1e-3, 'satır aralığı');
-  assert.equal(+m1.g['62'][0], 7, 'beyaz / siyah');
+  assert.equal(+m[0].g['40'][0], +hm.toFixed(4), 'malzeme yazısı eleman yazısının 0,7si');
+  assert.equal(+m[0].g['10'][0], +eleman.g['10'][0], 'eleman yazısıyla aynı hizada');
+  // Sol üst köşe: ilk satırın taban çizgisi (eleman yazısının 0,45 h + 1,15 hm altı) bir yazı yüksekliği aşağıda
+  assert.ok(Math.abs(+eleman.g['20'][0] - (0.45 * th + 1.15 * hm) + hm - +m[0].g['20'][0]) < 1e-3, 'yazının üstü eleman yazısının altında');
+  assert.equal(m[0].g['71'][0], '1', 'sol üst köşeden');
+  assert.equal(+m[0].g['44'][0], MALZEME_YAZISI.mtextAralik, 'satır aralığı 1,5 h (tam: 0,9)');
+  assert.equal(+m[0].g['62'][0], 7, 'beyaz / siyah');
+  assert.equal(yazilar.filter((x) => /^GT-60|^N80/.test(x.g['1'][0])).length, 0, 'satır satır TEXT yok');
 });
 
 test('ME4 · telefon projesi: malzeme yazısı açıkken DXF eklentinin kuralıyla satırları yazar', async () => {

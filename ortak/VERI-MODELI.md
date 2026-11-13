@@ -48,7 +48,7 @@ projenin sistemi dosyanınki olur, var olan projeye alınırken dosyanın koordi
 
 - `proje.boyutlar`: çizimin simge ve yazı boyutları `{ simgeOlcegi, etiketYuksekligi, metrajYuksekligi, elemanYaziYuksekligi,
   hatKalinligi, malzemeYazisi }` (simge kat; yazılar metre; hat kalınlığı kat: `cizim-stili.json` › katmanlar › `kalinlik`
-  × bu, 0 = ince çizgi; malzemeYazisi: elemanın malzemeleri simgenin yanında yazılsın, `MLZ_1…` öznitelikleri, kural
+  × bu, 0 = ince çizgi; malzemeYazisi: elemanın malzemeleri simgenin yanında yazılsın, `SH_MLZ` bağlı çok satırlı yazı, kural
   `Cekirdek/MalzemeEtiketi.cs` = sh-core `malzemeEtiketi`, ortak deneme `ortak/deneme/malzeme-etiketi.json`). Eklentide
   Çizim Ayarları › Görünüm, telefonda Dışa Aktarım › Çizim boyutları; telefonun DXF'i bunlarla çizer. Hepsi varsayılansa
   (1 kat · 1,8 · 1,44 · 1,8 m · kalınlık 1 kat · malzeme yazısı kapalı) yazılmaz. Alırken ayarlanmış olan kazanır: çizimde
@@ -287,6 +287,7 @@ Eklenti eski programın yazdığı biçimle yazar (yukarıdaki XDATA ve katmanla
 | `SH_ID` XDATA | telefondan gelen nesne | telefondaki kimlik; aynı dosya yeniden alınınca nesne bununla bulunur |
 | `SH_PARCA` XDATA | hat, kanal, sondaj | parça metrajı yazılarının tanıtıcıları (`<ön ek>_YAZI` katmanında) |
 | `SH_ARM` XDATA | armatürlü direk ve simgesi | direkte `[simgenin tanıtıcısı, dx, dy]` (simgenin direğe göre yeri), simgede `["@" + direğin tanıtıcısı]`. Simge `SH_ARMATUR_<varyant>` bloğudur, direğin katmanında; kendi poz verisi yoktur (armatür direğin `MALZEME` kalemidir). Direk AutoCAD'le taşınınca / kopyalanınca / silinince simge de gider |
+| `SH_MLZ` XDATA | malzeme yazılı direk ve yazısı (13.11.2026) | `SH_ARM` ile aynı biçim: direkte `[yazının tanıtıcısı, dx, dy]`, yazıda `["@" + direğin tanıtıcısı]` (+ `SH_SAHIP`: yazı seçilince komutlar direğe gider). Yazı tek `MTEXT`tir (sol üst köşeden, satırlar `\\P`, satır aralığı "tam" 0,9 = 1,5 yazı yüksekliği, renk 7, direğin katmanında); önceki sürümün `MLZ_1…` öznitelikleri güncellemede silinip yazıya çevrilir. Direkle taşınır / kopyalanır / silinir; tek başına taşınınca yeri (dx, dy) direğe yazılır |
 | `SEBEKE_HAKEDIS` › `AYARLAR` | çizimin sözlüğü (Named Objects Dictionary) | çizim ayarları: ön ekler, aktif hakediş, dilim, tarife, sembol takımı, etiket, metraj payları, son seçimler |
 | `SH_<aile>_<varyant>` (ör. `SH_KAFES_AG_YENI`), `GPS` | blok tanımları | lejant simgesi tür + malzeme + duruma göre (`katalog/semboller.json`; 1 ölçek, öznitelikler eski program adlarıyla; panoda ayrıca gizli `C_1…C_8`); tanımın sürümü blok sözlüğünde (`SEBEKE_HAKEDIS › BLOK`) |
 

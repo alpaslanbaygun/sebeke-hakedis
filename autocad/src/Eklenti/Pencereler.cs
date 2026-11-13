@@ -3397,6 +3397,15 @@ namespace SebekeHakedis.Eklenti
                 sil.SetBounds(ekle.Right + S(10), by, S(120), bh);
                 w.Alt.Controls.Add(ekle);
                 w.Alt.Controls.Add(sil);
+                // Elemanın kendi pozu (direk tipi) sonradan değiştirilebilir (13.11.2026): aynı cinsten başka tip (9,30/3 →
+                // 9,30/8) ya da başka cins (beton → demir; simge de değişir). Durum, hakediş, DM durumu ve malzemeler kalır.
+                KoyuDugme tipDegistir = null;
+                if (el != null && kalemler.Exists(k => k.Ana))
+                {
+                    tipDegistir = new KoyuDugme("Tipi değiştir…", DugmeTuru.Ikincil, Boya.Simge("sec", KoyuRenk.Ikincil, 16));
+                    tipDegistir.SetBounds(sil.Right + S(10), by, S(150), bh);
+                    w.Alt.Controls.Add(tipDegistir);
+                }
 
                 MetinKutusu gis = null, guc = null, gerilim = null, bas = null, bit = null;
                 ZeminSecici zemin = null;
@@ -3486,7 +3495,7 @@ namespace SebekeHakedis.Eklenti
                 var toplamYazi = Etiket(w, "", 16, 530, 320, KoyuYazi.Kalin, KoyuRenk.Yazi);
                 Etiket(w, kilitVar
                         ? "Gri satırlar onaylı (kilitli) hakedişte: değiştirilemez, silinemez." + (anaKilitli ? " Nesnenin kendi pozu da kilitli." : "")
-                        : "Durum, miktar, hakediş ve DM durumunu hücreye tıklayıp değiştirin; toplam kendiliğinden hesaplanır.",
+                        : "Durum, miktar, hakediş ve DM durumunu hücreye tıklayıp değiştirin; toplam kendiliğinden hesaplanır." + (el != null && kalemler.Exists(k => k.Ana) ? " Tip: ilk satıra çift tıklayın." : ""),
                     344, 532, 600, KoyuYazi.Kucuk, kilitVar ? KoyuRenk.UyariYazi : KoyuRenk.Soluk, ContentAlignment.TopRight);
 
                 bool yukleniyor = false;
@@ -3666,6 +3675,30 @@ namespace SebekeHakedis.Eklenti
                     g.Rows[r].Selected = true;
                     g.CurrentCell = g.Rows[r].Cells[3];
                     g.BeginEdit(true);
+                };
+                Action tipiDegistir = () =>
+                {
+                    if (el == null || ana == null) return;
+                    if (anaKilitli) { Uyar(o.KilitMesaji(ana.Hakedis) + " Tip değiştirilemez."); return; }
+                    var it = KatalogdanSec("Tipi değiştir — " + baslik, o.Katalog.AnaTipler(el.Tur), w);
+                    if (it == null || (it.Cins == ana.Cins && it.Tanim == ana.Tanim)) return;
+                    ana.Cins = it.Cins;
+                    ana.Tanim = it.Tanim;
+                    ana.Birim = it.Birim;
+                    ana.Katsayi = it.Katsayi;
+                    ana.Tarife = Katalog.TarifeSec(it, o.Ayar.Karakteristik, o.Ayar.Koy);
+                    if (ana.Miktar <= 0) ana.Miktar = 1;
+                    hesapla(ana);
+                    for (int r = 0; r < g.Rows.Count; r++) if (ReferenceEquals(g.Rows[r].Tag, ana)) satirYaz(r, ana);
+                    toplamYaz();
+                    w.Text = "Malzemeler — " + (el.GisId + " " + Turler.ElemanAdi(el.Tur) + " " + it.Tanim).Trim();
+                    w.Invalidate();
+                };
+                if (tipDegistir != null) tipDegistir.Click += (s, e) => tipiDegistir();
+                g.CellDoubleClick += (s, e) =>
+                {
+                    if (e.RowIndex < 0 || e.ColumnIndex > 1) return;
+                    if (ReferenceEquals(g.Rows[e.RowIndex].Tag, ana) && tipDegistir != null) tipiDegistir();
                 };
                 sil.Click += (s, e) =>
                 {
