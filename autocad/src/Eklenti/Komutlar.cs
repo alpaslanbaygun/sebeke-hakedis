@@ -203,7 +203,7 @@ namespace SebekeHakedis.Eklenti
             byte[] cikti = BirlesikMetraj.Uret(p, sablon, a, out plan, out st);
             File.WriteAllBytes(yol, cikti);
             int yeni; plan.Ozet.TryGetValue("yeniSutun", out yeni);
-            Uygulama.Yaz("Birleşik Metraj yazıldı: " + yol + " (" + yeni + " yeni sütun, " + plan.Uyarilar.Count + " uyarı)");
+            Uygulama.Yaz("Birleşik Metraj yazıldı: " + yol + " (" + yeni + " yeni sütun, " + plan.KopyaSayfalar.Count + " direk sayfası, " + plan.Uyarilar.Count + " uyarı)");
             foreach (var u in plan.Uyarilar) Uygulama.Yaz("  • " + u);
             Pencereler.BirlesikMetrajSonuc(plan, yol);
         }

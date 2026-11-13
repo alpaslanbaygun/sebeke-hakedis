@@ -31,10 +31,14 @@ function metrajSayfasi(x, onek) {
   if (!kod) return null;
   const s = x.sayfa(kod.sayfa);
   const satir = (ek) => { const a = x.tanimliAd(onek + '_' + ek); return a ? a.bas.satir : null; };
+  // Tanımlı adların aralıkları sayfasız ("$G$10:$ZZ$10"): kopya sayfanın MALZ. LİSTESİ formülleri bu aralığı kopya sayfasıyla kullanır
+  const aralik = (ek) => { const a = x.tanimliAd(onek + '_' + ek); return a ? '$' + sutunHarfi(a.bas.sutun) + '$' + a.bas.satir + ':$' + sutunHarfi(a.bit.sutun) + '$' + a.bit.satir : null; };
+  const adlar = {};
+  for (const ek of ['KOD', 'TIP', 'DURUM', 'POZ', 'AD', 'SEC', 'BIRIM', 'TOPLAM', 'MALZ']) { const r = aralik(ek + '_SATIRI'); if (r) adlar[ek] = r; }
   const o = {
     sayfa: kod.sayfa, onek, kodSatiri: kod.bas.satir, tipSatiri: satir('TIP_SATIRI'), durumSatiri: satir('DURUM_SATIRI'),
     pozSatiri: satir('POZ_SATIRI'), adSatiri: satir('AD_SATIRI'), teminSatiri: satir('SEC_SATIRI'), birimSatiri: satir('BIRIM_SATIRI'),
-    toplamSatiri: satir('TOPLAM_SATIRI'), malzSatiri: satir('MALZ_SATIRI'), ilkKodSutunu: kod.bas.sutun,
+    toplamSatiri: satir('TOPLAM_SATIRI'), malzSatiri: satir('MALZ_SATIRI'), ilkKodSutunu: kod.bas.sutun, adlar,
     bayrakSatirlari: [], grupSatiri: null, altSatirlar: [], ilkVeri: 0, sonVeri: 0, sonSutun: 0, sutunlar: [], sabit: {}, baslik: {}
   };
   if (!o.pozSatiri || !o.adSatiri || !o.teminSatiri || !o.birimSatiri) throw new Error(kod.sayfa + ': şablonun ' + onek + '_ tanımlı adları eksik.');
@@ -45,6 +49,8 @@ function metrajSayfasi(x, onek) {
     const son = o.malzSatiri || sinir.satir;
     for (let r = o.ilkVeri + 1; r <= son; r++) if (/^TOPLAM/i.test(String(s.metin('A' + r)).trim())) { o.toplamSatiri = r; break; }
     if (!o.toplamSatiri) throw new Error(kod.sayfa + ': TOPLAM satırı bulunamadı.');
+    // İLETKEN: TOPLAM satırının tanımlı adı olmadığından MALZ. LİSTESİ kopya formülleri MALZ satırını kullanır; yine de aralık verilir
+    if (!o.adlar.TOPLAM) o.adlar.TOPLAM = '$' + sutunHarfi(kod.bas.sutun) + '$' + o.toplamSatiri + ':$' + sutunHarfi(kod.bit.sutun) + '$' + o.toplamSatiri;
   }
   o.sonVeri = o.toplamSatiri - 1;
   // KOD sütunları
@@ -136,7 +142,7 @@ function malzListesi(x) {
       if (kaynak) break;
     }
     if (!kaynak) continue;
-    const o = { sayfa: sb.ad, kodSutunu: kaynak.kodSutunu, kaynakSutunu: kaynak.kaynakSutunu, pozSutunu: null, adSutunu: null, birimSutunu: null, teminSutunu: null, miktarSutunu: null, ekSatirlari: [] };
+    const o = { sayfa: sb.ad, kodSutunu: kaynak.kodSutunu, kaynakSutunu: kaynak.kaynakSutunu, pozSutunu: null, adSutunu: null, birimSutunu: null, teminSutunu: null, miktarSutunu: null, toplamSutunu: null, bayrakSutunu: null, kalemOrnekSatiri: kaynak.satir, grupOrnekSatiri: null, ekBaslikSatiri: null, ekSatirlari: [] };
     const satir = s.satirlar.get(kaynak.satir);
     for (const [c] of satir.hucreler) {
       const f = s.formul(hucreAdi(c, kaynak.satir)) || '';
@@ -148,10 +154,34 @@ function malzListesi(x) {
       else if (/N\(INDEX\((?:DM|IM|YM)_(?:TOPLAM|MALZ)_SATIRI/.test(f)) o.miktarSutunu = h;
     }
     if (!o.pozSutunu || !o.adSutunu || !o.birimSutunu || !o.teminSutunu || !o.miktarSutunu) throw new Error(sb.ad + ': malzeme listesi sütunları çözülemedi.');
+    // toplam sütunu: miktar sütununa eşit olan ("=H7"); bayrak sütunu: toplam > 0 denetimi yapan ("IF(F7>0,1,0)")
+    for (const [c] of satir.hucreler) {
+      const f = (s.formul(hucreAdi(c, kaynak.satir)) || '').replace(/\s+/g, '');
+      const h = sutunHarfi(c);
+      if (f === o.miktarSutunu + kaynak.satir) o.toplamSutunu = h;
+    }
+    for (const [c] of satir.hucreler) {
+      const f = (s.formul(hucreAdi(c, kaynak.satir)) || '').replace(/\s+/g, '');
+      if (o.toplamSutunu && f === 'IF(' + o.toplamSutunu + kaynak.satir + '>0,1,0)') o.bayrakSutunu = sutunHarfi(c);
+    }
+    // grup başlığı örneği: KOD'suz, ad sütununda yazılı, bir sonraki satırı KOD'lu ilk satır (ör. "BARALAR")
     const satirlar = [...s.satirlar.keys()].sort((a, b) => a - b);
+    for (let i = 0; i + 1 < satirlar.length; i++) {
+      const r = satirlar[i];
+      if (r >= kaynak.satir) break;
+      const kodVar = String(s.metin(o.kodSutunu + r)).trim() !== '', adVar = String(s.metin(o.adSutunu + r)).trim() !== '';
+      const sonrakiKod = String(s.metin(o.kodSutunu + satirlar[i + 1])).trim() !== '';
+      if (!kodVar && adVar && sonrakiKod) { o.grupOrnekSatiri = r; break; }
+    }
     for (const r of satirlar) {
       const k = String(s.metin(o.kodSutunu + r)).trim();
       if (/^E\d{3}$/i.test(k)) o.ekSatirlari.push({ satir: r, kod: k });
+    }
+    // EK KALEMLER bölüm başlığı: ilk EK satırının üstündeki KOD'suz yazılı satır
+    if (o.ekSatirlari.length) {
+      const r = o.ekSatirlari[0].satir - 1;
+      const yazi = [o.pozSutunu, o.adSutunu].map((c) => String(s.metin(c + r)).trim()).join('');
+      if (yazi && String(s.metin(o.kodSutunu + r)).trim() === '') o.ekBaslikSatiri = r;
     }
     return o;
   }
@@ -219,26 +249,43 @@ export function sablonTanimi(x) {
 /** Planı dosyaya işler. */
 export function planUygula(x, sablon, plan) {
   const sayfalar = { direk: sablon.direk, iletken: sablon.iletken, yeralti: sablon.yeralti };
-  // 1) yeni sütunlar: biçim, genişlik, bayrak / toplam / alt satır formülleri, (gerekirse) veri formülleri
+  // 0) kopya sayfalar (cins başına DİREK METRAJI kopyası): kaynağın biçimiyle, KOD sütunları boş (yeni sütunlar aşağıda açılır)
+  for (const k of plan.kopyaSayfalar || []) {
+    const t = sayfalar[k.hangi];
+    if (!t) continue;
+    const s = x.sayfaKopyala(k.kaynak, k.ad);
+    const sonSatir = Math.max(t.toplamSatiri, ...t.altSatirlar, t.malzSatiri || 0);
+    s.sutunlariBosalt(t.ilkKodSutunu, Math.min(t.kodSatiri, t.tipSatiri || t.kodSatiri, t.durumSatiri || t.kodSatiri), sonSatir);
+  }
+  // 1) yeni sütunlar: biçim, genişlik, bayrak / toplam / alt satır formülleri, (gerekirse) veri formülleri — örnek ana sayfada
   for (const y of plan.yeniSutunlar || []) {
     const t = sayfalar[y.hangi];
     if (!t || !y.ornekSutun) continue;
-    const s = x.sayfa(t.sayfa);
+    const s = x.sayfa(y.sayfa || t.sayfa), o = x.sayfa(y.ornekSayfa || t.sayfa);
     const kaynak = y.ornekSutun, hedef = y.sutun, fark = hedef - kaynak;
-    s.sutunGenisligiKopyala(kaynak, hedef);
+    if (o === s) s.sutunGenisligiKopyala(kaynak, hedef);
     const ustSatirlar = [];
     for (let r = Math.min(t.kodSatiri, t.tipSatiri || t.kodSatiri, t.durumSatiri || t.kodSatiri); r <= t.birimSatiri; r++) ustSatirlar.push(r);
     const formulluSatirlar = [...t.bayrakSatirlari, ...t.altSatirlar];
     for (const r of [...ustSatirlar, ...formulluSatirlar]) {
-      s.stilKopyala(hucreAdi(kaynak, r), hucreAdi(hedef, r));
-      if (formulluSatirlar.indexOf(r) >= 0) { const f = s.formul(hucreAdi(kaynak, r)); if (f != null) s.yazFormul(hucreAdi(hedef, r), formulKaydir(f, 0, fark)); }
+      s.stilKopyala(hucreAdi(kaynak, r), hucreAdi(hedef, r), o);
+      if (formulluSatirlar.indexOf(r) >= 0) { const f = o.formul(hucreAdi(kaynak, r)); if (f != null) s.yazFormul(hucreAdi(hedef, r), formulKaydir(f, 0, fark)); }
     }
     for (let r = t.ilkVeri; r <= t.sonVeri; r++) {
-      s.stilKopyala(hucreAdi(kaynak, r), hucreAdi(hedef, r));
-      if (y.veriFormulu) { const f = s.formul(hucreAdi(kaynak, r)); if (f != null) s.yazFormul(hucreAdi(hedef, r), formulKaydir(f, 0, fark)); }
+      s.stilKopyala(hucreAdi(kaynak, r), hucreAdi(hedef, r), o);
+      if (y.veriFormulu) { const f = o.formul(hucreAdi(kaynak, r)); if (f != null) s.yazFormul(hucreAdi(hedef, r), formulKaydir(f, 0, fark)); }
     }
   }
-  // 2) hücreler
+  // 1b) MALZ. LİSTESİ'ne eklenen satırların biçimi: grup başlığı ve kalem satırı örneklerinden
+  const M = sablon.malz;
+  if (M) {
+    const s = x.sayfa(M.sayfa), sonSutun = Math.max(...[M.kodSutunu, M.kaynakSutunu, M.pozSutunu, M.adSutunu, M.birimSutunu, M.teminSutunu, M.miktarSutunu, M.toplamSutunu || 'A', M.bayrakSutunu || 'A'].map(sutunNo));
+    for (const m of plan.malzSatirlari || []) {
+      const ornek = m.tur === 'grup' ? M.grupOrnekSatiri : M.kalemOrnekSatiri;
+      if (ornek && ornek !== m.satir) s.satirBicimKopyala(ornek, m.satir, sonSutun);
+    }
+  }
+  // 2) hücreler (null: hücre boşaltılır)
   for (const [ad, sp] of Object.entries(plan.sayfalar || {})) {
     const s = x.sayfa(ad);
     for (const [ref, deger] of Object.entries(sp.hucreler || {})) s.yaz(ref, deger);
@@ -270,11 +317,18 @@ export function planUygula(x, sablon, plan) {
  */
 export function planAyari(ayar, tablolar) {
   const a = ayar || {}, t = tablolar || {};
-  const poz = {};
-  for (const k of (t.kalemler && t.kalemler.kalemler) || []) if (k.pozNo) poz[k.cins + '|' + k.tanim] = k.pozNo;
+  const poz = {}, pozSade = {}, anaCinsler = {}, cinsAdlari = {};
+  // sade anahtar: boşluk (bölünmez boşluk da) ve büyük / küçük harf farkı yok (eklenti Katalog.Bul ile aynı; ilk kayıt kazanır)
+  const sade = (s) => String(s || '').replace(/\u00a0/g, ' ').replace(/\s+/g, '').toUpperCase().replace(/İ/g, 'I').replace(/ı/g, 'I');
+  for (const k of (t.kalemler && t.kalemler.kalemler) || []) {
+    if (k.pozNo) { poz[k.cins + '|' + k.tanim] = k.pozNo; const sk = k.cins + '|' + sade(k.tanim); if (!(sk in pozSade)) pozSade[sk] = k.pozNo; }
+    if (k.rol === 'ana') { const n = SH.bmNorm(k.tanim); (anaCinsler[n] = anaCinsler[n] || []).includes(k.cins) || anaCinsler[n].push(k.cins); }
+  }
+  for (const c of (t.kalemler && t.kalemler.cinsler) || []) if (c.cins && c.ad) cinsAdlari[c.cins] = c.ad;
   return {
     bolgeId: a.bolgeId || '', firma: a.firma || '', il: a.il || '', ilce: a.ilce || '', hakedisNo: a.hakedisNo != null ? a.hakedisNo : '',
-    katsayilar: SH.katsayiHazirla(t.katsayilar || null), eslesme: t.eslesme || {}, poz
+    katsayilar: SH.katsayiHazirla(t.katsayilar || null), eslesme: t.eslesme || {},
+    poz: (c, tn) => poz[c + '|' + tn] || pozSade[c + '|' + sade(tn)] || '', anaCinsler, cinsAdlari
   };
 }
 

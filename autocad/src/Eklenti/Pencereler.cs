@@ -2034,9 +2034,9 @@ namespace SebekeHakedis.Eklenti
                 var ilce = Koy(f, new MetinKutusu(a.Ilce ?? "", "İLÇESİ"), 420, 266, 188, 30);
                 Etiket(f, "Hakediş no", 16, 310);
                 var hak = Koy(f, new MetinKutusu(hakedisNo, "HAK_EDİŞ_NO"), 150, 304, 120, 30);
-                Koy(f, new BilgiCubugu(BilgiTuru.Bilgi, "Grup no, işin adı ve proje no bölgeden gelir. Şablonda olmayan malzemeler için ilgili sayfaya yeni sütun açılır " +
-                    "(MALZ. LİSTESİ'nin EK satırlarına bağlanır); EK satırı bitince kalanlar \"ŞABLONDA OLMAYAN\" sayfasına yazılır. " +
-                    "Dosya Excel'de açılınca formüller yeniden hesaplanır."), 16, 346, 592, 72);
+                Koy(f, new BilgiCubugu(BilgiTuru.Bilgi, "Grup no, işin adı ve proje no bölgeden gelir. Şablonun DİREK METRAJI sayfasında olmayan direk cinsleri (beton, " +
+                    "cıvatalı ENH…) aynı biçimde kendi sayfasına yazılır; şablonda olmayan malzemeler için ilgili sayfaya yeni sütun açılır ve " +
+                    "MALZ. LİSTESİ'ne sayfa başlığı altında normal satır eklenir. Dosya Excel'de açılınca formüller yeniden hesaplanır."), 16, 346, 592, 72);
                 alt.Tamam.Click += (s, e) =>
                 {
                     if (dosya.Checked && (string.IsNullOrEmpty(yol.Text) || !File.Exists(yol.Text.Trim()))) { Uyar("Şablon dosyasını seçin."); return; }
@@ -2070,17 +2070,24 @@ namespace SebekeHakedis.Eklenti
                 int Al(string k) { int v; return plan.Ozet.TryGetValue(k, out v) ? v : 0; }
                 Etiket(f, Al("eleman").ToString("N0", Tr) + " direk / eleman satırı · " + Al("iletkenSatiri").ToString("N0", Tr) + " açıklık · " + Al("yeraltiSatiri").ToString("N0", Tr) +
                     " yeraltı satırı · " + Al("eslesen").ToString("N0", Tr) + " malzeme şablon sütunuyla eşleşti · " + Al("yeniSutun").ToString("N0", Tr) + " yeni sütun" +
+                    (Al("kopyaSayfa") > 0 ? " · " + Al("kopyaSayfa").ToString("N0", Tr) + " direk sayfası" : "") +
                     (Al("fazla") > 0 ? " · " + Al("fazla").ToString("N0", Tr) + " malzeme şablona sığmadı" : ""), 16, 82, 688, KoyuYazi.Kucuk, KoyuRenk.Soluk);
                 var sb = new StringBuilder();
+                if (plan.KopyaSayfalar.Count > 0)
+                {
+                    sb.AppendLine("AÇILAN DİREK SAYFALARI (şablonun DİREK METRAJI sayfasında temsil edilmeyen cinsler; aynı biçimde kopya)");
+                    foreach (var k in plan.KopyaSayfalar) sb.AppendLine("  " + k.Ad + "  (" + k.Aile.Replace("|", " · ") + ")");
+                    sb.AppendLine();
+                }
                 if (plan.YeniSutunlar.Count > 0)
                 {
-                    sb.AppendLine("AÇILAN SÜTUNLAR (şablonda olmayan malzemeler; MALZ. LİSTESİ EK satırlarına bağlı)");
+                    sb.AppendLine("AÇILAN SÜTUNLAR (şablonda olmayan malzemeler; MALZ. LİSTESİ'nde sayfa başlığı altında normal satır)");
                     foreach (var y in plan.YeniSutunlar) sb.AppendLine("  " + y.Sayfa + " › " + XlsmDosyasi.SutunHarfi(y.SutunNo) + "  " + y.Kod + "  " + (y.Tip.Length > 0 ? y.Tip + " — " : "") + y.Ad + "  (" + y.Birim + (y.Poz.Length > 0 ? ", poz " + y.Poz : "") + ")");
                     sb.AppendLine();
                 }
                 if (plan.Fazlalar.Count > 0)
                 {
-                    sb.AppendLine("ŞABLONDA OLMAYAN sayfasına yazılanlar (EK satırı kalmadı)");
+                    sb.AppendLine("ŞABLONDA OLMAYAN sayfasına yazılanlar (sütun açılamadı)");
                     foreach (var x in plan.Fazlalar) sb.AppendLine("  " + x.Ad + ": " + SayiCoz.Temiz(x.Miktar, 3).ToString("N3", Tr) + " " + x.Birim + "  (" + string.Join(", ", x.Nereler.ToArray()) + ")");
                     sb.AppendLine();
                 }

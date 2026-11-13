@@ -563,14 +563,43 @@
   // Kural ortak/BIRLESIK-METRAJ.md'de; eklentideki Cekirdek/BirlesikMetraj.cs ile aynı. Ortak deneme:
   // ortak/deneme/birlesik-metraj.json. Girdi: eklenti biçiminde proje (projeOku), şablon tanımı (xlsm.js › sablonTanimi /
   // XlsmDosyasi.SablonTanimi), ayar { bolgeId, firma, il, ilce, hakedisNo, katsayilar (katsayiHazirla), eslesme (metraj-sablon.json),
-  // poz: (cins, tanim) → poz no }. Çıktı: { sayfalar: { ad: { hucreler: { "A18": deger }, gosterSatirlar, gizle } }, yeniSutunlar,
-  // ekSatirlar, listeEkle, fazla, uyarilar, ozet }. Değer: sayı → sayı, "=…" → formül, metin → metin. Yeni sütunların başlık
-  // hücreleri ve MALZ. LİSTESİ EK satırı formülleri de hücrelerdedir; biçim (stil, genişlik, bayrak / toplam / veri formülleri,
-  // satır gizleme, "ŞABLONDA OLMAYAN" sayfası) yazıcının işidir (xlsm.js › planUygula / XlsmDosyasi.PlanUygula).
+  // poz: (cins, tanim) → poz no, cinsAdlari: cins → okunur ad, anaCinsler: normalleştirilmiş tanım → [cins] (katalogun ana pozları) }.
+  // Çıktı: { sayfalar: { ad: { hucreler: { "A18": deger }, gosterSatirlar, gizle } }, kopyaSayfalar, yeniSutunlar, malzSatirlari,
+  // listeEkle, fazla, uyarilar, ozet }. Değer: sayı → sayı, "=…" → formül, metin → metin, null → hücre boşaltılır. Yeni sütunların
+  // başlık hücreleri ve MALZ. LİSTESİ'ne eklenen satırların formülleri de hücrelerdedir; biçim (stil, genişlik, bayrak / toplam /
+  // veri formülleri, satır gizleme, sayfa kopyalama, "ŞABLONDA OLMAYAN" sayfası) yazıcının işidir (xlsm.js › planUygula /
+  // XlsmDosyasi.PlanUygula).
+  // 13.11.2026 (kullanıcı kararı "cins başına ayrı sayfa"): şablonda temsil edilmeyen cinsten direkler DİREK METRAJI'nın
+  // kopyası olan kendi sayfasına yazılır ("DİREK AG BETON", "DİREK ENH GALV. KAYNAKLI RAVEN"…); şablonda olmayan her sütun
+  // (ana sayfada ya da kopyada) EK kodu yerine şablonun kendi KOD dizisiyle (Y175, D074…) açılır ve MALZ. LİSTESİ'ne
+  // normal satır olarak eklenir (EK KALEMLER bölümü kullanılmaz).
 
   const BM_BLOK_ADI = { Y: 'YENİ', D: 'DEMONTAJ', DM: 'DEMONTAJDAN MONTAJ', A: 'AKTARIM' };
   const BM_DURUM_YAZISI = { Y: 'YENİ', D: 'DM', DM: 'DM', A: 'AKTARIM' };
   const BM_SAYFA_SIRASI = ['direk', 'iletken', 'yeralti'];
+  /** ENH direk tipindeki iletken eki ("G-T-12 (sw)") → aile adı eki (İLETKEN METRAJI'ndaki tel kodlarıyla). */
+  const BM_ILETKEN_EKI = { SW: 'SWLL', RV: 'RAVEN', PG: 'PİGEON', HW: 'HAWK', PN: 'PANSY', RS: 'ROSE', AS: 'ASTER' };
+  /** Kopya sayfa adındaki kısaltmalar (Excel sayfa adı en çok 31 karakter). */
+  const BM_AD_KISALTMA = [[/\bGALVANİZ\b/g, 'GALV.'], [/\bAYDINLATMA\b/g, 'AYD.'], [/\bMÜŞTEREK\b/g, 'MÜŞ.']];
+  const bmBuyuk = (s) => str(s).replace(/i/g, 'İ').replace(/ı/g, 'I').toUpperCase();
+  /** Direğin aile anahtarı: cins + ENH tipindeki iletken eki ("ENH_DEMİR_GLV|SW"); eki olmayan tipte yalnız cins. */
+  function bmAile(cins, tip) {
+    const m = /\(\s*([A-Za-z]{2,3})\s*\)\s*$/.exec(str(tip).trim());
+    const ek = m ? m[1].toUpperCase().replace(/İ/g, 'I') : '';
+    return str(cins) + (ek ? '|' + ek : '');
+  }
+  /** Kopya sayfanın adı: "DİREK " + cinsin okunur adı (büyük; "DİREK" / "DİREĞİ" sözü atılır, kısaltmalar) + iletken eki; 31 karakter. */
+  function bmKopyaAdi(hangi, aile, cinsAdlari) {
+    const [cins, ek] = aile.split('|');
+    let ad = bmBuyuk((cinsAdlari && cinsAdlari[cins]) || cins.replace(/_/g, ' '));
+    ad = ad.replace(/\s+DİRE(K|Ğİ)(?=\s|$)/g, '').replace(/[\[\]:*?\/\\']/g, ' ').replace(/\s+/g, ' ').trim();
+    for (const [re, kisa] of BM_AD_KISALTMA) ad = ad.replace(re, kisa);
+    let tam = (hangi === 'direk' ? 'DİREK ' : hangi === 'iletken' ? 'İLETKEN ' : 'YERALTI ') + ad + (ek ? ' ' + (BM_ILETKEN_EKI[ek] || ek) : '');
+    if (tam.length > 31) tam = tam.slice(0, 31).trim();
+    return tam;
+  }
+  /** Formülde sayfa adı: tek tırnakla, içindeki tırnak ikilenir. */
+  const bmSayfaRef = (ad) => "'" + str(ad).replace(/'/g, "''") + "'";
 
   /** Karşılaştırma için ad normalleştirme (iki platformda aynı): büyük harf (i → I), '' → ", boşluk / çarpı sadeleşir. */
   function bmNorm(s) {
@@ -680,11 +709,13 @@
     const esKalemler = es.kalemler || {};
     const kat = a.katsayilar || katsayiHazirla(null);
     const pozAl = typeof a.poz === 'function' ? a.poz : (c, t) => str(a.poz && a.poz[c + '|' + t]);
-    const uyarilar = [], listeEkle = [], yeniSutunlar = [], ekKullanilan = [], fazla = [];
-    const ozet = { eleman: 0, iletkenSatiri: 0, yeraltiSatiri: 0, eslesen: 0, yeniSutun: 0, fazla: 0, atlanan: 0 };
+    const uyarilar = [], listeEkle = [], yeniSutunlar = [], fazla = [], malzSatirlari = [];
+    const ozet = { eleman: 0, iletkenSatiri: 0, yeraltiSatiri: 0, eslesen: 0, yeniSutun: 0, kopyaSayfa: 0, fazla: 0, atlanan: 0 };
     const sayfalar = {};
     const sayfa = (ad) => (sayfalar[ad] = sayfalar[ad] || { hucreler: {}, gosterSatirlar: [], gizle: null });
     const yaz = (ad, ref, deger) => { if (deger !== undefined && deger !== null && deger !== '') sayfa(ad).hucreler[ref] = deger; };
+    const basliklar = {};   // DİREK başlık hücreleri (il, ilçe…): kopya sayfalara da yazılır
+    const baslikYaz = (ad, ref, deger) => { yaz(ad, ref, deger); if (deger !== undefined && deger !== null && deger !== '') basliklar[ref] = deger; };
     const topla = (ad, ref, m) => { const h = sayfa(ad).hucreler; h[ref] = temiz((typeof h[ref] === 'number' ? h[ref] : 0) + m, 3); };
     const bolgeSuz = (o) => !a.bolgeId || str(o.bolge) === str(a.bolgeId);
     const elemanlar = (p.elemanlar || []).filter(bolgeSuz), hatlar = (p.hatlar || []).filter(bolgeSuz), kanallar = (p.kanallar || []).filter(bolgeSuz);
@@ -697,18 +728,35 @@
     // ---- şablon sayfaları ve yeni sütun yönetimi
     const T = { direk: sablon.direk || null, iletken: sablon.iletken || null, yeralti: sablon.yeralti || null };
     const ONEK = { direk: 'DM', iletken: 'IM', yeralti: 'YM' };
-    const sonSutun = {};
-    for (const h of BM_SAYFA_SIRASI) sonSutun[h] = T[h] ? T[h].sonSutun : 0;
-    const kullanilan = new Set(sablon.kullanilanKodlar || []);
-    const ekSatirlar = ((sablon.malz && sablon.malz.ekSatirlari) || []).filter((e) => !kullanilan.has(e.kod));
-    let ekSira = 0;
+    /** Hedef sayfa tanımları: ana sayfalar + kopyalar; { hangi, sayfa, kaynak (ana tanım; ana sayfada null), sutunlar, sonSutun }. */
+    const hedefler = [];
+    for (const h of BM_SAYFA_SIRASI) if (T[h]) hedefler.push({ hangi: h, sayfa: T[h].sayfa, kaynak: null, tanim: T[h], sutunlar: T[h].sutunlar, sonSutun: T[h].sonSutun });
+    const hedefBul = (ad) => hedefler.find((x) => x.sayfa === ad) || null;
+    const kopyaSayfalar = [];
+    const cinsAdlari = a.cinsAdlari || {};
+    /** Kopya sayfa (yoksa açılır): kaynak sayfanın biçimiyle, KOD sütunları boş. Başlık (il, ilçe…) hücreleri kopyada da yazılır. */
+    function kopyaSayfa(hangi, aile) {
+      const ana = T[hangi];
+      const ad = bmKopyaAdi(hangi, aile, cinsAdlari);
+      let k = hedefBul(ad);
+      if (k) return k;
+      k = { hangi, sayfa: ad, kaynak: ana, tanim: ana, sutunlar: [], sonSutun: ana.ilkKodSutunu - 1 };
+      hedefler.push(k);
+      kopyaSayfalar.push({ ad, kaynak: ana.sayfa, hangi, aile });
+      if (hangi === 'direk') for (const [ref, deger] of Object.entries(basliklar)) yaz(ad, ref, deger);
+      return k;
+    }
+    // KOD dizisi: şablonun blok önekli numaraları sürer (Y001… → Y175…, D074…, DM072…, A017…)
+    const kodSayac = {};
+    for (const k of sablon.kullanilanKodlar || []) { const m = /^(DM|Y|D|A)(\d+)$/i.exec(str(k).trim()); if (m) { const pre = m[1].toUpperCase(); kodSayac[pre] = Math.max(kodSayac[pre] || 0, +m[2]); } }
+    const kodUret = (blok) => { const n = (kodSayac[blok] || 0) + 1; kodSayac[blok] = n; return blok + String(n).padStart(3, '0'); };
     const listeler = sablon.listeler || {};
     const listeSayac = {};
     /**
      * KATSAYILAR'daki seçim listesine değer ekler (varsa eklemez). Şablonun listeleri TİP satırlarından formülle dolar;
      * yeni sütunun KOD'u blok önekiyle yazıldığından direk listeleri kendiliğinden güncellenir. Buraya yalnız formülün
-     * kapsamadığı değerler gelir: İLETKEN'de DM / AKTARIM bloğunda açılan tel ya da kablo (listeler YENİ bloğundan dolar)
-     * ve elle doldurulan Box listesi.
+     * kapsamadığı değerler gelir: İLETKEN'de DM / AKTARIM bloğunda açılan tel ya da kablo (listeler YENİ bloğundan dolar),
+     * kopya sayfalardaki direk tipleri (listeler yalnız ana sayfadan dolar) ve elle doldurulan Box listesi.
      */
     function listeyeEkle(liste, deger) {
       const l = listeler[liste];
@@ -723,53 +771,38 @@
       yaz(l.sayfa, l.sutun + satir, deger);
     }
     /**
-     * Bloğa yeni sütun açar (aynı anahtarla önce açılmışsa onu döner). EK satırı kalmadıysa null döner.
-     * bilgi: { tip, poz, ad, temin, birim, veriFormulu, kaynak }.
+     * Hedef sayfada bloğa yeni sütun açar (aynı anahtarla önce açılmışsa onu döner). bilgi: { tip, poz, ad, temin, birim,
+     * grup, veriFormulu, kaynak }. Biçim ve formüller örnek sütundan (ana sayfanın bloğundaki son sütun; tip sütunu
+     * açılıyorsa son tip sütunu) kopyalanır: kopya sayfada da örnek ana sayfadadır (ornekSayfa).
      */
-    function yeniSutun(hangi, blok, anahtar, bilgi) {
-      const t = T[hangi];
-      const var_ = yeniSutunlar.find((y) => y.hangi === hangi && y.blok === blok && y.anahtar === anahtar);
+    function yeniSutun(h, blok, anahtar, bilgi) {
+      const var_ = yeniSutunlar.find((y) => y.sayfa === h.sayfa && y.blok === blok && y.anahtar === anahtar);
       if (var_) return var_;
-      if (ekSira >= ekSatirlar.length) return null;
-      const ek = ekSatirlar[ekSira++];
-      const sutun = ++sonSutun[hangi];
-      const ters = [...t.sutunlar].reverse();
-      const ornek = (bilgi.veriFormulu && hangi === 'direk' ? ters.find((x) => x.blok === blok && x.tip) : null) || ters.find((x) => x.blok === blok) || ters[0] || null;
-      // KOD: blok öneki + EK kodu ("YE001", "DE002", "DME003", "AE004"): şablonun blok süzgeçleri (seçim listeleri,
-      // LEFT(KOD,1)="Y" gibi) yeni sütunu kendi bloğunda sayar; MALZ. LİSTESİ'ndeki EK satırının kodu da aynı yazılır.
-      const kod = blok + ek.kod;
+      const t = h.tanim;
+      const sutun = ++h.sonSutun;
+      const ornekler = (h.kaynak || t).sutunlar, ters = [...ornekler].reverse();
+      const ornek = (bilgi.veriFormulu && h.hangi === 'direk' ? ters.find((x) => x.blok === blok && x.tip) : null) || ters.find((x) => x.blok === blok) || ters[0] || null;
+      const kod = kodUret(blok);
       const y = {
-        hangi, sayfa: t.sayfa, blok, anahtar, sutun, kod, ekKodu: ek.kod, ekSatiri: ek.satir, ornekSutun: ornek ? ornek.sutun : null,
+        hangi: h.hangi, sayfa: h.sayfa, ornekSayfa: (h.kaynak || t).sayfa, blok, anahtar, sutun, kod, ornekSutun: ornek ? ornek.sutun : null,
         tip: str(bilgi.tip), poz: str(bilgi.poz), ad: str(bilgi.ad), temin: str(bilgi.temin), birim: str(bilgi.birim) || 'ad.',
-        grup: (BM_BLOK_ADI[blok] || blok) + '\nEK (Şebeke-M)', veriFormulu: !!bilgi.veriFormulu, kaynak: bilgi.kaynak || null
+        grup: (BM_BLOK_ADI[blok] || blok) + '\n' + (str(bilgi.grup) || 'ŞEBEKE-M'), veriFormulu: !!bilgi.veriFormulu, kaynak: bilgi.kaynak || null
       };
       yeniSutunlar.push(y);
-      ekKullanilan.push({ satir: ek.satir, kod, ekKodu: ek.kod, hangi, blok, ad: y.ad });
-      const S = sutunHarfiBM(sutun), h = sayfa(t.sayfa).hucreler;
-      h[S + t.kodSatiri] = y.kod;
-      if (t.tipSatiri && y.tip) h[S + t.tipSatiri] = y.tip;
-      if (t.durumSatiri) h[S + t.durumSatiri] = BM_DURUM_YAZISI[blok] || blok;
-      if (t.grupSatiri) h[S + t.grupSatiri] = y.grup;
-      if (y.poz) h[S + t.pozSatiri] = y.poz;
-      h[S + t.adSatiri] = y.ad;
-      if (y.temin) h[S + t.teminSatiri] = y.temin;
-      h[S + t.birimSatiri] = y.birim;
-      // MALZ. LİSTESİ EK satırı: bloğun satırlarındaki formüllerle aynı (temin: Y bloğunda metrajdan, ötekilerde 'Y' sabiti)
-      const m = sablon.malz;
-      if (m) {
-        const mh = sayfa(m.sayfa).hucreler, r = ek.satir, I = '$' + m.kaynakSutunu + r, ON = ONEK[hangi];
-        mh[m.kodSutunu + r] = kod;
-        mh[m.pozSutunu + r] = '=IF(' + I + '="","",INDEX(' + ON + '_POZ_SATIRI,' + I + ')&"")';
-        mh[m.adSutunu + r] = '=IF(' + I + '="","",TRIM(INDEX(' + ON + '_AD_SATIRI,' + I + ')&IFERROR(VLOOKUP(INDEX(' + ON + '_SEC_SATIRI,' + I + '),SECIM_EK,2,FALSE),"")))';
-        mh[m.birimSutunu + r] = '=IF(' + I + '="","",INDEX(' + ON + '_BIRIM_SATIRI,' + I + ')&"")';
-        mh[m.teminSutunu + r] = blok === 'Y' ? '=IF(' + I + '="","",INDEX(' + ON + '_SEC_SATIRI,' + I + ')&"")' : 'Y';
-        // miktar: İLETKEN'de "MALZ. LİSTESİNE AKTARILAN" satırı (DM: hurda = demontaj − aktarım), ötekilerde TOPLAM satırı
-        mh[m.miktarSutunu + r] = '=IF(' + I + '="",0,N(INDEX(' + (t.malzSatiri ? ON + '_MALZ_SATIRI' : ON + '_TOPLAM_SATIRI') + ',' + I + ')))';
-        mh[m.kaynakSutunu + r] = '=IFERROR(MATCH($' + m.kodSutunu + r + ',' + ON + '_KOD_SATIRI,0),"")';
-      }
+      h.sutunlar = h.sutunlar === t.sutunlar ? [...t.sutunlar] : h.sutunlar;   // ana tanımın listesi değişmesin
+      h.sutunlar.push({ sutun, kod, blok, tip: y.tip || null, poz: y.poz, ad: y.ad, temin: y.temin, birim: y.birim, grup: y.grup, formullu: y.veriFormulu, yeni: true });
+      const S = sutunHarfiBM(sutun), hc = sayfa(h.sayfa).hucreler;
+      hc[S + t.kodSatiri] = y.kod;
+      if (t.tipSatiri && y.tip) hc[S + t.tipSatiri] = y.tip;
+      if (t.durumSatiri) hc[S + t.durumSatiri] = BM_DURUM_YAZISI[blok] || blok;
+      if (t.grupSatiri) hc[S + t.grupSatiri] = y.grup;
+      if (y.poz) hc[S + t.pozSatiri] = y.poz;
+      hc[S + t.adSatiri] = y.ad;
+      if (y.temin) hc[S + t.teminSatiri] = y.temin;
+      hc[S + t.birimSatiri] = y.birim;
       return y;
     }
-    /** EK satırı kalmayınca: malzeme "ŞABLONDA OLMAYAN" listesine toplanır. */
+    /** Yazılamayan malzeme (yeni sütun açılamadı): "ŞABLONDA OLMAYAN" listesine toplanır. */
     function fazlaya(hangi, blok, anahtar, bilgi, miktar, kim) {
       let f = fazla.find((x) => x.hangi === hangi && x.blok === blok && x.anahtar === anahtar);
       if (!f) { f = { hangi, blok, anahtar, ad: str(bilgi.ad), poz: str(bilgi.poz), birim: str(bilgi.birim) || 'ad.', miktar: 0, nereler: [] }; fazla.push(f); }
@@ -777,25 +810,31 @@
       if (kim && f.nereler.indexOf(kim) < 0) f.nereler.push(kim);
       return f;
     }
-    /** Sütun bulur ya da açar; miktarı yazar. Dönüş: bulunan / açılan sütun no (fazlaya gittiyse 0). */
-    function malzemeYaz(hangi, blok, k, r, kim) {
-      const t = T[hangi];
-      let s = sutunBul(t, blok, k), birim;
-      if (s) { ozet.eslesen++; birim = s.birim; }
+    /**
+     * Sütun bulur ya da açar; miktarı yazar. Kopya sayfada sütun yoksa önce ana sayfanın sütunu aranır: varsa aynı başlıkla
+     * (poz, ad, temin, birim) açılır, yoksa kalemin bilgileriyle. Dönüş: bulunan / açılan sütun no (fazlaya gittiyse 0).
+     */
+    function malzemeYaz(h, blok, k, r, kim) {
+      let s = sutunBul(h.sutunlar, blok, k), birim;
+      if (s) { if (!s.yeni) ozet.eslesen++; birim = s.birim; }
       else {
-        const bilgi = { poz: pozYap(k, blok), ad: str(k.tanim), temin: temin(k, blok), birim: bmBirim(k.birim), kaynak: { cins: str(k.cins), tanim: str(k.tanim) } };
-        const y = yeniSutun(hangi, blok, 'AD|' + bmNorm(k.tanim), bilgi);
-        if (!y) { fazlaya(hangi, blok, 'AD|' + bmNorm(k.tanim), bilgi, bmMiktar(k, bilgi.birim), kim); return 0; }
+        const anaS = h.kaynak ? sutunBul(h.kaynak.sutunlar, blok, k) : null;
+        const bilgi = anaS
+          ? { tip: anaS.tip, poz: anaS.poz, ad: anaS.ad, temin: anaS.temin, birim: anaS.birim, grup: 'MALZEMELER', kaynak: { cins: str(k.cins), tanim: str(k.tanim) } }
+          : { poz: pozYap(k, blok), ad: str(k.tanim), temin: temin(k, blok), birim: bmBirim(k.birim), grup: 'MALZEMELER', kaynak: { cins: str(k.cins), tanim: str(k.tanim) } };
+        if (anaS) ozet.eslesen++;
+        const y = yeniSutun(h, blok, 'AD|' + bmNorm(k.tanim), bilgi);
+        if (!y) { fazlaya(h.hangi, blok, 'AD|' + bmNorm(k.tanim), bilgi, bmMiktar(k, bilgi.birim), kim); return 0; }
         s = y; birim = y.birim;
       }
-      topla(t.sayfa, sutunHarfiBM(s.sutun) + r, bmMiktar(k, birim));
+      topla(h.sayfa, sutunHarfiBM(s.sutun) + r, bmMiktar(k, birim));
       return s.sutun;
     }
-    /** Şablonda kalemi karşılayan sütun: TİP = tanım; AD = tanım; eşleşme tablosu; AD "tanım " ile başlar (tanımda rakam / tire varsa). */
-    function sutunBul(t, blok, k) {
+    /** Sütun listesinde kalemi karşılayan sütun: TİP = tanım; AD = tanım; eşleşme tablosu; AD "tanım " ile başlar (tanımda rakam / tire varsa). */
+    function sutunBul(sutunlar, blok, k) {
       const tanim = bmNorm(k.tanim), e = esl(k);
       const adlar = e && e.adlar ? e.adlar.map(bmNorm) : [];
-      const aday = t.sutunlar.filter((x) => x.blok === blok);
+      const aday = sutunlar.filter((x) => x.blok === blok);
       let b = aday.find((x) => x.tip && bmNorm(x.tip) === tanim);
       if (b) return b;
       b = aday.find((x) => bmNorm(x.ad) === tanim);
@@ -804,8 +843,33 @@
       if (/[\d-]/.test(tanim)) { b = aday.find((x) => bmNorm(x.ad).startsWith(tanim + ' ')); if (b) return b; }
       return null;
     }
+    /**
+     * Direğin cinsi ana DİREK sayfasında temsil ediliyor mu: şablonun TİP satırındaki bir tip o cinsin katalogdaki ana
+     * pozlarından (anaCinsler) ya da eşleşme tablosundaki "tip" takma adından biriyse; ya da eşleşme tablosunun
+     * anaSayfaAileleri listesindeyse (ör. ENH_DEMİR_GLV|SW: şablondaki G-N12 / G-T25 kataloga uymaz). Temsil edilmeyen
+     * cinsin direkleri kendi kopya sayfasına yazılır (kullanıcı kararı 13.11.2026).
+     */
+    const temsilOnbellek = {};
+    function cinsTemsilEdiliyor(aile) {
+      if (aile in temsilOnbellek) return temsilOnbellek[aile];
+      const D0 = T.direk;
+      const [cins, ek] = aile.split('|');
+      let var_ = ((es.anaSayfaAileleri || []).some((x) => str(x) === aile || (str(x) === cins && !ek)));
+      if (!var_ && D0) {
+        const tipler = D0.sutunlar.filter((x) => x.tip).map((x) => bmNorm(x.tip));
+        const anaCinsler = a.anaCinsler || {};
+        var_ = tipler.some((tn) => (anaCinsler[tn] || []).indexOf(cins) >= 0);
+        if (!var_) for (const [anahtar, deger] of Object.entries(esKalemler)) {
+          if (!deger || !deger.tip || anahtar.indexOf('|') < 0 || anahtar.split('|')[0] !== cins) continue;
+          if (tipler.indexOf(bmNorm(deger.tip)) >= 0) { var_ = true; break; }
+        }
+      }
+      temsilOnbellek[aile] = var_;
+      return var_;
+    }
     const satirGoster = (ad, r) => { const s = sayfa(ad); if (s.gosterSatirlar.indexOf(r) < 0) s.gosterSatirlar.push(r); };
     const bitir = (ad, t, r) => { const s = sayfa(ad); for (let i = r; i <= Math.min(r + 1, t.sonVeri); i++) satirGoster(ad, i); s.gizle = r + 2 <= t.sonVeri ? [r + 2, t.sonVeri] : null; };
+    const sil = (ad, ref) => { sayfa(ad).hucreler[ref] = null; };
 
     // ---- yardımcılar
     const ustTur = (o) => str(o.tur).replace(/İ/g, 'I').toUpperCase();
@@ -827,28 +891,43 @@
     const D = T.direk;
     if (D) {
       const ad = D.sayfa, sb = D.sabit, b = D.baslik || {};
-      if (b.il && a.il) yaz(ad, b.il, str(a.il));
-      if (b.ilce && a.ilce) yaz(ad, b.ilce, str(a.ilce));
-      if (b.grupNo && bolge) yaz(ad, b.grupNo, str(bolge.grup) || str(bolge.kod));
-      if (b.isinAdi) yaz(ad, b.isinAdi, bolge ? str(bolge.ad) : str(p.proje && p.proje.ad));
-      if (b.projeNo && bolge) yaz(ad, b.projeNo, str(bolge.kod));
-      if (b.yuklenici && a.firma) yaz(ad, b.yuklenici, str(a.firma));
-      if (b.hakedisNo) yaz(ad, b.hakedisNo, hakedisNo);
+      if (b.il && a.il) baslikYaz(ad, b.il, str(a.il));
+      if (b.ilce && a.ilce) baslikYaz(ad, b.ilce, str(a.ilce));
+      if (b.grupNo && bolge) baslikYaz(ad, b.grupNo, str(bolge.grup) || str(bolge.kod));
+      if (b.isinAdi) baslikYaz(ad, b.isinAdi, bolge ? str(bolge.ad) : str(p.proje && p.proje.ad));
+      if (b.projeNo && bolge) baslikYaz(ad, b.projeNo, str(bolge.kod));
+      if (b.yuklenici && a.firma) baslikYaz(ad, b.yuklenici, str(a.firma));
+      if (b.hakedisNo) baslikYaz(ad, b.hakedisNo, hakedisNo);
       const sira = elemanlar.filter((e) => direkMi(e) || (e.kalemler || []).length).filter((e) => bmBlok(e.durum) !== null)
         .sort((x, y) => bmDogalSira(x.gisId, y.gisId));
       const kapasite = D.sonVeri - D.ilkVeri + 1;
-      if (sira.length > kapasite) throw new Error('Şablonun ' + ad + ' sayfası ' + kapasite + ' satır alır; projede ' + sira.length + ' eleman var. Projeyi bölgelere bölün.');
-      let r = D.ilkVeri;
+      // Her eleman kendi hedef sayfasına: temsil edilmeyen cinsten direk kopya sayfaya (ilk görüldüğü sırayla açılır)
+      const hedefSira = [hedefBul(ad)];   // hedefler yazılış sırasıyla (ana sayfa her zaman ilk)
+      const satirlar = new Map([[ad, D.ilkVeri]]);
+      const hedefi = (e) => {
+        const ana = (e.kalemler || []).find((k) => k.ana) || null;
+        const tip = str(e.tip || (ana && ana.tanim));
+        if (!direkMi(e)) return hedefBul(ad);
+        const aile = bmAile(e.cins, tip);
+        return cinsTemsilEdiliyor(aile) ? hedefBul(ad) : kopyaSayfa('direk', aile);
+      };
+      for (const e of sira) { const h = hedefi(e); if (!satirlar.has(h.sayfa)) { satirlar.set(h.sayfa, D.ilkVeri); hedefSira.push(h); } }
+      for (const h of hedefSira) {
+        const sayi = sira.filter((e) => hedefi(e).sayfa === h.sayfa).length;
+        if (sayi > kapasite) throw new Error('Şablonun ' + h.sayfa + ' sayfası ' + kapasite + ' satır alır; projede ' + sayi + ' eleman var. Projeyi bölgelere bölün.');
+      }
       for (const e of sira) {
+        const h = hedefi(e), hs = h.sayfa;
+        const r = satirlar.get(hs);
         const blok = bmBlok(e.durum), direk = direkMi(e);
         const no = str(e.gisId);
-        satirGoster(ad, r);
-        yaz(ad, sb.no + r, no);
+        satirGoster(hs, r);
+        yaz(hs, sb.no + r, no);
         const ana = (e.kalemler || []).find((k) => k.ana) || null;
         if (direk) {
           const tip = str(e.tip || (ana && ana.tanim));
           const anaK = ana || { cins: e.cins, tanim: tip, durum: e.durum };
-          if (blok === 'MEVCUT') yaz(ad, sb.mevcut + r, tip);
+          if (blok === 'MEVCUT') yaz(hs, sb.mevcut + r, tip);
           else {
             let harf = '';
             if (blok === 'D') {
@@ -858,17 +937,22 @@
             }
             const e2 = esl(anaK), adaylar = [bmNorm(tip)];
             if (e2 && e2.tip) adaylar.push(bmNorm(e2.tip));
-            let s = D.sutunlar.find((x) => x.blok === blok && x.tip && adaylar.indexOf(bmNorm(x.tip)) >= 0 && (blok !== 'D' || bmNorm(x.temin).startsWith(harf)));
+            let s = h.sutunlar.find((x) => x.blok === blok && x.tip && adaylar.indexOf(bmNorm(x.tip)) >= 0 && (blok !== 'D' || bmNorm(x.temin).startsWith(harf)));
             let tipYazisi = s ? str(s.tip) : (e2 && e2.tip) || tip;
-            if (s) ozet.eslesen++;
+            if (s) { if (!s.yeni) ozet.eslesen++; }
             else {
-              const bilgi = { tip: tipYazisi, poz: pozYap(anaK, blok), ad: tipYazisi + ' ' + (/AĞAÇ|AGAC/.test(str(e.cins).toUpperCase()) ? 'Ağaç Direk' : /BETON/.test(str(e.cins).toUpperCase()) ? 'Beton Direk' : 'Demir Direk'),
-                temin: blok === 'D' ? (harf === 'S' ? 'Sökük' : 'Kesik') : blok === 'DM' ? 'Sökük' : temin(anaK, 'Y'), birim: 'ad.', veriFormulu: true, kaynak: { cins: str(e.cins), tanim: tip } };
-              const y = yeniSutun('direk', blok, 'TIP|' + bmNorm(tipYazisi) + (blok === 'D' ? '|' + harf : ''), bilgi);
-              if (!y) { fazlaya('direk', blok, 'TIP|' + bmNorm(tipYazisi), bilgi, 1, no); uyarilar.push(no + ': direk tipi "' + tip + '" şablonda yok ve EK satırı kalmadı.'); }
+              const cinsUst = str(e.cins).toUpperCase();
+              const cinsAdi = str(cinsAdlari[str(e.cins)]) || (/AĞAÇ|AGAC/.test(cinsUst) ? 'Ağaç Direk' : /BETON/.test(cinsUst) ? 'Beton Direk' : 'Demir Direk');
+              const bilgi = { tip: tipYazisi, poz: pozYap(anaK, blok), ad: tipYazisi + ' ' + cinsAdi.replace(/^(AG|OG|ENH|MÜŞTEREK|Müşterek)\s+/i, ''),
+                temin: blok === 'D' ? (harf === 'S' ? 'Sökük' : 'Kesik') : blok === 'DM' ? 'Sökük' : temin(anaK, 'Y'), birim: 'ad.', grup: bmBuyuk(cinsAdi).replace(/\s+DİRE(K|Ğİ)$/, '') + ' DİREKLER',
+                veriFormulu: true, kaynak: { cins: str(e.cins), tanim: tip } };
+              const y = yeniSutun(h, blok, 'TIP|' + bmNorm(tipYazisi) + (blok === 'D' ? '|' + harf : ''), bilgi);
+              if (!y) { fazlaya('direk', blok, 'TIP|' + bmNorm(tipYazisi), bilgi, 1, no); uyarilar.push(no + ': direk tipi "' + tip + '" için sütun açılamadı.'); }
+              // kopya sayfanın tipleri KATSAYILAR listelerine (listeler yalnız ana sayfadan formülle dolar)
+              else if (h.kaynak) listeyeEkle(blok === 'Y' ? 'yeniDirek' : blok === 'D' ? 'demontaj' : 'dmontaj', blok === 'D' ? tipYazisi + ' (' + harf + ')' : tipYazisi);
             }
             const secim = blok === 'D' ? tipYazisi + ' (' + harf + ')' : tipYazisi;
-            yaz(ad, (blok === 'Y' ? sb.yeni : blok === 'D' ? sb.demontaj : sb.dmm) + r, secim);
+            yaz(hs, (blok === 'Y' ? sb.yeni : blok === 'D' ? sb.demontaj : sb.dmm) + r, secim);
           }
         }
         // malzemeler: her kalem kendi durumuyla (mevcut direğe yeni armatür gibi)
@@ -877,15 +961,15 @@
           if (k.ana && direk) continue;
           const kb = bmBlok(str(k.durum) || str(e.durum));
           if (kb === null || kb === 'MEVCUT') continue;
-          const s = malzemeYaz('direk', kb, k, r, no);
+          const s = malzemeYaz(h, kb, k, r, no);
           if (s) yazilan.add(s);
         }
         // programın sayısı olmayan formüllü malzeme sütunları (direk tipi sütunları hariç) → 0 (programın malzemesi esas)
-        for (const x of D.sutunlar) if (!x.tip && x.formullu && !yazilan.has(x.sutun)) sayfa(ad).hucreler[sutunHarfiBM(x.sutun) + r] = 0;
-        r++;
+        for (const x of h.sutunlar) if (!x.tip && x.formullu && !x.yeni && !yazilan.has(x.sutun)) sayfa(hs).hucreler[sutunHarfiBM(x.sutun) + r] = 0;
+        satirlar.set(hs, r + 1);
         ozet.eleman++;
       }
-      bitir(ad, D, r);
+      for (const h of hedefSira) bitir(h.sayfa, D, satirlar.get(h.sayfa));
     }
 
     // ======================= İLETKEN METRAJI
@@ -902,9 +986,9 @@
         const s = I.sutunlar.find((x) => x.blok === blok && str(x.birim).toLowerCase().startsWith('kg') && bmIlkSozcuk(x.ad) === n);
         if (s) { ozet.eslesen++; return str(s.tip); }
         const pozKok = og ? '9.3.1' : '9.2.1';
-        const bilgi = { tip: telAdi, poz: bmPoz(pozKok, blok), ad: telAdi + (kgM ? ' (' + temiz(kgM * 1000, 2) + ' Kg/Km)' : ''), temin: blok === 'Y' ? 'Ş' : '', birim: 'kg', veriFormulu: true, kaynak: { cins: og ? 'OG_İLETKEN' : 'AG_İLETKEN', tanim: telAdi } };
-        const y = yeniSutun('iletken', blok, 'TEL|' + n, bilgi);
-        if (!y) { fazlaya('iletken', blok, 'TEL|' + n, bilgi, temiz(metraj * adet * kgM, 3), kim); uyarilar.push(kim + ': iletken "' + telAdi + '" için sütun açılamadı (EK satırı kalmadı).'); return null; }
+        const bilgi = { tip: telAdi, poz: bmPoz(pozKok, blok), ad: telAdi + (kgM ? ' (' + temiz(kgM * 1000, 2) + ' Kg/Km)' : ''), temin: blok === 'Y' ? 'Ş' : '', birim: 'kg', grup: 'İLETKENLER', veriFormulu: true, kaynak: { cins: og ? 'OG_İLETKEN' : 'AG_İLETKEN', tanim: telAdi } };
+        const y = yeniSutun(hedefBul(ad), blok, 'TEL|' + n, bilgi);
+        if (!y) { fazlaya('iletken', blok, 'TEL|' + n, bilgi, temiz(metraj * adet * kgM, 3), kim); uyarilar.push(kim + ': iletken "' + telAdi + '" için sütun açılamadı.'); return null; }
         if (blok !== 'Y' && !I.sutunlar.some((x) => x.blok === 'Y' && x.tip && bmNorm(x.tip) === n)) listeyeEkle('imIletken', telAdi);
         return telAdi;
       };
@@ -916,9 +1000,9 @@
         if (!s && /ALPEK|AER/.test(tanim)) s = I.sutunlar.find((x) => x.blok === blok && x.tip && /AER/.test(bmNorm(x.tip)) && bmIlkSozcuk(x.tip) === kok);
         if (s) { ozet.eslesen++; return str(s.tip); }
         const adi = (e && e.tip) || (/ALPEK/.test(tanim) ? kok.toLowerCase() + ' AER Kablo' : str(k.tanim));
-        const bilgi = { tip: adi, poz: pozYap(k, blok) || bmPoz('9.5.1', blok), ad: adi, temin: temin(k, blok), birim: 'mt.', veriFormulu: true, kaynak: { cins: str(k.cins), tanim: str(k.tanim) } };
-        const y = yeniSutun('iletken', blok, 'KABLO|' + bmNorm(adi), bilgi);
-        if (!y) { fazlaya('iletken', blok, 'KABLO|' + bmNorm(adi), bilgi, temiz(metraj * adet, 3), kim); uyarilar.push(kim + ': "' + k.tanim + '" için sütun açılamadı (EK satırı kalmadı).'); return null; }
+        const bilgi = { tip: adi, poz: pozYap(k, blok) || bmPoz('9.5.1', blok), ad: adi, temin: temin(k, blok), birim: 'mt.', grup: 'KABLOLAR', veriFormulu: true, kaynak: { cins: str(k.cins), tanim: str(k.tanim) } };
+        const y = yeniSutun(hedefBul(ad), blok, 'KABLO|' + bmNorm(adi), bilgi);
+        if (!y) { fazlaya('iletken', blok, 'KABLO|' + bmNorm(adi), bilgi, temiz(metraj * adet, 3), kim); uyarilar.push(kim + ': "' + k.tanim + '" için sütun açılamadı.'); return null; }
         if (blok !== 'Y' && !I.sutunlar.some((x) => x.blok === 'Y' && x.tip && bmNorm(x.tip) === bmNorm(adi))) listeyeEkle('imAer', adi);
         return adi;
       };
@@ -1024,17 +1108,17 @@
           const dolguAdi = dolgu === 'TOPRAK' ? 'Toprak' : dolgu === 'MICIR' ? 'Mıcır Dolgulu' : 'Tuvanen Dolgulu';
           const adi = ozel ? (z.cins === 'BRANŞMAN KANAL' ? 'Branşman Kablo Kanalı Yapılması' : 'Kablo Demontaj Kanalı Açılması')
             : kaplamaAdi + dolguAdi + ' Kablo Kanalı Yapılması' + (kaplama === 'KAPLAMASIZ' ? ' - Kaplamasız' : '') + (z.bariyerli ? ' (Bariyerli)' : '') + (z.trencher ? ' (Trencher)' : '');
-          const bilgi = { poz: pozYap(kalem, blok) || bmPoz('32.12.1', blok), ad: adi, temin: blok === 'Y' ? 'Y' : '', birim: 'm3', kaynak: { cins: str(kalem.cins), tanim: str(kalem.tanim) } };
+          const bilgi = { poz: pozYap(kalem, blok) || bmPoz('32.12.1', blok), ad: adi, temin: blok === 'Y' ? 'Y' : '', birim: 'm3', grup: 'KANALLAR', kaynak: { cins: str(kalem.cins), tanim: str(kalem.tanim) } };
           const anahtar = 'KANAL|' + bmNorm(adi);
-          const y = yeniSutun('yeralti', blok, anahtar, bilgi);
+          const y = yeniSutun(hedefBul(ad), blok, anahtar, bilgi);
           if (y) yaz(ad, sutunHarfiBM(y.sutun) + r, hacim);
-          else { fazlaya('yeralti', blok, anahtar, bilgi, hacim, kim); uyarilar.push(kim + ': kanal türü "' + adi + '" şablonda yok ve EK satırı kalmadı.'); }
+          else { fazlaya('yeralti', blok, anahtar, bilgi, hacim, kim); uyarilar.push(kim + ': kanal türü "' + adi + '" için sütun açılamadı.'); }
         }
         for (const x of k.kalemler || []) {
           if (x.ana) continue;
           const kb = bmBlok(str(x.durum) || str(k.durum));
           if (kb === null || kb === 'MEVCUT') continue;
-          malzemeYaz('yeralti', kb, x, r, kim);
+          malzemeYaz(hedefBul(ad), kb, x, r, kim);
         }
         r++;
         ozet.yeraltiSatiri++;
@@ -1073,18 +1157,18 @@
             if (!s) s = aday.find((x) => govde(bmNorm(x.ad)).startsWith(tanim + ' ')) || aday.find((x) => bmIlkSozcuk(x.ad) === bmIlkSozcuk(tanim) && uyumlu(bmNorm(x.ad)));
             if (s) { ozet.eslesen++; yaz(ad, sutunHarfiBM(s.sutun) + r, m); continue; }
             const adi = ((e && e.adlar && e.adlar[0]) || str(kalem.tanim)) + ' (' + ek + ')';
-            const bilgi = { poz: pozYap(kalem, kb) || bmPoz(nerede === 'KANAL' ? '32.16' : '32.12', kb), ad: adi, temin: temin(kalem, kb), birim: 'mt.', kaynak: { cins: str(kalem.cins), tanim: str(kalem.tanim) } };
+            const bilgi = { poz: pozYap(kalem, kb) || bmPoz(nerede === 'KANAL' ? '32.16' : '32.12', kb), ad: adi, temin: temin(kalem, kb), birim: 'mt.', grup: 'KABLOLAR', kaynak: { cins: str(kalem.cins), tanim: str(kalem.tanim) } };
             const anahtar = 'KABLO|' + tanim + '|' + nerede;
-            const y = yeniSutun('yeralti', kb, anahtar, bilgi);
+            const y = yeniSutun(hedefBul(ad), kb, anahtar, bilgi);
             if (y) yaz(ad, sutunHarfiBM(y.sutun) + r, m);
-            else { fazlaya('yeralti', kb, anahtar, bilgi, m, kim); uyarilar.push(kim + ': "' + kalem.tanim + '" şablonda yok ve EK satırı kalmadı.'); }
+            else { fazlaya('yeralti', kb, anahtar, bilgi, m, kim); uyarilar.push(kim + ': "' + kalem.tanim + '" için sütun açılamadı.'); }
           }
         }
         for (const x of h.kalemler || []) {
           if (x === kalem || x.ana) continue;
           const kb = bmBlok(str(x.durum) || str(h.durum));
           if (kb === null || kb === 'MEVCUT') continue;
-          malzemeYaz('yeralti', kb, x, r, kim);
+          malzemeYaz(hedefBul(ad), kb, x, r, kim);
         }
         r++;
         ozet.yeraltiSatiri++;
@@ -1092,10 +1176,53 @@
       bitir(ad, Yt, r);
     }
 
+    // ======================= MALZ. LİSTESİ: yeni sütunlar normal satır olarak (EK KALEMLER bölümünün yerine; kullanıcı kararı)
+    const M = sablon.malz;
+    if (M && yeniSutunlar.length) {
+      const ekler = M.ekSatirlari || [];
+      let r = M.ekBaslikSatiri || (ekler.length ? ekler[0].satir : 0);
+      if (!r) uyarilar.push(M.sayfa + ': EK KALEMLER bölümü yok; yeni sütunlar listeye yazılamadı.');
+      else {
+        // eski EK satırları temizlenir (KOD "E001"… ve miktar); bölüm başlığı satırının yazısı yeni başlıkla değişir
+        for (const e of ekler) { sil(M.sayfa, M.kodSutunu + e.satir); sil(M.sayfa, M.miktarSutunu + e.satir); }
+        const adlar = (t, anahtar) => (t.adlar && t.adlar[anahtar]) || null;
+        // bölüm sırası: DİREK METRAJI, DİREK kopyaları, İLETKEN, YERALTI
+        const sirali = [...hedefler].sort((x, y) => BM_SAYFA_SIRASI.indexOf(x.hangi) - BM_SAYFA_SIRASI.indexOf(y.hangi) || (x.kaynak ? 1 : 0) - (y.kaynak ? 1 : 0) || hedefler.indexOf(x) - hedefler.indexOf(y));
+        for (const h of sirali) {
+          const sutunlar = yeniSutunlar.filter((y) => y.sayfa === h.sayfa).sort((x, y) => x.sutun - y.sutun);
+          if (!sutunlar.length) continue;
+          const t = h.tanim, ON = ONEK[h.hangi];
+          // ad: ana sayfada tanımlı ad (DM_KOD_SATIRI), kopyada aynı aralık kopya sayfasında ('DİREK AG BETON'!$G$10:$ZZ$10)
+          const aralik = (anahtar) => (h.kaynak ? bmSayfaRef(h.sayfa) + '!' + adlar(t, anahtar) : ON + '_' + anahtar + '_SATIRI');
+          const F = M.toplamSutunu || 'F';
+          sayfa(M.sayfa).hucreler[(M.bayrakSutunu || 'A') + r] = '=IF(COUNTIF(' + F + (r + 1) + ':' + F + (r + sutunlar.length) + ',">0")>0,1,0)';
+          sayfa(M.sayfa).hucreler[M.pozSutunu + r] = h.sayfa;
+          for (const c of [M.adSutunu, M.birimSutunu, M.teminSutunu, F, M.kodSutunu, M.miktarSutunu, M.kaynakSutunu]) sil(M.sayfa, c + r);
+          malzSatirlari.push({ satir: r, tur: 'grup', sayfa: h.sayfa });
+          r++;
+          for (const y of sutunlar) {
+            const I = '$' + M.kaynakSutunu + r, hc = sayfa(M.sayfa).hucreler;
+            hc[(M.bayrakSutunu || 'A') + r] = '=IF(' + (M.toplamSutunu || 'F') + r + '>0,1,0)';
+            hc[M.kodSutunu + r] = y.kod;
+            hc[M.pozSutunu + r] = '=IF(' + I + '="","",INDEX(' + aralik('POZ') + ',' + I + ')&"")';
+            hc[M.adSutunu + r] = '=IF(' + I + '="","",TRIM(INDEX(' + aralik('AD') + ',' + I + ')&IFERROR(VLOOKUP(INDEX(' + aralik('SEC') + ',' + I + '),SECIM_EK,2,FALSE),"")))';
+            hc[M.birimSutunu + r] = '=IF(' + I + '="","",INDEX(' + aralik('BIRIM') + ',' + I + ')&"")';
+            hc[M.teminSutunu + r] = y.blok === 'Y' ? '=IF(' + I + '="","",INDEX(' + aralik('SEC') + ',' + I + ')&"")' : 'Y';
+            // miktar: İLETKEN'de "MALZ. LİSTESİNE AKTARILAN" satırı (DM: hurda = demontaj − aktarım), ötekilerde TOPLAM satırı
+            hc[M.miktarSutunu + r] = '=IF(' + I + '="",0,N(INDEX(' + aralik(t.malzSatiri ? 'MALZ' : 'TOPLAM') + ',' + I + ')))';
+            hc[(M.toplamSutunu || 'F') + r] = '=' + M.miktarSutunu + r;
+            hc[M.kaynakSutunu + r] = '=IFERROR(MATCH($' + M.kodSutunu + r + ',' + aralik('KOD') + ',0),"")';
+            malzSatirlari.push({ satir: r, tur: 'kalem', sayfa: h.sayfa, kod: y.kod });
+            r++;
+          }
+        }
+      }
+    }
     ozet.yeniSutun = yeniSutunlar.length;
+    ozet.kopyaSayfa = kopyaSayfalar.length;
     ozet.fazla = fazla.length;
-    if (fazla.length) uyarilar.push(fazla.length + ' malzeme için EK satırı kalmadı; "ŞABLONDA OLMAYAN" sayfasına yazıldı.');
-    return { sayfalar, yeniSutunlar, ekSatirlar: ekKullanilan, listeEkle, fazla, uyarilar, ozet };
+    if (fazla.length) uyarilar.push(fazla.length + ' malzeme yazılamadı; "ŞABLONDA OLMAYAN" sayfasına yazıldı.');
+    return { sayfalar, kopyaSayfalar, yeniSutunlar, malzSatirlari, listeEkle, fazla, uyarilar, ozet };
   }
 
   // ---------------------------------------------------------------- Malzeme adlarının görünen yazımı
@@ -1853,7 +1980,7 @@
     tmIleri, tmGeri, domBoylamdan, domTahmin,
     mesafe, uzunluk, ortaNokta, icinde, alan, dogruParcasinaMesafe, cokgeneMesafe, bolgeSec, kutu, projeKutusu,
     katsayiHazirla, kanalUnsurlari, kanalKodu, kanalKablolari, kanalHacmi, hatMetraji, metrajYazisi, hatEtiketi, malzemeYazisi,
-    birlesikMetraj, bmNorm, bmBlok, bmBirim, bmMiktar, bmPoz, bmDogalSira, bmKanalUstu, bmYakinEleman, sutunHarfiBM, sutunNoBM,
+    birlesikMetraj, bmNorm, bmBlok, bmBirim, bmMiktar, bmPoz, bmDogalSira, bmKanalUstu, bmYakinEleman, bmAile, bmKopyaAdi, sutunHarfiBM, sutunNoBM,
     KANAL_ZEMIN, kanalZeminiTanim, kanalZeminiYazi, kanalZeminiCoz, kanalListesi, projeSirasi,
     sonrakiGis, enBuyukSira,
     katalogHazirla, anaTipler, hatKesitleri, malzemeler, kalemYap, kalemToplami, birimler,
