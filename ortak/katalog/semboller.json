@@ -24,6 +24,10 @@
   "KESIK": "demontaj, kesik (DM · KESİK): boş + iki paralel çapraz \"//\" (Şebeke-M: + K)",
   "SOKUK": "demontaj, sökük (DM · SÖKÜK): boş + taşan çarpı \"X\" (Şebeke-M: + S)"
  },
+ "eskiAileler": {
+  "aciklama": "Adı değişen aileler: eski ad → yeni ad. Eklenti çizimdeki eski adlı SH_ bloklarını yeni adla yeniden adlandırır (blok adı R12 DXF sınırı: 31 karakter).",
+  "SM_KOSK_KULE_CIKIS_OZEL": "SM_KOSK_KCIKIS_OZEL"
+ },
  "aileler": {
   "DIREK_AG": {
    "ad": "AG direk · beton / ağaç",
@@ -183,7 +187,7 @@
    "yariGenislik": 7,
    "kapsam": 7.875
   },
-  "SM_KOSK_KULE_CIKIS_OZEL": {
+  "SM_KOSK_KCIKIS_OZEL": {
    "ad": "Kule çıkışlı tip özel trafo",
    "takim": "SM",
    "yariGenislik": 7,
@@ -11560,7 +11564,7 @@
     "S"
    ]
   ],
-  "SM_KOSK_KULE_CIKIS_OZEL_YENI": [
+  "SM_KOSK_KCIKIS_OZEL_YENI": [
    [
     "P",
     [
@@ -11753,7 +11757,7 @@
     0
    ]
   ],
-  "SM_KOSK_KULE_CIKIS_OZEL_MEVCUT": [
+  "SM_KOSK_KCIKIS_OZEL_MEVCUT": [
    [
     "P",
     [
@@ -11833,7 +11837,7 @@
     -4.5
    ]
   ],
-  "SM_KOSK_KULE_CIKIS_OZEL_DMM": [
+  "SM_KOSK_KCIKIS_OZEL_DMM": [
    [
     "P",
     [
@@ -12038,7 +12042,7 @@
     -4.5
    ]
   ],
-  "SM_KOSK_KULE_CIKIS_OZEL_DM": [
+  "SM_KOSK_KCIKIS_OZEL_DM": [
    [
     "P",
     [
@@ -12159,7 +12163,7 @@
     "DM"
    ]
   ],
-  "SM_KOSK_KULE_CIKIS_OZEL_KESIK": [
+  "SM_KOSK_KCIKIS_OZEL_KESIK": [
    [
     "P",
     [
@@ -12287,7 +12291,7 @@
     "K"
    ]
   ],
-  "SM_KOSK_KULE_CIKIS_OZEL_SOKUK": [
+  "SM_KOSK_KCIKIS_OZEL_SOKUK": [
    [
     "P",
     [

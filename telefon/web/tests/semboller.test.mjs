@@ -112,7 +112,7 @@ test('S4 · Şebeke-M takımı (SM_*): 23 aile, tasarım kuralı (dolu / yarı d
   assert.equal(sembolBlogu({ kind: 'transformer', state: 'yeni', attrs: { post: 'direk' }, typeName: '100 kVA' }, 'SM'), 'SH_SM_TRAFO_DIREK_YENI');
   assert.equal(sembolBlogu({ kind: 'transformer', state: 'yeni', attrs: { post: 'direk' }, typeName: 'Özel 100 kVA' }, 'SM'), 'SH_SM_TRAFO_DIREK_OZEL_YENI');
   assert.equal(sembolBlogu({ kind: 'kiosk', state: 'yeni', attrs: { post: 'mbk' }, typeName: 'Modüler beton köşk' }, 'SM'), 'SH_SM_KOSK_MODULER_YENI');
-  assert.equal(sembolBlogu({ kind: 'kiosk', state: 'yeni', attrs: { post: 'mono' }, typeName: 'Kule çıkışlı özel' }, 'SM'), 'SH_SM_KOSK_KULE_CIKIS_OZEL_YENI');
+  assert.equal(sembolBlogu({ kind: 'kiosk', state: 'yeni', attrs: { post: 'mono' }, typeName: 'Kule çıkışlı özel' }, 'SM'), 'SH_SM_KOSK_KCIKIS_OZEL_YENI');
   assert.equal(sembolBlogu({ kind: 'kiosk', state: 'mevcut', attrs: { post: 'mono' }, typeName: 'Kule tipi' }, 'SM'), 'SH_SM_KOSK_KULE_MEVCUT');
   assert.equal(sembolBlogu({ kind: 'substation', state: 'yeni', attrs: { post: 'bina' }, typeName: 'İndirici merkez' }, 'SM'), 'SH_SM_INDIRICI_MERKEZ_YENI');
   assert.equal(sembolBlogu({ kind: 'transformer', state: 'mevcut', attrs: { post: 'bina' } }, 'SM'), 'SH_SM_TRAFO_BINA_MEVCUT');
@@ -155,4 +155,45 @@ test('S5 · DXF: projenin simge takımı Şebeke-M ise SH_SM_ blokları konur (y
   assert.ok(!/\n62\n7\n/.test(blok('SH_SM_DIREK_AG_MEVCUT')), 'kontur simgede zıt renk yok');
   assert.ok(/\n6\nDASHED\n/.test(blok('SH_SM_TRAFO_BINA_MEVCUT')), 'bina tipi: kesikli kontur');
   assert.ok(/\nDASHED\n/.test(d.slice(0, d.indexOf('BLOCKS'))), 'DASHED çizgi tipi LTYPE tablosunda tanımlı');
+});
+
+// DXF R12 (AC1009) kuralı: AutoCAD bu biçimde 31 karakterden uzun ya da A–Z, 0–9, _ $ - dışında karakterli tablo / blok
+// adı ve R12'de olmayan varlık (MTEXT, LWPOLYLINE…) görürse dosyayı açmaz: "Invalid or incomplete DXF input", ENTER →
+// boş çizim (13.11.2026: SH_SM_KOSK_KULE_CIKIS_OZEL_MEVCUT 33 karakterdi; malzeme yazısı MTEXT'ti).
+const R12_VARLIK = new Set(['LINE', 'POINT', 'CIRCLE', 'ARC', 'TRACE', 'SOLID', 'TEXT', 'SHAPE', 'INSERT', 'ATTDEF', 'ATTRIB', 'POLYLINE', 'VERTEX', 'SEQEND', '3DFACE', 'VIEWPORT', 'DIMENSION']);
+const R12_AD = /^[A-Z0-9_$-]{1,31}$/;
+function r12Denetle(metin) {
+  const sat = metin.split(/\r?\n/), hatalar = [];
+  if (sat.length % 2 !== 0 && sat[sat.length - 1] !== '') hatalar.push('tek sayıda satır');
+  let bolum = '', tur = '';
+  for (let i = 0; i + 1 < sat.length; i += 2) {
+    const kod = +sat[i].trim(), deger = sat[i + 1];
+    if (!Number.isInteger(kod)) { hatalar.push('satır ' + (i + 1) + ': grup kodu sayı değil'); break; }
+    if (kod === 0) {
+      tur = deger;
+      if (deger === 'SECTION') bolum = sat[i + 3];
+      else if (['ENTITIES', 'BLOCKS'].includes(bolum) && !['BLOCK', 'ENDBLK', 'ENDSEC', 'EOF'].includes(deger) && !R12_VARLIK.has(deger)) hatalar.push('R12\'de olmayan varlık: ' + deger);
+    } else if (kod === 2 && ['LAYER', 'LTYPE', 'STYLE', 'BLOCK', 'INSERT'].includes(tur) && !R12_AD.test(deger)) hatalar.push(tur + ' adı: ' + deger + ' (' + deger.length + ')');
+    else if (kod === 3 && tur === 'BLOCK' && !R12_AD.test(deger)) hatalar.push('BLOCK adı (3): ' + deger);
+    else if ((kod === 8 || kod === 6) && bolum === 'ENTITIES' && !R12_AD.test(deger)) hatalar.push('katman / çizgi tipi: ' + deger);
+  }
+  return [...new Set(hatalar)];
+}
+
+test('S6 · DXF R12 kuralı: bütün blok adları 31 karakteri aşmaz, R12 varlıkları ve adları (iki takım, malzeme yazısı açık)', async () => {
+  for (const ad of Object.keys(SEMBOLLER.semboller)) assert.ok(R12_AD.test('SH_' + ad), 'blok adı R12 sınırında: SH_' + ad + ' (' + ('SH_' + ad).length + ')');
+  const eski = SEMBOLLER.eskiAileler || {};
+  for (const [a, y] of Object.entries(eski)) if (a !== 'aciklama') assert.ok(SEMBOLLER.aileler[y] && !SEMBOLLER.aileler[a], 'eski aile ' + a + ' → ' + y);
+  assert.equal(sembolBlogu({ kind: 'kiosk', state: 'mevcut', attrs: { post: 'mono' }, typeName: 'Kule çıkışlı özel' }, 'SM'), 'SH_SM_KOSK_KCIKIS_OZEL_MEVCUT');
+  const { ps } = await setup(); await newProject(ps);
+  const ROUTE = route({ E: 519300.0, N: 4282100.0, H: 1050.0 }, [[60, 98.412, 4.3], [60, 102.775, 2.14]]);
+  await buildPoleLine(ps, ROUTE, { group: 'bahh', typeNames: ['GD-12 (3 AWG)', 'GT-12 (3 AWG)', 'GN-12 (3 AWG)'], circuits: [{ role: 'OG', key: '3xSwallow', count: 1 }] });
+  for (const takim of ['', 'SM']) {
+    await ps.updateProject({ sebeke: { boyutlar: { simgeTakimi: takim, malzemeYazisi: true } } }, 'deneme');
+    const [d] = await exportFormat(ps, 'dxf');
+    const metin = new TextDecoder('windows-1254').decode(d.data);
+    assert.ok(metin.includes('AC1009'), 'R12 başlığı');
+    assert.deepEqual(r12Denetle(metin), [], 'takım "' + takim + '": R12 kuralı');
+  }
+  assert.ok(r12Denetle('0\nSECTION\n2\nBLOCKS\n0\nBLOCK\n2\nSH_SM_KOSK_KULE_CIKIS_OZEL_MEVCUT\n0\nENDBLK\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n0\nMTEXT\n0\nENDSEC\n').length === 2, 'denetim uzun adı ve MTEXT\'i yakalar');
 });
