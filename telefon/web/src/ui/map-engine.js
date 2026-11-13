@@ -293,6 +293,11 @@ export class MapEngine {
       g.strokeStyle = '#eab308'; g.lineWidth = 2; for (const r of [6, 12, 18]) { g.beginPath(); g.arc(s.x, s.y, r, 0, Math.PI * 2); g.stroke(); }
       if (d.gnss && d.gnss.E != null) { const a = this.toScreen(d.gnss.E, d.gnss.N); g.setLineDash([6, 4]); g.strokeStyle = '#10b981'; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(s.x, s.y); g.stroke(); g.setLineDash([]); }
     }
+    // Geçilen yol (aplikasyon haritası, 13.11.2026): son konumlar, eskisi soluk
+    if (d.trail && d.trail.length) {
+      const n = d.trail.length;
+      d.trail.forEach((p, i) => { const s = this.toScreen(p.E, p.N); g.fillStyle = 'rgba(56,189,248,' + (0.15 + 0.55 * (i + 1) / n).toFixed(2) + ')'; g.beginPath(); g.arc(s.x, s.y, 3.2, 0, Math.PI * 2); g.fill(); });
+    }
     // GNSS konumu
     if (d.gnss && d.gnss.E != null) {
       const s = this.toScreen(d.gnss.E, d.gnss.N);
@@ -300,6 +305,13 @@ export class MapEngine {
       const acc = d.gnss.sigmaH ? d.gnss.sigmaH / this.view.res : 0;
       if (acc > 6) { g.fillStyle = col + '22'; g.strokeStyle = col + '88'; g.lineWidth = 1; g.beginPath(); g.arc(s.x, s.y, Math.min(acc, 2000), 0, Math.PI * 2); g.fill(); g.stroke(); }
       const hd = d.gnss.heading ?? d.gnss.course;
+      // Yön konisi (aplikasyon haritası): ilerlenen yön uzaktan da görünsün
+      if (hd != null && d.yonKonisi) {
+        const a = (hd - 90) * Math.PI / 180, w = 20 * Math.PI / 180, L = 110;
+        const gr = g.createRadialGradient(s.x, s.y, 8, s.x, s.y, L);
+        gr.addColorStop(0, 'rgba(56,189,248,.42)'); gr.addColorStop(1, 'rgba(56,189,248,0)');
+        g.fillStyle = gr; g.beginPath(); g.moveTo(s.x, s.y); g.arc(s.x, s.y, L, a - w, a + w); g.closePath(); g.fill();
+      }
       if (hd != null) { g.save(); g.translate(s.x, s.y); g.rotate(hd * Math.PI / 180); g.fillStyle = col; g.beginPath(); g.moveTo(0, -18); g.lineTo(7, -6); g.lineTo(-7, -6); g.closePath(); g.fill(); g.restore(); }
       g.fillStyle = '#0b1326'; g.beginPath(); g.arc(s.x, s.y, 9, 0, Math.PI * 2); g.fill();
       g.fillStyle = col; g.beginPath(); g.arc(s.x, s.y, 6, 0, Math.PI * 2); g.fill();

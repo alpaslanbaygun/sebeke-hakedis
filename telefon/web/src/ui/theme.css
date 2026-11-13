@@ -324,6 +324,40 @@ html.web .tabbar button span{white-space:nowrap}
 .apl-alt{position:sticky;bottom:-24px;margin-top:auto;display:flex;gap:8px;padding:10px 0 12px;background:var(--bg);border-top:1px solid var(--line2)}
 .apl-sonraki{height:64px;flex:0 0 96px;flex-direction:column;gap:2px;font-size:11px}
 @media (max-width:360px){.apl-mesafe{font-size:36px;line-height:40px}.apl-radar{width:42%}}
+/* Basit mod (13.11.2026): alt panel tek satır + büyük AL, yarım ekran seçim penceresi, büyük seçim düğmeleri */
+.dock.basit{gap:10px}
+.what.tek{height:52px;min-height:52px;padding:0 12px}
+.what.tek b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.what.tek .degis{font-size:13px;font-weight:700;color:var(--cy);flex-shrink:0}
+.sheet.basit{max-height:66%}
+.sheet.basit .body{padding-top:2px}
+.sonsatir{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--tx);font-size:15px;text-align:left}
+.sonsatir i{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.sonsatir span{font-size:13px;font-weight:800}
+.sonsatir.on{border-color:var(--ok);background:var(--selbg)}
+.turkaro{gap:8px}
+.turkaro button{height:86px;border-radius:14px;border:1px solid var(--line3);background:var(--panel2);color:var(--tx);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:700}
+.turkaro button:active{background:var(--selbg)}
+.buyuksec{min-height:48px;padding:0 8px;border-radius:12px;border:1px solid var(--line3);background:var(--panel2);color:var(--tx);font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.buyuksec.on{border:2px solid var(--c,var(--ok));background:var(--selbg);color:var(--ok2)}
+.acilir{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--mut);font-size:14px;font-weight:600;text-align:left}
+.fabl .hatdugme{width:auto;min-width:64px;height:auto;min-height:48px;padding:4px 10px;flex-direction:column;gap:0;border:2px solid var(--c,var(--line))}
+.fabl .hatdugme b{font:800 13px var(--mono);color:var(--tx)}
+.fabl .hatdugme small{font-size:10px;color:var(--mut)}
+/* Aplikasyon haritası (13.11.2026, Basit mod): tam ekran harita, dokunulan noktanın kartı, yakında hedef halkaları */
+.aplh-ipucu{position:absolute;left:12px;right:72px;top:12px;z-index:6;padding:10px 12px;border-radius:12px;background:var(--b-cy-bg);border:1px solid var(--b-cy-bd);color:var(--b-cy-tx);font-size:14px;font-weight:700;box-shadow:0 4px 14px var(--shadow)}
+.aplh-kart{position:absolute;z-index:12;width:min(320px,calc(100% - 16px));padding:12px;border-radius:16px;background:var(--panel);border:2px solid var(--cy);box-shadow:0 10px 30px var(--shadow2)}
+.aplh-hedef{position:absolute;left:50%;top:calc(50% - 150px);width:min(300px,86vw);height:auto;transform:translate(-50%,-30%);z-index:6;pointer-events:none;filter:drop-shadow(0 6px 18px var(--shadow2))}
+.aplh-alt{max-height:56%}
+.aplh-alt .dock{gap:10px}
+.aplh-ad{font:800 18px/22px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aplh-ad span{font:600 13px Inter,sans-serif;color:var(--mut)}
+.aplh-mesafe{font:800 42px/44px var(--mono);letter-spacing:-.02em;white-space:nowrap}
+.aplh-mesafe small{font:600 16px var(--mono);color:var(--mut)}
+.aplh-yon{font-size:17px;font-weight:700;line-height:1.5;min-width:0}
+.aplh-yakin{height:54px;flex-direction:column;gap:0;font-size:16px;min-width:0}
+.aplh-yakin small{font-size:11px;font-weight:600;color:var(--mut)}
+@media (max-width:360px){.aplh-mesafe{font-size:34px;line-height:38px}.aplh-yon{font-size:15px}}
 .ayarsimge{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .aboutlogo img{display:block;width:min(220px,62vw);height:auto}
 /* Harita altlığı: atıf (sağ alt, her zaman görünür) ve yüklenemezse uyarı */

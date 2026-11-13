@@ -158,6 +158,26 @@ perde / toast…), seçili düğme yazısı `color-mix` ile koyulaşır; ekranla
 (WebView'in prefers-color-scheme'i uygulamanın koyu temasını izlediğinden). Playwright ile web sürümünde iki temada
 proje, harita ve ayarlar görüntüsü denetlendi. Belgeler: KULLANIM (Pencereler), telefon kılavuzu (Ekranlar), README.
 
+13.11 akşam (`basit-mod` dalı, `saha-duzeltmeleri-13-11` üstüne; geri dönüş: `onceki-basit-mod-oncesi` dalı): **Basit
+mod** (kullanıcının 14:04 bildirimi 6–7: aplikasyon haritada anlık yön + haritadan nokta seçip başlatma; saha alım
+pencereleri ekranı az kaplasın, teknolojiye uzak personel için sade ekranlar. Kararlar: Stitch yok, önce 6 ekran taslağı
+gösterildi — "basit mod olarak yapalım ama açık temayı da unutmayalım", Basit varsayılan, Ayrıntılı ayarda). Telefon:
+`src/ui/arayuz-modu.js` (`arayuzModu / basitMi / arayuzModuSec`, `ds.setting('arayuzModu')`; web varsayılanı Ayrıntılı),
+Ayarlar › Görünüm › Arayüz. Harita (Basit): alt panel tek satır (`.what.tek`, Değiştir) + büyük AL + geri al, KAYNAK
+yalnız GNSS dışı kaynakta; `+ HAT` sol düğme sütununda (`.hatdugme`); CAD, enerji, ölçüm, düğüm düzenleme, hakediş
+renkleri, koordinat satırı gizli. "Ne alıyorsunuz?" (`NeAliyorsunuz`: son üç direk tek dokunuş + 6 büyük düğme) ve kısa
+direk penceresi (`BasitDirek`: genel, en çok 3 hızlı tip + Başka tip…, Yeni / Mevcut / Sökülecek + Diğer durumlar,
+Armatür kapalı) `.sheet.basit` (en çok %66). Aplikasyon: `stakeout.js` iki görünüm, ortak `useAplikasyon`;
+**Harita** (`AplikasyonHaritasi`, Basit varsayılanı): kendi `MapEngine`'i (`app.state.aplEngine`), yön konisi
+(`yonKonisi`) ve geçilen yol (`trail`, map-engine), konum + hedef birlikte sığdırma (elle kaydırınca durur, konum düğmesi
+yeniden başlatır), haritada noktaya dokununca kart + APLİKASYONU BAŞLAT, hedefsizken en yakın 3 nokta + Liste, 1 m altında
+hedef halkaları (10 / 5 / 2 cm, kuzey yukarı), küçük alt panel (mesafe, ileri / sağa cm, zemin işareti, İŞARETLE /
+SONRAKİ); **Radar** (1.11 tasarımı, Ayrıntılı varsayılanı), iki görünüm arasında düğme; `StakeoutScreen.flush /
+compactHud` görünüme göre. Denemeler: `tests/arayuz-modu.test.mjs`, `tests/ui/esitleme_ui.py` (Basit alt panel; radar ve
+harita aplikasyonu simülatörle: dokun → kart → başlat → ileri / sağa → halkalar → İŞARETLE → kayıt). Playwright ile iki
+temada 11 ekran denetlendi; kılavuz resimleri `kilavuz/01b-basit-mod.png`, `06b-aplikasyon-harita.png`. Yalnız telefon
+(eklentide saha alımı yok). Haritayı yön yukarı döndürme yapılmadı (motor kuzey yukarı çizer; yön koni ile gösterilir).
+
 13.11 akşam (`saha-duzeltmeleri-13-11` dalı, `acik-tema` üstüne; PR J): kullanıcının 13.11 14:04 bildiriminin hızlı
 düzeltmeleri. **Toplu malzeme** (kullanıcı: "seçili direklere yalnızca tek bir malzeme eklenebiliyor gibi"; sorgulama
 ekranından da toplu ekleme): eklenti Toplu malzeme penceresinde katalog **işaret kutulu** (`IkiSatirListe.Isaretli` /
@@ -518,7 +538,7 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
   etiketinde bugün metraj yok — hangi yazı olduğu için ekran görüntüsü istendi), **Aplikasyon ekranı** (haritada anlık
   yön, haritadan nokta seçip hızlı aplikasyon) ve **genel arayüz sadeleştirme** (saha alım pencereleri ekranı az kaplasın;
   teknolojiye uzak personel için sade ekranlar) — kullanıcı kararı: Stitch yok, önce ekran taslakları gösterilir, onaydan
-  sonra yapılır. AutoCAD'de denemesi: Toplu malzeme'de birden çok malzeme işaretleme, Eksik Malzeme › Bulunanlara
+  sonra yapılır — 13.11 akşam **Basit mod** olarak yapıldı (§2; cihazda denenmedi). AutoCAD'de denemesi: Toplu malzeme'de birden çok malzeme işaretleme, Eksik Malzeme › Bulunanlara
   malzeme ekle; ACI 102 AG direklerin baskıda görünürlüğü. Telefonda: el konsolunda derinlik girişi, Google Earth'te 3B klasör.
 - **13.11 bildiriminin kalan maddeleri** (kullanıcı kararları 13.11 04:40):
   - **5 Birim fiyatlı keşif** — kullanıcı birim fiyat dosyasını verecek: gönderdiği "Genel Keşif Simülatörü" HTML'inin
