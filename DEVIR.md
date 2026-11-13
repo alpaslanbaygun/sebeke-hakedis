@@ -158,6 +158,22 @@ perde / toast…), seçili düğme yazısı `color-mix` ile koyulaşır; ekranla
 (WebView'in prefers-color-scheme'i uygulamanın koyu temasını izlediğinden). Playwright ile web sürümünde iki temada
 proje, harita ve ayarlar görüntüsü denetlendi. Belgeler: KULLANIM (Pencereler), telefon kılavuzu (Ekranlar), README.
 
+13.11 akşam (`lisans` dalı, `basit-mod` üstüne; PR L): **Lisans sistemi** (kullanıcı: "lisans sistemi kuralım"; kararlar:
+AutoCAD eklentisi ve telefon, internetsiz ve cihaza bağlı, bitiş her lisansta seçilir ya da süresiz, lisanssız 7 gün çalışıp
+sonra kapanır). Ayrıntı: [ortak/LISANS.md](ortak/LISANS.md). Çekirdek: `Cekirdek/Lisans.cs` ↔ `telefon/web/src/core/lisans.js`
+(cihaz kodu SHA-256 + Crockford base32; `SHL1.<yük>.<imza>`, RSA-2048 PKCS#1 v1.5 / SHA-256 elle doğrulama; durum: lisanslı /
+deneme / bitti, 15 gün uyarı, saat geri alma), ortak deneme `ortak/deneme/lisans/vektorler.json` (19 durum, 3 cihaz kodu;
+`araclar/lisans/lisans-deneme-uret.mjs`). Açık anahtar `ortak/lisans/acik-anahtar.json` (parmak izi B0EE-69D6-0C0E-1F54;
+eklentiye gömülü, telefona ortak-tablolar kopyalar). **Gizli anahtar depoda yok** — kullanıcıya teslim edildi (`.gitignore`
+`*.pem`, `*.lisans`). Eklenti: `LisansDenetimi.cs` (MachineGuid, %APPDATA% + HKCU iki yerde), `Komutlar.Calistir` her
+komuttan önce denetler (Hakkında ve `SH_LISANS` serbest), `Pencereler.Lisans` (cihaz kodu / kopyala, yapıştır / dosyadan aç,
+anlık denetim, Kaydet), şeritte Lisans düğmesi; PencereTest 45 / 45b / 40g. Telefon: köprü `cihazKimligi` (ANDROID_ID),
+`services/lisans-service.js` (web / köprüsüz: kalıcı rastgele kimlik), `ui/screens/lisans.js`, `app.js` kilit (yalnız Lisans
+ekranı), Ayarlar › Lisans, açılış uyarısı, öne gelince yeniden denetim; denemeler `tests/lisans.test.mjs` (LS1–LS5),
+`tests/ui/lisans_ui.py` (CI'a eklendi). Araçlar: `araclar/lisans/lisans-araci.html` (tarayıcıda, WebCrypto; gizli anahtarı
+seç, cihaz kodu / kime / ürün / bitiş → lisans, `.lisans` indir, lisans denetle; yeni anahtar çifti), `lisans-uret.mjs`
+(anahtar / uret / arac / denetle). Cihazda ve AutoCAD'de denenmedi.
+
 13.11 akşam (`basit-mod` dalı, aynı PR): **Hat metrajı küsuratlı** (kullanıcı ekran görüntüsüyle: "45,00 yazmış 45,25
 yazması lazım"; karar: metraj da 45,25 olsun). Eklenti: `Metraj.Hat(cizim, yuvarlama, ekPay)` — `YuvarlamaYok` (2 hane,
 yeni varsayılan) / `YuvarlamaYukari` / `YuvarlamaYakin`; `CizimAyarlari.MetrajYuvarlama` (anahtar `metrajYuvarlama`; eski
@@ -546,6 +562,9 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 
 ## 6. Sıradaki işler
 
+- **Lisans (13.11 akşam)**: AutoCAD'de denemesi (SH_LISANS, cihaz kodu, 7 gün sonrası kilit — tarihi elle geri alıp
+  denemeyin, `%APPDATA%\SebekeHakedis\lisans.json` ve `HKCU\Software\SebekeHakedis\Lisans` silinip ilk açılış elle
+  eskitilerek denenir), telefonda Ayarlar › Lisans ve kilit. Gizli anahtar kullanıcıda; kaybolursa yeni anahtar + yeniden derleme.
 - **13.11 14:04 bildirimi** (7 madde): ~~toplu malzeme~~, ~~KMZ 3B~~, ~~AG rengi ACI 102~~, ~~el konsolunda kanal
   derinliği~~ — PR J (§2). Kalan: **hat etiketi metrajı iki haneli** (kullanıcı "Hat etiketi metrajı (/341m)" dedi; hat
   etiketinde bugün metraj yok — hangi yazı olduğu için ekran görüntüsü istendi), **Aplikasyon ekranı** (haritada anlık

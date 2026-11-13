@@ -14,6 +14,7 @@ import { TepeScreen } from './tepe.js';
 import { TeamScreen } from './team.js';
 import { HesapMerkeziScreen, HesapScreen } from './hesap.js';
 import { KanalListesiScreen } from './kanallar.js';
+import { LisansScreen } from './lisans.js';
 
 export const SCREENS = {
   map: MapScreen, stake: StakeoutScreen, calc: CalcScreen, export: ExportScreen, settings: SettingsScreen,
@@ -23,5 +24,5 @@ export const SCREENS = {
   projects: ProjectsScreen, hub: HubScreen, projectEdit: ProjectEditScreen, audit: AuditScreen, sync: SyncScreen, user: UserScreen,
   excel: ExcelScreen, objects: ObjectsScreen, baseRover: BaseRoverScreen, cabin: CabinScreen, tepe: TepeScreen, team: TeamScreen,
   hesapMerkezi: HesapMerkeziScreen, hesap: HesapScreen, kanallar: KanalListesiScreen,
-  ayarOlcum: OlcumAyarlari, ayarDuzeltme: DuzeltmeAyarlari, ayarHassasiyet: HassasiyetAyarlari, ayarKoordinat: KoordinatAyarlari, ayarHarita: HaritaAyarlari, ayarVeri: VeriAyarlari, ayarDeneme: DenemeAyarlari, hakkinda: HakkindaEkrani
+  ayarOlcum: OlcumAyarlari, ayarDuzeltme: DuzeltmeAyarlari, ayarHassasiyet: HassasiyetAyarlari, ayarKoordinat: KoordinatAyarlari, ayarHarita: HaritaAyarlari, ayarVeri: VeriAyarlari, ayarDeneme: DenemeAyarlari, hakkinda: HakkindaEkrani, lisans: LisansScreen
 };

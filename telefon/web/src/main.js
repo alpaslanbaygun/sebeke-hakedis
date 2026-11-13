@@ -17,6 +17,7 @@ import { isWeb, capability, installWebBridge, probeTiles } from './web/platform.
 import { CloudAdapter } from './web/cloud-adapter.js';
 import './ui/theme.css';
 import { temaBaslat, temaUygula, sistemTemasi } from './ui/tema.js';
+import { cihazBilgisi, lisansYukle } from './services/lisans-service.js';
 
 temaBaslat();   // ilk boyamadan önce (Otomatik: cihazın teması)
 if (bridge.sistemTemasi) bridge.sistemTemasi().then((d) => sistemTemasi(!!(d && d.acik))).catch(() => {});
@@ -111,8 +112,17 @@ async function boot() {
     // Son alıcıya otomatik bağlan (yalnız APK)
     const lr = await ds.setting('lastReceiver');
     if (lr && bridge.isNative()) gnss.connectExternal({ type: lr.type, address: lr.address, name: lr.name }).catch(() => {});
+    // Lisans (13.11.2026): cihaz kodu ve durum; süre dolmuşsa uygulama yalnız Lisans ekranını açar (ui/app.js)
+    try { const cihaz = await cihazBilgisi({ ds, bridge, web: WEB }); app.state.lisans = { cihaz, durum: await lisansYukle({ ds, cihaz }) }; } catch (e) { console.warn('Lisans denetlenemedi', e); }
     document.getElementById('splash').remove();
     render(html`<${App} />`, document.body);
+    const lisUyar = () => { const d = app.state.lisans && app.state.lisans.durum; if (d && d.kullanilabilir && d.uyari && app.toast) app.toast(d.mesaj + ' · Ayarlar › Lisans', 'warn', 6000); };
+    setTimeout(lisUyar, 1500);
+    // Uygulama günlerce açık kalırsa: öne gelince yeniden denetle (gün değiştiyse süre dolmuş olabilir)
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState !== 'visible' || !app.state.lisans) return;
+      try { const d = await lisansYukle({ ds, cihaz: app.state.lisans.cihaz }); const once = app.state.lisans.durum; app.state.lisans = Object.assign({}, app.state.lisans, { durum: d }); if (!once || once.kullanilabilir !== d.kullanilabilir || once.kalanGun !== d.kalanGun) bus.emit('lisans:change'); } catch (e) { /* */ }
+    });
     // Yakalanmamış servis hatası (ör. kilitli kayıt reddi) sessizce kaybolmasın: kullanıcıya bildirim olarak gösterilir
     window.addEventListener('unhandledrejection', (ev) => { const m = ev.reason && ev.reason.message; if (m && app.toast) { app.toast(m, 'err', 6000); ev.preventDefault(); } });
     bus.on('native:gnssStatus', (d) => { if (d && d.state === 'error' && app.toast) app.toast('GNSS: ' + (d.error || 'bağlantı hatası'), 'err', 5000); if (d && d.state === 'connected' && app.toast) app.toast('GNSS bağlandı · ' + (d.name || '')); });

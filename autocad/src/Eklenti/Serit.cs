@@ -984,6 +984,7 @@ namespace SebekeHakedis.Eklenti
                 CommandParameter = "_SH_HAKKINDA ",
                 CommandHandler = new KomutIsleyici(),
             });
+            p.Items.Add(Dugme("Lisans", "Lisans durumu, bu bilgisayarın cihaz kodu ve lisans girme (SH_LISANS). Lisanssız 7 gün çalışır.", "_SH_LISANS ", "anahtar", null));
         }
 
         private static RibbonPanelSource Panel(RibbonTab sekme, string baslik)

@@ -190,7 +190,7 @@ async def main():
             await pg.evaluate("() => window.__app.nav.tab('settings')"); await pg.wait_for_timeout(700)
             await pg.screenshot(path=f'{OUT}/esitleme_05a_ayarlar_menu.png')
             menu = await pg.locator('.card.tight.list .li .t').all_inner_texts()
-            kontrol(menu == ['Ölçüm', 'Düzeltme kaynağı', 'Hassasiyet eşikleri', 'Koordinat sistemi', 'Harita', 'Veri ve kullanıcılar', 'Deneme ve eğitim', 'Hakkında'], 'ayarlar menüsü gruplu: ' + ' | '.join(menu))
+            kontrol(menu == ['Ölçüm', 'Düzeltme kaynağı', 'Hassasiyet eşikleri', 'Koordinat sistemi', 'Harita', 'Veri ve kullanıcılar', 'Deneme ve eğitim', 'Lisans', 'Hakkında'], 'ayarlar menüsü gruplu: ' + ' | '.join(menu))
             await pg.get_by_role('button', name='Harita', exact=False).filter(has_text='Simge ve yazı').click(); await pg.wait_for_timeout(700)
             alt = pg.locator('.sect', has_text='Harita altlığı').locator('xpath=following-sibling::div[1]')
             await alt.locator('.fld', has_text='ArcGIS anahtarı').scroll_into_view_if_needed(); await pg.wait_for_timeout(300)

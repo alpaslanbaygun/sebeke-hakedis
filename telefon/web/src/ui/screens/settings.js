@@ -21,6 +21,7 @@ const GRUPLAR = [
   ['ayarHarita', 'map', 'Harita', 'Simge ve yazı büyüklüğü, altlıklar ve anahtarlar, offline harita', false],
   ['ayarVeri', 'folder', 'Veri ve kullanıcılar', 'Senkron, hakediş onayı, projeler, katalog, denetim kaydı, kullanıcı', false],
   ['ayarDeneme', 'star', 'Deneme ve eğitim', 'Alıcısız simülatör', true],
+  ['lisans', 'lock', 'Lisans', 'Lisans durumu, bu cihazın kodu, lisans girme', false],
   ['hakkinda', 'info', 'Hakkında', 'Şebeke-M Hakediş: amaç, yapabildikler, sürüm', false],
 ];
 
@@ -40,7 +41,7 @@ export function SettingsScreen() {
     ${app.web ? html`<div class="alert info"><${Icon} n="info" s=${16} /><span>Web sürümü ofis içindir: ölçüm (GNSS alıcı, NTRIP, telefon GPS) telefondaki uygulamayla yapılır. Buradaki ayarlar proje verisini ilgilendirir ve buluta kaydedilir.</span></div>` : html`<button class="card row" style="text-align:left;color:inherit;gap:12px;width:100%" onClick=${() => app.nav.go('ayarOlcum')}>
       <span class="ayarsimge" style=${'--c:' + (FIXCOL[s.fix] || 'var(--mut2)')}><${Icon} n="locate" s=${20} c=${FIXCOL[s.fix] || 'var(--mut)'} /></span>
       <div class="grow"><b style="font-size:14px">${kaynak}</b><div class="note">${s.source === 'none' ? 'Ölçüm için konum kaynağı seçin' : (s.fix || '—') + (s.sigmaH != null ? ' · σH ' + fmt(s.sigmaH) + ' m' : '') + ' · düzeltme ' + (nts.state === 'connected' ? 'bağlı' : 'yok') + (ps.p ? ' · ' + ps.p.name : '')}</div></div><${Icon} n="next" s=${16} c="var(--mut)" /></button>`}
-    <div class="card tight list" style="margin-top:10px">${gruplar.map(([ekran, simge, baslik, aciklama]) => html`<${MenuSatiri} ekran=${ekran} simge=${simge} baslik=${baslik} aciklama=${aciklama} />`)}</div>
+    <div class="card tight list" style="margin-top:10px">${gruplar.map(([ekran, simge, baslik, aciklama]) => html`<${MenuSatiri} ekran=${ekran} simge=${simge} baslik=${baslik} aciklama=${ekran === 'lisans' && app.state.lisans && app.state.lisans.durum ? app.state.lisans.durum.mesaj : aciklama} />`)}</div>
     <div class="note" style="margin-top:8px">Ölçüm, düzeltme ve harita ayarları bu cihazda; hassasiyet eşikleri ve koordinat sistemi projede saklanır.</div>
     <div class="sect">Görünüm</div>
     <div class="card stack"><div class="fld"><label>Tema</label><${Seg} value=${temaSecimi()} options=${TEMA_SECENEKLERI}

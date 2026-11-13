@@ -43,6 +43,12 @@ klasörünüze; o zaman AutoCAD ilk açılışta "imzalanmamış dosya" uyarıs�
 Güncellemek için yeni zip ile aynı adımları tekrarlayın. Kaldırmak için **KALDIR.bat**. Sürüm ve komut listesi:
 her iki sekmenin başındaki **Şebeke-M Hakediş › Hakkında** düğmesi (`SH_HAKKINDA`).
 
+**Lisans** (13.11.2026): eklenti lisanssız **7 gün** tam çalışır; sonra komutlar çalışmaz ve **Lisans** penceresi açılır.
+**Şebeke-M Hakediş › Lisans** düğmesi (`SH_LISANS`) bu bilgisayarın **cihaz kodunu** (`PC-…`, **Kopyala**) ve lisans
+durumunu gösterir. Kodu lisans verene gönderin; gelen lisansı pencereye yapıştırın ya da **Dosyadan aç…** ile `.lisans`
+dosyasını seçin, **Lisansı kaydet** deyin. Bitişe 15 gün kala komut satırında uyarı çıkar. Ayrıntı ve lisans üretme:
+[ortak/LISANS.md](ortak/LISANS.md).
+
 ---
 
 ## 2. Genel iş akışı
@@ -464,6 +470,7 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 | --- | --- | --- |
 | Malzeme | `SH_MALZEME` | Direği, hattı, kanalı ya da sondajı seçin: malzemeleri tablo hâlinde düzenleyin, katalogdan ekleyin (2 982 kalemlik katalog; AG galvaniz travers ve konsollar GT-60, GD-80, T-AG-1… ağırlıklarıyla). Hatta iletken eklerseniz hattın ikinci iletkeni olur (metrajı hattın boyu). Direkte **Önerilen…** telefonun reçete kurallarıyla eksik travers / izolatör / topraklama kalemlerini önerir (aşağıda). |
 | Toplu Malzeme | `SH_TOPLUMALZEME` | Seçilen bütün direklere (trafo, SDK…) aynı malzemeleri birden ekler. |
+| Lisans | `SH_LISANS` | Lisans durumu, bu bilgisayarın cihaz kodu, lisans girme (lisanssız 7 gün çalışır; ortak/LISANS.md). |
 | Malzeme Hafızası | — | Açıkken son elemanın malzemeleri aynı tipteki yeni elemana kendiliğinden eklenir; tıklayınca kapanır / açılır. |
 | Hat Değiştir | `SH_HATDEGISTIR` | Seçilen hatların iletkenini (tip, cins), türünü, durumunu, hakedişini değiştirir; kablo tipi yazısı ve katman güncellenir, metraj korunur. |
 | Metraj | `SH_METRAJ` | Seçilen hat / kanal / sondajın metrajını çizim uzunluğundan yeniden hesaplar (önce listeyi gösterip sorar). |

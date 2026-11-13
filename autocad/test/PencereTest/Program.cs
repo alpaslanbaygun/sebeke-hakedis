@@ -868,6 +868,37 @@ namespace SebekeHakedis.PencereTest
                 Resim(f, "sonra");
             });
 
+            // Lisans penceresi (13.11.2026): deneme durumu ve cihaz kodu; geçerli lisans yapıştırınca Kaydet açılır ve kaydeder
+            var lv = (JsonNesne)Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "lisans-vektorler.json"), Encoding.UTF8));
+            var lan = lv.Nesne("anahtar");
+            var lk = new Lisans.AcikAnahtar { N = lan.Metin("n"), E = lan.Tam("e", 65537) };
+            JsonNesne suresiz = null;
+            foreach (JsonNesne x in lv.Dizi("durumlar")) if (x.Metin("ad") == "süresiz") suresiz = x;
+            string pc = suresiz.Metin("cihaz"), kayitliLisans = "";
+            Func<string, bool, LisansDurumu> lDene = (m, kaydet) =>
+            {
+                var r = Lisans.Durum(m, pc, "eklenti", "2026-11-13", "2026-11-10", "2026-11-13", lk);
+                if (kaydet && r.Tur == "lisansli") kayitliLisans = m;
+                return r;
+            };
+            Dene("45-lisans", () =>
+            {
+                bool ok = Pencereler.Lisans(lDene("", false), pc, lDene, false);
+                Esit(true, ok && kayitliLisans.Length > 0, "lisans: geçerli lisans kaydedildi");
+            }, f =>
+            {
+                var kutu = Bul<TextBox>(f, x => x.Name == "lisansMetni");
+                var kaydet = Bul<Button>(f, b => b.Text == "Lisansı kaydet");
+                Esit(false, kaydet.Enabled, "lisans: boşken Kaydet kapalı");
+                kutu.Text = "SHL1.YWJj.ZGVm";
+                Esit(false, kaydet.Enabled, "lisans: bozuk lisansta Kaydet kapalı");
+                Resim(f, "bozuk");
+                kutu.Text = suresiz.Metin("lisans");
+                Esit(true, kaydet.Enabled, "lisans: geçerli lisansta Kaydet açık");
+                Resim(f, "gecerli");
+            });
+            Dene("45b-lisans-kilitli", () => Esit(false, Pencereler.Lisans(Lisans.Durum("", pc, "eklenti", "2026-11-13", "2026-11-01", "2026-11-13", lk), pc, lDene, true), "lisans: süre dolmuşken boş bırakılırsa kaydedilmez"), null, false);
+
             // Açık tema (13.11.2026): aynı pencereler açık renklerle (SH_TEMA=acik seçimi geçersiz kılar); vazgeçilir, veri değişmez
             Environment.SetEnvironmentVariable("SH_TEMA", "acik");
             Esit(true, Tema.Yenile() && KoyuRenk.Arka.GetBrightness() > 0.9f && KoyuRenk.Yazi.GetBrightness() < 0.2f, "açık tema: zemin açık, yazı koyu");
@@ -884,6 +915,7 @@ namespace SebekeHakedis.PencereTest
             Dene("40d-acik-proje-ozeti", () => Pencereler.ProjeOzetiGoster(poz, gv => { }), null, false);
             Dene("40e-acik-ileti", () => KoyuMesaj.Goster("Açık tema ileti kutusu.", "Şebeke-M", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2, Goster));
             Dene("40f-acik-hakkinda", () => Pencereler.Hakkinda("0.1.99", "AutoCAD R25.0 · .NET 8", () => { }));
+            Dene("40g-acik-lisans", () => Pencereler.Lisans(Lisans.Durum("", pc, "eklenti", "2026-11-13", "2026-11-10", "2026-11-13", lk), pc, lDene, false), null, false);
             Environment.SetEnvironmentVariable("SH_TEMA", null);
             Esit(false, Tema.Yenile(), "açık tema: değişken kalkınca seçim (otomatik → AutoCAD yok → koyu)");
 

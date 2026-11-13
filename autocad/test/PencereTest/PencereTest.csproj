@@ -44,6 +44,7 @@
     <EmbeddedResource Include="..\..\..\ortak\marka\hakkinda.json" Link="Marka\hakkinda.json" LogicalName="SebekeHakedis.marka.hakkinda.json" />
     <None Include="..\CekirdekTest\ornek-dokum.json" Link="ornek-dokum.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\CekirdekTest\telefon-proje.sebeke.json" Link="telefon-proje.sebeke.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\ortak\deneme\lisans\vektorler.json" Link="lisans-vektorler.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

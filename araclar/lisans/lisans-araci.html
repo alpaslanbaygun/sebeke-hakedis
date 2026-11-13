@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Şebeke-M Lisans Aracı</title>
+<!--
+  Şebeke-M Hakediş lisans aracı (13.11.2026). İnternetsiz çalışır: bu dosyayı bilgisayarınızda Chrome ya da Edge ile açın.
+  Gizli anahtar dosyası (.pem) yalnız bu sayfada, bu bilgisayarda kullanılır; hiçbir yere gönderilmez. Biçim: ortak/LISANS.md
+  (Node eşi: araclar/lisans/lisans-uret.mjs). Açık anahtar aşağıda ACIK-BASLA / ACIK-BITIR arasındadır; "lisans-uret.mjs
+  anahtar" yeni anahtar kurunca burayı da günceller.
+-->
+<style>
+:root{--bg:#f3f5f8;--kart:#fff;--yazi:#0f1b2a;--soluk:#5b6b7f;--kenar:#cbd5e1;--vurgu:#169b5a;--vurgu2:#0d7a45;--hata:#b91c1c;--hatabg:#fee2e2;--iyibg:#dcfce7;--uyari:#92400e;--uyaribg:#fef3c7;--kutu:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1326;--kart:#131b2e;--yazi:#dae2fd;--soluk:#94a3b8;--kenar:#334155;--vurgu:#10b981;--vurgu2:#6ffbbe;--hata:#ff8a8a;--hatabg:#450a0a;--iyibg:#0f2a22;--uyari:#fcd34d;--uyaribg:#3a2a07;--kutu:#0e1730}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--yazi);font:15px/1.5 system-ui,"Segoe UI",sans-serif}
+main{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:22px;margin:0 0 4px}
+.alt{color:var(--soluk);margin:0 0 20px}
+section{background:var(--kart);border:1px solid var(--kenar);border-radius:14px;padding:16px;margin:0 0 16px}
+h2{font-size:16px;margin:0 0 10px;display:flex;gap:8px;align-items:center}
+h2 b{display:inline-flex;width:24px;height:24px;border-radius:12px;background:var(--vurgu);color:#fff;font-size:13px;align-items:center;justify-content:center}
+label{display:block;font-weight:600;font-size:13px;margin:12px 0 4px}
+input[type=text],input[type=date],select,textarea{width:100%;padding:10px 12px;border:1px solid var(--kenar);border-radius:10px;background:var(--kutu);color:var(--yazi);font:inherit}
+textarea{font:12px/1.4 ui-monospace,Consolas,monospace;min-height:110px;word-break:break-all;resize:vertical}
+.kod{font:700 16px ui-monospace,Consolas,monospace;letter-spacing:.03em;text-transform:uppercase}
+.satir{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.satir>*{flex:0 0 auto}
+button,.dugme{appearance:none;border:1px solid var(--kenar);background:var(--kutu);color:var(--yazi);border-radius:10px;padding:9px 14px;font:600 14px system-ui,sans-serif;cursor:pointer}
+button.ana{background:var(--vurgu);border-color:var(--vurgu);color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+.not{color:var(--soluk);font-size:13px;margin:6px 0 0}
+.durum{padding:10px 12px;border-radius:10px;margin:10px 0 0;font-size:14px}
+.iyi{background:var(--iyibg);color:var(--vurgu2)}
+.kotu{background:var(--hatabg);color:var(--hata)}
+.dikkat{background:var(--uyaribg);color:var(--uyari)}
+details summary{cursor:pointer;font-weight:600}
+.gizli{display:none}
+.izgara{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media (max-width:560px){.izgara{grid-template-columns:1fr}}
+pre{white-space:pre-wrap;word-break:break-all;font:12px ui-monospace,Consolas,monospace;margin:8px 0 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Şebeke-M Lisans Aracı</h1>
+<p class="alt">AutoCAD eklentisi ve telefon için cihaza bağlı lisans üretir. İnternet gerekmez; gizli anahtarınız bu bilgisayardan çıkmaz.</p>
+<div id="destek" class="durum kotu gizli">Bu tarayıcı imzalama desteklemiyor. Sayfayı Chrome ya da Edge ile açın.</div>
+
+<section>
+  <h2><b>1</b>Gizli anahtar</h2>
+  <div class="satir"><label class="dugme" style="margin:0">Gizli anahtar dosyasını seç (.pem)<input id="pem" type="file" accept=".pem,.txt" class="gizli"></label><span id="pemAd" class="not" style="margin:0"></span></div>
+  <div id="pemDurum" class="durum dikkat">Lisans üretmek için önce gizli anahtar dosyanızı seçin.</div>
+  <details style="margin-top:12px"><summary>Yeni anahtar çifti üret (yalnız bir kez; dikkat)</summary>
+    <p class="not">Yeni anahtar üretirseniz eski lisanslar geçersiz olur ve programların yeni açık anahtarla yeniden derlenmesi gerekir. Yalnız gizli anahtarınızı kaybettiyseniz kullanın.</p>
+    <button id="yeniAnahtar">Yeni anahtar çifti üret</button>
+    <pre id="yeniAcik"></pre>
+  </details>
+</section>
+
+<section>
+  <h2><b>2</b>Lisans bilgileri</h2>
+  <label for="cihaz">Cihaz kodu (programın Lisans ekranında yazar)</label>
+  <input id="cihaz" type="text" class="kod" placeholder="PC-XXXX-XXXX-XXXX-XXXX ya da TL-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
+  <div id="cihazDurum" class="not">PC: AutoCAD eklentisi · TL: telefon · WB: web (ofis) sürümü</div>
+  <div class="izgara">
+    <div><label for="ad">Kime (kişi ya da kurum)</label><input id="ad" type="text" placeholder="ör. Saha ekibi 1"></div>
+    <div><label for="no">Lisans no</label><input id="no" type="text"></div>
+  </div>
+  <div class="izgara">
+    <div><label for="urun">Ürün</label><select id="urun"><option value="hepsi">AutoCAD + telefon (hepsi)</option><option value="eklenti">Yalnız AutoCAD eklentisi</option><option value="telefon">Yalnız telefon</option></select></div>
+    <div><label for="bitis">Bitiş tarihi</label><input id="bitis" type="date">
+      <div class="satir" style="margin-top:6px"><button data-sure="0">Süresiz</button><button data-sure="6">6 ay</button><button data-sure="12">1 yıl</button><button data-sure="24">2 yıl</button></div></div>
+  </div>
+  <p class="not" id="bitisNot">Bitiş boşsa lisans süresizdir. Programlar bitişe 15 gün kala uyarır.</p>
+</section>
+
+<section>
+  <h2><b>3</b>Lisans</h2>
+  <button id="uret" class="ana" disabled>Lisansı üret</button>
+  <div id="uretDurum" class="durum gizli"></div>
+  <textarea id="cikti" readonly placeholder="Üretilen lisans burada görünür" style="margin-top:10px"></textarea>
+  <div class="satir" style="margin-top:8px"><button id="kopyala" disabled>Kopyala</button><button id="indir" disabled>.lisans dosyasını indir</button></div>
+  <p class="not">Lisansı kullanıcıya gönderin (metin ya da dosya). Programda Lisans ekranına yapıştırılır ya da dosyadan açılır.</p>
+</section>
+
+<section>
+  <h2><b>?</b>Lisans denetle</h2>
+  <textarea id="denetle" placeholder="Bir lisansı yapıştırın: kime, hangi cihaz, bitiş ve imza denetlenir"></textarea>
+  <div id="denetleDurum" class="durum gizli"></div>
+</section>
+</main>
+<script>
+'use strict';
+// Programlara gömülü açık anahtar (ortak/lisans/acik-anahtar.json)
+const ACIK = /*ACIK-BASLA*/{"n":"0QMDSHVcTqEmuvfyDWb0SqHF2gYaLU6WR3pilUBNX3vd8AiTX9WX9omVb9_MFrOxkw0Y9t2KgKT6Qg2iWucQ_nQl1YIuyTiPOsan6Kz-qFo2M7X99c1mY9Vxb467trRWw_tigkCOqJFh6IzcwbZc8GazLTu0tGqKNM9Wa6pk2hFuvlfQ6JHnEEPTzEFYd1kJzShXY7brrMXmEE0a1lBuswxo7Fpc8JM3DFMhD1oDDvvxm7TLLxH2HQOjisAIoCJJDIflWa9uKLpCMaOL1ff7JJmzWdcLur7ODD0jD3Vj_05Ay1GxmUnxDgvu5TlGz7sK8OqoOzqvVfd072VujkDSmw","e":65537,"parmakIzi":"B0EE-69D6-0C0E-1F54"}/*ACIK-BITIR*/;
+const $ = (id) => document.getElementById(id);
+const S = window.crypto && window.crypto.subtle;
+const ALG = { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' };
+let ozel = null;
+
+const b64u = (u8) => { let s = ''; for (const b of u8) s += String.fromCharCode(b); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const b64uCoz = (s) => { const t = s.replace(/-/g, '+').replace(/_/g, '/'); const p = t + '==='.slice((t.length + 3) % 4); return Uint8Array.from(atob(p), (c) => c.charCodeAt(0)); };
+const utf8 = (s) => new TextEncoder().encode(s);
+const bugun = () => { const d = new Date(), p = (x) => String(x).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); };
+const tarihTr = (t) => (t ? t.slice(8, 10) + '.' + t.slice(5, 7) + '.' + t.slice(0, 4) : 'süresiz');
+async function parmakIzi(n) { const h = new Uint8Array(await S.digest('SHA-256', b64uCoz(n))); return Array.from(h.slice(0, 8), (x) => x.toString(16).padStart(2, '0')).join('').toUpperCase().match(/.{4}/g).join('-'); }
+function goster(el, sinif, metin) { el.className = 'durum ' + sinif; el.textContent = metin; }
+const KOD = /^(PC|TL|WB)-[0-9A-HJKMNP-TV-Z]{4}(-[0-9A-HJKMNP-TV-Z]{4}){3}$/;
+const kodSade = (k) => k.toUpperCase().replace(/\s+/g, '');
+
+if (!S) $('destek').classList.remove('gizli');
+
+// ---- 1. gizli anahtar
+$('pem').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  $('pemAd').textContent = f.name;
+  try {
+    const pem = await f.text();
+    const m = /-----BEGIN PRIVATE KEY-----([\s\S]+?)-----END PRIVATE KEY-----/.exec(pem);
+    if (!m) throw new Error('Dosyada "BEGIN PRIVATE KEY" bulunamadı.');
+    const der = Uint8Array.from(atob(m[1].replace(/\s+/g, '')), (c) => c.charCodeAt(0));
+    const k = await S.importKey('pkcs8', der, ALG, true, ['sign']);
+    const jwk = await S.exportKey('jwk', k);
+    const iz = await parmakIzi(jwk.n);
+    ozel = k;
+    if (jwk.n === ACIK.n) goster($('pemDurum'), 'iyi', 'Gizli anahtar yüklendi. Programlardaki açık anahtarla eşleşiyor (parmak izi ' + iz + ').');
+    else goster($('pemDurum'), 'kotu', 'Bu gizli anahtar programlardaki açık anahtarla EŞLEŞMİYOR (parmak izi ' + iz + ', beklenen ' + ACIK.parmakIzi + '). Üretilen lisansları programlar kabul etmez.');
+  } catch (err) { ozel = null; goster($('pemDurum'), 'kotu', 'Anahtar okunamadı: ' + err.message); }
+  durumGuncelle();
+});
+$('yeniAnahtar').addEventListener('click', async () => {
+  if (!confirm('Yeni anahtar çifti üretilsin mi? Eski lisanslar geçersiz olur; programların yeni açık anahtarla yeniden derlenmesi gerekir.')) return;
+  const kp = await S.generateKey(Object.assign({ modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]) }, ALG), true, ['sign', 'verify']);
+  const der = new Uint8Array(await S.exportKey('pkcs8', kp.privateKey));
+  const pem = '-----BEGIN PRIVATE KEY-----\n' + btoa(String.fromCharCode(...der)).match(/.{1,64}/g).join('\n') + '\n-----END PRIVATE KEY-----\n';
+  indir('sebeke-m-lisans-gizli-anahtar.pem', pem, 'application/x-pem-file');
+  const jwk = await S.exportKey('jwk', kp.publicKey);
+  const acik = { bicim: 'sebeke-hakedis.lisans-anahtari', surum: 1, n: jwk.n, e: 65537, parmakIzi: await parmakIzi(jwk.n), olusturma: bugun() };
+  $('yeniAcik').textContent = 'Gizli anahtar indirildi (güvenli yerde saklayın). Programlara konacak açık anahtar (ortak/lisans/acik-anahtar.json):\n\n' + JSON.stringify(acik, null, 1);
+});
+
+// ---- 2. bilgiler
+$('no').value = 'L-' + bugun().replace(/-/g, '') + '-01';
+document.querySelectorAll('[data-sure]').forEach((b) => b.addEventListener('click', () => {
+  const ay = +b.dataset.sure;
+  if (!ay) { $('bitis').value = ''; } else { const d = new Date(); d.setMonth(d.getMonth() + ay); const p = (x) => String(x).padStart(2, '0'); $('bitis').value = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+  durumGuncelle();
+}));
+['cihaz', 'ad', 'no', 'urun', 'bitis'].forEach((id) => $(id).addEventListener('input', durumGuncelle));
+function durumGuncelle() {
+  const kod = kodSade($('cihaz').value);
+  const iyi = KOD.test(kod);
+  $('cihazDurum').textContent = !kod ? 'PC: AutoCAD eklentisi · TL: telefon · WB: web (ofis) sürümü' : iyi ? (kod.startsWith('PC') ? 'AutoCAD eklentisi (bilgisayar)' : kod.startsWith('TL') ? 'Telefon' : 'Web (ofis) sürümü') + ' kodu' : 'Kod biçimi tutmuyor (ör. PC-ABCD-EFGH-JKMN-PQRS; O ve I harfleri kullanılmaz).';
+  $('cihazDurum').style.color = kod && !iyi ? 'var(--hata)' : '';
+  $('bitisNot').textContent = $('bitis').value ? 'Bitiş: ' + tarihTr($('bitis').value) + ' · programlar 15 gün kala uyarır.' : 'Bitiş boş: lisans süresiz.';
+  $('uret').disabled = !(ozel && iyi);
+}
+
+// ---- 3. üret
+let son = null;
+$('uret').addEventListener('click', async () => {
+  const yuk = { v: 1, no: $('no').value.trim(), ad: $('ad').value.trim(), cihaz: kodSade($('cihaz').value), urun: $('urun').value, verildi: bugun(), bitis: $('bitis').value || '' };
+  if (yuk.urun === 'eklenti' && yuk.cihaz.startsWith('TL')) return goster($('uretDurum'), 'kotu', 'Telefon koduna "yalnız AutoCAD eklentisi" lisansı verilemez.');
+  if (yuk.urun === 'telefon' && yuk.cihaz.startsWith('PC')) return goster($('uretDurum'), 'kotu', 'Bilgisayar koduna "yalnız telefon" lisansı verilemez.');
+  const m = 'SHL1.' + b64u(utf8(JSON.stringify(yuk)));
+  const imza = new Uint8Array(await S.sign(ALG, ozel, utf8(m)));
+  const lisans = m + '.' + b64u(imza);
+  const dogru = await dogrula(lisans);
+  son = { yuk, lisans };
+  $('cikti').value = lisans;
+  $('kopyala').disabled = $('indir').disabled = false;
+  goster($('uretDurum'), dogru ? 'iyi' : 'kotu', dogru ? 'Lisans üretildi: ' + (yuk.ad || '-') + ' · ' + yuk.cihaz + ' · ' + tarihTr(yuk.bitis) + '.' : 'Lisans üretildi ama açık anahtarla doğrulanmadı: gizli anahtar programlarla eşleşmiyor.');
+});
+$('kopyala').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('cikti').value); $('kopyala').textContent = 'Kopyalandı'; setTimeout(() => { $('kopyala').textContent = 'Kopyala'; }, 1500); } catch (e) { $('cikti').select(); } });
+$('indir').addEventListener('click', () => {
+  if (!son) return;
+  const y = son.yuk;
+  const metin = ['# Şebeke-M Hakediş lisansı', '# Kime: ' + (y.ad || '-'), '# Cihaz: ' + y.cihaz, '# Ürün: ' + y.urun, '# Bitiş: ' + (y.bitis || 'süresiz'), '# Lisans no: ' + (y.no || '-'), '', son.lisans, ''].join('\n');
+  indir(((y.ad || 'lisans').replace(/[^\p{L}\p{N}_-]+/gu, '_')) + '_' + y.cihaz + '.lisans', metin, 'text/plain');
+});
+function indir(ad, metin, tur) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([metin], { type: tur })); a.download = ad; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+
+// ---- denetle
+async function dogrula(metin) {
+  const m = /SHL1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.exec(String(metin).replace(/\s+/g, ''));
+  if (!m) return false;
+  const [o, y, s] = m[0].split('.');
+  const k = await S.importKey('jwk', { kty: 'RSA', n: ACIK.n, e: 'AQAB', alg: 'RS256', ext: true }, ALG, false, ['verify']);
+  return S.verify(ALG, k, b64uCoz(s), utf8(o + '.' + y));
+}
+$('denetle').addEventListener('input', async () => {
+  const t = $('denetle').value, el = $('denetleDurum');
+  const m = /SHL1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.exec(t.replace(/\s+/g, ''));
+  if (!m) { if (t.trim()) goster(el, 'kotu', 'Metinde lisans bulunamadı (SHL1. ile başlar).'); else el.className = 'durum gizli'; return; }
+  try {
+    const y = JSON.parse(new TextDecoder().decode(b64uCoz(m[0].split('.')[1])));
+    const ok = await dogrula(m[0]);
+    goster(el, ok ? 'iyi' : 'kotu', (ok ? 'İmza doğru. ' : 'İMZA GEÇERSİZ. ') + 'Kime: ' + (y.ad || '-') + ' · Cihaz: ' + y.cihaz + ' · Ürün: ' + y.urun + ' · Verildi: ' + tarihTr(y.verildi) + ' · Bitiş: ' + tarihTr(y.bitis) + ' · No: ' + (y.no || '-'));
+  } catch (e) { goster(el, 'kotu', 'Lisans okunamadı.'); }
+});
+durumGuncelle();
+</script>
+</body>
+</html>
