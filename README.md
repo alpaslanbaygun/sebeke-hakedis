@@ -28,6 +28,7 @@ GitHub › **Releases**:
 | Bölge (alt proje) | AutoCAD'den gelen bölgeler korunur (grup kodu dahil) | `SH_BOLGE` |
 | Ölçü noktaları | ölçerek, CSV / NCN çıktısı | `SH_NOKTAAL` (CSV/TXT) |
 | Malzeme (TEDAŞ poz kataloğu) | ✓ elle ekleme, otomatik reçete seçeneği | `SH_MALZEME` (2 982 kalemlik katalog; AG galvaniz travers ve konsollar dâhil); **Önerilen…**: telefonun reçete kuralları (`ortak/katalog/onerilen-malzeme.json`) direğin grubu, rolü ve iletkenine göre travers, izolatör, topraklama önerir, işaretlenenler eklenir |
+| **Arayüz teması**: koyu ya da açık (Otomatik: eklentide AutoCAD'in teması, telefonda cihazın teması); eklentide Çizim ayarları › Genel, telefonda Ayarlar › Görünüm |
 | **Teknik hesaplar (Hesap Merkezi)**: sehim, uplift, ag–aw, Amax, iletken kopma, tepe kuvveti (TEDAŞ / cer vektörü), OG–AG gerilim düşümü, OG–AG kısa devre, Cu ⇄ Al kesit, beton köşk yerleşimi, kanal planı, AG tek hat | ✓ (objeden açılır, bilgiler projeden dolar, sonuç projeye kaydedilir) | ✓ (`SH_HESAP`, `SH_HESAPLAR`; sonuç çizime kaydedilir, raporun HESAPLAR sayfasına yazılır) |
 | Kabin / köşk yerleşimi, tepe kuvveti, enerji kontrolü (eski ekranlar) | ✓ | — |
 | Fotoğraf ve not | ✓ | — |

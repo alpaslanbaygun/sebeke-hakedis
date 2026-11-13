@@ -275,8 +275,8 @@ namespace SebekeHakedis.Eklenti
 
         // ---- simgeler ----
 
-        private static readonly Color KanalRengi = KoyuRenk.Hex("#c98a4b", Color.Peru);
-        private static readonly Color SondajRengi = KoyuRenk.Hex("#fbbf24", Color.Gold);
+        private static Color KanalRengi => Tema.Okunur(KoyuRenk.Hex("#c98a4b", Color.Peru));
+        private static Color SondajRengi => Tema.Okunur(KoyuRenk.Hex("#fbbf24", Color.Gold));
 
         private static string IlkCins(string tur)
         {
@@ -286,13 +286,13 @@ namespace SebekeHakedis.Eklenti
 
         private static Color ElemanRengi(string tur, string cins = null)
         {
-            try { return KoyuRenk.Hex(CizimStili.EkranElemanRengi(tur, cins ?? IlkCins(tur)), KoyuRenk.Yesil); }
+            try { return Tema.Okunur(KoyuRenk.Hex(CizimStili.EkranElemanRengi(tur, cins ?? IlkCins(tur)), KoyuRenk.Yesil)); }
             catch { return KoyuRenk.Yesil; }
         }
 
         private static Color HatRengi(string tur)
         {
-            try { return KoyuRenk.Hex(CizimStili.EkranHatRengi(tur), KoyuRenk.Yesil); }
+            try { return Tema.Okunur(KoyuRenk.Hex(CizimStili.EkranHatRengi(tur), KoyuRenk.Yesil)); }
             catch { return KoyuRenk.Yesil; }
         }
 
@@ -324,7 +324,7 @@ namespace SebekeHakedis.Eklenti
                 var s = Semboller.Bul(blok);
                 bool demontaj = Semboller.DemontajVaryanti(Semboller.Varyant(durum, dm));
                 // Demontaj simgesi telefondaki gibi sarı (çizimde demontaj rengi)
-                if (s != null) r = SeritSimgeleri.SembolResmi(s, demontaj ? "#ffd84d" : CizimStili.EkranElemanRengi(tur, cins), S(px));
+                if (s != null) r = SeritSimgeleri.SembolResmi(s, Tema.OkunurHex(demontaj ? "#ffd84d" : CizimStili.EkranElemanRengi(tur, cins)), S(px));
             }
             catch { r = null; }
             if (r == null) r = TurSimgesi(tur, false, false);
@@ -2626,7 +2626,7 @@ namespace SebekeHakedis.Eklenti
                     ciziliyor = true;
                     bool acik = d.OnayAcik;
                     if (!acik) { kimAd.Text = "Onay mekanizması kapalı"; kimRol.Text = "Kullanıcı tanımlı değil: onaylar ve hakediş yetkisi herkese açık (eski davranış). Açmak için ilk Yöneticiyi tanımlayın."; }
-                    else if (d.Uye != null) { kimAd.Text = d.Uye.Ad; kimRol.Text = Roller.Ad(d.Uye.Rol); kimRol.ForeColor = KoyuRenk.Hex(Roller.Bul(d.Uye.Rol)?.Renk ?? "", KoyuRenk.Ikincil); }
+                    else if (d.Uye != null) { kimAd.Text = d.Uye.Ad; kimRol.Text = Roller.Ad(d.Uye.Rol); kimRol.ForeColor = Tema.Okunur(KoyuRenk.Hex(Roller.Bul(d.Uye.Rol)?.Renk ?? "", KoyuRenk.Ikincil)); }
                     else { kimAd.Text = "Oturum açık değil"; kimRol.Text = "Onay vermek, kullanıcı eklemek ya da hakediş yetkisini değiştirmek için oturum açın."; kimRol.ForeColor = KoyuRenk.Ikincil; }
                     if (!acik || d.Uye == null) kimRol.ForeColor = KoyuRenk.Ikincil;
                     acDugme.Visible = acik && d.Uye == null;
@@ -2648,7 +2648,7 @@ namespace SebekeHakedis.Eklenti
                         var sp = new SatirPaneli { Vurgulu = ben, BackColor = ben ? KoyuRenk.Secili : KoyuRenk.Kart };
                         Koy(govde, sp, 0, i * satirBoy, en - 34 - 20, satirBoy);
                         Etiket(sp, k.Ad + (ben ? "  (siz)" : ""), 14, 8, 250, KoyuYazi.Kalin, k.Etkin ? KoyuRenk.Yazi : KoyuRenk.Soluk);
-                        Etiket(sp, Roller.Ad(k.Rol), 270, 8, 170, KoyuYazi.Govde, k.Etkin ? KoyuRenk.Hex(Roller.Bul(k.Rol)?.Renk ?? "", KoyuRenk.Ikincil) : KoyuRenk.Soluk);
+                        Etiket(sp, Roller.Ad(k.Rol), 270, 8, 170, KoyuYazi.Govde, k.Etkin ? Tema.Okunur(KoyuRenk.Hex(Roller.Bul(k.Rol)?.Renk ?? "", KoyuRenk.Ikincil)) : KoyuRenk.Soluk);
                         Etiket(sp, k.Etkin ? "Etkin" : "Pasif", 448, 8, 70, KoyuYazi.Kucuk, k.Etkin ? KoyuRenk.Ikincil : KoyuRenk.Soluk);
                         if (d.Yonetebilir && d.OnayAcik)
                         {
@@ -2976,6 +2976,12 @@ namespace SebekeHakedis.Eklenti
                 }
                 if (!domlar.Exists(r => r.Checked)) domlar[0].Checked = true;
                 Aciklama(genel, "Telefondaki projeyle aynı olmalı (Elazığ, Malatya, Erzincan: 39°).", 0, 282, 600, 20);
+                // Arayüz teması (13.11.2026): bu bilgisayarda kullanıcı başına, çizime yazılmaz
+                Etiket(genel, "Arayüz teması (bu bilgisayar)", 0, 326);
+                var tema = Koy(genel, new KoyuAcilir { Name = "arayuzTemasi" }, 0, 346, 300);
+                foreach (var t in Tema.SecenekAdlari) tema.Items.Add(t);
+                tema.SelectedIndex = Math.Max(0, Array.IndexOf(Tema.Secenekler, Tema.Secim));
+                Aciklama(genel, "Pencerelerin rengi. Otomatik: AutoCAD açık temadaysa açık. Çizime kaydedilmez; değişiklik pencereler yeniden açılınca görünür.", 316, 342, 300, 40);
 
                 // Tarife
                 var tarife = sayfa();
@@ -3103,6 +3109,7 @@ namespace SebekeHakedis.Eklenti
                 if (kalinlik.SelectedIndex >= 0) a.HatKalinligi = katlar[kalinlik.SelectedIndex];
                 a.MalzemeYazisi = malzemeYazisi.Checked;
                 a.SimgeTakimi = takim.SelectedIndex == 1 ? Semboller.TakimSM : "";
+                if (tema.SelectedIndex >= 0 && Tema.Secenekler[tema.SelectedIndex] != Tema.Secim) Tema.Secim = Tema.Secenekler[tema.SelectedIndex];
                 a.BoyutlariDuzelt();
                 a.YakalamaMesafesi = (double)yakala.Value;
                 a.YukariYuvarla = yukari.Checked;

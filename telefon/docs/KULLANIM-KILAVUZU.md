@@ -53,7 +53,11 @@ Uygulamanın beş ana ekranı vardır; ekranın altındaki menüden geçilir. Pr
 | Ayarlar | Gruplu menü: Ölçüm, Düzeltme kaynağı, Hassasiyet eşikleri, Koordinat sistemi, Harita, Veri ve kullanıcılar, Deneme ve eğitim, Hakkında |
 
 Ayarlar ekranının üstündeki kart o anki konum kaynağını ve düzeltme durumunu özetler; dokununca Ölçüm grubu
-açılır. **Hakkında** grubunda uygulamanın amacı, neler yapabildiği ve sürümü yazar (AutoCAD eklentisinin Hakkında
+açılır. Ayarlar ekranının altındaki **Görünüm › Tema** uygulamanın rengini seçer: **Otomatik** (telefonun açık / koyu
+teması; telefonun teması değişince uygulama da değişir), **Koyu** ya da **Açık**. Seçim yalnız bu cihazda saklanır.
+Açık temada harita da açık zeminle çizilir; çizgi ve yazı renkleri açık zeminde okunacak biçimde koyulaştırılır. Köşk
+planı çizimi her iki temada koyu zeminde kalır. AutoCAD eklentisinde aynı seçim Çizim ayarları › Genel › Arayüz
+teması'ndadır. **Hakkında** grubunda uygulamanın amacı, neler yapabildiği ve sürümü yazar (AutoCAD eklentisinin Hakkında
 penceresiyle aynı metin).
 
 ### Üst durum çubuğu

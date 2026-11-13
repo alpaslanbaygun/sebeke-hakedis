@@ -89,20 +89,20 @@ export function CabinScreen({ id }) {
       <div class="fld"><label>Yapı sınıfı</label><div class="chips">${[...SINIF, ...(cabin.sinif === 'bina' ? [['bina', 'Trafo binası (eski kayıt)']] : [])].map(([k, l]) => html`<${Chip} fill on=${cabin.sinif === k} onClick=${() => { if (k === cabin.sinif) return; run(kabinDegistir(cabin, { sinif: k })); if (govde !== 'yok') setGovde(k === 'pref' ? ilkPB() : 'oto'); }}>${l}</${Chip}>`)}</div></div>
       <div class="grid2"><div class="fld"><label>${cabin.sinif === 'pref' ? 'Yerleşim ölçüsü (tip proje)' : 'Tip'}</label><${Sel} mono value=${cabin.kosk} options=${tipler.map((t) => [t.kosk, t.ad + ' · ' + t.boy + '×' + t.en + ' mm'])} onChange=${(v) => run(kabinDegistir(cabin, { kosk: v }))} /></div>
         <div class="fld"><label>Yerleşim</label><${Sel} value=${cabin.varyant} options=${(tip ? tip.varyantlar : []).map((v) => [v.key, v.ad])} onChange=${(v) => run(kabinDegistir(cabin, { varyant: v }))} /></div></div>
-      <div class="grid2">${Y.hasT ? html`<div class="fld"><label>Trafo gücü</label><${Sel} mono value=${cabin.trafoKva} options=${guc.map((g) => [g, g + ' kVA'])} onChange=${(v) => run(kabinDegistir(cabin, { trafoKva: +v }))} /></div>` : html`<div class="fld"><label>Trafo</label><div class="inp" style="display:flex;align-items:center;color:#94a3b8">yok (KÖK)</div></div>`}
+      <div class="grid2">${Y.hasT ? html`<div class="fld"><label>Trafo gücü</label><${Sel} mono value=${cabin.trafoKva} options=${guc.map((g) => [g, g + ' kVA'])} onChange=${(v) => run(kabinDegistir(cabin, { trafoKva: +v }))} /></div>` : html`<div class="fld"><label>Trafo</label><div class="inp" style="display:flex;align-items:center;color:var(--mut)">yok (KÖK)</div></div>`}
         <div class="fld"><label>Hücre yalıtımı</label><${Seg} value=${yal} options=${[['hd', 'Hava (hd)'], ['gd', 'Gaz (gd)']]} onChange=${(v) => setCabin(Object.assign({}, cabin, { yalitim: v }))} /></div></div>
       ${cabin.sinif === 'pref' && cabin.kosk === 'PBK-1B' && cabin.varyant !== 'KOK' ? html`<div class="fld"><label>Trafo adedi</label><${Seg} value=${cabin.trafoAdet || 2} options=${[[1, '1 trafo'], [2, '2 trafo']]} onChange=${(v) => run(kabinDegistir(cabin, { trafoAdet: v }))} /></div>` : null}
     </div>
 
     <${CabinPlan} cabin=${cabin} />
-    <div class="grid3"><div class="stat"><b>Hücre sırası</b><span>${trn(Y.hucreW, 0)}</span><small>mm</small></div><div class="stat"><b>Kalan yer</b><span style=${'color:' + (Y.kalan < 0 ? '#ff8a8a' : '#6ffbbe')}>${trn(Y.kalan, 0)}</span><small>mm</small></div><div class="stat"><b>Koridor</b><span style=${'color:' + (Y.koridor < 800 ? '#fcd34d' : '#dae2fd')}>${trn(Y.koridor, 0)}</span><small>mm</small></div></div>
+    <div class="grid3"><div class="stat"><b>Hücre sırası</b><span>${trn(Y.hucreW, 0)}</span><small>mm</small></div><div class="stat"><b>Kalan yer</b><span style=${'color:' + (Y.kalan < 0 ? '#ff8a8a' : 'var(--ok2)')}>${trn(Y.kalan, 0)}</span><small>mm</small></div><div class="stat"><b>Koridor</b><span style=${'color:' + (Y.koridor < 800 ? 'var(--warn3)' : 'var(--tx)')}>${trn(Y.koridor, 0)}</span><small>mm</small></div></div>
 
     <div class="sect">Hücreler <span class="r mono">${cabin.hucreler.length} adet</span></div>
     <div class="card tight list">
       ${cabin.hucreler.map((h, i) => { const r = hucreRec(h.c) || [h.c, '?', 0, 0]; const yh = Y.hucreler.find((x) => x.i === i); const pz = hucrePoz(cat, h.c, yal); return html`<div class="li" style="align-items:flex-start;flex-wrap:wrap;gap:6px">
         <div class="grow" style="min-width:180px"><div class="row" style="gap:6px"><b class="mono" style="font-size:13px">${i + 1}. ${h.c}</b>${yh && yh.sigar === false ? html`<${Badge} k="err">SIĞMIYOR</${Badge}>` : null}${Y.siralar.length > 1 && yh ? html`<${Badge} k="mut">${yh.sira === 'on' ? 'ÖN SIRA' : 'ARKA SIRA'}</${Badge}>` : null}</div>
           <div class="s">${r[1]} · ${r[2]} mm · ${r[3]} kg</div>
-          <div class="m" style=${pz ? '' : 'color:#fcd34d'}>${r[3] === 0 && /YEDEK/.test(h.c) ? 'yedek yer · keşfe girmez' : pz ? 'Keşif: ' + ((cat.poz(pz) || {}).pozNo || pz) : 'Keşif: poz eşlenmemiş'}</div>
+          <div class="m" style=${pz ? '' : 'color:var(--warn3)'}>${r[3] === 0 && /YEDEK/.test(h.c) ? 'yedek yer · keşfe girmez' : pz ? 'Keşif: ' + ((cat.poz(pz) || {}).pozNo || pz) : 'Keşif: poz eşlenmemiş'}</div>
           <div class="row" style="gap:6px;margin-top:6px"><input class="inp" style="height:36px;font-size:13px" value=${h.f || ''} placeholder="Fider adı" onChange=${(e) => run(hucreAyar(cabin, i, { f: e.target.value }))} />
             <select class="inp" style="height:36px;width:96px;font-size:13px" value=${h.y || 'c'} onChange=${(e) => run(hucreAyar(cabin, i, { y: e.target.value }))}><option value="g">Giriş</option><option value="c">Çıkış</option><option value="x">—</option></select></div>
           <div class="row" style="gap:6px;margin-top:6px"><select class="inp mono" style="height:36px;font-size:12px" value=${h.c} onChange=${(e) => run(hucreDegistir(cabin, i, e.target.value))}>${[...(liste.some((x) => x[0] === h.c) ? [] : [[h.c, r[1]]]), ...liste].map((x) => html`<option value=${x[0]}>${x[0]} · ${x[1]}</option>`)}</select></div></div>
@@ -136,7 +136,7 @@ export function CabinScreen({ id }) {
 
     <div class="sect">Keşfe gelecek kalemler <span class="r mono">${items.length} kalem</span></div>
     <div class="card tight scrollx"><table class="t"><thead><tr><th>Kod</th><th>Kalem</th><th class="n">Miktar</th></tr></thead><tbody>
-      ${items.map((m) => html`<tr><td class="mono" style=${m.missing ? 'color:#fcd34d' : ''}>${m.servis ? ((cat.poz(m.servis) || {}).pozNo || m.servis) : 'poz yok'}</td><td>${m.name}<div class="note">${m.why}</div></td><td class="n">${trn(m.qty, m.unit === 'm' ? 2 : 0)} ${m.unit}</td></tr>`)}
+      ${items.map((m) => html`<tr><td class="mono" style=${m.missing ? 'color:var(--warn3)' : ''}>${m.servis ? ((cat.poz(m.servis) || {}).pozNo || m.servis) : 'poz yok'}</td><td>${m.name}<div class="note">${m.why}</div></td><td class="n">${trn(m.qty, m.unit === 'm' ? 2 : 0)} ${m.unit}</td></tr>`)}
     </tbody></table></div>
 
     <div class="sect">Ağırlıklar</div>

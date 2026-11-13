@@ -16,7 +16,10 @@ import { wireRawLog } from './ui/services.js';
 import { isWeb, capability, installWebBridge, probeTiles } from './web/platform.js';
 import { CloudAdapter } from './web/cloud-adapter.js';
 import './ui/theme.css';
+import { temaBaslat, temaUygula, sistemTemasi } from './ui/tema.js';
 
+temaBaslat();   // ilk boyamadan önce (Otomatik: cihazın teması)
+if (bridge.sistemTemasi) bridge.sistemTemasi().then((d) => sistemTemasi(!!(d && d.acik))).catch(() => {});
 const splash = (t) => { const el = document.getElementById('splash-msg'); if (el) el.textContent = t; };
 
 async function boot() {
@@ -74,6 +77,9 @@ async function boot() {
     gnss.yakinKonum = () => { const p = ps.p ? (ps.data.points || []).find((x) => x.lat != null && x.lon != null) : null; return p ? { lat: p.lat, lon: p.lon, alt: p.H } : null; };
     Object.assign(app, { bus, ds, ps, gnss, bridge });
     window.__app = app;
+    // Arayüz teması: ayardaki seçim (açılışta tarayıcı belleğinden uygulanmıştı); Android cihazın temasını bildirir
+    try { const t = await ds.setting('tema'); if (t) temaUygula(t); } catch (e) { /* */ }
+    bus.on('native:tema', (d) => sistemTemasi(!!(d && d.acik)));
     app.state.basemap = (await ds.setting('basemap')) || 'none';
     app.state.mapKeys = (await ds.setting('mapKeys')) || {};
     app.state.haritaOlcek = (await ds.setting('haritaOlcek')) || { simge: 1, yazi: 1 };

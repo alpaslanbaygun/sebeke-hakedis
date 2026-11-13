@@ -99,11 +99,11 @@ export function TepeScreen({ E, N, arms, title, pointId }) {
     const c = 110, rr = 86;
     const maxT = Math.max(1, ...(S.kollar || []).map((k) => k.Td || 0));
     return html`<svg viewBox="0 0 220 220" style="width:100%;max-width:240px;height:auto" role="img" aria-label="Kol yönleri">
-      <circle cx=${c} cy=${c} r=${rr} fill="#0e1730" stroke="#334155" /><line x1=${c} y1=${c - rr} x2=${c} y2=${c + rr} stroke="#1f2a40" /><line x1=${c - rr} y1=${c} x2=${c + rr} y2=${c} stroke="#1f2a40" />
-      <text x=${c} y="16" text-anchor="middle" font-size="9" fill="#94a3b8" font-weight="700">KUZEY</text>
-      ${rows.map((r, i) => { const a = (+r.az || 0) * Math.PI / 180; const L = S.kollar && S.kollar[i] && S.kollar[i].Td ? 30 + 56 * (S.kollar[i].Td / maxT) : rr; const x = c + L * Math.cos(a), y = c - L * Math.sin(a); return html`<line x1=${c} y1=${c} x2=${x} y2=${y} stroke=${r.yg ? '#ff8a8a' : '#7ee08a'} stroke-width="3" stroke-linecap="round" /><text x=${c + (L + 10) * Math.cos(a)} y=${c - (L + 10) * Math.sin(a) + 3} text-anchor="middle" font-size="10" font-weight="800" fill="#dae2fd">${i + 1}</text>`; })}
+      <circle cx=${c} cy=${c} r=${rr} fill="var(--bg2)" stroke="var(--line)" /><line x1=${c} y1=${c - rr} x2=${c} y2=${c + rr} stroke="var(--panel2)" /><line x1=${c - rr} y1=${c} x2=${c + rr} y2=${c} stroke="var(--panel2)" />
+      <text x=${c} y="16" text-anchor="middle" font-size="9" fill="var(--mut)" font-weight="700">KUZEY</text>
+      ${rows.map((r, i) => { const a = (+r.az || 0) * Math.PI / 180; const L = S.kollar && S.kollar[i] && S.kollar[i].Td ? 30 + 56 * (S.kollar[i].Td / maxT) : rr; const x = c + L * Math.cos(a), y = c - L * Math.sin(a); return html`<line x1=${c} y1=${c} x2=${x} y2=${y} stroke=${r.yg ? '#ff8a8a' : '#7ee08a'} stroke-width="3" stroke-linecap="round" /><text x=${c + (L + 10) * Math.cos(a)} y=${c - (L + 10) * Math.sin(a) + 3} text-anchor="middle" font-size="10" font-weight="800" fill="var(--tx)">${i + 1}</text>`; })}
       ${R && R.ok && S.yon != null ? (() => { const a = S.yon * Math.PI / 180; return html`<line x1=${c} y1=${c} x2=${c + 70 * Math.cos(a)} y2=${c - 70 * Math.sin(a)} stroke="#fde047" stroke-width="2.5" stroke-dasharray="5 4" /><circle cx=${c + 70 * Math.cos(a)} cy=${c - 70 * Math.sin(a)} r="4" fill="#fde047" />`; })() : null}
-      <circle cx=${c} cy=${c} r="6" fill="#dae2fd" stroke="#0b1326" stroke-width="2" /></svg>`;
+      <circle cx=${c} cy=${c} r="6" fill="var(--tx)" stroke="var(--bg)" stroke-width="2" /></svg>`;
   })();
   return html`<${Title} title="Direk tepe kuvveti" sub=${(title || 'Cer vektör hesabı') + (E != null ? ' · Y ' + trn(E, 2) + ' · X ' + trn(N, 2) : '')} />
     <div class="card stack">
@@ -114,7 +114,7 @@ export function TepeScreen({ E, N, arms, title, pointId }) {
     ${rows.map((r, i) => html`<div class="card stack" style="gap:8px">
       <div class="row"><span class="badge b-mut" style="height:24px">${i + 1}</span><b class="grow mono" style="font-size:13px">${r.layer || 'elle eklenen kol'}</b><button class="btn xs dang" aria-label="Kolu sil" onClick=${() => setRows((rs) => rs.filter((_, k) => k !== i))}><${Icon} n="trash" s=${14} /></button></div>
       <div class="grid2"><div class="fld"><label>Yön (° · doğu 0, saat tersi)</label><input class="inp mono" type="number" step="0.1" value=${Math.round((+r.az || 0) * 10) / 10} onChange=${(e) => setRow(i, { az: +e.target.value })} /></div><div class="fld"><label>Açıklık (m)</label><input class="inp mono" type="number" step="0.1" value=${Math.round((+r.len || 0) * 10) / 10} onChange=${(e) => setRow(i, { len: +e.target.value })} /></div></div>
-      <div class="grid2"><div class="fld"><label style="color:#ff8a8a">OG iletkeni</label><${Sel} mono value=${r.yg || ''} options=${[['', 'yok'], ...TABLES.YG_SIRA.map((k) => [k, k])]} onChange=${(v) => setRow(i, { yg: v }, true)} /></div>
+      <div class="grid2"><div class="fld"><label style="color:var(--og)">OG iletkeni</label><${Sel} mono value=${r.yg || ''} options=${[['', 'yok'], ...TABLES.YG_SIRA.map((k) => [k, k])]} onChange=${(v) => setRow(i, { yg: v }, true)} /></div>
         <div class="fld"><label style="color:#7ee08a">AG tertibi</label><${Sel} mono value=${r.ag || ''} options=${[['', 'yok'], ...agList.map((t) => [t.key, t.label || t.key])]} onChange=${(v) => setRow(i, { ag: v }, true)} /></div></div>
       ${!(r.yg || r.ag) ? html`<div class="note hw">İletken tanınmadı: OG iletkeni ya da AG tertibini seçin. Seçiminiz "${r.layer || 'bu katman'}" için hatırlanır.</div>` : null}
     </div>`)}
@@ -140,18 +140,18 @@ export function TepeScreen({ E, N, arms, title, pointId }) {
       : html`<div class="card stack">
         <div class="row" style="align-items:flex-start;gap:12px"><div style="flex:0 0 42%">${dia}</div>
           <div class="grow stack" style="gap:10px">
-            <div><div class="lbl">Tepe kuvveti · demir direk</div><div class="row" style="align-items:baseline;gap:4px"><span class="big" style="font-size:32px;line-height:36px">${num(anaR)}</span><span class="num" style="color:#94a3b8">kg</span></div></div>
+            <div><div class="lbl">Tepe kuvveti · demir direk</div><div class="row" style="align-items:baseline;gap:4px"><span class="big" style="font-size:32px;line-height:36px">${num(anaR)}</span><span class="num" style="color:var(--mut)">kg</span></div></div>
             <div><div class="lbl">Beton direk için</div><div class="num" style="font-size:18px">${anaB != null ? num(anaB) + ' kg' : 'tablo değeri yok'}</div></div>
             ${S.yon != null ? html`<div><div class="lbl">Bileşke yönü</div><div class="num">${trn(S.yon, 1)}°</div></div>` : null}
           </div></div>
-        <div class="grid2"><div class="stat"><b>Demir direk</b><span style="font-size:17px;color:#6ffbbe">${R.demir ? (R.demir.tip === 'K' ? 'Kafes ' : 'A tipi ') + R.demir.ad : '—'}</span>${R.kafesZorunlu ? html`<div class="note">kafes zorunlu</div>` : null}</div>
-          <div class="stat"><b>Beton direk</b><span style="font-size:17px;color:#6ffbbe">${R.beton ? R.beton.ad : '—'}</span>${R.beton && R.beton.taban ? html`<div class="note">asgari tip</div>` : null}</div></div>
+        <div class="grid2"><div class="stat"><b>Demir direk</b><span style="font-size:17px;color:var(--ok2)">${R.demir ? (R.demir.tip === 'K' ? 'Kafes ' : 'A tipi ') + R.demir.ad : '—'}</span>${R.kafesZorunlu ? html`<div class="note">kafes zorunlu</div>` : null}</div>
+          <div class="stat"><b>Beton direk</b><span style="font-size:17px;color:var(--ok2)">${R.beton ? R.beton.ad : '—'}</span>${R.beton && R.beton.taban ? html`<div class="note">asgari tip</div>` : null}</div></div>
         ${S.Rk != null && gorev !== 'T' ? html`<div class="kv mono" style="font-size:12px"><b>Kuvvetli eksen</b><span>${num(S.Rk)} kg</span><b>Zayıf eksen</b><span>${num(S.Rz)} kg</span>${S.Pwz != null ? html`<b>Rüzgâr (zayıf eksen)</b><span>${num(S.Pwz)} kg</span>` : null}${S.sinif && S.sinif.ad ? html`<b>Düğüm</b><span>${S.sinif.ad}</span>` : null}</div>` : null}
         ${R.manuel ? html`<div class=${'alert ' + (R.manuel.ok ? 'ok' : 'err')}>${R.manuel.ok ? 'Seçilen direk yeterlidir' : 'Seçilen direk YETERSİZDİR'}${R.manuel.ad ? ' · ' + R.manuel.ad : ''}</div>` : null}
         ${(R.uyarilar || []).map((u) => html`<div class="alert warn" style="font-size:12px">${u}</div>`)}
         ${S.haller && S.haller.length ? html`<div class="card tight scrollx"><table class="t"><thead><tr><th>Yük hâli</th><th class="n">ΣPx</th><th class="n">ΣPy</th><th class="n">R demir</th><th class="n">R beton</th></tr></thead><tbody>${S.haller.map((h) => html`<tr><td>${h.ad}</td><td class="n">${num(h.Px)}</td><td class="n">${num(h.Py)}</td><td class="n">${num(h.sk ?? h.R)}</td><td class="n">${h.Rb != null ? num(h.Rb) : '—'}</td></tr>`)}</tbody></table></div>` : null}
         <button class="btn sm" onClick=${() => setSteps(!steps)}>${steps ? 'Hesap adımlarını gizle' : 'Hesap adımlarını göster'}</button>
-        ${steps ? html`<div class="card" style="background:#0e1730"><div class="mono" style="font-size:11.5px;line-height:1.6;white-space:pre-wrap">${(R.adimlar || []).join('\n')}</div></div>` : null}
+        ${steps ? html`<div class="card" style="background:var(--bg2)"><div class="mono" style="font-size:11.5px;line-height:1.6;white-space:pre-wrap">${(R.adimlar || []).join('\n')}</div></div>` : null}
       </div>`}
     <div class="note">Yöntem: tablo değerleriyle cer (Tmax) ve vektör toplamı; kuvvetler kg. AG kuvvetleri müşterek direkte tepeye 0,81 oranıyla indirgenir. Sonuç proje müellifinin kontrolündedir.</div>
     ${Object.keys(map).length ? html`<details class="card"><summary style="cursor:pointer;font-weight:700">Katman → iletken eşleştirmeleri (${Object.keys(map).length})</summary><div class="stack" style="gap:4px;margin-top:8px">${Object.entries(map).map(([k, v]) => html`<div class="row" style="font-size:12px"><span class="mono grow">${k}</span><span class="mono note">${(v.yg || '—') + ' # ' + (v.ag || '—')}</span><button class="btn xs" aria-label="Eşleştirmeyi sil" onClick=${() => { const m = Object.assign({}, map); delete m[k]; setMap(m); app.ds.setting('tepeLayerMap', m); }}><${Icon} n="x" s=${12} /></button></div>`)}</div></details>` : null}`;

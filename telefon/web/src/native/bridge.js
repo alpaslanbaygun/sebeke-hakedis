@@ -59,6 +59,8 @@ export const bridge = {
   shareFile(name, mime, u8) { return this.saveFile(name, mime, u8, { share: true }); },
   printHtml: (title, html) => (N() ? call('printHtml', { title, html }) : webPrint(html)),
   keepScreenOn: (on) => (N() ? call('keepScreenOn', { on }) : Promise.resolve()),
+  // Cihazın teması ({ acik }); yerel uygulama eskiyse ya da web'de: hata (tema.js tarayıcının prefers-color-scheme'ine düşer)
+  sistemTemasi: () => call('sistemTemasi', {}),
   vibrate: (ms = 40) => { if (N()) return call('vibrate', { ms }).catch(() => {}); try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* */ } return Promise.resolve(); },
   openSettings: (what) => call('openSettings', { what })
 };

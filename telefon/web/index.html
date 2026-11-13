@@ -12,7 +12,11 @@ html,body{margin:0;height:100%;background:#0b1326;color:#dae2fd;font-family:Inte
 #splash .logo{width:min(240px,62vw);background:#fff;border-radius:20px;padding:14px 18px;box-shadow:0 10px 40px rgba(0,0,0,.45)}
 #splash .logo img{display:block;width:100%;height:auto}
 #splash span{font-size:13px;color:#94a3b8}
+html[data-tema=acik],html[data-tema=acik] body{background:#f3f5f8;color:#0f1b2a}
+html[data-tema=acik] #splash .logo{box-shadow:0 10px 40px rgba(15,23,42,.15)}
+html[data-tema=acik] #splash span{color:#475569}
 </style>
+<script>/* arayüz teması ilk boyamadan önce (ui/tema.js ile aynı kural) */try{var t=localStorage.getItem('sh-tema')||'otomatik';var a=t==='acik'||(t==='otomatik'&&window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches);document.documentElement.dataset.tema=a?'acik':'koyu';}catch(e){}</script>
 </head>
 <body>
 <div id="splash"><div class="logo"><img src="assets/sebeke-m-logo.png" alt="Şebeke-M Hakediş"></div><span id="splash-msg">Başlatılıyor…</span></div>

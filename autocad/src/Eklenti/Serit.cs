@@ -105,6 +105,9 @@ namespace SebekeHakedis.Eklenti
             Olustur();
         }
 
+        /// <summary>AutoCAD açık temada mı? (pencerelerin "Otomatik" teması için)</summary>
+        internal static bool AcikTemaMi() => !KoyuTemaMi();
+
         /// <summary>AutoCAD koyu temada mı? (COLORTHEME: 0 koyu, 1 açık; yoksa koyu sayılır)</summary>
         private static bool KoyuTemaMi()
         {

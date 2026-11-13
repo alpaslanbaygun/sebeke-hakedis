@@ -261,6 +261,8 @@ namespace SebekeHakedis.PencereTest
                 Esit(true, Convert.ToString(takim.SelectedItem).StartsWith("Klasik"), "ayarlar: simge takımı varsayılanı Klasik");
                 takim.SelectedIndex = 1;
                 Esit(true, Convert.ToString(takim.SelectedItem).StartsWith("Şebeke-M"), "ayarlar: simge takımı Şebeke-M seçildi");
+                var tema = Bul<KoyuAcilir>(f, k => k.Name == "arayuzTemasi");
+                Esit(3, tema != null ? tema.Items.Count : 0, "ayarlar: arayüz teması seçenekleri (Otomatik, Koyu, Açık)");
                 string[] adlar = { "genel", "proje", "tarife", "gorunum", "metraj" };
                 for (int i = 1; i < adlar.Length; i++)
                 {
@@ -846,6 +848,25 @@ namespace SebekeHakedis.PencereTest
                 Bul<KoyuSecim>(f, r => r.Text.StartsWith("Yüksek", StringComparison.Ordinal)).Checked = true;
                 Resim(f, "sonra");
             });
+
+            // Açık tema (13.11.2026): aynı pencereler açık renklerle (SH_TEMA=acik seçimi geçersiz kılar); vazgeçilir, veri değişmez
+            Environment.SetEnvironmentVariable("SH_TEMA", "acik");
+            Esit(true, Tema.Yenile() && KoyuRenk.Arka.GetBrightness() > 0.9f && KoyuRenk.Yazi.GetBrightness() < 0.2f, "açık tema: zemin açık, yazı koyu");
+            Esit(true, Tema.Okunur(Color.FromArgb(0x7F, 0xFF, 0xFF)).GetBrightness() < 0.5f, "açık tema: açık çizim rengi (AYD camgöbeği) koyulaşır");
+            Dene("40-acik-eleman", () => Pencereler.Eleman(o, null), null, false);
+            Dene("40b-acik-ayarlar", () => Pencereler.Ayarlar(o), f =>
+            {
+                var sekme = Bul<Sekmeler>(f, x => true);
+                sekme.Secili = 3;
+                Resim(f, "gorunum");
+                sekme.Secili = 0;
+            }, false);
+            Dene("40c-acik-malzeme", () => Pencereler.Kalemler(o, direk), null, false);
+            Dene("40d-acik-proje-ozeti", () => Pencereler.ProjeOzetiGoster(poz, gv => { }), null, false);
+            Dene("40e-acik-ileti", () => KoyuMesaj.Goster("Açık tema ileti kutusu.", "Şebeke-M", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2, Goster));
+            Dene("40f-acik-hakkinda", () => Pencereler.Hakkinda("0.1.99", "AutoCAD R25.0 · .NET 8", () => { }));
+            Environment.SetEnvironmentVariable("SH_TEMA", null);
+            Esit(false, Tema.Yenile(), "açık tema: değişken kalkınca seçim (otomatik → AutoCAD yok → koyu)");
 
             // Şerit menü önizlemesi (AutoCAD olmadan; aynı veri ve simgelerle)
             Console.WriteLine("14-serit");

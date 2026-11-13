@@ -91,27 +91,27 @@ export function StakeoutScreen() {
   const cadN = cadDocs(ps).length;
   const openCad = async (f) => { if (!f) return; try { const rr = await openCadFile(f); const b = rr.doc.bbox; if (b) app.state.view = { cE: (b.minE + b.maxE) / 2, cN: (b.minN + b.maxN) / 2, res: Math.max((b.maxE - b.minE) / 320, (b.maxN - b.minN) / 420, 0.05) }; app.state.follow = false; app.nav.tab('map'); app.toast('Çizimde bir uca ya da köşeye dokunun, sonra "Aplikasyon yap" deyin', 'ok', 6000); } catch (e) { app.toast(e.message || String(e), 'err', 7000); } };
   const son = ps.data.stakeouts.slice(-3).reverse();
-  const durumRenk = inTol ? '#10b981' : r ? '#f59e0b' : '#64748b';
+  const durumRenk = inTol ? '#10b981' : r ? '#f59e0b' : 'var(--mut2)';
   return html`<div class="apl">
     <button class="apl-hedef" onClick=${pick}><${Icon} n="target" s=${22} c="#eab308" />
-      <span class="grow" style="min-width:0"><span class="lbl">Hedef nokta</span><span class="apl-hedef-ad">${T ? T.no : 'Seçilmedi — dokunun'}</span>${T && T.label ? html`<span class="apl-hedef-alt">${T.label}</span>` : null}</span><${Icon} n="down" c="#94a3b8" /></button>
+      <span class="grow" style="min-width:0"><span class="lbl">Hedef nokta</span><span class="apl-hedef-ad">${T ? T.no : 'Seçilmedi — dokunun'}</span>${T && T.label ? html`<span class="apl-hedef-alt">${T.label}</span>` : null}</span><${Icon} n="down" c="var(--mut)" /></button>
 
     <div class="apl-yon card">
       <svg class="apl-radar" viewBox="0 0 210 210" role="img" aria-label="Yönlendirme radarı">
-        <circle cx="105" cy="105" r="100" fill="#0e1730" stroke="#334155" stroke-width="1.5" />
-        <circle cx="105" cy="105" r="50" fill="none" stroke="#2d3449" stroke-dasharray="3 4" />
-        <circle cx="105" cy="105" r="20" fill=${inTol ? 'rgba(16,185,129,.18)' : 'none'} stroke=${inTol ? '#10b981' : '#2d3449'} stroke-width=${inTol ? 2.5 : 1} />
-        <line x1="105" y1="8" x2="105" y2="202" stroke="#1f2a40" /><line x1="8" y1="105" x2="202" y2="105" stroke="#1f2a40" />
-        <text x="105" y="17" text-anchor="middle" font-size="9" font-weight="700" fill="#94a3b8">${r && r.heading != null ? 'İLERİ' : 'KUZEY'}</text>
-        <text x="120" y="126" font-family="JetBrains Mono" font-size="9" fill="#94a3b8">${olcek(scale[0])}</text>
-        <text x="141" y="146" font-family="JetBrains Mono" font-size="9" fill="#94a3b8">${olcek(scale[1])}</text>
-        <text x="160" y="176" font-family="JetBrains Mono" font-size="9" fill="#94a3b8">${olcek(scale[2])}</text>
-        ${r ? html`<line x1="105" y1="105" x2=${tx} y2=${ty} stroke="#10b981" stroke-width="2" stroke-dasharray="5 4" /><circle cx=${tx} cy=${ty} r="10" fill="#0b1326" stroke="#dae2fd" stroke-width="2.5" /><circle cx=${tx} cy=${ty} r="3.5" fill="#dae2fd" />` : null}
-        <path d="M105 88 L115 118 L105 111 L95 118 Z" fill="#10b981" stroke="#0b1326" stroke-width="1.5" />
+        <circle cx="105" cy="105" r="100" fill="var(--bg2)" stroke="var(--line)" stroke-width="1.5" />
+        <circle cx="105" cy="105" r="50" fill="none" stroke="var(--line2)" stroke-dasharray="3 4" />
+        <circle cx="105" cy="105" r="20" fill=${inTol ? 'rgba(16,185,129,.18)' : 'none'} stroke=${inTol ? '#10b981' : 'var(--line2)'} stroke-width=${inTol ? 2.5 : 1} />
+        <line x1="105" y1="8" x2="105" y2="202" stroke="var(--panel2)" /><line x1="8" y1="105" x2="202" y2="105" stroke="var(--panel2)" />
+        <text x="105" y="17" text-anchor="middle" font-size="9" font-weight="700" fill="var(--mut)">${r && r.heading != null ? 'İLERİ' : 'KUZEY'}</text>
+        <text x="120" y="126" font-family="JetBrains Mono" font-size="9" fill="var(--mut)">${olcek(scale[0])}</text>
+        <text x="141" y="146" font-family="JetBrains Mono" font-size="9" fill="var(--mut)">${olcek(scale[1])}</text>
+        <text x="160" y="176" font-family="JetBrains Mono" font-size="9" fill="var(--mut)">${olcek(scale[2])}</text>
+        ${r ? html`<line x1="105" y1="105" x2=${tx} y2=${ty} stroke="#10b981" stroke-width="2" stroke-dasharray="5 4" /><circle cx=${tx} cy=${ty} r="10" fill="var(--bg2)" stroke="var(--tx)" stroke-width="2.5" /><circle cx=${tx} cy=${ty} r="3.5" fill="var(--tx)" />` : null}
+        <path d="M105 88 L115 118 L105 111 L95 118 Z" fill="#10b981" stroke="var(--bg)" stroke-width="1.5" />
       </svg>
       <div class="apl-sag">
         <div class="lbl">Kalan mesafe</div>
-        <div class="apl-mesafe" style=${'color:' + (inTol ? '#10b981' : '#dae2fd')}>${r ? mesafe(r.dist) : '—'}<small>m</small></div>
+        <div class="apl-mesafe" style=${'color:' + (inTol ? '#10b981' : 'var(--tx)')}>${r ? mesafe(r.dist) : '—'}<small>m</small></div>
         ${r && r.forward != null ? html`<${Yon} deger=${r.forward} arti="ileri" eksi="geri" /><${Yon} deger=${r.right} arti="sağa" eksi="sola" />`
           : r ? html`<div class="apl-yon-satir"><span class="apl-yon-sayi">${dms(r.azimuth)}</span><span class="apl-yon-ad">semt</span></div><div class="note">${dirWord(r.azimuth)} yönünde</div>` : null}
         <div class="row" style="gap:6px;margin-top:4px"><span class="badge" style=${'background:' + durumRenk + '22;color:' + durumRenk + ';border-color:' + durumRenk + '66'}>${inTol ? 'TOLERANS İÇİ' : r ? 'YAKLAŞIYOR' : 'BEKLİYOR'}</span><span class=${'badge ' + (fixOk ? 'b-ok' : g.fix && g.fix !== 'NONE' ? 'b-warn' : 'b-mut')}>${g.fix && g.fix !== 'NONE' ? g.fix : 'KONUM YOK'}</span></div>
@@ -132,7 +132,7 @@ export function StakeoutScreen() {
     ${ayrinti ? html`<div class="card stack">
       <div class="row"><span class="lbl grow">ΔD toleransı</span><span class="mono hl" style="font-size:12px;font-weight:700">YEŞİL ≤ ${tol.toFixed(3)} m</span></div>
       <div style="position:relative;height:10px;margin:6px 0 2px;display:flex;gap:3px">${bands.map((b) => html`<div style=${'flex:1;border-radius:3px;background:' + b[2]}></div>`)}<div style=${'position:absolute;top:-4px;left:' + marker * 100 + '%;width:4px;height:18px;background:#fff;border-radius:2px'}></div></div>
-      <div class="row mono" style="font-size:10px;color:#94a3b8;justify-content:space-between"><span>0</span><span>${tol}</span><span>0.20</span><span>1.00</span><span>5.00+</span></div>
+      <div class="row mono" style="font-size:10px;color:var(--mut);justify-content:space-between"><span>0</span><span>${tol}</span><span>0.20</span><span>1.00</span><span>5.00+</span></div>
       <div class="kv mono" style="font-size:11px"><b>Hedef</b><span>Y ${fmt(T && T.E)} · X ${fmt(T && T.N)} · Z ${fmt(T && T.H)}</span><b>Mevcut</b><span>Y ${fmt(g.E)} · X ${fmt(g.N)} · Z ${fmt(g.H)}</span><b>ΔY / ΔX</b><span>${r ? fmt(r.dE) + ' · ' + fmt(r.dN) : '—'}</span><b>Durum</b><span class=${fixOk ? 'hl' : 'hw'}>${g.fix || '—'} · σH ${fmt(g.sigmaH)}</span></div>
       <div class="grid2"><label class="btn sm"><${Icon} n="folder" s=${16} />CAD çizimi aç<input type="file" accept=".dxf,.ncz,.DXF,.NCZ,*/*" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; openCad(f); }} /></label>
         <button class="btn sm" disabled=${!cadN} onClick=${() => { app.state.follow = false; app.nav.tab('map'); app.toast('Çizimde hedef noktaya dokunun, sonra "Aplikasyon yap" deyin', 'ok', 5000); }}><${Icon} n="map" s=${16} />Çizimden hedef seç${cadN ? ' (' + cadN + ')' : ''}</button></div>
