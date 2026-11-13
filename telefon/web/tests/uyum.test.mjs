@@ -22,7 +22,8 @@ test('U1 · cins kodlarındaki yazım hataları: telefonun tablosu ortak katalog
   assert.equal(KALEMLER.kalemler.filter((k) => eskiKodlar.has(k.cins)).length, 0, 'katalog kalemlerinde eski kod yok');
   assert.equal(KALEMLER.cinsler.filter((c) => eskiKodlar.has(c.cins)).length, 0, 'cins listesinde eski kod yok');
   assert.equal(KALEMLER.cinsler.filter((c) => /̇/.test(c.ad)).length, 0, 'cins adlarında bozuk harf (i̇) yok');
-  assert.ok(!JSON.stringify(ESLESME).match(/ALİMİNYUM|"KOFRA"|TECHİZAT/), 'telefon eşleme tablosunda eski kod yok');
+  const esCins = JSON.stringify(ESLESME, (k, v) => (k === 'tanim' ? undefined : v));   // tanımlar eski programın yazımıyla kalır (ALİMİNYUM TEHLİKE LEVHASI)
+  assert.ok(!esCins.match(/ALİMİNYUM|"KOFRA"|TECHİZAT/), 'telefon eşleme tablosunda eski kod yok');
   assert.equal(SH.cinstenElemanTuru('KOFRE'), 'KOFRE');
   assert.equal(SH.cinstenElemanTuru('KOFRA'), 'KOFRE');
   assert.equal(SH.cinstenHatTuru('AG_ALÜMİNYUM_KABLO'), 'AG_YERALTI');

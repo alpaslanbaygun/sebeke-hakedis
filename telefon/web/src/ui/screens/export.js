@@ -95,8 +95,9 @@ export function ExportScreen() {
     // Birleşik Metraj: açılan sütunlar ve uyarılar
     const bm = files.find((f) => f.metraj);
     if (bm) {
-      const o = bm.metraj.ozet, ys = bm.metraj.yeniSutunlar;
+      const o = bm.metraj.ozet, ys = bm.metraj.yeniSutunlar, ks = bm.metraj.kopyaSayfalar || [];
       app.toast('Birleşik Metraj: ' + o.eleman + ' direk · ' + o.iletkenSatiri + ' açıklık · ' + o.yeraltiSatiri + ' yeraltı satırı · ' + o.eslesen + ' eşleşen malzeme' +
+        (ks.length ? ' · ' + ks.length + ' direk sayfası (' + ks.map((k) => k.ad).join(', ') + ')' : '') +
         (ys.length ? ' · ' + ys.length + ' yeni sütun (' + ys.slice(0, 3).map((y) => y.ad).join(', ') + (ys.length > 3 ? ' …' : '') + ')' : '') + (o.fazla ? ' · ' + o.fazla + ' malzeme şablona sığmadı' : ''), ys.length || o.fazla ? 'warn' : 'ok', 9000);
       if (bm.uyarilar && bm.uyarilar.length) app.toast('Birleşik Metraj uyarıları: ' + bm.uyarilar.slice(0, 3).join(' · ') + (bm.uyarilar.length > 3 ? ' …' : ''), 'warn', 9000);
     }

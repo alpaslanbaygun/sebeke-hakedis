@@ -2,6 +2,7 @@
 // (2026 poz kataloğu) dönüştürür. Çıktı uygulamaya ilk açılışta
 // veritabanına (IndexedDB) içe aktarılır; uygulama içinde koddan değil DB'den okunur.
 import { applyExtras } from './seed_extras_v23.mjs';
+import { kurallariCevir } from '../web/src/grid/onerilen-malzeme.js';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -179,72 +180,10 @@ const trafoPoleCompat = [
 ];
 
 // ---------------- Otomatik malzeme reçetesi kuralları ----------------
-// when: koşullar (hepsi sağlanmalı) · items: servis kodu ya da kaynak (self/lookup) + miktar (sayı ya da parametre adı)
-const OG = ['bahh', 'civ', 'beton562', 'mus'];
-const rules = [];
-let rn = 0;
-const R = (eq, when, items, note) => rules.push({ id: STD + ':R' + String(++rn).padStart(3, '0'), stdId: STD, eq, when, items, note: note || '' });
-R('pole', {}, [{ src: 'self', qty: 1, why: 'Direk · {tip}', grp: '{kgGroup}', tag: 'direk' }], 'Direğin kendisi (tipten)');
-for (const [r, c] of Object.entries({ T: '005.02.02.02-004', D: '005.02.02.02-010', N: '005.02.02.02-016', Z: '005.02.02.02-021' }))
-  R('pole', { group: ['bahh'], role: [r] }, [{ servis: c, qty: 1, why: 'OG travers · {rol}', grp: '005.02.02.02-000', tag: 'travers' }]);
-R('pole', { group: ['sehir', 'mus'], role: ['T'] }, [{ servis: '005.02.02.01-002', qty: 1, why: 'AG travers · {rol}', grp: '005.02.02.01-000', tag: 'travers' }]);
-R('pole', { group: ['sehir', 'mus'], role: ['D', 'N', 'Z'] }, [{ servis: '005.02.02.01-010', qty: 1, why: 'AG travers · {rol}', grp: '005.02.02.01-000', tag: 'travers' }]);
-R('pole', { group: ['mus'], role: ['T'] }, [{ servis: '005.02.02.01-005', qty: 1, why: 'Müşterek tepe traversi', grp: '005.02.02.01-000', tag: 'travers' }]);
-R('pole', { group: ['mus'], role: ['D', 'N', 'Z'] }, [{ servis: '005.02.02.01-015', qty: 1, why: 'Müşterek tepe traversi', grp: '005.02.02.01-000', tag: 'travers' }]);
-R('pole', { group: ['beton'], role: ['T'] }, [{ servis: '005.07.02.02-002', qty: 1, why: 'AG beton travers · {rol}', grp: '005.07.02.00-000', tag: 'travers' }]);
-R('pole', { group: ['beton'], role: ['D', 'N', 'Z'] }, [{ servis: '005.07.02.02-004', qty: 1, why: 'AG beton travers · {rol}', grp: '005.07.02.00-000', tag: 'travers' }]);
-R('pole', { group: ['beton562'], role: ['T'] }, [{ servis: '005.07.01.01-005', qty: 1, why: 'OG beton travers · {rol}', grp: '005.07.01.00-000', tag: 'travers' }]);
-R('pole', { group: ['beton562'], role: ['D', 'N', 'Z'] }, [{ servis: '005.07.01.06-005', qty: 1, why: 'OG beton travers · {rol}', grp: '005.07.01.00-000', tag: 'travers' }]);
-// OG izolatörleri: iletken sınıfına göre (normal / 477 MCM "big" / çift devre "dbl")
-const iso = (big, dbl) => ({
-  gerg: big ? '011.06.04.01-002' : '011.06.04.01-001',
-  tert: big ? (dbl ? '011.08.01.01-006' : '011.08.01.01-003') : (dbl ? '011.08.01.01-004' : '011.08.01.01-001'),
-  aski: big ? (dbl ? '011.07.01.01-006' : '011.07.01.01-003') : (dbl ? '011.07.01.01-004' : '011.07.01.01-001')
-});
-for (const big of [false, true]) for (const dbl of [false, true]) {
-  const I = iso(big, dbl); const w = { clsBig: big, clsDbl: dbl };
-  R('pole', Object.assign({ group: ['civ'], role: ['T'] }, w), [{ servis: I.gerg, qty: 3, why: 'Askı izolatörü · 3 faz', tag: 'izo' }, { servis: I.aski, qty: 3, why: 'Askı tertibatı', tag: 'izo' }]);
-  R('pole', Object.assign({ group: OG, role: ['N'] }, w), [{ servis: I.gerg, qty: 3, why: 'Gergi izolatörü · 1 yön × 3 faz', tag: 'izo' }, { servis: I.tert, qty: 3, why: 'Gergi tertibatı', tag: 'izo' }]);
-  R('pole', Object.assign({ group: OG, role: ['D', 'Z'] }, w), [{ servis: I.gerg, qty: 6, why: 'Gergi izolatörü · 2 yön × 3 faz', tag: 'izo' }, { servis: I.tert, qty: 6, why: 'Gergi tertibatı', tag: 'izo' }]);
-}
-R('pole', { group: ['bahh', 'mus'], role: ['T'] }, [{ servis: '011.04.01.01-006', qty: 3, why: 'Mesnet izolatörü · 3 faz', tag: 'izo' }, { servis: '011.05.01.01-017', qty: 3, why: 'İzolatör demiri', tag: 'izo' }]);
-R('pole', { group: ['beton562'], role: ['T'] }, [{ servis: '011.04.01.01-006', qty: 3, why: 'Mesnet izolatörü · 3 faz', tag: 'izo' }, { servis: '011.05.01.01-020', qty: 3, why: 'İzolatör demiri', tag: 'izo' }]);
-R('pole', { group: ['bahh', 'mus'], role: ['D', 'Z'] }, [{ servis: '011.04.01.01-006', qty: 3, why: 'Atlama (köprü) mesneti', tag: 'izo' }, { servis: '011.05.01.01-017', qty: 3, why: 'İzolatör demiri', tag: 'izo' }]);
-R('pole', { group: ['beton562'], role: ['D', 'Z'] }, [{ servis: '011.04.01.01-006', qty: 3, why: 'Atlama (köprü) mesneti', tag: 'izo' }, { servis: '011.05.01.01-020', qty: 3, why: 'İzolatör demiri', tag: 'izo' }]);
-R('pole', { group: OG }, [{ servis: '030.02.01.01-001', qty: 'ogKazik', why: 'Topraklama kazığı', tag: 'top' }, { servis: '030.01.02.01-001', qty: 'ogTopIlet', why: 'Topraklama iletkeni (m)', tag: 'top' }, { servis: '027.01.02.01-000', qty: 'levha', why: 'Tehlike levhası', tag: 'top' }]);
-R('pole', { group: ['sehir', 'mus', 'beton', 'agac'], role: ['T'], agCiplak: true }, [{ servis: '011.04.01.01-001', qty: 'agMesnetT', why: 'AG mesnet izolatörü (çıplak hat)', tag: 'izo' }, { servis: '011.05.01.01-001', qty: 'agMesnetT', why: 'İzolatör demiri', tag: 'izo' }]);
-R('pole', { group: ['sehir', 'mus', 'beton', 'agac'], role: ['D', 'N', 'Z'], agCiplak: true }, [{ servis: '011.04.01.01-001', qty: 'agMesnetD', why: 'AG mesnet izolatörü (çıplak hat)', tag: 'izo' }, { servis: '011.05.01.01-001', qty: 'agMesnetD', why: 'İzolatör demiri', tag: 'izo' }]);
-// Trafo reçeteleri
-const topr = (k, b) => [{ servis: '030.02.01.01-001', qty: k, why: 'Topraklama kazığı', tag: 'top' }, ...(b ? [{ servis: '030.01.04.01-002', qty: b, why: 'Örgülü bakır 50 mm² (m)', tag: 'top' }] : []), { servis: '027.01.02.01-000', qty: 'levha', why: 'Tehlike levhası', tag: 'top' }];
-R('trafo', { type: ['direk'] }, [
-  { src: 'lookup:trafo', qty: 1, why: '{kva} kVA hermetik direk tipi trafo', tag: 'trafo' },
-  { src: 'self:pole', qty: 1, why: 'Trafo direği {tdirek}', grp: '005.01.02.01-000', tag: 'direk' },
-  { src: 'lookup:panoH', qty: 1, why: 'Harici AG dağıtım panosu', tag: 'pano' },
-  { servis: '015.01.01.01-010', qty: 'parafudr', why: 'Parafudr 36 kV 10 kA', tag: 'koruma' },
-  { servis: '017.08.01.01-006', qty: 1, why: 'Sigortalı + topraklı ayırıcı', tag: 'koruma' },
-  ...topr('trKazik', 'trBakir')]);
-R('trafo', { type: ['bina', 'ba', 'dapt', 'mod', 'kule', 'kulec', 'mono'] }, [
-  { src: 'lookup:trafo', qty: 1, why: '{kva} kVA {cinsLabel} trafo', tag: 'trafo' },
-  { src: 'lookup:panoD', qty: 1, why: 'Dahili AG dağıtım panosu', tag: 'pano' },
-  { servis: '022.05.02.01-004', qty: 1, why: 'Trafo koruma hücresi', tag: 'hucre' },
-  { servis: '022.05.01.01-004', qty: 2, why: 'Yük ayırıcılı giriş-çıkış hücresi', tag: 'hucre' },
-  ...topr('koskKazik', 'koskBakir')]);
-R('trafo', { type: ['mbk', 'ind'] }, [{ src: 'self:kiosk', qty: 1, why: 'Beton köşk · {kioskLabel}', tag: 'kosk' }, ...topr('koskKazik', 'koskBakir')]);
-R('trafo', { type: ['rbk'] }, [{ src: 'self:kiosk', qty: 1, why: 'Prefabrik beton köşk', tag: 'kosk' }, { servis: '022.04.01.01-002', qty: 1, why: 'Kompakt RMU', tag: 'hucre' }, { src: 'lookup:trafo', qty: 1, why: '{kva} kVA hermetik trafo', tag: 'trafo' }, { src: 'lookup:panoD', qty: 1, why: 'Dahili AG dağıtım panosu', tag: 'pano' }, ...topr('koskKazik', 'koskBakir')]);
-R('trafo', { type: ['mrmu'] }, [{ src: 'self:kiosk', qty: 1, why: 'Ring main unit', tag: 'hucre' }, ...topr('trKazik', 0)]);
-// SDK / box, aydınlatma direği, abone
-R('sdk', {}, [{ src: 'self', qty: 1, why: 'SDK / box · {tip}', tag: 'sdk' }]);
-R('abone', { install: ['havai'], phase: ['tek'] }, [{ servis: '032.13.01.01-002', qty: 1, why: 'Tek fazlı yapı bağlantı hattı', tag: 'abone' }, { servis: '014.01.00.00-001', qty: 'aboneAskiKg', why: 'Askı teli çelik halat (abone)', tag: 'abone' }, { servis: '008.01.01.01-001', qty: 1, why: '2.15 m galv. muhafaza borusu 3/4"', tag: 'abone' }]);
-R('abone', { install: ['havai'], phase: ['uc'] }, [{ servis: '032.13.01.01-003', qty: 1, why: 'Üç fazlı yapı bağlantı hattı', tag: 'abone' }, { servis: '014.01.00.00-001', qty: 'aboneAskiKg', why: 'Askı teli çelik halat (abone)', tag: 'abone' }, { servis: '008.01.01.01-002', qty: 1, why: '2.15 m galv. muhafaza borusu 1"', tag: 'abone' }]);
-R('abone', { install: ['yeralti'], phase: ['tek'] }, [{ servis: '032.13.03.01-001', qty: '$length', why: 'Abone bağlantı hattı kablo kanalı (m)', tag: 'abone' }, { servis: '008.01.01.01-001', qty: 1, why: '2.15 m galv. muhafaza borusu 3/4"', tag: 'abone' }]);
-R('abone', { install: ['yeralti'], phase: ['uc'] }, [{ servis: '032.13.03.01-001', qty: '$length', why: 'Abone bağlantı hattı kablo kanalı (m)', tag: 'abone' }, { servis: '008.01.01.01-002', qty: 1, why: '2.15 m galv. muhafaza borusu 1"', tag: 'abone' }]);
-
-const params = [
-  ['ogKazik', 'Topraklama kazığı · OG direk', 1, 'Ad'], ['ogTopIlet', 'Topraklama iletkeni · OG direk', 10, 'm'], ['levha', 'Tehlike levhası · OG direk / trafo', 1, 'Ad'],
-  ['agMesnetT', 'AG mesnet · taşıyıcı · çıplak AG hat', 4, 'Ad'], ['agMesnetD', 'AG mesnet · durdurucu/köşe · çıplak AG hat', 8, 'Ad'],
-  ['parafudr', 'Parafudr · direk tipi trafo', 3, 'Ad'], ['trKazik', 'Topraklama kazığı · direk tipi trafo', 4, 'Ad'], ['trBakir', 'Örgülü bakır · direk tipi trafo', 30, 'm'],
-  ['koskKazik', 'Topraklama kazığı · köşk / bina', 8, 'Ad'], ['koskBakir', 'Örgülü bakır · köşk / bina', 40, 'm'], ['aboneAskiKg', 'Askı teli · abone bağlantısı', 1.5, 'Kg']
-].map(([key, label, value, unit]) => ({ id: STD + ':P:' + key, stdId: STD, key, label, value, unit }));
+// Kurallar ve parametreler ortak dosyadadır (ortak/katalog/onerilen-malzeme.json; AutoCAD eklentisi de aynı dosyayı okur);
+// motorun (src/grid/recipe.js) kural biçimine src/grid/onerilen-malzeme.js çevirir.
+const oneri = JSON.parse(fs.readFileSync(path.join(root, '../ortak/katalog/onerilen-malzeme.json'), 'utf8'));
+const { rules, params } = kurallariCevir(oneri, STD);
 
 // SDK tipleri (katalogdan)
 const sdkTypes = [

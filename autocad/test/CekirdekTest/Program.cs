@@ -378,6 +378,66 @@ namespace SebekeHakedis.Test
             MalzemeYazisiVeKalinlikDene(); // stil yüklü olmalı (hat kalınlıkları ortak stilden)
             YazmaDenetimiDene();
             BirlesikMetrajOrtakDeneme(); // telefonla ortak: şablon tanımı, doldurma planı, dosyaya yazma
+            OnerilenMalzemeOrtakDeneme(); // telefonla ortak: direk bağlamından önerilen kalemler
+        }
+
+        // ---------------- Telefonla ortak önerilen malzeme denemesi (ortak/deneme/onerilen-malzeme) ----------------
+
+        /// <summary>
+        /// Ortak kurallar (ortak/katalog/onerilen-malzeme.json) her direk bağlamında (durumlar.json) telefonun motoruyla
+        /// aynı listeyi vermeli (beklenen.json; üretici araclar/onerilen-beklenen-uret.mjs). Ayrıca servis kodu → katalog
+        /// kalemi eşlemesi (volt-eslesme.json) ve çizimden bağlam çıkarımı (rol, çıplak AG, iletken sınıfı) denenir.
+        /// </summary>
+        private static void OnerilenMalzemeOrtakDeneme()
+        {
+            Console.WriteLine("Önerilen malzeme: telefonla ortak deneme (ortak/deneme/onerilen-malzeme)");
+            var klasor = Path.Combine(AppContext.BaseDirectory, "onerilen-malzeme");
+            var o = OnerilenMalzeme.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "onerilen-malzeme.json"), Encoding.UTF8));
+            Esit(true, o.Kurallar.Count >= 40 && o.Parametreler.Count == 11, "önerilen malzeme: kurallar ve parametreler okundu (" + o.Kurallar.Count + " / " + o.Parametreler.Count + ")");
+            var durumlar = ((JsonNesne)Json.Oku(File.ReadAllText(Path.Combine(klasor, "durumlar.json"), Encoding.UTF8))).Dizi("durumlar");
+            var beklenen = ((JsonNesne)Json.Oku(File.ReadAllText(Path.Combine(klasor, "beklenen.json"), Encoding.UTF8))).Dizi("durumlar");
+            Esit(durumlar.Count, beklenen.Count, "önerilen malzeme ortak: durum sayısı");
+            for (int i = 0; i < durumlar.Count; i++)
+            {
+                var d = (JsonNesne)durumlar[i]; var bg = d.Nesne("baglam");
+                var b = new OnerilenMalzeme.DirekBaglami { Grup = bg.Metin("grup"), Rol = bg.Metin("rol", "T"), IletkenBuyuk = bg.Mantik("iletkenBuyuk") ?? false, IletkenCift = bg.Mantik("iletkenCift") ?? false, AgCiplak = bg.Mantik("agCiplak") ?? false };
+                var gercek = new List<object>();
+                foreach (var x in o.Direk(b, null)) { var j = new JsonNesne(); j["servis"] = x.Servis; j["miktar"] = x.Miktar; j["neden"] = x.Neden; j["etiket"] = x.Etiket; gercek.Add(j); }
+                var fark = JsonFark(((JsonNesne)beklenen[i])["kalemler"], gercek, "kalemler");
+                Esit("", fark, "önerilen malzeme ortak: " + d.Metin("ad") + (fark.Length > 0 ? " — " + fark : ""));
+            }
+            // Eşleme: her direk kuralı servis kodu AutoCAD katalog kalemine gider
+            var katalog = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            var volt = (JsonNesne)Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "volt-eslesme.json"), Encoding.UTF8));
+            var esle = OnerilenMalzeme.Esleyici(volt, katalog);
+            int oncesi = katalog.Kalemler.Count; var eksik = new List<string>();
+            foreach (var k in o.Kurallar) if (k.Nesne == "direk") foreach (var it in k.Kalemler) if (it.Servis.Length > 0 && esle(it.Servis) == null && !eksik.Contains(it.Servis)) eksik.Add(it.Servis);
+            Esit("", string.Join(", ", eksik.ToArray()), "önerilen malzeme: direk kurallarının bütün servis kodları eşlemede");
+            Esit(oncesi, katalog.Kalemler.Count, "önerilen malzeme: eşlemedeki kalemlerin hepsi katalogda (yeni kalem açılmadı)");
+            var vhd = esle("011.04.01.01-006");
+            Esit("OG_İZOLATÖR|VHD-35", vhd.Cins + "|" + vhd.Tanim, "önerilen malzeme: VHD 35 mesnet izolatörü katalog kalemi");
+            // Çizimden bağlam: deneme projesinde (ortak/deneme/birlesik-metraj) direklerin grubu, rolü ve çıplak AG bilgisi
+            var p = ProjeDosyasi.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "birlesik-metraj", "proje.sebeke.json"), Encoding.UTF8));
+            Func<string, OnerilenMalzeme.DirekBaglami> baglam = gis => { var e = p.Elemanlar.Find(x => x.GisId == gis); return OnerilenMalzeme.Baglam(p, e, volt); };
+            var sc1 = baglam("SC1");
+            Esit("sehir", sc1.Grup, "önerilen malzeme: AG galvaniz direk şehir içi grubunda");
+            Esit(true, sc1.Rol == "N" || sc1.Rol == "T" || sc1.Rol == "Z" || sc1.Rol == "D", "önerilen malzeme: rol dört değerden biri (" + sc1.Rol + ": " + sc1.RolNedeni + ")");
+            var sc13 = baglam("SC13");
+            Esit("civ", sc13.Grup, "önerilen malzeme: cıvatalı ENH direk civ grubunda");
+            Esit("beton", baglam("SC11").Grup, "önerilen malzeme: AG beton direk beton grubunda");
+            Esit("", OnerilenMalzeme.Grup(volt, "BOX_PANO"), "önerilen malzeme: direk olmayan cinsin grubu yok");
+            Esit("sw", OnerilenMalzeme.IletkenSinifi("G-T-12 (sw)"), "önerilen malzeme: iletken sınıfı tipin parantezinden");
+            Esit(true, OnerilenMalzeme.Baglam(p, new Eleman { Cins = "ENH_GLV_CVT", Tip = "GT-25 (2x477)", Saga = 9e9, Yukari = 9e9 }, volt).IletkenBuyuk && OnerilenMalzeme.Baglam(p, new Eleman { Cins = "ENH_GLV_CVT", Tip = "GT-25 (2x477)", Saga = 9e9, Yukari = 9e9 }, volt).IletkenCift, "önerilen malzeme: 2x477 → büyük ve çift devre");
+            var tekBasina = OnerilenMalzeme.Baglam(p, new Eleman { Cins = "AG_DEMİR_GLV", Tip = "G-K1", Saga = 9e9, Yukari = 9e9 }, volt);
+            Esit("T", tekBasina.Rol, "önerilen malzeme: hat bağlantısı olmayan direk taşıyıcı sayılır");
+            // Öneri listesi: şehir içi taşıyıcı, çıplak AG → travers + mesnet + izolatör demiri; mevcut malzeme işaretlenir
+            var b1 = new OnerilenMalzeme.DirekBaglami { Grup = "sehir", Rol = "T", AgCiplak = true };
+            var oneriler = o.Direk(b1, esle);
+            Esit(3, oneriler.Count, "önerilen malzeme: şehir içi taşıyıcı çıplak AG → 3 öneri");
+            Esit("TRAVERS_VE_KONSOLLAR_GLV|GT-70|1", oneriler[0].Cins + "|" + oneriler[0].Tanim + "|" + oneriler[0].Miktar, "önerilen malzeme: ilk öneri GT-70 travers");
+            Esit("AG_İZOLATÖR|N-80|4", oneriler[1].Cins + "|" + oneriler[1].Tanim + "|" + oneriler[1].Miktar, "önerilen malzeme: AG mesnet izolatörü N-80 × 4 (agMesnetT)");
+            Esit(8.0, o.Direk(new OnerilenMalzeme.DirekBaglami { Grup = "sehir", Rol = "D", AgCiplak = true }, esle)[1].Miktar, "önerilen malzeme: durdurucuda 8 mesnet (agMesnetD)");
+            Esit(6.0, o.Direk(b1, esle, new Dictionary<string, double> { { "agMesnetT", 6 } })[1].Miktar, "önerilen malzeme: parametre üstüne yazılır");
         }
 
         // ---------------- Telefonla ortak Birleşik Metraj denemesi (ortak/deneme/birlesik-metraj) ----------------
@@ -419,15 +479,22 @@ namespace SebekeHakedis.Test
             var beklenenPlan = Json.Oku(File.ReadAllText(Path.Combine(klasor, "beklenen-plan.json"), Encoding.UTF8));
             fark = JsonFark(beklenenPlan, plan.JsonYap(), "plan");
             Esit("", fark, "Birleşik Metraj ortak: doldurma planı telefonla aynı" + (fark.Length > 0 ? " — " + fark : ""));
-            Esit(8.0, (double)plan.Ozet["eleman"], "Birleşik Metraj: 8 eleman satırı (öteki bölge ve İLERİDE dışarıda)");
+            Esit(12.0, (double)plan.Ozet["eleman"], "Birleşik Metraj: 12 eleman satırı (öteki bölge ve İLERİDE dışarıda)");
+            Esit(3.0, (double)plan.Ozet["kopyaSayfa"], "Birleşik Metraj: temsil edilmeyen 3 cins için kopya sayfa (AG beton, ENH cıvatalı, ENH kaynaklı raven)");
+            Esit("DİREK AG BETON", plan.KopyaSayfalar[0].Ad, "Birleşik Metraj: kopya sayfa adı cinsin okunur adıyla");
+            Esit("DİREK ENH GALV. KAYNAKLI RAVEN", plan.KopyaSayfalar[2].Ad, "Birleşik Metraj: ENH kopyası iletken ekiyle ayrılır (SW ana sayfada)");
             Esit(6.0, (double)plan.Ozet["iletkenSatiri"], "Birleşik Metraj: 6 açıklık satırı (sök-tak iki satır)");
-            Esit("YE003", plan.YeniSutunlar[2].Kod, "Birleşik Metraj: yeni direk tipi sütunu blok önekli EK koduyla");
+            Esit("Y177", plan.YeniSutunlar[2].Kod, "Birleşik Metraj: yeni direk tipi sütunu şablonun KOD dizisiyle (EK kodu yok)");
+            Esit("DİREK AG BETON", plan.YeniSutunlar[5].Sayfa, "Birleşik Metraj: beton direğin tipi kopya sayfada açılır");
+            Esit(23.0, (double)plan.MalzSatirlari.Count, "Birleşik Metraj: MALZ. LİSTESİ'ne 6 bölüm başlığı + 17 kalem satırı");
             Esit(0.0, (double)plan.Uyarilar.Count, "Birleşik Metraj: uyarı yok");
 
             sw.Restart();
             BirlesikMetraj.PlanUygula(x, sablon, plan);
             byte[] cikti = x.Yaz();
             Console.WriteLine("    dosyaya yazma: " + sw.ElapsedMilliseconds + " ms, " + cikti.Length + " bayt");
+            var kayit = Environment.GetEnvironmentVariable("SH_BM_CIKTI");   // elle inceleme / LibreOffice hesabı için dosyayı kaydet
+            if (!string.IsNullOrEmpty(kayit)) File.WriteAllBytes(kayit, cikti);
             var y = XlsmDosyasi.Ac(cikti);
             var d = y.Sayfa("DİREK METRAJI");
             Esit("SC1", d.Metin("A19"), "Birleşik Metraj yazma: direk no");
@@ -435,7 +502,7 @@ namespace SebekeHakedis.Test
             Esit("G-K1 (K)", d.Metin("D20"), "Birleşik Metraj yazma: demontaj direk tipi (Kesik)");
             Esit("G-10I''", d.Metin("E21"), "Birleşik Metraj yazma: demontajdan montaj tipi şablonun yazımıyla (iki kesme)");
             Esit("1", d.Metin("JS18"), "Birleşik Metraj yazma: yeni sütuna box adedi");
-            Esit("YE003", d.Metin("JU10"), "Birleşik Metraj yazma: yeni sütunun KOD'u");
+            Esit("Y177", d.Metin("JU10"), "Birleşik Metraj yazma: yeni sütunun KOD'u");
             Esit("G-K5", d.Metin("JU11"), "Birleşik Metraj yazma: yeni sütunun TİP'i");
             Esit("IF(AND($C18<>\"\",$C18=JU$11),1,0)", d.Formul("JU18"), "Birleşik Metraj yazma: yeni direk sütununa veri formülü örnekten kaydırılır");
             Esit("SUM(JU18:JU315)", d.Formul("JU316"), "Birleşik Metraj yazma: yeni sütunun toplam formülü");
@@ -447,13 +514,26 @@ namespace SebekeHakedis.Test
             Esit(true, (i.Formul("BN16") ?? "").Contains("BN$6") && (i.Formul("BN16") ?? "").Contains("BN$8"), "Birleşik Metraj yazma: İLETKEN veri formülü yeni sütuna kaydırılır");
             Esit("MAX(0,BN118-BN119)", i.Formul("BN120"), "Birleşik Metraj yazma: İLETKEN alt satır formülleri (MALZ. LİSTESİNE AKTARILAN)");
             var m = y.Sayfa("MALZ. LİSTESİ");
-            Esit("YE001", m.Metin("G472"), "Birleşik Metraj yazma: MALZ. LİSTESİ EK satırının kodu yeni sütunla aynı");
-            Esit("IF($I477=\"\",0,N(INDEX(IM_MALZ_SATIRI,$I477)))", m.Formul("H477"), "Birleşik Metraj yazma: İLETKEN EK satırı MALZ satırından okur");
-            var k = y.Sayfa("KATSAYILAR");
+            Esit("DİREK METRAJI", m.Metin("B471"), "Birleşik Metraj yazma: MALZ. LİSTESİ bölüm başlığı sayfa adıyla (EK KALEMLER yerine)");
+            Esit("Y175", m.Metin("G472"), "Birleşik Metraj yazma: MALZ. LİSTESİ kalem satırının kodu yeni sütunla aynı");
+            Esit("IF($I489=\"\",0,N(INDEX(IM_MALZ_SATIRI,$I489)))", m.Formul("H489"), "Birleşik Metraj yazma: İLETKEN satırı MALZ satırından okur");
+            Esit("IFERROR(MATCH($G478,'DİREK AG BETON'!$G$10:$ZZ$10,0),\"\")", m.Formul("I478"), "Birleşik Metraj yazma: kopya sayfanın kalemi açık aralıkla okunur");
+            Esit("", m.Metin("G490") == "A017" ? "" : m.Metin("G490"), "Birleşik Metraj yazma: AKTARIM sütununun kodu listede");
+            var kb = y.Sayfa("DİREK AG BETON");
+            Esit("SC11", kb.Metin("A18"), "Birleşik Metraj yazma: kopya sayfada beton direk");
+            Esit("9,3/3", kb.Metin("C18"), "Birleşik Metraj yazma: kopya sayfada yeni direk tipi");
+            Esit("Y180", kb.Metin("G10"), "Birleşik Metraj yazma: kopya sayfanın ilk sütunu şablonun KOD dizisinden");
+            Esit("", kb.Metin("L10"), "Birleşik Metraj yazma: kopya sayfada kaynağın KOD sütunları boş");
+            Esit("IF(AND($C18<>\"\",$C18=G$11),1,0)", kb.Formul("G18"), "Birleşik Metraj yazma: kopya sayfada veri formülü ana sayfanın örneğinden");
+            Esit("DENEME", kb.Metin("C3"), "Birleşik Metraj yazma: kopya sayfada başlık (il)");
+            Esit("9,3/3", k0(y).Metin("AD23"), "Birleşik Metraj yazma: kopya sayfanın direk tipi KATSAYILAR listesine eklenir");
+            var k = k0(y);
             Esit("OXLIP", k.Metin("AN11"), "Birleşik Metraj yazma: DM bloğundaki yeni tel iletken kodu listesine eklenir");
             Esit("4 ÇIKIŞLI H.T", k.Metin("AS4"), "Birleşik Metraj yazma: box cinsi listeye eklenir");
             Esit(true, y.Dosya("xl/vbaProject.bin") != null && y.Dosya("xl/calcChain.xml") == null && y.Workbook.Contains("fullCalcOnLoad=\"1\""), "Birleşik Metraj yazma: makro korunur, calcChain silinir, açılışta yeniden hesap");
         }
+
+        private static XlsmSayfa k0(XlsmDosyasi y) => y.Sayfa("KATSAYILAR");
 
         /// <summary>İki JSON değerinin ilk farkı ("" = aynı). Sayılar 1e-6 payla, nesnelerde anahtar sırası önemsiz.</summary>
         private static string JsonFark(object a, object b, string yol)

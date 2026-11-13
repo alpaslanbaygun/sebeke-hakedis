@@ -77,6 +77,54 @@ cins / tanım / birim / katsayı / tarife değişir, kaydedince `el.Cins / Tip` 
 Denemeler: CekirdekTest (MetrajUzunlugu), PencereTest 08c, `tests/dxf.test.mjs` D6. Belgeler: KULLANIM (malzeme yazısı,
 yazı rengi, metraj yazısı, tip değiştirme), telefon kılavuzu, VERI-MODELI (`SH_MLZ`), README.
 
+13.11 öğleden sonra (`metraj-cins-sayfalari` dalı, `duzeltmeler-13-11` üstüne; PR E): **6 Birleşik Metraj: cins başına
+ayrı sayfa** (kullanıcı kararı "Cins başına ayrı sayfa"; "ek" kalemi yok). Şablonun DİREK METRAJI'nda temsil edilmeyen
+cinsten direkler (`cinsTemsilEdiliyor`: TİP satırındaki tip o cinsin katalogdaki ana pozu ya da eşleme `tip` takma adı;
+`metraj-sablon.json › anaSayfaAileleri` = `ENH_DEMİR_GLV|SW`) **DİREK METRAJI'nın kopyası** olan sayfaya yazılır
+(`bmAile` cins + ENH iletken eki; `bmKopyaAdi` "DİREK AG BETON", "DİREK ENH GALV. CIVATALI", "DİREK ENH GALV. KAYNAKLI
+RAVEN", 31 karakter; başlık hücreleri kopyaya da; tipleri KATSAYILAR listelerine `listeyeEkle`). Yeni sütunların KOD'u
+şablonun kendi dizisinden (`kodUret`: Y175, D120, DM072, A017), örnek sütun ana sayfada (`ornekSayfa`), grup başlığı
+"MALZEMELER / … DİREKLER / İLETKENLER / KABLOLAR / KANALLAR". MALZ. LİSTESİ'nde EK KALEMLER bölümü yerine sayfa başına
+bölüm: başlık satırı (B = sayfa adı, A = COUNTIF bayrağı) + kalem satırları (şablonun formülleri; kopya sayfada açık
+aralık `'DİREK AG BETON'!$G$10:$ZZ$10`), eski EK KOD / miktarları silinir, biçim örnek satırlardan (`satirBicimKopyala`).
+Şablon tanımına `adlar`, MALZ `toplamSutunu / bayrakSutunu / kalemOrnekSatiri / grupOrnekSatiri / ekBaslikSatiri`;
+plana `kopyaSayfalar`, `malzSatirlari`, `yeniSutunlar[].ornekSayfa`, `ozet.kopyaSayfa`; hücre `null` = boşalt. Xlsm:
+`sayfaKopyala` (rels'e bağlı parçalar atılır, birleşik hücreler kaldırılır, `kopyasi` sırası), `sutunlariBosalt`,
+`hucreSil`, `satirBicimKopyala`, `stilKopyala(…, kaynakSayfa)`. Poz araması boşluk / harf farkını da aşar (telefon
+`planAyari › poz` işlevi, eklenti `Katalog.Bul`). Eklenti: `BirlesikMetraj.cs` (Hedef, Aile, KopyaAdi, SayfaRef…),
+`XlsmDosyasi.cs` (SayfaKopyala, SutunlariBosalt, HucreSil, SatirBicimKopyala, StilKopyala), sonuç penceresi "AÇILAN
+DİREK SAYFALARI". Ortak deneme: proje.sebeke.json'a SC11–SC14 (AG beton 9,3/3 yeni, 9,3/8 kesik DM, ENH cıvatalı BER-8,
+ENH kaynaklı G-T-12 (rv)) → 17 yeni sütun, 3 kopya sayfa, 23 MALZ satırı; iki platform birebir (CekirdekTest,
+BM4–BM10); LibreOffice yeniden hesabında kopya sayfa toplamları, MALZ. LİSTESİ miktarları ve denetim hücreleri (I3 / J3
+= 0) doğru. `SH_BM_CIKTI=<yol>` eklentinin dosyasını kaydeder. Belgeler: ortak/BIRLESIK-METRAJ.md, KULLANIM, telefon
+kılavuzu, README.
+
+13.11 akşam (`onerilen-malzeme` dalı, `metraj-cins-sayfalari` üstüne; PR F): **7 Önerilen malzeme** (kullanıcı kararı
+"Telefonun reçete kuralları eklentiye"). Telefonun reçete kuralları ve parametreleri `build_seed.mjs` içinden ortak dosyaya
+alındı: `ortak/katalog/onerilen-malzeme.json` (Türkçe anahtarlar: nesne, kosul {grup, rol, iletkenBuyuk, iletkenCift,
+agCiplak, tip, tesis, faz}, kalemler {servis | kaynak, miktar, neden, grup, etiket}, parametreler); `build_seed.mjs` artık
+bu dosyayı okur (`src/grid/onerilen-malzeme.js › kurallariCevir`; tohumun recipeRules / params'ı birebir aynı — OM1).
+Tohum dosyası yeniden üretilmedi (sonraki eklerin — seedRev 27, 2 041 poz — yalnız build_seed ile üretilmediği görüldü;
+tohum build_seed çıktısından sonra başka adımlarla büyümüş). Eklenti: `Cekirdek/OnerilenMalzeme.cs` (Oku / Yukle, `Direk(
+baglam, esleyici, parametreUstune)` telefon applyRules ile aynı sıra ve miktarlar, `Baglam(proje, eleman, voltEslesme)`:
+grup `cinsGruplari`'ndan, rol bağlı havai hatların yön sayısı ve sapma açısından — hat yok / düz: T, tek yön: N, sapma >
+3°: Z, ≥ 3 yön: D (telefonda hat düğümlerinden; AutoCAD'de her açıklık ayrı hat olduğundan "iki hat birleşimi" ölçütü
+yok) —, iletken sınıfı tipin parantezinden ya da bağlı OG kesitten, çıplak AG bağlı AG hatta AG_İLETKEN kalemi;
+`Esleyici(volt, katalog)` servis → `volt-eslesme.kalemler` → `Katalog.Bul` (yoksa eşlemedeki adla açar); `IletkenSinifi`).
+`Pencereler.Kalemler`: direkte **Önerilen (n)…** düğmesi → `OnerilenMalzemeler` penceresi (grup, rol seçimi, çıplak AG /
+477 / çift devre onayları, işaretli tablo, var olanlar soluk, "eşleme yok" eklenemez; Seçilenleri ekle → `Katalog.KalemYap`
+MALZEME). `KatalogKaynagi.VoltEslesme / OnerilenMalzemeler`; `volt-eslesme.json` ve `onerilen-malzeme.json` eklentiye ve
+PencereTest'e gömüldü. `volt-eslesme.json › kalemler`'e direk kurallarının 24 servis kodu eklendi (OG travers GT/GD/GN/GZ-250
+→ G-T-250 (sw) / G-D-250 (sw) — üçü 51 kg; T-27/200, N-70/200; t-75, n-75; VHD-35; C 35 demir / beton izolatör demiri;
+kompozit 40kN/11B, 100kN/16B; tek / çift askı ve gergi takımları SW / 477; tehlike levhası; galvanizli örgülü çelik;
+topraklama kazığı); `kalemler.json`'a "C 35 BETON TRAVERS İÇİN ( TAŞIYICI )" (İZOLATÖR_DEMİRLERİ, kaynak ek). Ortak
+deneme `ortak/deneme/onerilen-malzeme/` (13 bağlam; `araclar/onerilen-beklenen-uret.mjs`): telefon
+`tests/onerilen-malzeme.test.mjs` OM1–OM3, eklenti CekirdekTest `OnerilenMalzemeOrtakDeneme` (+ eşleme, bağlam, parametre
+üstüne yazma), PencereTest 08d. sebeke.test A2 ve uyum U1 beklentileri eşlemeye göre güncellendi (kompozit izolatör artık
+kendi cinsinde; tanımlardaki eski yazım — ALİMİNYUM — kataloğun yazımıdır). Telefon 196 deneme, CekirdekTest tümü geçti.
+Belgeler: KULLANIM (Malzeme komutu, Önerilen malzemeler), VERI-MODELI (onerilen-malzeme.json bölümü), telefon kılavuzu,
+README, HARITA.
+
 13.11 öğlen (`dxf-blok-adi` dalı, main üstüne; PR G, acil): **Telefon DXF'i AutoCAD'de açılmıyor** (kullanıcı bildirimi:
 "ENTER bas diyor, basınca boş sayfa"). Neden: DXF R12 (AC1009) biçiminde, AutoCAD bu biçimde 31 karakterden uzun tablo /
 blok adını reddeder ("Invalid or incomplete DXF input -- drawing discarded"); #89'un Şebeke-M takımındaki
@@ -433,13 +481,13 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
     düzeltilen eşleme tablosu `birim-fiyat-eslesme.json`), keşif raporu üç bölüm (montaj: malzeme + montaj; demontaj: yalnız
     demontaj bedeli; demontajdan montaj) poz / cins / birim / miktar / birim fiyatlar / tutar ve toplamlar, Excel'e (eklenti
     Proje Özeti › Keşif…, telefon Dışa Aktar). HTML'deki firma adı hiçbir yere yazılmaz.
-  - **6 Birleşik Metraj: cins başına ayrı sayfa** — şablonda olmayan direk cinsleri (beton, ENH cıvatalı…) ve iletkenler
-    (Raven…) EK sütunu yerine DİREK METRAJI / İLETKEN METRAJI biçiminde kopya sayfalarda ("DİREK METRAJI - BETON"…),
-    malzemeler normal sütun, MALZ. LİSTESİ'ne normal satır (EK KALEMLER kullanılmaz). Kural telefonla ortak.
-  - **7 Önerilen malzeme** — telefonun reçete kuralları (`telefon/tools/build_seed.mjs › rules`, direk grubu + rol + iletken
-    sınıfı) ortak dosyaya alınıp eklentiye: direk konunca ve Malzemeler penceresinde "Önerilen malzemeler" listesi
-    (rol bağlı hatlardan: taşıyıcı / durdurucu / köşe / nihayet; poz → eski program kalemi `volt-eslesme.json` ile),
-    işaretlenenler eklenir.
+  - ~~6 Birleşik Metraj: cins başına ayrı sayfa~~ — 13.11 öğleden sonra yapıldı (PR E, §2). AutoCAD'de denemesi: beton
+    ve cıvatalı ENH direkli bir projede Birleşik Metraj… → kopya sayfalar, MALZ. LİSTESİ bölümleri, Excel'de yeniden hesap
+    (makro sütun gizle / göster kopya sayfada da çalışıyor mu?).
+  - ~~7 Önerilen malzeme~~ — 13.11 akşam yapıldı (PR F, §2). AutoCAD'de denemesi: AG direkte Malzeme › Önerilen…
+    (rol çizimden, çıplak AG hatta mesnet 4 / 8), ENH direkte gergi / askı takımları, beton direkte t-75; eklenen kalemlerin
+    Malzeme hafızasına girmesi. Kullanıcı onayı bekleyen eşlemeler: OG travers GN / GZ → G-D-250 (sw); C 35 beton travers
+    izolatör demiri yeni katalog kalemi. Sonraki adım (istenirse): direk konunca öneriyi kendiliğinden sormak (ayar).
   - 1–4'ün AutoCAD'de denemesi: eleman yazılarının beyaz görünmesi (eski çizimde Telefon Görünümü), malzeme yazısını Taşı
     ile taşıma / direği kopyalama ve silme / Geri Al, eski çizimdeki MLZ_ satırlarının tek yazıya dönmesi, Malzemeler'de
     iletken metrajını değiştirince hat yazısı, hattı taşıma ve uzatma, Tipi değiştir… ile 9,30/3 → 9,30/8 ve beton → demir.

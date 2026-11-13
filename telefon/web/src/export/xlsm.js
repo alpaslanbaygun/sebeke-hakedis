@@ -232,9 +232,9 @@ export class Sayfa {
 
   temizle(ref) { const h = this._hazirla(ref); h.ic = ''; }
 
-  /** Hücrenin stilini başka hücreden alır (yeni sütun başlıkları için). */
-  stilKopyala(kaynakRef, hedefRef) {
-    const k = this.hucre(kaynakRef);
+  /** Hücrenin stilini başka hücreden alır (yeni sütun başlıkları için); kaynakSayfa verilirse o sayfadan (stiller çalışma kitabında ortak). */
+  stilKopyala(kaynakRef, hedefRef, kaynakSayfa = null) {
+    const k = (kaynakSayfa || this).hucre(kaynakRef);
     const stil = k ? (/\bs="(\d+)"/.exec(k.nitelik) || [])[1] : null;
     const { sutun, satir } = hucreCoz(hedefRef);
     const s = this._satir(satir);
@@ -242,6 +242,47 @@ export class Sayfa {
     if (!h) { h = { nitelik: '', ic: '' }; s.hucreler.set(sutun, h); }
     h.nitelik = h.nitelik.replace(/\bs="\d+"/, '').trim();
     if (stil) h.nitelik = ('s="' + stil + '" ' + h.nitelik).trim();
+    this.degisti = true;
+  }
+
+  /** Hücreyi bütünüyle kaldırır (stil de gider). */
+  hucreSil(ref) {
+    const { sutun, satir } = hucreCoz(ref);
+    const s = this.satirlar.get(satir);
+    if (s && s.hucreler.delete(sutun)) this.degisti = true;
+  }
+
+  /** Satırın niteliklerini (yükseklik…) ve hücre stillerini (sütun sütun) örnek satırdan alır; değerlere dokunmaz. */
+  satirBicimKopyala(kaynakSatir, hedefSatir, sonSutun = 0) {
+    const k = this.satirlar.get(kaynakSatir);
+    if (!k) return;
+    const h = this._satir(hedefSatir);
+    h.nitelik = k.nitelik;
+    for (const [c, kh] of k.hucreler) {
+      if (sonSutun && c > sonSutun) continue;
+      const stil = (/\bs="(\d+)"/.exec(kh.nitelik) || [])[1];
+      let hh = h.hucreler.get(c);
+      if (!hh) { hh = { nitelik: '', ic: '' }; h.hucreler.set(c, hh); }
+      hh.nitelik = hh.nitelik.replace(/\bs="\d+"/, '').trim();
+      if (stil) hh.nitelik = ('s="' + stil + '" ' + hh.nitelik).trim();
+    }
+    this.degisti = true;
+  }
+
+  /** ilkSutun'dan sağdaki bütün hücreleri (verilen satır aralığında) kaldırır; o sütunlardaki birleşik hücre tanımlarını da. */
+  sutunlariBosalt(ilkSutun, ilkSatir, sonSatir) {
+    for (const [r, s] of this.satirlar) {
+      if (r < ilkSatir || r > sonSatir) continue;
+      for (const c of [...s.hucreler.keys()]) if (c >= ilkSutun) s.hucreler.delete(c);
+    }
+    const m = /<mergeCells\b[^>]*>([\s\S]*?)<\/mergeCells>/.exec(this.son);
+    if (m) {
+      const kalan = [...m[1].matchAll(/<mergeCell\b[^>]*ref="([^"]+)"[^>]*\/>/g)].filter((x) => {
+        const a = hucreCoz(x[1].split(':')[0]);
+        return a.sutun < ilkSutun;
+      }).map((x) => x[0]);
+      this.son = this.son.replace(m[0], kalan.length ? '<mergeCells count="' + kalan.length + '">' + kalan.join('') + '</mergeCells>' : '');
+    }
     this.degisti = true;
   }
 
@@ -389,6 +430,44 @@ export class Xlsm {
     this.sayfalar.push({ ad, yol, sheetId: String(sheetId), durum: 'visible' });
     this.rel[rid] = yol.replace(/^xl\//, '');
     return this.sayfa(ad);
+  }
+
+  /**
+   * Sayfayı kopyalar (biçim, formüller, değerler, birleşik hücreler, sütun genişlikleri, koruma); yorum, çizim, yazıcı ayarı
+   * ve VBA kod adı gibi bağlı parçalar kopyaya alınmaz. Yeni sayfa kaynağın hemen sağına konur. Eklentideki XlsmDosyasi.SayfaKopyala.
+   */
+  sayfaKopyala(kaynakAd, yeniAd) {
+    const k = this.sayfalar.find((x) => x.ad === kaynakAd);
+    if (!k) throw new Error('Sayfa yok: ' + kaynakAd);
+    if (this.sayfalar.some((x) => x.ad === yeniAd)) return this.sayfa(yeniAd);
+    const kaynak = this.sayfa(kaynakAd);
+    let xml = (kaynak.degisti ? kaynak.xml() : dec(this.dosyalar[k.yol]));
+    xml = xml.replace(/\s+xr:uid="[^"]*"/, '').replace(/\s+codeName="[^"]*"/, '').replace(/\s+tabSelected="1"/, '')
+      .replace(/<legacyDrawing\b[^>]*\/>/g, '').replace(/<legacyDrawingHF\b[^>]*\/>/g, '').replace(/<drawing\b[^>]*\/>/g, '').replace(/<picture\b[^>]*\/>/g, '')
+      .replace(/<tableParts\b[^>]*>[\s\S]*?<\/tableParts>/g, '').replace(/<tableParts\b[^>]*\/>/g, '')
+      .replace(/<oleObjects\b[^>]*>[\s\S]*?<\/oleObjects>/g, '').replace(/<controls\b[^>]*>[\s\S]*?<\/controls>/g, '')
+      .replace(/<hyperlinks\b[^>]*>[\s\S]*?<\/hyperlinks>/g, '')
+      .replace(/(<pageSetup\b[^>]*?)\s+r:id="[^"]*"/g, '$1');
+    let n = this.sayfalar.length + 1, yol = 'xl/worksheets/sheet' + n + '.xml';
+    while (this.dosyalar[yol]) { n++; yol = 'xl/worksheets/sheet' + n + '.xml'; }
+    const rid = 'rIdSM' + n;
+    const sheetId = Math.max(0, ...this.sayfalar.map((s) => +s.sheetId || 0)) + 1;
+    this.dosyalar[yol] = enc(xml);
+    const giris = '<sheet name="' + xmlKac(yeniAd) + '" sheetId="' + sheetId + '" r:id="' + rid + '"/>';
+    // kaynağın (ve önceki kopyalarının) hemen sağına: kopyalar açılış sırasıyla dizilir
+    let onceki = k;
+    for (const s of this.sayfalar) if (s.kopyasi === kaynakAd) onceki = s;
+    const oncekiGiris = new RegExp('<sheet\\b[^>]*name="' + xmlKac(onceki.ad).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"[^>]*/>');
+    this.workbook = oncekiGiris.test(this.workbook) ? this.workbook.replace(oncekiGiris, (m) => m + giris) : this.workbook.replace('</sheets>', giris + '</sheets>');
+    const relYol = 'xl/_rels/workbook.xml.rels';
+    this.dosyalar[relYol] = enc(dec(this.dosyalar[relYol]).replace('</Relationships>', '<Relationship Id="' + rid + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="' + yol.replace(/^xl\//, '') + '"/></Relationships>'));
+    let ct = dec(this.dosyalar['[Content_Types].xml']);
+    if (ct.indexOf('PartName="/' + yol + '"') < 0) ct = ct.replace('</Types>', '<Override PartName="/' + yol + '" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>');
+    this.dosyalar['[Content_Types].xml'] = enc(ct);
+    const yeni = { ad: yeniAd, yol, sheetId: String(sheetId), durum: 'visible', kopyasi: kaynakAd };
+    this.sayfalar.splice(this.sayfalar.indexOf(onceki) + 1, 0, yeni);
+    this.rel[rid] = yol.replace(/^xl\//, '');
+    return this.sayfa(yeniAd);
   }
 
   /** Paketi yazar: değişen sayfalar, workbook (fullCalcOnLoad), calcChain silinir. */

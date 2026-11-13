@@ -383,6 +383,30 @@ namespace SebekeHakedis.PencereTest
                 direk.Cins = eskiCins;
             }
 
+            // Önerilen malzemeler (13.11.2026): SC77 şehir içi AG direk, bağlı hattı yok → taşıyıcı; çıplak AG yok → yalnız GT-70 travers
+            int oncekiSayi = direk.Kalemler.Count;
+            Dene("08d-malzeme-onerilen", () =>
+            {
+                bool ok = Pencereler.Kalemler(o, direk);
+                Esit(true, ok, "önerilen: Kaydet");
+                Esit(oncekiSayi + 1, direk.Kalemler.Count, "önerilen: işaretli öneri kalem olarak eklendi");
+                var yeni = direk.Kalemler.Find(k => k.Cins == "TRAVERS_VE_KONSOLLAR_GLV" && k.Tanim == "GT-70");
+                Esit(true, yeni != null && !yeni.Ana && yeni.Miktar == 1 && yeni.Durum == "M" && yeni.Kaynak == "MALZEME", "önerilen: GT-70 travers, 1 adet, direğin durumuyla");
+            }, f =>
+            {
+                var dugme = Bul<Button>(f, b => b.Text.StartsWith("Önerilen", StringComparison.Ordinal));
+                Esit(true, dugme != null, "önerilen: düğme var");
+                Esit("Önerilen (1)…", dugme?.Text, "önerilen: düğme eksik öneri sayısını gösterir");
+                dugme.PerformClick();   // iç pencere: Seçilenleri ekle (varsayılan işaretli)
+                Esit("Önerilen…", dugme?.Text, "önerilen: eklenince sayı düşer");
+                var g = Bul<DataGridView>(f, x => true);
+                bool var_ = false;
+                for (int i = 0; i < g.Rows.Count; i++) if (g.Rows[i].Tag is Kalem k && k.Tanim == "GT-70") var_ = true;
+                Esit(true, var_, "önerilen: tabloda yeni satır");
+                Resim(f, "sonra");
+            });
+            direk.Kalemler.RemoveAll(k => k.Cins == "TRAVERS_VE_KONSOLLAR_GLV" && k.Tanim == "GT-70");   // sonraki denemeler eski listeyi bekler
+
             var hat = o.Proje.Hatlar[0];
             Dene("09-malzeme-hat", () =>
             {
@@ -746,16 +770,18 @@ namespace SebekeHakedis.PencereTest
                 Resim(f, "sonra");
             });
             var metrajPlani = new MetrajPlani();
-            foreach (var k in new[] { "eleman", "iletkenSatiri", "yeraltiSatiri", "eslesen", "yeniSutun", "fazla", "atlanan" }) metrajPlani.Ozet[k] = 0;
-            metrajPlani.Ozet["eleman"] = 8; metrajPlani.Ozet["iletkenSatiri"] = 6; metrajPlani.Ozet["eslesen"] = 25; metrajPlani.Ozet["yeniSutun"] = 2; metrajPlani.Ozet["fazla"] = 1;
-            metrajPlani.YeniSutunlar.Add(new MetrajPlani.YeniSutun { Hangi = "direk", Sayfa = "DİREK METRAJI", Blok = "Y", SutunNo = 279, Kod = "YE001", Tip = "G-K5", Ad = "G-K5 Demir Direk", Birim = "ad.", Poz = "5.1" });
-            metrajPlani.YeniSutunlar.Add(new MetrajPlani.YeniSutun { Hangi = "iletken", Sayfa = "İLETKEN METRAJI", Blok = "D", SutunNo = 66, Kod = "DE002", Tip = "OXLIP", Ad = "OXLIP (298.86 Kg/Km)", Birim = "kg", Poz = "109.2.1" });
+            foreach (var k in new[] { "eleman", "iletkenSatiri", "yeraltiSatiri", "eslesen", "yeniSutun", "kopyaSayfa", "fazla", "atlanan" }) metrajPlani.Ozet[k] = 0;
+            metrajPlani.Ozet["eleman"] = 9; metrajPlani.Ozet["iletkenSatiri"] = 6; metrajPlani.Ozet["eslesen"] = 25; metrajPlani.Ozet["yeniSutun"] = 3; metrajPlani.Ozet["kopyaSayfa"] = 1; metrajPlani.Ozet["fazla"] = 1;
+            metrajPlani.KopyaSayfalar.Add(new MetrajPlani.KopyaSayfa { Ad = "DİREK AG BETON", Kaynak = "DİREK METRAJI", Hangi = "direk", Aile = "AG_BETON" });
+            metrajPlani.YeniSutunlar.Add(new MetrajPlani.YeniSutun { Hangi = "direk", Sayfa = "DİREK METRAJI", Blok = "Y", SutunNo = 279, Kod = "Y175", Tip = "G-K5", Ad = "G-K5 Galvaniz Demir Direk", Birim = "ad.", Poz = "5.1" });
+            metrajPlani.YeniSutunlar.Add(new MetrajPlani.YeniSutun { Hangi = "direk", Sayfa = "DİREK AG BETON", Blok = "Y", SutunNo = 7, Kod = "Y176", Tip = "9,3/3", Ad = "9,3/3 Beton Direk", Birim = "ad.", Poz = "5.6.7" });
+            metrajPlani.YeniSutunlar.Add(new MetrajPlani.YeniSutun { Hangi = "iletken", Sayfa = "İLETKEN METRAJI", Blok = "D", SutunNo = 66, Kod = "D120", Tip = "OXLIP", Ad = "OXLIP (298.86 Kg/Km)", Birim = "kg", Poz = "109.2.1" });
             metrajPlani.Fazlalar.Add(new MetrajPlani.Fazla { Hangi = "direk", Blok = "Y", Ad = "VHD-35", Birim = "ad.", Miktar = 3, Nereler = new List<string> { "SC7" } });
             metrajPlani.Uyarilar.Add("SC2: demontaj direğin kesik / sökük bilgisi yok; \"Kesik\" sayıldı.");
             Dene("30b-birlesik-metraj-sonuc", () => Pencereler.BirlesikMetrajSonuc(metrajPlani, Path.Combine(_klasor, "Deneme_BIRLESIK_METRAJ.xlsm")), f =>
             {
                 var kutu = Bul<TextBox>(f, t => t.Multiline);
-                Esit(true, kutu != null && kutu.Text.Contains("YE001") && kutu.Text.Contains("VHD-35") && kutu.Text.Contains("UYARILAR"), "birleşik metraj sonucu: sütunlar, fazlalar ve uyarılar listelenir");
+                Esit(true, kutu != null && kutu.Text.Contains("DİREK AG BETON  (AG_BETON)") && kutu.Text.Contains("Y175") && kutu.Text.Contains("VHD-35") && kutu.Text.Contains("UYARILAR"), "birleşik metraj sonucu: direk sayfaları, sütunlar, fazlalar ve uyarılar listelenir");
                 Resim(f, "sonra");
             });
 

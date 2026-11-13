@@ -1,0 +1,397 @@
+{
+ "bicim": "sebeke-hakedis.deneme.onerilen-malzeme.beklenen",
+ "durumlar": [
+  {
+   "ad": "Şehir içi AG taşıyıcı, çıplak AG hat",
+   "kalemler": [
+    {
+     "servis": "005.02.02.01-002",
+     "miktar": 1,
+     "neden": "AG travers · Taşıyıcı",
+     "etiket": "travers"
+    },
+    {
+     "servis": "011.04.01.01-001",
+     "miktar": 4,
+     "neden": "AG mesnet izolatörü (çıplak hat)",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-001",
+     "miktar": 4,
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "ad": "Şehir içi AG durdurucu, demetli (ALPEK) hat",
+   "kalemler": [
+    {
+     "servis": "005.02.02.01-010",
+     "miktar": 1,
+     "neden": "AG travers · Durdurucu",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "ad": "Müşterek taşıyıcı, çıplak AG",
+   "kalemler": [
+    {
+     "servis": "005.02.02.01-002",
+     "miktar": 1,
+     "neden": "AG travers · Taşıyıcı",
+     "etiket": "travers"
+    },
+    {
+     "servis": "005.02.02.01-005",
+     "miktar": 1,
+     "neden": "Müşterek tepe traversi",
+     "etiket": "travers"
+    },
+    {
+     "servis": "011.04.01.01-006",
+     "miktar": 3,
+     "neden": "Mesnet izolatörü · 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-017",
+     "miktar": 3,
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    },
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": 1,
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "030.01.02.01-001",
+     "miktar": 10,
+     "neden": "Topraklama iletkeni (m)",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": 1,
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    },
+    {
+     "servis": "011.04.01.01-001",
+     "miktar": 4,
+     "neden": "AG mesnet izolatörü (çıplak hat)",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-001",
+     "miktar": 4,
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "ad": "Müşterek köşe, demetli AG",
+   "kalemler": [
+    {
+     "servis": "005.02.02.01-010",
+     "miktar": 1,
+     "neden": "AG travers · Köşe",
+     "etiket": "travers"
+    },
+    {
+     "servis": "005.02.02.01-015",
+     "miktar": 1,
+     "neden": "Müşterek tepe traversi",
+     "etiket": "travers"
+    },
+    {
+     "servis": "011.06.04.01-001",
+     "miktar": 6,
+     "neden": "Gergi izolatörü · 2 yön × 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.08.01.01-001",
+     "miktar": 6,
+     "neden": "Gergi tertibatı",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.04.01.01-006",
+     "miktar": 3,
+     "neden": "Atlama (köprü) mesneti",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-017",
+     "miktar": 3,
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    },
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": 1,
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "030.01.02.01-001",
+     "miktar": 10,
+     "neden": "Topraklama iletkeni (m)",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": 1,
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    }
+   ]
+  },
+  {
+   "ad": "ENH kaynaklı (bahh) nihayet, swallow",
+   "kalemler": [
+    {
+     "servis": "005.02.02.02-016",
+     "miktar": 1,
+     "neden": "OG travers · Nihayet",
+     "etiket": "travers"
+    },
+    {
+     "servis": "011.06.04.01-001",
+     "miktar": 3,
+     "neden": "Gergi izolatörü · 1 yön × 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.08.01.01-001",
+     "miktar": 3,
+     "neden": "Gergi tertibatı",
+     "etiket": "izo"
+    },
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": 1,
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "030.01.02.01-001",
+     "miktar": 10,
+     "neden": "Topraklama iletkeni (m)",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": 1,
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    }
+   ]
+  },
+  {
+   "ad": "ENH kaynaklı (bahh) köşe, çift devre",
+   "kalemler": [
+    {
+     "servis": "005.02.02.02-021",
+     "miktar": 1,
+     "neden": "OG travers · Köşe",
+     "etiket": "travers"
+    },
+    {
+     "servis": "011.06.04.01-001",
+     "miktar": 6,
+     "neden": "Gergi izolatörü · 2 yön × 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.08.01.01-004",
+     "miktar": 6,
+     "neden": "Gergi tertibatı",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.04.01.01-006",
+     "miktar": 3,
+     "neden": "Atlama (köprü) mesneti",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-017",
+     "miktar": 3,
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    },
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": 1,
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "030.01.02.01-001",
+     "miktar": 10,
+     "neden": "Topraklama iletkeni (m)",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": 1,
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    }
+   ]
+  },
+  {
+   "ad": "ENH cıvatalı (civ) taşıyıcı, 477 MCM",
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-002",
+     "miktar": 3,
+     "neden": "Askı izolatörü · 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.07.01.01-003",
+     "miktar": 3,
+     "neden": "Askı tertibatı",
+     "etiket": "izo"
+    },
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": 1,
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "030.01.02.01-001",
+     "miktar": 10,
+     "neden": "Topraklama iletkeni (m)",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": 1,
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    }
+   ]
+  },
+  {
+   "ad": "ENH cıvatalı (civ) durdurucu, swallow",
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-001",
+     "miktar": 6,
+     "neden": "Gergi izolatörü · 2 yön × 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.08.01.01-001",
+     "miktar": 6,
+     "neden": "Gergi tertibatı",
+     "etiket": "izo"
+    },
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": 1,
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "030.01.02.01-001",
+     "miktar": 10,
+     "neden": "Topraklama iletkeni (m)",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": 1,
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    }
+   ]
+  },
+  {
+   "ad": "AG beton durdurucu, çıplak AG",
+   "kalemler": [
+    {
+     "servis": "005.07.02.02-004",
+     "miktar": 1,
+     "neden": "AG beton travers · Durdurucu",
+     "etiket": "travers"
+    },
+    {
+     "servis": "011.04.01.01-001",
+     "miktar": 8,
+     "neden": "AG mesnet izolatörü (çıplak hat)",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-001",
+     "miktar": 8,
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "ad": "OG beton (5.6.2) taşıyıcı",
+   "kalemler": [
+    {
+     "servis": "005.07.01.01-005",
+     "miktar": 1,
+     "neden": "OG beton travers · Taşıyıcı",
+     "etiket": "travers"
+    },
+    {
+     "servis": "011.04.01.01-006",
+     "miktar": 3,
+     "neden": "Mesnet izolatörü · 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-020",
+     "miktar": 3,
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    },
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": 1,
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "030.01.02.01-001",
+     "miktar": 10,
+     "neden": "Topraklama iletkeni (m)",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": 1,
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    }
+   ]
+  },
+  {
+   "ad": "Ağaç nihayet, demetli AG",
+   "kalemler": []
+  },
+  {
+   "ad": "Aydınlatma direği",
+   "kalemler": []
+  },
+  {
+   "ad": "Trafo direği (G-T)",
+   "kalemler": []
+  }
+ ]
+}

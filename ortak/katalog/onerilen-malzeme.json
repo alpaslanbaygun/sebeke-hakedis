@@ -1,0 +1,1284 @@
+{
+ "bicim": "sebeke-hakedis.onerilen-malzeme",
+ "surum": 1,
+ "aciklama": "Önerilen malzeme (otomatik reçete) kuralları; telefon ve AutoCAD eklentisi aynı tabloyu kullanır. nesne: direk / trafo / sdk / abone. kosul: hepsi sağlanmalı — grup: direk grubu (volt-eslesme.json › direkGruplari: sehir, mus, bahh, civ, beton, beton562, agac, ayd, trafo), rol: T taşıyıcı / D durdurucu / N nihayet / Z köşe, iletkenBuyuk: OG iletken sınıfı 477 MCM, iletkenCift: çift devre (2x…), agCiplak: direğe çıplak AG hat bağlı; trafo: tip (direk, bina, ba, dapt, mod, kule, kulec, mono, mbk, rbk, mrmu, ind); abone: tesis (havai / yeralti), faz (tek / uc). kalemler: servis = telefon poz kodu (AutoCAD cins / tanımı volt-eslesme.json › kalemler ile), kaynak = kendisi (nesnenin kendi pozu) / kendisi:direk / kendisi:kosk / ara:trafo / ara:panoH / ara:panoD; miktar = sayı, parametre anahtarı ya da $uzunluk; neden: {rol} {tip} {kva}… yer tutucuları; etiket: travers / izo / top / direk / trafo / pano / koruma / hucre / kosk / sdk / abone. Telefon: telefon/tools/build_seed.mjs bu dosyayı okuyup standart tohumuna (recipeRules, params) yazar, motor src/grid/recipe.js. Eklenti: Cekirdek/OnerilenMalzeme.cs (yalnız direk kuralları; Malzemeler penceresi › Önerilen malzemeler).",
+ "parametreler": [
+  {
+   "anahtar": "ogKazik",
+   "ad": "Topraklama kazığı · OG direk",
+   "deger": 1,
+   "birim": "Ad"
+  },
+  {
+   "anahtar": "ogTopIlet",
+   "ad": "Topraklama iletkeni · OG direk",
+   "deger": 10,
+   "birim": "m"
+  },
+  {
+   "anahtar": "levha",
+   "ad": "Tehlike levhası · OG direk / trafo",
+   "deger": 1,
+   "birim": "Ad"
+  },
+  {
+   "anahtar": "agMesnetT",
+   "ad": "AG mesnet · taşıyıcı · çıplak AG hat",
+   "deger": 4,
+   "birim": "Ad"
+  },
+  {
+   "anahtar": "agMesnetD",
+   "ad": "AG mesnet · durdurucu/köşe · çıplak AG hat",
+   "deger": 8,
+   "birim": "Ad"
+  },
+  {
+   "anahtar": "parafudr",
+   "ad": "Parafudr · direk tipi trafo",
+   "deger": 3,
+   "birim": "Ad"
+  },
+  {
+   "anahtar": "trKazik",
+   "ad": "Topraklama kazığı · direk tipi trafo",
+   "deger": 4,
+   "birim": "Ad"
+  },
+  {
+   "anahtar": "trBakir",
+   "ad": "Örgülü bakır · direk tipi trafo",
+   "deger": 30,
+   "birim": "m"
+  },
+  {
+   "anahtar": "koskKazik",
+   "ad": "Topraklama kazığı · köşk / bina",
+   "deger": 8,
+   "birim": "Ad"
+  },
+  {
+   "anahtar": "koskBakir",
+   "ad": "Örgülü bakır · köşk / bina",
+   "deger": 40,
+   "birim": "m"
+  },
+  {
+   "anahtar": "aboneAskiKg",
+   "ad": "Askı teli · abone bağlantısı",
+   "deger": 1.5,
+   "birim": "Kg"
+  }
+ ],
+ "kurallar": [
+  {
+   "no": 1,
+   "nesne": "direk",
+   "kosul": {},
+   "kalemler": [
+    {
+     "kaynak": "kendisi",
+     "miktar": 1,
+     "neden": "Direk · {tip}",
+     "grup": "{kgGroup}",
+     "etiket": "direk"
+    }
+   ],
+   "not": "Direğin kendisi (tipten)"
+  },
+  {
+   "no": 2,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh"
+    ],
+    "rol": [
+     "T"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "005.02.02.02-004",
+     "miktar": 1,
+     "neden": "OG travers · {rol}",
+     "grup": "005.02.02.02-000",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "no": 3,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh"
+    ],
+    "rol": [
+     "D"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "005.02.02.02-010",
+     "miktar": 1,
+     "neden": "OG travers · {rol}",
+     "grup": "005.02.02.02-000",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "no": 4,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh"
+    ],
+    "rol": [
+     "N"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "005.02.02.02-016",
+     "miktar": 1,
+     "neden": "OG travers · {rol}",
+     "grup": "005.02.02.02-000",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "no": 5,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh"
+    ],
+    "rol": [
+     "Z"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "005.02.02.02-021",
+     "miktar": 1,
+     "neden": "OG travers · {rol}",
+     "grup": "005.02.02.02-000",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "no": 6,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "sehir",
+     "mus"
+    ],
+    "rol": [
+     "T"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "005.02.02.01-002",
+     "miktar": 1,
+     "neden": "AG travers · {rol}",
+     "grup": "005.02.02.01-000",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "no": 7,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "sehir",
+     "mus"
+    ],
+    "rol": [
+     "D",
+     "N",
+     "Z"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "005.02.02.01-010",
+     "miktar": 1,
+     "neden": "AG travers · {rol}",
+     "grup": "005.02.02.01-000",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "no": 8,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "mus"
+    ],
+    "rol": [
+     "T"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "005.02.02.01-005",
+     "miktar": 1,
+     "neden": "Müşterek tepe traversi",
+     "grup": "005.02.02.01-000",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "no": 9,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "mus"
+    ],
+    "rol": [
+     "D",
+     "N",
+     "Z"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "005.02.02.01-015",
+     "miktar": 1,
+     "neden": "Müşterek tepe traversi",
+     "grup": "005.02.02.01-000",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "no": 10,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "beton"
+    ],
+    "rol": [
+     "T"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "005.07.02.02-002",
+     "miktar": 1,
+     "neden": "AG beton travers · {rol}",
+     "grup": "005.07.02.00-000",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "no": 11,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "beton"
+    ],
+    "rol": [
+     "D",
+     "N",
+     "Z"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "005.07.02.02-004",
+     "miktar": 1,
+     "neden": "AG beton travers · {rol}",
+     "grup": "005.07.02.00-000",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "no": 12,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "beton562"
+    ],
+    "rol": [
+     "T"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "005.07.01.01-005",
+     "miktar": 1,
+     "neden": "OG beton travers · {rol}",
+     "grup": "005.07.01.00-000",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "no": 13,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "beton562"
+    ],
+    "rol": [
+     "D",
+     "N",
+     "Z"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "005.07.01.06-005",
+     "miktar": 1,
+     "neden": "OG beton travers · {rol}",
+     "grup": "005.07.01.00-000",
+     "etiket": "travers"
+    }
+   ]
+  },
+  {
+   "no": 14,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "civ"
+    ],
+    "rol": [
+     "T"
+    ],
+    "iletkenBuyuk": false,
+    "iletkenCift": false
+   },
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-001",
+     "miktar": 3,
+     "neden": "Askı izolatörü · 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.07.01.01-001",
+     "miktar": 3,
+     "neden": "Askı tertibatı",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 15,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh",
+     "civ",
+     "beton562",
+     "mus"
+    ],
+    "rol": [
+     "N"
+    ],
+    "iletkenBuyuk": false,
+    "iletkenCift": false
+   },
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-001",
+     "miktar": 3,
+     "neden": "Gergi izolatörü · 1 yön × 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.08.01.01-001",
+     "miktar": 3,
+     "neden": "Gergi tertibatı",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 16,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh",
+     "civ",
+     "beton562",
+     "mus"
+    ],
+    "rol": [
+     "D",
+     "Z"
+    ],
+    "iletkenBuyuk": false,
+    "iletkenCift": false
+   },
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-001",
+     "miktar": 6,
+     "neden": "Gergi izolatörü · 2 yön × 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.08.01.01-001",
+     "miktar": 6,
+     "neden": "Gergi tertibatı",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 17,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "civ"
+    ],
+    "rol": [
+     "T"
+    ],
+    "iletkenBuyuk": false,
+    "iletkenCift": true
+   },
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-001",
+     "miktar": 3,
+     "neden": "Askı izolatörü · 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.07.01.01-004",
+     "miktar": 3,
+     "neden": "Askı tertibatı",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 18,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh",
+     "civ",
+     "beton562",
+     "mus"
+    ],
+    "rol": [
+     "N"
+    ],
+    "iletkenBuyuk": false,
+    "iletkenCift": true
+   },
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-001",
+     "miktar": 3,
+     "neden": "Gergi izolatörü · 1 yön × 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.08.01.01-004",
+     "miktar": 3,
+     "neden": "Gergi tertibatı",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 19,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh",
+     "civ",
+     "beton562",
+     "mus"
+    ],
+    "rol": [
+     "D",
+     "Z"
+    ],
+    "iletkenBuyuk": false,
+    "iletkenCift": true
+   },
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-001",
+     "miktar": 6,
+     "neden": "Gergi izolatörü · 2 yön × 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.08.01.01-004",
+     "miktar": 6,
+     "neden": "Gergi tertibatı",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 20,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "civ"
+    ],
+    "rol": [
+     "T"
+    ],
+    "iletkenBuyuk": true,
+    "iletkenCift": false
+   },
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-002",
+     "miktar": 3,
+     "neden": "Askı izolatörü · 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.07.01.01-003",
+     "miktar": 3,
+     "neden": "Askı tertibatı",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 21,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh",
+     "civ",
+     "beton562",
+     "mus"
+    ],
+    "rol": [
+     "N"
+    ],
+    "iletkenBuyuk": true,
+    "iletkenCift": false
+   },
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-002",
+     "miktar": 3,
+     "neden": "Gergi izolatörü · 1 yön × 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.08.01.01-003",
+     "miktar": 3,
+     "neden": "Gergi tertibatı",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 22,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh",
+     "civ",
+     "beton562",
+     "mus"
+    ],
+    "rol": [
+     "D",
+     "Z"
+    ],
+    "iletkenBuyuk": true,
+    "iletkenCift": false
+   },
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-002",
+     "miktar": 6,
+     "neden": "Gergi izolatörü · 2 yön × 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.08.01.01-003",
+     "miktar": 6,
+     "neden": "Gergi tertibatı",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 23,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "civ"
+    ],
+    "rol": [
+     "T"
+    ],
+    "iletkenBuyuk": true,
+    "iletkenCift": true
+   },
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-002",
+     "miktar": 3,
+     "neden": "Askı izolatörü · 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.07.01.01-006",
+     "miktar": 3,
+     "neden": "Askı tertibatı",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 24,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh",
+     "civ",
+     "beton562",
+     "mus"
+    ],
+    "rol": [
+     "N"
+    ],
+    "iletkenBuyuk": true,
+    "iletkenCift": true
+   },
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-002",
+     "miktar": 3,
+     "neden": "Gergi izolatörü · 1 yön × 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.08.01.01-006",
+     "miktar": 3,
+     "neden": "Gergi tertibatı",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 25,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh",
+     "civ",
+     "beton562",
+     "mus"
+    ],
+    "rol": [
+     "D",
+     "Z"
+    ],
+    "iletkenBuyuk": true,
+    "iletkenCift": true
+   },
+   "kalemler": [
+    {
+     "servis": "011.06.04.01-002",
+     "miktar": 6,
+     "neden": "Gergi izolatörü · 2 yön × 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.08.01.01-006",
+     "miktar": 6,
+     "neden": "Gergi tertibatı",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 26,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh",
+     "mus"
+    ],
+    "rol": [
+     "T"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "011.04.01.01-006",
+     "miktar": 3,
+     "neden": "Mesnet izolatörü · 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-017",
+     "miktar": 3,
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 27,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "beton562"
+    ],
+    "rol": [
+     "T"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "011.04.01.01-006",
+     "miktar": 3,
+     "neden": "Mesnet izolatörü · 3 faz",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-020",
+     "miktar": 3,
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 28,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh",
+     "mus"
+    ],
+    "rol": [
+     "D",
+     "Z"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "011.04.01.01-006",
+     "miktar": 3,
+     "neden": "Atlama (köprü) mesneti",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-017",
+     "miktar": 3,
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 29,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "beton562"
+    ],
+    "rol": [
+     "D",
+     "Z"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "011.04.01.01-006",
+     "miktar": 3,
+     "neden": "Atlama (köprü) mesneti",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-020",
+     "miktar": 3,
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 30,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "bahh",
+     "civ",
+     "beton562",
+     "mus"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": "ogKazik",
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "030.01.02.01-001",
+     "miktar": "ogTopIlet",
+     "neden": "Topraklama iletkeni (m)",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": "levha",
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    }
+   ]
+  },
+  {
+   "no": 31,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "sehir",
+     "mus",
+     "beton",
+     "agac"
+    ],
+    "rol": [
+     "T"
+    ],
+    "agCiplak": true
+   },
+   "kalemler": [
+    {
+     "servis": "011.04.01.01-001",
+     "miktar": "agMesnetT",
+     "neden": "AG mesnet izolatörü (çıplak hat)",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-001",
+     "miktar": "agMesnetT",
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 32,
+   "nesne": "direk",
+   "kosul": {
+    "grup": [
+     "sehir",
+     "mus",
+     "beton",
+     "agac"
+    ],
+    "rol": [
+     "D",
+     "N",
+     "Z"
+    ],
+    "agCiplak": true
+   },
+   "kalemler": [
+    {
+     "servis": "011.04.01.01-001",
+     "miktar": "agMesnetD",
+     "neden": "AG mesnet izolatörü (çıplak hat)",
+     "etiket": "izo"
+    },
+    {
+     "servis": "011.05.01.01-001",
+     "miktar": "agMesnetD",
+     "neden": "İzolatör demiri",
+     "etiket": "izo"
+    }
+   ]
+  },
+  {
+   "no": 33,
+   "nesne": "trafo",
+   "kosul": {
+    "tip": [
+     "direk"
+    ]
+   },
+   "kalemler": [
+    {
+     "kaynak": "ara:trafo",
+     "miktar": 1,
+     "neden": "{kva} kVA hermetik direk tipi trafo",
+     "etiket": "trafo"
+    },
+    {
+     "kaynak": "kendisi:direk",
+     "miktar": 1,
+     "neden": "Trafo direği {tdirek}",
+     "grup": "005.01.02.01-000",
+     "etiket": "direk"
+    },
+    {
+     "kaynak": "ara:panoH",
+     "miktar": 1,
+     "neden": "Harici AG dağıtım panosu",
+     "etiket": "pano"
+    },
+    {
+     "servis": "015.01.01.01-010",
+     "miktar": "parafudr",
+     "neden": "Parafudr 36 kV 10 kA",
+     "etiket": "koruma"
+    },
+    {
+     "servis": "017.08.01.01-006",
+     "miktar": 1,
+     "neden": "Sigortalı + topraklı ayırıcı",
+     "etiket": "koruma"
+    },
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": "trKazik",
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "030.01.04.01-002",
+     "miktar": "trBakir",
+     "neden": "Örgülü bakır 50 mm² (m)",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": "levha",
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    }
+   ]
+  },
+  {
+   "no": 34,
+   "nesne": "trafo",
+   "kosul": {
+    "tip": [
+     "bina",
+     "ba",
+     "dapt",
+     "mod",
+     "kule",
+     "kulec",
+     "mono"
+    ]
+   },
+   "kalemler": [
+    {
+     "kaynak": "ara:trafo",
+     "miktar": 1,
+     "neden": "{kva} kVA {cinsLabel} trafo",
+     "etiket": "trafo"
+    },
+    {
+     "kaynak": "ara:panoD",
+     "miktar": 1,
+     "neden": "Dahili AG dağıtım panosu",
+     "etiket": "pano"
+    },
+    {
+     "servis": "022.05.02.01-004",
+     "miktar": 1,
+     "neden": "Trafo koruma hücresi",
+     "etiket": "hucre"
+    },
+    {
+     "servis": "022.05.01.01-004",
+     "miktar": 2,
+     "neden": "Yük ayırıcılı giriş-çıkış hücresi",
+     "etiket": "hucre"
+    },
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": "koskKazik",
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "030.01.04.01-002",
+     "miktar": "koskBakir",
+     "neden": "Örgülü bakır 50 mm² (m)",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": "levha",
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    }
+   ]
+  },
+  {
+   "no": 35,
+   "nesne": "trafo",
+   "kosul": {
+    "tip": [
+     "mbk",
+     "ind"
+    ]
+   },
+   "kalemler": [
+    {
+     "kaynak": "kendisi:kosk",
+     "miktar": 1,
+     "neden": "Beton köşk · {kioskLabel}",
+     "etiket": "kosk"
+    },
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": "koskKazik",
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "030.01.04.01-002",
+     "miktar": "koskBakir",
+     "neden": "Örgülü bakır 50 mm² (m)",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": "levha",
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    }
+   ]
+  },
+  {
+   "no": 36,
+   "nesne": "trafo",
+   "kosul": {
+    "tip": [
+     "rbk"
+    ]
+   },
+   "kalemler": [
+    {
+     "kaynak": "kendisi:kosk",
+     "miktar": 1,
+     "neden": "Prefabrik beton köşk",
+     "etiket": "kosk"
+    },
+    {
+     "servis": "022.04.01.01-002",
+     "miktar": 1,
+     "neden": "Kompakt RMU",
+     "etiket": "hucre"
+    },
+    {
+     "kaynak": "ara:trafo",
+     "miktar": 1,
+     "neden": "{kva} kVA hermetik trafo",
+     "etiket": "trafo"
+    },
+    {
+     "kaynak": "ara:panoD",
+     "miktar": 1,
+     "neden": "Dahili AG dağıtım panosu",
+     "etiket": "pano"
+    },
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": "koskKazik",
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "030.01.04.01-002",
+     "miktar": "koskBakir",
+     "neden": "Örgülü bakır 50 mm² (m)",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": "levha",
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    }
+   ]
+  },
+  {
+   "no": 37,
+   "nesne": "trafo",
+   "kosul": {
+    "tip": [
+     "mrmu"
+    ]
+   },
+   "kalemler": [
+    {
+     "kaynak": "kendisi:kosk",
+     "miktar": 1,
+     "neden": "Ring main unit",
+     "etiket": "hucre"
+    },
+    {
+     "servis": "030.02.01.01-001",
+     "miktar": "trKazik",
+     "neden": "Topraklama kazığı",
+     "etiket": "top"
+    },
+    {
+     "servis": "027.01.02.01-000",
+     "miktar": "levha",
+     "neden": "Tehlike levhası",
+     "etiket": "top"
+    }
+   ]
+  },
+  {
+   "no": 38,
+   "nesne": "sdk",
+   "kosul": {},
+   "kalemler": [
+    {
+     "kaynak": "kendisi",
+     "miktar": 1,
+     "neden": "SDK / box · {tip}",
+     "etiket": "sdk"
+    }
+   ]
+  },
+  {
+   "no": 39,
+   "nesne": "abone",
+   "kosul": {
+    "tesis": [
+     "havai"
+    ],
+    "faz": [
+     "tek"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "032.13.01.01-002",
+     "miktar": 1,
+     "neden": "Tek fazlı yapı bağlantı hattı",
+     "etiket": "abone"
+    },
+    {
+     "servis": "014.01.00.00-001",
+     "miktar": "aboneAskiKg",
+     "neden": "Askı teli çelik halat (abone)",
+     "etiket": "abone"
+    },
+    {
+     "servis": "008.01.01.01-001",
+     "miktar": 1,
+     "neden": "2.15 m galv. muhafaza borusu 3/4\"",
+     "etiket": "abone"
+    }
+   ]
+  },
+  {
+   "no": 40,
+   "nesne": "abone",
+   "kosul": {
+    "tesis": [
+     "havai"
+    ],
+    "faz": [
+     "uc"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "032.13.01.01-003",
+     "miktar": 1,
+     "neden": "Üç fazlı yapı bağlantı hattı",
+     "etiket": "abone"
+    },
+    {
+     "servis": "014.01.00.00-001",
+     "miktar": "aboneAskiKg",
+     "neden": "Askı teli çelik halat (abone)",
+     "etiket": "abone"
+    },
+    {
+     "servis": "008.01.01.01-002",
+     "miktar": 1,
+     "neden": "2.15 m galv. muhafaza borusu 1\"",
+     "etiket": "abone"
+    }
+   ]
+  },
+  {
+   "no": 41,
+   "nesne": "abone",
+   "kosul": {
+    "tesis": [
+     "yeralti"
+    ],
+    "faz": [
+     "tek"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "032.13.03.01-001",
+     "miktar": "$uzunluk",
+     "neden": "Abone bağlantı hattı kablo kanalı (m)",
+     "etiket": "abone"
+    },
+    {
+     "servis": "008.01.01.01-001",
+     "miktar": 1,
+     "neden": "2.15 m galv. muhafaza borusu 3/4\"",
+     "etiket": "abone"
+    }
+   ]
+  },
+  {
+   "no": 42,
+   "nesne": "abone",
+   "kosul": {
+    "tesis": [
+     "yeralti"
+    ],
+    "faz": [
+     "uc"
+    ]
+   },
+   "kalemler": [
+    {
+     "servis": "032.13.03.01-001",
+     "miktar": "$uzunluk",
+     "neden": "Abone bağlantı hattı kablo kanalı (m)",
+     "etiket": "abone"
+    },
+    {
+     "servis": "008.01.01.01-002",
+     "miktar": 1,
+     "neden": "2.15 m galv. muhafaza borusu 1\"",
+     "etiket": "abone"
+    }
+   ]
+  }
+ ]
+}

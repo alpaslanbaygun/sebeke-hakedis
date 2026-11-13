@@ -65,7 +65,7 @@ test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Dur
   assert.equal(d.tur, 'ENH_DIREK'); assert.equal(d.cins, 'ENH_DEMİR_GLV'); assert.equal(d.tip, 'G-D-10 (sw)'); assert.equal(d.durum, 'M'); assert.equal(d.bolge, 'B1');
   const ana = d.kalemler.find((k) => k.ana);
   assert.equal(ana.cins, 'ENH_DEMİR_GLV'); assert.equal(ana.tanim, 'G-D-10 (sw)'); assert.equal(ana.birim, 'ad/kg'); assert.equal(ana.katsayi, 279); assert.equal(ana.toplam, 279); assert.equal(ana.tarife, '0103');
-  assert.ok(d.kalemler.some((k) => !k.ana && k.miktar === 3 && k.cins === 'OG_İZOLATÖR'), 'elle eklenen izolatör OG_İZOLATÖR cinsiyle');
+  assert.ok(d.kalemler.some((k) => !k.ana && k.miktar === 3 && k.cins === 'KOMPOZİT_SİLİKON_ASKI_VE_GERGİ_İZOLATÖRLERİ' && k.tanim === '40kN/11B'), 'elle eklenen izolatör eşleme tablosuyla katalog kalemine (kompozit askı-gergi 40kN/11B)');
   assert.equal(d.telefonId, poles[0].id);
   // Beton direk mevcut: AG_BETON 9,3/8 (katalogdaki 1510 kg)
   const b = sp.elemanlar.find((e) => e.gisId === beton.no);

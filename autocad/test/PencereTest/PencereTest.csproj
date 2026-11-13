@@ -31,6 +31,8 @@
     <EmbeddedResource Include="..\..\..\ortak\katalog\cizim-stili.json" Link="Katalog\cizim-stili.json" LogicalName="SebekeHakedis.cizim-stili.json" />
     <EmbeddedResource Include="..\..\..\ortak\katalog\semboller.json" Link="Katalog\semboller.json" LogicalName="SebekeHakedis.semboller.json" />
     <EmbeddedResource Include="..\..\..\ortak\katalog\kategoriler.json" Link="Katalog\kategoriler.json" LogicalName="SebekeHakedis.kategoriler.json" />
+    <EmbeddedResource Include="..\..\..\ortak\katalog\onerilen-malzeme.json" Link="Katalog\onerilen-malzeme.json" LogicalName="SebekeHakedis.onerilen-malzeme.json" />
+    <EmbeddedResource Include="..\..\..\ortak\katalog\volt-eslesme.json" Link="Katalog\volt-eslesme.json" LogicalName="SebekeHakedis.volt-eslesme.json" />
     <!-- Roller ve yetkiler: telefonla ortak tablo -->
     <EmbeddedResource Include="..\..\..\ortak\katalog\roller.json" Link="Katalog\roller.json" LogicalName="SebekeHakedis.roller.json" />
     <!-- Şebeke-M markası: logo ve simgeler (üretici araclar/marka-uret.py) -->

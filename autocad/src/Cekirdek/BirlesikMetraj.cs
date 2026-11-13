@@ -16,6 +16,8 @@ namespace SebekeHakedis.Cekirdek
         public sealed class Sutun
         {
             public int SutunNo; public string Kod = "", Blok = "", Tip, Poz = "", Ad = "", Temin = "", Birim = "", Grup; public bool Formullu;
+            /// <summary>Planın açtığı sütun (şablonda yoktu): eşleşen sayılmaz, formüllü sütun sıfırlaması yapılmaz.</summary>
+            public bool Yeni;
         }
 
         public sealed class Sayfa
@@ -25,6 +27,8 @@ namespace SebekeHakedis.Cekirdek
             public int? TipSatiri, DurumSatiri, MalzSatiri, GrupSatiri;
             public List<int> BayrakSatirlari = new List<int>(), AltSatirlar = new List<int>();
             public List<Sutun> Sutunlar = new List<Sutun>();
+            /// <summary>Tanımlı adların aralıkları sayfasız ("KOD" → "$G$10:$ZZ$10"): kopya sayfanın MALZ. LİSTESİ formülleri kopya sayfasıyla kullanır.</summary>
+            public Dictionary<string, string> Adlar = new Dictionary<string, string>(StringComparer.Ordinal);
             /// <summary>Sabit sütunlar (harf): direk: no, yeni, demontaj, dmm, mevcut · iletken: direkler, aramesafe, tertip, durum · yeraltı: no, …</summary>
             public Dictionary<string, string> Sabit = new Dictionary<string, string>(StringComparer.Ordinal);
             /// <summary>İLETKEN: AG iletken (adet, kod) sütun çiftleri; OG ve AER çiftleri.</summary>
@@ -37,7 +41,9 @@ namespace SebekeHakedis.Cekirdek
 
         public sealed class Malz
         {
-            public string Sayfa, KodSutunu, KaynakSutunu, PozSutunu, AdSutunu, BirimSutunu, TeminSutunu, MiktarSutunu;
+            public string Sayfa, KodSutunu, KaynakSutunu, PozSutunu, AdSutunu, BirimSutunu, TeminSutunu, MiktarSutunu, ToplamSutunu, BayrakSutunu;
+            /// <summary>Örnek satırlar (biçim kopyalamak için): kalem satırı (ilk KOD'lu), grup başlığı (KOD'suz, adı yazılı, sonraki satır KOD'lu); EK KALEMLER bölüm başlığı.</summary>
+            public int KalemOrnekSatiri; public int? GrupOrnekSatiri, EkBaslikSatiri;
             public List<EkSatiri> EkSatirlari = new List<EkSatiri>();
         }
 
@@ -81,6 +87,11 @@ namespace SebekeHakedis.Cekirdek
             if (kod == null) return null;
             var s = x.Sayfa(kod.Sayfa);
             Func<string, int?> satir = ek => { var a = x.TanimliAd(onek + "_" + ek); return a != null ? a.BasSatir : (int?)null; };
+            Func<string, string> aralik = ek =>
+            {
+                var a = x.TanimliAd(onek + "_" + ek);
+                return a != null ? "$" + XlsmDosyasi.SutunHarfi(a.BasSutun) + "$" + a.BasSatir + ":$" + XlsmDosyasi.SutunHarfi(a.BitSutun) + "$" + a.BitSatir : null;
+            };
             var o = new Sayfa
             {
                 Ad = kod.Sayfa, Onek = onek, KodSatiri = kod.BasSatir, TipSatiri = satir("TIP_SATIRI"), DurumSatiri = satir("DURUM_SATIRI"),
@@ -88,6 +99,7 @@ namespace SebekeHakedis.Cekirdek
                 ToplamSatiri = satir("TOPLAM_SATIRI") ?? 0, MalzSatiri = satir("MALZ_SATIRI"), IlkKodSutunu = kod.BasSutun
             };
             if (o.PozSatiri == 0 || o.AdSatiri == 0 || o.TeminSatiri == 0 || o.BirimSatiri == 0) throw new InvalidOperationException(kod.Sayfa + ": şablonun " + onek + "_ tanımlı adları eksik.");
+            foreach (var ek in new[] { "KOD", "TIP", "DURUM", "POZ", "AD", "SEC", "BIRIM", "TOPLAM", "MALZ" }) { var ar = aralik(ek + "_SATIRI"); if (ar != null) o.Adlar[ek] = ar; }
             o.IlkVeri = o.BirimSatiri + 1;
             int sinirSatir, sinirSutun; s.Sinirlar(out sinirSatir, out sinirSutun);
             if (o.ToplamSatiri == 0)
@@ -95,6 +107,7 @@ namespace SebekeHakedis.Cekirdek
                 int son = o.MalzSatiri ?? sinirSatir;
                 for (int r = o.IlkVeri + 1; r <= son; r++) if (Regex.IsMatch(Metin(s, 1, r), "^TOPLAM", RegexOptions.IgnoreCase)) { o.ToplamSatiri = r; break; }
                 if (o.ToplamSatiri == 0) throw new InvalidOperationException(kod.Sayfa + ": TOPLAM satırı bulunamadı.");
+                if (!o.Adlar.ContainsKey("TOPLAM")) o.Adlar["TOPLAM"] = "$" + XlsmDosyasi.SutunHarfi(kod.BasSutun) + "$" + o.ToplamSatiri + ":$" + XlsmDosyasi.SutunHarfi(kod.BitSutun) + "$" + o.ToplamSatiri;
             }
             o.SonVeri = o.ToplamSatiri - 1;
             int ilkKodlu = 0; string oncekiBlok = "Y";
@@ -223,10 +236,39 @@ namespace SebekeHakedis.Cekirdek
                     else if (Regex.IsMatch(f, @"N\(INDEX\((?:DM|IM|YM)_(?:TOPLAM|MALZ)_SATIRI")) o.MiktarSutunu = h;
                 }
                 if (o.PozSutunu == null || o.AdSutunu == null || o.BirimSutunu == null || o.TeminSutunu == null || o.MiktarSutunu == null) throw new InvalidOperationException(sb.Ad + ": malzeme listesi sütunları çözülemedi.");
+                o.KalemOrnekSatiri = kaynakSatir;
+                // toplam sütunu: miktar sütununa eşit olan ("=H7"); bayrak sütunu: toplam > 0 denetimi yapan ("IF(F7>0,1,0)")
+                foreach (var ck in s.Satirlar[kaynakSatir].Hucreler)
+                {
+                    var f = Regex.Replace(s.Formul(XlsmDosyasi.HucreAdi(ck.Key, kaynakSatir)) ?? "", @"\s+", "");
+                    if (f == o.MiktarSutunu + kaynakSatir) o.ToplamSutunu = XlsmDosyasi.SutunHarfi(ck.Key);
+                }
+                foreach (var ck in s.Satirlar[kaynakSatir].Hucreler)
+                {
+                    var f = Regex.Replace(s.Formul(XlsmDosyasi.HucreAdi(ck.Key, kaynakSatir)) ?? "", @"\s+", "");
+                    if (o.ToplamSutunu != null && f == "IF(" + o.ToplamSutunu + kaynakSatir + ">0,1,0)") o.BayrakSutunu = XlsmDosyasi.SutunHarfi(ck.Key);
+                }
+                // grup başlığı örneği: KOD'suz, ad sütununda yazılı, bir sonraki satırı KOD'lu ilk satır (ör. "BARALAR")
+                var satirNolari = new List<int>(s.Satirlar.Keys);
+                for (int i = 0; i + 1 < satirNolari.Count; i++)
+                {
+                    int r = satirNolari[i];
+                    if (r >= kaynakSatir) break;
+                    bool kodVar = (s.Metin(o.KodSutunu + r) ?? "").Trim().Length > 0, adVar = (s.Metin(o.AdSutunu + r) ?? "").Trim().Length > 0;
+                    bool sonrakiKod = (s.Metin(o.KodSutunu + satirNolari[i + 1]) ?? "").Trim().Length > 0;
+                    if (!kodVar && adVar && sonrakiKod) { o.GrupOrnekSatiri = r; break; }
+                }
                 foreach (var rk in s.Satirlar)
                 {
                     var k = (s.Metin(o.KodSutunu + rk.Key) ?? "").Trim();
                     if (Regex.IsMatch(k, @"^E\d{3}$", RegexOptions.IgnoreCase)) o.EkSatirlari.Add(new EkSatiri { Satir = rk.Key, Kod = k });
+                }
+                // EK KALEMLER bölüm başlığı: ilk EK satırının üstündeki KOD'suz yazılı satır
+                if (o.EkSatirlari.Count > 0)
+                {
+                    int r = o.EkSatirlari[0].Satir - 1;
+                    var yazi = (s.Metin(o.PozSutunu + r) ?? "").Trim() + (s.Metin(o.AdSutunu + r) ?? "").Trim();
+                    if (yazi.Length > 0 && (s.Metin(o.KodSutunu + r) ?? "").Trim().Length == 0) o.EkBaslikSatiri = r;
                 }
                 return o;
             }
@@ -292,6 +334,9 @@ namespace SebekeHakedis.Cekirdek
                 var m = new JsonNesne();
                 m["sayfa"] = MalzListesi.Sayfa; m["kodSutunu"] = MalzListesi.KodSutunu; m["kaynakSutunu"] = MalzListesi.KaynakSutunu; m["pozSutunu"] = MalzListesi.PozSutunu;
                 m["adSutunu"] = MalzListesi.AdSutunu; m["birimSutunu"] = MalzListesi.BirimSutunu; m["teminSutunu"] = MalzListesi.TeminSutunu; m["miktarSutunu"] = MalzListesi.MiktarSutunu;
+                m["toplamSutunu"] = MalzListesi.ToplamSutunu; m["bayrakSutunu"] = MalzListesi.BayrakSutunu; m["kalemOrnekSatiri"] = (double)MalzListesi.KalemOrnekSatiri;
+                m["grupOrnekSatiri"] = MalzListesi.GrupOrnekSatiri.HasValue ? (object)(double)MalzListesi.GrupOrnekSatiri.Value : null;
+                m["ekBaslikSatiri"] = MalzListesi.EkBaslikSatiri.HasValue ? (object)(double)MalzListesi.EkBaslikSatiri.Value : null;
                 var ek = new List<object>();
                 foreach (var e in MalzListesi.EkSatirlari) { var o = new JsonNesne(); o["satir"] = (double)e.Satir; o["kod"] = e.Kod; ek.Add(o); }
                 m["ekSatirlari"] = ek;
@@ -318,6 +363,7 @@ namespace SebekeHakedis.Cekirdek
             j["durumSatiri"] = o.DurumSatiri.HasValue ? (object)(double)o.DurumSatiri.Value : null; j["pozSatiri"] = (double)o.PozSatiri; j["adSatiri"] = (double)o.AdSatiri;
             j["teminSatiri"] = (double)o.TeminSatiri; j["birimSatiri"] = (double)o.BirimSatiri; j["toplamSatiri"] = (double)o.ToplamSatiri;
             j["malzSatiri"] = o.MalzSatiri.HasValue ? (object)(double)o.MalzSatiri.Value : null; j["ilkKodSutunu"] = (double)o.IlkKodSutunu;
+            var adl = new JsonNesne(); foreach (var kv in o.Adlar) adl[kv.Key] = kv.Value; j["adlar"] = adl;
             var b = new List<object>(); foreach (var r in o.BayrakSatirlari) b.Add((double)r); j["bayrakSatirlari"] = b;
             j["grupSatiri"] = o.GrupSatiri.HasValue ? (object)(double)o.GrupSatiri.Value : null;
             var a = new List<object>(); foreach (var r in o.AltSatirlar) a.Add((double)r); j["altSatirlar"] = a;
@@ -354,16 +400,20 @@ namespace SebekeHakedis.Cekirdek
         }
         public sealed class YeniSutun
         {
-            public string Hangi, Sayfa, Blok, Anahtar, Kod, EkKodu, Tip = "", Poz = "", Ad = "", Temin = "", Birim = "ad.", Grup;
-            public int SutunNo, EkSatiri; public int? OrnekSutun; public bool VeriFormulu; public string KaynakCins, KaynakTanim;
+            public string Hangi, Sayfa, OrnekSayfa, Blok, Anahtar, Kod, Tip = "", Poz = "", Ad = "", Temin = "", Birim = "ad.", Grup, GrupAdi;
+            public int SutunNo; public int? OrnekSutun; public bool VeriFormulu; public string KaynakCins, KaynakTanim;
         }
-        public sealed class EkKaydi { public int Satir; public string Kod, EkKodu, Hangi, Blok, Ad; }
+        /// <summary>Kopya sayfa: DİREK METRAJI'nın kopyası, temsil edilmeyen cinsin (ailenin) direkleri için.</summary>
+        public sealed class KopyaSayfa { public string Ad, Kaynak, Hangi, Aile; }
+        /// <summary>MALZ. LİSTESİ'ne eklenen satır: grup başlığı ya da kalem (biçimi örnek satırdan alınır).</summary>
+        public sealed class MalzSatiri { public int Satir; public string Tur, Sayfa, Kod; }
         public sealed class ListeEki { public string Liste, Deger, Sayfa, Ref; }
         public sealed class Fazla { public string Hangi, Blok, Anahtar, Ad, Poz, Birim; public double Miktar; public List<string> Nereler = new List<string>(); }
 
         public Dictionary<string, SayfaPlani> Sayfalar = new Dictionary<string, SayfaPlani>(StringComparer.Ordinal);
+        public List<KopyaSayfa> KopyaSayfalar = new List<KopyaSayfa>();
         public List<YeniSutun> YeniSutunlar = new List<YeniSutun>();
-        public List<EkKaydi> EkSatirlar = new List<EkKaydi>();
+        public List<MalzSatiri> MalzSatirlari = new List<MalzSatiri>();
         public List<ListeEki> ListeEkle = new List<ListeEki>();
         public List<Fazla> Fazlalar = new List<Fazla>();
         public List<string> Uyarilar = new List<string>();
@@ -383,20 +433,23 @@ namespace SebekeHakedis.Cekirdek
                 sayfalar[kv.Key] = s;
             }
             j["sayfalar"] = sayfalar;
+            var ks = new List<object>();
+            foreach (var k in KopyaSayfalar) { var o = new JsonNesne(); o["ad"] = k.Ad; o["kaynak"] = k.Kaynak; o["hangi"] = k.Hangi; o["aile"] = k.Aile; ks.Add(o); }
+            j["kopyaSayfalar"] = ks;
             var ys = new List<object>();
             foreach (var y in YeniSutunlar)
             {
                 var o = new JsonNesne();
-                o["hangi"] = y.Hangi; o["sayfa"] = y.Sayfa; o["blok"] = y.Blok; o["anahtar"] = y.Anahtar; o["sutun"] = (double)y.SutunNo; o["kod"] = y.Kod; o["ekKodu"] = y.EkKodu;
-                o["ekSatiri"] = (double)y.EkSatiri; o["ornekSutun"] = y.OrnekSutun.HasValue ? (object)(double)y.OrnekSutun.Value : null; o["tip"] = y.Tip; o["poz"] = y.Poz; o["ad"] = y.Ad;
+                o["hangi"] = y.Hangi; o["sayfa"] = y.Sayfa; o["ornekSayfa"] = y.OrnekSayfa; o["blok"] = y.Blok; o["anahtar"] = y.Anahtar; o["sutun"] = (double)y.SutunNo; o["kod"] = y.Kod;
+                o["ornekSutun"] = y.OrnekSutun.HasValue ? (object)(double)y.OrnekSutun.Value : null; o["tip"] = y.Tip; o["poz"] = y.Poz; o["ad"] = y.Ad;
                 o["temin"] = y.Temin; o["birim"] = y.Birim; o["grup"] = y.Grup; o["veriFormulu"] = y.VeriFormulu;
                 if (y.KaynakCins != null) { var k = new JsonNesne(); k["cins"] = y.KaynakCins; k["tanim"] = y.KaynakTanim; o["kaynak"] = k; } else o["kaynak"] = null;
                 ys.Add(o);
             }
             j["yeniSutunlar"] = ys;
-            var ek = new List<object>();
-            foreach (var e in EkSatirlar) { var o = new JsonNesne(); o["satir"] = (double)e.Satir; o["kod"] = e.Kod; o["ekKodu"] = e.EkKodu; o["hangi"] = e.Hangi; o["blok"] = e.Blok; o["ad"] = e.Ad; ek.Add(o); }
-            j["ekSatirlar"] = ek;
+            var ms = new List<object>();
+            foreach (var m in MalzSatirlari) { var o = new JsonNesne(); o["satir"] = (double)m.Satir; o["tur"] = m.Tur; o["sayfa"] = m.Sayfa; if (m.Kod != null) o["kod"] = m.Kod; ms.Add(o); }
+            j["malzSatirlari"] = ms;
             var le = new List<object>();
             foreach (var l in ListeEkle) { var o = new JsonNesne(); o["liste"] = l.Liste; o["deger"] = l.Deger; o["sayfa"] = l.Sayfa; o["ref"] = l.Ref; le.Add(o); }
             j["listeEkle"] = le;
@@ -462,6 +515,46 @@ namespace SebekeHakedis.Cekirdek
             public JsonNesne Eslesme;
             /// <summary>Katalog: kalemin poz numarası için.</summary>
             public Katalog Katalog;
+        }
+
+        /// <summary>ENH direk tipindeki iletken eki ("G-T-12 (sw)") → aile adı eki (İLETKEN METRAJI'ndaki tel kodlarıyla).</summary>
+        private static readonly Dictionary<string, string> IletkenEki = new Dictionary<string, string>(StringComparer.Ordinal) { { "SW", "SWLL" }, { "RV", "RAVEN" }, { "PG", "PİGEON" }, { "HW", "HAWK" }, { "PN", "PANSY" }, { "RS", "ROSE" }, { "AS", "ASTER" } };
+        private static readonly string[] SayfaSirasi = { "direk", "iletken", "yeralti" };
+
+        /// <summary>Büyük harf (Türkçe: i → İ, ı → I).</summary>
+        public static string Buyuk(string s) => Str(s).Replace('i', 'İ').Replace('ı', 'I').ToUpperInvariant();
+
+        /// <summary>Direğin aile anahtarı: cins + ENH tipindeki iletken eki ("ENH_DEMİR_GLV|SW"); eki olmayan tipte yalnız cins.</summary>
+        public static string Aile(string cins, string tip)
+        {
+            var m = Regex.Match(Str(tip).Trim(), @"\(\s*([A-Za-z]{2,3})\s*\)\s*$");
+            var ek = m.Success ? m.Groups[1].Value.ToUpperInvariant().Replace('İ', 'I') : "";
+            return Str(cins) + (ek.Length > 0 ? "|" + ek : "");
+        }
+
+        /// <summary>Kopya sayfanın adı: "DİREK " + cinsin okunur adı (büyük; "DİREK" / "DİREĞİ" sözü atılır, kısaltmalar) + iletken eki; 31 karakter.</summary>
+        public static string KopyaAdi(string hangi, string aile, Func<string, string> cinsAdi)
+        {
+            var parca = aile.Split('|');
+            string cins = parca[0], ek = parca.Length > 1 ? parca[1] : "";
+            var adi = cinsAdi != null ? cinsAdi(cins) : null;
+            var ad = Buyuk(!string.IsNullOrEmpty(adi) ? adi : cins.Replace('_', ' '));
+            ad = Regex.Replace(ad, @"\s+DİRE(K|Ğİ)(?=\s|$)", "");
+            ad = Regex.Replace(Regex.Replace(ad, @"[\[\]:*?/\\']", " "), @"\s+", " ").Trim();
+            ad = Regex.Replace(ad, @"\bGALVANİZ\b", "GALV."); ad = Regex.Replace(ad, @"\bAYDINLATMA\b", "AYD."); ad = Regex.Replace(ad, @"\bMÜŞTEREK\b", "MÜŞ.");
+            string ekAdi = ""; if (ek.Length > 0 && !IletkenEki.TryGetValue(ek, out ekAdi)) ekAdi = ek;
+            var tam = (hangi == "direk" ? "DİREK " : hangi == "iletken" ? "İLETKEN " : "YERALTI ") + ad + (ekAdi.Length > 0 ? " " + ekAdi : "");
+            if (tam.Length > 31) tam = tam.Substring(0, 31).Trim();
+            return tam;
+        }
+
+        /// <summary>Formülde sayfa adı: tek tırnakla, içindeki tırnak ikilenir.</summary>
+        private static string SayfaRef(string ad) => "'" + Str(ad).Replace("'", "''") + "'";
+
+        /// <summary>Plan hedefi: ana metraj sayfası ya da kopyası (kaynak = ana tanım; ana sayfada null).</summary>
+        private sealed class Hedef
+        {
+            public string Hangi, Sayfa; public MetrajSablonu.Sayfa Tanim, Kaynak; public List<MetrajSablonu.Sutun> Sutunlar; public int SonSutun;
         }
 
         private static readonly Dictionary<string, string> BlokAdi = new Dictionary<string, string>(StringComparer.Ordinal) { { "Y", "YENİ" }, { "D", "DEMONTAJ" }, { "DM", "DEMONTAJDAN MONTAJ" }, { "A", "AKTARIM" } };
@@ -612,13 +705,22 @@ namespace SebekeHakedis.Cekirdek
             var plan = new MetrajPlani();
             var uyarilar = plan.Uyarilar;
             var ozet = plan.Ozet;
-            foreach (var k in new[] { "eleman", "iletkenSatiri", "yeraltiSatiri", "eslesen", "yeniSutun", "fazla", "atlanan" }) ozet[k] = 0;
+            foreach (var k in new[] { "eleman", "iletkenSatiri", "yeraltiSatiri", "eslesen", "yeniSutun", "kopyaSayfa", "fazla", "atlanan" }) ozet[k] = 0;
             Func<string, MetrajPlani.SayfaPlani> sayfa = ad => { MetrajPlani.SayfaPlani s; if (!plan.Sayfalar.TryGetValue(ad, out s)) { s = new MetrajPlani.SayfaPlani(); plan.Sayfalar[ad] = s; } return s; };
             Action<string, string, object> yaz = (ad, ref_, deger) =>
             {
                 if (deger == null) return;
                 var s = deger as string; if (s != null && s.Length == 0) return;
                 sayfa(ad).Hucreler[ref_] = deger;
+            };
+            Action<string, string> sil = (ad, ref_) => { sayfa(ad).Hucreler[ref_] = null; };
+            var basliklar = new Dictionary<string, object>(StringComparer.Ordinal);   // DİREK başlık hücreleri (il, ilçe…): kopya sayfalara da yazılır
+            Action<string, string, object> baslikYaz = (ad, ref_, deger) =>
+            {
+                yaz(ad, ref_, deger);
+                if (deger == null) return;
+                var s = deger as string; if (s != null && s.Length == 0) return;
+                basliklar[ref_] = deger;
             };
             Action<string, string, double> topla = (ad, ref_, m) =>
             {
@@ -644,13 +746,33 @@ namespace SebekeHakedis.Cekirdek
                 return t.Length > 0 ? t : "Ş";
             };
 
-            // ---- yeni sütun yönetimi
-            var sonSutun = new Dictionary<string, int>(StringComparer.Ordinal);
-            foreach (var hangi in new[] { "direk", "iletken", "yeralti" }) { var t = sablon.Al(hangi); sonSutun[hangi] = t != null ? t.SonSutun : 0; }
-            var kullanilan = new HashSet<string>(sablon.KullanilanKodlar, StringComparer.Ordinal);
-            var ekSatirlar = new List<MetrajSablonu.EkSatiri>();
-            if (sablon.MalzListesi != null) foreach (var e in sablon.MalzListesi.EkSatirlari) if (!kullanilan.Contains(e.Kod)) ekSatirlar.Add(e);
-            int ekSira = 0;
+            // ---- yeni sütun yönetimi (telefon: hedefler, kopyaSayfa, kodUret, yeniSutun, malzemeYaz, sutunBul, cinsTemsilEdiliyor)
+            var hedefler = new List<Hedef>();
+            foreach (var hangi in SayfaSirasi) { var t = sablon.Al(hangi); if (t != null) hedefler.Add(new Hedef { Hangi = hangi, Sayfa = t.Ad, Tanim = t, Kaynak = null, Sutunlar = t.Sutunlar, SonSutun = t.SonSutun }); }
+            Func<string, Hedef> hedefBul = ad => { foreach (var h in hedefler) if (h.Sayfa == ad) return h; return null; };
+            Func<string, string> cinsAdi = c => { var kc = a.Katalog != null ? a.Katalog.Cins(c) : null; return kc != null && Str(kc.Ad).Length > 0 ? kc.Ad : null; };
+            Func<string, string, Hedef> kopyaSayfa = (hangi, aile) =>
+            {
+                var ana = sablon.Al(hangi);
+                var ad = KopyaAdi(hangi, aile, cinsAdi);
+                var k = hedefBul(ad);
+                if (k != null) return k;
+                k = new Hedef { Hangi = hangi, Sayfa = ad, Kaynak = ana, Tanim = ana, Sutunlar = new List<MetrajSablonu.Sutun>(), SonSutun = ana.IlkKodSutunu - 1 };
+                hedefler.Add(k);
+                plan.KopyaSayfalar.Add(new MetrajPlani.KopyaSayfa { Ad = ad, Kaynak = ana.Ad, Hangi = hangi, Aile = aile });
+                if (hangi == "direk") foreach (var kv in basliklar) yaz(ad, kv.Key, kv.Value);
+                return k;
+            };
+            // KOD dizisi: şablonun blok önekli numaraları sürer (Y001… → Y175…, D074…, DM072…, A017…)
+            var kodSayac = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var k in sablon.KullanilanKodlar)
+            {
+                var m = Regex.Match(Str(k).Trim(), @"^(DM|Y|D|A)(\d+)$", RegexOptions.IgnoreCase);
+                if (!m.Success) continue;
+                var pre = m.Groups[1].Value.ToUpperInvariant(); int n = int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
+                int eski; if (!kodSayac.TryGetValue(pre, out eski) || n > eski) kodSayac[pre] = n;
+            }
+            Func<string, string> kodUret = blok => { int n; kodSayac.TryGetValue(blok, out n); n++; kodSayac[blok] = n; return blok + n.ToString("000", CultureInfo.InvariantCulture); };
             var listeSayac = new Dictionary<string, int>(StringComparer.Ordinal);
             Action<string, string> listeyeEkle = (liste, deger) =>
             {
@@ -666,47 +788,35 @@ namespace SebekeHakedis.Cekirdek
                 plan.ListeEkle.Add(new MetrajPlani.ListeEki { Liste = liste, Deger = deger, Sayfa = l.Sayfa, Ref = l.Sutun + satir });
                 yaz(l.Sayfa, l.Sutun + satir, deger);
             };
-            Func<string, string, string, MetrajPlani.YeniSutun, MetrajPlani.YeniSutun> yeniSutun = (hangi, blok, anahtar, bilgi) =>
+            Func<Hedef, string, string, MetrajPlani.YeniSutun, MetrajPlani.YeniSutun> yeniSutun = (h, blok, anahtar, bilgi) =>
             {
-                var t = sablon.Al(hangi);
-                foreach (var v in plan.YeniSutunlar) if (v.Hangi == hangi && v.Blok == blok && v.Anahtar == anahtar) return v;
-                if (ekSira >= ekSatirlar.Count) return null;
-                var ek = ekSatirlar[ekSira++];
-                int sutun = ++sonSutun[hangi];
+                foreach (var v in plan.YeniSutunlar) if (v.Sayfa == h.Sayfa && v.Blok == blok && v.Anahtar == anahtar) return v;
+                var t = h.Tanim;
+                int sutun = ++h.SonSutun;
+                var ornekler = (h.Kaynak ?? t).Sutunlar;
                 MetrajSablonu.Sutun ornek = null;
-                if (bilgi.VeriFormulu && hangi == "direk") for (int i = t.Sutunlar.Count - 1; i >= 0; i--) if (t.Sutunlar[i].Blok == blok && t.Sutunlar[i].Tip != null) { ornek = t.Sutunlar[i]; break; }
-                if (ornek == null) for (int i = t.Sutunlar.Count - 1; i >= 0; i--) if (t.Sutunlar[i].Blok == blok) { ornek = t.Sutunlar[i]; break; }
-                if (ornek == null && t.Sutunlar.Count > 0) ornek = t.Sutunlar[t.Sutunlar.Count - 1];
-                var kod = blok + ek.Kod;
+                if (bilgi.VeriFormulu && h.Hangi == "direk") for (int i = ornekler.Count - 1; i >= 0; i--) if (ornekler[i].Blok == blok && ornekler[i].Tip != null) { ornek = ornekler[i]; break; }
+                if (ornek == null) for (int i = ornekler.Count - 1; i >= 0; i--) if (ornekler[i].Blok == blok) { ornek = ornekler[i]; break; }
+                if (ornek == null && ornekler.Count > 0) ornek = ornekler[ornekler.Count - 1];
+                var kod = kodUret(blok);
                 var y = new MetrajPlani.YeniSutun
                 {
-                    Hangi = hangi, Sayfa = t.Ad, Blok = blok, Anahtar = anahtar, SutunNo = sutun, Kod = kod, EkKodu = ek.Kod, EkSatiri = ek.Satir, OrnekSutun = ornek != null ? ornek.SutunNo : (int?)null,
+                    Hangi = h.Hangi, Sayfa = h.Sayfa, OrnekSayfa = (h.Kaynak ?? t).Ad, Blok = blok, Anahtar = anahtar, SutunNo = sutun, Kod = kod, OrnekSutun = ornek != null ? ornek.SutunNo : (int?)null,
                     Tip = Str(bilgi.Tip), Poz = Str(bilgi.Poz), Ad = Str(bilgi.Ad), Temin = Str(bilgi.Temin), Birim = Str(bilgi.Birim).Length > 0 ? bilgi.Birim : "ad.",
-                    Grup = (BlokAdi.ContainsKey(blok) ? BlokAdi[blok] : blok) + "\nEK (Şebeke-M)", VeriFormulu = bilgi.VeriFormulu, KaynakCins = bilgi.KaynakCins, KaynakTanim = bilgi.KaynakTanim
+                    Grup = (BlokAdi.ContainsKey(blok) ? BlokAdi[blok] : blok) + "\n" + (Str(bilgi.GrupAdi).Length > 0 ? bilgi.GrupAdi : "ŞEBEKE-M"), VeriFormulu = bilgi.VeriFormulu, KaynakCins = bilgi.KaynakCins, KaynakTanim = bilgi.KaynakTanim
                 };
                 plan.YeniSutunlar.Add(y);
-                plan.EkSatirlar.Add(new MetrajPlani.EkKaydi { Satir = ek.Satir, Kod = kod, EkKodu = ek.Kod, Hangi = hangi, Blok = blok, Ad = y.Ad });
-                var S = XlsmDosyasi.SutunHarfi(sutun); var h = sayfa(t.Ad).Hucreler;
-                h[S + t.KodSatiri] = y.Kod;
-                if (t.TipSatiri.HasValue && y.Tip.Length > 0) h[S + t.TipSatiri.Value] = y.Tip;
-                if (t.DurumSatiri.HasValue) h[S + t.DurumSatiri.Value] = DurumYazisi.ContainsKey(blok) ? DurumYazisi[blok] : blok;
-                if (t.GrupSatiri.HasValue) h[S + t.GrupSatiri.Value] = y.Grup;
-                if (y.Poz.Length > 0) h[S + t.PozSatiri] = y.Poz;
-                h[S + t.AdSatiri] = y.Ad;
-                if (y.Temin.Length > 0) h[S + t.TeminSatiri] = y.Temin;
-                h[S + t.BirimSatiri] = y.Birim;
-                var m = sablon.MalzListesi;
-                if (m != null)
-                {
-                    var mh = sayfa(m.Sayfa).Hucreler; int r = ek.Satir; string I = "$" + m.KaynakSutunu + r, ON = Onek[hangi];
-                    mh[m.KodSutunu + r] = kod;
-                    mh[m.PozSutunu + r] = "=IF(" + I + "=\"\",\"\",INDEX(" + ON + "_POZ_SATIRI," + I + ")&\"\")";
-                    mh[m.AdSutunu + r] = "=IF(" + I + "=\"\",\"\",TRIM(INDEX(" + ON + "_AD_SATIRI," + I + ")&IFERROR(VLOOKUP(INDEX(" + ON + "_SEC_SATIRI," + I + "),SECIM_EK,2,FALSE),\"\")))";
-                    mh[m.BirimSutunu + r] = "=IF(" + I + "=\"\",\"\",INDEX(" + ON + "_BIRIM_SATIRI," + I + ")&\"\")";
-                    mh[m.TeminSutunu + r] = blok == "Y" ? "=IF(" + I + "=\"\",\"\",INDEX(" + ON + "_SEC_SATIRI," + I + ")&\"\")" : "Y";
-                    mh[m.MiktarSutunu + r] = "=IF(" + I + "=\"\",0,N(INDEX(" + (t.MalzSatiri.HasValue ? ON + "_MALZ_SATIRI" : ON + "_TOPLAM_SATIRI") + "," + I + ")))";
-                    mh[m.KaynakSutunu + r] = "=IFERROR(MATCH($" + m.KodSutunu + r + "," + ON + "_KOD_SATIRI,0),\"\")";
-                }
+                if (ReferenceEquals(h.Sutunlar, t.Sutunlar)) h.Sutunlar = new List<MetrajSablonu.Sutun>(t.Sutunlar);   // ana tanımın listesi değişmesin
+                h.Sutunlar.Add(new MetrajSablonu.Sutun { SutunNo = sutun, Kod = kod, Blok = blok, Tip = y.Tip.Length > 0 ? y.Tip : null, Poz = y.Poz, Ad = y.Ad, Temin = y.Temin, Birim = y.Birim, Grup = y.Grup, Formullu = y.VeriFormulu, Yeni = true });
+                var S = XlsmDosyasi.SutunHarfi(sutun); var hc = sayfa(h.Sayfa).Hucreler;
+                hc[S + t.KodSatiri] = y.Kod;
+                if (t.TipSatiri.HasValue && y.Tip.Length > 0) hc[S + t.TipSatiri.Value] = y.Tip;
+                if (t.DurumSatiri.HasValue) hc[S + t.DurumSatiri.Value] = DurumYazisi.ContainsKey(blok) ? DurumYazisi[blok] : blok;
+                if (t.GrupSatiri.HasValue) hc[S + t.GrupSatiri.Value] = y.Grup;
+                if (y.Poz.Length > 0) hc[S + t.PozSatiri] = y.Poz;
+                hc[S + t.AdSatiri] = y.Ad;
+                if (y.Temin.Length > 0) hc[S + t.TeminSatiri] = y.Temin;
+                hc[S + t.BirimSatiri] = y.Birim;
                 return y;
             };
             Func<string, string, string, MetrajPlani.YeniSutun, double, string, MetrajPlani.Fazla> fazlaya = (hangi, blok, anahtar, bilgi, miktar, kim) =>
@@ -718,32 +828,63 @@ namespace SebekeHakedis.Cekirdek
                 if (!string.IsNullOrEmpty(kim) && !f.Nereler.Contains(kim)) f.Nereler.Add(kim);
                 return f;
             };
-            Func<MetrajSablonu.Sayfa, string, Kalem, MetrajSablonu.Sutun> sutunBul = (t, blok, k) =>
+            Func<List<MetrajSablonu.Sutun>, string, Kalem, MetrajSablonu.Sutun> sutunBul = (sutunlar, blok, k) =>
             {
                 var tanim = Norm(k.Tanim); var e = esl(k.Cins, k.Tanim);
                 var adlar = new List<string>();
                 if (e != null && e.Dizi("adlar") != null) foreach (var x in e.Dizi("adlar")) adlar.Add(Norm(x as string));
-                var aday = new List<MetrajSablonu.Sutun>(); foreach (var x in t.Sutunlar) if (x.Blok == blok) aday.Add(x);
+                var aday = new List<MetrajSablonu.Sutun>(); foreach (var x in sutunlar) if (x.Blok == blok) aday.Add(x);
                 foreach (var x in aday) if (x.Tip != null && Norm(x.Tip) == tanim) return x;
                 foreach (var x in aday) if (Norm(x.Ad) == tanim) return x;
                 if (adlar.Count > 0) foreach (var x in aday) if (adlar.Contains(Norm(x.Ad))) return x;
                 if (Regex.IsMatch(tanim, @"[\d-]")) foreach (var x in aday) if (Norm(x.Ad).StartsWith(tanim + " ", StringComparison.Ordinal)) return x;
                 return null;
             };
-            Func<string, string, Kalem, int, string, int> malzemeYaz = (hangi, blok, k, r, kim) =>
+            Func<Hedef, string, Kalem, int, string, int> malzemeYaz = (h, blok, k, r, kim) =>
             {
-                var t = sablon.Al(hangi);
-                var s = sutunBul(t, blok, k); int sutunNo; string birim;
-                if (s != null) { ozet["eslesen"]++; sutunNo = s.SutunNo; birim = s.Birim; }
+                var s = sutunBul(h.Sutunlar, blok, k); int sutunNo; string birim;
+                if (s != null) { if (!s.Yeni) ozet["eslesen"]++; sutunNo = s.SutunNo; birim = s.Birim; }
                 else
                 {
-                    var bilgi = new MetrajPlani.YeniSutun { Poz = pozYap(k.Cins, k.Tanim, blok), Ad = Str(k.Tanim), Temin = temin(k.Cins, k.Tanim, blok), Birim = Birim(k.Birim), KaynakCins = Str(k.Cins), KaynakTanim = Str(k.Tanim) };
-                    var y = yeniSutun(hangi, blok, "AD|" + Norm(k.Tanim), bilgi);
-                    if (y == null) { fazlaya(hangi, blok, "AD|" + Norm(k.Tanim), bilgi, Miktar(k, bilgi.Birim), kim); return 0; }
+                    var anaS = h.Kaynak != null ? sutunBul(h.Kaynak.Sutunlar, blok, k) : null;
+                    var bilgi = anaS != null
+                        ? new MetrajPlani.YeniSutun { Tip = anaS.Tip ?? "", Poz = anaS.Poz, Ad = anaS.Ad, Temin = anaS.Temin, Birim = anaS.Birim, GrupAdi = "MALZEMELER", KaynakCins = Str(k.Cins), KaynakTanim = Str(k.Tanim) }
+                        : new MetrajPlani.YeniSutun { Poz = pozYap(k.Cins, k.Tanim, blok), Ad = Str(k.Tanim), Temin = temin(k.Cins, k.Tanim, blok), Birim = Birim(k.Birim), GrupAdi = "MALZEMELER", KaynakCins = Str(k.Cins), KaynakTanim = Str(k.Tanim) };
+                    if (anaS != null) ozet["eslesen"]++;
+                    var y = yeniSutun(h, blok, "AD|" + Norm(k.Tanim), bilgi);
+                    if (y == null) { fazlaya(h.Hangi, blok, "AD|" + Norm(k.Tanim), bilgi, Miktar(k, bilgi.Birim), kim); return 0; }
                     sutunNo = y.SutunNo; birim = y.Birim;
                 }
-                topla(t.Ad, XlsmDosyasi.SutunHarfi(sutunNo) + r, Miktar(k, birim));
+                topla(h.Sayfa, XlsmDosyasi.SutunHarfi(sutunNo) + r, Miktar(k, birim));
                 return sutunNo;
+            };
+            // Direğin cinsi ana DİREK sayfasında temsil ediliyor mu (telefon: cinsTemsilEdiliyor): TİP satırındaki bir tip o
+            // cinsin katalogdaki ana pozlarından ya da eşleşme tablosundaki "tip" takma adından biriyse; ya da anaSayfaAileleri'ndeyse
+            var temsilOnbellek = new Dictionary<string, bool>(StringComparer.Ordinal);
+            var anaSayfaAileleri = new List<string>(); if (es.Dizi("anaSayfaAileleri") != null) foreach (var x in es.Dizi("anaSayfaAileleri")) anaSayfaAileleri.Add(Str(x as string));
+            Func<string, bool> cinsTemsilEdiliyor = aile =>
+            {
+                bool var_;
+                if (temsilOnbellek.TryGetValue(aile, out var_)) return var_;
+                var D0 = sablon.Direk;
+                var parca = aile.Split('|'); string cins = parca[0]; bool ekVar = parca.Length > 1;
+                var_ = false;
+                foreach (var x in anaSayfaAileleri) if (x == aile || (x == cins && !ekVar)) { var_ = true; break; }
+                if (!var_ && D0 != null)
+                {
+                    var tipler = new List<string>(); foreach (var x in D0.Sutunlar) if (x.Tip != null) tipler.Add(Norm(x.Tip));
+                    if (a.Katalog != null)
+                        foreach (var tn in tipler) { foreach (var kk in a.Katalog.Kalemler) if (kk.Rol == "ana" && kk.Cins == cins && Norm(kk.Tanim) == tn) { var_ = true; break; } if (var_) break; }
+                    if (!var_)
+                        foreach (var kv in esKalemler)
+                        {
+                            var deger = kv.Value as JsonNesne;
+                            if (deger == null || deger.Metin("tip").Length == 0 || kv.Key.IndexOf('|') < 0 || kv.Key.Split('|')[0] != cins) continue;
+                            if (tipler.Contains(Norm(deger.Metin("tip")))) { var_ = true; break; }
+                        }
+                }
+                temsilOnbellek[aile] = var_;
+                return var_;
             };
             Action<string, int> satirGoster = (ad, r) => { var s = sayfa(ad); if (!s.GosterSatirlar.Contains(r)) s.GosterSatirlar.Add(r); };
             Action<string, MetrajSablonu.Sayfa, int> bitir = (ad, t, r) =>
@@ -775,31 +916,48 @@ namespace SebekeHakedis.Cekirdek
             {
                 var ad = D.Ad;
                 string bAl;
-                if (D.Baslik.TryGetValue("il", out bAl) && !string.IsNullOrEmpty(a.Il)) yaz(ad, bAl, a.Il);
-                if (D.Baslik.TryGetValue("ilce", out bAl) && !string.IsNullOrEmpty(a.Ilce)) yaz(ad, bAl, a.Ilce);
-                if (D.Baslik.TryGetValue("grupNo", out bAl) && bolge != null) yaz(ad, bAl, Str(bolge.Grup).Length > 0 ? bolge.Grup : Str(bolge.Kod));
-                if (D.Baslik.TryGetValue("isinAdi", out bAl)) yaz(ad, bAl, bolge != null ? Str(bolge.Ad) : Str(p.Ad));
-                if (D.Baslik.TryGetValue("projeNo", out bAl) && bolge != null) yaz(ad, bAl, Str(bolge.Kod));
-                if (D.Baslik.TryGetValue("yuklenici", out bAl) && !string.IsNullOrEmpty(a.Firma)) yaz(ad, bAl, a.Firma);
-                if (D.Baslik.TryGetValue("hakedisNo", out bAl)) yaz(ad, bAl, hakedisNo);
+                if (D.Baslik.TryGetValue("il", out bAl) && !string.IsNullOrEmpty(a.Il)) baslikYaz(ad, bAl, a.Il);
+                if (D.Baslik.TryGetValue("ilce", out bAl) && !string.IsNullOrEmpty(a.Ilce)) baslikYaz(ad, bAl, a.Ilce);
+                if (D.Baslik.TryGetValue("grupNo", out bAl) && bolge != null) baslikYaz(ad, bAl, Str(bolge.Grup).Length > 0 ? bolge.Grup : Str(bolge.Kod));
+                if (D.Baslik.TryGetValue("isinAdi", out bAl)) baslikYaz(ad, bAl, bolge != null ? Str(bolge.Ad) : Str(p.Ad));
+                if (D.Baslik.TryGetValue("projeNo", out bAl) && bolge != null) baslikYaz(ad, bAl, Str(bolge.Kod));
+                if (D.Baslik.TryGetValue("yuklenici", out bAl) && !string.IsNullOrEmpty(a.Firma)) baslikYaz(ad, bAl, a.Firma);
+                if (D.Baslik.TryGetValue("hakedisNo", out bAl)) baslikYaz(ad, bAl, hakedisNo);
                 var sira = new List<Eleman>();
                 foreach (var e in elemanlar) if ((direkMi(e) || e.Kalemler.Count > 0) && Blok(e.Durum) != null) sira.Add(e);
                 KararliSirala(sira, (x, y) => DogalSira(x.GisId, y.GisId));
                 int kapasite = D.SonVeri - D.IlkVeri + 1;
-                if (sira.Count > kapasite) throw new InvalidOperationException("Şablonun " + ad + " sayfası " + kapasite + " satır alır; projede " + sira.Count + " eleman var. Projeyi bölgelere bölün.");
-                int r = D.IlkVeri;
+                // Her eleman kendi hedef sayfasına: temsil edilmeyen cinsten direk kopya sayfaya (ilk görüldüğü sırayla açılır)
+                var hedefSira = new List<Hedef> { hedefBul(ad) };   // hedefler yazılış sırasıyla (ana sayfa her zaman ilk)
+                var satirlar = new Dictionary<string, int>(StringComparer.Ordinal) { { ad, D.IlkVeri } };
+                Func<Eleman, Hedef> hedefi = e =>
+                {
+                    Kalem ana0 = null; foreach (var k in e.Kalemler) if (k.Ana) { ana0 = k; break; }
+                    var tip0 = Str(e.Tip).Length > 0 ? e.Tip : (ana0 != null ? Str(ana0.Tanim) : "");
+                    if (!direkMi(e)) return hedefBul(ad);
+                    var aile = Aile(e.Cins, tip0);
+                    return cinsTemsilEdiliyor(aile) ? hedefBul(ad) : kopyaSayfa("direk", aile);
+                };
+                foreach (var e in sira) { var h = hedefi(e); if (!satirlar.ContainsKey(h.Sayfa)) { satirlar[h.Sayfa] = D.IlkVeri; hedefSira.Add(h); } }
+                foreach (var h in hedefSira)
+                {
+                    int sayi = 0; foreach (var e in sira) if (hedefi(e).Sayfa == h.Sayfa) sayi++;
+                    if (sayi > kapasite) throw new InvalidOperationException("Şablonun " + h.Sayfa + " sayfası " + kapasite + " satır alır; projede " + sayi + " eleman var. Projeyi bölgelere bölün.");
+                }
                 foreach (var e in sira)
                 {
+                    var h = hedefi(e); var hs = h.Sayfa;
+                    int r = satirlar[hs];
                     var blok = Blok(e.Durum); bool direk = direkMi(e);
                     var no = Str(e.GisId);
-                    satirGoster(ad, r);
-                    yaz(ad, D.S("no") + r, no);
+                    satirGoster(hs, r);
+                    yaz(hs, D.S("no") + r, no);
                     Kalem ana = null; foreach (var k in e.Kalemler) if (k.Ana) { ana = k; break; }
                     if (direk)
                     {
                         var tip = Str(e.Tip).Length > 0 ? e.Tip : (ana != null ? Str(ana.Tanim) : "");
                         string anaCins = ana != null ? ana.Cins : e.Cins, anaTanim = ana != null ? ana.Tanim : tip;
-                        if (blok == "MEVCUT") yaz(ad, D.S("mevcut") + r, tip);
+                        if (blok == "MEVCUT") yaz(hs, D.S("mevcut") + r, tip);
                         else
                         {
                             string harf = "";
@@ -813,40 +971,47 @@ namespace SebekeHakedis.Cekirdek
                             var adaylar = new List<string> { Norm(tip) };
                             if (e2 != null && e2.Metin("tip").Length > 0) adaylar.Add(Norm(e2.Metin("tip")));
                             MetrajSablonu.Sutun s = null;
-                            foreach (var x in D.Sutunlar) if (x.Blok == blok && x.Tip != null && adaylar.Contains(Norm(x.Tip)) && (blok != "D" || Norm(x.Temin).StartsWith(harf))) { s = x; break; }
-                            var tipYazisi = s != null ? s.Tip : (e2 != null && e2.Metin("tip").Length > 0 ? e2.Metin("tip") : tip);
-                            if (s != null) ozet["eslesen"]++;
+                            foreach (var x in h.Sutunlar) if (x.Blok == blok && x.Tip != null && adaylar.Contains(Norm(x.Tip)) && (blok != "D" || Norm(x.Temin).StartsWith(harf))) { s = x; break; }
+                            var tipYazisi = s != null ? Str(s.Tip) : (e2 != null && e2.Metin("tip").Length > 0 ? e2.Metin("tip") : tip);
+                            if (s != null) { if (!s.Yeni) ozet["eslesen"]++; }
                             else
                             {
-                                var ustCins = Ust(e.Cins);
+                                var cinsUst = Str(e.Cins).ToUpperInvariant();
+                                var cAd = Str(cinsAdi(Str(e.Cins)));
+                                if (cAd.Length == 0) cAd = Regex.IsMatch(cinsUst, "AĞAÇ|AGAC") ? "Ağaç Direk" : cinsUst.Contains("BETON") ? "Beton Direk" : "Demir Direk";
                                 var bilgi = new MetrajPlani.YeniSutun
                                 {
                                     Tip = tipYazisi, Poz = pozYap(anaCins, anaTanim, blok),
-                                    Ad = tipYazisi + " " + (Regex.IsMatch(ustCins, "AĞAÇ|AGAC") ? "Ağaç Direk" : ustCins.Contains("BETON") ? "Beton Direk" : "Demir Direk"),
-                                    Temin = blok == "D" ? (harf == "S" ? "Sökük" : "Kesik") : blok == "DM" ? "Sökük" : temin(anaCins, anaTanim, "Y"), Birim = "ad.", VeriFormulu = true,
-                                    KaynakCins = Str(e.Cins), KaynakTanim = tip
+                                    Ad = tipYazisi + " " + Regex.Replace(cAd, @"^(AG|OG|ENH|MÜŞTEREK|Müşterek)\s+", "", RegexOptions.IgnoreCase),
+                                    Temin = blok == "D" ? (harf == "S" ? "Sökük" : "Kesik") : blok == "DM" ? "Sökük" : temin(anaCins, anaTanim, "Y"), Birim = "ad.",
+                                    GrupAdi = Regex.Replace(Buyuk(cAd), @"\s+DİRE(K|Ğİ)$", "") + " DİREKLER",
+                                    VeriFormulu = true, KaynakCins = Str(e.Cins), KaynakTanim = tip
                                 };
-                                var y = yeniSutun("direk", blok, "TIP|" + Norm(tipYazisi) + (blok == "D" ? "|" + harf : ""), bilgi);
-                                if (y == null) { fazlaya("direk", blok, "TIP|" + Norm(tipYazisi), bilgi, 1, no); uyarilar.Add(no + ": direk tipi \"" + tip + "\" şablonda yok ve EK satırı kalmadı."); }
+                                var y = yeniSutun(h, blok, "TIP|" + Norm(tipYazisi) + (blok == "D" ? "|" + harf : ""), bilgi);
+                                if (y == null) { fazlaya("direk", blok, "TIP|" + Norm(tipYazisi), bilgi, 1, no); uyarilar.Add(no + ": direk tipi \"" + tip + "\" için sütun açılamadı."); }
+                                // kopya sayfanın tipleri KATSAYILAR listelerine (listeler yalnız ana sayfadan formülle dolar)
+                                else if (h.Kaynak != null) listeyeEkle(blok == "Y" ? "yeniDirek" : blok == "D" ? "demontaj" : "dmontaj", blok == "D" ? tipYazisi + " (" + harf + ")" : tipYazisi);
                             }
                             var secim = blok == "D" ? tipYazisi + " (" + harf + ")" : tipYazisi;
-                            yaz(ad, (blok == "Y" ? D.S("yeni") : blok == "D" ? D.S("demontaj") : D.S("dmm")) + r, secim);
+                            yaz(hs, (blok == "Y" ? D.S("yeni") : blok == "D" ? D.S("demontaj") : D.S("dmm")) + r, secim);
                         }
                     }
+                    // malzemeler: her kalem kendi durumuyla (mevcut direğe yeni armatür gibi)
                     var yazilan = new HashSet<int>();
                     foreach (var k in e.Kalemler)
                     {
                         if (k.Ana && direk) continue;
                         var kb = kalemBlok(k, e);
                         if (kb == null || kb == "MEVCUT") continue;
-                        int s = malzemeYaz("direk", kb, k, r, no);
+                        int s = malzemeYaz(h, kb, k, r, no);
                         if (s > 0) yazilan.Add(s);
                     }
-                    foreach (var x in D.Sutunlar) if (x.Tip == null && x.Formullu && !yazilan.Contains(x.SutunNo)) sayfa(ad).Hucreler[XlsmDosyasi.SutunHarfi(x.SutunNo) + r] = 0.0;
-                    r++;
+                    // programın sayısı olmayan formüllü malzeme sütunları (direk tipi sütunları hariç) → 0 (programın malzemesi esas)
+                    foreach (var x in h.Sutunlar) if (x.Tip == null && x.Formullu && !x.Yeni && !yazilan.Contains(x.SutunNo)) sayfa(hs).Hucreler[XlsmDosyasi.SutunHarfi(x.SutunNo) + r] = 0.0;
+                    satirlar[hs] = r + 1;
                     ozet["eleman"]++;
                 }
-                bitir(ad, D, r);
+                foreach (var h in hedefSira) bitir(h.Sayfa, D, satirlar[h.Sayfa]);
             }
 
             // ======================= İLETKEN METRAJI
@@ -867,10 +1032,10 @@ namespace SebekeHakedis.Cekirdek
                     var bilgi = new MetrajPlani.YeniSutun
                     {
                         Tip = telAdi, Poz = Poz(pozKok, blok), Ad = telAdi + (kgM > 0 ? " (" + XlsmSayfa.SayiYazisi(SayiCoz.Temiz(kgM * 1000, 2)) + " Kg/Km)" : ""),
-                        Temin = blok == "Y" ? "Ş" : "", Birim = "kg", VeriFormulu = true, KaynakCins = og ? "OG_İLETKEN" : "AG_İLETKEN", KaynakTanim = telAdi
+                        Temin = blok == "Y" ? "Ş" : "", Birim = "kg", GrupAdi = "İLETKENLER", VeriFormulu = true, KaynakCins = og ? "OG_İLETKEN" : "AG_İLETKEN", KaynakTanim = telAdi
                     };
-                    var y = yeniSutun("iletken", blok, "TEL|" + n, bilgi);
-                    if (y == null) { fazlaya("iletken", blok, "TEL|" + n, bilgi, SayiCoz.Temiz(metraj * adet * kgM, 3), kim); uyarilar.Add(kim + ": iletken \"" + telAdi + "\" için sütun açılamadı (EK satırı kalmadı)."); return null; }
+                    var y = yeniSutun(hedefBul(ad), blok, "TEL|" + n, bilgi);
+                    if (y == null) { fazlaya("iletken", blok, "TEL|" + n, bilgi, SayiCoz.Temiz(metraj * adet * kgM, 3), kim); uyarilar.Add(kim + ": iletken \"" + telAdi + "\" için sütun açılamadı."); return null; }
                     if (blok != "Y")
                     {
                         bool var_ = false; foreach (var x in I_.Sutunlar) if (x.Blok == "Y" && x.Tip != null && Norm(x.Tip) == n) { var_ = true; break; }
@@ -888,9 +1053,9 @@ namespace SebekeHakedis.Cekirdek
                     if (s != null) { ozet["eslesen"]++; return Str(s.Tip); }
                     var adi = e != null && e.Metin("tip").Length > 0 ? e.Metin("tip") : (tanim.Contains("ALPEK") ? kok.ToLowerInvariant() + " AER Kablo" : Str(k.Tanim));
                     var pz = pozYap(k.Cins, k.Tanim, blok);
-                    var bilgi = new MetrajPlani.YeniSutun { Tip = adi, Poz = pz.Length > 0 ? pz : Poz("9.5.1", blok), Ad = adi, Temin = temin(k.Cins, k.Tanim, blok), Birim = "mt.", VeriFormulu = true, KaynakCins = Str(k.Cins), KaynakTanim = Str(k.Tanim) };
-                    var y = yeniSutun("iletken", blok, "KABLO|" + Norm(adi), bilgi);
-                    if (y == null) { fazlaya("iletken", blok, "KABLO|" + Norm(adi), bilgi, SayiCoz.Temiz(metraj * adet, 3), kim); uyarilar.Add(kim + ": \"" + k.Tanim + "\" için sütun açılamadı (EK satırı kalmadı)."); return null; }
+                    var bilgi = new MetrajPlani.YeniSutun { Tip = adi, Poz = pz.Length > 0 ? pz : Poz("9.5.1", blok), Ad = adi, Temin = temin(k.Cins, k.Tanim, blok), Birim = "mt.", GrupAdi = "KABLOLAR", VeriFormulu = true, KaynakCins = Str(k.Cins), KaynakTanim = Str(k.Tanim) };
+                    var y = yeniSutun(hedefBul(ad), blok, "KABLO|" + Norm(adi), bilgi);
+                    if (y == null) { fazlaya("iletken", blok, "KABLO|" + Norm(adi), bilgi, SayiCoz.Temiz(metraj * adet, 3), kim); uyarilar.Add(kim + ": \"" + k.Tanim + "\" için sütun açılamadı."); return null; }
                     if (blok != "Y")
                     {
                         bool var_ = false; foreach (var x in I_.Sutunlar) if (x.Blok == "Y" && x.Tip != null && Norm(x.Tip) == Norm(adi)) { var_ = true; break; }
@@ -1033,18 +1198,18 @@ namespace SebekeHakedis.Cekirdek
                         var adi = ozel ? (z.Cins == KanalZemini.Bransman ? "Branşman Kablo Kanalı Yapılması" : "Kablo Demontaj Kanalı Açılması")
                             : kaplamaAdi + dolguAdi + " Kablo Kanalı Yapılması" + (kaplama == "KAPLAMASIZ" ? " - Kaplamasız" : "") + (z.Bariyerli ? " (Bariyerli)" : "") + (z.Trencher ? " (Trencher)" : "");
                         var pz = pozYap(kCins, kTanim, blok);
-                        var bilgi = new MetrajPlani.YeniSutun { Poz = pz.Length > 0 ? pz : Poz("32.12.1", blok), Ad = adi, Temin = blok == "Y" ? "Y" : "", Birim = "m3", KaynakCins = Str(kCins), KaynakTanim = Str(kTanim) };
+                        var bilgi = new MetrajPlani.YeniSutun { Poz = pz.Length > 0 ? pz : Poz("32.12.1", blok), Ad = adi, Temin = blok == "Y" ? "Y" : "", Birim = "m3", GrupAdi = "KANALLAR", KaynakCins = Str(kCins), KaynakTanim = Str(kTanim) };
                         var anahtar = "KANAL|" + Norm(adi);
-                        var y = yeniSutun("yeralti", blok, anahtar, bilgi);
+                        var y = yeniSutun(hedefBul(ad), blok, anahtar, bilgi);
                         if (y != null) yaz(ad, XlsmDosyasi.SutunHarfi(y.SutunNo) + r, hacim);
-                        else { fazlaya("yeralti", blok, anahtar, bilgi, hacim, kim); uyarilar.Add(kim + ": kanal türü \"" + adi + "\" şablonda yok ve EK satırı kalmadı."); }
+                        else { fazlaya("yeralti", blok, anahtar, bilgi, hacim, kim); uyarilar.Add(kim + ": kanal türü \"" + adi + "\" için sütun açılamadı."); }
                     }
                     foreach (var x in k.Kalemler)
                     {
                         if (x.Ana) continue;
                         var kb = Blok(Str(x.Durum).Length > 0 ? x.Durum : k.Durum);
                         if (kb == null || kb == "MEVCUT") continue;
-                        malzemeYaz("yeralti", kb, x, r, kim);
+                        malzemeYaz(hedefBul(ad), kb, x, r, kim);
                     }
                     r++;
                     ozet["yeraltiSatiri"]++;
@@ -1094,11 +1259,11 @@ namespace SebekeHakedis.Cekirdek
                             if (s != null) { ozet["eslesen"]++; yaz(ad, XlsmDosyasi.SutunHarfi(s.SutunNo) + r, m); continue; }
                             var adi = (e != null && e.Dizi("adlar") != null && e.Dizi("adlar").Count > 0 ? (string)e.Dizi("adlar")[0] : Str(kalem.Tanim)) + " (" + ek + ")";
                             var pz = pozYap(kalem.Cins, kalem.Tanim, kb);
-                            var bilgi = new MetrajPlani.YeniSutun { Poz = pz.Length > 0 ? pz : Poz(nerede == "KANAL" ? "32.16" : "32.12", kb), Ad = adi, Temin = temin(kalem.Cins, kalem.Tanim, kb), Birim = "mt.", KaynakCins = Str(kalem.Cins), KaynakTanim = Str(kalem.Tanim) };
+                            var bilgi = new MetrajPlani.YeniSutun { Poz = pz.Length > 0 ? pz : Poz(nerede == "KANAL" ? "32.16" : "32.12", kb), Ad = adi, Temin = temin(kalem.Cins, kalem.Tanim, kb), Birim = "mt.", GrupAdi = "KABLOLAR", KaynakCins = Str(kalem.Cins), KaynakTanim = Str(kalem.Tanim) };
                             var anahtar = "KABLO|" + tanim + "|" + nerede;
-                            var y = yeniSutun("yeralti", kb, anahtar, bilgi);
+                            var y = yeniSutun(hedefBul(ad), kb, anahtar, bilgi);
                             if (y != null) yaz(ad, XlsmDosyasi.SutunHarfi(y.SutunNo) + r, m);
-                            else { fazlaya("yeralti", kb, anahtar, bilgi, m, kim); uyarilar.Add(kim + ": \"" + kalem.Tanim + "\" şablonda yok ve EK satırı kalmadı."); }
+                            else { fazlaya("yeralti", kb, anahtar, bilgi, m, kim); uyarilar.Add(kim + ": \"" + kalem.Tanim + "\" için sütun açılamadı."); }
                         }
                     }
                     foreach (var x in h.Kalemler)
@@ -1106,7 +1271,7 @@ namespace SebekeHakedis.Cekirdek
                         if (ReferenceEquals(x, kalem) || x.Ana) continue;
                         var kb = Blok(Str(x.Durum).Length > 0 ? x.Durum : h.Durum);
                         if (kb == null || kb == "MEVCUT") continue;
-                        malzemeYaz("yeralti", kb, x, r, kim);
+                        malzemeYaz(hedefBul(ad), kb, x, r, kim);
                     }
                     r++;
                     ozet["yeraltiSatiri"]++;
@@ -1114,9 +1279,64 @@ namespace SebekeHakedis.Cekirdek
                 bitir(ad, Yt, r);
             }
 
+            // ======================= MALZ. LİSTESİ: yeni sütunlar normal satır olarak (EK KALEMLER bölümünün yerine; kullanıcı kararı)
+            var M = sablon.MalzListesi;
+            if (M != null && plan.YeniSutunlar.Count > 0)
+            {
+                var ekler = M.EkSatirlari;
+                int r = M.EkBaslikSatiri ?? (ekler.Count > 0 ? ekler[0].Satir : 0);
+                if (r == 0) uyarilar.Add(M.Sayfa + ": EK KALEMLER bölümü yok; yeni sütunlar listeye yazılamadı.");
+                else
+                {
+                    // eski EK satırları temizlenir (KOD "E001"… ve miktar); bölüm başlığı satırının yazısı yeni başlıkla değişir
+                    foreach (var e in ekler) { sil(M.Sayfa, M.KodSutunu + e.Satir); sil(M.Sayfa, M.MiktarSutunu + e.Satir); }
+                    // bölüm sırası: DİREK METRAJI, DİREK kopyaları, İLETKEN, YERALTI
+                    var sirali = new List<Hedef>(hedefler);
+                    KararliSirala(sirali, (x, y) =>
+                    {
+                        int c = Array.IndexOf(SayfaSirasi, x.Hangi).CompareTo(Array.IndexOf(SayfaSirasi, y.Hangi)); if (c != 0) return c;
+                        c = (x.Kaynak != null ? 1 : 0).CompareTo(y.Kaynak != null ? 1 : 0); if (c != 0) return c;
+                        return hedefler.IndexOf(x).CompareTo(hedefler.IndexOf(y));
+                    });
+                    var F = Str(M.ToplamSutunu).Length > 0 ? M.ToplamSutunu : "F";
+                    var A = Str(M.BayrakSutunu).Length > 0 ? M.BayrakSutunu : "A";
+                    foreach (var h in sirali)
+                    {
+                        var sutunlar = new List<MetrajPlani.YeniSutun>(); foreach (var y in plan.YeniSutunlar) if (y.Sayfa == h.Sayfa) sutunlar.Add(y);
+                        if (sutunlar.Count == 0) continue;
+                        KararliSirala(sutunlar, (x, y) => x.SutunNo.CompareTo(y.SutunNo));
+                        var t = h.Tanim; var ON = t.Onek;
+                        // ad: ana sayfada tanımlı ad (DM_KOD_SATIRI), kopyada aynı aralık kopya sayfasında ('DİREK AG BETON'!$G$10:$ZZ$10)
+                        Func<string, string> aralik = anahtar => { string v; return h.Kaynak != null ? SayfaRef(h.Sayfa) + "!" + (t.Adlar.TryGetValue(anahtar, out v) ? v : null) : ON + "_" + anahtar + "_SATIRI"; };
+                        var mh = sayfa(M.Sayfa).Hucreler;
+                        mh[A + r] = "=IF(COUNTIF(" + F + (r + 1) + ":" + F + (r + sutunlar.Count) + ",\">0\")>0,1,0)";
+                        mh[M.PozSutunu + r] = h.Sayfa;
+                        foreach (var c in new[] { M.AdSutunu, M.BirimSutunu, M.TeminSutunu, F, M.KodSutunu, M.MiktarSutunu, M.KaynakSutunu }) sil(M.Sayfa, c + r);
+                        plan.MalzSatirlari.Add(new MetrajPlani.MalzSatiri { Satir = r, Tur = "grup", Sayfa = h.Sayfa });
+                        r++;
+                        foreach (var y in sutunlar)
+                        {
+                            var I = "$" + M.KaynakSutunu + r;
+                            mh[A + r] = "=IF(" + F + r + ">0,1,0)";
+                            mh[M.KodSutunu + r] = y.Kod;
+                            mh[M.PozSutunu + r] = "=IF(" + I + "=\"\",\"\",INDEX(" + aralik("POZ") + "," + I + ")&\"\")";
+                            mh[M.AdSutunu + r] = "=IF(" + I + "=\"\",\"\",TRIM(INDEX(" + aralik("AD") + "," + I + ")&IFERROR(VLOOKUP(INDEX(" + aralik("SEC") + "," + I + "),SECIM_EK,2,FALSE),\"\")))";
+                            mh[M.BirimSutunu + r] = "=IF(" + I + "=\"\",\"\",INDEX(" + aralik("BIRIM") + "," + I + ")&\"\")";
+                            mh[M.TeminSutunu + r] = y.Blok == "Y" ? "=IF(" + I + "=\"\",\"\",INDEX(" + aralik("SEC") + "," + I + ")&\"\")" : "Y";
+                            // miktar: İLETKEN'de "MALZ. LİSTESİNE AKTARILAN" satırı (DM: hurda = demontaj − aktarım), ötekilerde TOPLAM satırı
+                            mh[M.MiktarSutunu + r] = "=IF(" + I + "=\"\",0,N(INDEX(" + aralik(t.MalzSatiri.HasValue ? "MALZ" : "TOPLAM") + "," + I + ")))";
+                            mh[F + r] = "=" + M.MiktarSutunu + r;
+                            mh[M.KaynakSutunu + r] = "=IFERROR(MATCH($" + M.KodSutunu + r + "," + aralik("KOD") + ",0),\"\")";
+                            plan.MalzSatirlari.Add(new MetrajPlani.MalzSatiri { Satir = r, Tur = "kalem", Sayfa = h.Sayfa, Kod = y.Kod });
+                            r++;
+                        }
+                    }
+                }
+            }
             ozet["yeniSutun"] = plan.YeniSutunlar.Count;
+            ozet["kopyaSayfa"] = plan.KopyaSayfalar.Count;
             ozet["fazla"] = plan.Fazlalar.Count;
-            if (plan.Fazlalar.Count > 0) uyarilar.Add(plan.Fazlalar.Count + " malzeme için EK satırı kalmadı; \"" + FazlaSayfasi + "\" sayfasına yazıldı.");
+            if (plan.Fazlalar.Count > 0) uyarilar.Add(plan.Fazlalar.Count + " malzeme yazılamadı; \"" + FazlaSayfasi + "\" sayfasına yazıldı.");
             return plan;
         }
 
@@ -1132,27 +1352,51 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Planı dosyaya işler (telefon: birlesik-metraj.js › planUygula).</summary>
         public static void PlanUygula(XlsmDosyasi x, MetrajSablonu sablon, MetrajPlani plan)
         {
+            // 0) kopya sayfalar (cins başına DİREK METRAJI kopyası): kaynağın biçimiyle, KOD sütunları boş (yeni sütunlar aşağıda açılır)
+            foreach (var k in plan.KopyaSayfalar)
+            {
+                var t = sablon.Al(k.Hangi);
+                if (t == null) continue;
+                var s = x.SayfaKopyala(k.Kaynak, k.Ad);
+                int sonSatir = Math.Max(t.ToplamSatiri, t.MalzSatiri ?? 0); foreach (var r in t.AltSatirlar) sonSatir = Math.Max(sonSatir, r);
+                s.SutunlariBosalt(t.IlkKodSutunu, Math.Min(t.KodSatiri, Math.Min(t.TipSatiri ?? t.KodSatiri, t.DurumSatiri ?? t.KodSatiri)), sonSatir);
+            }
+            // 1) yeni sütunlar: biçim, genişlik, bayrak / toplam / alt satır formülleri, (gerekirse) veri formülleri — örnek ana sayfada
             foreach (var y in plan.YeniSutunlar)
             {
                 var t = sablon.Al(y.Hangi);
                 if (t == null || !y.OrnekSutun.HasValue) continue;
-                var s = x.Sayfa(t.Ad);
+                var s = x.Sayfa(Str(y.Sayfa).Length > 0 ? y.Sayfa : t.Ad); var o = x.Sayfa(Str(y.OrnekSayfa).Length > 0 ? y.OrnekSayfa : t.Ad);
                 int kaynak = y.OrnekSutun.Value, hedef = y.SutunNo, fark = hedef - kaynak;
-                s.SutunGenisligiKopyala(kaynak, hedef);
-                var formulluSatirlar = new HashSet<int>(t.BayrakSatirlari); foreach (var r in t.AltSatirlar) formulluSatirlar.Add(r);
+                if (ReferenceEquals(o, s)) s.SutunGenisligiKopyala(kaynak, hedef);
+                var formulluSatirlar = new List<int>(t.BayrakSatirlari); formulluSatirlar.AddRange(t.AltSatirlar);
                 int ustBas = Math.Min(t.KodSatiri, Math.Min(t.TipSatiri ?? t.KodSatiri, t.DurumSatiri ?? t.KodSatiri));
                 var satirlar = new List<int>(); for (int r = ustBas; r <= t.BirimSatiri; r++) satirlar.Add(r); satirlar.AddRange(formulluSatirlar);
                 foreach (var r in satirlar)
                 {
-                    s.StilKopyala(XlsmDosyasi.HucreAdi(kaynak, r), XlsmDosyasi.HucreAdi(hedef, r));
-                    if (formulluSatirlar.Contains(r)) { var f = s.Formul(XlsmDosyasi.HucreAdi(kaynak, r)); if (f != null) s.YazFormul(XlsmDosyasi.HucreAdi(hedef, r), XlsmDosyasi.FormulKaydir(f, 0, fark)); }
+                    s.StilKopyala(XlsmDosyasi.HucreAdi(kaynak, r), XlsmDosyasi.HucreAdi(hedef, r), o);
+                    if (formulluSatirlar.Contains(r)) { var f = o.Formul(XlsmDosyasi.HucreAdi(kaynak, r)); if (f != null) s.YazFormul(XlsmDosyasi.HucreAdi(hedef, r), XlsmDosyasi.FormulKaydir(f, 0, fark)); }
                 }
                 for (int r = t.IlkVeri; r <= t.SonVeri; r++)
                 {
-                    s.StilKopyala(XlsmDosyasi.HucreAdi(kaynak, r), XlsmDosyasi.HucreAdi(hedef, r));
-                    if (y.VeriFormulu) { var f = s.Formul(XlsmDosyasi.HucreAdi(kaynak, r)); if (f != null) s.YazFormul(XlsmDosyasi.HucreAdi(hedef, r), XlsmDosyasi.FormulKaydir(f, 0, fark)); }
+                    s.StilKopyala(XlsmDosyasi.HucreAdi(kaynak, r), XlsmDosyasi.HucreAdi(hedef, r), o);
+                    if (y.VeriFormulu) { var f = o.Formul(XlsmDosyasi.HucreAdi(kaynak, r)); if (f != null) s.YazFormul(XlsmDosyasi.HucreAdi(hedef, r), XlsmDosyasi.FormulKaydir(f, 0, fark)); }
                 }
             }
+            // 1b) MALZ. LİSTESİ'ne eklenen satırların biçimi: grup başlığı ve kalem satırı örneklerinden
+            var M = sablon.MalzListesi;
+            if (M != null)
+            {
+                var s = x.Sayfa(M.Sayfa); int sonSutun = 0;
+                foreach (var c in new[] { M.KodSutunu, M.KaynakSutunu, M.PozSutunu, M.AdSutunu, M.BirimSutunu, M.TeminSutunu, M.MiktarSutunu, Str(M.ToplamSutunu).Length > 0 ? M.ToplamSutunu : "A", Str(M.BayrakSutunu).Length > 0 ? M.BayrakSutunu : "A" })
+                    sonSutun = Math.Max(sonSutun, XlsmDosyasi.SutunNo(c));
+                foreach (var m in plan.MalzSatirlari)
+                {
+                    int? ornek = m.Tur == "grup" ? M.GrupOrnekSatiri : (int?)M.KalemOrnekSatiri;
+                    if (ornek.HasValue && ornek.Value != 0 && ornek.Value != m.Satir) s.SatirBicimKopyala(ornek.Value, m.Satir, sonSutun);
+                }
+            }
+            // 2) hücreler (null: hücre boşaltılır)
             foreach (var kv in plan.Sayfalar)
             {
                 var s = x.Sayfa(kv.Key);
@@ -1160,6 +1404,7 @@ namespace SebekeHakedis.Cekirdek
                 foreach (var r in kv.Value.GosterSatirlar) s.SatirGoster(r);
                 if (kv.Value.Gizle != null) for (int r = kv.Value.Gizle[0]; r <= kv.Value.Gizle[1]; r++) s.SatirGizle(r);
             }
+            // 3) şablona sığmayan malzemeler
             if (plan.Fazlalar.Count > 0)
             {
                 var s = x.SayfaEkle(FazlaSayfasi);
