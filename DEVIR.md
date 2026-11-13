@@ -66,8 +66,8 @@ yazısı** `MLZ_` öznitelikleri yerine `SH_MLZ` bağlı tek **MText** (`CizimYa
 MalzemeMetni`; sol üst köşeden, "tam" satır aralığı 0,9, renk 7, direğin katmanında, `SH_SAHIP` ile komutlar direğe
 gider); `ArmaturBagi` / `ArmaturTakibi` uygulama adı parametresiyle genelleştirildi (SH_ARM ve SH_MLZ, blok ve MText;
 `Not.Susler`, `Aday.Tur / Uygulama`, `Konum / KonumYaz`), `Sil` yazıyı da siler; eski öznitelikler güncellemede silinir,
-taşınmış ilk satırın yeri geçer. Telefon DXF'i de tek MTEXT yazar (`dxf.js › malzemeMetni`, 250 karakterlik 3 / 1
-parçaları, `MALZEME_YAZISI.mtextAralik`). **3 Metraj yazısı = iletken metrajı** (kullanıcı kararı: ÷ adet; kanal /
+taşınmış ilk satırın yeri geçer. ~~Telefon DXF'i de tek MTEXT yazar~~ — 13.11 öğlen geri alındı: DXF R12'dir, MTEXT
+AutoCAD'de dosyayı açtırmaz (aşağıda "DXF açılmıyor"). **3 Metraj yazısı = iletken metrajı** (kullanıcı kararı: ÷ adet; kanal /
 sondajda kendi pozunun metrajı): `CadVarlik.MetrajUzunlugu` (NesneYazici.Hat / Kanal / Sondaj), `ParcaMetrajlariYaz(…,
 toplam)` açıklıklara orantılı dağıtır; süs takibinde (`YazilariGuncelle`) uzunluğu değişmeyen çizgide kalemin metrajı
 (`MetrajUzunluguOku`, SH_PARCA izindeki eski uzunlukla karşılaştırma), uzatılan çizgide çizim uzunluğu. Telefon DXF'i
@@ -76,6 +76,19 @@ Malzemeler penceresinde **Tipi değiştir…** / ilk satıra çift tıklama → 
 cins / tanım / birim / katsayı / tarife değişir, kaydedince `el.Cins / Tip` ve `NesneyiYaz` bloğu + TİP yazısını yeniler.
 Denemeler: CekirdekTest (MetrajUzunlugu), PencereTest 08c, `tests/dxf.test.mjs` D6. Belgeler: KULLANIM (malzeme yazısı,
 yazı rengi, metraj yazısı, tip değiştirme), telefon kılavuzu, VERI-MODELI (`SH_MLZ`), README.
+
+13.11 öğlen (`dxf-blok-adi` dalı, main üstüne; PR G, acil): **Telefon DXF'i AutoCAD'de açılmıyor** (kullanıcı bildirimi:
+"ENTER bas diyor, basınca boş sayfa"). Neden: DXF R12 (AC1009) biçiminde, AutoCAD bu biçimde 31 karakterden uzun tablo /
+blok adını reddeder ("Invalid or incomplete DXF input -- drawing discarded"); #89'un Şebeke-M takımındaki
+`SH_SM_KOSK_KULE_CIKIS_OZEL_MEVCUT` 33, `_KESIK` / `_SOKUK` 32 karakterdi ve DXF bütün simge bloklarını yazdığından her
+çıktı bozuluyordu (APK 2.5.69). Ayrıca PR D'nin malzeme yazısı MTEXT'i R12'de yoktur. Düzeltme: aile
+`SM_KOSK_KULE_CIKIS_OZEL` → `SM_KOSK_KCIKIS_OZEL` (semboller-uret.mjs; üretici artık 31 karakteri ve A–Z 0–9 _ $ -
+dışını reddeder; semboller.json › `eskiAileler`), eklenti çizimdeki eski adlı blok tanımını yeni adla yeniden adlandırır
+(`Semboller.EskiBlokAdlari`, `CizimYazici.EskiBloklariYenile` + `BlokSurumunuSil`), telefon DXF'inde malzeme satırları
+yeniden ayrı TEXT (`malzemeMetni`, `mtextAralik` kaldırıldı). Denemeler: telefon `tests/semboller.test.mjs` S6 (iki
+takımla dışa aktarılan DXF'te bütün LAYER / LTYPE / STYLE / BLOCK / INSERT adları ≤ 31 ve A–Z 0–9 _ $ -, ENTITIES ve
+BLOCKS'ta yalnız R12 varlıkları), D6 / ME3 satır satır TEXT; CekirdekTest bütün `SH_` adları `Semboller.R12AdiMi`, eski
+ad eşlemesi. Kullanıcının dosyası (gerçek proje, depoya konmadı) blok adları kısaltılarak onarılıp geri verildi.
 
 9.11 öğleden sonra (`simge-takimi` dalı, `hesap-metraj` üstüne; PR C): **#89 Şebeke-M simge takımı** — kullanıcının
 SM_* SVG / DXF tasarımı seçilebilir ikinci takım olarak (kararlar: ikinci takım, çizim başına seçilir; demontajda DM

@@ -197,7 +197,14 @@ namespace SebekeHakedis.Test
                 Esit("SH_SM_TRAFO_DIREK_OZEL_YENI", Semboller.BlokAdi("TRAFO_DIREGI", "TR_DİREK_GLV", "M", "", "ÖZEL TRAFO 250 kVA"), "takım SM: özel direk tipi trafo");
                 Esit("SH_SM_KOSK_MODULER_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "M"), "takım SM: tipi yazılmamış köşk → modüler");
                 Esit("SH_SM_KOSK_KULE_CIKIS_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "M", "", "KULE ÇIKIŞLI KÖŞK"), "takım SM: kule çıkışlı köşk");
-                Esit("SH_SM_KOSK_KULE_CIKIS_OZEL_MEVCUT", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "MEVCUT", "", "ÖZEL KULE ÇIKIŞLI"), "takım SM: özel kule çıkışlı köşk");
+                Esit("SH_SM_KOSK_KCIKIS_OZEL_MEVCUT", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "MEVCUT", "", "ÖZEL KULE ÇIKIŞLI"), "takım SM: özel kule çıkışlı köşk");
+                // R12 DXF blok adı sınırı (telefonun DXF'i AC1009; AutoCAD 31 karakterden uzun adlı dosyayı açmaz, 13.11.2026)
+                var uzunAdlar = new List<string>();
+                foreach (var sb in Semboller.Hepsi()) if (!Semboller.R12AdiMi(Semboller.OnEk + sb.Ad)) uzunAdlar.Add(Semboller.OnEk + sb.Ad);
+                Esit("", string.Join(", ", uzunAdlar.ToArray()), "semboller: bütün blok adları R12 sınırında (≤ 31, A–Z 0–9 _ $ -)");
+                string yeniAd;
+                Esit(true, Semboller.EskiBlokAdlari.TryGetValue("SH_SM_KOSK_KULE_CIKIS_OZEL_MEVCUT", out yeniAd) && yeniAd == "SH_SM_KOSK_KCIKIS_OZEL_MEVCUT", "semboller: eski uzun adlı blok yeni ada eşlenir (çizimde yeniden adlandırılır)");
+                Esit(false, Semboller.R12AdiMi("SH_SM_KOSK_KULE_CIKIS_OZEL_MEVCUT"), "semboller: 33 karakterlik ad R12 dışı");
                 Esit("SH_SM_KOSK_KULE_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "M", "", "KULELİ KÖŞK"), "takım SM: kuleli köşk");
                 Esit("SH_SM_KOSK_KULESIZ_OZEL_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "BETON_KÖŞKLER", "M", "", "KULESİZ ÖZEL"), "takım SM: kulesiz özel köşk");
                 Esit("SH_SM_TRAFO_BINA_YENI", Semboller.BlokAdi("TRAFO_MERKEZI", "TRAFO_BİNASI", "M"), "takım SM: trafo binası cinsten tanınır");

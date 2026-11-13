@@ -146,7 +146,7 @@ demontaj varyantlarında iç işaret (kafes çarpısı) yoktur.
 **Şebeke-M** aileleri (`SM_` önekli, 23 aile; kullanıcının 9.11.2026 tasarımı; yarı genişlikler klasik karşılığıyla
 aynı, hatlar aynı yere yapışır): `SM_DIREK_AG`, `SM_KAFES_AG`, `SM_DIREK_OG`, `SM_KAFES_OG`, `SM_DIREK_ENH`,
 `SM_DIREK_AYD`, `SM_TRAFO_DIREK`, `SM_TRAFO_DIREK_OZEL`, `SM_INDIRICI_MERKEZ`, `SM_KOSK_KULE`, `SM_KOSK_KULE_CIKIS`,
-`SM_KOSK_KULESIZ_OZEL`, `SM_KOSK_KULE_OZEL`, `SM_KOSK_KULE_CIKIS_OZEL`, `SM_KOSK_MODULER`, `SM_TRAFO_BINA`, `SM_BOX`,
+`SM_KOSK_KULESIZ_OZEL`, `SM_KOSK_KULE_OZEL`, `SM_KOSK_KCIKIS_OZEL` (kule çıkışlı özel; R12 DXF blok adı sınırı 31 karakter), `SM_KOSK_MODULER`, `SM_TRAFO_BINA`, `SM_BOX`,
 `SM_SDK_AG`, `SM_SDK_AYD`, `SM_ARMATUR_CIVA`, `SM_ARMATUR_SODYUM`, `SM_ARMATUR_LED`, `SM_ARMATUR_FLORESAN`. Durum
 simgenin doluluğundan okunur: `YENI` dolu (iç işaret zıt renkte), `MEVCUT` kontur, `DMM` sol yarısı dolu, `DM` çift
 kontur (iç çizgi 0,8 R) + altında `DM` yazısı, `KESIK` / `SOKUK` ayrıca sağ altta `K` / `S` harfi (tür bilinmiyorsa

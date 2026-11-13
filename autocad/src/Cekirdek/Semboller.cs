@@ -48,6 +48,17 @@ namespace SebekeHakedis.Cekirdek
         private static Dictionary<string, Sembol> _tablo;
         private static Dictionary<string, string> _aileAdlari;
         private static Dictionary<string, double[]> _aileOlculeri;
+        private static Dictionary<string, string> _eskiBlokAdlari = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Adı değişen SH_ blokları: eski blok adı → yeni blok adı (semboller.json › eskiAileler, her varyant için).
+        /// CizimYazici çizimdeki eski adlı blok tanımlarını yeni adla yeniden adlandırır (13.11.2026: telefonun R12 DXF'i
+        /// 31 karakterden uzun blok adıyla AutoCAD'de açılmıyordu; SM_KOSK_KULE_CIKIS_OZEL → SM_KOSK_KCIKIS_OZEL).
+        /// </summary>
+        public static IDictionary<string, string> EskiBlokAdlari => _eskiBlokAdlari;
+
+        /// <summary>R12 DXF blok adı sınırı: en çok 31 karakter, yalnız A–Z 0–9 _ $ - (AutoCAD daha uzun adlı R12 DXF'i açmaz).</summary>
+        public static bool R12AdiMi(string ad) => !string.IsNullOrEmpty(ad) && ad.Length <= 31 && System.Text.RegularExpressions.Regex.IsMatch(ad, @"^[A-Z0-9_$\-]+$");
 
         /// <summary>Varyantlar (semboller.json sırası): montaj, mevcut, sök-tak, demontaj, demontaj kesik, demontaj sökük.</summary>
         public static readonly string[] Varyantlar = { "YENI", "MEVCUT", "DMM", "DM", "KESIK", "SOKUK" };
@@ -106,9 +117,19 @@ namespace SebekeHakedis.Cekirdek
                 }
                 tablo[kv.Key] = s;
             }
+            var eskiler = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var eskiAileler = kok.Nesne("eskiAileler");
+            if (eskiAileler != null)
+                foreach (var kv in eskiAileler)
+                {
+                    var yeni = kv.Value as string;
+                    if (kv.Key == "aciklama" || string.IsNullOrEmpty(yeni)) continue;
+                    foreach (var v in Varyantlar) eskiler[OnEk + kv.Key + "_" + v] = OnEk + yeni + "_" + v;
+                }
             _tablo = tablo;
             _aileAdlari = aileler;
             _aileOlculeri = olculer;
+            _eskiBlokAdlari = eskiler;
         }
 
         private static SembolIlkeli IlkelOku(List<object> d)
@@ -297,7 +318,7 @@ namespace SebekeHakedis.Cekirdek
                         if (ct.Contains("INDIRICI") || ct.Contains("DAGITIM MERKEZ")) return "SM_INDIRICI_MERKEZ";
                         if (ct.Contains("BINA")) return "SM_TRAFO_BINA";
                         if (ct.Contains("KULESIZ")) return "SM_KOSK_KULESIZ_OZEL";
-                        if (ct.Contains("KULE") && ct.Contains("CIKIS")) return ozel ? "SM_KOSK_KULE_CIKIS_OZEL" : "SM_KOSK_KULE_CIKIS";
+                        if (ct.Contains("KULE") && ct.Contains("CIKIS")) return ozel ? "SM_KOSK_KCIKIS_OZEL" : "SM_KOSK_KULE_CIKIS";
                         if (ct.Contains("KULE")) return ozel ? "SM_KOSK_KULE_OZEL" : "SM_KOSK_KULE";
                         return "SM_KOSK_MODULER";
                     }

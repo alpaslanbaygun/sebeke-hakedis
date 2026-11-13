@@ -337,7 +337,8 @@ göre saklanır ve güncellemede korunur; direği taşır, kopyalar ya da silers
 tıklayıp Malzeme komutunu verirseniz direğin malzemeleri açılır. Malzeme eklenince ya da silinince yazı kendiliğinden
 yenilenir; kapatınca yazılar silinir. Eski çizimlerdeki satır satır yazılar güncellemede (ya da Telefon Görünümü ile)
 tek yazıya çevrilir, taşınmış ilk satırın yeri kalır. Telefonda Dışa Aktarım › Çizim boyutları › Malzemeleri çizimde
-göster açıksa telefonun DXF'i de aynı yazıyı (tek çok satırlı yazı) yazar.
+göster açıksa telefonun DXF'i de aynı satırları yazar; telefonun DXF'i R12 biçiminde olduğundan (çok satırlı yazı bu
+sürümde yoktur) satırlar ayrı yazılardır, simgeden bağımsız taşınır.
 
 **Eleman yazıları beyaz / siyah** (13.11.2026): GIS numarası ve tip yazısı direğin renginde değil, 7 numaralı renkte
 yazılır (siyah ekranda beyaz, kâğıtta siyah) — koyu yeşil / kırmızı yazılar siyah ekranda okunmuyordu. Telefonun DXF'i
