@@ -49,6 +49,9 @@
     <EmbeddedResource Include="..\..\..\ortak\katalog\metraj-sablon.json" Link="Katalog\metraj-sablon.json" LogicalName="SebekeHakedis.metraj-sablon.json" />
     <!-- Roller ve yetkiler: telefonla ortak tablo -->
     <EmbeddedResource Include="..\..\..\ortak\katalog\roller.json" Link="Katalog\roller.json" LogicalName="SebekeHakedis.roller.json" />
+    <!-- Önerilen malzeme kuralları ve telefon servis kodu ↔ eklenti kalemi eşlemesi (telefonla ortak tablolar) -->
+    <EmbeddedResource Include="..\..\..\ortak\katalog\onerilen-malzeme.json" Link="Katalog\onerilen-malzeme.json" LogicalName="SebekeHakedis.onerilen-malzeme.json" />
+    <EmbeddedResource Include="..\..\..\ortak\katalog\volt-eslesme.json" Link="Katalog\volt-eslesme.json" LogicalName="SebekeHakedis.volt-eslesme.json" />
     <!-- Şebeke-M markası: logo ve simgeler (üretici araclar/marka-uret.py) -->
     <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-logo.png" Link="Marka\logo.png" LogicalName="SebekeHakedis.marka.logo.png" />
     <EmbeddedResource Include="..\..\..\ortak\marka\sebeke-m-simge-16.png" Link="Marka\simge-16.png" LogicalName="SebekeHakedis.marka.simge-16.png" />

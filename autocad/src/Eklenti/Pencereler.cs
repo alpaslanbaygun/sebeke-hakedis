@@ -5,6 +5,7 @@ using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using SebekeHakedis.Cekirdek;
 #if AUTOCAD
@@ -3369,6 +3370,96 @@ namespace SebekeHakedis.Eklenti
         /// Nesnenin pozlarını düzenler. Kaydet'e basılırsa değişiklikler nesneye (model) yazılır ve true döner;
         /// çizime yazmak çağıranın işidir.
         /// </summary>
+        /// <summary>
+        /// Direğin önerilen malzemeleri: bağlam çizimden (grup, rol, iletken sınıfı, çıplak AG), istenirse kullanıcı
+        /// bağlamıyla (baglam). Var olan kalemler (aynı cins / tanım) işaretlenir.
+        /// </summary>
+        private static List<OnerilenMalzeme.Oneri> OnerilenListe(OrtamVerisi o, Eleman el, List<Kalem> kalemler, OnerilenMalzeme kurallar, OnerilenMalzeme.DirekBaglami baglam)
+        {
+            var volt = KatalogKaynagi.VoltEslesme();
+            var b = baglam ?? OnerilenMalzeme.Baglam(o.Proje, el, volt);
+            var liste = kurallar.Direk(b, OnerilenMalzeme.Esleyici(volt, o.Katalog));
+            foreach (var x in liste)
+                if (x.Kalem != null)
+                    foreach (var k in kalemler)
+                        if (!k.Ana && KatalogKalemi.Sade(k.Cins) == KatalogKalemi.Sade(x.Kalem.Cins) && KatalogKalemi.Sade(k.Tanim) == KatalogKalemi.Sade(x.Kalem.Tanim)) x.MevcutMiktar += k.Miktar;
+            return liste;
+        }
+
+        /// <summary>
+        /// Önerilen malzemeler penceresi (13.11.2026): direğin bağlamı (rol, çıplak AG, iletken sınıfı) değiştirilebilir, liste
+        /// yenilenir; işaretlenen satırlar verilen durum ve etkin hakedişle kalem olur. Dönüş: eklenecek kalemler (vazgeçte null).
+        /// </summary>
+        private static List<Kalem> OnerilenMalzemeler(OrtamVerisi o, Eleman el, List<Kalem> kalemler, OnerilenMalzeme kurallar, string baslik, string durum, IWin32Window sahip)
+        {
+            var volt = KatalogKaynagi.VoltEslesme();
+            var b = OnerilenMalzeme.Baglam(o.Proje, el, volt);
+            using (var w = new KoyuPencere("Önerilen malzemeler — " + baslik, 860, 560, Boya.Simge("arti", KoyuRenk.Vurgu, 20)))
+            {
+                var alt = AltKur(w, "Seçilenleri ekle", true, 160);
+                string grupAdi = b.Grup.Length > 0 ? b.Grup : "—";
+                var dg = volt.Nesne("direkGruplari"); var gb = dg != null ? dg.Nesne(b.Grup) : null;
+                if (gb != null && gb.Metin("aciklama").Length > 0) grupAdi = gb.Metin("aciklama");
+                Etiket(w, "Direk grubu: " + grupAdi + (b.Grup.Length == 0 ? "  (bu cins için kural yok)" : ""), 16, 56, 828, KoyuYazi.Kucuk, KoyuRenk.Soluk);
+                Etiket(w, "Rol", 16, 84);
+                var rol = Koy(w, new KoyuAcilir(), 16, 104, 200, 30);
+                foreach (var r in OnerilenMalzeme.Roller) rol.Items.Add(OnerilenMalzeme.RolAdlari[r]);
+                rol.SelectedIndex = Math.Max(0, Array.IndexOf(OnerilenMalzeme.Roller, b.Rol));
+                var rolNedeni = Etiket(w, b.RolNedeni, 16, 138, 300, KoyuYazi.Kucuk, KoyuRenk.Soluk);
+                var ciplak = Koy(w, new KoyuOnay("Çıplak AG hat bağlı") { Checked = b.AgCiplak }, 236, 108);
+                var buyuk = Koy(w, new KoyuOnay("477 MCM iletken") { Checked = b.IletkenBuyuk }, 420, 108);
+                var cift = Koy(w, new KoyuOnay("Çift devre") { Checked = b.IletkenCift }, 580, 108);
+                Etiket(w, "Bağlam çizimden okundu (bağlı hatlar, direk tipi); gerekirse değiştirin. Miktarlar telefonun varsayılan parametreleri.", 236, 138, 600, KoyuYazi.Kucuk, KoyuRenk.Soluk);
+
+                var g = new DataGridView { AllowUserToAddRows = false, AllowUserToDeleteRows = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, EditMode = DataGridViewEditMode.EditOnEnter };
+                KoyuTablo.Uygula(g);
+                g.Columns.Add(new DataGridViewCheckBoxColumn { HeaderText = "", FillWeight = 22 });
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Cins", ReadOnly = true, FillWeight = 110 });
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Tanım", ReadOnly = true, FillWeight = 150 });
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Miktar", FillWeight = 50 });
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Birim", ReadOnly = true, FillWeight = 40 });
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Neden", ReadOnly = true, FillWeight = 150 });
+                g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Direkte", ReadOnly = true, FillWeight = 60 });
+                Koy(w, new Cerceve(g), 16, 166, 828, 290);
+                List<OnerilenMalzeme.Oneri> liste = null;
+                Action yenile = () =>
+                {
+                    var bg = new OnerilenMalzeme.DirekBaglami { Grup = b.Grup, Tip = b.Tip, Rol = OnerilenMalzeme.Roller[Math.Max(0, rol.SelectedIndex)], AgCiplak = ciplak.Checked, IletkenBuyuk = buyuk.Checked, IletkenCift = cift.Checked };
+                    liste = OnerilenListe(o, el, kalemler, kurallar, bg);
+                    g.Rows.Clear();
+                    foreach (var x in liste)
+                    {
+                        var birim = x.Kalem != null ? x.Kalem.Birim.Split('/')[0] : "";
+                        int r = g.Rows.Add(!x.Var && !x.EslemeYok, x.EslemeYok ? "(eşleme yok)" : x.Cins, x.EslemeYok ? x.Servis : x.Kalem.Gorunen, x.Miktar.ToString("0.###", Tr), birim, x.Neden, x.Var ? x.MevcutMiktar.ToString("0.###", Tr) + " var" : "");
+                        g.Rows[r].Tag = x;
+                        if (x.EslemeYok) { g.Rows[r].ReadOnly = true; g.Rows[r].DefaultCellStyle.ForeColor = KoyuRenk.Soluk; }
+                        else if (x.Var) g.Rows[r].DefaultCellStyle.ForeColor = KoyuRenk.Soluk;
+                    }
+                    int eksik = 0; foreach (var x in liste) if (!x.Var && !x.EslemeYok) eksik++;
+                    alt.Ozet.Text = liste.Count == 0 ? "Bu bağlam için öneri yok." : liste.Count + " öneri · " + eksik + " eksik · " + (liste.Count - eksik) + " direkte var";
+                };
+                rol.SelectedIndexChanged += (s, e) => { rolNedeni.Text = "Rol elle seçildi"; yenile(); };
+                ciplak.CheckedChanged += (s, e) => yenile();
+                buyuk.CheckedChanged += (s, e) => yenile();
+                cift.CheckedChanged += (s, e) => yenile();
+                yenile();
+                g.CellContentClick += (s, e) => { if (e.RowIndex >= 0 && e.ColumnIndex == 0) g.EndEdit(); };
+                if (Goster(w, sahip) != DialogResult.OK) return null;
+                g.EndEdit();
+                var secilen = new List<Kalem>();
+                foreach (DataGridViewRow r in g.Rows)
+                {
+                    var x = r.Tag as OnerilenMalzeme.Oneri;
+                    if (x == null || x.Kalem == null || !(r.Cells[0].Value is bool) || !(bool)r.Cells[0].Value) continue;
+                    double miktar = SayiCoz.Coz(Convert.ToString(r.Cells[3].Value, Tr));
+                    if (!(miktar > 0)) miktar = x.Miktar;
+                    var k = Katalog.KalemYap(x.Kalem, miktar, durum, o.Hakedis, false, "MALZEME", o.YeniSira(), "", o.Ayar.Karakteristik, o.Ayar.Koy);
+                    secilen.Add(k);
+                }
+                return secilen;
+            }
+        }
+
         public static bool Kalemler(OrtamVerisi o, object nesne)
         {
             Hazirla();
@@ -3406,12 +3497,21 @@ namespace SebekeHakedis.Eklenti
                 w.Alt.Controls.Add(sil);
                 // Elemanın kendi pozu (direk tipi) sonradan değiştirilebilir (13.11.2026): aynı cinsten başka tip (9,30/3 →
                 // 9,30/8) ya da başka cins (beton → demir; simge de değişir). Durum, hakediş, DM durumu ve malzemeler kalır.
-                KoyuDugme tipDegistir = null;
+                KoyuDugme tipDegistir = null, oner = null;
                 if (el != null && kalemler.Exists(k => k.Ana))
                 {
                     tipDegistir = new KoyuDugme("Tipi değiştir…", DugmeTuru.Ikincil, Boya.Simge("sec", KoyuRenk.Ikincil, 16));
                     tipDegistir.SetBounds(sil.Right + S(10), by, S(150), bh);
                     w.Alt.Controls.Add(tipDegistir);
+                }
+                // Önerilen malzemeler (13.11.2026): telefonun reçete kuralları direğin grubu, rolü ve iletkenine göre travers,
+                // izolatör, topraklama… önerir; kullanıcı işaretleyip ekler. Düğme eksik öneri sayısını gösterir.
+                OnerilenMalzeme kurallar = el != null && Regex.IsMatch(el.Tur ?? "", "DIREK|DIREGI") ? KatalogKaynagi.OnerilenMalzemeler() : null;
+                if (kurallar != null)
+                {
+                    oner = new KoyuDugme("Önerilen…", DugmeTuru.Ikincil, Boya.Simge("arti", KoyuRenk.Ikincil, 16));
+                    oner.SetBounds((tipDegistir ?? sil).Right + S(10), by, S(150), bh);
+                    w.Alt.Controls.Add(oner);
                 }
 
                 MetinKutusu gis = null, guc = null, gerilim = null, bas = null, bit = null;
@@ -3702,6 +3802,27 @@ namespace SebekeHakedis.Eklenti
                     w.Invalidate();
                 };
                 if (tipDegistir != null) tipDegistir.Click += (s, e) => tipiDegistir();
+                Action onerSayisi = () =>
+                {
+                    if (oner == null) return;
+                    int n = 0;
+                    try { foreach (var x in OnerilenListe(o, el, kalemler, kurallar, null)) if (!x.Var && !x.EslemeYok) n++; } catch { }
+                    oner.Text = n > 0 ? "Önerilen (" + n + ")…" : "Önerilen…";
+                };
+                onerSayisi();
+                if (oner != null) oner.Click += (s, e) =>
+                {
+                    if (o.Kilitli(o.Hakedis)) { Uyar(o.KilitMesaji(o.Hakedis)); return; }
+                    string dur = nesneDurumu == "MEVCUT" || string.IsNullOrEmpty(nesneDurumu) ? "M" : nesneDurumu;
+                    var secilen = OnerilenMalzemeler(o, el, kalemler, kurallar, baslik, dur, w);
+                    if (secilen == null || secilen.Count == 0) return;
+                    int ilk = -1;
+                    foreach (var k in secilen) { kalemler.Add(k); int r = satirEkle(k); if (ilk < 0) ilk = r; }
+                    toplamYaz();
+                    onerSayisi();
+                    g.ClearSelection();
+                    if (ilk >= 0) { g.Rows[ilk].Selected = true; g.CurrentCell = g.Rows[ilk].Cells[3]; }
+                };
                 g.CellDoubleClick += (s, e) =>
                 {
                     if (e.RowIndex < 0 || e.ColumnIndex > 1) return;

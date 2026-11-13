@@ -371,6 +371,66 @@ namespace SebekeHakedis.Test
             MalzemeYazisiVeKalinlikDene(); // stil yüklü olmalı (hat kalınlıkları ortak stilden)
             YazmaDenetimiDene();
             BirlesikMetrajOrtakDeneme(); // telefonla ortak: şablon tanımı, doldurma planı, dosyaya yazma
+            OnerilenMalzemeOrtakDeneme(); // telefonla ortak: direk bağlamından önerilen kalemler
+        }
+
+        // ---------------- Telefonla ortak önerilen malzeme denemesi (ortak/deneme/onerilen-malzeme) ----------------
+
+        /// <summary>
+        /// Ortak kurallar (ortak/katalog/onerilen-malzeme.json) her direk bağlamında (durumlar.json) telefonun motoruyla
+        /// aynı listeyi vermeli (beklenen.json; üretici araclar/onerilen-beklenen-uret.mjs). Ayrıca servis kodu → katalog
+        /// kalemi eşlemesi (volt-eslesme.json) ve çizimden bağlam çıkarımı (rol, çıplak AG, iletken sınıfı) denenir.
+        /// </summary>
+        private static void OnerilenMalzemeOrtakDeneme()
+        {
+            Console.WriteLine("Önerilen malzeme: telefonla ortak deneme (ortak/deneme/onerilen-malzeme)");
+            var klasor = Path.Combine(AppContext.BaseDirectory, "onerilen-malzeme");
+            var o = OnerilenMalzeme.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "onerilen-malzeme.json"), Encoding.UTF8));
+            Esit(true, o.Kurallar.Count >= 40 && o.Parametreler.Count == 11, "önerilen malzeme: kurallar ve parametreler okundu (" + o.Kurallar.Count + " / " + o.Parametreler.Count + ")");
+            var durumlar = ((JsonNesne)Json.Oku(File.ReadAllText(Path.Combine(klasor, "durumlar.json"), Encoding.UTF8))).Dizi("durumlar");
+            var beklenen = ((JsonNesne)Json.Oku(File.ReadAllText(Path.Combine(klasor, "beklenen.json"), Encoding.UTF8))).Dizi("durumlar");
+            Esit(durumlar.Count, beklenen.Count, "önerilen malzeme ortak: durum sayısı");
+            for (int i = 0; i < durumlar.Count; i++)
+            {
+                var d = (JsonNesne)durumlar[i]; var bg = d.Nesne("baglam");
+                var b = new OnerilenMalzeme.DirekBaglami { Grup = bg.Metin("grup"), Rol = bg.Metin("rol", "T"), IletkenBuyuk = bg.Mantik("iletkenBuyuk") ?? false, IletkenCift = bg.Mantik("iletkenCift") ?? false, AgCiplak = bg.Mantik("agCiplak") ?? false };
+                var gercek = new List<object>();
+                foreach (var x in o.Direk(b, null)) { var j = new JsonNesne(); j["servis"] = x.Servis; j["miktar"] = x.Miktar; j["neden"] = x.Neden; j["etiket"] = x.Etiket; gercek.Add(j); }
+                var fark = JsonFark(((JsonNesne)beklenen[i])["kalemler"], gercek, "kalemler");
+                Esit("", fark, "önerilen malzeme ortak: " + d.Metin("ad") + (fark.Length > 0 ? " — " + fark : ""));
+            }
+            // Eşleme: her direk kuralı servis kodu AutoCAD katalog kalemine gider
+            var katalog = Katalog.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "kalemler.json"), Encoding.UTF8), null);
+            var volt = (JsonNesne)Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "volt-eslesme.json"), Encoding.UTF8));
+            var esle = OnerilenMalzeme.Esleyici(volt, katalog);
+            int oncesi = katalog.Kalemler.Count; var eksik = new List<string>();
+            foreach (var k in o.Kurallar) if (k.Nesne == "direk") foreach (var it in k.Kalemler) if (it.Servis.Length > 0 && esle(it.Servis) == null && !eksik.Contains(it.Servis)) eksik.Add(it.Servis);
+            Esit("", string.Join(", ", eksik.ToArray()), "önerilen malzeme: direk kurallarının bütün servis kodları eşlemede");
+            Esit(oncesi, katalog.Kalemler.Count, "önerilen malzeme: eşlemedeki kalemlerin hepsi katalogda (yeni kalem açılmadı)");
+            var vhd = esle("011.04.01.01-006");
+            Esit("OG_İZOLATÖR|VHD-35", vhd.Cins + "|" + vhd.Tanim, "önerilen malzeme: VHD 35 mesnet izolatörü katalog kalemi");
+            // Çizimden bağlam: deneme projesinde (ortak/deneme/birlesik-metraj) direklerin grubu, rolü ve çıplak AG bilgisi
+            var p = ProjeDosyasi.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "birlesik-metraj", "proje.sebeke.json"), Encoding.UTF8));
+            Func<string, OnerilenMalzeme.DirekBaglami> baglam = gis => { var e = p.Elemanlar.Find(x => x.GisId == gis); return OnerilenMalzeme.Baglam(p, e, volt); };
+            var sc1 = baglam("SC1");
+            Esit("sehir", sc1.Grup, "önerilen malzeme: AG galvaniz direk şehir içi grubunda");
+            Esit(true, sc1.Rol == "N" || sc1.Rol == "T" || sc1.Rol == "Z" || sc1.Rol == "D", "önerilen malzeme: rol dört değerden biri (" + sc1.Rol + ": " + sc1.RolNedeni + ")");
+            var sc13 = baglam("SC13");
+            Esit("civ", sc13.Grup, "önerilen malzeme: cıvatalı ENH direk civ grubunda");
+            Esit("beton", baglam("SC11").Grup, "önerilen malzeme: AG beton direk beton grubunda");
+            Esit("", OnerilenMalzeme.Grup(volt, "BOX_PANO"), "önerilen malzeme: direk olmayan cinsin grubu yok");
+            Esit("sw", OnerilenMalzeme.IletkenSinifi("G-T-12 (sw)"), "önerilen malzeme: iletken sınıfı tipin parantezinden");
+            Esit(true, OnerilenMalzeme.Baglam(p, new Eleman { Cins = "ENH_GLV_CVT", Tip = "GT-25 (2x477)", Saga = 9e9, Yukari = 9e9 }, volt).IletkenBuyuk && OnerilenMalzeme.Baglam(p, new Eleman { Cins = "ENH_GLV_CVT", Tip = "GT-25 (2x477)", Saga = 9e9, Yukari = 9e9 }, volt).IletkenCift, "önerilen malzeme: 2x477 → büyük ve çift devre");
+            var tekBasina = OnerilenMalzeme.Baglam(p, new Eleman { Cins = "AG_DEMİR_GLV", Tip = "G-K1", Saga = 9e9, Yukari = 9e9 }, volt);
+            Esit("T", tekBasina.Rol, "önerilen malzeme: hat bağlantısı olmayan direk taşıyıcı sayılır");
+            // Öneri listesi: şehir içi taşıyıcı, çıplak AG → travers + mesnet + izolatör demiri; mevcut malzeme işaretlenir
+            var b1 = new OnerilenMalzeme.DirekBaglami { Grup = "sehir", Rol = "T", AgCiplak = true };
+            var oneriler = o.Direk(b1, esle);
+            Esit(3, oneriler.Count, "önerilen malzeme: şehir içi taşıyıcı çıplak AG → 3 öneri");
+            Esit("TRAVERS_VE_KONSOLLAR_GLV|GT-70|1", oneriler[0].Cins + "|" + oneriler[0].Tanim + "|" + oneriler[0].Miktar, "önerilen malzeme: ilk öneri GT-70 travers");
+            Esit("AG_İZOLATÖR|N-80|4", oneriler[1].Cins + "|" + oneriler[1].Tanim + "|" + oneriler[1].Miktar, "önerilen malzeme: AG mesnet izolatörü N-80 × 4 (agMesnetT)");
+            Esit(8.0, o.Direk(new OnerilenMalzeme.DirekBaglami { Grup = "sehir", Rol = "D", AgCiplak = true }, esle)[1].Miktar, "önerilen malzeme: durdurucuda 8 mesnet (agMesnetD)");
+            Esit(6.0, o.Direk(b1, esle, new Dictionary<string, double> { { "agMesnetT", 6 } })[1].Miktar, "önerilen malzeme: parametre üstüne yazılır");
         }
 
         // ---------------- Telefonla ortak Birleşik Metraj denemesi (ortak/deneme/birlesik-metraj) ----------------

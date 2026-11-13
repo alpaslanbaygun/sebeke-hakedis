@@ -99,6 +99,32 @@ BM4–BM10); LibreOffice yeniden hesabında kopya sayfa toplamları, MALZ. LİST
 = 0) doğru. `SH_BM_CIKTI=<yol>` eklentinin dosyasını kaydeder. Belgeler: ortak/BIRLESIK-METRAJ.md, KULLANIM, telefon
 kılavuzu, README.
 
+13.11 akşam (`onerilen-malzeme` dalı, `metraj-cins-sayfalari` üstüne; PR F): **7 Önerilen malzeme** (kullanıcı kararı
+"Telefonun reçete kuralları eklentiye"). Telefonun reçete kuralları ve parametreleri `build_seed.mjs` içinden ortak dosyaya
+alındı: `ortak/katalog/onerilen-malzeme.json` (Türkçe anahtarlar: nesne, kosul {grup, rol, iletkenBuyuk, iletkenCift,
+agCiplak, tip, tesis, faz}, kalemler {servis | kaynak, miktar, neden, grup, etiket}, parametreler); `build_seed.mjs` artık
+bu dosyayı okur (`src/grid/onerilen-malzeme.js › kurallariCevir`; tohumun recipeRules / params'ı birebir aynı — OM1).
+Tohum dosyası yeniden üretilmedi (sonraki eklerin — seedRev 27, 2 041 poz — yalnız build_seed ile üretilmediği görüldü;
+tohum build_seed çıktısından sonra başka adımlarla büyümüş). Eklenti: `Cekirdek/OnerilenMalzeme.cs` (Oku / Yukle, `Direk(
+baglam, esleyici, parametreUstune)` telefon applyRules ile aynı sıra ve miktarlar, `Baglam(proje, eleman, voltEslesme)`:
+grup `cinsGruplari`'ndan, rol bağlı havai hatların yön sayısı ve sapma açısından — hat yok / düz: T, tek yön: N, sapma >
+3°: Z, ≥ 3 yön: D (telefonda hat düğümlerinden; AutoCAD'de her açıklık ayrı hat olduğundan "iki hat birleşimi" ölçütü
+yok) —, iletken sınıfı tipin parantezinden ya da bağlı OG kesitten, çıplak AG bağlı AG hatta AG_İLETKEN kalemi;
+`Esleyici(volt, katalog)` servis → `volt-eslesme.kalemler` → `Katalog.Bul` (yoksa eşlemedeki adla açar); `IletkenSinifi`).
+`Pencereler.Kalemler`: direkte **Önerilen (n)…** düğmesi → `OnerilenMalzemeler` penceresi (grup, rol seçimi, çıplak AG /
+477 / çift devre onayları, işaretli tablo, var olanlar soluk, "eşleme yok" eklenemez; Seçilenleri ekle → `Katalog.KalemYap`
+MALZEME). `KatalogKaynagi.VoltEslesme / OnerilenMalzemeler`; `volt-eslesme.json` ve `onerilen-malzeme.json` eklentiye ve
+PencereTest'e gömüldü. `volt-eslesme.json › kalemler`'e direk kurallarının 24 servis kodu eklendi (OG travers GT/GD/GN/GZ-250
+→ G-T-250 (sw) / G-D-250 (sw) — üçü 51 kg; T-27/200, N-70/200; t-75, n-75; VHD-35; C 35 demir / beton izolatör demiri;
+kompozit 40kN/11B, 100kN/16B; tek / çift askı ve gergi takımları SW / 477; tehlike levhası; galvanizli örgülü çelik;
+topraklama kazığı); `kalemler.json`'a "C 35 BETON TRAVERS İÇİN ( TAŞIYICI )" (İZOLATÖR_DEMİRLERİ, kaynak ek). Ortak
+deneme `ortak/deneme/onerilen-malzeme/` (13 bağlam; `araclar/onerilen-beklenen-uret.mjs`): telefon
+`tests/onerilen-malzeme.test.mjs` OM1–OM3, eklenti CekirdekTest `OnerilenMalzemeOrtakDeneme` (+ eşleme, bağlam, parametre
+üstüne yazma), PencereTest 08d. sebeke.test A2 ve uyum U1 beklentileri eşlemeye göre güncellendi (kompozit izolatör artık
+kendi cinsinde; tanımlardaki eski yazım — ALİMİNYUM — kataloğun yazımıdır). Telefon 196 deneme, CekirdekTest tümü geçti.
+Belgeler: KULLANIM (Malzeme komutu, Önerilen malzemeler), VERI-MODELI (onerilen-malzeme.json bölümü), telefon kılavuzu,
+README, HARITA.
+
 9.11 öğleden sonra (`simge-takimi` dalı, `hesap-metraj` üstüne; PR C): **#89 Şebeke-M simge takımı** — kullanıcının
 SM_* SVG / DXF tasarımı seçilebilir ikinci takım olarak (kararlar: ikinci takım, çizim başına seçilir; demontajda DM
 simgesine K / S harfi; köşk türü tipten, yoksa modüler köşk). `semboller.json` sürüm 3: 23 `SM_` ailesi (`aileler.*.takim`,
@@ -445,10 +471,10 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
   - ~~6 Birleşik Metraj: cins başına ayrı sayfa~~ — 13.11 öğleden sonra yapıldı (PR E, §2). AutoCAD'de denemesi: beton
     ve cıvatalı ENH direkli bir projede Birleşik Metraj… → kopya sayfalar, MALZ. LİSTESİ bölümleri, Excel'de yeniden hesap
     (makro sütun gizle / göster kopya sayfada da çalışıyor mu?).
-  - **7 Önerilen malzeme** — telefonun reçete kuralları (`telefon/tools/build_seed.mjs › rules`, direk grubu + rol + iletken
-    sınıfı) ortak dosyaya alınıp eklentiye: direk konunca ve Malzemeler penceresinde "Önerilen malzemeler" listesi
-    (rol bağlı hatlardan: taşıyıcı / durdurucu / köşe / nihayet; poz → eski program kalemi `volt-eslesme.json` ile),
-    işaretlenenler eklenir.
+  - ~~7 Önerilen malzeme~~ — 13.11 akşam yapıldı (PR F, §2). AutoCAD'de denemesi: AG direkte Malzeme › Önerilen…
+    (rol çizimden, çıplak AG hatta mesnet 4 / 8), ENH direkte gergi / askı takımları, beton direkte t-75; eklenen kalemlerin
+    Malzeme hafızasına girmesi. Kullanıcı onayı bekleyen eşlemeler: OG travers GN / GZ → G-D-250 (sw); C 35 beton travers
+    izolatör demiri yeni katalog kalemi. Sonraki adım (istenirse): direk konunca öneriyi kendiliğinden sormak (ayar).
   - 1–4'ün AutoCAD'de denemesi: eleman yazılarının beyaz görünmesi (eski çizimde Telefon Görünümü), malzeme yazısını Taşı
     ile taşıma / direği kopyalama ve silme / Geri Al, eski çizimdeki MLZ_ satırlarının tek yazıya dönmesi, Malzemeler'de
     iletken metrajını değiştirince hat yazısı, hattı taşıma ve uzatma, Tipi değiştir… ile 9,30/3 → 9,30/8 ve beton → demir.

@@ -27,7 +27,7 @@ GitHub › **Releases**:
 | İki simge takımı: Klasik, Şebeke-M (durum doluluktan: dolu · kontur · yarı dolu · çift kontur + DM; köşk ve armatür türü tipten) | ✓ DXF (Dışa Aktar › Çizim boyutları › Simge takımı) | Çizim Ayarları › Görünüm › Simge takımı (`SH_GORUNUM` çizimdekileri çevirir); lejant `ortak/lejant/` |
 | Bölge (alt proje) | AutoCAD'den gelen bölgeler korunur (grup kodu dahil) | `SH_BOLGE` |
 | Ölçü noktaları | ölçerek, CSV / NCN çıktısı | `SH_NOKTAAL` (CSV/TXT) |
-| Malzeme (TEDAŞ poz kataloğu) | ✓ elle ekleme, otomatik reçete seçeneği | `SH_MALZEME` (2 982 kalemlik katalog; AG galvaniz travers ve konsollar dâhil) |
+| Malzeme (TEDAŞ poz kataloğu) | ✓ elle ekleme, otomatik reçete seçeneği | `SH_MALZEME` (2 982 kalemlik katalog; AG galvaniz travers ve konsollar dâhil); **Önerilen…**: telefonun reçete kuralları (`ortak/katalog/onerilen-malzeme.json`) direğin grubu, rolü ve iletkenine göre travers, izolatör, topraklama önerir, işaretlenenler eklenir |
 | **Teknik hesaplar (Hesap Merkezi)**: sehim, uplift, ag–aw, Amax, iletken kopma, tepe kuvveti (TEDAŞ / cer vektörü), OG–AG gerilim düşümü, OG–AG kısa devre, Cu ⇄ Al kesit, beton köşk yerleşimi, kanal planı, AG tek hat | ✓ (objeden açılır, bilgiler projeden dolar, sonuç projeye kaydedilir) | ✓ (`SH_HESAP`, `SH_HESAPLAR`; sonuç çizime kaydedilir, raporun HESAPLAR sayfasına yazılır) |
 | Kabin / köşk yerleşimi, tepe kuvveti, enerji kontrolü (eski ekranlar) | ✓ | — |
 | Fotoğraf ve not | ✓ | — |
@@ -53,7 +53,7 @@ renk, çizgi ve yazılarla görünür; çevrimdışı çalışır.
 | --- | --- |
 | `telefon/` | Telefon uygulaması Şebeke-M Hakediş (Java kabuk + WebView, Preact arayüz, JS hesap motoru, TEDAŞ kataloğu). Ayrıntı: [telefon/README.md](telefon/README.md), kaynak notları [telefon/README_KAYNAK.txt](telefon/README_KAYNAK.txt) |
 | `autocad/` | AutoCAD eklentisi (C#): `src/Cekirdek` AutoCAD'den bağımsız hesap çekirdeği, `src/Eklenti` AutoCAD tarafı (şerit, pencereler, Hesap Merkezi sunucusu), `test/` denemeler, `paket/` kurulum |
-| `ortak/` | Proje dosyası biçimi ([VERI-MODELI.md](ortak/VERI-MODELI.md)), rapor katsayıları, malzeme kataloğu (2 982 kalem), iki lejant simge takımı (`semboller.json`; lejant resimleri `lejant/`), ortak çizim stili (`cizim-stili.json`), şerit kategorileri (`kategoriler.json`), telefon ↔ eski program eşlemesi (`volt-eslesme.json`), eski programın inceleme notları ([CIZIM-BICIMI-NOTLARI.md](ortak/CIZIM-BICIMI-NOTLARI.md)), marka (`marka/`), **Hesap Merkezi** (`hesap/`: hesap sayfaları, köprü, tema, uyarlamalar, denemeler; sözleşme [hesap/BAGLAM.md](ortak/hesap/BAGLAM.md)) |
+| `ortak/` | Proje dosyası biçimi ([VERI-MODELI.md](ortak/VERI-MODELI.md)), rapor katsayıları, malzeme kataloğu (2 982 kalem), iki lejant simge takımı (`semboller.json`; lejant resimleri `lejant/`), ortak çizim stili (`cizim-stili.json`), şerit kategorileri (`kategoriler.json`), telefon ↔ eski program eşlemesi (`volt-eslesme.json`), önerilen malzeme kuralları (`onerilen-malzeme.json`), eski programın inceleme notları ([CIZIM-BICIMI-NOTLARI.md](ortak/CIZIM-BICIMI-NOTLARI.md)), marka (`marka/`), **Hesap Merkezi** (`hesap/`: hesap sayfaları, köprü, tema, uyarlamalar, denemeler; sözleşme [hesap/BAGLAM.md](ortak/hesap/BAGLAM.md)) |
 | `araclar/` | Geliştirme araçları: AutoCAD olmadan DWG okuma, simge takımı üretimi, önizlemesi ve lejant resmi (`lejant-uret.mjs`), ortak tabloların telefona kopyalanması, Hesap Merkezi paketleyicisi (`hesap-paketle.mjs`) ve deneme koşucusu (`hesap-dene.py`) |
 
 ## Doğrulama

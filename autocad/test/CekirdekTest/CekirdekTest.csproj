@@ -36,6 +36,10 @@
     <None Include="..\..\..\ortak\deneme\birlesik-metraj\**\*" LinkBase="birlesik-metraj" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\sablon\birlesik-metraj.xlsm" Link="birlesik-metraj.xlsm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\katalog\metraj-sablon.json" Link="metraj-sablon.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Telefonla ortak önerilen malzeme denemesi: kurallar, servis kodu eşlemesi, durumlar ve beklenen listeler -->
+    <None Include="..\..\..\ortak\katalog\onerilen-malzeme.json" Link="onerilen-malzeme.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\ortak\katalog\volt-eslesme.json" Link="volt-eslesme.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\ortak\deneme\onerilen-malzeme\**\*" LinkBase="onerilen-malzeme" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

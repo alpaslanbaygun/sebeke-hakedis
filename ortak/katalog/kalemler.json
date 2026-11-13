@@ -35680,6 +35680,18 @@
   },
   {
    "cins": "İZOLATÖR_DEMİRLERİ",
+   "tanim": "C 35 BETON TRAVERS İÇİN ( TAŞIYICI )",
+   "birim": "ad/ad",
+   "katsayi": 1.0,
+   "tarife": "0106",
+   "unsurKoy": "16",
+   "onem": 3816,
+   "rol": "malzeme",
+   "nesneler": ["ENH_DIREK"],
+   "kaynak": "ek"
+  },
+  {
+   "cins": "İZOLATÖR_DEMİRLERİ",
    "tanim": "B 95",
    "birim": "ad/ad",
    "katsayi": 1.0,

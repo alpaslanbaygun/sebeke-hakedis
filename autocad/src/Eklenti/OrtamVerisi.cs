@@ -169,6 +169,25 @@ namespace SebekeHakedis.Eklenti
             }
         }
 
+        private static JsonNesne _voltEslesme;
+
+        /// <summary>Telefon servis kodu ↔ eklenti kalemi eşlemesi (ortak/katalog/volt-eslesme.json; telefonla ortak tablo).</summary>
+        public static JsonNesne VoltEslesme()
+        {
+            if (_voltEslesme != null) return _voltEslesme;
+            string json = Kaynak("SebekeHakedis.volt-eslesme.json");
+            return _voltEslesme = (string.IsNullOrEmpty(json) ? null : SebekeHakedis.Cekirdek.Json.Oku(json) as JsonNesne) ?? new JsonNesne();
+        }
+
+        /// <summary>Önerilen malzeme kurallarını bir kez yükler (ortak/katalog/onerilen-malzeme.json; telefonun reçete kuralları).</summary>
+        public static OnerilenMalzeme OnerilenMalzemeler()
+        {
+            if (OnerilenMalzeme.Yuklu != null) return OnerilenMalzeme.Yuklu;
+            string json = Kaynak("SebekeHakedis.onerilen-malzeme.json");
+            if (!string.IsNullOrEmpty(json)) { try { OnerilenMalzeme.Yukle(json); } catch { } }
+            return OnerilenMalzeme.Yuklu;
+        }
+
         /// <summary>Birleşik Metraj eşleşme tablosu (ortak/katalog/metraj-sablon.json).</summary>
         public static JsonNesne MetrajEslesme()
         {
