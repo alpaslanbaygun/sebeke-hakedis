@@ -97,6 +97,7 @@ namespace SebekeHakedis.Eklenti
                 p.GisOnEki = string.IsNullOrEmpty(ayar.GisOnEki) ? p.KatmanOnEki : ayar.GisOnEki;
                 // Simge ve yazı boyutları telefona da gider (telefonun DXF'i aynı boyutlarla çizer)
                 if (ayar.BoyutlarDegisik) p.Boyutlar = ayar.BoyutlariVer();
+                p.MetrajYuvarlama = ayar.MetrajYuvarlama;   // telefon geri yazarken iletken metrajını aynı kuralla yuvarlar
                 if (p.Dom == 0) Uygulama.Yaz("Not: dilim orta meridyeni (DOM) ayarlı değil; telefonda proje açılırken sorulacak. SH_AYARLAR ile girebilirsiniz.");
                 string yol = KayitYeriSor("Proje dosyasını kaydet",
                     "AutoCAD proje dosyası (*.sebeke.json)|*.sebeke.json|Telefon proje dosyası (*.volt.json)|*.volt.json",

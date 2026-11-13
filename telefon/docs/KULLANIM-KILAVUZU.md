@@ -393,10 +393,13 @@ Hat, sırayla alınan direklerin kendiliğinden birbirine bağlanmasıyla çizil
 1. Alt çubukta `+ HAT` düğmesine basın. "Yeni hat" penceresi açılır.
 2. `Hat tipi` seçin: `AG`, `OG`, `AYD.`, `ENH` ya da `ABONE`.
 3. `Tesis` seçin: `Havai` ya da `Yeraltı`.
-4. `İLETKEN / KABLO` satırını açıp iletkeni ve devre sayısını seçin. Bunu sonradan Hat kaydından da değiştirebilirsiniz.
-5. `HAT BAŞLAT` düğmesine basın.
-6. Direkleri sırayla alın. Her direk hatta eklenir; açıklık, köşe açısı ve direk rolü kendiliğinden hesaplanır.
-7. Bitince hat düğmesine dokunup `HATTI BİTİR` deyin.
+4. `Durum` seçin: `Yeni`, `Mevcut`, `Demontaj`, `DM+M (sök-tak)` ya da `İleride` (iletken ve kablonun durumu). Ayrıntılı
+   hakediş kodu (M+M, KM, DM, DM+M …) `İLETKEN / KABLO` açılınca `Hakediş durum kodu` listesindedir; seçilmezse durumdan
+   üretilir. Çizilmekte olan hattın durumu hat düğmesine dokununca açılan pencereden de değiştirilir.
+5. `İLETKEN / KABLO` satırını açıp iletkeni ve devre sayısını seçin. Bunu sonradan Hat kaydından da değiştirebilirsiniz.
+6. `HAT BAŞLAT` düğmesine basın.
+7. Direkleri sırayla alın. Her direk hatta eklenir; açıklık, köşe açısı ve direk rolü kendiliğinden hesaplanır.
+8. Bitince hat düğmesine dokunup `HATTI BİTİR` deyin.
 
 Hat çizilirken haritanın sol üstünde "H-01 çiziliyor · alınanlar hatta eklenir" yazar ve son direkten bulunduğunuz yere kesik bir çizgi uzanır.
 

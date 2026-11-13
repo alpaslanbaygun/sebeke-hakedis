@@ -89,12 +89,13 @@ test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Dur
   assert.equal(og.kose.length, 2);
   assert.deepEqual(og.uclar, [poles[0].id, poles[1].id]);
   assert.deepEqual(ogler[2].uclar, [poles[2].id, poles[3].id]);
-  assert.ok(ogler.every((h) => h.telefonId === ogler[0].telefonId && Number.isInteger(h.kalemler[0].miktar)), 'parçalar aynı telefon hattına ait, metrajlar tam sayı');
+  const ikiHane = (x) => Math.abs(Math.round(x * 100) - x * 100) < 1e-6;
+  assert.ok(ogler.every((h) => h.telefonId === ogler[0].telefonId && ikiHane(h.kalemler[0].miktar)), 'parçalar aynı telefon hattına ait, metrajlar 2 haneli (13.11.2026: yuvarlama yok)');
   assert.deepEqual(ogler.map((h) => h.id), [ogler[0].id.replace(/-1$/, '') + '-1', ogler[0].id.replace(/-1$/, '') + '-2', ogler[0].id.replace(/-1$/, '') + '-3']);
   const ogLine = ps.data.lines.find((l) => l.lineType === 'OG');
   const ogInfo = ps.result.lineInfo.get(ogLine.id);
   const ogIletken = ogInfo.items.find((x) => x.role === 'OG' && !x.kanal && !x.manual);
-  assert.equal(ogler.reduce((a, h) => a + h.kalemler[0].miktar, 0), Math.ceil(ogInfo.length3D - 1e-6), 'parça metrajlarının toplamı hattın metrajı');
+  assert.ok(Math.abs(ogler.reduce((a, h) => a + h.kalemler[0].miktar, 0) - Math.round(ogInfo.length3D * 100) / 100) < 1e-6, 'parça metrajlarının toplamı hattın metrajı (2 hane)');
   assert.ok(ogIletken);
   assert.ok(Math.abs(ogler.reduce((a, h) => a + h.cizimUzunlugu, 0) - ogInfo.length2D) < 0.01, 'çizim uzunlukları toplamı');
   const ag = sp.hatlar.find((h) => h.tur === 'AG_HAVAI');
@@ -113,8 +114,23 @@ test('A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Dur
   const voltKg = ps.result.quantities.filter((q) => q.job === 'montaj' && q.isGroup && /direk/i.test(q.name)).reduce((a, q) => a + q.qty, 0);
   assert.equal(Math.round(direkKg), Math.round(voltKg));
   // OG hattı tel tel açılır: 3 × Swallow
-  assert.ok(satirlar.some((r) => r.cins === 'AL_İLETKENLER' && r.tip === 'SWALLOW' && r.miktar === og.kalemler[0].miktar * 3));
+  assert.ok(satirlar.some((r) => r.cins === 'AL_İLETKENLER' && r.tip === 'SWALLOW' && Math.abs(r.miktar - og.kalemler[0].miktar * 3) < 1e-6));
   fs.writeFileSync(OUT + 'telefon-durum-tespit.json', JSON.stringify(SH.ozet(satirlar), null, 1));
+});
+
+test('A2b · hat metrajının yuvarlanması: varsayılan 2 hane; AutoCAD çiziminin ayarı (yukarı / en yakın tam metre) dosyayla gelir ve geri yazımda uygulanır', async () => {
+  assert.equal(SH.metrajYuvarla(45.25, 'yok'), 45.25); assert.equal(SH.metrajYuvarla(45.2499999, undefined), 45.25);
+  assert.equal(SH.metrajYuvarla(45.25, 'yukari'), 46); assert.equal(SH.metrajYuvarla(45.25, 'yakin'), 45);
+  assert.equal(SH.hatMetraji(45.25, 'AG_HAVAI', { ekPay: { AG_HAVAI: 2.5 } }), 47.75, 'eklentideki Metraj.Hat ile aynı');
+  assert.equal(SH.hatMetraji(45.25, 'AG_HAVAI', { yukariYuvarla: false }), 45, 'eski ayar: en yakın');
+  const { ps } = await ornekProje();
+  await ps.updateProject({ sebeke: Object.assign({}, ps.p.sebeke || {}, { metrajYuvarlama: 'yukari' }) }, 'deneme');
+  const sp = SH.projeOku(sebekeYaz(ps));
+  assert.equal(sp.proje.metrajYuvarlama, 'yukari', 'ayar dosyaya yazılır');
+  const og = sp.hatlar.filter((h) => h.tur === 'OG_HAVAI');
+  const li = ps.result.lineInfo.get(ps.data.lines.find((l) => l.lineType === 'OG').id);
+  assert.ok(og.every((h) => Number.isInteger(h.kalemler[0].miktar)), 'yukarı yuvarlamada parçalar tam metre');
+  assert.equal(og.reduce((a, h) => a + h.kalemler[0].miktar, 0), Math.ceil(li.length3D - 1e-6));
 });
 
 test('A3 · "ileride" objeler yazılmaz, demontaj / sök-tak durumları çevrilir, tedarik Y olan pozda M+M', async () => {

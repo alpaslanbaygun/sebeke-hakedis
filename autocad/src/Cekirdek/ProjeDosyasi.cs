@@ -73,6 +73,7 @@ namespace SebekeHakedis.Cekirdek
                 if (Boyutlar.TakimDuzelt(p.Boyutlar.SimgeTakimi).Length > 0) b["simgeTakimi"] = Boyutlar.TakimDuzelt(p.Boyutlar.SimgeTakimi);
                 pj["boyutlar"] = b;
             }
+            if (Metraj.YuvarlamaDuzelt(p.MetrajYuvarlama) != Metraj.YuvarlamaYok) pj["metrajYuvarlama"] = Metraj.YuvarlamaDuzelt(p.MetrajYuvarlama);
             var onaylar = new List<object>();
             foreach (var kv in p.Onaylar)
             {
@@ -240,6 +241,7 @@ namespace SebekeHakedis.Cekirdek
             p.AktifHakedis = pj.Tam("aktifHakedis", 1);
             p.KatmanOnEki = pj.Metin("katmanOnEki");
             p.GisOnEki = pj.Metin("gisOnEki");
+            p.MetrajYuvarlama = Metraj.YuvarlamaDuzelt(pj.Metin("metrajYuvarlama"));
             var by = pj.Nesne("boyutlar");
             if (by != null)
                 p.Boyutlar = new Boyutlar

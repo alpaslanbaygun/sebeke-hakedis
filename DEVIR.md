@@ -158,6 +158,19 @@ perde / toast…), seçili düğme yazısı `color-mix` ile koyulaşır; ekranla
 (WebView'in prefers-color-scheme'i uygulamanın koyu temasını izlediğinden). Playwright ile web sürümünde iki temada
 proje, harita ve ayarlar görüntüsü denetlendi. Belgeler: KULLANIM (Pencereler), telefon kılavuzu (Ekranlar), README.
 
+13.11 akşam (`basit-mod` dalı, aynı PR): **Hat metrajı küsuratlı** (kullanıcı ekran görüntüsüyle: "45,00 yazmış 45,25
+yazması lazım"; karar: metraj da 45,25 olsun). Eklenti: `Metraj.Hat(cizim, yuvarlama, ekPay)` — `YuvarlamaYok` (2 hane,
+yeni varsayılan) / `YuvarlamaYukari` / `YuvarlamaYakin`; `CizimAyarlari.MetrajYuvarlama` (anahtar `metrajYuvarlama`; eski
+`yukariYuvarla` "1" eski varsayılandı → yeni varsayılan, "0" → en yakın), Çizim Ayarları › Metraj'da üç seçenekli liste;
+`Proje.MetrajYuvarlama` dosyaya `proje.metrajYuvarlama` (yalnız varsayılandan farklıysa). Telefon: sh-core `metrajYuvarla /
+yuvarlamaDuzelt / hatMetraji`, `sebeke.js` iletken metrajı ve parça payları (`kalemPayi(…, tamMetre)`) dosyadaki ayarla;
+içe almada `sebeke.metrajYuvarlama`. Denemeler: CekirdekTest (45,25 / 46 / 45, eski ayar dönüşümü), sebeke A2 (2 hane),
+A2b (yukarı ayarıyla tam metre, dosyaya yazım). Mevcut çizimde eski kalemler tam metre kalır: hatları seçip **Metraj**.
+**Hat durumu telefonda** (kullanıcı: "iletken ve kabloya yeni demontaj dm+m vb giremiyorum mobil uygulamada"): Yeni hat
+penceresinde `Durum` (Yeni / Mevcut / Demontaj / DM+M (sök-tak) / İleride, `HAT_DURUMLARI`) ve İLETKEN / KABLO
+bölümünde hakediş durum kodu (`CizimDurum`); çizilen hattın penceresinde durum değiştirme; Hat kaydı'nda DMM çipi
+"DM+M (sök-tak)" yazar. Devre başına ayrı durum (müşterek hatta OG mevcut, AG yeni gibi) yok — hat tek durumludur.
+
 13.11 akşam (`basit-mod` dalı, `saha-duzeltmeleri-13-11` üstüne; geri dönüş: `onceki-basit-mod-oncesi` dalı): **Basit
 mod** (kullanıcının 14:04 bildirimi 6–7: aplikasyon haritada anlık yön + haritadan nokta seçip başlatma; saha alım
 pencereleri ekranı az kaplasın, teknolojiye uzak personel için sade ekranlar. Kararlar: Stitch yok, önce 6 ekran taslağı

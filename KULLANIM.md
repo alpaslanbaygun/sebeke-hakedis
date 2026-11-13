@@ -360,6 +360,14 @@ zaten öyleydi. Eski çizimdeki yazılar güncellemede ya da Telefon Görünüm�
 olmayan hatta çizim uzunluğu yazılır. Hattı AutoCAD'le **taşırsanız** yazı aynı kalır; **uzatır / kısaltırsanız** yeni
 çizim uzunluğu yazılır (kalemin metrajı eskimiştir: **Metraj** komutu ya da Malzemeler kaydı yeniden yazar).
 
+**Hat metrajının yuvarlanması** (13.11.2026; kullanıcı: "45,00 yazmış 45,25 yazması lazım"): Çizim Ayarları › Metraj ›
+**Hat metrajının yuvarlanması**: **Yuvarlama yok (cm, 2 hane)** — varsayılan, 45,25 m olduğu gibi kalır ve açıklık
+yazısında 45.25 görünür; **Yukarı tam metreye** (eski program gibi, 45,25 → 46) ya da **En yakın tam metreye** (45). Önceki
+sürümlerdeki "Çizim uzunluğunu yukarı yuvarla" işareti (açık gelen eski varsayılan) yeni varsayılana döner; işareti
+kaldırılmış çizim "en yakın tam metre" olarak kalır. Seçim yeni çizilen hatlara ve **Metraj** komutuna uygulanır: mevcut
+çizimde hatları seçip **Metraj** deyin, kalemler ve açıklık yazıları yeniden hesaplanır. Seçim telefona giden dosyaya da
+yazılır (`proje.metrajYuvarlama`); telefon AutoCAD'e geri yazarken iletken metrajını aynı kuralla yuvarlar.
+
 **Direk tipini sonradan değiştirme** (13.11.2026): Malzemeler penceresinde **Tipi değiştir…** (ya da ilk satıra çift
 tıklayın) katalogdan yeni tipi seçtirir — aynı cinsten başka tip (9,30/3 → 9,30/8) ya da başka cins (beton → demir;
 simge de değişir). Durum, hakediş, DM durumu ve malzemeler kalır; tip yazısı ve raporlar yeni tiple gider. Onaylı

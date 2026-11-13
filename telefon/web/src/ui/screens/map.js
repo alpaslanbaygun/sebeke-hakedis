@@ -18,6 +18,7 @@ import { HakRow } from './team.js';
 import { energize, levelsOf } from '../../grid/energize.js';
 import { cadDocs, importCad, visibleCad, setCad, removeCad, cadModel, snapCad, cadArms } from '../../services/cad-service.js';
 import { basitMi } from '../arayuz-modu.js';
+import { CizimDurum } from '../durum-kodu.js';
 
 const GEN = { AG: ['sehir', 'beton', 'agac'], OG: ['bahh', 'civ', 'beton562', 'agac'], MUS: ['mus', 'beton', 'agac'], AYD: ['ayd'] };
 // Hat türü / direk grubu renkleri ortak çizim stilinden (haritadaki ve AutoCAD şeridindeki renklerle aynı)
@@ -625,6 +626,9 @@ function SourceSheet({ mode, setMode, close }) {
     </div></section>`;
 }
 const ST_LBL = { YENI: 'YENİ', MEVCUT: 'MEVCUT', DMM: 'DMM', DEMONTAJ: 'DEMONTAJ', ILERIDE: 'İLERİDE' };
+// Hat (iletken / kablo) durumu (13.11.2026, kullanıcı: "iletken ve kabloya yeni, demontaj, DM+M giremiyorum"): hat başlatırken
+// ve çizilen hatta; ayrıntılı kod (M+M, KM, DM+M …) İLETKEN / KABLO bölümünde ya da Hat kaydı'nda
+const HAT_DURUMLARI = [['YENI', 'Yeni'], ['MEVCUT', 'Mevcut'], ['DEMONTAJ', 'Demontaj'], ['DMM', 'DM+M (sök-tak)'], ['ILERIDE', 'İleride']];
 const GEN_LBL = { AG: 'AG DİREK', OG: 'OG DİREK', MUS: 'MÜŞTEREK DİREK', AYD: 'AYDINLATMA DİREĞİ' };
 
 function usePole() {
@@ -741,7 +745,7 @@ function circuitOpts(role, install) {
 }
 function LineSheet({ active, close, rerender }) {
   const ps = app.ps, cat = ps.cat;
-  const [f, set] = useForm('line', { lt: 'OG', install: 'havai', og: cat.lineDefault('OG', 'havai'), ogN: 1, ag: cat.lineDefault('AG', 'havai'), agN: 1, mus: false, bare: false, bf: 'P', bn: 'R', ba: '', phase: 'uc', channel: 'toprak', depth: null, width: 0.4, channelOnly: false });
+  const [f, set] = useForm('line', { lt: 'OG', install: 'havai', og: cat.lineDefault('OG', 'havai'), ogN: 1, ag: cat.lineDefault('AG', 'havai'), agN: 1, mus: false, bare: false, bf: 'P', bn: 'R', ba: '', phase: 'uc', channel: 'toprak', depth: null, width: 0.4, channelOnly: false, state: 'YENI', kod: '' });
   const [more, setMore] = useState(() => ((app.state.forms || {}).line || {}).install === 'yeralti');
   const wrap = (body, foot) => html`<section class="sheet" aria-label="Hat"><div class="grab" onClick=${close}><i></i></div><div class="body">${body}</div>${foot ? html`<div class="foot">${foot}</div>` : null}</section>`;
   if (active) {
@@ -754,6 +758,7 @@ function LineSheet({ active, close, rerender }) {
         <div class="mono" style="font-size:12px;margin:4px 0">${lineLabelText(active, cat) || 'iletken tanımsız'}</div>
         <div class="note">${active.nodes.length} düğüm · ${trn(li.length3D || 0, 2)} m (3B)${last ? ' · son: ' + last.pointNo : ''}</div>
       </div>
+      <div class="row" style="align-items:flex-start"><span class="lbl" style="width:64px;margin-top:10px">Durum</span><div class="chips grow">${HAT_DURUMLARI.map(([k, l]) => html`<${Chip} c=${ST_COL[k]} on=${active.state === k} onClick=${async () => { if (active.state === k) return; try { await ps.updateLine(active.id, { state: k, sebeke: Object.assign({}, active.sebeke || {}, { durum: undefined }) }, active.lineNo + ' durumu: ' + l); rerender(); } catch (err) { app.toast(err.message, 'err', 6000); } }}>${l}</${Chip}>`)}</div></div>
       <div class="row card" style="padding:10px 12px"><span class="grow" style="font-size:14px"><b>Alınanları bu hatta ekle</b><div class="note">Açıkken aldığın her direk, trafo ve SDK sırayla bu hatta bağlanır.</div></span><${Toggle} on=${toLine} onChange=${(v) => { app.state.toLine = v; rerender(); }} label="Alınanları hatta ekle" /></div>
       <div class="grid2">
         <button class="btn" disabled=${!active.nodes.length} onClick=${async () => { await ps.removeNode(active.id, active.nodes.length - 1); app.toast('Son düğüm hattan çıkarıldı', 'warn'); }}><${Icon} n="undo" s=${18} />Son düğümü çıkar</button>
@@ -776,7 +781,8 @@ function LineSheet({ active, close, rerender }) {
     const chOnly = f.install === 'yeralti' && !!f.channelOnly;
     if (ogOn && !chOnly) circuits.push({ role: f.lt, key: f.og, count: f.ogN });
     if (agShow && !chOnly) circuits.push(f.bare && f.install === 'havai' && agRole !== 'ABONE' ? { role: agRole, custom: { f: f.bf, nt: f.bn, ay: f.ba || '' }, count: f.agN } : { role: agRole, key: f.ag, count: f.agN });
-    const d = { lineType: f.lt, install: f.install, circuits, musterek: ogOn && f.mus, nodes: startPt ? [startPt.id] : [] };
+    const d = { lineType: f.lt, install: f.install, circuits, musterek: ogOn && f.mus, nodes: startPt ? [startPt.id] : [], state: HAT_DURUMLARI.some(([k]) => k === f.state) ? f.state : 'YENI' };
+    if (f.kod) d.sebeke = { durum: f.kod };
     if (f.lt === 'ABONE') { d.abonePhase = f.phase; d.aboneCount = 1; }
     if (f.install === 'yeralti') { d.cable = { zemin: zem.zemin, kaplama: zem.kaplama, bariyer: zem.bariyer, trencher: zem.trencher, surface: surf, method: meth, depth: f.depth, width: f.width }; if (meth !== 'acik') { d.cable.pipeDia = +f.pipeDia || 110; d.cable.pipeCount = meth === 'borulu' ? Math.max(1, +f.pipeCount || 1) : (+f.pipeCount || 0); } if (chOnly) d.channelOnly = true; }
     const l = await ps.createLine(d);
@@ -787,11 +793,13 @@ function LineSheet({ active, close, rerender }) {
   };
   const agOptions = f.lt === 'ABONE' ? circuitOpts('ABONE', f.install).filter(([k]) => /2x16|3x16|4x16|NYY 2x|NYY 4x|NAYY 4x|3x25\+|4x25/.test(k)) : circuitOpts(agRole, f.install);
   const others = ps.data.lines.slice().sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')).slice(0, 5);
-  const sumr = f.lt + ' · ' + (f.install === 'havai' ? 'havai' : 'yeraltı') + ' · ' + (ogOn ? (f.ogN > 1 ? f.ogN + '× ' : '') + f.og + (f.mus ? ' + AG' : '') : (f.agN > 1 ? f.agN + '× ' : '') + (f.bare && f.install === 'havai' && f.lt !== 'ABONE' ? '3' + f.bf + '+' + f.bn : f.ag));
+  const sumr = f.lt + ' · ' + (ST_LBL[f.state] || 'YENİ') + (f.kod ? ' (' + f.kod + ')' : '') + ' · ' + (f.install === 'havai' ? 'havai' : 'yeraltı') + ' · ' + (ogOn ? (f.ogN > 1 ? f.ogN + '× ' : '') + f.og + (f.mus ? ' + AG' : '') : (f.agN > 1 ? f.agN + '× ' : '') + (f.bare && f.install === 'havai' && f.lt !== 'ABONE' ? '3' + f.bf + '+' + f.bn : f.ag));
   return wrap(html`
     <div class="row"><b class="grow" style="font-size:17px">Yeni hat</b>${startPt ? html`<${Badge} k="cy">İLK DÜĞÜM ${startPt.pointNo}</${Badge}>` : null}</div>
     <div class="row"><span class="lbl" style="width:64px">Hat tipi</span><div class="chips grow">${['AG', 'OG', 'AYD', 'ENH', 'ABONE'].map((k) => html`<${Chip} c=${GCOL[k]} on=${f.lt === k} onClick=${() => set({ lt: k, og: cat.lineDefault(k, f.install) || f.og, ag: cat.lineDefault(k === 'ABONE' ? 'ABONE' : 'AG', f.install) || f.ag })}>${k === 'AYD' ? 'AYD.' : k}</${Chip}>`)}</div></div>
     <div class="row"><span class="lbl" style="width:64px">Tesis</span><div class="grow"><${Seg} value=${f.install} options=${[['havai', 'Havai'], ['yeralti', 'Yeraltı']]} onChange=${(v) => { set({ install: v, og: cat.lineDefault('OG', v), ag: cat.lineDefault(f.lt === 'ABONE' ? 'ABONE' : 'AG', v) }); if (v === 'yeralti') setMore(true); }} /></div></div>
+    <div class="row" style="align-items:flex-start"><span class="lbl" style="width:64px;margin-top:10px">Durum</span><div class="chips grow">${HAT_DURUMLARI.map(([k, l]) => html`<${Chip} c=${ST_COL[k]} on=${(f.state || 'YENI') === k} onClick=${() => set({ state: k, kod: '' })}>${l}</${Chip}>`)}</div></div>
+    ${more ? html`<${CizimDurum} d=${{ state: f.state || 'YENI', sebeke: { durum: f.kod || undefined } }} set=${(p) => set({ kod: (p.sebeke && p.sebeke.durum) || '' })} />` : null}
     ${f.install === 'yeralti' ? html`<div class="row card" style="padding:8px 10px"><span class="grow" style="font-size:13px"><b>Yalnız kanal / kazı</b><div class="note">Kablo yok; yalnız kanal metrajı çıkar.</div></span><${Toggle} on=${!!f.channelOnly} onChange=${(v) => set({ channelOnly: v })} label="Yalnız kanal" /></div>` : null}
     <button class="what" style="height:auto;min-height:52px;padding:8px 10px" onClick=${() => setMore(!more)}><span class="grow"><b>${f.install === 'yeralti' && f.channelOnly ? 'KANAL' : 'İLETKEN / KABLO'}</b><small style="white-space:normal">${f.install === 'yeralti' && f.channelOnly ? f.lt + ' · ' + kanalZeminYazisi(zem) + (meth !== 'acik' ? ' · ' + YONTEM[meth] : '') + ' · ' + (f.depth ?? '?') + ' × ' + f.width + ' m' : sumr}</small></span><${Icon} n=${more ? 'up' : 'down'} s=${18} c="var(--mut)" /></button>
     ${more ? html`

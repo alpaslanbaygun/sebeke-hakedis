@@ -7,13 +7,25 @@ namespace SebekeHakedis.Cekirdek
     /// <summary>Metraj ve hacim kuralları (telefondaki hatMetraji / kanalHacmi ile aynı).</summary>
     public static class Metraj
     {
-        /// <summary>Hat metrajı: çizim uzunluğu yukarı yuvarlanır (ya da en yakına), türüne göre ek pay eklenir.</summary>
-        public static double Hat(double cizim, bool yukariYuvarla, double ekPay)
+        /// <summary>Hat metrajının yuvarlanması (Çizim Ayarları › Metraj): yok (cm, 2 hane; 13.11.2026'dan beri varsayılan —
+        /// kullanıcı: "45,00 yazmış 45,25 yazması lazım"), yukarı tam metreye (eski program gibi), en yakın tam metreye.</summary>
+        public const string YuvarlamaYok = "yok", YuvarlamaYukari = "yukari", YuvarlamaYakin = "yakin";
+        public static readonly string[] Yuvarlamalar = { YuvarlamaYok, YuvarlamaYukari, YuvarlamaYakin };
+        public static string YuvarlamaDuzelt(string y) => y == YuvarlamaYukari || y == YuvarlamaYakin ? y : YuvarlamaYok;
+
+        /// <summary>Hat metrajı: çizim uzunluğu ayardaki gibi yuvarlanır (yok: 2 hane), türüne göre ek pay eklenir.</summary>
+        public static double Hat(double cizim, string yuvarlama, double ekPay)
         {
             double L = Math.Max(0, double.IsNaN(cizim) ? 0 : cizim);
-            double m = yukariYuvarla ? Math.Ceiling(L - 1e-6) : Math.Round(L, MidpointRounding.AwayFromZero);
-            return m + ekPay;
+            string y = YuvarlamaDuzelt(yuvarlama);
+            double m = y == YuvarlamaYukari ? Math.Ceiling(L - 1e-6)
+                : y == YuvarlamaYakin ? Math.Round(L, MidpointRounding.AwayFromZero)
+                : Math.Round(L + 1e-9, 2, MidpointRounding.AwayFromZero);
+            return SayiCoz.Temiz(m + ekPay);
         }
+
+        /// <summary>Eski imza (true: yukarı, false: en yakın tam metre).</summary>
+        public static double Hat(double cizim, bool yukariYuvarla, double ekPay) => Hat(cizim, yukariYuvarla ? YuvarlamaYukari : YuvarlamaYakin, ekPay);
 
         /// <summary>Kanal ve sondaj metrajı: çizim uzunluğu yukarı yuvarlanır.</summary>
         public static double Kanal(double cizim) => Math.Ceiling(Math.Max(0, cizim) - 1e-6);
@@ -70,7 +82,8 @@ namespace SebekeHakedis.Cekirdek
         /// <summary>Boyutlar varsayılandan farklı mı (telefon dosyasına yalnız farklıysa yazılır).</summary>
         public bool BoyutlarDegisik => !BoyutlariVer().Varsayilan;
         public double YakalamaMesafesi = 1.0;
-        public bool YukariYuvarla = true;
+        /// <summary>Hat metrajının yuvarlanması: Metraj.YuvarlamaYok (varsayılan) / YuvarlamaYukari / YuvarlamaYakin.</summary>
+        public string MetrajYuvarlama = Metraj.YuvarlamaYok;
         public readonly Dictionary<string, double> EkPay = new Dictionary<string, double>(StringComparer.Ordinal);
         public double KanalAlt = 40, KanalUst = 40, KanalDerinlik = 100;
         public string KanalZemin = "TOPRAK";
@@ -115,7 +128,7 @@ namespace SebekeHakedis.Cekirdek
             return EkPay.TryGetValue(hatTuru ?? "", out d) ? d : 0;
         }
 
-        public double HatMetraji(double cizim, string hatTuru) => Metraj.Hat(cizim, YukariYuvarla, EkPayi(hatTuru));
+        public double HatMetraji(double cizim, string hatTuru) => Metraj.Hat(cizim, MetrajYuvarlama, EkPayi(hatTuru));
 
         /// <summary>Katalog kaleminin bu çizimdeki tarifesi (karakteristik ve şehir/köy ayarına göre).</summary>
         public string Tarife(KatalogKalemi it) => Katalog.TarifeSec(it, Karakteristik, Koy);
@@ -148,7 +161,7 @@ namespace SebekeHakedis.Cekirdek
                 new KeyValuePair<string, string>("malzemeYazisi", MalzemeYazisi ? "1" : "0"),
                 new KeyValuePair<string, string>("simgeTakimi", Boyutlar.TakimDuzelt(SimgeTakimi)),
                 new KeyValuePair<string, string>("yakalamaMesafesi", S(YakalamaMesafesi)),
-                new KeyValuePair<string, string>("yukariYuvarla", YukariYuvarla ? "1" : "0"),
+                new KeyValuePair<string, string>("metrajYuvarlama", Metraj.YuvarlamaDuzelt(MetrajYuvarlama)),
                 new KeyValuePair<string, string>("kanalAlt", S(KanalAlt)),
                 new KeyValuePair<string, string>("kanalUst", S(KanalUst)),
                 new KeyValuePair<string, string>("kanalDerinlik", S(KanalDerinlik)),
@@ -172,6 +185,7 @@ namespace SebekeHakedis.Cekirdek
             var a = new CizimAyarlari();
             if (ciftler == null) return a;
             int surum = 2;
+            bool yuvarlamaOkundu = false;
             foreach (var kv in ciftler)
             {
                 string k = kv.Key ?? "", v = kv.Value ?? "";
@@ -193,7 +207,10 @@ namespace SebekeHakedis.Cekirdek
                     case "malzemeYazisi": a.MalzemeYazisi = v == "1"; break;
                     case "simgeTakimi": a.SimgeTakimi = Boyutlar.TakimDuzelt(v); break;
                     case "yakalamaMesafesi": a.YakalamaMesafesi = SayiCoz.Coz(v, 1.0); break;
-                    case "yukariYuvarla": a.YukariYuvarla = v != "0"; break;
+                    // Eski ayar (13.11.2026 öncesi): "1" eski varsayılandı → yeni varsayılan (yuvarlama yok); "0" bilinçli
+                    // seçim → en yakın tam metre. Yeni anahtar varsa o geçerlidir.
+                    case "yukariYuvarla": if (v == "0" && !yuvarlamaOkundu) a.MetrajYuvarlama = Metraj.YuvarlamaYakin; break;
+                    case "metrajYuvarlama": a.MetrajYuvarlama = Metraj.YuvarlamaDuzelt(v); yuvarlamaOkundu = true; break;
                     case "kanalAlt": a.KanalAlt = SayiCoz.Coz(v, 40); break;
                     case "kanalUst": a.KanalUst = SayiCoz.Coz(v, 40); break;
                     case "kanalDerinlik": a.KanalDerinlik = SayiCoz.Coz(v, 100); break;

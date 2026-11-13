@@ -168,6 +168,9 @@ namespace SebekeHakedis.Cekirdek
         public OnayAyari OnayAyari;
         /// <summary>Simge ve yazı boyutları (proje dosyasında "boyutlar"; null: varsayılan, telefonla aynı).</summary>
         public Boyutlar Boyutlar;
+        /// <summary>Hat metrajının yuvarlanması (Çizim Ayarları › Metraj; proje dosyasında "metrajYuvarlama", yalnız varsayılandan
+        /// farklıysa): telefon AutoCAD'e dosya yazarken iletken metrajını aynı kuralla yuvarlar.</summary>
+        public string MetrajYuvarlama = Metraj.YuvarlamaYok;
 
         public Bolge BolgeBul(string id)
         {

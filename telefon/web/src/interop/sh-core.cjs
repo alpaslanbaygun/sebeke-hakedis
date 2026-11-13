@@ -521,14 +521,25 @@
     return temiz(((sayi(altCm) || 0) + (sayi(ustCm) || 0)) / 2 / 100 * ((sayi(derCm) || 0) / 100) * (sayi(uzunlukM) || 0));
   }
 
-  /** Hat metrajı: çizim uzunluğu yukarı yuvarlanır, türüne göre ek pay eklenir (ayar). */
+  /**
+   * Hat metrajının yuvarlanması (Cekirdek/CizimAyarlari.cs › Metraj.Hat ile aynı; 13.11.2026): 'yok' (cm, 2 hane;
+   * varsayılan — kullanıcı: "45,00 yazmış 45,25 yazması lazım"), 'yukari' (tam metreye yukarı, eski program gibi),
+   * 'yakin' (en yakın tam metre). Proje dosyasında "metrajYuvarlama" (yalnız varsayılandan farklıysa).
+   */
+  const YUVARLAMALAR = ['yok', 'yukari', 'yakin'];
+  function yuvarlamaDuzelt(y) { return y === 'yukari' || y === 'yakin' ? y : 'yok'; }
+  function metrajYuvarla(uzunluk, yuvarlama) {
+    const L = Math.max(0, Number(uzunluk) || 0), y = yuvarlamaDuzelt(yuvarlama);
+    if (y === 'yukari') return Math.ceil(L - 1e-6);
+    if (y === 'yakin') return Math.round(L);
+    return temiz(Math.round((L + 1e-9) * 100) / 100, 2);
+  }
+  /** Hat metrajı: çizim uzunluğu ayardaki gibi yuvarlanır (metrajYuvarlama; eski yukariYuvarla false → en yakın), türüne göre ek pay eklenir. */
   function hatMetraji(cizim, tur, ayar) {
     const a = ayar || {};
-    const yukari = a.yukariYuvarla !== false;
+    const y = a.metrajYuvarlama != null ? a.metrajYuvarlama : a.yukariYuvarla === false ? 'yakin' : 'yok';
     const ek = (a.ekPay && Number(a.ekPay[tur])) || 0;
-    const L = Math.max(0, Number(cizim) || 0);
-    const m = yukari ? Math.ceil(L - 1e-6) : Math.round(L);
-    return m + ek;
+    return temiz(metrajYuvarla(cizim, y) + ek);
   }
 
   /** Etiketteki metraj yazımı ("341", "10,5"). */
@@ -1979,7 +1990,7 @@
     temiz, sayi, tr, ordinal, siraKarsilastir,
     tmIleri, tmGeri, domBoylamdan, domTahmin,
     mesafe, uzunluk, ortaNokta, icinde, alan, dogruParcasinaMesafe, cokgeneMesafe, bolgeSec, kutu, projeKutusu,
-    katsayiHazirla, kanalUnsurlari, kanalKodu, kanalKablolari, kanalHacmi, hatMetraji, metrajYazisi, hatEtiketi, malzemeYazisi,
+    katsayiHazirla, kanalUnsurlari, kanalKodu, kanalKablolari, kanalHacmi, hatMetraji, metrajYuvarla, yuvarlamaDuzelt, YUVARLAMALAR, metrajYazisi, hatEtiketi, malzemeYazisi,
     birlesikMetraj, bmNorm, bmBlok, bmBirim, bmMiktar, bmPoz, bmDogalSira, bmKanalUstu, bmYakinEleman, bmAile, bmKopyaAdi, sutunHarfiBM, sutunNoBM,
     KANAL_ZEMIN, kanalZeminiTanim, kanalZeminiYazi, kanalZeminiCoz, kanalListesi, projeSirasi,
     sonrakiGis, enBuyukSira,
