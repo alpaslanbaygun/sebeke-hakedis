@@ -127,10 +127,6 @@ export function aciklikMetraji(line, sp, projectPayPct = 0) {
   return (sp.length3D ?? sp.length) * (1 + pay);
 }
 
-/** MText metni: satırlar \\P ile, MText'in özel karakterleri (\\ { }) kaçırılmış (eklentideki CizimYazici.MalzemeMetni). */
-export function malzemeMetni(satirlar) {
-  return satirlar.map((s) => String(s ?? '').replace(/[\\{}]/g, (c) => '\\' + c)).join('\\P');
-}
 /**
  * Parça yazısının (metraj, hat etiketi) yeri ve açısı: parçanın (a→b) ortasından parçanın kendi ekseninde kaydırılır —
  * dx parça boyunca (okuma yönünde), dy parçaya dik (artı: yazının üst yanı). Açı (derece) parçanın doğrultusu, ters
@@ -209,7 +205,7 @@ export function hatKalinligi(l, kat) {
 }
 
 /** Malzeme yazısının yüksekliği eleman yazısına oranı ve satır aralığı (eklentideki MalzemeEtiketi ile aynı). */
-export const MALZEME_YAZISI = { oran: 0.7, aralik: 1.5, mtextAralik: 0.9 };   // mtextAralik: MTEXT "tam" satır aralığı çarpanı (1,0 = 5/3 yükseklik → 1,5 h)
+export const MALZEME_YAZISI = { oran: 0.7, aralik: 1.5 };
 
 /** Demontaj türünden (KESİK / SÖKÜK) demontaj varyantı: DM · KESIK · SOKUK (eklentideki Semboller.Varyant ile aynı). */
 export function dmVaryanti(dmDurum) {
@@ -275,7 +271,7 @@ export function smAilesi(e) {
     if (ct.includes('INDIRICI') || ct.includes('DAGITIM MERKEZ')) return 'SM_INDIRICI_MERKEZ';
     if (klasik === 'TRAFO_BINA' || ct.includes('BINA')) return 'SM_TRAFO_BINA';
     if (ct.includes('KULESIZ')) return 'SM_KOSK_KULESIZ_OZEL';
-    if (ct.includes('KULE') && ct.includes('CIKIS')) return ozel ? 'SM_KOSK_KULE_CIKIS_OZEL' : 'SM_KOSK_KULE_CIKIS';
+    if (ct.includes('KULE') && ct.includes('CIKIS')) return ozel ? 'SM_KOSK_KCIKIS_OZEL' : 'SM_KOSK_KULE_CIKIS';
     if (ct.includes('KULE')) return ozel ? 'SM_KOSK_KULE_OZEL' : 'SM_KOSK_KULE';
     return 'SM_KOSK_MODULER';
   }
@@ -464,18 +460,15 @@ export function buildDXF(model, opts = {}) {
     insert(layer, block, e.E, e.N, e.H, color); nIns++;
     // Eleman yazısı simgenin sağ üstünde; yeri simgeyle büyür (simgenin dışında kalsın), yüksekliği ayrı ayarlanır
     text(YAZI(), e.E + edx * ol, e.N + edy * ol, e.H, e.no + (e.typeName ? ' ' + e.typeName : ''), th, 0); nTxt++;
-    // Malzemeler (Çizim boyutları › Malzemeleri çizimde göster): eleman yazısının altında tek bir çok satırlı yazı
-    // (MTEXT; AutoCAD'de tek nesne olarak taşınır — eklentideki SH_MLZ bağlı yazı, 13.11.2026), eleman yazısının
-    // 0,7'si yükseklikte, satır aralığı 1,5, beyaz / siyah; satırlar sh-core malzemeEtiketi'nden
+    // Malzemeler (Çizim boyutları › Malzemeleri çizimde göster): eleman yazısının altında satır satır, eleman yazısının
+    // 0,7'si yükseklikte, satır aralığı 1,5, beyaz / siyah; satırlar sh-core malzemeEtiketi'nden. DXF R12 (AC1009)
+    // biçimindedir: MTEXT bu sürümde yoktur, AutoCAD dosyayı açmaz (13.11.2026) — satırlar ayrı TEXT, simgeden bağımsız
+    // taşınır (AutoCAD eklentisi kendi çiziminde tek MText yazar: SH_MLZ).
     const satirlar = B.malzeme && opts.malzemeSatirlari ? opts.malzemeSatirlari[e.id] : null;
     if (satirlar && satirlar.length) {
-      const hm = th * MALZEME_YAZISI.oran;
-      const ust = e.N + edy * ol - (0.45 * th + 0.15 * hm);   // sol üst köşe (ilk satırın taban çizgisi bir yazı yüksekliği altta)
-      w.g(0, 'MTEXT').g(8, YAZI()).g(62, 7).g(10, f(e.E + edx * ol)).g(20, f(ust)).g(30, f(e.H || 0)).g(40, f(hm)).g(41, 0).g(71, 1).g(72, 1);
-      const metin = malzemeMetni(satirlar);
-      for (let i = 0; i + 250 < metin.length; i += 250) w.g(3, metin.slice(i, i + 250));   // 250 karakterlik parçalar (3), son parça (1)
-      w.g(1, metin.slice(Math.floor(Math.max(0, metin.length - 1) / 250) * 250)).g(73, 2).g(44, MALZEME_YAZISI.mtextAralik);
-      nTxt++; nMalzeme += satirlar.length;
+      const hm = th * MALZEME_YAZISI.oran, adim = hm * MALZEME_YAZISI.aralik;
+      const y0 = e.N + edy * ol - (0.45 * th + 1.15 * hm);
+      satirlar.forEach((m, i) => { text(YAZI(), e.E + edx * ol, y0 - i * adim, e.H, m, hm, 0, 7); nTxt++; nMalzeme++; });
     }
     if (e.role === 'Z' && e.angle) { text(YAZI(), e.E + adx * ol, e.N + ady * ol, e.H, 'α=' + e.angle.toFixed(2) + '°', thKucuk); nTxt++; }
   }

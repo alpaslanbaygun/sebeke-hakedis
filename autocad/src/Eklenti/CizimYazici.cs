@@ -416,6 +416,19 @@ namespace SebekeHakedis.Eklenti
             if (_bloklarDenetlendi) return;
             _bloklarDenetlendi = true;
             var bt = (BlockTable)_tr.GetObject(_db.BlockTableId, OpenMode.ForRead);
+            // Adı değişen simgeler (semboller.json › eskiAileler): eski adlı tanım yeni adı alır, örnekleri ona bağlı kalır;
+            // ardından aşağıdaki döngü yeni adın geometrisiyle yeniden çizer (sürüm damgası eski kalmıştır).
+            foreach (var kv in Semboller.EskiBlokAdlari)
+            {
+                if (!bt.Has(kv.Key) || bt.Has(kv.Value)) continue;
+                try
+                {
+                    var eski = (BlockTableRecord)_tr.GetObject(bt[kv.Key], OpenMode.ForWrite);
+                    eski.Name = kv.Value;
+                    BlokSurumunuSil(eski);
+                }
+                catch (Exception ex) { Uyarilar.Add("Blok yeniden adlandırılamadı: " + kv.Key + " (" + ex.Message + ")"); }
+            }
             var adaylar = new List<ObjectId>();
             foreach (ObjectId id in bt)
             {
@@ -432,6 +445,18 @@ namespace SebekeHakedis.Eklenti
         }
 
         private bool BlokGuncel(BlockTableRecord btr) => BlokSurumuOku(btr) == BlokSurumu;
+
+        /// <summary>Sürüm damgasını "yeniden çizilmeli" yapar (yeniden adlandırılan blok yeni adın geometrisini alsın diye).</summary>
+        private void BlokSurumunuSil(BlockTableRecord btr)
+        {
+            if (btr.ExtensionDictionary.IsNull) return;
+            var d = _tr.GetObject(btr.ExtensionDictionary, OpenMode.ForRead) as DBDictionary;
+            if (d == null || !d.Contains(Sozluk)) return;
+            var alt = _tr.GetObject(d.GetAt(Sozluk), OpenMode.ForRead) as DBDictionary;
+            if (alt == null || !alt.Contains(BlokKaydi)) return;
+            var xr = (Xrecord)_tr.GetObject(alt.GetAt(BlokKaydi), OpenMode.ForWrite);
+            using (var rb = new ResultBuffer(new TypedValue((int)DxfCode.Text, BlokSurumu + "-ad"))) xr.Data = rb;
+        }
 
         /// <summary>Blok tanımına yazılmış sürüm ("": damgasız, ilk sürüm).</summary>
         private string BlokSurumuOku(BlockTableRecord btr)

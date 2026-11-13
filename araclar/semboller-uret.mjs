@@ -213,7 +213,7 @@ const SM = {
   SM_KOSK_KULE_CIKIS: { ad: 'Kule çıkışlı trafo postası', kose: kosk, glif: G.kuleCikis },
   SM_KOSK_KULESIZ_OZEL: { ad: 'Kulesiz tip özel trafo postası', kose: kosk, kesik: true, glif: (R) => G.simsek(R * 0.7) },
   SM_KOSK_KULE_OZEL: { ad: 'Kule tipi özel trafo postası', kose: kosk, glif: (R) => G.simsek(R * 0.7) },
-  SM_KOSK_KULE_CIKIS_OZEL: { ad: 'Kule çıkışlı tip özel trafo', kose: kosk, glif: (R) => [...G.simsek(R * 0.7), ...G.kuleCikis()] },
+  SM_KOSK_KCIKIS_OZEL: { ad: 'Kule çıkışlı tip özel trafo', kose: kosk, glif: (R) => [...G.simsek(R * 0.7), ...G.kuleCikis()] },
   SM_KOSK_MODULER: { ad: 'Modüler beton köşk', kose: dikdortgen(12, 8), glif: G.moduler },
   SM_TRAFO_BINA: { ad: 'Bina tipi trafo postası', kose: kare(10), kesik: true, glif: G.bina },
   SM_BOX: { ad: 'Dağıtım / ölçüm box (pano)', kose: dikdortgen(8, 5), glif: G.box },
@@ -319,6 +319,16 @@ function smUret(aile, varyant) {
   return { yariGenislik: r4(R), ilkeller: out };
 }
 
+// Blok adı sınırı: telefonun DXF'i R12 (AC1009) biçimindedir; AutoCAD bu biçimde 31 karakterden uzun ya da A–Z, 0–9,
+// _ $ - dışında karakterli adlı dosyayı açmaz ("Invalid or incomplete DXF input", ENTER → boş çizim). SH_<aile>_<varyant>
+// bu sınırı aşamaz (13.11.2026: SM_KOSK_KULE_CIKIS_OZEL_MEVCUT 33 karakterdi → SM_KOSK_KCIKIS_OZEL).
+const ESKI_AILELER = { SM_KOSK_KULE_CIKIS_OZEL: 'SM_KOSK_KCIKIS_OZEL' };
+for (const aile of [...Object.keys(AILELER), ...Object.keys(SM)])
+  for (const v of VARYANTLAR) {
+    const ad = 'SH_' + aile + '_' + v;
+    if (ad.length > 31 || !/^[A-Z0-9_$-]+$/.test(ad)) throw new Error('Blok adı R12 DXF sınırını aşıyor (en çok 31 karakter, A–Z 0–9 _ $ -): ' + ad);
+  }
+
 const semboller = {};
 const aileler = {};
 for (const aile of Object.keys(AILELER)) {
@@ -363,6 +373,7 @@ const cikti = {
     KESIK: 'demontaj, kesik (DM · KESİK): boş + iki paralel çapraz "//" (Şebeke-M: + K)',
     SOKUK: 'demontaj, sökük (DM · SÖKÜK): boş + taşan çarpı "X" (Şebeke-M: + S)'
   },
+  eskiAileler: Object.assign({ aciklama: 'Adı değişen aileler: eski ad → yeni ad. Eklenti çizimdeki eski adlı SH_ bloklarını yeni adla yeniden adlandırır (blok adı R12 DXF sınırı: 31 karakter).' }, ESKI_AILELER),
   aileler,
   semboller
 };

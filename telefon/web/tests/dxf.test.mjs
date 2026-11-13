@@ -2,7 +2,7 @@
 // Eklentideki karşılıkları: CizimStili (renkler), CizimYazici.ParcaMetrajlariYaz + Geometri.Acikliklar (metraj).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildDXF, spanTexts, yaziKonumu, yaziGenisligi, yaziSigdir, enUzunParca, boyutlar, aciklikMetraji, malzemeMetni } from '../src/export/dxf.js';
+import { buildDXF, spanTexts, yaziKonumu, yaziGenisligi, yaziSigdir, enUzunParca, boyutlar, aciklikMetraji, MALZEME_YAZISI } from '../src/export/dxf.js';
 import STIL from '../src/ortak/cizim-stili.js';
 
 /** DXF metnini (grup kodu, değer) çiftlerine ayırıp varlıklara böler. */
@@ -183,7 +183,7 @@ test('D5 · kanal kenarları: eksenin iki yanında genişliğin yarısı kadar, 
   assert.deepEqual(koseler, [[500000, 4400000.25], [500040, 4400000.25]]);
 });
 
-test('D6 · malzeme yazısı tek MTEXT (13.11.2026), havai açıklık metrajı iletken metrajı (3B × ek pay), yer altında çizim uzunluğu', () => {
+test('D6 · malzeme yazısı satır satır TEXT (R12: MTEXT yok), havai açıklık metrajı iletken metrajı (3B × ek pay), yer altında çizim uzunluğu', () => {
   const points = [{ id: 'p1', no: '1', E: 0, N: 0, H: 100 }, { id: 'p2', no: '2', E: 30, N: 0, H: 140 }, { id: 'p3', no: '3', E: 60, N: 0, H: 140 }];
   const coords = points.map((p) => ({ id: p.id, E: p.E, N: p.N, H: p.H }));
   const model = {
@@ -201,19 +201,11 @@ test('D6 · malzeme yazısı tek MTEXT (13.11.2026), havai açıklık metrajı i
   const uzun = 'Çok uzun malzeme satırı {özel} \\ '.repeat(12);
   const { text, stats } = buildDXF(model, { malzemeSatirlari: { e1: ['GT-60=1 (M)', 'B 95 İzolatör Demiri=4 (M)', uzun] } });
   const v = varliklar(text);
-  const mt = v.filter((x) => x.tur === 'MTEXT');
-  assert.equal(mt.length, 1, 'bir elemanın malzemeleri tek MTEXT');
+  assert.equal(v.filter((x) => x.tur === 'MTEXT').length, 0, 'R12 DXF: MTEXT yok (AutoCAD açmaz)');
   assert.equal(stats.materials, 3);
-  assert.equal(mt[0].g['62'][0], '7', 'beyaz / siyah');
-  assert.equal(mt[0].g['71'][0], '1', 'sol üst köşeden');
-  assert.equal(+mt[0].g['44'][0], 0.9, 'satır aralığı 1,5 yazı yüksekliği (tam: 0,9 × 5/3)');
-  const metin = (mt[0].g['3'] || []).join('') + mt[0].g['1'][0];
-  assert.equal(metin, malzemeMetni(['GT-60=1 (M)', 'B 95 İzolatör Demiri=4 (M)', uzun]), '250 karakterlik parçalar birleşince metin aynı');
-  assert.ok(metin.startsWith('GT-60=1 (M)\\PB 95'), 'satırlar \\P ile');
-  assert.ok(metin.includes('\\{özel\\}') && metin.includes('\\\\'), 'özel karakterler kaçırılmış');
-  assert.ok((mt[0].g['3'] || []).every((x) => x.length === 250) && mt[0].g['1'][0].length <= 250, 'parça boyları');
-  assert.equal(+mt[0].g['40'][0], 1.8 * 0.7, 'yükseklik eleman yazısının 0,7\'si');
-  assert.equal(v.filter((x) => x.tur === 'TEXT' && /^GT-60/.test(x.g['1'][0])).length, 0, 'satır satır TEXT yok');
+  const ml = v.filter((x) => x.tur === 'TEXT' && x.g['62'] && x.g['62'][0] === '7' && +x.g['40'][0] === +(1.8 * MALZEME_YAZISI.oran).toFixed(4));
+  assert.deepEqual(ml.map((x) => x.g['1'][0]), ['GT-60=1 (M)', 'B 95 İzolatör Demiri=4 (M)', uzun], 'üç satır, sırayla, beyaz / siyah, eleman yazısının 0,7si');
+  assert.ok(Math.abs(+ml[0].g['20'][0] - +ml[1].g['20'][0] - 1.8 * 0.7 * 1.5) < 1e-3, 'satır aralığı 1,5 yazı yüksekliği');
   // Havai açıklıklar: 3B uzunluk (30 yatay + 40 kot = 50) × 1,02; ikinci açıklık 30 × 1,02; yer altı: çizim uzunluğu 30
   const yazilar = v.filter((x) => x.tur === 'TEXT').map((x) => x.g['1'][0]);
   assert.ok(yazilar.includes('51.00'), 'ilk açıklık 50 m × 1,02: ' + yazilar.join(','));
