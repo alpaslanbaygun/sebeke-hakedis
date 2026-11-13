@@ -94,6 +94,14 @@ public final class VoltBridge {
     @JavascriptInterface public void keepScreenOn(String reqId, String json) {
         try { boolean on = new JSONObject(json).optBoolean("on", true); act.runOnUiThread(() -> act.setKeepScreenOn(on)); reply(reqId, true); } catch (Exception e) { fail(reqId, e.getMessage()); }
     }
+    /** Cihazın teması: { acik } (13.11.2026; web tarafı ui/tema.js). */
+    @JavascriptInterface public void sistemTemasi(String reqId, String json) {
+        try { org.json.JSONObject o = new org.json.JSONObject(); o.put("acik", act.cihazAcikTemada()); reply(reqId, o); } catch (Exception e) { fail(reqId, e.getMessage()); }
+    }
+    /** Durum / gezinme çubuğu rengi: { renk: "#rrggbb", acik } (tema değişince). */
+    @JavascriptInterface public void cubukRengi(String reqId, String json) {
+        try { org.json.JSONObject a = new org.json.JSONObject(json); act.cubukRengi(a.optString("renk", "#0b1326"), a.optBoolean("acik", false)); reply(reqId, true); } catch (Exception e) { fail(reqId, e.getMessage()); }
+    }
     @JavascriptInterface public void vibrate(String reqId, String json) {
         try {
             int ms = new JSONObject(json).optInt("ms", 40);

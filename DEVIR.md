@@ -138,6 +138,26 @@ takımla dışa aktarılan DXF'te bütün LAYER / LTYPE / STYLE / BLOCK / INSERT
 BLOCKS'ta yalnız R12 varlıkları), D6 / ME3 satır satır TEXT; CekirdekTest bütün `SH_` adları `Semboller.R12AdiMi`, eski
 ad eşlemesi. Kullanıcının dosyası (gerçek proje, depoya konmadı) blok adları kısaltılarak onarılıp geri verildi.
 
+13.11 öğleden sonra (`acik-tema` dalı, `onerilen-malzeme` üstüne; PR I): **Açık tema** (kullanıcı: "arayüze açık temada
+ekleyelim"; kararlar: ikisine de, Otomatik + elle, Google Stitch yok — mevcut tasarımın açık karşılığı). Eklenti:
+`KoyuRenk` alanları `Tema.Acik`'a göre iki paletten dönen özellikler (adlar aynı; açık palet: zemin #F3F5F8, kart beyaz,
+yazı #0F1B2A, vurgu yeşili aynı, uyarı / hata / bilgi renkleri açık zemine göre); `Tema` sınıfı (KoyuTema.cs): Secim
+otomatik / koyu / acik (%APPDATA%\SebekeHakedis\arayuz.json, çizime yazılmaz), `Yenile()` her `KoyuPencere` açılışında
+(Otomatik: `Tema.AutoCadAcikMi` = `Serit.AcikTemaMi`, COLORTHEME 1), `SH_TEMA` ortam değişkeni denemede seçimi geçersiz
+kılar, `Okunur / OkunurHex` açık temada parlak çizim renklerini koyulaştırır (hat / eleman / kanal / sondaj / rol
+renkleri, simge resimleri), kaydırma çubukları açık temada "Explorer". Çizim Ayarları › Genel › **Arayüz teması**
+(`arayuzTemasi`). PencereTest 40–40f açık temada ekran görüntüleri (eleman, ayarlar › görünüm, malzeme, proje özeti,
+ileti, hakkında); 07'de seçenek sayısı. Telefon: `src/ui/tema.js` (TEMA_SECENEKLERI, temaUygula / temaBaslat /
+sistemTemasi / temaDinle; `okunur` ve `kanvasTemasi`: harita kanvasının fillStyle / strokeStyle atamaları açık temada
+çevrilir — koyu zemin / hale → açık, beyaz / açık gri yazı → koyu, parlak renk parlaklığı 0,55'e), `theme.css`
+`:root[data-tema="acik"]` değişkenleri + yeni yüzey değişkenleri (--scroll, --tog, --knob, rozet / uyarı / cam /
+perde / toast…), seçili düğme yazısı `color-mix` ile koyulaşır; ekranlardaki nötr renk sabitleri değişkenlere
+(`var(--mut)`…; köşk planı çizimi koyu kalır); Ayarlar › Görünüm › Tema (`ds.setting('tema')` + tarayıcı belleği
+`sh-tema`; index.html / web.html ilk boyamadan önce uygular). Android: `VoltBridge.sistemTemasi` (gece modu),
+`cubukRengi` (durum / gezinme çubuğu rengi ve açık simgeler), `MainActivity.onConfigurationChanged` → `native:tema`
+(WebView'in prefers-color-scheme'i uygulamanın koyu temasını izlediğinden). Playwright ile web sürümünde iki temada
+proje, harita ve ayarlar görüntüsü denetlendi. Belgeler: KULLANIM (Pencereler), telefon kılavuzu (Ekranlar), README.
+
 9.11 öğleden sonra (`simge-takimi` dalı, `hesap-metraj` üstüne; PR C): **#89 Şebeke-M simge takımı** — kullanıcının
 SM_* SVG / DXF tasarımı seçilebilir ikinci takım olarak (kararlar: ikinci takım, çizim başına seçilir; demontajda DM
 simgesine K / S harfi; köşk türü tipten, yoksa modüler köşk). `semboller.json` sürüm 3: 23 `SM_` ailesi (`aileler.*.takim`,

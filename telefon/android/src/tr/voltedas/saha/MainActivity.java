@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -168,6 +169,37 @@ public final class MainActivity extends Activity {
         } catch (Exception e) {
             return new WebResourceResponse("text/plain", "utf-8", 504, "Offline", null, new ByteArrayInputStream(new byte[0]));
         }
+    }
+
+    // ---------------- Arayüz teması (13.11.2026) ----------------
+    /** Cihaz açık temada mı (gece modu kapalı)? WebView'in prefers-color-scheme'i uygulamanın koyu temasını izlediğinden ayrıca bildirilir. */
+    public boolean cihazAcikTemada() {
+        return (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) != Configuration.UI_MODE_NIGHT_YES;
+    }
+    /** Durum ve gezinme çubuğunun rengi; açık zeminde simgeler koyu. */
+    @SuppressWarnings("deprecation")
+    public void cubukRengi(String renk, boolean acik) {
+        runOnUiThread(() -> {
+            try {
+                Window w = getWindow();
+                int c = Color.parseColor(renk);
+                w.setStatusBarColor(c);
+                w.setNavigationBarColor(c);
+                if (Build.VERSION.SDK_INT >= 30 && w.getInsetsController() != null) {
+                    int m = android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                    w.getInsetsController().setSystemBarsAppearance(acik ? m : 0, m);
+                } else {
+                    View d = w.getDecorView();
+                    int f = d.getSystemUiVisibility();
+                    int m = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                    d.setSystemUiVisibility(acik ? (f | m) : (f & ~m));
+                }
+            } catch (Exception e) { Log.w("Sebeke", "cubukRengi: " + e.getMessage()); }
+        });
+    }
+    @Override public void onConfigurationChanged(Configuration c) {
+        super.onConfigurationChanged(c);
+        try { JSONObject o = new JSONObject(); o.put("acik", cihazAcikTemada()); emit("tema", o); } catch (Exception e) { /* */ }
     }
 
     // ---------------- Olaylar (Java → JS) ----------------

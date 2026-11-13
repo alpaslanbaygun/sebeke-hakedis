@@ -2,6 +2,7 @@
 // ızgara, katmanlar, yakalama, seçim, ölçüm, GNSS konumu, aplikasyon hedefi ve düğüm düzenleme.
 import { tileX, tileY, tileLL } from '../geo/tiles.js';
 import { aciCSS } from '../cad/aci.js';
+import { kanvasTemasi, temaDinle } from './tema.js';
 import { project as projLL, unproject } from '../geo/crs.js';
 import STIL from '../ortak/cizim-stili.js';
 import { spanTexts, yaziKonumu, enUzunParca } from '../export/dxf.js';
@@ -15,7 +16,8 @@ const PCOL = Object.fromEntries(['AG', 'OG', 'AYD'].map((v) => [v, { MEVCUT: EKR
 
 export class MapEngine {
   constructor(canvas, opts) {
-    this.c = canvas; this.ctx = canvas.getContext('2d'); this.o = opts;
+    this.c = canvas; this.ctx = kanvasTemasi(canvas.getContext('2d')); this.o = opts;   // açık temada renkler açık zemine uyarlanır (tema.js)
+    this.temaKaldir = temaDinle(() => this.invalidate());
     this.view = { cE: 500000, cN: 4280000, res: 0.5 };
     this.dpr = Math.max(1, Math.min(3, (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1)));
     this.dirty = true; this.pointers = new Map(); this.follow = false;
@@ -28,7 +30,7 @@ export class MapEngine {
     this.olcek = { simge: 1, yazi: 1 };
     this.bind(); this.resize(); this.loop();
   }
-  destroy() { this.dead = true; this.ro && this.ro.disconnect(); }
+  destroy() { this.dead = true; this.ro && this.ro.disconnect(); this.temaKaldir && this.temaKaldir(); }
   /** Simge ve yazı büyüklüğü: { simge, yazi } (0,5 … 3 kat). */
   setOlcek(o) {
     const k = (v) => (Number.isFinite(+v) && +v >= 0.5 && +v <= 3 ? +v : 1);

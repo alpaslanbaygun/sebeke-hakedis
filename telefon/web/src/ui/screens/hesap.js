@@ -38,9 +38,9 @@ export function HesapMerkeziScreen({ hedef }) {
   const uygun = deg.filter((x) => x.u.uygun), uygunsuz = deg.filter((x) => !x.u.uygun);
   const kayitlar = hedefli ? hedefKayitlari(ps, b.hedef) : hesapKayitlari(ps);
   const satir = (x) => html`<button class="li" onClick=${() => hesapAc(x.m, hedefli ? Object.assign({}, b.hedef) : null)} style="align-items:flex-start">
-      <${Icon} n=${x.m.grup === 'yerlesim' ? 'grid' : x.m.grup === 'elektrik' ? 'note' : 'pole'} s=${20} c=${x.u.uygun ? '#f59e0b' : '#64748b'} />
-      <span class="grow" style="min-width:0"><b style="display:block;font-size:14px">${x.m.ad}</b><span class="note" style="display:block">${x.u.uygun ? x.m.aciklama : x.u.neden}</span>${x.u.not ? html`<span class="note" style="display:block;color:#fbbf24">${x.u.not}</span>` : null}</span>
-      ${x.k ? html`<${KayitRozeti} k=${x.k} />` : html`<${Icon} n="next" s=${18} c="#64748b" />`}</button>`;
+      <${Icon} n=${x.m.grup === 'yerlesim' ? 'grid' : x.m.grup === 'elektrik' ? 'note' : 'pole'} s=${20} c=${x.u.uygun ? '#f59e0b' : 'var(--mut2)'} />
+      <span class="grow" style="min-width:0"><b style="display:block;font-size:14px">${x.m.ad}</b><span class="note" style="display:block">${x.u.uygun ? x.m.aciklama : x.u.neden}</span>${x.u.not ? html`<span class="note" style="display:block;color:var(--warn2)">${x.u.not}</span>` : null}</span>
+      ${x.k ? html`<${KayitRozeti} k=${x.k} />` : html`<${Icon} n="next" s=${18} c="var(--mut2)" />`}</button>`;
   return html`<${Title} title="Teknik hesaplar" sub=${hedefYazisi(b)} />
     ${hedefli ? html`<div class="alert info" style="margin-bottom:6px"><${Icon} n="info" s=${16} /><span>Bu ${(HEDEF_ADI[hedef.tur] || '').toLowerCase()} için uygun hesaplar. Açılan hesaba ${(HEDEF_ADI[hedef.tur] || '').toLowerCase()}in bilgileri (tip, açıklıklar, iletken…) kendiliğinden yazılır; projede olmayan bilgiler turuncu çerçeveyle istenir.</span></div>` : null}
     ${GRUPLAR.map((g) => { const l = uygun.filter((x) => x.m.grup === g.id); return l.length ? html`<div class="sect">${g.ad}</div><div class="card tight"><div class="list">${l.map(satir)}</div></div>` : null; })}
@@ -48,7 +48,7 @@ export function HesapMerkeziScreen({ hedef }) {
       ${acik ? html`<div class="card tight"><div class="list">${uygunsuz.map(satir)}</div></div>` : null}` : null}
     <div class="sect">Kayıtlı sonuçlar${hedefli ? ' (bu hedef)' : ''}</div>
     ${kayitlar.length ? html`<div class="card tight"><div class="list">${kayitlar.map((k) => { const m = MODUL.get(k.modul) || { ad: k.modulAdi }; return html`<button class="li" style="align-items:flex-start" onClick=${() => app.nav.go('hesap', { modul: k.modul, hedef: k.hedef, kayitId: k.id })}>
-        <span class="grow" style="min-width:0"><b style="display:block">${m.ad || k.modulAdi}</b><span class="mono" style="font-size:12px;color:#ff8a8a">${(HEDEF_ADI[(k.hedef || {}).tur] || '') + ((k.hedef || {}).no ? ' ' + k.hedef.no : '') + ((k.hedef || {}).hatId ? ' · çıkış ' + (((ps.lineById(k.hedef.hatId) || {}).lineNo) || '?') : '')}</span>
+        <span class="grow" style="min-width:0"><b style="display:block">${m.ad || k.modulAdi}</b><span class="mono" style="font-size:12px;color:var(--og)">${(HEDEF_ADI[(k.hedef || {}).tur] || '') + ((k.hedef || {}).no ? ' ' + k.hedef.no : '') + ((k.hedef || {}).hatId ? ' · çıkış ' + (((ps.lineById(k.hedef.hatId) || {}).lineNo) || '?') : '')}</span>
         <span class="note" style="display:block">${k.ozet}</span><span class="note" style="display:block">${tarihYaz(k.tarih)} · ${k.kaynak === 'autocad' ? 'AutoCAD' : 'telefon'}${k.yapan ? ' · ' + k.yapan : ''}</span></span>
         <${KayitRozeti} k=${k} /></button>`; })}</div></div>` : html`<${Empty}>Henüz kayıtlı hesap yok. Bir hesabı açıp üstteki <b>Kaydet</b> ile projeye kaydedin.</${Empty}>`}
     <div class="note" style="margin:12px 2px">Hesap araçlarının formülleri ve tabloları değiştirilmeden Şebeke-M Hakediş'e eklenmiştir; her hesabın içindeki ⓘ düğmesi kaynak ve bilinen sınırları gösterir.</div>`;

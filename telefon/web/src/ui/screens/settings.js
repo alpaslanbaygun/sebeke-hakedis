@@ -9,6 +9,7 @@ import { pendingChanges } from '../../core/sync.js';
 import { BASEMAPS, ALTLIK_GRUPLARI, basemapById, basemapReady, prefetchArea } from '../services.js';
 import { unproject } from '../../geo/crs.js';
 import HAKKINDA from '../../ortak/hakkinda.js';
+import { TEMA_SECENEKLERI, temaSecimi, temaUygula } from '../tema.js';
 
 /** Ayarlar menüsü: [ekran, simge, başlık, açıklama, yalnız telefonda mı]. */
 const GRUPLAR = [
@@ -24,7 +25,7 @@ const GRUPLAR = [
 
 /** Menü satırı. */
 const MenuSatiri = ({ ekran, simge, baslik, aciklama }) => html`<button class="li" style="min-height:58px" onClick=${() => app.nav.go(ekran)}>
-  <span class="ayarsimge"><${Icon} n=${simge} s=${20} c="#6ffbbe" /></span><div class="grow"><div class="t">${baslik}</div><div class="s">${aciklama}</div></div><${Icon} n="next" s=${16} c="#94a3b8" /></button>`;
+  <span class="ayarsimge"><${Icon} n=${simge} s=${20} c="var(--ok2)" /></span><div class="grow"><div class="t">${baslik}</div><div class="s">${aciklama}</div></div><${Icon} n="next" s=${16} c="var(--mut)" /></button>`;
 
 /** Ana ekran: durum özeti + gruplar. */
 export function SettingsScreen() {
@@ -36,10 +37,14 @@ export function SettingsScreen() {
   const gruplar = GRUPLAR.filter(([, , , , telefon]) => !telefon || !app.web);
   return html`<div class="title"><div class="grow"><h1>Ayarlar</h1><div class="sub" style="font-family:Inter">${app.web ? 'Proje ayarları: kontrol eşikleri, koordinat sistemi, tanımlar' : 'Ölçüm, düzeltme, hassasiyet, harita, veri'}</div></div></div>
     ${app.web ? html`<div class="alert info"><${Icon} n="info" s=${16} /><span>Web sürümü ofis içindir: ölçüm (GNSS alıcı, NTRIP, telefon GPS) telefondaki uygulamayla yapılır. Buradaki ayarlar proje verisini ilgilendirir ve buluta kaydedilir.</span></div>` : html`<button class="card row" style="text-align:left;color:inherit;gap:12px;width:100%" onClick=${() => app.nav.go('ayarOlcum')}>
-      <span class="ayarsimge" style=${'--c:' + (FIXCOL[s.fix] || '#64748b')}><${Icon} n="locate" s=${20} c=${FIXCOL[s.fix] || '#94a3b8'} /></span>
-      <div class="grow"><b style="font-size:14px">${kaynak}</b><div class="note">${s.source === 'none' ? 'Ölçüm için konum kaynağı seçin' : (s.fix || '—') + (s.sigmaH != null ? ' · σH ' + fmt(s.sigmaH) + ' m' : '') + ' · düzeltme ' + (nts.state === 'connected' ? 'bağlı' : 'yok') + (ps.p ? ' · ' + ps.p.name : '')}</div></div><${Icon} n="next" s=${16} c="#94a3b8" /></button>`}
+      <span class="ayarsimge" style=${'--c:' + (FIXCOL[s.fix] || 'var(--mut2)')}><${Icon} n="locate" s=${20} c=${FIXCOL[s.fix] || 'var(--mut)'} /></span>
+      <div class="grow"><b style="font-size:14px">${kaynak}</b><div class="note">${s.source === 'none' ? 'Ölçüm için konum kaynağı seçin' : (s.fix || '—') + (s.sigmaH != null ? ' · σH ' + fmt(s.sigmaH) + ' m' : '') + ' · düzeltme ' + (nts.state === 'connected' ? 'bağlı' : 'yok') + (ps.p ? ' · ' + ps.p.name : '')}</div></div><${Icon} n="next" s=${16} c="var(--mut)" /></button>`}
     <div class="card tight list" style="margin-top:10px">${gruplar.map(([ekran, simge, baslik, aciklama]) => html`<${MenuSatiri} ekran=${ekran} simge=${simge} baslik=${baslik} aciklama=${aciklama} />`)}</div>
-    <div class="note" style="margin-top:8px">Ölçüm, düzeltme ve harita ayarları bu cihazda; hassasiyet eşikleri ve koordinat sistemi projede saklanır.</div>`;
+    <div class="note" style="margin-top:8px">Ölçüm, düzeltme ve harita ayarları bu cihazda; hassasiyet eşikleri ve koordinat sistemi projede saklanır.</div>
+    <div class="sect">Görünüm</div>
+    <div class="card stack"><div class="fld"><label>Tema</label><${Seg} value=${temaSecimi()} options=${TEMA_SECENEKLERI}
+      onChange=${(v) => { temaUygula(v); app.ds.setting('tema', v); app.bus.emit('settings:change', { key: 'tema' }); }} /></div>
+      <div class="note">Otomatik: cihazın açık / koyu temasını izler. Yalnız bu cihazda saklanır. AutoCAD eklentisinde aynı seçim Çizim ayarları › Genel › Arayüz teması'ndadır.</div></div>`;
 }
 
 /** Ölçüm: konum kaynağı, yöntem, GNSS alıcı (Bluetooth), anten. */
@@ -67,7 +72,7 @@ export function OlcumAyarlari() {
         <button class=${'chip' + (s.source === 'external' ? ' on' : '')} style="min-height:62px;flex-direction:column" onClick=${() => (native ? listBt() : webConnect('web-serial'))}><b style="font-size:16px">Harici GNSS</b><small>RTK · ±1–2 cm</small></button>
       </div>
       ${s.source === 'phone' ? html`<div class="alert warn"><${Icon} n="warn" s=${16} /><span>Telefon GPS doğruluğu ±3–10 m. Noktalar "TEST / DÜŞÜK DOĞRULUK" olarak işaretlenir; kritik noktalar RTK FIX ile yeniden ölçülene kadar kontrol listesinde "ÖLÇÜ KABUL EDİLMEDİ" kalır.</span></div>` : null}
-      <div class="row"><span class="grow note">Etkin: <b style=${'color:' + (FIXCOL[s.fix] || '#94a3b8')}>${s.source === 'none' ? 'yok' : (s.receiver || {}).name || s.source}</b> ${s.connected ? '· bağlı' : ''}</span>${s.source !== 'none' ? html`<button class="btn dang sm" onClick=${() => g.stopAll()}>Kaynağı kapat</button>` : null}</div>
+      <div class="row"><span class="grow note">Etkin: <b style=${'color:' + (FIXCOL[s.fix] || 'var(--mut)')}>${s.source === 'none' ? 'yok' : (s.receiver || {}).name || s.source}</b> ${s.connected ? '· bağlı' : ''}</span>${s.source !== 'none' ? html`<button class="btn dang sm" onClick=${() => g.stopAll()}>Kaynağı kapat</button>` : null}</div>
     </div>
     <div class="sect">Ölçüm yöntemi</div>
     <div class="card stack">
@@ -85,7 +90,7 @@ export function OlcumAyarlari() {
     </div>
     <div class="sect">GNSS alıcı · Bluetooth</div>
     <div class="card stack">
-      <div class="row"><span style="width:44px;height:44px;border-radius:8px;border:1px solid #334155;display:flex;align-items:center;justify-content:center"><${Icon} n="bt" c="#22d3ee" /></span><div class="grow"><b style="font-size:17px">${s.source === 'external' ? (s.receiver || {}).name : 'Alıcı seçilmedi'}</b><div class="mono note">${s.source === 'external' ? ((s.link || {}).type || '').toUpperCase() + ' · ' + ((s.link || {}).address || '') + (s.rateHz ? ' · ' + Math.round(s.rateHz) + ' Hz' : '') : native ? 'Eşleşmiş cihazlar listelenir' : 'Masaüstü: Web Serial / Web Bluetooth'}</div></div>${s.source === 'external' ? html`<${Badge} k=${s.connected ? 'ok' : 'warn'}>${s.connected ? 'BAĞLI' : 'BEKLİYOR'}</${Badge}>` : null}</div>
+      <div class="row"><span style="width:44px;height:44px;border-radius:8px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center"><${Icon} n="bt" c="#22d3ee" /></span><div class="grow"><b style="font-size:17px">${s.source === 'external' ? (s.receiver || {}).name : 'Alıcı seçilmedi'}</b><div class="mono note">${s.source === 'external' ? ((s.link || {}).type || '').toUpperCase() + ' · ' + ((s.link || {}).address || '') + (s.rateHz ? ' · ' + Math.round(s.rateHz) + ' Hz' : '') : native ? 'Eşleşmiş cihazlar listelenir' : 'Masaüstü: Web Serial / Web Bluetooth'}</div></div>${s.source === 'external' ? html`<${Badge} k=${s.connected ? 'ok' : 'warn'}>${s.connected ? 'BAĞLI' : 'BEKLİYOR'}</${Badge}>` : null}</div>
       <div class="grid2">${native ? html`<button class="btn" disabled=${scan} onClick=${listBt}>${scan ? 'Taranıyor…' : 'Cihaz Tara'}</button>` : html`<button class="btn" onClick=${() => webConnect('web-serial')}>USB / Seri</button>`}${native ? html`<button class="btn dang" disabled=${s.source !== 'external'} onClick=${() => g.stopAll()}>Bağlantıyı Kes</button>` : html`<button class="btn" onClick=${() => webConnect('web-ble')}>Web Bluetooth</button>`}</div>
       ${devs ? html`<div class="card tight list">${devs.map((d) => html`<button class="li" onClick=${() => connect(d)}><${Badge} k=${d.type === 'ble' ? 'cy' : 'mut'}>${d.type.toUpperCase()}</${Badge}><div class="grow"><div class="t" style="font-size:13px">${d.name || '(adsız)'}</div><div class="m">${d.address}${d.rssi ? ' · ' + d.rssi + ' dBm' : ''}</div></div><${Icon} n="next" s=${16} /></button>`)}${!devs.length ? html`<div class="empty">Cihaz bulunamadı · alıcıyı telefonun Bluetooth ayarlarından eşleştirin</div>` : null}</div>` : null}
       <div class="fld"><label>Anten yüksekliği</label><div class="row"><${Girdi} type="number" step="0.001" inputmode="decimal" style="flex:1;font-size:18px;color:#10b981" value=${ant.height} onSave=${(v) => setAnt({ height: +v })} /><${Chip} on=${ant.measure === 'vertical'} onClick=${() => setAnt({ measure: 'vertical' })}>Dikey</${Chip}><${Chip} on=${ant.measure === 'slant'} onClick=${() => setAnt({ measure: 'slant' })}>Eğik</${Chip}></div></div>
@@ -171,7 +176,7 @@ export function HaritaAyarlari() {
     </div>
     ${app.web ? null : html`<div class="sect">Harita altlığı</div>
     <div class="card stack"><div class="note">Altlık haritadaki Katmanlar düğmesinden seçilir; ölçüm, koordinat ve çizim altlıktan bağımsızdır. Ücretsiz altlıklar anahtarsız çalışır; anahtarlı sağlayıcıların ücretsiz kullanım payı vardır, ücretli plana geçmeniz gerekmez. Ücretsiz kullanım sınırsız değildir: sağlayıcı yoğun kullanımı kesebilir. Anahtarlar yalnız bu cihazda saklanır; proje dosyalarına ve paylaşıma girmez.</div>
-      ${ALTLIK_GRUPLARI.map(([gk, gl]) => html`<div class="lbl" style="margin-top:4px">${gl}</div>${BASEMAPS.filter((b) => b.grup === gk).map((b) => html`<div class="row" style="align-items:flex-start;gap:8px;padding:4px 0"><${Icon} n=${basemapReady(b) ? 'check' : 'minus'} s=${16} c=${basemapReady(b) ? '#10b981' : '#64748b'} /><div class="grow"><b style="font-size:13px">${b.label}</b><div class="note">${b.note || ''}${b.kosul ? html` · koşullar: <span class="mono">${b.kosul}</span>` : null}</div></div></div>`)}`)}
+      ${ALTLIK_GRUPLARI.map(([gk, gl]) => html`<div class="lbl" style="margin-top:4px">${gl}</div>${BASEMAPS.filter((b) => b.grup === gk).map((b) => html`<div class="row" style="align-items:flex-start;gap:8px;padding:4px 0"><${Icon} n=${basemapReady(b) ? 'check' : 'minus'} s=${16} c=${basemapReady(b) ? '#10b981' : 'var(--mut2)'} /><div class="grow"><b style="font-size:13px">${b.label}</b><div class="note">${b.note || ''}${b.kosul ? html` · koşullar: <span class="mono">${b.kosul}</span>` : null}</div></div></div>`)}`)}
       <div class="fld"><label>MapTiler anahtarı (ücretsiz plan yeterli)</label><input class="inp mono" type="password" autocomplete="off" value=${keys.maptiler || ''} placeholder="maptiler.com hesabından" onChange=${(e) => saveKeys({ maptiler: e.target.value.trim() })} /></div>
       <div class="fld"><label>Google Map Tiles anahtarı</label><input class="inp mono" type="password" autocomplete="off" value=${keys.google || ''} placeholder="Google Cloud konsolundan" onChange=${(e) => saveKeys({ google: e.target.value.trim() })} /></div>
       <div class="fld"><label>ArcGIS anahtarı (Esri uydu, API key)</label><input class="inp mono" type="password" autocomplete="off" value=${keys.esri || ''} placeholder="ArcGIS hesabından" onChange=${(e) => saveKeys({ esri: e.target.value.trim() })} /></div>
@@ -196,7 +201,7 @@ export function VeriAyarlari() {
     ${ps.p ? html`<div class="sect">Kullanıcılar ve hakediş onayı</div>
     <div class="card row"><div class="grow"><b style="font-size:14px">${ps.approval().on ? (ps.member ? ps.member.name : 'Oturum açılmadı') : 'Onay mekanizması kapalı'}</b><div class="note">Roller, şifreli oturum, onay bekleyen işler</div></div><button class="btn sm pri" onClick=${() => app.nav.go('team')}>Aç →</button></div>` : null}
     <div class="sect">Tanımlar ve kayıtlar</div>
-    <div class="card tight list">${[['projects', 'Projeler', 'Proje merkezi, akış, yeni proje'], ['definitions', 'Tanımlar (tek veri kaynağı)', 'Reçete kuralları, parametreler, katalog sürümleri'], ['poz', 'Poz kataloğu', 'Veritabanından · sürümlü'], ['layers', 'Katmanlar ve lejant', 'Lejant.dxf katman / ACI eşlemesi'], ['audit', 'Denetim kaydı', 'Kim · ne · ne zaman · eski / yeni · neden'], ['user', 'Kullanıcı ve cihaz', app.ds.user.name + ' · ' + app.ds.deviceId]].map(([k, t, d]) => html`<button class="li" onClick=${() => app.nav.go(k)}><div class="grow"><div class="t">${t}</div><div class="s">${d}</div></div><${Icon} n="next" s=${16} c="#94a3b8" /></button>`)}</div>`;
+    <div class="card tight list">${[['projects', 'Projeler', 'Proje merkezi, akış, yeni proje'], ['definitions', 'Tanımlar (tek veri kaynağı)', 'Reçete kuralları, parametreler, katalog sürümleri'], ['poz', 'Poz kataloğu', 'Veritabanından · sürümlü'], ['layers', 'Katmanlar ve lejant', 'Lejant.dxf katman / ACI eşlemesi'], ['audit', 'Denetim kaydı', 'Kim · ne · ne zaman · eski / yeni · neden'], ['user', 'Kullanıcı ve cihaz', app.ds.user.name + ' · ' + app.ds.deviceId]].map(([k, t, d]) => html`<button class="li" onClick=${() => app.nav.go(k)}><div class="grow"><div class="t">${t}</div><div class="s">${d}</div></div><${Icon} n="next" s=${16} c="var(--mut)" /></button>`)}</div>`;
 }
 
 /** Deneme ve eğitim: alıcısız simülatör. */

@@ -1,14 +1,18 @@
 <title>Şebeke-M Hakediş Web</title>
 <link rel="stylesheet" href="app.css">
 <style>
-/* Tek görünüm (koyu saha teması): uygulamadaki ekranlarla aynı. Düzen: solda menü, üstte proje + bulut durumu, ortada harita / ekran. */
+/* Uygulamadaki ekranlarla aynı görünüm (koyu ya da açık tema). Düzen: solda menü, üstte proje + bulut durumu, ortada harita / ekran. */
 :root{color-scheme:dark;--splash-bg:#0b1326;--splash-fg:#dae2fd;--splash-accent:#10b981;--splash-mut:#94a3b8}
 html,body{margin:0;height:100%;background:var(--splash-bg);color:var(--splash-fg);font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif}
 #splash{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding-inline:16px;text-align:center}
 #splash .logo{width:min(240px,62vw);background:#fff;border-radius:20px;padding:14px 18px;box-shadow:0 10px 40px rgba(0,0,0,.45)}
 #splash .logo img{display:block;width:100%;height:auto}
 #splash span{font-size:13px;color:var(--splash-mut)}
+/* Açık tema (13.11.2026; Ayarlar › Görünüm › Tema): ui/tema.js html'e data-tema yazar */
+html[data-tema=acik]{color-scheme:light;--splash-bg:#f3f5f8;--splash-fg:#0f1b2a;--splash-mut:#475569}
+html[data-tema=acik] #splash .logo{box-shadow:0 10px 40px rgba(15,23,42,.15)}
 </style>
+<script>/* arayüz teması ilk boyamadan önce (ui/tema.js ile aynı kural) */try{var t=localStorage.getItem('sh-tema')||'otomatik';var a=t==='acik'||(t==='otomatik'&&window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches);document.documentElement.dataset.tema=a?'acik':'koyu';}catch(e){}</script>
 <div id="splash"><div class="logo"><img src="assets/sebeke-m-logo.png" alt="Şebeke-M Hakediş"></div><span id="splash-msg">Başlatılıyor…</span></div>
 <script>window.__VOLT_WEB__ = true; window.__VOLT_VERSION__ = '__VERSION__';</script>
 <script src="app.js"></script>

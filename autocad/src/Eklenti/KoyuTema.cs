@@ -13,34 +13,43 @@ namespace SebekeHakedis.Eklenti
     // Hepsi Windows Forms'un kendi denetimlerinden türer; klavye (Tab, Enter, Esc) ve AutoCAD'in modal penceresi aynen çalışır.
     // =====================================================================================================
 
-    /// <summary>Koyu tema renkleri (telefonun koyu lacivert zemini; vurgu: AG yeşili).</summary>
+    /// <summary>
+    /// Arayüz renkleri: koyu (telefonun koyu lacivert zemini) ve açık tema (13.11.2026); vurgu her ikisinde AG yeşili.
+    /// Etkin tema <see cref="Tema"/>'dan; pencere açılırken seçilir (açık pencere tema değişince değişmez).
+    /// </summary>
     internal static class KoyuRenk
     {
-        public static readonly Color Arka = Color.FromArgb(0x16, 0x22, 0x33);
-        public static readonly Color Baslik = Color.FromArgb(0x10, 0x1A, 0x29);
-        public static readonly Color Kart = Color.FromArgb(0x1C, 0x2A, 0x3E);
-        public static readonly Color Kutu = Color.FromArgb(0x0F, 0x19, 0x27);
-        public static readonly Color Kenar = Color.FromArgb(0x2C, 0x3D, 0x55);
-        public static readonly Color KenarAcik = Color.FromArgb(0x45, 0x5C, 0x7D);
-        public static readonly Color Uzerinde = Color.FromArgb(0x24, 0x35, 0x4D);
-        public static readonly Color Yazi = Color.FromArgb(0xE6, 0xED, 0xF5);
-        public static readonly Color Ikincil = Color.FromArgb(0x9D, 0xAB, 0xBF);
-        public static readonly Color Soluk = Color.FromArgb(0x66, 0x76, 0x8D);
-        public static readonly Color Vurgu = Color.FromArgb(0x16, 0x9B, 0x5A);
-        public static readonly Color VurguAcik = Color.FromArgb(0x1D, 0xB2, 0x69);
-        public static readonly Color VurguKoyu = Color.FromArgb(0x11, 0x7E, 0x49);
-        public static readonly Color VurguPasif = Color.FromArgb(0x1D, 0x3A, 0x31);
-        public static readonly Color Yesil = Color.FromArgb(0x34, 0xC7, 0x7B);
-        public static readonly Color Secili = Color.FromArgb(0x13, 0x3B, 0x2D);
-        public static readonly Color Mavi = Color.FromArgb(0x1F, 0x6F, 0xD1);
-        public static readonly Color MaviAcik = Color.FromArgb(0x60, 0xA5, 0xFA);
-        public static readonly Color Gri = Color.FromArgb(0x47, 0x55, 0x69);
-        public static readonly Color Sari = Color.FromArgb(0xF7, 0xCB, 0x55);
-        public static readonly Color Kirmizi = Color.FromArgb(0xFF, 0x6B, 0x78);
-        public static readonly Color BilgiZemin = Color.FromArgb(0x12, 0x29, 0x48), BilgiKenar = Color.FromArgb(0x1F, 0x4E, 0x86), BilgiYazi = Color.FromArgb(0xA5, 0xCF, 0xFF);
-        public static readonly Color UyariZemin = Color.FromArgb(0x35, 0x2A, 0x0E), UyariKenar = Color.FromArgb(0x7A, 0x5B, 0x12), UyariYazi = Color.FromArgb(0xF7, 0xCB, 0x55);
-        public static readonly Color HataZemin = Color.FromArgb(0x3A, 0x1A, 0x21), HataKenar = Color.FromArgb(0x80, 0x30, 0x3B), HataYazi = Color.FromArgb(0xFF, 0xA3, 0xAD);
-        public static readonly Color Kapat = Color.FromArgb(0xC4, 0x2B, 0x1C);
+        public static Color Arka => Tema.Acik ? Color.FromArgb(0xF3, 0xF5, 0xF8) : Color.FromArgb(0x16, 0x22, 0x33);
+        public static Color Baslik => Tema.Acik ? Color.FromArgb(0xE6, 0xEB, 0xF1) : Color.FromArgb(0x10, 0x1A, 0x29);
+        public static Color Kart => Tema.Acik ? Color.FromArgb(0xFF, 0xFF, 0xFF) : Color.FromArgb(0x1C, 0x2A, 0x3E);
+        public static Color Kutu => Tema.Acik ? Color.FromArgb(0xFF, 0xFF, 0xFF) : Color.FromArgb(0x0F, 0x19, 0x27);
+        public static Color Kenar => Tema.Acik ? Color.FromArgb(0xCB, 0xD4, 0xDF) : Color.FromArgb(0x2C, 0x3D, 0x55);
+        public static Color KenarAcik => Tema.Acik ? Color.FromArgb(0x9A, 0xA8, 0xBA) : Color.FromArgb(0x45, 0x5C, 0x7D);
+        public static Color Uzerinde => Tema.Acik ? Color.FromArgb(0xE8, 0xEE, 0xF5) : Color.FromArgb(0x24, 0x35, 0x4D);
+        public static Color Yazi => Tema.Acik ? Color.FromArgb(0x0F, 0x1B, 0x2A) : Color.FromArgb(0xE6, 0xED, 0xF5);
+        public static Color Ikincil => Tema.Acik ? Color.FromArgb(0x3C, 0x4A, 0x5D) : Color.FromArgb(0x9D, 0xAB, 0xBF);
+        public static Color Soluk => Tema.Acik ? Color.FromArgb(0x66, 0x76, 0x8B) : Color.FromArgb(0x66, 0x76, 0x8D);
+        public static Color Vurgu => Tema.Acik ? Color.FromArgb(0x16, 0x9B, 0x5A) : Color.FromArgb(0x16, 0x9B, 0x5A);
+        public static Color VurguAcik => Tema.Acik ? Color.FromArgb(0x1D, 0xB2, 0x69) : Color.FromArgb(0x1D, 0xB2, 0x69);
+        public static Color VurguKoyu => Tema.Acik ? Color.FromArgb(0x11, 0x7E, 0x49) : Color.FromArgb(0x11, 0x7E, 0x49);
+        public static Color VurguPasif => Tema.Acik ? Color.FromArgb(0xD3, 0xEE, 0xDF) : Color.FromArgb(0x1D, 0x3A, 0x31);
+        public static Color Yesil => Tema.Acik ? Color.FromArgb(0x12, 0x80, 0x4A) : Color.FromArgb(0x34, 0xC7, 0x7B);
+        public static Color Secili => Tema.Acik ? Color.FromArgb(0xD9, 0xF2, 0xE5) : Color.FromArgb(0x13, 0x3B, 0x2D);
+        public static Color Mavi => Tema.Acik ? Color.FromArgb(0x1F, 0x6F, 0xD1) : Color.FromArgb(0x1F, 0x6F, 0xD1);
+        public static Color MaviAcik => Tema.Acik ? Color.FromArgb(0x1F, 0x5F, 0xBF) : Color.FromArgb(0x60, 0xA5, 0xFA);
+        public static Color Gri => Tema.Acik ? Color.FromArgb(0x94, 0xA3, 0xB8) : Color.FromArgb(0x47, 0x55, 0x69);
+        public static Color Sari => Tema.Acik ? Color.FromArgb(0x9A, 0x67, 0x00) : Color.FromArgb(0xF7, 0xCB, 0x55);
+        public static Color Kirmizi => Tema.Acik ? Color.FromArgb(0xC4, 0x28, 0x3A) : Color.FromArgb(0xFF, 0x6B, 0x78);
+        public static Color BilgiZemin => Tema.Acik ? Color.FromArgb(0xE8, 0xF1, 0xFD) : Color.FromArgb(0x12, 0x29, 0x48);
+        public static Color BilgiKenar => Tema.Acik ? Color.FromArgb(0xA9, 0xC8, 0xF2) : Color.FromArgb(0x1F, 0x4E, 0x86);
+        public static Color BilgiYazi => Tema.Acik ? Color.FromArgb(0x1B, 0x4E, 0x8C) : Color.FromArgb(0xA5, 0xCF, 0xFF);
+        public static Color UyariZemin => Tema.Acik ? Color.FromArgb(0xFF, 0xF5, 0xD6) : Color.FromArgb(0x35, 0x2A, 0x0E);
+        public static Color UyariKenar => Tema.Acik ? Color.FromArgb(0xE3, 0xC0, 0x63) : Color.FromArgb(0x7A, 0x5B, 0x12);
+        public static Color UyariYazi => Tema.Acik ? Color.FromArgb(0x7A, 0x56, 0x00) : Color.FromArgb(0xF7, 0xCB, 0x55);
+        public static Color HataZemin => Tema.Acik ? Color.FromArgb(0xFD, 0xEB, 0xEE) : Color.FromArgb(0x3A, 0x1A, 0x21);
+        public static Color HataKenar => Tema.Acik ? Color.FromArgb(0xEF, 0xA6, 0xB0) : Color.FromArgb(0x80, 0x30, 0x3B);
+        public static Color HataYazi => Tema.Acik ? Color.FromArgb(0xA1, 0x1D, 0x2D) : Color.FromArgb(0xFF, 0xA3, 0xAD);
+        public static Color Kapat => Tema.Acik ? Color.FromArgb(0xC4, 0x2B, 0x1C) : Color.FromArgb(0xC4, 0x2B, 0x1C);
 
         /// <summary>"#rrggbb" → renk (okunamazsa varsayılan).</summary>
         public static Color Hex(string hex, Color varsayilan)
@@ -53,6 +62,89 @@ namespace SebekeHakedis.Eklenti
                 return Color.FromArgb((v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF);
             }
             catch { return varsayilan; }
+        }
+    }
+
+    /// <summary>
+    /// Arayüz teması (13.11.2026): Otomatik (AutoCAD'in temasını izler: COLORTHEME 1 açık), Koyu ya da Açık. Seçim bu
+    /// bilgisayarda kullanıcı başına saklanır (%APPDATA%\SebekeHakedis\arayuz.json; çizime yazılmaz). Her pencere açılırken
+    /// <see cref="Yenile"/> etkin temayı belirler. Denemede SH_TEMA ortam değişkeni (koyu / acik) seçimi geçersiz kılar.
+    /// </summary>
+    internal static class Tema
+    {
+        public const string Otomatik = "otomatik", Koyu = "koyu", AcikSecim = "acik";
+        public static readonly string[] Secenekler = { Otomatik, Koyu, AcikSecim };
+        public static readonly string[] SecenekAdlari = { "Otomatik (AutoCAD'in teması)", "Koyu", "Açık" };
+
+        /// <summary>AutoCAD açık temada mı (eklenti başlarken bağlanır; bağlanmamışsa koyu sayılır).</summary>
+        public static Func<bool> AutoCadAcikMi;
+
+        private static string _secim;
+        private static bool _acik;
+
+        /// <summary>Etkin tema açık mı (son <see cref="Yenile"/> sonucu).</summary>
+        public static bool Acik => _acik;
+
+        /// <summary>Kullanıcının seçimi: otomatik / koyu / acik.</summary>
+        public static string Secim
+        {
+            get { if (_secim == null) _secim = Oku(); return _secim; }
+            set { _secim = Array.IndexOf(Secenekler, value) >= 0 ? value : Otomatik; Kaydet(_secim); Yenile(); }
+        }
+
+        /// <summary>Etkin temayı seçimden (otomatikte AutoCAD'den) belirler.</summary>
+        public static bool Yenile()
+        {
+            string s = Environment.GetEnvironmentVariable("SH_TEMA");
+            if (string.IsNullOrEmpty(s)) s = Secim;
+            if (s == AcikSecim) _acik = true;
+            else if (s == Koyu) _acik = false;
+            else { try { _acik = AutoCadAcikMi != null && AutoCadAcikMi(); } catch { _acik = false; } }
+            return _acik;
+        }
+
+        private static string Yol => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SebekeHakedis", "arayuz.json");
+
+        private static string Oku()
+        {
+            try
+            {
+                if (!System.IO.File.Exists(Yol)) return Otomatik;
+                var m = System.Text.RegularExpressions.Regex.Match(System.IO.File.ReadAllText(Yol), "\"tema\"\\s*:\\s*\"(\\w+)\"");
+                return m.Success && Array.IndexOf(Secenekler, m.Groups[1].Value) >= 0 ? m.Groups[1].Value : Otomatik;
+            }
+            catch { return Otomatik; }
+        }
+
+        private static void Kaydet(string secim)
+        {
+            try
+            {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(Yol));
+                System.IO.File.WriteAllText(Yol, "{ \"tema\": \"" + secim + "\" }\n");
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Çizim rengini (hat / eleman simgesi) zemine göre okunur yapar: açık temada çok açık renkler (AYD camgöbeği,
+        /// sarı…) koyulaştırılır; koyu temada aynen kalır.
+        /// </summary>
+        public static Color Okunur(Color c)
+        {
+            if (!_acik) return c;
+            double l = (0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B) / 255.0;
+            if (l <= 0.55) return c;
+            double k = 0.55 / l;
+            return Color.FromArgb(c.A, (int)(c.R * k), (int)(c.G * k), (int)(c.B * k));
+        }
+
+        /// <summary><see cref="Okunur(Color)"/> "#rrggbb" yazımıyla (simge resimleri için).</summary>
+        public static string OkunurHex(string hex)
+        {
+            if (!_acik) return hex;
+            var c = Okunur(KoyuRenk.Hex(hex, Color.Empty));
+            return c.IsEmpty ? hex : "#" + c.R.ToString("x2") + c.G.ToString("x2") + c.B.ToString("x2");
         }
     }
 
@@ -112,7 +204,7 @@ namespace SebekeHakedis.Eklenti
 
         public static void KoyuKaydirma(IntPtr h)
         {
-            try { if (h != IntPtr.Zero) SetWindowTheme(h, "DarkMode_Explorer", null); } catch { }
+            try { if (h != IntPtr.Zero) SetWindowTheme(h, Tema.Acik ? "Explorer" : "DarkMode_Explorer", null); } catch { }
         }
 
         public static void KoyuKaydirma(Control c)
@@ -216,6 +308,7 @@ namespace SebekeHakedis.Eklenti
 
         public KoyuPencere(string baslik, int en, int boy, Image simge = null, bool altVar = true)
         {
+            Tema.Yenile();   // pencere açılırken etkin tema (Otomatik: AutoCAD'in teması)
             SuspendLayout();
             Text = baslik;
             _simge = simge;

@@ -73,7 +73,10 @@ async def main():
     try:
         async with async_playwright() as p:
             b = await p.chromium.launch()
-            ctx = await b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2)
+            # Renk denetimleri koyu temanın renkleriyle (13.11.2026 açık tema: başsız tarayıcı açık şemadadır, Otomatik açık
+            # temayı seçer ve harita renklerini koyulaştırırdı)
+            ctx = await b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, color_scheme='dark')
+            await ctx.add_init_script("try { localStorage.setItem('sh-tema', 'koyu'); } catch (e) {}")
             await ctx.add_init_script(MOCK)
             pg = await ctx.new_page()
             errors = []

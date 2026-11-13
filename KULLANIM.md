@@ -198,7 +198,11 @@ kendiliğinden artar. Her komut AutoCAD'in **U** (Geri Al) komutuyla tek seferde
 
 ### Pencereler
 
-Bütün pencereler koyu temadadır; **Enter** birincil düğmeye (Çiz, Kaydet), **Esc** Vazgeç'e basar. Pencere
+Pencereler koyu ya da açık temada açılır (13.11.2026): **Çizim Ayarları › Genel › Arayüz teması** — **Otomatik**
+(AutoCAD'in teması: Seçenekler › Görüntü › Renk düzeni Açık ise açık), **Koyu** ya da **Açık**. Seçim bu bilgisayarda
+kullanıcı başına saklanır, çizime yazılmaz; açık pencereler değişmez, sonraki açılan pencereler yeni temayla gelir.
+Açık temada çok açık çizim renkleri (aydınlatmanın camgöbeği, sarı) listelerde okunsun diye koyulaştırılır. Telefonda
+aynı seçim Ayarlar › Görünüm › Tema'dadır. **Enter** birincil düğmeye (Çiz, Kaydet), **Esc** Vazgeç'e basar. Pencere
 başlığından tutup taşınır.
 
 - **Eleman koy / Hat çiz**: solda tür, ortada arama kutusu + **cins düğmeleri** (Beton, Ağaç, Demir…; yanında
