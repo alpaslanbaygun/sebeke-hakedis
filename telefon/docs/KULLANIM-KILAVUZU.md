@@ -128,7 +128,11 @@ Koordinat sistemi sonradan Ayarlar › Koordinat sistemi ekranından değiştiri
 Proje merkezi projenin özet ekranıdır. Haritada sol üstteki klasör düğmesiyle açılır.
 
 - Üstte nokta, ekipman, hat ve hata sayıları durur.
-- `Saha objeleri`: tüm objelerin listesi, arama ve süzme.
+- `Saha objeleri`: tüm objelerin listesi, arama ve süzme. **Malzeme süzgeci** ile bir malzemesi olmayan (ya da olan)
+  ekipmanlar listelenir (ör. topraklaması olmayan direkler). **Toplu malzeme** düğmesi listedeki bütün ekipmanlara —
+  `Seç` ile işaretlediyseniz yalnız onlara — aynı anda birden çok malzeme ekler: malzemelere dokunup işaretleyin,
+  miktarları yazın, `N OBJEYE M MALZEME` deyin. Objede zaten olan malzeme (istenirse) eklenmez; mevcut / ileride ve
+  kilitli objeler atlanır. Otomatik reçete açıksa eklenenler "sahada ilave" olur (gerekçe yazılır, onay bekler).
 - `Excel aktarım`: toplu veri alma.
 - `Kullanıcılar ve hakediş onayı`: roller ve onay.
 - "Proje akışı": 14 adımlık iş listesi. Biten adımın yanında yeşil tik olur; sıradaki adım vurgulanır. Bir adıma dokununca ilgili ekran açılır.
@@ -387,7 +391,7 @@ Abone ve "Diğer" türü objeler hatta kendiliğinden bağlanmaz.
 
 ### Yeraltı kablosu ve kanal
 
-Yeraltı hattında kanalın `Cins`'i (zemin: `Toprak`, `Tüvenan`, `Mıcır`, `Branşman kanalı`, `Kablo demontaj kanalı`), `Kaplama`'sı (`Kaplamasız`, `Parke`, `Asfalt`, `Beton`) ve `Ek` (`Bariyerli`, `Trencher`) ayrı ayrı, sonra `Yöntem` seçilir. `Derinlik (m)` zorunludur; girilmeden hat başlamaz.
+Yeraltı hattında kanalın `Cins`'i (zemin: `Toprak`, `Tüvenan`, `Mıcır`, `Branşman kanalı`, `Kablo demontaj kanalı`), `Kaplama`'sı (`Kaplamasız`, `Parke`, `Asfalt`, `Beton`) ve `Ek` (`Bariyerli`, `Trencher`) ayrı ayrı, sonra `Yöntem` seçilir. `Derinlik (m)` zorunludur; girilmeden hat başlamaz. Derinlik virgülle ya da noktayla yazılabilir (0,8 = 0.8); hızlı olsun diye altında hazır derinlik düğmeleri vardır (0,7 · 0,8 · 0,9 · 1,0 · 1,2 m — asgari AG 0,7, OG 0,9 m). Ondalık alanlar bütün ekranlarda (anten yüksekliği, direk boyu, açılar…) el konsollarının klavyesinde virgülü de kabul eder.
 
 Seçimden AutoCAD'e giden kanal kalemi adı kurulur; AutoCAD eklentisindekiyle aynı kural (ör. Tüvenan + Parke + Bariyerli → `PARKE TUVENAN (BARİYERLİ)`, Toprak + Asfalt → `TOPRAK (ASFALT KAPLAMALI)`). Hat kaydı ekranında "AutoCAD kalem adı" satırı bunu gösterir. AutoCAD'den gelen ve bu kurala uymayan bir ad olduğu gibi korunur; cins ya da kaplama seçilince yenisi yazılır. Eski sürümde tek `Kaplama` seçimiyle girilmiş hatlar okunur (Parke ve Asfalt → Tüvenan zemin, Beton → Toprak zemin).
 
@@ -887,7 +891,7 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 | Telefon proje dosyası | .volt.json | Projenin tam yedeği (tüm kayıtlar) + AutoCAD bölümü; eklenti ve telefon bunu da açar |
 | AutoCAD DXF | .dxf | Katmanlar, semboller (eklentiyle aynı bloklar), yazılar; 1/1000 |
 | Netcad NCN | .ncn | Nokta adı, Y, X, Z, kod. Netcad'e DXF ile birlikte alınır |
-| Google Earth KMZ | .kmz | AutoCAD eklentisinin Google Earth dosyasıyla aynı: her proje bir klasör (sınır, elemanlar, hatlar, kanallar, sondajlar), GPS noktaları; nesneye dokununca bilgileri (GIS no, tür, tip, durum, hakediş, proje, malzemeler, metraj). Ayrı klasörde (başta kapalı) gerçek yükseklikte 3 boyutlu direk ve tel |
+| Google Earth KMZ | .kmz | AutoCAD eklentisinin Google Earth dosyasıyla aynı: her proje bir klasör (sınır, elemanlar, hatlar, kanallar, sondajlar), GPS noktaları; nesneye dokununca bilgileri (GIS no, tür, tip, durum, hakediş, proje, malzemeler, metraj). Ayrı klasörde (başta kapalı) 3 boyutlu direk ve tel: direk zeminden (arazinin yüksekliğinden) direk boyu kadar yükselir, tel bağlantı yüksekliğinden geçer; ölçülen Z'ye değil Google Earth'ün zeminine göre çizildiği için direkler havada kalmaz |
 | CBS MapInfo (MIF / MID) | .zip | AutoCAD eklentisinin CBS dosyalarıyla aynı katman ve sütunlar, şebeke elemanı bazında: DIREK, TRAFO, SDK, PANO, ELEMAN (diğer elemanlar), HAT (iletkenleri, adetleri, baş ve bit elemanıyla), KANAL, SONDAJ, BOLGE (proje sınırı), NOKTA (GPS noktası) ve MALZEME (her nesnenin bütün malzeme satırları; haritada yeri olmayan tablo); bütün öznitelikler (GIS no, tür, cins, tip, durum, hakediş, güç, gerilim, kontrol…); her katman bir `.mif` + `.mid` çifti, Türkçe karakterler Windows kod sayfasında. Seçilen koordinat sisteminde yazılır; QGIS ve MapInfo açar |
 | CBS Shapefile | .zip | Ekipman, hat, açıklık ve ölçü katmanları |
 | GeoJSON | .geojson | CBS yazılımları için |
@@ -998,7 +1002,7 @@ Yeni sürümün kurulum dosyasını eski sürümün üzerine kurun; uygulamayı 
 | "Önce direk tipini seçin" | Direk tipi boş | Nesne seçiciden tip seçin |
 | "Hassas alım için uygun değil" | Ölçü eşikleri tutmuyor | `Vazgeç · FIX bekle` deyip bekleyin, ya da `Yine de kaydet` |
 | "Köşe noktası için önce hat başlatın" | Çizilen hat yok | `+ HAT` ile hat başlatın |
-| "Yeraltı hat için kanal derinliği zorunlu" | Derinlik boş | Hat penceresinde `Derinlik (m)` yazın |
+| "Yeraltı hat için kanal derinliği zorunlu" | Derinlik boş | Hat penceresinde `Derinlik (m)` yazın (virgül ya da nokta: 0,8) ya da alttaki hazır derinliklerden birine dokunun (0,7 · 0,8 · 0,9 · 1,0 · 1,2 m) |
 | Hücre eklenemedi | Köşkte yer kalmadı | Daha geniş köşk tipi seçin ya da bir hücre çıkarın |
 | CAD çizimi görünmüyor ya da başka yerde | Çizimin koordinat sistemi projeninkinden farklı | Çizimi proje koordinat sisteminde kaydedip yeniden açın; `Sığdır` ile yerini görün |
 | Altlık harita boş | İnternet yok ya da adres yanıt vermiyor | Başka altlık seçin; sahaya çıkmadan `Görünen alanı offline indir` deyin |

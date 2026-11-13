@@ -1,6 +1,6 @@
 // Proje merkezi (akış: PROJE → GNSS → SAHA → ALIM → HAT → BAĞLANTI → REÇETE → METRAJ → HAKEDİŞ → KONTROL → APLİKASYON → DXF/GIS → RAPOR → TESLİM)
 // + Denetim kaydı + Senkron & çakışmalar
-import { html, useState, useEffect, useBus, Icon, Chip, Seg, Sel, Badge, Title, Toggle, Empty, fmt, trn } from '../kit.js';
+import { html, useState, useEffect, useBus, Icon, Chip, Seg, Sel, Badge, Title, Toggle, Empty, SayiGirdi, fmt, trn } from '../kit.js';
 import { app } from '../ctx.js';
 import { makeCrs, zoneForLon, TM_ZONES } from '../../geo/crs.js';
 import { listStandards } from '../../core/standards.js';
@@ -144,7 +144,7 @@ export function ProjectEditScreen() {
   return html`<${Title} title="Proje bilgileri" sub=${'Standart: ' + ps.cat.std.name + ' (sabit)'} />
     <div class="card stack">${[['name', 'Proje adı'], ['code', 'Kod'], ['client', 'İdare'], ['contractor', 'Yüklenici'], ['location', 'Yer']].map(([k, l]) => html`<div class="fld"><label>${l}</label><input class="inp" value=${d[k] || ''} onInput=${(e) => set({ [k]: e.target.value })} /></div>`)}
       <div class="fld"><label>Çalışma modu</label><${Seg} value=${d.mode} options=${[['asbuilt', 'Uygulama'], ['tasarim', 'Tasarım']]} onChange=${(v) => set({ mode: v })} /></div>
-      <div class="grid2"><div class="fld"><label>Köşe eşiği (°)</label><input class="inp mono" type="number" step="0.5" value=${d.cornerThresholdDeg} onChange=${(e) => set({ cornerThresholdDeg: +e.target.value })} /></div><div class="fld"><label>İletken payı (%)</label><input class="inp mono" type="number" step="0.5" value=${d.conductorPayPct} onChange=${(e) => set({ conductorPayPct: +e.target.value })} /></div></div>
+      <div class="grid2"><div class="fld"><label>Köşe eşiği (°)</label><${SayiGirdi} canli value=${d.cornerThresholdDeg} onSave=${(v) => set({ cornerThresholdDeg: v ?? 0 })} /></div><div class="fld"><label>İletken payı (%)</label><${SayiGirdi} canli value=${d.conductorPayPct} onSave=${(v) => set({ conductorPayPct: v ?? 0 })} /></div></div>
       <div class="fld"><label>Zemin sınıfı (ENH açıklık)</label><${Seg} value=${d.landClass} options=${[['arazi', 'Yerleşim dışı'], ['yerlesim', 'Yerleşim yeri']]} onChange=${(v) => set({ landClass: v })} /></div>
       <div class="row"><div class="grow"><b style="font-size:14px">Otomatik malzeme reçetesi</b><div class="note">Kapalı (önerilen): objede yalnız seçtiğiniz kalemler gelir (direk, trafo, köşk, iletken boyu, kanal hesabı); diğer malzemeleri siz eklersiniz. Açık: travers, izolatör, topraklama, kum, bant gibi yardımcı malzemeler kurala göre kendiliğinden eklenir.</div></div><${Toggle} on=${d.autoRecipe} onChange=${(v) => set({ autoRecipe: v })} label="Otomatik reçete" /></div></div>
     <button class="btn pri blk huge" onClick=${save}>KAYDET</button>`;

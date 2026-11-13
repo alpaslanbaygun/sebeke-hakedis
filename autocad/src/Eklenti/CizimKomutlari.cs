@@ -1183,41 +1183,63 @@ namespace SebekeHakedis.Eklenti
                     if (e != null) secilen.Add(new KeyValuePair<ObjectId, Eleman>(id, e));
                 }
                 if (secilen.Count == 0) { ed.WriteMessage("\nSeçimde şebeke elemanı yok (direk, trafo, box, pano …)."); return; }
-                var eklenecek = Pencereler.TopluMalzeme(o, secilen.ConvertAll(x => x.Value));
-                if (eklenecek == null || eklenecek.Count == 0) return;
-                int yazilan = 0, satir = 0;
-                using (var tr = o.Db.TransactionManager.StartTransaction())
-                {
-                    var y = Yazici(o, tr);
-                    foreach (var kv in secilen)
-                    {
-                        var e = kv.Value;
-                        var eklenen = new List<Kalem>();
-                        foreach (var t in eklenecek)
-                        {
-                            string durum = string.IsNullOrEmpty(t.Durum) ? MalzemeDurumu(e.Durum) : t.Durum;
-                            eklenen.Add(Katalog.KalemYap(t.Kalem, t.Miktar, durum, t.Hakedis, false, "MALZEME", o.YeniSira(), "", o.Ayar.Karakteristik, o.Ayar.Koy));
-                        }
-                        e.Kalemler.AddRange(eklenen);
-                        try
-                        {
-                            NesneyiYaz(o, y, kv.Key, e, e.Durum, e.Hakedis);
-                            yazilan++;
-                            satir += eklenen.Count;
-                        }
-                        catch (System.Exception ex)
-                        {
-                            foreach (var k in eklenen) e.Kalemler.Remove(k);
-                            y.Uyarilar.Add(Ad(e) + " güncellenemedi (katmanı kilitli olabilir): " + ex.Message);
-                        }
-                    }
-                    tr.Commit();
-                    UyarilariYaz(ed, y);
-                }
-                // Malzeme hafızası: her tür ve tipin son elemanı
-                HizliSecim.HepsiniHatirla(secilen.ConvertAll(x => x.Value));
-                ed.WriteMessage("\n" + yazilan + " elemana toplam " + satir + " malzeme satırı eklendi.");
+                TopluMalzemeUygula(o, secilen, null, null);
             });
+        }
+
+        /// <summary>
+        /// Toplu malzeme penceresini açar ve dönen malzemeleri her elemana ayrı kalem olarak yazar (SH_TOPLUMALZEME ve
+        /// Eksik malzeme sorgusunun "Bulunanlara malzeme ekle" işlemi). "Elemanda zaten olanı ekleme" işaretliyse aynı
+        /// cins ve tipte ara malzemesi olan elemana o satır eklenmez.
+        /// </summary>
+        internal static void TopluMalzemeUygula(Ortam o, List<KeyValuePair<ObjectId, Eleman>> secilen, List<TopluMalzemeSatiri> baslangic, string baslik)
+        {
+            var ed = o.Ed;
+            var eklenecek = Pencereler.TopluMalzeme(o, secilen.ConvertAll(x => x.Value), baslangic, baslik);
+            if (eklenecek == null || eklenecek.Count == 0) return;
+            int yazilan = 0, satir = 0, atlanan = 0;
+            using (var tr = o.Db.TransactionManager.StartTransaction())
+            {
+                var y = Yazici(o, tr);
+                foreach (var kv in secilen)
+                {
+                    var e = kv.Value;
+                    var eklenen = new List<Kalem>();
+                    foreach (var t in eklenecek)
+                    {
+                        if (t.VarsaAtla && ZatenVar(e, t.Kalem)) { atlanan++; continue; }
+                        string durum = string.IsNullOrEmpty(t.Durum) ? MalzemeDurumu(e.Durum) : t.Durum;
+                        eklenen.Add(Katalog.KalemYap(t.Kalem, t.Miktar, durum, t.Hakedis, false, "MALZEME", o.YeniSira(), "", o.Ayar.Karakteristik, o.Ayar.Koy));
+                    }
+                    if (eklenen.Count == 0) continue;
+                    e.Kalemler.AddRange(eklenen);
+                    try
+                    {
+                        NesneyiYaz(o, y, kv.Key, e, e.Durum, e.Hakedis);
+                        yazilan++;
+                        satir += eklenen.Count;
+                    }
+                    catch (System.Exception ex)
+                    {
+                        foreach (var k in eklenen) e.Kalemler.Remove(k);
+                        y.Uyarilar.Add(Ad(e) + " güncellenemedi (katmanı kilitli olabilir): " + ex.Message);
+                    }
+                }
+                tr.Commit();
+                UyarilariYaz(ed, y);
+            }
+            // Malzeme hafızası: her tür ve tipin son elemanı
+            HizliSecim.HepsiniHatirla(secilen.ConvertAll(x => x.Value));
+            ed.WriteMessage("\n" + yazilan + " elemana toplam " + satir + " malzeme satırı eklendi." +
+                            (atlanan > 0 ? " Elemanda zaten olduğu için " + atlanan + " satır eklenmedi." : ""));
+        }
+
+        /// <summary>Elemanda bu katalog kaleminin cins ve tipinde ara malzeme var mı (boşluk ve büyük/küçük harf farkı sayılmaz).</summary>
+        internal static bool ZatenVar(Eleman e, KatalogKalemi it)
+        {
+            if (e == null || it == null) return false;
+            string tanim = DetaySorgu.Sade(it.Tanim);
+            return e.Kalemler.Exists(k => !k.Ana && string.Equals(k.Cins, it.Cins, StringComparison.OrdinalIgnoreCase) && DetaySorgu.Sade(k.Tanim) == tanim);
         }
 
         // ================= SH_METRAJ =================

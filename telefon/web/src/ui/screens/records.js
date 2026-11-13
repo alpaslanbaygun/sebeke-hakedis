@@ -1,11 +1,11 @@
 // Nokta kaydı · Hat kaydı · Fotoğraf (kanıt) ekranları
-import { html, useState, useEffect, useRef, useBus, Icon, Chip, Seg, Sel, Badge, Title, Toggle, fmt, trn, CODE_KIND } from '../kit.js';
+import { html, useState, useEffect, useRef, useBus, Icon, Chip, Seg, Sel, Badge, Title, Toggle, SayiGirdi, fmt, trn, CODE_KIND } from '../kit.js';
 import { app } from '../ctx.js';
 import { measure } from '../services.js';
 import { renumberDialog } from './field.js';
 import { HakRow, HakHistory } from './team.js';
 import { STATUSES, HAK_STATUSES, HAK_ORDER, hakOf } from '../../core/schema.js';
-import { circuitLabel, circuitParts, autocadDevresi, lineLabelText, malzemeYazisi, CABLE_DEFAULTS, KAPLAMA, YONTEM, kanalModel, ZEMIN_CINSI, KAPLAMA_TURU, zemindenSurface, zeminOzelMi, kanalZeminTanimi } from '../../grid/lines.js';
+import { circuitLabel, circuitParts, autocadDevresi, lineLabelText, malzemeYazisi, CABLE_DEFAULTS, KANAL_DERINLIKLERI, KAPLAMA, YONTEM, kanalModel, ZEMIN_CINSI, KAPLAMA_TURU, zemindenSurface, zeminOzelMi, kanalZeminTanimi } from '../../grid/lines.js';
 import { autocadSecenekleri, autocadCinsAdi } from '../../interop/sebeke.js';
 import { autoRecipeOn } from '../../grid/recipe.js';
 import { MaterialPicker } from './matpick.js';
@@ -144,7 +144,7 @@ export function LineScreen({ id }) {
     <div class="card stack">
       <div class="grid2"><div class="fld"><label>Hat no</label><input class="inp mono" value=${d.lineNo} onChange=${(e) => set({ lineNo: e.target.value })} /></div><div class="fld"><label>Hat adı</label><input class="inp" value=${d.name || ''} placeholder="ör. Kurtdere OG fideri" onChange=${(e) => set({ name: e.target.value })} /></div></div>
       <div class="fld"><label>Hat tipi</label><${Seg} value=${d.lineType} options=${['AG', 'OG', 'AYD', 'ENH', 'ABONE']} onChange=${(v) => set({ lineType: v })} /></div>
-      <div class="grid2"><div class="fld"><label>Tesis</label><${Seg} value=${d.install} options=${[['havai', 'Havai'], ['yeralti', 'Yeraltı']]} onChange=${(v) => set({ install: v })} /></div><div class="fld"><label>Gerilim (kV)</label><input class="inp mono" type="number" step="0.1" value=${d.voltageKV ?? (d.lineType === 'OG' || d.lineType === 'ENH' ? 34.5 : 0.4)} onChange=${(e) => set({ voltageKV: +e.target.value })} /></div></div>
+      <div class="grid2"><div class="fld"><label>Tesis</label><${Seg} value=${d.install} options=${[['havai', 'Havai'], ['yeralti', 'Yeraltı']]} onChange=${(v) => set({ install: v })} /></div><div class="fld"><label>Gerilim (kV)</label><${SayiGirdi} canli value=${d.voltageKV ?? (d.lineType === 'OG' || d.lineType === 'ENH' ? 34.5 : 0.4)} onSave=${(v) => set({ voltageKV: v ?? 0 })} /></div></div>
       <div class="fld"><label>Durum</label><div class="chips">${Object.entries(STATUSES).map(([k, v]) => html`<${Chip} on=${d.state === k} onClick=${() => set({ state: k })}>${v.label.split(' ·')[0]}</${Chip}>`)}</div></div>
       <${CizimDurum} d=${d} set=${set} />
       <div class="row"><span class="grow">${d.install === 'yeralti' ? 'Aynı kanalda AG ve OG kablosu' : 'Müşterek (AG+OG aynı direk)'}</span><${Toggle} on=${!!d.musterek} onChange=${(v) => set({ musterek: v })} label="Müşterek" /></div>
@@ -156,7 +156,7 @@ export function LineScreen({ id }) {
     ${d.circuits.map((c, i) => html`<div class="card stack"><div class="row"><${Sel} value=${c.role} options=${roleOpts} onChange=${(v) => setC(i, { role: v })} /><select class="inp mono" style="width:70px" value=${c.count || 1} onChange=${(e) => setC(i, { count: +e.target.value })}>${[1, 2, 3, 4].map((n) => html`<option value=${n}>${n}×</option>`)}</select><button class="btn dang sm" aria-label="Sil" disabled=${d.circuits.length < 2} onClick=${() => set({ circuits: d.circuits.filter((_, j) => j !== i) })}><${Icon} n="x" s=${16} /></button></div>
       ${c.custom ? html`<div class="mono note">Çıplak: ${malzemeYazisi(circuitLabel(c, cat))}</div>` : html`<${Sel} mono value=${c.key} options=${devreSecenekleri(cat, c, d.install)} onChange=${(v) => setC(i, { key: v, custom: null })} />`}
       <div class="note">${devreNotu(cat, c)}</div></div>`)}
-    ${d.install === 'yeralti' ? (() => { const km = kanalModel(d.cable); const kn = li.cable && li.cable.kanal; const fld = ([k, l]) => html`<div class="fld"><label>${l}</label><input class="inp mono" type="number" step="0.05" value=${(d.cable || {})[k] ?? (k === 'joints' || k === 'depth' ? '' : cb[k])} onChange=${(e) => setCable({ [k]: e.target.value === '' ? null : +e.target.value })} /></div>`;
+    ${d.install === 'yeralti' ? (() => { const km = kanalModel(d.cable); const kn = li.cable && li.cable.kanal; const fld = ([k, l]) => html`<div class="fld"><label>${l}</label><${SayiGirdi} canli value=${(d.cable || {})[k] ?? (k === 'joints' || k === 'depth' ? '' : cb[k])} onSave=${(v) => setCable({ [k]: v })} /></div>`;
       return html`<div class="sect">Kanal</div><div class="card stack">
       ${!km.yeni && (km.eski === 'direk' || km.eski === 'duvar') ? html`<div class="alert warn" style="font-size:12px">Bu kayıt eski "${km.eski === 'direk' ? 'Direk inişi' : 'Duvar geçişi'}" türündeydi; bu tür kaldırıldı. Kaplama ve yöntemi seçip kaydedin.</div>` : null}
       <div class="fld"><label>Cins (zemin)</label><div class="chips">${Object.entries(ZEMIN_CINSI).map(([k, l]) => html`<${Chip} on=${km.zemin === k && !(d.cable || {}).zeminHam} onClick=${() => setZemin({ zemin: k })}>${l}</${Chip}>`)}</div></div>
@@ -164,6 +164,7 @@ export function LineScreen({ id }) {
       <div class="note mono">AutoCAD kalem adı: ${kanalZeminTanimi(d.cable)}${(d.cable || {}).zeminHam ? ' (AutoCAD\'den geldiği gibi; seçim yapınca değişir)' : ''}</div>
       <div class="fld"><label>Yöntem</label><div class="chips">${Object.entries(YONTEM).map(([k, l]) => html`<${Chip} on=${km.method === k} onClick=${() => setCable(Object.assign({ surface: km.surface, method: k, zemin: km.zemin, kaplama: km.kaplama, bariyer: km.bariyer, trencher: km.trencher }, k === 'borulu' && !((d.cable || {}).pipeCount > 0) ? { pipeCount: 1 } : {}))}>${l}</${Chip}>`)}</div></div>
       <div class="grid3">${[['depth', 'Derinlik m *'], ['width', 'Genişlik m']].map(fld)}${km.method !== 'acik' ? [['pipeDia', 'Boru Ø mm'], ['pipeCount', 'Boru adet']].map(fld) : null}</div>
+      <div class="chips">${KANAL_DERINLIKLERI.map((v) => html`<${Chip} on=${(d.cable || {}).depth === v} onClick=${() => setCable({ depth: v })}>${trn(v, 1)} m</${Chip}>`)}</div>
       ${kn && kn.eski ? html`<div class="alert warn">Bu hat eski sürümde “${kn.eski === 'direk' ? 'Direk inişi' : 'Duvar geçişi'}” olarak girilmiş; bu seçenek kaldırıldı ve kazı hesaplanmıyor. Burada kanal açılıyorsa yukarıdan kaplamayı seçin.</div>` : null}
       ${kn ? html`<div class="kv mono" style="font-size:12px"><b>Kanal boyu</b><span>${trn(kn.uzunluk, 2)} m</span>${kn.method === 'sondaj' ? html`<b>Yatay sondaj</b><span class="hl">${trn(kn.uzunluk, 2)} m</span>` : html`<b>Kazı hacmi</b><span class="hl">${trn(kn.uzunluk, 2)} × ${kn.genislik} × ${kn.derinlik} = ${trn(kn.hacim, 2)} m³</span>`}${kn.boru ? html`<b>Boru</b><span>${trn(kn.boru, 2)} m</span>` : null}</div>` : html`<div class="note">Kaplama ve yöntemi seçip kaydedince kanal hesabı burada görünür.</div>`}
       </div>

@@ -98,6 +98,8 @@ namespace SebekeHakedis.Eklenti
         /// <summary>Malzemenin durumu; boş: elemanın durumuna göre (mevcut elemana M).</summary>
         public string Durum = "";
         public int Hakedis = 1;
+        /// <summary>Elemanda aynı malzeme (cins + tip) zaten varsa o elemana eklenmez ("Elemanda zaten olanı ekleme").</summary>
+        public bool VarsaAtla;
     }
 
     /// <summary>Telefondan alma özeti (Telefondan al penceresi). Satırlar: { ad, açıklama }.</summary>
@@ -118,7 +120,7 @@ namespace SebekeHakedis.Eklenti
     }
 
     /// <summary>Eksik malzeme penceresinden çıkış: vazgeç, bulunanları çizimde seç, ya da seç ve Excel'e yaz.</summary>
-    internal enum DetayIslemi { Vazgec, Sec, Excel }
+    internal enum DetayIslemi { Vazgec, Sec, Excel, Malzeme }
 
     /// <summary>
     /// Eklentinin pencereleri (kodla kurulur, koyu tema; Google Stitch tasarımı). Yerleşim 96 DPI'a göre mantıksal piksel;
@@ -1498,7 +1500,8 @@ namespace SebekeHakedis.Eklenti
 
         /// <summary>
         /// Eksik malzeme sorgusu (AutoCAD raporundaki DETAY): hangi elemanlarda hangi ara malzeme aranacak; süzgeç değiştikçe
-        /// sonuç listesi yenilenir. Çizimde seç / Excel'e yaz ile kapanır. Son seçimler çizimin ayarlarında saklanır.
+        /// sonuç listesi yenilenir. Çizimde seç / Excel'e yaz / Bulunanlara malzeme ekle (toplu malzeme penceresi, aranan
+        /// malzeme hazır gelir) ile kapanır. Son seçimler çizimin ayarlarında saklanır.
         /// </summary>
         public static DetayIslemi Detay(OrtamVerisi o, DetayFiltresi f, out List<DetaySatiri> sonuc)
         {
@@ -1538,8 +1541,11 @@ namespace SebekeHakedis.Eklenti
                 sec.SetBounds(S(16), by, S(150), bh);
                 var excel = new KoyuDugme("Excel'e yaz", DugmeTuru.Ikincil, Boya.Simge("excel", KoyuRenk.Yesil, 16));
                 excel.SetBounds(sec.Right + S(10), by, S(140), bh);
+                var malzeme = new KoyuDugme("Bulunanlara malzeme ekle", DugmeTuru.Ikincil, Boya.Simge("malzeme", KoyuRenk.Yesil, 16));
+                malzeme.SetBounds(excel.Right + S(10), by, S(230), bh);
                 w.Alt.Controls.Add(sec);
                 w.Alt.Controls.Add(excel);
+                w.Alt.Controls.Add(malzeme);
                 w.Alt.Controls.Add(vazgec);
                 w.AcceptButton = sec;
                 w.CancelButton = vazgec;
@@ -1668,6 +1674,12 @@ namespace SebekeHakedis.Eklenti
                 var islem = DetayIslemi.Vazgec;
                 sec.Click += (s, e) => { islem = DetayIslemi.Sec; w.DialogResult = DialogResult.OK; };
                 excel.Click += (s, e) => { islem = DetayIslemi.Excel; w.DialogResult = DialogResult.OK; };
+                malzeme.Click += (s, e) =>
+                {
+                    if (gorunen.Count == 0) { Uyar("Süzgece uyan eleman yok; önce süzgeci değiştirin."); return; }
+                    islem = DetayIslemi.Malzeme;
+                    w.DialogResult = DialogResult.OK;
+                };
                 if (Goster(w) != DialogResult.OK) return DetayIslemi.Vazgec;
                 var son = suzgec();
                 f.AnaCins = son.AnaCins;
@@ -2760,11 +2772,12 @@ namespace SebekeHakedis.Eklenti
         // ================= Toplu malzeme =================
 
         /// <summary>
-        /// Seçilen elemanlara (ör. 12 direk) aynı malzemeleri tek seferde ekler: soldaki katalogdan malzeme seçilip "Ekle"
-        /// ile sağdaki listeye alınır, miktar ve durum düzenlenir. "Hafızadakiler" son elemanın malzemelerini getirir.
-        /// Dönen satırlar her elemana ayrı kalem olarak eklenir; vazgeçilirse null.
+        /// Seçilen elemanlara (ör. 12 direk) aynı malzemeleri tek seferde ekler: soldaki katalogda malzemelere tıklanır
+        /// (her tıklanan işaretlenir ve sağdaki listeye girer, bir daha tıklamak çıkarır), miktar ve durum düzenlenir.
+        /// "Hafızadakiler" son elemanın malzemelerini getirir. baslangic: pencere açılırken listede olacak satırlar (Eksik
+        /// malzeme sorgusundan aranan malzeme). Dönen satırlar her elemana ayrı kalem olarak eklenir; vazgeçilirse null.
         /// </summary>
-        public static List<TopluMalzemeSatiri> TopluMalzeme(OrtamVerisi o, List<Eleman> elemanlar)
+        public static List<TopluMalzemeSatiri> TopluMalzeme(OrtamVerisi o, List<Eleman> elemanlar, List<TopluMalzemeSatiri> baslangic = null, string baslik = null)
         {
             Hazirla();
             if (elemanlar == null || elemanlar.Count == 0) return null;
@@ -2780,7 +2793,7 @@ namespace SebekeHakedis.Eklenti
                 if (kv.Value > enCok) { enCok = kv.Value; anaTur = kv.Key; }
             }
             var ornek = elemanlar.FindLast(x => x.Tur == anaTur) ?? elemanlar[elemanlar.Count - 1];
-            using (var w = new KoyuPencere("Toplu malzeme — " + elemanlar.Count + " eleman", 980, 640, Boya.Simge("malzeme", KoyuRenk.Yesil, 20)))
+            using (var w = new KoyuPencere(baslik ?? "Toplu malzeme — " + elemanlar.Count + " eleman", 980, 640, Boya.Simge("malzeme", KoyuRenk.Yesil, 20)))
             {
                 var alt = AltKur(w, "Malzemeleri ekle", true, 160);
                 int icSon = w.IcerikSonu - 16;
@@ -2798,7 +2811,7 @@ namespace SebekeHakedis.Eklenti
                 cins.SelectedIndexChanged += (s, e) => { tl.Cins = SeciliCins(cins); tl.Yenile(); };
                 tl.Doldur(katalogListesi, HizliSecim.SonTipler("malzeme/" + anaTur, o.Katalog, katalogListesi, 8), null, "Son eklenenler", "Bütün malzemeler");
                 var ekle = Koy(w, new KoyuDugme("Ekle", DugmeTuru.Birincil, Boya.Simge("arti", Color.White, 16)), 16, icSon - 36, 120, 34);
-                Aciklama(w, "Malzemeye çift tıklamak da ekler.", 146, icSon - 28, 380, 20);
+                Aciklama(w, "Malzemeye tıklayın: işaretlenir ve sağa eklenir; bir daha tıklamak çıkarır. Birden çok malzeme işaretleyebilirsiniz.", 146, icSon - 40, 380, 40);
 
                 // Sağ: eklenecekler
                 Etiket(w, "Her elemana eklenecek malzemeler", 542, 84, 420, KoyuYazi.Kalin, KoyuRenk.Yazi);
@@ -2823,7 +2836,8 @@ namespace SebekeHakedis.Eklenti
                 g.Columns[1].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
                 foreach (DataGridViewColumn c in g.Columns) c.SortMode = DataGridViewColumnSortMode.NotSortable;
                 g.DataError += (s, e) => { e.ThrowException = false; };
-                Koy(w, new Cerceve(g), 542, 108, 422, icSon - 108 - 44);
+                Koy(w, new Cerceve(g), 542, 108, 422, icSon - 108 - 80);
+                var varsaAtla = Koy(w, new KoyuOnay("Elemanda zaten olan malzemeyi ekleme (aynı cins ve tip)") { Checked = true }, 542, icSon - 70, 422, 26);
                 var hafiza = Koy(w, new KoyuDugme("Hafızadakiler", DugmeTuru.Ikincil, Boya.Simge("malzeme", KoyuRenk.Ikincil, 16)), 542, icSon - 36, 150, 34);
                 var sil = Koy(w, new KoyuDugme("Satırı sil", DugmeTuru.Ikincil, Boya.Simge("sil", KoyuRenk.Ikincil, 16)), 702, icSon - 36, 120, 34);
                 Etiket(w, "Hakediş", 834, icSon - 28, 56);
@@ -2832,7 +2846,7 @@ namespace SebekeHakedis.Eklenti
                 var satirlar = new List<TopluMalzemeSatiri>();
                 Action ozetYaz = () =>
                 {
-                    alt.Ozet.Text = satirlar.Count == 0 ? "Soldan malzeme seçip Ekle'ye basın."
+                    alt.Ozet.Text = satirlar.Count == 0 ? "Soldan malzemelere tıklayın (birden çok seçilebilir)."
                         : elemanlar.Count + " elemanın her birine " + satirlar.Count + " malzeme eklenecek (" + (int)hak.Value + ". hakediş).";
                     alt.Ozet.Simge = Boya.Simge("malzeme", KoyuRenk.Ikincil, 16);
                     alt.Tamam.Enabled = satirlar.Count > 0 && !o.Kilitli((int)hak.Value);
@@ -2857,9 +2871,25 @@ namespace SebekeHakedis.Eklenti
                     g.ClearSelection();
                     g.Rows[r].Selected = true;
                     ozetYaz();
+                    tl.Liste.Invalidate();
                 };
-                ekle.Click += (s, e) => satirEkle(tl.Secili, 1, "");
-                tl.Secildi += () => satirEkle(tl.Secili, 1, "");
+                Func<KatalogKalemi, TopluMalzemeSatiri> listede = it => it == null ? null : satirlar.Find(t => t.Kalem.Anahtar == it.Anahtar);
+                Action<TopluMalzemeSatiri> satirSil = t =>
+                {
+                    satirlar.Remove(t);
+                    foreach (DataGridViewRow row in g.Rows) if (row.Tag == t) { g.Rows.Remove(row); break; }
+                    ozetYaz();
+                    tl.Liste.Invalidate();
+                };
+                // İşaret kutulu katalog (13.11.2026): her tıklanan malzeme sağdaki listeye girer, bir daha tıklamak çıkarır
+                tl.Liste.Isaretli = x => listede(x as KatalogKalemi) != null;
+                tl.Liste.Isaret += x =>
+                {
+                    var it = x as KatalogKalemi;
+                    var mevcut = listede(it);
+                    if (mevcut != null) satirSil(mevcut); else satirEkle(it, 1, "");
+                };
+                ekle.Click += (s, e) => { if (listede(tl.Secili) == null) satirEkle(tl.Secili, 1, ""); };
                 hafiza.Click += (s, e) =>
                 {
                     string kaynak;
@@ -2868,17 +2898,18 @@ namespace SebekeHakedis.Eklenti
                     foreach (var h in l)
                     {
                         var it = o.Katalog.Bul(h.Cins, h.Tanim);
-                        if (it != null) satirEkle(it, h.Miktar, h.ElemanDurumunda ? "" : h.Durum);
+                        if (it != null && listede(it) == null) satirEkle(it, h.Miktar, h.ElemanDurumunda ? "" : h.Durum);
                     }
                 };
                 sil.Click += (s, e) =>
                 {
                     if (g.CurrentRow == null) return;
                     var t = g.CurrentRow.Tag as TopluMalzemeSatiri;
-                    if (t != null) satirlar.Remove(t);
-                    g.Rows.Remove(g.CurrentRow);
-                    ozetYaz();
+                    if (t != null) satirSil(t);
+                    else { g.Rows.Remove(g.CurrentRow); ozetYaz(); }
                 };
+                if (baslangic != null)
+                    foreach (var t in baslangic) if (t != null && t.Kalem != null && listede(t.Kalem) == null) satirEkle(t.Kalem, t.Miktar, t.Durum);
                 g.CellClick += (s, e) =>
                 {
                     if (e.RowIndex < 0 || e.ColumnIndex < 0 || g.Columns[e.ColumnIndex].ReadOnly) return;
@@ -2918,6 +2949,7 @@ namespace SebekeHakedis.Eklenti
                 foreach (var t in satirlar)
                 {
                     t.Hakedis = (int)hak.Value;
+                    t.VarsaAtla = varsaAtla.Checked;
                     HizliSecim.SonaEkle("malzeme/" + anaTur, t.Kalem);
                 }
                 return satirlar;

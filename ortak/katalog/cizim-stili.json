@@ -37,8 +37,8 @@
   "CENTER": [10, -2, 2, -2]
  },
  "direkRenkleri": {
-  "aciklama": "Direk simgesinin rengi (nesneye yazılır): [mevcut, yeni, sök-tak]; demontaj her türde 2 (sarı). Yeni: M, M+M, KM, ENH, ME.",
-  "AG": [120, 108, 3],
+  "aciklama": "Direk simgesinin rengi (nesneye yazılır): [mevcut, yeni, sök-tak]; demontaj her türde 2 (sarı). Yeni: M, M+M, KM, ENH, ME. Yeni AG 13.11.2026 kullanıcı isteğiyle 108 (çok koyu yeşil) → 102 (orta yeşil); çizimdeki direkler Telefon Görünümü ya da güncellemede yeni rengi alır.",
+  "AG": [120, 102, 3],
   "OG": [16, 10, 1],
   "AYD": [190, 152, 4],
   "ENH": [6, 6, 6],
@@ -57,7 +57,7 @@
   "KANAL": { "telefon": "ELEKTRIK-KABLO", "katmanTurleri": ["KABLO_KANALI"], "aci": 8, "cizgi": "CENTER",
    "kenar": { "aci": 8, "cizgi": "CONTINUOUS", "varsayilanGenislik": 0.4, "aciklama": "Kanal iki kenar çizgisiyle çizilir: genişlik kanalın üst genişliği (yoksa alt genişliği, o da yoksa 0.4 m). Ortadaki eksen çizgisi kanalın verisini taşır; kenarlar ona bağlı süstür, onunla taşınır ve silinir." } },
   "SONDAJ": { "telefon": "ELEKTRIK-KABLO", "katmanTurleri": ["YATAY_SONDAJ"], "aci": 40, "cizgi": "DOT" },
-  "DIREK_AG": { "telefon": "ELEKTRIK-DIREK-AG", "katmanTurleri": ["AGDIR"], "aci": 120, "aciYeni": 108, "aciDmm": 3 },
+  "DIREK_AG": { "telefon": "ELEKTRIK-DIREK-AG", "katmanTurleri": ["AGDIR"], "aci": 120, "aciYeni": 102, "aciDmm": 3 },
   "DIREK_OG": { "telefon": "ELEKTRIK-DIREK-OG", "katmanTurleri": ["ENHDIR"], "aci": 16, "aciYeni": 10, "aciDmm": 1 },
   "DIREK_MUSTEREK": { "telefon": "ELEKTRIK-DIREK-MUSTEREK", "katmanTurleri": ["MUSDIR"], "aci": 16, "aciYeni": 10, "aciDmm": 1 },
   "DIREK_AYD": { "telefon": "ELEKTRIK-DIREK-AYD", "katmanTurleri": ["AYDDIR"], "aci": 190, "aciYeni": 152, "aciDmm": 4 },

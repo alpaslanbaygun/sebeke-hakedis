@@ -1,5 +1,5 @@
 // 01 · Harita & Nokta Alımı — gerçek GIS motoru + tek elle hızlı ekipman/hat alımı.
-import { html, useState, useEffect, useRef, useBus, Icon, Chip, Seg, Toggle, Sel, Badge, fmt, trn, FIXCOL } from '../kit.js';
+import { html, useState, useEffect, useRef, useBus, Icon, Chip, Seg, Toggle, Sel, Badge, SayiGirdi, fmt, trn, FIXCOL } from '../kit.js';
 import { app } from '../ctx.js';
 import { MapEngine } from '../map-engine.js';
 import { TUR_RENGI, hatRengi, hatEtiketi, EKRAN, DEMONTAJ_RENGI } from '../cizim-gorunumu.js';
@@ -8,7 +8,7 @@ import { dist2, bearing, polygonArea, polylineLength, dms, segProject } from '..
 import { STATUSES, TRAFO_STATUSES, HAK_STATUSES, HAK_ORDER, EQUIPMENT_KINDS, hakOf } from '../../core/schema.js';
 import { sourceInfo, sourceText } from '../../core/source.js';
 import { resolveCoord, crsChoices, luminairePoz } from '../../services/survey-service.js';
-import { lineLabelText, KAPLAMA, YONTEM, ZEMIN_CINSI, KAPLAMA_TURU, kanalZemini, zemindenSurface, zeminOzelMi, kanalZeminYazisi } from '../../grid/lines.js';
+import { lineLabelText, KANAL_DERINLIKLERI, KAPLAMA, YONTEM, ZEMIN_CINSI, KAPLAMA_TURU, kanalZemini, zemindenSurface, zeminOzelMi, kanalZeminYazisi } from '../../grid/lines.js';
 import { koskGovdeleri } from '../../grid/cabin-recipe.js';
 import { KABIN_POSTLARI } from './cabin.js';
 import { roleLabel } from '../../grid/checks.js';
@@ -722,7 +722,8 @@ function LineSheet({ active, close, rerender }) {
         ${zeminOzelMi(zem.zemin) ? null : html`<div class="row"><span class="lbl" style="width:64px">Kaplama</span><div class="chips grow">${Object.entries(KAPLAMA_TURU).map(([k, l]) => html`<${Chip} on=${zem.kaplama === k} onClick=${() => setZem({ kaplama: k })}>${l}</${Chip}>`)}</div></div>
         <div class="row"><span class="lbl" style="width:64px">Ek</span><div class="chips grow"><${Chip} on=${zem.bariyer} onClick=${() => setZem({ bariyer: !zem.bariyer })}>Bariyerli</${Chip}><${Chip} on=${zem.trencher} onClick=${() => setZem({ trencher: !zem.trencher })}>Trencher</${Chip}></div></div>`}
         <div class="row"><span class="lbl" style="width:64px">Yöntem</span><div class="chips grow">${Object.entries(YONTEM).map(([k, l]) => html`<${Chip} on=${meth === k} onClick=${() => set({ method: k })}>${l}</${Chip}>`)}</div></div>
-        <div class="grid2"><div class="fld"><label>Derinlik (m) *</label><input class="inp mono" type="number" step="0.05" value=${f.depth ?? ''} placeholder="zorunlu" onChange=${(e) => set({ depth: e.target.value === '' ? null : +e.target.value })} /></div><div class="fld"><label>Genişlik (m)</label><input class="inp mono" type="number" step="0.05" value=${f.width ?? ''} onChange=${(e) => set({ width: +e.target.value })} /></div></div>
+        <div class="grid2"><div class="fld"><label>Derinlik (m) *</label><${SayiGirdi} canli value=${f.depth} placeholder="zorunlu" onSave=${(v) => set({ depth: v })} /></div><div class="fld"><label>Genişlik (m)</label><${SayiGirdi} canli value=${f.width} onSave=${(v) => set({ width: v })} /></div></div>
+        <div class="row"><span class="lbl" style="width:64px">Derinlik</span><div class="chips grow">${KANAL_DERINLIKLERI.map((v) => html`<${Chip} on=${f.depth === v} onClick=${() => set({ depth: v })}>${trn(v, 1)} m</${Chip}>`)}</div></div>
         ${meth !== 'acik' ? html`<div class="grid2"><div class="fld"><label>Boru çapı (mm)</label><${Sel} mono value=${+f.pipeDia || 110} options=${[110, 125, 160, 200].map((x) => [x, 'Ø' + x])} onChange=${(v) => set({ pipeDia: +v })} /></div><div class="fld"><label>Boru adedi${meth === 'sondaj' ? ' (yoksa 0)' : ''}</label><input class="inp mono" type="number" min=${meth === 'borulu' ? 1 : 0} step="1" value=${f.pipeCount ?? (meth === 'borulu' ? 1 : 0)} onChange=${(e) => set({ pipeCount: +e.target.value })} /></div></div>` : null}
         <div class="note">${meth === 'sondaj' ? 'Yatay sondaj: metraja sondaj boyu (m) gelir; kazı hacmi hesaplanmaz.' : 'Kanal hesabı: uzunluk × genişlik × derinlik = m³, seçilen kaplamanın kalemine yazılır.' + (meth === 'borulu' ? ' Borulu geçişte boru metrajı da gelir.' : '')}</div>` : null}` : null}
     <div class="note">Hattı başlattıktan sonra direkleri sırayla al; her direk otomatik bağlanır, köşe ve rol kendiliğinden hesaplanır. İletken bilgisi sonradan Hat kaydından değişir.</div>

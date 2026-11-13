@@ -95,3 +95,19 @@ test('C5 · başka koordinat sistemine çevirme: köşeler, SAGA / YUKARI, çizi
   assert.notEqual(s(e0, 'SAGA'), s(e, 'SAGA'), 'asıl nesneler değişmez');
   assert.ok(c.filter((x) => x.katman.ad === 'MALZEME').every((x) => x.kose.length === 0), 'malzeme satırlarının yeri yok');
 });
+
+test('KMZ 3B klasörü: direkler zemine oturur (relativeToGround; mutlak kot Google Earth arazisinden farklıydı, 13.11.2026)', async () => {
+  const { kml3BKlasoru } = await import('../src/export/gis.js');
+  const model = {
+    equipment: [
+      { id: 'e1', no: 'SC1', pointId: 'p1', lat: 38.6, lon: 39.2, H: 1050, heightM: 10, state: 'YENI' },
+      { id: 'e2', no: 'SC2', pointId: 'p2', lat: 38.6005, lon: 39.2005, H: 1052, heightM: 12, state: 'YENI' },
+    ],
+    lines: [{ no: 'H1', label: '3x50', install: 'havai', state: 'YENI', coords: [{ id: 'p1', lat: 38.6, lon: 39.2, H: 1050 }, { id: 'p2', lat: 38.6005, lon: 39.2005, H: 1052 }] }],
+  };
+  const k = kml3BKlasoru(model);
+  assert.ok(!k.includes('absolute'), 'mutlak yükseklik yok');
+  assert.equal((k.match(/relativeToGround/g) || []).length, 5, 'iki direk (nokta + gövde) ve iletken zemine göre');
+  assert.ok(k.includes('39.2,38.6,0 39.2,38.6,8.400'), 'direk gövdesi zeminden (0) tepeye: 10 − (1 + 0,6) = 8,4 m');
+  assert.ok(/39\.2,38\.6,7\.800 39\.2005,38\.6005,9\.600/.test(k), 'iletken direk tepesinin 0,6 m altından');
+});

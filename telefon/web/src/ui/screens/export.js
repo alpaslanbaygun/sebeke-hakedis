@@ -1,5 +1,5 @@
 // 05 · Dışa Aktarım — gerçek dosya üretimi (DXF, NCN, KMZ, SHP, GeoJSON, XLSX, rapor, teslim paketi)
-import { html, useState, useEffect, useBus, Icon, Chip, Badge, Title, fmt, trn, Girdi, Toggle } from '../kit.js';
+import { html, useState, useEffect, useBus, Icon, Chip, Badge, Title, fmt, trn, Girdi, SayiGirdi, Toggle } from '../kit.js';
 import STIL from '../../ortak/cizim-stili.js';
 import { app } from '../ctx.js';
 import SH from '../../interop/sh-core.cjs';
@@ -48,8 +48,8 @@ function CizimBoyutlari() {
     if (by) sebeke.boyutlar = by; else delete sebeke.boyutlar;
     try { await ps.updateProject({ sebeke }, 'Çizim boyutları'); } catch (e) { app.toast(e.message, 'err'); }
   };
-  const alan = (k, ad, adim) => html`<div class="fld"><label>${ad}</label><${Girdi} type="number" inputmode="decimal" step=${adim} value=${b[k]}
-    onSave=${(v) => { const x = +String(v).replace(',', '.'); if (Number.isFinite(x)) kaydet(Object.assign({}, b, { [k]: x })); }} /></div>`;
+  const alan = (k, ad, adim) => html`<div class="fld"><label>${ad}</label><${SayiGirdi} value=${b[k]}
+    onSave=${(v) => { if (v != null) kaydet(Object.assign({}, b, { [k]: v })); }} /></div>`;
   const varsayilan = !SH.boyutlarOku(b);
   const takim = b.simgeTakimi === 'SM' ? 'SM' : '';
   return html`<div class="card"><div class="row"><b class="grow">Çizim boyutları</b>${varsayilan ? html`<${Badge} k="mut">VARSAYILAN</${Badge}>` : html`<button class="btn sm" onClick=${() => kaydet(SH.BOYUT_VARSAYILAN)}>Varsayılana dön</button>`}</div>

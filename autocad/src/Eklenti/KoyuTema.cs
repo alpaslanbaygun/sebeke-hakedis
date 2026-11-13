@@ -677,7 +677,7 @@ namespace SebekeHakedis.Eklenti
                     TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine);
         }
 
-        private static void Tik(Graphics g, Rectangle r, Color c)
+        internal static void Tik(Graphics g, Rectangle r, Color c)
         {
             using (var p = new Pen(c, Math.Max(1.6f, r.Width / 8f)) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
                 g.DrawLines(p, new[]
@@ -1070,6 +1070,12 @@ namespace SebekeHakedis.Eklenti
         public Func<object, string> Baslik = o => Convert.ToString(o, CultureInfo.CurrentCulture);
         public Func<object, string> Alt = o => "";
         public Func<object, Image> Simge = o => null;
+        /// <summary>
+        /// İşaret kutulu liste (Toplu malzeme, 13.11.2026): null değilse her satırın solunda işaret kutusu çizilir;
+        /// satıra tıklamak Isaret olayını verir (pencere işareti değiştirir). Böylece birden çok kalem tek tek tıklanarak seçilir.
+        /// </summary>
+        public Func<object, bool> Isaretli;
+        public event Action<object> Isaret;
         private int _onceki = -1, _uzerinde = -1;
 
         public IkiSatirListe()
@@ -1111,6 +1117,17 @@ namespace SebekeHakedis.Eklenti
             if (secili) Boya.Kutu(g, kutu, KoyuRenk.Secili, KoyuRenk.Vurgu, Olcu.S(5));
             else if (e.Index == _uzerinde && SelectionMode != SelectionMode.None) Boya.Kutu(g, kutu, KoyuRenk.Uzerinde, Color.Transparent, Olcu.S(5));
             int x = r.X + Olcu.S(12);
+            if (Isaretli != null)
+            {
+                int ks = Olcu.S(18);
+                var kr = new Rectangle(x, r.Y + (r.Height - ks) / 2, ks, ks);
+                var eski = g.SmoothingMode;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                if (Isaretli(o)) { Boya.Kutu(g, kr, KoyuRenk.Vurgu, KoyuRenk.Vurgu, Olcu.S(3)); KoyuOnay.Tik(g, kr, Color.White); }
+                else Boya.Kutu(g, kr, KoyuRenk.Kutu, KoyuRenk.KenarAcik, Olcu.S(3));
+                g.SmoothingMode = eski;
+                x += ks + Olcu.S(10);
+            }
             var simge = Simge(o);
             if (simge != null)
             {
@@ -1159,6 +1176,31 @@ namespace SebekeHakedis.Eklenti
             }
             _onceki = SelectedIndex;
             base.OnSelectedIndexChanged(e);
+        }
+
+        protected override void OnMouseClick(MouseEventArgs e)
+        {
+            base.OnMouseClick(e);
+            if (Isaretli == null || e.Button != MouseButtons.Left) return;
+            int i = IndexFromPoint(e.Location);
+            if (i >= 0 && i < Items.Count && GetItemRectangle(i).Contains(e.Location)) Isaretle(i);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            if (Isaretli == null || e.KeyCode != Keys.Space) return;
+            Isaretle(SelectedIndex);
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+        }
+
+        /// <summary>i. satırın işaretini değiştirir (tıklama ve boşluk tuşu; deneme de bunu çağırır).</summary>
+        public void Isaretle(int i)
+        {
+            if (Isaretli == null || i < 0 || i >= Items.Count || Items[i] is ListeBasligi) return;
+            Isaret?.Invoke(Items[i]);
+            Invalidate(GetItemRectangle(i));
         }
 
         protected override void OnMouseMove(MouseEventArgs e)

@@ -309,11 +309,29 @@ namespace SebekeHakedis.Eklenti
 
                 // Bulunan elemanlar çizimde seçili kalsın
                 var ids = new List<Autodesk.AutoCAD.DatabaseServices.ObjectId>();
+                var ciftler = new List<KeyValuePair<Autodesk.AutoCAD.DatabaseServices.ObjectId, Eleman>>();
                 var gorulen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var s in satirlar)
                 {
                     Autodesk.AutoCAD.DatabaseServices.ObjectId id;
-                    if (gorulen.Add(s.Eleman.Id) && Toplayici.TaniticiylaBul(o.Db, s.Eleman.Id, out id)) ids.Add(id);
+                    if (gorulen.Add(s.Eleman.Id) && Toplayici.TaniticiylaBul(o.Db, s.Eleman.Id, out id))
+                    {
+                        ids.Add(id);
+                        ciftler.Add(new KeyValuePair<Autodesk.AutoCAD.DatabaseServices.ObjectId, Eleman>(id, s.Eleman));
+                    }
+                }
+                if (islem == DetayIslemi.Malzeme)
+                {
+                    // Bulunanlara toplu malzeme (13.11.2026): aranan malzeme (cins + tip seçiliyse) pencerede hazır gelir
+                    var baslangic = new List<TopluMalzemeSatiri>();
+                    if (!string.IsNullOrWhiteSpace(f.Tip))
+                    {
+                        string tip = DetaySorgu.Sade(f.Tip);
+                        var it = o.Katalog.Kalemler.Find(k => DetaySorgu.Uyar(f.Cins, k.Cins) && DetaySorgu.Sade(k.Tanim) == tip);
+                        if (it != null) baslangic.Add(new TopluMalzemeSatiri { Kalem = it, Miktar = 1 });
+                    }
+                    CizimKomutlari.TopluMalzemeUygula(o, ciftler, baslangic, "Bulunanlara malzeme ekle — " + ciftler.Count + " eleman");
+                    return;
                 }
                 try { ed.SetImpliedSelection(ids.ToArray()); } catch { }
 
