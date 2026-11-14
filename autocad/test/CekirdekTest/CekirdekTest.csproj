@@ -41,6 +41,8 @@
     <None Include="..\..\..\ortak\katalog\volt-eslesme.json" Link="volt-eslesme.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\deneme\onerilen-malzeme\**\*" LinkBase="onerilen-malzeme" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\deneme\lisans\vektorler.json" Link="lisans\vektorler.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\ortak\deneme\uzak-grup\vektorler.json" Link="uzak-grup\vektorler.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\ortak\deneme\yazi-cakisma\vektorler.json" Link="yazi-cakisma\vektorler.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\ortak\lisans\acik-anahtar.json" Link="lisans\acik-anahtar.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

@@ -1326,6 +1326,108 @@ namespace SebekeHakedis.Eklenti
             });
         }
 
+        // ================= SH_KOTKAYDIR: seçilenlerin kotunu kaydır =================
+
+        /// <summary>
+        /// Toplu kot (14.11.2026, saha isteği): seçilen direklerin / elemanların, GPS noktalarının ve hatların Z kotuna aynı
+        /// farkı (± m, ör. 1,5) ekler. Tek komut: AutoCAD'de bir U ile tümü geri alınır. Hat uzunluğu ve metrajı çizimde planda
+        /// (2B) ölçüldüğü için kot değişince metraj değişmez; 3B açıklık, eğim ve sehim hesapları (Hesap Merkezi) yeni kotla
+        /// yapılır. Onaylı / yazmaya kapalı hakedişteki nesne atlanır.
+        /// </summary>
+        [CommandMethod("SH_KOTKAYDIR", CommandFlags.Modal | CommandFlags.UsePickSet)]
+        public void KotKaydir()
+        {
+            var belge = AcApp.DocumentManager.MdiActiveDocument;
+            if (belge == null) return;
+            Komutlar.Calistir("Kot kaydırma", () =>
+            {
+                var o = Ortam.Hazirla(belge);
+                var ed = o.Ed;
+                ObjectId[] idler = null;
+                var onceden = ed.SelectImplied();
+                if (onceden.Status == PromptStatus.OK && onceden.Value != null) idler = onceden.Value.GetObjectIds();
+                if (idler == null || idler.Length == 0)
+                {
+                    var pso = new PromptSelectionOptions { MessageForAdding = "\nKotu kaydırılacak direkleri, elemanları, GPS noktalarını ve hatları seçin: " };
+                    var filtre = new SelectionFilter(new[] { new TypedValue((int)DxfCode.Start, "INSERT,LWPOLYLINE,POLYLINE") });
+                    var r = ed.GetSelection(pso, filtre);
+                    if (r.Status != PromptStatus.OK) return;
+                    idler = r.Value.GetObjectIds();
+                }
+                var kilitler = o.Kilitler;
+                var secilen = new List<KeyValuePair<ObjectId, object>>();
+                int kilitli = 0;
+                foreach (var id in idler)
+                {
+                    string h = id.Handle.ToString();
+                    object n = NesneBul(o.Proje, h);
+                    if (n == null) n = o.Proje.Noktalar.Find(x => string.Equals(x.Id, h, StringComparison.OrdinalIgnoreCase));
+                    if (n == null || n is Kanal || n is Sondaj) continue;
+                    if (HakedisOnayi.NesneKilitli(kilitler, n)) { kilitli++; continue; }
+                    secilen.Add(new KeyValuePair<ObjectId, object>(id, n));
+                }
+                if (kilitli > 0) ed.WriteMessage("\n" + kilitli + " nesne kilitli (onaylı ya da yazmaya kapalı) hakedişte olduğu için atlandı.");
+                if (secilen.Count == 0) { ed.WriteMessage("\nSeçimde şebeke nesnesi yok (direk, eleman, GPS noktası, hat)."); return; }
+                int nEl = secilen.Count(x => x.Value is Eleman), nNo = secilen.Count(x => x.Value is Nokta), nHat = secilen.Count(x => x.Value is Hat);
+
+                var pso2 = new PromptStringOptions("\nKot farkı, m (ör. 1,5 yükseltir, -0,8 alçaltır): ") { AllowSpaces = false };
+                var rs = ed.GetString(pso2);
+                if (rs.Status != PromptStatus.OK) return;
+                double dz = SayiCoz.Coz(rs.StringResult, double.NaN);
+                if (double.IsNaN(dz) || double.IsInfinity(dz)) { ed.WriteMessage("\nKot farkı okunamadı: " + rs.StringResult); return; }
+                if (Math.Abs(dz) < 1e-9) { ed.WriteMessage("\nKot farkı sıfır; değişiklik yok."); return; }
+                if (Math.Abs(dz) > 1000) { ed.WriteMessage("\nKot farkı çok büyük (en çok ±1000 m)."); return; }
+
+                int yapilan = 0, hatali = 0;
+                var ok = new Vector3d(0, 0, dz);
+                using (var tr = o.Db.TransactionManager.StartTransaction())
+                {
+                    foreach (var kv in secilen)
+                    {
+                        try
+                        {
+                            var ent = tr.GetObject(kv.Key, OpenMode.ForWrite, false) as Entity;
+                            if (ent == null) continue;
+                            // Blok (öznitelikleriyle), hafif / 3B çoklu çizgi: konum ve köşeler Z yönünde kayar
+                            ent.TransformBy(Matrix3d.Displacement(ok));
+                            if (kv.Value is Nokta) ZKoordKaydir(ent, dz);
+                            yapilan++;
+                        }
+                        catch (System.Exception ex)
+                        {
+                            hatali++;
+                            ed.WriteMessage("\n" + kv.Key.Handle + " kaydırılamadı (katmanı kilitli olabilir): " + ex.Message);
+                        }
+                    }
+                    tr.Commit();
+                }
+                string fark = (dz > 0 ? "+" : "") + Metraj.Yazi(dz) + " m";
+                ed.WriteMessage("\n" + yapilan + " nesnenin kotu " + fark + " kaydırıldı (" + nEl + " eleman, " + nNo + " GPS noktası, " + nHat + " hat)" +
+                                (hatali > 0 ? "; " + hatali + " nesne kaydırılamadı" : "") + ". Geri almak için: U." +
+                                "\nNot: hat uzunluğu ve metraj planda (2B) ölçüldüğü için değişmez; 3B açıklık, eğim ve sehim hesapları yeni kotla yapılır.");
+            });
+        }
+
+        /// <summary>GPS noktasının ZKOORD verisini (kot yazısı) dz kadar değiştirir; veri yoksa dokunmaz.</summary>
+        private static void ZKoordKaydir(DBObject o, double dz)
+        {
+            using (var rb = o.GetXDataForApplication("ZKOORD"))
+            {
+                if (rb == null) return;
+                var d = rb.AsArray();
+                for (int i = 1; i < d.Length; i++)
+                {
+                    if (d[i].TypeCode != (int)DxfCode.ExtendedDataAsciiString) continue;
+                    double v = SayiCoz.Coz(Convert.ToString(d[i].Value, CultureInfo.InvariantCulture), double.NaN);
+                    if (double.IsNaN(v)) continue;
+                    d[i] = new TypedValue(d[i].TypeCode, NesneYazici.Sayi(v + dz));
+                    if (!o.IsWriteEnabled) o.UpgradeOpen();
+                    o.XData = new ResultBuffer(d);
+                    return;
+                }
+            }
+        }
+
         // ================= SH_AYARLAR / SH_HAKEDIS =================
 
         [CommandMethod("SH_AYARLAR", CommandFlags.Modal)]
@@ -1529,6 +1631,19 @@ namespace SebekeHakedis.Eklenti
                     !Pencereler.Onay("Dikkat: telefondaki proje " + tel.Dom + "° dilimde, bu çizim " + o.Ayar.Dom + "° dilimde ayarlı.\n" +
                                      "Koordinatlar uyuşmayabilir. Yine de aktarılsın mı?", false))
                     return;
+
+                // Uzak nesne grubu (14.11.2026, saha bildirimi): telefonda adı değiştirilip yeni işe devam edilen projede eski
+                // projenin alımları km'lerce uzakta kalıyordu. Ana gruptan 2 km'den uzak nesneler sorulur.
+                var uzak = UzakGrup.Bul(tel);
+                if (uzak != null &&
+                    Pencereler.Onay("Dosyada, nesnelerin çoğundan uzakta bir grup var:\n  " + uzak.Ozet() + ".\n\n" +
+                                    "Başka bir işten kalmış olabilir (ör. telefonda adı değiştirilip yeni işe devam edilen eski proje).\n\n" +
+                                    "Evet: uzaktakiler aktarılmaz (çizimde daha önce alınmışlarsa silinecekler listesinde görünür).\n" +
+                                    "Hayır: hepsi aktarılır.", true))
+                {
+                    UzakGrup.Cikar(tel, uzak);
+                    ed.WriteMessage("\nUzak grup aktarılmayacak: " + uzak.Ozet() + ".");
+                }
 
                 // Simge ve yazı boyutları: çizimde ayarlanmamışsa (varsayılan) telefondakiler alınır (aktarım onaylanınca);
                 // ikisi de ayarlıysa çizimdeki kalır (değiştirmek için Çizim Ayarları › Görünüm)

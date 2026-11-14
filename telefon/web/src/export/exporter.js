@@ -98,6 +98,8 @@ export function workbookSheets(model, ps) {
  * telefon kaydının kimliğiyle: { [equipmentId]: ["GT-60=1 (M)", …] } (eklentideki MLZ_ satırlarıyla aynı kural:
  * sh-core malzemeEtiketi). Kapalıysa null.
  */
+/** DXF'te yazı çakışmalarını düzelt (Dışa Aktar › Çizim boyutları; projede sebeke.yaziDuzen, varsayılan açık). */
+export const yaziDuzenAcik = (ps) => ((ps.p && ps.p.sebeke) || {}).yaziDuzen !== false;
 export function malzemeSatirlari(ps, p) {
   const by = (ps.p.sebeke || {}).boyutlar;
   if (!by || by.malzemeYazisi !== true) return null;
@@ -139,7 +141,7 @@ export async function exportFormat(ps, fmt, opts = {}) {
   const model = buildExportModel(ps, { crs: opts.crs });
   const base = (ps.p.code || ps.p.name || 'proje').replace(/[^\p{L}\p{N}_-]+/gu, '_');
   switch (fmt) {
-    case 'dxf': { const d = buildDXF(model, Object.assign({}, opts, { malzemeSatirlari: malzemeSatirlari(ps) })); return [{ name: base + '.dxf', mime: 'application/dxf', data: dxfBytes(d.text), stats: d.stats }]; }
+    case 'dxf': { const d = buildDXF(model, Object.assign({ yaziDuzen: yaziDuzenAcik(ps) }, opts, { malzemeSatirlari: malzemeSatirlari(ps) })); return [{ name: base + '.dxf', mime: 'application/dxf', data: dxfBytes(d.text), stats: d.stats }]; }
     case 'sebeke': return [{ name: base + '.sebeke.json', mime: 'application/json', data: enc(sebekeYaz(ps)) }];
     case 'voltjson': return [{ name: base + '.volt.json', mime: 'application/json', data: enc(JSON.stringify(voltProjeYaz(ps), null, 1)) }];
     case 'ncn': return [{ name: base + '.ncn', mime: 'text/plain', data: enc(buildNCN(model)) }];
@@ -232,7 +234,7 @@ async function deliveryPackage(ps, model, base, opts) {
   add('HARITA/' + base + '.kmz', await zip([{ name: 'doc.kml', data: enc(googleEarthMetni(ps, model, opts, cbsModeli)) }]));
   for (const f of mifCiktilari(ps, base, opts.crs, cbsModeli)) add('HARITA/mif/' + f.name, f.data);
   // EXPORT: CAD + SHP
-  add('EXPORT/' + base + '.dxf', dxfBytes(buildDXF(model, { malzemeSatirlari: malzemeSatirlari(ps, cbsModeli) }).text));
+  add('EXPORT/' + base + '.dxf', dxfBytes(buildDXF(model, { yaziDuzen: yaziDuzenAcik(ps), malzemeSatirlari: malzemeSatirlari(ps, cbsModeli) }).text));
   add('EXPORT/' + base + '.ncn', buildNCN(model));
   for (const L of shapefileLayers(model)) { const s = writeShapefile(L.kind, L.feats, L.fields, model.crs); for (const ext of ['shp', 'shx', 'dbf', 'prj', 'cpg']) add('EXPORT/shp/' + L.name + '.' + ext, s[ext]); }
   // RAPORLAR

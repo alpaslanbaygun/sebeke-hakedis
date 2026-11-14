@@ -297,6 +297,8 @@ namespace SebekeHakedis.Eklenti
             var duzen = Panel(sekme, "Düzenle");
             duzen.Items.Add(Dugme("Hat\nDeğiştir", "Çizilmiş hatların iletkenini (tip, cins), türünü, durumunu ve hakedişini değiştirir: hatları seçin (ya da önce seçip basın), pencerede yeni iletkeni seçin. Kablo tipi yazısı, katman ve renk güncellenir; metraj korunur.", "_SH_HATDEGISTIR ", "hat_havai", null));
             duzen.Items.Add(Dugme("Metraj", "Seçilen hat, kanal ve sondajların metrajını çizim uzunluğundan yeniden hesaplar (parça metrajları yenilenir).", "_SH_METRAJ ", "metraj", null));
+            duzen.Items.Add(Dugme("Yazıları\nDüzenle", "Üst üste binen yazıları boş yere taşır: eleman ve malzeme yazıları simgenin çevresinde, hat metrajı ve etiketi kendi parçası boyunca ya da çizginin öbür yanında. Simgeler yerinde kalır. Önce seçerseniz yalnız onların yazıları; Enter ile tüm çizim. Tek U ile geri alınır.", "_SH_YAZIDUZEN ", "yazi_duzen", null));
+            duzen.Items.Add(Dugme("Kot\nKaydır", "Seçilen direklerin, elemanların, GPS noktalarının ve hatların kotuna aynı farkı ekler (ör. 1,5 ya da -0,8 m). Tek U ile geri alınır; metraj planda ölçüldüğü için değişmez.", "_SH_KOTKAYDIR ", "kot", null));
             duzen.Items.Add(Dugme("Telefon\nGörünümü", "Çizimi telefonun görünümüne çevirir: simgeler (durumuna göre), renkler, hat etiketleri, her parçanın uzunluğu, direklerin yanındaki armatürler. Veriye dokunmaz.", "_SH_GORUNUM ", "gorunum", null));
             duzen.Items.Add(Dugme("Çizim\nAyarları", "Katman ön eki, tarife (şehir / köy), simge ve yazı boyutları, yakalama, metraj payları, kanal ölçüleri.", "_SH_AYARLAR ", "ayarlar", null));
 

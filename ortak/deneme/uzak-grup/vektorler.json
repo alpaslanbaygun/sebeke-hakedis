@@ -1,0 +1,42 @@
+{
+  "aciklama": "Uzak nesne grubu (14.11.2026): nesneler 2000 m'den yakınsa aynı grupta (zincirleme), bir nesnenin köşeleri hep aynı grupta. 0 ana grup (en çok nesneli; eşitlikte ilk nesnenin grubu), 1, 2 … uzak gruplar (nesne sayısı azalan, eşitlikte ilk görünen); köşesiz nesne 0. Eklenti: Cekirdek/UzakGrup.cs (CekirdekTest), telefon: src/geo/uzak-grup.js (tests/uzak-grup.test.mjs). Koordinatlar uydurmadır.",
+  "esik": 2000,
+  "durumlar": [
+    {
+      "ad": "iki küme, 13 km arayla (adı değiştirilen proje)",
+      "nesneler": [[[612000, 4401000]], [[612040, 4401010]], [[612080, 4401020], [612120, 4401030]], [[612160, 4401040]], [[612200, 4401050]],
+                   [[600500, 4391600]], [[600520, 4391610]], [[600500, 4391600], [600520, 4391610]]],
+      "beklenen": [0, 0, 0, 0, 0, 1, 1, 1]
+    },
+    {
+      "ad": "1500 m arayla zincir: tek grup",
+      "nesneler": [[[0, 0]], [[1500, 0]], [[3000, 0]], [[4500, 0]], [[6000, 0]]],
+      "beklenen": [0, 0, 0, 0, 0]
+    },
+    {
+      "ad": "tam 2000 m: aynı grup; 2000,5 m: ayrı",
+      "nesneler": [[[100, 100]], [[2100, 100]], [[4100.5, 100]]],
+      "beklenen": [0, 0, 1]
+    },
+    {
+      "ad": "iki uzak kümeyi bağlayan uzun hat: tek grup",
+      "nesneler": [[[0, 0]], [[50, 0]], [[100, 0]], [[10000, 0]], [[10050, 0]], [[100, 0], [5000, 0], [10000, 0]]],
+      "beklenen": [0, 0, 0, 0, 0, 0]
+    },
+    {
+      "ad": "eşit büyüklük: ilk nesnenin grubu ana",
+      "nesneler": [[[9000, 9000]], [[100, 100]], [[9010, 9000]], [[110, 100]]],
+      "beklenen": [0, 1, 0, 1]
+    },
+    {
+      "ad": "üç grup: büyüklüğe göre sıra; köşesiz nesne ana grupta",
+      "nesneler": [[[50000, 0]], [[0, 0]], [[10, 0]], [[20, 0]], [[30, 0]], [], [[20000, 0]], [[20010, 0]]],
+      "beklenen": [2, 0, 0, 0, 0, 0, 1, 1]
+    },
+    {
+      "ad": "negatif ve hücre sınırı koordinatları",
+      "nesneler": [[[-1999, 0]], [[1, 0]], [[-6000, 0]]],
+      "beklenen": [0, 0, 1]
+    }
+  ]
+}

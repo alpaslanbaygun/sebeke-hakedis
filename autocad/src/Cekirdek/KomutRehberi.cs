@@ -18,6 +18,8 @@ namespace SebekeHakedis.Cekirdek
             new[] { "Düzenleme", "SH_TOPLUMALZEME", "Seçilen direklere / elemanlara aynı malzemeleri tek seferde ekler" },
             new[] { "Düzenleme", "SH_HATDEGISTIR", "Çizilmiş hatların iletkenini (tip, cins), türünü, durumunu değiştirir; kablo tipi yazısı ve katman güncellenir" },
             new[] { "Düzenleme", "SH_METRAJ", "Hat / kanal metrajını çizim uzunluğundan yeniden hesaplar" },
+            new[] { "Düzenleme", "SH_YAZIDUZEN", "Üst üste binen yazıları boş yere taşır (eleman, malzeme, hat metrajı ve etiketi); simgeler yerinde kalır, tek U ile geri alınır" },
+            new[] { "Düzenleme", "SH_KOTKAYDIR", "Seçilen direk, eleman, GPS noktası ve hatların kotuna aynı farkı ekler (± m); tek U ile geri alınır" },
             new[] { "Düzenleme", "SH_GORUNUM", "Çizimi telefon görünümüne çevirir (simge, renk, hat kalınlığı, etiket, parça metrajı, malzeme yazısı; ayarlardaki boyutlarla); katman adları Türkçe karaktersiz, cins kodları yazım hatasız" },
             new[] { "Düzenleme", "SH_AYARLAR", "Çizim ayarları (ön ek, tarife, simge ve yazı boyutları, hat kalınlığı, malzemeleri çizimde gösterme, metraj payı)" },
             new[] { "Hakediş", "SH_HAKEDIS", "Aktif hakedişi değiştirir" },

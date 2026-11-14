@@ -474,6 +474,8 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 | Malzeme Hafızası | — | Açıkken son elemanın malzemeleri aynı tipteki yeni elemana kendiliğinden eklenir; tıklayınca kapanır / açılır. |
 | Hat Değiştir | `SH_HATDEGISTIR` | Seçilen hatların iletkenini (tip, cins), türünü, durumunu, hakedişini değiştirir; kablo tipi yazısı ve katman güncellenir, metraj korunur. |
 | Metraj | `SH_METRAJ` | Seçilen hat / kanal / sondajın metrajını çizim uzunluğundan yeniden hesaplar (önce listeyi gösterip sorar). |
+| Yazıları Düzenle | `SH_YAZIDUZEN` | **Yazı ve simge çakışmaları** (14.11.2026): üst üste binen yazıları boş yere taşır. Simgeler yerinde kalır; eleman / GPS noktası yazıları (görünen öznitelikler birlikte) ve malzeme yazısı simgenin çevresinde (sağ / sol, üst / alt, gerekirse biraz uzağa), hat metrajı ve kablo tipi yazısı kendi parçası boyunca ya da çizginin öbür yanında yer arar. Önce seçerseniz yalnız seçilenlerin yazıları; seçmeden Enter: tüm çizim. Tek **U** ile geri alınır. Yer bulunamayan yazı sayısı komut satırında yazar (yazı boyunu küçültün ya da elle taşıyın). Eleman ya da hat yeniden yazılınca (Malzeme, Telefon Görünümü) yazıları eski yerine döner; komutu yeniden çalıştırın. Telefonun DXF'inde aynı kural (Dışa Aktar › Çizim boyutları › Yazı çakışmalarını düzelt). |
+| Kot Kaydır | `SH_KOTKAYDIR` | Seçilen direklerin, elemanların, GPS noktalarının ve hatların **kotuna aynı farkı** ekler (ör. `1,5` yükseltir, `-0,8` alçaltır). Tek **U** ile geri alınır. Onaylı / yazmaya kapalı hakedişteki nesne atlanır. Hat uzunluğu ve metraj çizimde planda (2B) ölçüldüğü için değişmez; 3B açıklık, eğim ve sehim hesapları (Hesap Merkezi) yeni kotla yapılır. Telefonda: Nokta listesi › Kot kaydır (orada hatlar 3B ölçüldüğü için metraj da yenilenir). |
 | Telefon Görünümü | `SH_GORUNUM` | Çizimi telefon görünümüne çevirir (seçili simge takımıyla simgeler, renk, hat kalınlığı, etiket, metraj ve malzeme yazıları, kanal kenarları, Tahoma yazı tipi); katman adlarını Türkçe karaktersiz, cins kodlarını yazım hatasız yapar. |
 | Aktif Hakediş | `SH_HAKEDIS` | Aktif hakediş: yeni çizilenler bu hakedişin katmanlarına (`SC_3.HAK.…`) konur. Eski programın aktif hakedişiyle ortaktır. |
 | Hakediş Onayı | `SH_ONAY` | Her hakediş için sırayla **Kontrol → Hakediş → GIS** onayı (eski programın onay kaydı; o program aynı işaretleri görür). **Hakediş onayı verilen hakediş kilitlenir**: o hakedişe yeni nesne çizilemez, malzeme satırları gri görünür ve değiştirilemez / silinemez, metraj güncellemesi o nesneleri atlar, telefondan gelen değişiklik o hakedişe dokunuyorsa aktarılmaz. Kilitli direğe açık hakedişte yeni malzeme eklemek serbesttir. **Kullanıcı tanımlıysa** (aşağıda) önce oturum istenir: Kontrol aşamasını Kontrol mühendisi, Hakediş ve GIS aşamasını Onay yetkilisi verir ya da kaldırır (Yönetici hepsini); yetkiniz olmayan kutular soluk ve kapalıdır. |
@@ -482,7 +484,7 @@ Eski çizimlerin hat etiketleri **Telefon Görünümü** (`SH_GORUNUM`) ile yeni
 | Çizim Ayarları | `SH_AYARLAR` | Katman / GIS ön eki, koordinat dilimi, **tarife (şehir / köy-bakım ve karakteristik)**, sembol takımı, **simge ve yazı boyutları**, direğe yakalama mesafesi, metraj yuvarlama ve ek paylar, kanal varsayılanları, **proje bilgileri** (ad, kod, hesabı yapan, unvan, firma, buz bölgesi). Çizimin içinde saklanır. |
 | Bölge | `SH_BOLGE` | Alt proje sınırı: köşeleri gösterin ya da **Nesne** deyip var olan kapalı çizgiyi seçin; ad, proje kodu ve **grup kodu**. Eski programın bölge listesine de kaydedilir. |
 | Nokta Al | `SH_NOKTAAL` | Ölçü noktalarını dosyadan alır (telefonun "Noktalar (CSV)" çıktısı ya da Ad, Y, X, Z, Kod dosyası). |
-| Telefondan Al | `SH_PROJEAL` | Bölüm 2. Üç dosya türü açılır: `.sebeke.json`, `.volt.json`, teslim paketi `.zip`. Teknik hesap kayıtları da alınır. |
+| Telefondan Al | `SH_PROJEAL` | Bölüm 2. Üç dosya türü açılır: `.sebeke.json`, `.volt.json`, teslim paketi `.zip`. Teknik hesap kayıtları da alınır. Dosyada nesnelerin çoğundan **2 km'den uzak bir grup** varsa (ör. telefonda adı değiştirilip yeni işe devam edilen eski projenin alımları) sorar: **Evet** uzaktakileri aktarmaz. |
 | Telefona Gönder | `SH_ICEAL` | Bölüm 2. `.sebeke.json` (varsayılan) ya da `.volt.json` olarak kaydeder (onaylar, kullanıcılar, hakediş yetkisi ve hesap kayıtları da gider). |
 | Durum Tespit | `SH_RAPOR` | Bu çizimden Excel rapor (eski programın sayfaları; ayrıca **DETAY** sayfası: her elemanın ara malzemeleri satır satır; **HESAPLAR** sayfası: teknik hesap sonuçları ve güncellikleri). |
 | Dosyadan Rapor | `SH_PROJERAPOR` | Bir proje dosyasından Excel rapor (çizim açmadan; telefon dosyaları da olur). |
@@ -679,7 +681,15 @@ olarak durur (sayfası açılmaz).
   geçmez; `telefon/web/tests/marka.test.mjs` denetler). Bilgisayarda kurulu kalan eski program her çizim açılışında
   kendini yükleyip adını yazar. Eski programı artık kullanmıyorsanız AutoCAD'in açılışta yüklediklerinden çıkarılabilir
   (çoğunlukla komut satırına `APPLOAD` › **Başlangıç Grubu** › **İçindekiler**: eski programın dosyasını seçip **Kaldır**).
-- **Malzeme yazıları simgeleri kapatıyor**: ilk satırı tutup boş bir yere taşıyın; öteki satırlar bir sonraki
+- **Telefondan alınca başka bir işin nesneleri de geliyor**: telefonda eski bir projenin **adı değiştirilip** yeni işe
+  aynı projede devam edilmiş (eski alımlar projede kalır). Telefondan Al uzak grubu sorar (Evet: aktarma). Telefonda
+  temizlemek için: Nokta listesi › gün süzgeci › **Seç** › hepsini işaretle › **Sil**. Yeni iş için her zaman
+  **Yeni proje** açın; telefon artık dolu projenin adı değişirken uyarır.
+- **Hat metrajı tam sayı geliyor (45,25 yerine 45)**: telefon 2.5.87'den eski (o sürümler metrajı tam metreye yukarı
+  yuvarlayıp yazıyordu) ya da çizimin eski "yuvarla" ayarı. Telefonu güncelleyin; eklentinin bu sürümü eski ayarı
+  "yuvarlama yok"a çevirir (Çizim Ayarları › Metraj). Alınmış hatları **Metraj** (`SH_METRAJ`) ile yeniden hesaplayın.
+- **Yazılar birbirine ya da simgelere biniyor**: **Yazıları Düzenle** (`SH_YAZIDUZEN`).
+- **Malzeme yazıları simgeleri kapatıyor**: **Yazıları Düzenle** ya da ilk satırı tutup boş bir yere taşıyın; öteki satırlar bir sonraki
   güncellemede onun altına dizilir. Yazı büyüklüğü eleman yazısıyla birlikte değişir (Çizim Ayarları › Görünüm).
 - **Şerit sekmesi kayboldu**: komut satırına `SH_SERIT`.
 - **Bir hata oldu**: ayrıntı `%TEMP%\SebekeHakedis_hata.txt` dosyasına yazılır. Destek için `SH_DOKUM`

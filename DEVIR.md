@@ -59,6 +59,31 @@ gT / gD müşterek tepe traversleri, T-AG-1…9, D-AG-1…3, N-AG-1, MT-1…4, M
 (seedRev 26: kurulu telefonlarda eksik satırlar kendiliğinden eklenir). `volt-eslesme.json › kalemler`: servis kodu ↔
 eklenti cins / tanım (iki yönde aynı kalem). Denemeler: CekirdekTest, `telefon/web/tests/konsol.test.mjs`.
 
+14.11 (`saha-istekleri-14-11` dalı, main üstüne; geri dönüş: `onceki-14-11` dalı): kullanıcının 14.11 05:56 bildirimi (9
+madde). **Telefon**: ölçülürken büyük düğme `TAMAM` olur — geri sayım beklenmeden o ana kadarki epoklarla nokta alınır
+(`GnssService.olcumuBitir`; gözlemde `erken`, `epochsNeed`); haritada sol üstte **Nokta listesi** (Saha objeleri);
+direğe dokununca **Malzeme ekle** (Toplu malzeme formu, tek obje) ve **Direği sil** (`ps.pointDeleteImpact` /
+`deletePoint`: ekipman + elle malzeme + hat düğümü, tek direğe düşen hat da silinir; çizilmekte olan hat korunur);
+**sonradan hat çekme**: `Buradan hat çiz (direklere dokunarak)` ya da hat panelinde `Haritada direğe dokunarak bağla`
+(`app.state.dokunBagla`; üstte şerit: son direği çıkar, BİTİR; dokunuşta bildirim yazısı yok — yazılar sonraki
+dokunuşu yutuyordu); Nokta listesinde **alım günü süzgeci**, `Seç` › hepsini işaretle › **Sil** (`ps.deleteMany`),
+**Kot kaydır** (`ps.shiftHeights`, yön + miktar, Geri al; 3B uzunluk ve metraj yenilenir); dolu projenin **adı
+değişirken uyarı** (`Yeni proje aç` formu doğrudan açar). **6 Veri karışıklığı** (kullanıcının örnek dosyası incelendi,
+depoya konmadı): kod hatası değil — telefondaki proje 12.11'de başka adla açılmış, deneme alımları yapılmış, 13.11'de
+**adı değiştirilip** yeni işe devam edilmiş; eski 8 nesne ~13 km uzakta projede kalmış. Önlem: **uzak nesne grubu**
+(`Cekirdek/UzakGrup.cs` ↔ `src/geo/uzak-grup.js`, 2 km tek bağlantılı kümeleme; ortak deneme `ortak/deneme/uzak-grup`):
+eklentide Telefondan Al sorar (Evet: uzaktakiler aktarılmaz), telefonda Kontrol listesinde `UZAK GRUP`. **7 Tam sayı
+metraj**: eklentide eski "yukarı yuvarla" ayarı (0 / 1) ve 13.11 sürümünün çevirdiği "en yakın" artık yuvarlama yok
+(Çizim Ayarları sürüm 3); telefon 2.5.87'den eskiyse dosyaya tam metre yazar (güncellenmeli), alınmış hatlar SH_METRAJ
+ile yenilenir. **8 Toplu Z kotu** (kullanıcı kararı: yalnız "seçilenlerin kotunu kaydır"): eklentide `SH_KOTKAYDIR`
+(Düzenle › Kot Kaydır; blok, hafif / 3B çoklu çizgi TransformBy, GPS noktasında ZKOORD; tek U), telefonda Nokta listesi ›
+Kot kaydır. Eklentide hat uzunluğu planda (2B) ölçüldüğü için metraj değişmez; 3B açıklık / sehim yeni kotla.
+**9 Yazı ve simge çakışmaları**: `Cekirdek/YaziCakisma.cs` ↔ `src/export/yazi-cakisma.js` (dönük dikdörtgen çakışma
+sınaması, eleman ve hat yazısı aday yerleri, açgözlü yerleştirme; ortak deneme `ortak/deneme/yazi-cakisma`): eklentide
+`SH_YAZIDUZEN` (Düzenle › Yazıları Düzenle; eleman öznitelikleri birlikte, malzeme yazısı, hat metrajı ve etiketi;
+simgeler engel; seçim ya da tüm çizim; tek U; **AutoCAD'de denenmedi**), telefonda DXF dışa aktarımı (Çizim boyutları ›
+Yazı çakışmalarını düzelt, varsayılan açık; `sebeke.yaziDuzen`). Arayüz denemesi `tests/ui/saha_ui.py` (CI).
+
 13.11 (`duzeltmeler-13-11` dalı, main üstüne; PR D): kullanıcının 13.11 04:31 bildirimi (7 madde; 1–4 bu dalda, 5–7
 §6'da). **1 Eleman yazıları** (GIS no, tip) blok tanımında ve özniteliklerde renk 7 (beyaz / siyah; direk rengi 120 /
 16 siyah ekranda okunmuyordu); `BlokSurumu` 7; eski çizimin yazıları `BlokGuncelle`'deki döngüde çevrilir. **2 Malzeme
@@ -561,6 +586,10 @@ Yeniden yapmak için kullanıcıdan DWG ve Durum Tespit dosyası istenir, `aracl
 - Telefondan alma: o çizimden çıkmış, değişmemiş proje 17.837 nesnede 0 iş üretir.
 
 ## 6. Sıradaki işler
+
+- **14.11 saha istekleri**: AutoCAD'de denemesi — `SH_YAZIDUZEN` (öznitelik taşıma, malzeme yazısı, hat yazıları;
+  geri al), `SH_KOTKAYDIR` (blok, LWPOLYLINE, GPS ZKOORD; U), Telefondan Al'da uzak grup sorusu. Telefonda: TAMAM düğmesi
+  el konsolunda, dokunarak hat, direk silme, kot kaydır, DXF'te yazı düzeni.
 
 - **Lisans (13.11 akşam)**: AutoCAD'de denemesi (SH_LISANS, cihaz kodu, 7 gün sonrası kilit — tarihi elle geri alıp
   denemeyin, `%APPDATA%\SebekeHakedis\lisans.json` ve `HKCU\Software\SebekeHakedis\Lisans` silinip ilk açılış elle

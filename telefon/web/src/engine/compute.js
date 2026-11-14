@@ -4,6 +4,7 @@ import { indexModel, computeSpans, computePoleRoles, lineLengths, topologyIssues
 import { equipmentMaterials, applyRules, autoRecipeOn } from '../grid/recipe.js';
 import { overheadQuantities, cableQuantities, isBareAG } from '../grid/lines.js';
 import { checkPole, checkTransformer, checkLine, checkPoint, checkMaterials } from '../grid/checks.js';
+import { uzakGruplar } from '../geo/uzak-grup.js';
 import { analyzeLine } from '../grid/enh.js';
 import { contributionsFromEquipment, contributionsFromLine, aggregate } from '../qty/metraj.js';
 import { STATUSES } from '../core/schema.js';
@@ -71,6 +72,15 @@ export function computeProject(model, cat) {
     lineInfo.set(l.id, { length2D: ln.l2, length3D: ln.l3, spans: ln.spans, items, cable: cableInfo, job, lenSource: allGnss ? 'GNSS' : 'GIS' });
   }
   issues.push(...topologyIssues(m, ix));
+  // Uzak nesne grubu (14.11.2026; eklentideki Telefondan Al uyarısının karşılığı): adı değiştirilip yeni işe devam edilen
+  // projede eski işin alımları km'lerce uzakta kalabilir — her uzak obje bir uyarı (Kontrol listesinde "Konum" grubu)
+  const uz = uzakGruplar(m);
+  if (uz) {
+    const km = (uz.uzaklik / 1000).toFixed(1).replace('.', ',');
+    for (const e of uz.ekipman) issues.push({ code: 'UZAK GRUP', severity: 'warn', entityId: e.id, entityNo: e.no, pointId: e.pointId, group: 'Konum', message: 'Projenin çoğundan ' + km + ' km uzakta · başka işten kalmış olabilir (Nokta listesi › gün süzgeci › Seç › Sil)' });
+    for (const p of uz.noktalar) issues.push({ code: 'UZAK GRUP', severity: 'warn', entityId: p.id, entityNo: p.pointNo, pointId: p.id, group: 'Konum', message: 'Projenin çoğundan ' + km + ' km uzakta · başka işten kalmış olabilir' });
+    for (const l of uz.hatlar) issues.push({ code: 'UZAK GRUP', severity: 'warn', entityId: l.id, entityNo: l.lineNo, group: 'Konum', message: 'Projenin çoğundan ' + km + ' km uzakta · başka işten kalmış olabilir' });
+  }
 
   // ENH / havai hat mekanik analiz (çıplak iletkenli OG/ENH hatları)
   const enh = new Map();

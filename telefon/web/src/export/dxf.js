@@ -7,6 +7,7 @@ import SEMBOLLER from '../ortak/semboller.js';
 import STIL from '../ortak/cizim-stili.js';
 import SH from '../interop/sh-core.cjs';
 import { kanalModel } from '../grid/lines.js';
+import { yerlestir, elemanAdaylari, hatAdaylari, genislet } from './yazi-cakisma.js';
 const f = (v) => (Number.isFinite(v) ? (+v).toFixed(4) : '0.0');
 
 class W {
@@ -294,6 +295,25 @@ export function sembolBlogu(e, takim = '') {
   return 'SH_' + aile + '_' + sembolVaryanti(st, e.cizimDurumu, (e.attrs || {}).dmDurum);
 }
 
+/** Simge bloğunun kapsamı (blok biriminde, m): [x0, y0, x1, y1]; yazı çakışmasında engel kutusu. Önbellekli. */
+const KAPSAM = new Map();
+export function sembolKapsami(blok) {
+  if (KAPSAM.has(blok)) return KAPSAM.get(blok);
+  const ilk = SEMBOLLER.semboller[String(blok).replace(/^SH_/, '')];
+  let k = null;
+  const ekle = (x, y) => { if (!Number.isFinite(x) || !Number.isFinite(y)) return; if (!k) k = [x, y, x, y]; else { k[0] = Math.min(k[0], x); k[1] = Math.min(k[1], y); k[2] = Math.max(k[2], x); k[3] = Math.max(k[3], y); } };
+  for (const i of ilk || []) {
+    const t = i[0];
+    if (t === 'L') { ekle(i[1], i[2]); ekle(i[3], i[4]); }
+    else if (t === 'C') { ekle(i[1] - i[3], i[2] - i[3]); ekle(i[1] + i[3], i[2] + i[3]); }
+    else if (t === 'P' || t === 'S') for (const p of i[1] || []) ekle(p[0], p[1]);
+    else if (t === 'D' || t === 'Y') { ekle(-i[1], -i[1]); ekle(i[1], i[1]); }
+    else if (t === 'T') { const w = yaziGenisligi(i[4], i[3]) / 2; ekle(i[1] - w, i[2] - i[3] / 2); ekle(i[1] + w, i[2] + i[3] / 2); }
+  }
+  KAPSAM.set(blok, k);
+  return k;
+}
+
 function blocks(w) {
   const defs = {};
   for (const [name, ilkeller] of Object.entries(SEMBOLLER.semboller)) {
@@ -374,13 +394,33 @@ export function buildDXF(model, opts = {}) {
   blocks(w);
   // ENTITIES
   w.g(0, 'SECTION').g(2, 'ENTITIES');
-  const text = (layer, x, y, z, s, h = th, rot = 0, color = null) => { w.g(0, 'TEXT').g(8, layer); if (color != null) w.g(62, color); w.g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(40, f(h)).g(1, s).g(50, f(rot)); };
+  const textYaz = (layer, x, y, z, s, h = th, rot = 0, color = null) => { w.g(0, 'TEXT').g(8, layer); if (color != null) w.g(62, color); w.g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(40, f(h)).g(1, s).g(50, f(rot)); };
+  // Yazı çakışmalarını düzelt (14.11.2026; eklentideki Yazıları Düzenle / SH_YAZIDUZEN ile aynı kural): açıkken yazılar
+  // önce toplanır, simgeler engel olur, çakışan yazı aday yerlerinden boş olana taşınır, sonra hepsi yazılır.
+  const duzen = !!opts.yaziDuzen;
+  const yazilar = [], gruplar = [], engeller = [];
+  const text = (layer, x, y, z, s, h = th, rot = 0, color = null) => { if (!duzen) return textYaz(layer, x, y, z, s, h, rot, color); yazilar.push({ sol: true, a: [layer, x, y, z, s, h, rot, color] }); return yazilar.length - 1; };
+  const solKutu = (x, y, s, h, rotDer) => { const r = (rotDer || 0) * Math.PI / 180, c = Math.cos(r), sn = Math.sin(r), wd = yaziGenisligi(s, h); return { x: x + (wd / 2) * c - (h / 2) * sn, y: y + (wd / 2) * sn + (h / 2) * c, w: wd, h, aci: r }; };
+  const ortaliKutu = (x, y, s, h, rotDer, ust, gk) => { const r = rotDer * Math.PI / 180, c = Math.cos(r), sn = Math.sin(r), dy = ust ? -h / 2 : h / 2; return { x: x - dy * sn, y: y + dy * c, w: yaziGenisligi(s, h, gk), h, aci: r }; };
+  // Bir grup: üyeleri birlikte taşınır; kutu üyelerin kutularını (grubun açısında) sarar
+  const grupEkle = (uyeler, kutular, adayFn, hMax, sira) => {
+    if (!duzen || !uyeler.length) return;
+    const aci = kutular[0].aci || 0, c = Math.cos(aci), sn = Math.sin(aci);
+    let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+    for (const k of kutular) for (const [du, dv] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      const kc = Math.cos(k.aci || 0), ks = Math.sin(k.aci || 0), px = k.x + du * k.w / 2 * kc - dv * k.h / 2 * ks, py = k.y + du * k.w / 2 * ks + dv * k.h / 2 * kc;
+      const u = px * c + py * sn, v = -px * sn + py * c; u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v);
+    }
+    const um = (u0 + u1) / 2, vm = (v0 + v1) / 2, kutu = { x: um * c - vm * sn, y: um * sn + vm * c, w: u1 - u0, h: v1 - v0, aci };
+    gruplar.push({ uyeler, kutu: genislet(kutu, hMax), adaylar: adayFn(kutu), sira });
+  };
   /**
    * Parçaya ortalı yazı: (x, y) hizalama noktası — üst: false → taban çizgisinin ortası (metraj), true → üst kenarın ortası
    * (hat etiketi). 10/20 sol alt köşe (harf tablosuyla yaklaşık; hizalamayı okumayan programlar için), 11/21 hizalama
    * noktası, 72 = 1 ortalı, 73 = 3 üstten; 41 genişlik katsayısı (sığdırma).
    */
-  const ortaliText = (layer, x, y, s, h, rot, color, ust, gk) => {
+  const ortaliText = (layer, x, y, s, h, rot, color, ust, gk) => { if (!duzen) return ortaliYaz(layer, x, y, s, h, rot, color, ust, gk); yazilar.push({ sol: false, a: [layer, x, y, s, h, rot, color, ust, gk] }); return yazilar.length - 1; };
+  const ortaliYaz = (layer, x, y, s, h, rot, color, ust, gk) => {
     const r = rot * Math.PI / 180, c = Math.cos(r), sn = Math.sin(r), yarim = yaziGenisligi(s, h, gk) / 2, asagi = ust ? h : 0;
     const x0 = x - yarim * c + asagi * sn, y0 = y - yarim * sn - asagi * c;
     w.g(0, 'TEXT').g(8, layer); if (color != null) w.g(62, color);
@@ -390,7 +430,9 @@ export function buildDXF(model, opts = {}) {
     if (ust) w.g(73, 3);
   };
   const ol = B.simge;
-  const insert = (layer, block, x, y, z, color = null, rot = 0) => { w.g(0, 'INSERT').g(8, layer); if (color != null) w.g(62, color); w.g(2, block).g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(41, f(ol)).g(42, f(ol)).g(43, f(ol)).g(50, f(rot)); };
+  const insert = (layer, block, x, y, z, color = null, rot = 0) => {
+    if (duzen) { const k = sembolKapsami(block); if (k) engeller.push({ x: x + ((k[0] + k[2]) / 2) * ol, y: y + ((k[1] + k[3]) / 2) * ol, w: Math.max((k[2] - k[0]) * ol, 1e-3), h: Math.max((k[3] - k[1]) * ol, 1e-3), aci: 0 }); }
+    w.g(0, 'INSERT').g(8, layer); if (color != null) w.g(62, color); w.g(2, block).g(10, f(x)).g(20, f(y)).g(30, f(z || 0)).g(41, f(ol)).g(42, f(ol)).g(43, f(ol)).g(50, f(rot)); };
   // Açıklık sınırı olan elemanların noktaları (direk, SDK, pano, trafo…)
   const nodePts = new Set(model.equipment.filter((e) => e.pointId && !ARA_ELEMAN.has(e.kind)).map((e) => e.pointId));
   let nLines = 0, nIns = 0, nTxt = 0, nKenar = 0, nKalin = 0, nMalzeme = 0;
@@ -434,14 +476,16 @@ export function buildDXF(model, opts = {}) {
       for (const sp of spanTexts(l.coords, (c) => nodePts.has(c.id))) {
         const a = l.coords[sp.seg], b = l.coords[sp.seg + 1], metin = aciklikMetraji(l, sp, model.project.conductorPayPct || 0).toFixed(2);
         const k = yaziKonumu(a, b, 0, mdy), s = yaziSigdir(metin, thParca, Math.hypot(b.E - a.E, b.N - a.N));
-        ortaliText(YAZI(), k.x, k.y, metin, s.h, k.ang, aci, false, s.gk); nTxt++;
+        const yi = ortaliText(YAZI(), k.x, k.y, metin, s.h, k.ang, aci, false, s.gk); nTxt++;
+        grupEkle([yi], [ortaliKutu(k.x, k.y, metin, s.h, k.ang, false, s.gk)], (kt) => hatAdaylari(kt, [a.E, a.N], [b.E, b.N]), s.h, 3);
       }
     }
     // Hat etiketi (kablo tipi; "hat no kesit", haritayla aynı yazı: hatYazisi): en uzun parçanın ortasına ortalı, üst
     // kenarı çizginin alt yanında, parçaya sığdırılmış
     const ep = enUzunParca(l.coords), ea = l.coords[ep], eb = l.coords[ep + 1], etiket = hatYazisi(l.no, l.state, l.label, l.channelOnly);
     const k = yaziKonumu(ea, eb, 0, hdy), es = yaziSigdir(etiket, B.etiket, Math.hypot(eb.E - ea.E, eb.N - ea.N));
-    ortaliText(YAZI(), k.x, k.y, etiket, es.h, k.ang, aci, true, es.gk); nTxt++;
+    const yi = ortaliText(YAZI(), k.x, k.y, etiket, es.h, k.ang, aci, true, es.gk); nTxt++;
+    grupEkle([yi], [ortaliKutu(k.x, k.y, etiket, es.h, k.ang, true, es.gk)], (kt) => hatAdaylari(kt, [ea.E, ea.N], [eb.E, eb.N]), es.h, 2);
   }
   for (const e of model.equipment) {
     if (e.E == null) continue;
@@ -459,7 +503,9 @@ export function buildDXF(model, opts = {}) {
     if (e.state === 'DEMONTAJ' || e.state === 'demontaj') color = DEMONTAJ_ACI;
     insert(layer, block, e.E, e.N, e.H, color); nIns++;
     // Eleman yazısı simgenin sağ üstünde; yeri simgeyle büyür (simgenin dışında kalsın), yüksekliği ayrı ayarlanır
-    text(YAZI(), e.E + edx * ol, e.N + edy * ol, e.H, e.no + (e.typeName ? ' ' + e.typeName : ''), th, 0); nTxt++;
+    const ey = e.no + (e.typeName ? ' ' + e.typeName : '');
+    const yi = text(YAZI(), e.E + edx * ol, e.N + edy * ol, e.H, ey, th, 0); nTxt++;
+    grupEkle([yi], [solKutu(e.E + edx * ol, e.N + edy * ol, ey, th, 0)], (kt) => elemanAdaylari(kt, e.E, e.N), th, 0);
     // Malzemeler (Çizim boyutları › Malzemeleri çizimde göster): eleman yazısının altında satır satır, eleman yazısının
     // 0,7'si yükseklikte, satır aralığı 1,5, beyaz / siyah; satırlar sh-core malzemeEtiketi'nden. DXF R12 (AC1009)
     // biçimindedir: MTEXT bu sürümde yoktur, AutoCAD dosyayı açmaz (13.11.2026) — satırlar ayrı TEXT, simgeden bağımsız
@@ -468,18 +514,29 @@ export function buildDXF(model, opts = {}) {
     if (satirlar && satirlar.length) {
       const hm = th * MALZEME_YAZISI.oran, adim = hm * MALZEME_YAZISI.aralik;
       const y0 = e.N + edy * ol - (0.45 * th + 1.15 * hm);
-      satirlar.forEach((m, i) => { text(YAZI(), e.E + edx * ol, y0 - i * adim, e.H, m, hm, 0, 7); nTxt++; nMalzeme++; });
+      const uy = [], ku = [];
+      satirlar.forEach((m, i) => { uy.push(text(YAZI(), e.E + edx * ol, y0 - i * adim, e.H, m, hm, 0, 7)); ku.push(solKutu(e.E + edx * ol, y0 - i * adim, m, hm, 0)); nTxt++; nMalzeme++; });
+      grupEkle(uy, ku, (kt) => elemanAdaylari(kt, e.E, e.N), hm, 1);
     }
-    if (e.role === 'Z' && e.angle) { text(YAZI(), e.E + adx * ol, e.N + ady * ol, e.H, 'α=' + e.angle.toFixed(2) + '°', thKucuk); nTxt++; }
+    if (e.role === 'Z' && e.angle) { const am = 'α=' + e.angle.toFixed(2) + '°'; const yi = text(YAZI(), e.E + adx * ol, e.N + ady * ol, e.H, am, thKucuk); nTxt++; grupEkle([yi], [solKutu(e.E + adx * ol, e.N + ady * ol, am, thKucuk, 0)], (kt) => elemanAdaylari(kt, e.E, e.N), thKucuk, 1); }
   }
   for (const p of model.points) {
     if (p.E == null) continue;
     w.g(0, 'POINT').g(8, OLCU()).g(10, f(p.E)).g(20, f(p.N)).g(30, f(p.H || 0));
-    if (opts.pointText !== false && !model.equipment.some((e) => e.pointId === p.id)) { text(OLCU(), p.E + 1, p.N + 1, p.H, p.no + ' ' + (p.H != null ? (+p.H).toFixed(2) : ''), th * (STIL.yazi.noktaYazisi / STIL.yazi.yukseklik)); nTxt++; }
+    if (opts.pointText !== false && !model.equipment.some((e) => e.pointId === p.id)) { const pm = p.no + ' ' + (p.H != null ? (+p.H).toFixed(2) : ''), ph = th * (STIL.yazi.noktaYazisi / STIL.yazi.yukseklik); const yi = text(OLCU(), p.E + 1, p.N + 1, p.H, pm, ph); nTxt++; grupEkle([yi], [solKutu(p.E + 1, p.N + 1, pm, ph, 0)], (kt) => elemanAdaylari(kt, p.E, p.N), ph, 1); }
+  }
+  // Yazı çakışmaları: öncelik eleman yazıları, malzeme / nokta / açı yazıları, hat etiketleri, metrajlar (eklentiyle aynı)
+  let nTasinan = 0, nCakisan = 0, nCozulemeyen = 0;
+  if (duzen) {
+    const sirali = gruplar.map((g, i) => [g, i]).sort((a, b) => a[0].sira - b[0].sira || a[1] - b[1]).map((x) => x[0]);
+    const r = yerlestir(engeller, sirali.map((g) => ({ kutu: g.kutu, adaylar: g.adaylar })));
+    nCakisan = r.cakisan; nCozulemeyen = r.cozulemeyen;
+    sirali.forEach((g, i) => { const d = g.adaylar[r.secim[i]]; if (r.secim[i] > 0) { nTasinan++; for (const yi of g.uyeler) { yazilar[yi].a[1] += d[0]; yazilar[yi].a[2] += d[1]; } } });
+    for (const y of yazilar) { if (y.sol) textYaz(...y.a); else ortaliYaz(...y.a); }
   }
   w.g(0, 'ENDSEC').g(0, 'EOF');
   const txt = w.text();
-  return { text: txt, stats: { layers: layers.length + 1, lines: nLines, inserts: nIns, texts: nTxt, edges: nKenar, thick: nKalin, materials: nMalzeme } };
+  return { text: txt, stats: { layers: layers.length + 1, lines: nLines, inserts: nIns, texts: nTxt, edges: nKenar, thick: nKalin, materials: nMalzeme, yaziCakisan: nCakisan, yaziTasinan: nTasinan, yaziCozulemeyen: nCozulemeyen } };
 }
 
 // Türkçe karakterler için Windows-1254 kodlaması (R12 DXF); tabloda olmayanlar AutoCAD \U+XXXX kaçışı ile

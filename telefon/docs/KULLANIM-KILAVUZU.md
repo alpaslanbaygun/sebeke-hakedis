@@ -94,6 +94,7 @@ Sağ üstteki Bluetooth simgesi Ayarlar'ı açar; alıcı bağlıyken mavi yanar
 | --- | --- | --- |
 | Sol üst | Klasör | Proje merkezi |
 | Sol üst | Kuzey oku | Tüm objeleri ekrana sığdırır |
+| Sol üst | Liste | Nokta listesi (Saha objeleri): arama, süzme, toplu malzeme, kot kaydırma, toplu silme |
 | Sol üst | `CAD` | CAD çizimleri |
 | Sol üst | `ϟ` | Enerji kontrolü |
 | Sağ üst | Katmanlar | Katman aç / kapat, altlık harita seçimi |
@@ -137,6 +138,10 @@ Her iş bir proje içinde tutulur; önce proje oluşturulur, sonra sahaya çık�
 
 Koordinat sistemi sonradan Ayarlar › Koordinat sistemi ekranından değiştirilebilir; tüm noktalar yeniden hesaplanır.
 
+**Yeni iş = yeni proje.** Eski bir projenin adını değiştirip yeni işe devam etmeyin: eski alımlar projede kalır ve AutoCAD
+dosyasıyla da gider. İçinde kayıt olan bir projenin adı değiştirilirken uygulama uyarır (`Yeni proje aç` ya da `Yine de
+adı değiştir`). Projede km'lerce uzakta kalmış bir grup obje varsa Kontrol listesinde `UZAK GRUP` uyarısı çıkar.
+
 ### Proje merkezi
 
 Proje merkezi projenin özet ekranıdır. Haritada sol üstteki klasör düğmesiyle açılır.
@@ -147,6 +152,15 @@ Proje merkezi projenin özet ekranıdır. Haritada sol üstteki klasör düğmes
   `Seç` ile işaretlediyseniz yalnız onlara — aynı anda birden çok malzeme ekler: malzemelere dokunup işaretleyin,
   miktarları yazın, `N OBJEYE M MALZEME` deyin. Objede zaten olan malzeme (istenirse) eklenmez; mevcut / ileride ve
   kilitli objeler atlanır. Otomatik reçete açıksa eklenenler "sahada ilave" olur (gerekçe yazılır, onay bekler).
+  Haritadan da açılır (sol üstteki liste düğmesi). Aynı ekranda:
+  - **Alım günü** süzgeci (birden çok gün varsa): o gün alınanları listeler.
+  - `Seç` açıkken `Listedekilerin hepsini işaretle` ve **`Sil (N)`**: işaretlenen direkler / noktalar (malzemeleriyle)
+    ve hatlar silinir; silinen direkler hatlardan çıkar, tek direğe düşen hat da silinir. Gerekçe isteğe bağlı,
+    silinenler denetim kaydında kalır. Başka bir işten kalmış alımları temizlemek için: gün süzgeci › `Seç` › hepsini
+    işaretle › `Sil`.
+  - **`Kot kaydır`**: işaretlenen (yoksa listedeki) direklerin / noktaların kotuna aynı fark eklenir: `Yükselt (+)` ya da
+    `Alçalt (−)`, miktar (ör. 1,5 m). Hat uzunlukları (3B), açıklıklar ve metraj kendiliğinden yenilenir. `Geri al`
+    son kaydırmayı geri çevirir. Kotu bilinmeyen nokta atlanır. AutoCAD'de karşılığı **Kot Kaydır** (`SH_KOTKAYDIR`).
 - `Excel aktarım`: toplu veri alma.
 - `Kullanıcılar ve hakediş onayı`: roller ve onay.
 - "Proje akışı": 14 adımlık iş listesi. Biten adımın yanında yeşil tik olur; sıradaki adım vurgulanır. Bir adıma dokununca ilgili ekran açılır.
@@ -346,7 +360,10 @@ Büyük düğmenin yazısı ve rengi o anki durumu söyler.
 | `DİREK · ELLE` | Sarı | Koordinatı elle yazacaksınız |
 | `DİREK · BURAYA` | Mor | Nişangahın durduğu yer alınacak |
 | `KAYNAK YOK` | Gri | Konum kaynağı seçilmemiş |
-| `ÖLÇÜLÜYOR 3/5` | Dolan çubuk | Ölçülerin ortalaması alınıyor; jalonu oynatmayın |
+| `ÖLÇÜLÜYOR 3/5` · `TAMAM` | Dolan çubuk | Ölçülerin ortalaması alınıyor; jalonu oynatmayın |
+
+Ölçülürken düğmeye yeniden basarsanız (`TAMAM`) geri sayım beklenmez: o ana kadar gelen ölçülerle (en az 1) nokta
+hemen alınır. Kayıtta kaç ölçünün ortalandığı yazar.
 
 Kayıt bitince telefon titrer ve "D-017 kaydedildi" yazısı çıkar. Bir hat çiziyorsanız obje o hatta kendiliğinden bağlanır.
 
@@ -367,7 +384,7 @@ Kayıt bitince telefon titrer ve "D-017 kaydedildi" yazısı çıkar. Bir hat ç
 
 ### Son alımı geri alma
 
-Alt çubuğun sağındaki geri ok yalnız en son alımı siler; onay sorar. Daha eski bir objeyi silen düğme yoktur. Yanlış alınmış eski bir objenin durumunu kayıt ekranından değiştirebilir ya da noktayı yeniden ölçebilirsiniz.
+Alt çubuğun sağındaki geri ok yalnız en son alımı siler; onay sorar. Daha eski bir objeyi silmek için haritada ona dokunun ve `Direği sil` deyin (aşağıda); birden çoğu için Nokta listesi › `Seç` › `Sil`.
 
 ### Alınmış bir objeye dokununca
 
@@ -379,7 +396,9 @@ Haritada bir objeye dokununca alt çubuğun yerine o objenin kartı gelir.
 | `Fotoğraf` | Kamerayı açar |
 | `Yeniden ölç` / `GNSS ile ölç` | Aynı noktayı yeniden ölçer; gerekçe sorar, yeni kayıt açmaz |
 | `Aplikasyon` | Bu noktayı hedef yapar |
-| `Buradan hat başlat` | Bu noktadan yeni hat başlatır |
+| `Malzeme ekle` | Bu direğe doğrudan malzeme ekler: malzemelere dokunun, miktarı yazın, `N MALZEME EKLE`. Mevcut / ileride direkte iş olmadığı için eklenmez |
+| `Buradan hat çiz (direklere dokunarak)` | Bu direkten yeni hat başlatır; sonra bağlanacak direklere sırayla dokunursunuz (Hat çizme › Sonradan hat çekme) |
+| `Direği sil` | Direği (ya da noktayı) siler: ne silineceğini gösterir (ekipman, elle eklenen malzemeler, hangi hatlardan çıkacağı, tek direğe düşüp silinecek hat). Gerekçe isteğe bağlı; denetim kaydında kalır. Kilitli (onaylı hakedişteki) direk silinmez |
 | `Tepe kuvveti (cer vektör hesabı)` | Yalnız direklerde |
 | Hakediş durumu satırı | Altı durumdan birine dokunarak değiştirilir |
 
@@ -423,6 +442,20 @@ Hat çizilirken haritanın sol üstünde "H-01 çiziliyor · alınanlar hatta ek
 | Bir direği hatta eklemeden almak | Hat düğmesi › `Alınanları bu hatta ekle` anahtarını kapatın |
 
 Abone ve "Diğer" türü objeler hatta kendiliğinden bağlanmaz.
+
+### Sonradan hat çekme (mevcut direklere dokunarak)
+
+Direkler önceden alınmışsa hattı haritada dokunarak çizin:
+
+1. İlk direğe dokunun › `Buradan hat çiz (direklere dokunarak)`.
+2. Hat tipini, iletkeni, durumu seçip `HAT BAŞLAT` deyin.
+3. Üstte "H-03 · 1 direk · direğe dokunun" şeridi çıkar. Bağlanacak direklere **sırayla dokunun**; her dokunuş direği
+   hattın sonuna ekler (telefon kısa titrer, şeritteki sayı artar). Son direğe yeniden dokunmak eklemez.
+4. Yanlış direk: şeritteki geri ok son direği çıkarır.
+5. Bitince şeritteki `BİTİR`.
+
+Çizilmekte olan bir hatta da açılabilir: hat düğmesi › `Haritada direğe dokunarak bağla`. Bu kip açıkken direğe dokunmak
+seçim kartını açmaz, direği hatta ekler.
 
 ### Yeraltı kablosu ve kanal
 
@@ -821,7 +854,7 @@ Hesaplar › `Metraj` ekranı tüm projenin Yeşil Defter satırlarını üç sa
 
 ### Kontrol listesi
 
-Hesaplar › `Kontrol` ekranı eksikleri sıralar: tipi seçilmemiş direk, FIX olmadan alınmış kritik nokta, eksik malzeme, uyumsuz direk rolü gibi. Bir bulguya dokununca ilgili kayıt açılır.
+Hesaplar › `Kontrol` ekranı eksikleri sıralar: tipi seçilmemiş direk, FIX olmadan alınmış kritik nokta, eksik malzeme, uyumsuz direk rolü gibi. Bir bulguya dokununca ilgili kayıt açılır. `UZAK GRUP`: obje projenin çoğundan 2 km'den uzakta; başka bir işten kalmış olabilir (Proje oluşturma › Yeni iş = yeni proje).
 
 ### Poz kataloğu
 
@@ -968,7 +1001,9 @@ Dönem açılınca iş tarihi dönemin içinde kalan tamamlanmış objeler (onay
 - **Çizim boyutları** kartı (DXF, AutoCAD dosyası ya da teslim paketi seçiliyken): simge ve yazı büyüklükleri, **Hat
   kalınlığı** (İnce çizgi · İnce · Normal · Kalın · Çok kalın; Normal'de 1/1000 baskıda OG 0,5 mm, AG 0,35 mm) ve
   **Malzemeleri çizimde göster** (her elemanın malzemeleri simgenin yanında tek bir çok satırlı yazı — AutoCAD'de tek
-  nesne olarak taşınır; `GT-60=1 (M)`) ve **Simge
+  nesne olarak taşınır; `GT-60=1 (M)`), **Yazı çakışmalarını düzelt** (varsayılan açık, 14.11.2026: DXF'te üst üste
+  binen yazılar boş yere taşınır — eleman ve malzeme yazıları simgenin çevresinde, metraj ve kablo tipi yazısı kendi
+  parçası boyunca ya da çizginin öbür yanında; AutoCAD'de karşılığı **Yazıları Düzenle**) ve **Simge
   takımı** (Klasik ya da Şebeke-M; 9.11.2026). Şebeke-M takımında her elemanın kendi işareti vardır (ENH direği,
   köşk türleri, indirici merkez, box / SDK, armatür lamba türü) ve durum doluluktan okunur: yeni dolu, mevcut kontur,
   sök-tak sol yarısı dolu, demontaj çift kontur + "DM" (kesik K, sökük S). Köşkün ve armatürün türü direğin / köşkün tip

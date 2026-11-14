@@ -97,6 +97,26 @@ async def main():
             kontrol(n4 == 4, 'aynı direğe ikinci dokunuş eklemez: ' + str(n4))
             await pg.locator('.dokunserit button.bitir').click(); await pg.wait_for_timeout(600)
             kontrol(await pg.evaluate("() => !window.__app.state.activeLineId && !window.__app.state.dokunBagla") and await pg.locator('.dokunserit').count() == 0, 'BİTİR: hat kapandı, şerit gitti')
+            # Kot kaydır (AutoCAD'deki Kot Kaydır karşılığı): A-02 ve A-03'ü işaretle, +1,5 m → 3B uzunluk artar; Geri al
+            L0 = await pg.evaluate("() => { const ps = window.__app.ps, l = ps.data.lines[0]; return ps.result.lineInfo.get(l.id).length3D; }")
+            await pg.locator('.fabl button[aria-label="Nokta listesi"]').click(); await pg.wait_for_timeout(700)
+            await pg.get_by_role('button', name='Seç', exact=True).click(); await pg.wait_for_timeout(300)
+            for n in nos[1:3]:
+                await pg.locator('.li', has_text=n).locator('button[aria-label="İşaretle"]').click(); await pg.wait_for_timeout(150)
+            kb = pg.get_by_role('button', name='Kot kaydır · 2 nokta')
+            kontrol(await kb.count() == 1, 'listede "Kot kaydır · 2 nokta"')
+            await kb.click(); await pg.wait_for_timeout(400)
+            await pg.locator('.modal input.inp').fill('1,5'); await pg.wait_for_timeout(200)
+            await pg.screenshot(path=f'{OUT}/saha_03b_kot.png')
+            await pg.locator('.modal button.pri').click(); await pg.wait_for_timeout(900)
+            k = await pg.evaluate("(ids) => { const ps = window.__app.ps, l = ps.data.lines[0]; return [ps.pointById(ids[0]).H, ps.pointById(ids[1]).H, ps.pointById(ids[2]).H, ps.result.lineInfo.get(l.id).length3D]; }", [ids[nos[1]], ids[nos[2]], ids[nos[0]]])
+            kontrol(abs(k[0] - 1051.5) < 1e-6 and abs(k[1] - 1051.5) < 1e-6 and abs(k[2] - 1050) < 1e-6 and k[3] > L0 + 0.01, 'kot +1,5: A-02, A-03 1051,5; A-01 değişmedi; 3B uzunluk %.3f → %.3f' % (L0, k[3]))
+            await pg.locator('button.btn.warn', has_text='Geri al (+1,5').click(); await pg.wait_for_timeout(900)
+            k = await pg.evaluate("(ids) => { const ps = window.__app.ps, l = ps.data.lines[0]; return [ps.pointById(ids[0]).H, ps.result.lineInfo.get(l.id).length3D]; }", [ids[nos[1]]])
+            kontrol(abs(k[0] - 1050) < 1e-6 and abs(k[1] - L0) < 1e-6, 'Geri al: kot ve uzunluk eski haline döndü')
+            await pg.get_by_role('button', name='Seçimi kapat').click(); await pg.wait_for_timeout(200)
+            await pg.evaluate("() => window.__app.nav.back()"); await pg.wait_for_timeout(900)
+            await pg.evaluate("() => { const e = window.__app.state.mapEngine; e.fit(window.__app.ps.data.points); e.zoom(1.8); }"); await pg.wait_for_timeout(500)
             # Bitince direğe dokunmak yine seçim penceresini açar
             await direge_dokun(nos[1])
             kontrol(await pg.get_by_role('button', name='Malzeme ekle', exact=False).count() == 1 and await pg.get_by_role('button', name='Direği sil').count() == 1, 'seçim penceresi: Malzeme ekle ve Direği sil')
@@ -140,6 +160,24 @@ async def main():
             kontrol(r == [0, 2, 0], 'hat ve malzeme de silindi (hat, ekipman, malzeme): ' + json.dumps(r))
             aud = await pg.evaluate("async (pid) => { const a = window.__app; const l = await a.ds.auditFor(pid); return l.filter((x) => x.action === 'delete').map((x) => x.reason); }", ids[nos[3]])
             kontrol(len(aud) == 1 and aud[0] == 'Sahada silindi', 'denetim kaydında silme (gerekçe boşsa "Sahada silindi"): ' + json.dumps(aud, ensure_ascii=False))
+
+            # 4b) Nokta listesinde Seç › işaretle › Sil (toplu silme) ve dolu projenin adı değişirken uyarı
+            await pg.locator('.fabl button[aria-label="Nokta listesi"]').click(); await pg.wait_for_timeout(700)
+            await pg.get_by_role('button', name='Seç', exact=True).click(); await pg.wait_for_timeout(300)
+            await pg.locator('.li', has_text=nos[0]).locator('button[aria-label="İşaretle"]').click(); await pg.wait_for_timeout(200)
+            await pg.locator('button.btn.dang', has_text='Sil (1)').click(); await pg.wait_for_timeout(400)
+            kontrol('1 kayıt silinsin mi' in await pg.locator('.modal').inner_text(), 'toplu silme penceresi')
+            await pg.locator('.modal button.dang').click(); await pg.wait_for_timeout(900)
+            kontrol(await pg.evaluate("(pid) => !window.__app.ps.pointById(pid)", ids[nos[0]]), 'Seçilenleri sil: ' + nos[0] + ' silindi')
+            await pg.evaluate("() => window.__app.nav.go('projectEdit')"); await pg.wait_for_timeout(600)
+            await pg.locator('main input.inp').first.fill('Başka iş'); await pg.wait_for_timeout(200)
+            await pg.get_by_role('button', name='KAYDET').click(); await pg.wait_for_timeout(500)
+            mt = await pg.locator('.modal').inner_text() if await pg.locator('.modal').count() else ''
+            kontrol('Projenin adı değişiyor' in mt and 'Yeni proje aç' in mt, 'dolu projenin adı değişirken uyarı')
+            await pg.screenshot(path=f'{OUT}/saha_06b_ad_uyari.png')
+            await pg.get_by_role('button', name='Yeni proje aç').click(); await pg.wait_for_timeout(900)
+            kontrol(await pg.evaluate("() => window.__app.ps.p.name") == 'Deneme · Saha' and 'Yeni proje' in await pg.locator('main').inner_text(), 'ad değişmedi; Yeni proje formu açıldı')
+            await pg.evaluate("() => window.__app.nav.tab('map')"); await pg.wait_for_timeout(800)
 
             # 5) Ölçülürken TAMAM: 30 epok bekleniyor, ikinci epokta TAMAM → nokta erken alınır
             await pg.evaluate("async () => { const g = window.__app.gnss; g.thresholds.epochs = 30; g.startSimulator({ profile: 'FIX', hz: 2 }); }")
