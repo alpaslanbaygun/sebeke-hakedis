@@ -147,7 +147,7 @@ namespace SebekeHakedis.Cekirdek
         {
             var l = new List<KeyValuePair<string, string>>
             {
-                new KeyValuePair<string, string>("surum", "2"),
+                new KeyValuePair<string, string>("surum", "3"),
                 new KeyValuePair<string, string>("katmanOnEki", KatmanOnEki ?? ""),
                 new KeyValuePair<string, string>("gisOnEki", GisOnEki ?? ""),
                 new KeyValuePair<string, string>("aktifHakedis", AktifHakedis.ToString(CultureInfo.InvariantCulture)),
@@ -207,9 +207,10 @@ namespace SebekeHakedis.Cekirdek
                     case "malzemeYazisi": a.MalzemeYazisi = v == "1"; break;
                     case "simgeTakimi": a.SimgeTakimi = Boyutlar.TakimDuzelt(v); break;
                     case "yakalamaMesafesi": a.YakalamaMesafesi = SayiCoz.Coz(v, 1.0); break;
-                    // Eski ayar (13.11.2026 öncesi): "1" eski varsayılandı → yeni varsayılan (yuvarlama yok); "0" bilinçli
-                    // seçim → en yakın tam metre. Yeni anahtar varsa o geçerlidir.
-                    case "yukariYuvarla": if (v == "0" && !yuvarlamaOkundu) a.MetrajYuvarlama = Metraj.YuvarlamaYakin; break;
+                    // Eski ayar (13.11.2026 öncesi, "yukarı yuvarla" evet / hayır): ikisi de artık yuvarlama yok (2 hane) olur —
+                    // eski programda küsurat seçeneği yoktu; kullanıcı 14.11.2026: içe aktarınca hat değerleri tam sayıya
+                    // yuvarlanıyordu. Yeni anahtar (metrajYuvarlama) varsa o geçerlidir.
+                    case "yukariYuvarla": break;
                     case "metrajYuvarlama": a.MetrajYuvarlama = Metraj.YuvarlamaDuzelt(v); yuvarlamaOkundu = true; break;
                     case "kanalAlt": a.KanalAlt = SayiCoz.Coz(v, 40); break;
                     case "kanalUst": a.KanalUst = SayiCoz.Coz(v, 40); break;
@@ -227,6 +228,9 @@ namespace SebekeHakedis.Cekirdek
             }
             // Sürüm 1 ayarlarında varsayılan 0,5 m idi (AutoCAD görünümü); telefon stiliyle 1,8 m
             if (a.EtiketYuksekligi <= 0 || (surum < 2 && Math.Abs(a.EtiketYuksekligi - 0.5) < 1e-9)) a.EtiketYuksekligi = 1.8;
+            // Sürüm 3 (14.11.2026): 13.11.2026 sürümü eski "yukarı yuvarla: hayır" ayarını "en yakın tam metre"ye çevirip
+            // kaydediyordu; o çevrilmiş kayıt yuvarlama yok (2 hane) olur. Sürüm 3'te kaydedilen seçim olduğu gibi kalır.
+            if (surum < 3 && a.MetrajYuvarlama == Metraj.YuvarlamaYakin) a.MetrajYuvarlama = Metraj.YuvarlamaYok;
             if (a.YakalamaMesafesi < 0) a.YakalamaMesafesi = 1.0;
             a.BoyutlariDuzelt();
             return a;

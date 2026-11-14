@@ -19,6 +19,7 @@ import { energize, levelsOf } from '../../grid/energize.js';
 import { cadDocs, importCad, visibleCad, setCad, removeCad, cadModel, snapCad, cadArms } from '../../services/cad-service.js';
 import { basitMi } from '../arayuz-modu.js';
 import { CizimDurum } from '../durum-kodu.js';
+import { TopluMalzemeForm } from './field.js';
 
 const GEN = { AG: ['sehir', 'beton', 'agac'], OG: ['bahh', 'civ', 'beton562', 'agac'], MUS: ['mus', 'beton', 'agac'], AYD: ['ayd'] };
 // Hat türü / direk grubu renkleri ortak çizim stilinden (haritadaki ve AutoCAD şeridindeki renklerle aynı)
@@ -108,7 +109,7 @@ export function MapScreen() {
     const off1 = app.bus.on('gnss:state', () => { const G = app.gnss.state; if (G.E != null && (app.state.follow || first)) { e.center(G.E, G.N, first ? 0.4 : undefined); first = false; } e.invalidate(); });
     const off5 = app.bus.on('data:change', (c) => { if (c.store === 'points' && c.op === 'create' && c.after && c.after.E != null && !e.inView(c.after.E, c.after.N, 30)) e.center(c.after.E, c.after.N); });
     const off2 = app.bus.on('project:computed', () => e.invalidate());
-    const off3 = app.bus.on('ui:measuring', (m) => setMeasuring(m));
+    const off3 = app.bus.on('ui:measuring', (m) => setMeasuring(m ? Object.assign({ t0: Date.now() }, m) : null));
     const off4 = app.bus.on('ui:measureProgress', (p) => setMeasuring((m) => (m ? Object.assign({}, m, p) : m)));
     return () => { off1(); off2(); off3(); off4(); off5(); off6(); if (ro) ro.disconnect(); if (app.web) window.removeEventListener('resize', syncPad); e.destroy(); };
   }, []);
@@ -175,6 +176,8 @@ export function MapScreen() {
   // Aktif hat + önizleme (son düğümden bulunduğun yere kesik çizgi)
   const active = app.state.activeLineId ? ps.lineById(app.state.activeLineId) : null;
   const toLine = app.state.toLine !== false;
+  if (!active && app.state.dokunBagla) app.state.dokunBagla = false;
+  const dokun = !!(active && app.state.dokunBagla);
   if (eng.current) {
     const g = app.gnss.state;
     const last = active && active.nodes.length ? ps.pointById(active.nodes[active.nodes.length - 1]) : null;
@@ -186,6 +189,12 @@ export function MapScreen() {
   async function onTap(w, hit, snap) {
     const t = app.state.tool;
     if (t === 'measure' || t === 'area') { eng.current.measure.pts.push(snap ? { E: snap.E, N: snap.N } : w); eng.current.invalidate(); force((x) => x + 1); return; }
+    // Dokunarak hat çizme (14.11.2026): çizilen hat varken direğe / noktaya dokunmak onu hattın sonuna bağlar
+    if (app.state.dokunBagla && app.state.activeLineId && t !== 'edit') {
+      if (hit && hit.kind === 'point') await dokunBagla(hit.ref);
+      else app.toast('Hatta bağlamak için direğe dokunun · bitirmek için üstteki BİTİR', 'warn', 2500);
+      return;
+    }
     if (hit) select(hit.kind === 'line' ? { type: 'line', id: hit.ref.id, seg: hit.seg } : { type: 'point', id: hit.ref.id });
     else {
       // Uygulama objesi yoksa: CAD çiziminde en yakın uç / köşe / merkez noktasına yapış
@@ -194,6 +203,19 @@ export function MapScreen() {
       select(sn ? { type: 'cad', docId: sn.docId, x: sn.x, y: sn.y, kind: sn.kind, layer: sn.layer, text: sn.text } : null);
     }
   }
+  async function dokunBagla(p) {
+    const l = ps.lineById(app.state.activeLineId);
+    if (!l) { app.state.dokunBagla = false; force((x) => x + 1); return; }
+    const ad = (ps.eqAt(p.id)[0] || {}).no || p.pointNo;
+    if (l.nodes[l.nodes.length - 1] === p.id) { app.toast(ad + ' zaten ' + l.lineNo + ' hattının son direği', 'warn', 2500); return; }
+    if (l.nodes.includes(p.id) && !(await app.confirm(ad + ' zaten bu hatta', ad + ' ' + l.lineNo + ' hattında var. Yine de sona eklensin mi? (hat kendi üstüne döner)', { ok: 'Ekle' }))) return;
+    try { await ps.appendNode(l.id, p.id); } catch (err) { app.toast(err.message || String(err), 'err', 5000); return; }
+    // Bildirim yazısı yok (üstteki şerit sayıyı ve son direği gösterir): yazılar haritayı kapatıp sonraki dokunuşu yutmasın
+    if (app.bridge && app.bridge.vibrate) app.bridge.vibrate(30);
+    force((x) => x + 1);
+  }
+  // Direk / nokta silinince: son alım ona aitse geri al düğmesi boşalır
+  const silindi = (pid) => { if (lastCap && lastCap.pointId === pid) { app.state.lastCap = null; setLastCap(null); } };
   async function onLong(w) {
     const r = await app.modal((close) => html`<div class="mh"><h3>Haritada nokta</h3></div><div class="mb"><div class="kv mono"><b>Y</b><span>${fmt(w.E)}</span><b>X</b><span>${fmt(w.N)}</span></div>
       <button class="btn blk" onClick=${() => close('design')}>Tasarım (aplikasyon) noktası ekle</button>
@@ -248,6 +270,7 @@ export function MapScreen() {
     <div class="fabl">
       <button aria-label="Proje merkezi" onClick=${() => app.nav.go('hub')}><${Icon} n="folder" /></button>
       <button aria-label="Tümünü sığdır" onClick=${() => { setFollow(false); app.state.follow = false; eng.current.fit(ps.data.points); }}><${Icon} n="north" s=${18} c="var(--tx)" fill="var(--line)" /></button>
+      <button aria-label="Nokta listesi" title="Nokta listesi" onClick=${() => app.nav.go('objects')}><${Icon} n="list" /></button>
       ${basit ? html`<button class="hatdugme" style=${active ? '--c:' + hatRengi(active) : ''} aria-label="Hat" onClick=${() => setPanel('line')}>${active ? html`<b>${active.lineNo}</b><small>${active.nodes.length} düğüm · hat</small>` : html`<b>+ HAT</b><small>başlat</small>`}</button>` : html`<button class=${cadDocs(ps).length ? 'on' : ''} aria-label="CAD çizimleri" onClick=${() => setPanel('cad')}><b style="font:800 11px var(--mono)">CAD</b></button>
       <button class=${app.state.energyCfg && (app.state.energyCfg.og || app.state.energyCfg.ag) ? 'on' : ''} aria-label="Enerji kontrolü" onClick=${() => setPanel('energy')}><b style="font:800 15px var(--mono)">ϟ</b></button>`}
     </div>
@@ -264,7 +287,12 @@ export function MapScreen() {
       ${app.web ? null : html`<button class=${'loc' + (follow ? ' on' : '')} aria-label="Konumuma git" onClick=${locate}><${Icon} n="locate" s=${24} /></button>`}
     </div>
     <div class="maptag coord" hidden=${(!!app.web && g.E == null) || basit} style=${'left:12px;bottom:' + (padB + 10) + 'px'}>Y ${g.E != null ? g.E.toFixed(3) : '—'}  X ${g.N != null ? g.N.toFixed(3) : '—'}  Z ${g.H != null ? g.H.toFixed(3) : '—'}</div>
-    ${active && !basit ? html`<button class="maptag" style=${'left:12px;top:124px;color:var(--tx);border-color:' + hatRengi(active)} onClick=${() => setPanel('line')}>${active.lineNo} çiziliyor · ${toLine ? 'alınanlar hatta eklenir' : 'otomatik ekleme kapalı'}</button>` : null}
+    ${dokun ? html`<div class="dokunserit" style=${'--c:' + hatRengi(active)} role="status">
+        <div class="grow" style="min-width:0"><b>${active.lineNo} · ${active.nodes.length} direk</b><small>${active.nodes.length ? 'son ' + ((ps.eqAt(active.nodes[active.nodes.length - 1])[0] || {}).no || (ps.pointById(active.nodes[active.nodes.length - 1]) || {}).pointNo || '') + ' · direğe dokun' : 'direğe dokunun'}</small></div>
+        <button aria-label="Son direği çıkar" disabled=${!active.nodes.length} onClick=${async () => { try { await ps.removeNode(active.id, active.nodes.length - 1); app.toast('Son direk hattan çıkarıldı', 'warn', 2000); force((x) => x + 1); } catch (err) { app.toast(err.message, 'err', 5000); } }}><${Icon} n="undo" s=${20} /></button>
+        <button class="bitir" onClick=${() => { app.state.dokunBagla = false; app.state.activeLineId = null; app.bus.emit('ui:sel'); app.toast(active.lineNo + ' tamamlandı · ' + active.nodes.length + ' direk'); force((x) => x + 1); }}>BİTİR</button>
+      </div>` : null}
+    ${active && !basit && !dokun ? html`<button class="maptag" style=${'left:12px;top:124px;color:var(--tx);border-color:' + hatRengi(active)} onClick=${() => setPanel('line')}>${active.lineNo} çiziliyor · ${toLine ? 'alınanlar hatta eklenir' : 'otomatik ekleme kapalı'}</button>` : null}
     ${tool === 'edit' ? html`<div class="maptag" style=${'left:12px;top:' + (active ? 156 : 124) + 'px;color:var(--warn2)'}>Düğüm düzenleme: noktayı sürükleyin</div>` : null}
     ${tool === 'measure' || tool === 'area' ? html`<div class="maptag" style=${'left:12px;top:' + (active ? 156 : 124) + 'px;color:var(--cy2)'}>${tool === 'area' ? 'Alan ölçümü' : 'Mesafe ölçümü'}: haritaya dokunun</div>` : null}
     ${layersOpen ? html`<${LayerPop} eng=${eng.current} close=${() => setLayersOpen(false)} />` : null}
@@ -272,7 +300,7 @@ export function MapScreen() {
     <div class="base" ref=${base}>
       ${m ? html`<${MeasurePanel} m=${m} clear=${() => { m.pts = []; eng.current.invalidate(); force((x) => x + 1); }} undo=${() => { m.pts.pop(); eng.current.invalidate(); force((x) => x + 1); }} close=${() => setTool(null)} />`
         : sel && sel.type === 'cad' ? html`<${CadPointPanel} sel=${sel} select=${select} curLabel=${cur.label} take=${async () => { app.state.forceCoord = { E: sel.x, N: sel.y }; select(null); await doTake(); }} />`
-        : sel ? html`<${SelectionPanel} sel=${sel} select=${select} eng=${eng.current} openLine=${() => setPanel('line')} />`
+        : sel ? html`<${SelectionPanel} sel=${sel} select=${select} eng=${eng.current} openLine=${() => setPanel('line')} silindi=${silindi} />`
         : basit ? html`<div class="dock basit" aria-label="Alım">
             <button class="what tek" aria-label="Alınacak nesneyi seç" onClick=${secimAc}>
               <i style=${'background:' + cur.color}></i>
@@ -471,7 +499,7 @@ function CadPointPanel({ sel, select, take, curLabel }) {
 }
 
 // ---------------- Seçim kartı ----------------
-function SelectionPanel({ sel, select, eng, openLine }) {
+function SelectionPanel({ sel, select, eng, openLine, silindi }) {
   const ps = app.ps;
   if (sel.type === 'line') {
     const l = ps.lineById(sel.id);
@@ -511,6 +539,41 @@ function SelectionPanel({ sel, select, eng, openLine }) {
     app.toast(p.pointNo + ' revize edildi' + (im ? ' → ' + im.spans + ' açıklık, ' + im.roles + ' rol, ' + im.materials + ' reçete, ' + im.quantities + ' metraj' : ''), 'ok', 5000);
   };
   const nPh = ps.data.photos.filter((x) => x.ownerId === (e ? e.id : p.id)).length;
+  const ad = e ? e.no : p.pointNo;
+  // Direğe malzeme (14.11.2026, saha isteği): haritada dokunulan direğe doğrudan malzeme eklenir (Toplu malzeme formu, tek obje)
+  const nMz = e ? ((ps.result.matsByEq && ps.result.matsByEq.get(e.id)) || { items: [] }).items.length : 0;
+  const malzemeEkle = async () => {
+    if (!e) return;
+    if (!jobOf(e)) { app.toast(ad + ' ' + (((STATUSES[e.state] || {}).label) || '').toLocaleLowerCase('tr-TR') + ' · işi olmayan direğe malzeme eklenmez (durumu Yeni / Demontaj yapın)', 'warn', 6000); return; }
+    const r = await app.modal((close) => html`<${TopluMalzemeForm} close=${close} n=${1} ad=${ad} baslangic=${[]} />`);
+    if (!r) return;
+    try {
+      const o = await ps.addMaterialsBulk([e.id], r.kalemler, { varsaAtla: r.varsaAtla, reason: r.reason });
+      app.toast(o.eklenen ? ad + ' · ' + o.eklenen + ' malzeme eklendi' + (o.atlanan ? ' · ' + o.atlanan + ' zaten vardı' : '') : o.kilitli ? ad + ' kilitli · malzeme eklenmedi' : 'Seçilen malzemeler ' + ad + ' üzerinde zaten var', o.eklenen ? 'ok' : 'warn', 5000);
+    } catch (err) { app.toast(err.message, 'err', 6000); }
+  };
+  // Direk / nokta silme (14.11.2026, saha isteği): etkisi gösterilir, onaylanınca ekipman + malzeme + hat düğümü + nokta silinir
+  const sil = async () => {
+    const keep = app.state.activeLineId || null;
+    const im = ps.pointDeleteImpact(p.id, keep);
+    const kal = im.lines.filter((l) => !im.dropLines.includes(l));
+    const why = await app.modal((close) => { let v = ''; return html`<div class="mh"><h3 class="he">${ad} silinsin mi?</h3></div><div class="mb">
+      <div class="note" style="font-size:14px">Silinecekler:</div>
+      <ul style="margin:0;padding-left:20px;font-size:14px;line-height:1.5">
+        <li>${e ? kindLbl + ' ' + ad + (im.eqs.length > 1 ? ' (+' + (im.eqs.length - 1) + ' ekipman)' : '') : 'Nokta ' + p.pointNo}</li>
+        ${im.mats.length ? html`<li>${im.mats.length} elle eklenen malzeme satırı</li>` : null}
+        ${kal.length ? html`<li>${kal.map((l) => l.lineNo).join(', ')} hattından düğüm olarak çıkarılır (hat kalan direklerle sürer)</li>` : null}
+        ${im.dropLines.length ? html`<li class="he">${im.dropLines.map((l) => l.lineNo).join(', ')} tek direğe düşer ve silinir</li>` : null}
+      </ul>
+      <div class="fld"><label>Gerekçe (isteğe bağlı)</label><input class="inp" placeholder="ör. yanlış alındı" onInput=${(ev) => { v = ev.target.value; }} /></div>
+      <div class="note">Silinen kayıtlar denetim kaydında görünür.</div></div>
+      <div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn dang grow" onClick=${() => close(v.trim() || 'Sahada silindi')}><${Icon} n="trash" s=${18} />Sil</button></div>`; });
+    if (why == null) return;
+    try { await ps.deletePoint(p.id, why, { keep }); } catch (err) { app.toast(err.message || String(err), 'err', 6000); return; }
+    if (silindi) silindi(p.id);
+    select(null);
+    app.toast(ad + ' silindi' + (im.dropLines.length ? ' · ' + im.dropLines.map((l) => l.lineNo).join(', ') + ' hattı da silindi' : ''), 'warn', 5000);
+  };
   const when = p.measuredAt || p.updatedAt || p.createdAt;
   const note = (e && e.note) || p.note || '';
   const kindLbl = e ? (EQUIPMENT_KINDS[e.kind] || {}).label || e.kind : p.cls === 'HAT' ? 'Hat köşe noktası' : p.cls === 'TASARIM' ? 'Tasarım noktası' : 'Detay noktası';
@@ -518,6 +581,7 @@ function SelectionPanel({ sel, select, eng, openLine }) {
   return html`<div class="body">
     <div class="row"><b class="grow" style="font-size:17px">${e ? e.no : p.pointNo} <span style="font-weight:500;color:var(--mut)">· ${kindLbl}</span></b><${Badge} k=${si.badge}>${si.tag}</${Badge}><button class="btn xs" aria-label="Kapat" onClick=${() => select(null)}><${Icon} n="x" s=${16} /></button></div>
     ${e ? html`<div style="font-size:13px">${eqSummary(e)}${ri && ri.role ? html` · <b class="hw">${roleLabel(ri.role)}${ri.angle ? ' α=' + dms(ri.angle) : ''}</b>` : null}</div>` : null}
+    ${e ? html`<button class="btn blk" style="min-height:46px;border-color:var(--ok);color:var(--ok2)" onClick=${malzemeEkle}><${Icon} n="plus" s=${18} />Malzeme ekle${nMz ? html`<small class="mono" style="color:var(--mut);margin-left:6px">· listede ${nMz} kalem</small>` : null}</button>` : null}
     ${e && e.kind === 'transformer' && (KABIN_POSTLARI.includes((e.attrs || {}).post) || (e.attrs || {}).cabin) ? html`<button class="btn blk" style="min-height:46px;border-color:var(--cy2);color:#67e8f9" onClick=${() => app.nav.go('cabin', { id: e.id })}><${Icon} n="grid" s=${18} />Kabin · hücreler${(e.attrs || {}).cabin ? ' (' + e.attrs.cabin.hucreler.length + ')' : ' ve kablo kanalları'}</button>` : null}
     <div class="kv" style="font-size:13px">
       <b>Koordinat</b><span class="mono">Y ${fmt(p.E)} · X ${fmt(p.N)} · Z ${p.H != null ? fmt(p.H) : 'bilinmiyor'}</span>
@@ -534,7 +598,8 @@ function SelectionPanel({ sel, select, eng, openLine }) {
       <button class="btn" onClick=${() => app.nav.go('photo', { ownerId: e ? e.id : p.id, pointId: p.id, ownerNo: e ? e.no : p.pointNo, ownerKind: e ? e.kind : 'point' })}><${Icon} n="camera" s=${18} />Fotoğraf</button>
       ${app.web ? html`<button class="btn" style="grid-column:1/3" onClick=${() => app.nav.go('point', { id: p.id })}><${Icon} n="cross" s=${18} />Koordinat ve ölçüm kaydı</button>` : html`<button class="btn" onClick=${remeasure}><${Icon} n="cross" s=${18} />${si.precise ? 'Yeniden ölç' : 'GNSS ile ölç'}</button>
       <button class="btn" onClick=${() => { app.state.target = { id: p.id }; app.nav.tab('stake'); }}><${Icon} n="target" s=${18} />Aplikasyon</button>`}
-      ${act ? null : html`<button class="btn" style="grid-column:1/3" onClick=${() => { app.state.lineStartPoint = p.id; select(null); openLine(); }}><${Icon} n="plus" s=${18} />Buradan hat başlat</button>`}
+      ${act ? null : html`<button class="btn" style="grid-column:1/3" onClick=${() => { app.state.lineStartPoint = p.id; select(null); openLine(); }}><${Icon} n="plus" s=${18} />Buradan hat çiz (direklere dokunarak)</button>`}
+      <button class="btn dang" style="grid-column:1/3" onClick=${sil}><${Icon} n="trash" s=${18} />${e ? (e.kind === 'pole' || e.kind === 'lighting' ? 'Direği sil' : kindLbl + ' sil') : 'Noktayı sil'}</button>
       ${app.state.energyCfg && (app.state.energyCfg.og || app.state.energyCfg.ag) ? ['og', 'ag'].filter((lv) => app.state.energyCfg[lv] && ps.data.lines.some((l) => l.nodes.includes(p.id) && levelsOf(l)[lv])).map((lv) => { const cur = ((ps.p.energy || {})[lv] || []); const on = cur.includes(p.id); return html`<button class=${'btn' + (on ? ' warn' : '')} style="grid-column:1/3" onClick=${async () => { const en = Object.assign({ og: [], ag: [] }, ps.p.energy || {}); en[lv] = on ? cur.filter((x) => x !== p.id) : [...cur, p.id]; await ps.updateProject({ energy: en }, (on ? 'Enerji kaynağı kaldırıldı: ' : 'Enerji kaynağı: ') + (e ? e.no : p.pointNo) + ' (' + lv.toUpperCase() + ')'); app.bus.emit('ui:sel'); }}><b style="font:800 15px var(--mono)">ϟ</b>${on ? lv.toUpperCase() + ' enerji kaynağını kaldır' : 'Buradan ' + lv.toUpperCase() + ' enerjisi ver'}</button>`; }) : null}
       ${e && (e.kind === 'pole' || e.kind === 'lighting' || e.kind === 'transformer' || e.kind === 'kiosk' || e.kind === 'substation') ? html`<button class="btn" style="grid-column:1/3;border-color:#f59e0b;color:var(--warn3)" onClick=${() => app.nav.go('hesapMerkezi', { hedef: { tur: e.kind === 'pole' || e.kind === 'lighting' ? 'direk' : 'trafo', id: e.id } })}><${Icon} n="calc" s=${18} />Teknik hesaplar (${e.kind === 'pole' || e.kind === 'lighting' ? 'bu direk' : 'bu trafo'})</button>` : null}
       ${e && (e.kind === 'pole' || e.kind === 'lighting') ? html`<button class="btn" style="grid-column:1/3" onClick=${() => app.nav.go('tepe', { E: p.E, N: p.N, arms: armsOfPoint(ps, p.id), title: e.no + ' · ' + eqSummary(e), pointId: p.id })}><${Icon} n="calc" s=${18} />Tepe kuvveti (cer vektör hesabı)</button>` : null}
@@ -570,9 +635,13 @@ function TakeBtn({ label, onTake, disabled, measuring, busy, mode = 'gnss' }) {
   let style = 'background:' + b.bg + ';border-color:' + b.bg + ';color:' + b.fg;
   let text = b.t;
   if (measuring && mode === 'gnss') {
+    // Ölçülürken düğme "TAMAM" olur: basınca geri sayım beklenmeden o ana kadarki epoklarla nokta alınır (14.11.2026)
     const pct = Math.round(100 * Math.min(1, (measuring.n || 0) / (measuring.need || 1)));
     style = 'background:linear-gradient(90deg,#10b981 ' + pct + '%,#0f5c46 ' + pct + '%);border-color:#10b981;color:#0b1326';
     text = 'ÖLÇÜLÜYOR ' + (measuring.n || 0) + '/' + measuring.need;
+    // Başlatırken yanlışlıkla çift dokunuş ölçümü bitirmesin: ilk 0,8 saniyede TAMAM sayılmaz
+    const bitir = () => { if (measuring.t0 && Date.now() - measuring.t0 < 800) return; if (app.gnss.olcumuBitir()) app.toast('Ölçüm bitiriliyor · ' + Math.max(1, measuring.n || 0) + ' epok', 'ok', 1500); };
+    return html`<button class="btn huge take olcum" style=${style} onClick=${bitir} title="Beklemeden bitir"><span class="grow" style="text-align:left">${text}</span><span class="tamam-pill"><${Icon} n="check" s=${20} c="#0b1326" w=${2.6} />TAMAM</span></button>`;
   }
   return html`<button class="btn huge take" style=${style} disabled=${disabled || busy} onClick=${onTake}><${Icon} n=${b.ic || 'cross'} s=${22} c=${b.fg} w=${2.4} /><span>${text}</span></button>`;
 }
@@ -760,12 +829,13 @@ function LineSheet({ active, close, rerender }) {
       </div>
       <div class="row" style="align-items:flex-start"><span class="lbl" style="width:64px;margin-top:10px">Durum</span><div class="chips grow">${HAT_DURUMLARI.map(([k, l]) => html`<${Chip} c=${ST_COL[k]} on=${active.state === k} onClick=${async () => { if (active.state === k) return; try { await ps.updateLine(active.id, { state: k, sebeke: Object.assign({}, active.sebeke || {}, { durum: undefined }) }, active.lineNo + ' durumu: ' + l); rerender(); } catch (err) { app.toast(err.message, 'err', 6000); } }}>${l}</${Chip}>`)}</div></div>
       <div class="row card" style="padding:10px 12px"><span class="grow" style="font-size:14px"><b>Alınanları bu hatta ekle</b><div class="note">Açıkken aldığın her direk, trafo ve SDK sırayla bu hatta bağlanır.</div></span><${Toggle} on=${toLine} onChange=${(v) => { app.state.toLine = v; rerender(); }} label="Alınanları hatta ekle" /></div>
+      <div class="row card" style="padding:10px 12px"><span class="grow" style="font-size:14px"><b>Haritada direğe dokunarak bağla</b><div class="note">Açıkken haritada dokunduğun her mevcut direk sırayla bu hattın sonuna eklenir (sonradan hat çekme).</div></span><${Toggle} on=${!!app.state.dokunBagla} onChange=${(v) => { app.state.dokunBagla = v; rerender(); if (v) close(); }} label="Dokunarak bağla" /></div>
       <div class="grid2">
         <button class="btn" disabled=${!active.nodes.length} onClick=${async () => { await ps.removeNode(active.id, active.nodes.length - 1); app.toast('Son düğüm hattan çıkarıldı', 'warn'); }}><${Icon} n="undo" s=${18} />Son düğümü çıkar</button>
         <button class="btn" onClick=${() => { close(); app.nav.go('line', { id: active.id }); }}><${Icon} n="edit" s=${18} />Hat kaydı</button>
       </div>
-      <div class="note">Mevcut bir direği hatta bağlamak için haritada direğe dokun, "hattına ekle"ye bas. Direksiz güzergah noktası için: Alınacak nesne › Diğer › Hat köşe noktası.</div>`,
-      html`<button class="btn grow" style="height:52px" onClick=${close}>Devam et</button><button class="btn pri grow" style="height:52px;font-size:16px" onClick=${() => { app.state.activeLineId = null; app.bus.emit('ui:sel'); app.toast(active.lineNo + ' tamamlandı'); close(); }}><${Icon} n="check" s=${20} c="#0b1326" />HATTI BİTİR</button>`);
+      <div class="note">Mevcut direkleri hatta bağlamak için "Haritada direğe dokunarak bağla"yı aç, direklere sırayla dokun. Direksiz güzergah noktası için: Alınacak nesne › Diğer › Hat köşe noktası.</div>`,
+      html`<button class="btn grow" style="height:52px" onClick=${close}>Devam et</button><button class="btn pri grow" style="height:52px;font-size:16px" onClick=${() => { app.state.activeLineId = null; app.state.dokunBagla = false; app.bus.emit('ui:sel'); app.toast(active.lineNo + ' tamamlandı'); close(); }}><${Icon} n="check" s=${20} c="#0b1326" />HATTI BİTİR</button>`);
   }
   const ogOn = f.lt === 'OG' || f.lt === 'ENH';
   const agShow = !ogOn || f.mus;
@@ -786,9 +856,9 @@ function LineSheet({ active, close, rerender }) {
     if (f.lt === 'ABONE') { d.abonePhase = f.phase; d.aboneCount = 1; }
     if (f.install === 'yeralti') { d.cable = { zemin: zem.zemin, kaplama: zem.kaplama, bariyer: zem.bariyer, trencher: zem.trencher, surface: surf, method: meth, depth: f.depth, width: f.width }; if (meth !== 'acik') { d.cable.pipeDia = +f.pipeDia || 110; d.cable.pipeCount = meth === 'borulu' ? Math.max(1, +f.pipeCount || 1) : (+f.pipeCount || 0); } if (chOnly) d.channelOnly = true; }
     const l = await ps.createLine(d);
-    app.state.activeLineId = l.id; app.state.toLine = true; app.state.lineStartPoint = null; app.state.sel = null; app.bus.emit('ui:sel');
+    app.state.activeLineId = l.id; app.state.toLine = true; app.state.lineStartPoint = null; app.state.sel = null; app.state.dokunBagla = !!startPt; app.bus.emit('ui:sel');
     await recent('form:line', f);
-    app.toast(l.lineNo + ' başlatıldı · ' + (startPt ? 'ilk düğüm ' + startPt.pointNo : 'şimdi direkleri sırayla al'));
+    app.toast(l.lineNo + ' başlatıldı · ' + (startPt ? 'bağlanacak direklere sırayla dokunun' : 'şimdi direkleri sırayla al'), 'ok', 2500);
     close();
   };
   const agOptions = f.lt === 'ABONE' ? circuitOpts('ABONE', f.install).filter(([k]) => /2x16|3x16|4x16|NYY 2x|NYY 4x|NAYY 4x|3x25\+|4x25/.test(k)) : circuitOpts(agRole, f.install);

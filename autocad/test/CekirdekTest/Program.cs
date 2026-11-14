@@ -380,6 +380,85 @@ namespace SebekeHakedis.Test
             BirlesikMetrajOrtakDeneme(); // telefonla ortak: şablon tanımı, doldurma planı, dosyaya yazma
             OnerilenMalzemeOrtakDeneme(); // telefonla ortak: direk bağlamından önerilen kalemler
             LisansOrtakDeneme();          // telefonla ortak: cihaz kodu, imza, deneme süresi, bitiş
+            UzakGrupDeneme();             // telefonla ortak: uzak nesne grubu (adı değiştirilen projenin eski alımları)
+            YaziCakismaDeneme();          // telefonla ortak: yazı ve simge çakışmaları (SH_YAZIDUZEN ↔ DXF)
+        }
+
+        // ---------------- Yazı ve simge çakışmaları (ortak/deneme/yazi-cakisma) ----------------
+
+        private static YaziCakisma.Kutu KutuOku(JsonNesne o) =>
+            new YaziCakisma.Kutu(o.Ondalik("x"), o.Ondalik("y"), o.Ondalik("w"), o.Ondalik("h"), o.Ondalik("aci"));
+        private static List<double[]> NoktalarOku(List<object> l) =>
+            l.ConvertAll(x => { var p = (List<object>)x; return new[] { Convert.ToDouble(p[0], CultureInfo.InvariantCulture), Convert.ToDouble(p[1], CultureInfo.InvariantCulture) }; });
+        private static bool AyniNoktalar(List<double[]> a, List<double[]> b)
+        {
+            if (a.Count != b.Count) return false;
+            for (int i = 0; i < a.Count; i++) if (Math.Abs(a[i][0] - b[i][0]) > 1e-6 || Math.Abs(a[i][1] - b[i][1]) > 1e-6) return false;
+            return true;
+        }
+
+        private static void YaziCakismaDeneme()
+        {
+            Console.WriteLine("Yazı çakışması: telefonla ortak deneme (ortak/deneme/yazi-cakisma)");
+            var v = (JsonNesne)Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "yazi-cakisma", "vektorler.json"), Encoding.UTF8));
+            foreach (JsonNesne c in v.Dizi("cakisma"))
+                Esit(c.Mantik("beklenen") == true, YaziCakisma.Cakisir(KutuOku(c.Nesne("a")), KutuOku(c.Nesne("b"))), "yazı çakışması: " + c.Metin("ad"));
+            foreach (JsonNesne e in v.Dizi("elemanAdaylari"))
+            {
+                var a = NoktalarOku(new List<object> { e.Dizi("a") })[0];
+                var g = YaziCakisma.ElemanAdaylari(KutuOku(e.Nesne("kutu")), a[0], a[1]);
+                Esit(true, AyniNoktalar(NoktalarOku(e.Dizi("beklenen")), g), "eleman yazısı adayları: " + e.Metin("ad"));
+            }
+            foreach (JsonNesne h in v.Dizi("hatAdaylari"))
+            {
+                var ab = NoktalarOku(new List<object> { h.Dizi("a"), h.Dizi("b") });
+                var g = YaziCakisma.HatAdaylari(KutuOku(h.Nesne("kutu")), ab[0], ab[1]);
+                Esit(true, AyniNoktalar(NoktalarOku(h.Dizi("beklenen")), g), "hat yazısı adayları: " + h.Metin("ad"));
+            }
+            foreach (JsonNesne y in v.Dizi("yerlestirme"))
+            {
+                var eng = y.Dizi("engeller").ConvertAll(x => KutuOku((JsonNesne)x));
+                var et = y.Dizi("etiketler").ConvertAll(x => { var o = (JsonNesne)x; return new YaziCakisma.Etiket { Kutu = KutuOku(o.Nesne("kutu")), Adaylar = NoktalarOku(o.Dizi("adaylar")) }; });
+                var r = YaziCakisma.Yerlestir(eng, et);
+                var b = y.Nesne("beklenen");
+                string bek = string.Join(",", b.Dizi("secim").ConvertAll(x => Convert.ToInt32(x, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture)).ToArray()) + " · " + b.Tam("cakisan") + " · " + b.Tam("cozulemeyen");
+                string ger = string.Join(",", r.Secim.ConvertAll(x => x.ToString(CultureInfo.InvariantCulture)).ToArray()) + " · " + r.Cakisan + " · " + r.Cozulemeyen;
+                Esit(bek, ger, "yazı yerleştirme: " + y.Metin("ad"));
+            }
+        }
+
+        // ---------------- Uzak nesne grubu (ortak/deneme/uzak-grup) ----------------
+
+        private static void UzakGrupDeneme()
+        {
+            Console.WriteLine("Uzak grup: telefonla ortak deneme (ortak/deneme/uzak-grup)");
+            var v = (JsonNesne)Json.Oku(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "uzak-grup", "vektorler.json"), Encoding.UTF8));
+            double esik = v.Ondalik("esik", UzakGrup.Esik);
+            foreach (JsonNesne d in v.Dizi("durumlar"))
+            {
+                var nesneler = new List<IList<double[]>>();
+                foreach (List<object> n in d.Dizi("nesneler"))
+                {
+                    var k = new List<double[]>();
+                    foreach (List<object> p in n) k.Add(new[] { Convert.ToDouble(p[0], CultureInfo.InvariantCulture), Convert.ToDouble(p[1], CultureInfo.InvariantCulture) });
+                    nesneler.Add(k);
+                }
+                var g = UzakGrup.Grupla(nesneler, esik);
+                var b = d.Dizi("beklenen").ConvertAll(x => Convert.ToInt32(x, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture));
+                Esit(string.Join(",", b.ToArray()), string.Join(",", Array.ConvertAll(g, x => x.ToString(CultureInfo.InvariantCulture))), "uzak grup: " + d.Metin("ad"));
+            }
+            // Proje dosyası: 13 km uzaktaki 3 eleman + 1 hat ayrılır, Cikar ile aktarılmaz
+            var pr = new Proje();
+            for (int i = 0; i < 6; i++) pr.Elemanlar.Add(new Eleman { Id = "Y" + i, GisId = "D-00" + i, Saga = 612000 + i * 40, Yukari = 4401000 });
+            for (int i = 0; i < 3; i++) pr.Elemanlar.Add(new Eleman { Id = "E" + i, GisId = "A-0" + i, Saga = 600500 + i * 20, Yukari = 4391600 });
+            var h1 = new Hat { Id = "H1" }; h1.Kose.Add(new[] { 612000.0, 4401000 }); h1.Kose.Add(new[] { 612040.0, 4401000 }); pr.Hatlar.Add(h1);
+            var h2 = new Hat { Id = "H2" }; h2.Kose.Add(new[] { 600500.0, 4391600 }); h2.Kose.Add(new[] { 600520.0, 4391600 }); pr.Hatlar.Add(h2);
+            var u = UzakGrup.Bul(pr);
+            Esit("3,1", u == null ? "yok" : u.Elemanlar.Count + "," + u.Hatlar.Count, "uzak grup: dosyada 3 eleman + 1 hat uzak");
+            Esit(true, u != null && u.Ozet().Contains("A-00") && u.Ozet().Contains("km uzakta"), "uzak grup: özet adları ve uzaklığı yazar: " + (u == null ? "" : u.Ozet()));
+            UzakGrup.Cikar(pr, u);
+            Esit("6,1", pr.Elemanlar.Count + "," + pr.Hatlar.Count, "uzak grup: uzaktakiler çıkarıldı");
+            Esit(true, UzakGrup.Bul(pr) == null, "uzak grup: tek grupta uyarı yok");
         }
 
         // ---------------- Telefonla ortak lisans denemesi (ortak/deneme/lisans) ----------------
@@ -2170,7 +2249,9 @@ namespace SebekeHakedis.Test
             Esit(45.0, Metraj.Hat(45.25, Metraj.YuvarlamaYakin, 0), "metraj: en yakın tam metre");
             Esit(Metraj.YuvarlamaYok, new CizimAyarlari().MetrajYuvarlama, "ayar: yuvarlama varsayılanı yok");
             Esit(Metraj.YuvarlamaYok, CizimAyarlari.Ciftlerden(new[] { new KeyValuePair<string, string>("yukariYuvarla", "1") }).MetrajYuvarlama, "ayar: eski varsayılan (yukarı) yeni varsayılana döner");
-            Esit(Metraj.YuvarlamaYakin, CizimAyarlari.Ciftlerden(new[] { new KeyValuePair<string, string>("yukariYuvarla", "0") }).MetrajYuvarlama, "ayar: eski 'en yakın' seçimi korunur");
+            Esit(Metraj.YuvarlamaYok, CizimAyarlari.Ciftlerden(new[] { new KeyValuePair<string, string>("yukariYuvarla", "0") }).MetrajYuvarlama, "ayar: eski 'yukarı yuvarlama' hayır da yuvarlama yok olur (14.11.2026)");
+            Esit(Metraj.YuvarlamaYok, CizimAyarlari.Ciftlerden(new[] { new KeyValuePair<string, string>("surum", "2"), new KeyValuePair<string, string>("metrajYuvarlama", "yakin") }).MetrajYuvarlama, "ayar: 13.11 sürümünün çevirdiği 'en yakın' (sürüm 2) yuvarlama yok olur");
+            Esit(Metraj.YuvarlamaYakin, CizimAyarlari.Ciftlerden(new[] { new KeyValuePair<string, string>("surum", "3"), new KeyValuePair<string, string>("metrajYuvarlama", "yakin") }).MetrajYuvarlama, "ayar: sürüm 3'te seçilen 'en yakın' korunur");
             Esit(Metraj.YuvarlamaYukari, CizimAyarlari.Ciftlerden(new[] { new KeyValuePair<string, string>("metrajYuvarlama", "yukari"), new KeyValuePair<string, string>("yukariYuvarla", "0") }).MetrajYuvarlama, "ayar: yeni anahtar eskisinden önce gelir");
             Esit("10,5", Metraj.Yazi(10.5), "metraj yazımı ondalıklı");
             Esit("341", Metraj.Yazi(341), "metraj yazımı tam");

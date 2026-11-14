@@ -98,6 +98,12 @@ namespace SebekeHakedis.Eklenti
                     return new[] { "M5,8 V20", "M3,10 H7", "M11,8 V20", "M9,10 H13", "M17,13 V20", "M15,15 H19", "M18.5,3 V9", "M15.5,6 H21.5" };
                 case "metraj":
                     return new[] { "M3,16.5 L16.5,3 L21,7.5 L7.5,21 Z", "M7,12.5 L9,14.5", "M10,9.5 L12.5,12", "M13,6.5 L15,8.5" };
+                case "yazi_duzen":
+                    // iki yazı satırı (biri kaydırılmış) + ok: çakışan yazı boş yere
+                    return new[] { "M3,5.5 H13", "M3,9 H10", "M11,15 H21", "M14,18.5 H21", "M6,12 Q6,17 9.5,17", "M7.8,15.2 L9.8,17 L7.8,18.8" };
+                case "kot":
+                    // direk + yukarı / aşağı ok (kot kaydır)
+                    return new[] { "M7,5 V21", "M4.5,7 H9.5", "M17,3.5 V10.5", "M14.5,6 L17,3.5 L19.5,6", "M17,13.5 V20.5", "M14.5,18 L17,20.5 L19.5,18" };
                 case "gorunum":
                     return new[] { "M2,12 Q12,3 22,12 Q12,21 2,12 Z", D(12, 12, 3.2) };
                 case "ayarlar":

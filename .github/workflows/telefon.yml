@@ -87,7 +87,8 @@ jobs:
       - name: Arayüz denemeleri · düzeltme kaynağı, eklentiyle eşitleme (tarayıcıda)
         # Derlenmiş uygulama tarayıcıda açılır (yerel köprü taklidiyle): Ayarlar › Düzeltme kaynağı (gnss_ui.py); haritanın
         # çizim görünümü, lejant, altlık anahtarları, Google Earth ve MIF dışa aktarımı (esitleme_ui.py). Ekran görüntüleri
-        # cikti/ekran; lisans ekranı ve kilit (lisans_ui.py). main'de deneme hatası sürümü durdurmaz (sonuç ozet.txt'de); diğer dallarda durdurur.
+        # cikti/ekran; lisans ekranı ve kilit (lisans_ui.py); ölçümde TAMAM, nokta listesi, dokunarak hat, direğe malzeme,
+        # direk silme (saha_ui.py). main'de deneme hatası sürümü durdurmaz (sonuç ozet.txt'de); diğer dallarda durdurur.
         continue-on-error: ${{ github.ref == 'refs/heads/main' }}
         run: |
           set -o pipefail
@@ -101,6 +102,8 @@ jobs:
           echo "ARAYÜZ (eşitleme): $(tail -1 cikti/ui-esitleme.log)" >> cikti/ozet.txt
           if python telefon/web/tests/ui/lisans_ui.py telefon/web/dist/www cikti/ekran 2>&1 | tee cikti/ui-lisans.log; then :; else d=1; fi
           echo "ARAYÜZ (lisans): $(tail -1 cikti/ui-lisans.log)" >> cikti/ozet.txt
+          if python telefon/web/tests/ui/saha_ui.py telefon/web/dist/www cikti/ekran 2>&1 | tee cikti/ui-saha.log; then :; else d=1; fi
+          echo "ARAYÜZ (saha): $(tail -1 cikti/ui-saha.log)" >> cikti/ozet.txt
           exit $d
 
       - name: İş akışı eki (dal denemeleri için)

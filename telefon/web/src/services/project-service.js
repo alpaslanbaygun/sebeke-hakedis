@@ -182,6 +182,32 @@ export class ProjectService {
     await this.ds.update('points', pointId, patch, { reason: reason || 'Elle taşındı' });
     return this._after('points', 'Nokta taşındı: ' + p0.pointNo);
   }
+  /**
+   * Toplu kot (14.11.2026; AutoCAD'deki Kot Kaydır / SH_KOTKAYDIR ile aynı iş): noktaların kotuna aynı farkı (± m) ekler.
+   * Kotu bilinmeyen ve kilitli nokta atlanır. Koordinat ve kaynak değişmez; eski kot geçmişe yazılır. Tek yeniden hesap:
+   * 3B hat uzunlukları, açıklıklar ve metraj yeni kotla çıkar. Döner: { kaydirilan, kotsuz, kilitli, ids }.
+   */
+  async shiftHeights(pointIds, dz, reason) {
+    const d = Number(dz);
+    if (!Number.isFinite(d) || Math.abs(d) < 1e-9) throw new Error('Kot farkı sıfırdan farklı bir sayı olmalı');
+    if (Math.abs(d) > 1000) throw new Error('Kot farkı çok büyük (en çok ±1000 m)');
+    const r4 = (x) => Math.round(x * 1e4) / 1e4;
+    const r = { kaydirilan: 0, kotsuz: 0, kilitli: 0, ids: [] };
+    const why = String(reason || '').trim() || 'Kot kaydırıldı ' + (d > 0 ? '+' : '') + d + ' m';
+    for (const id of new Set(pointIds || [])) {
+      const p = this.pointById(id);
+      if (!p) continue;
+      if (p.H == null || p.zUnknown) { r.kotsuz++; continue; }
+      try { this._assertPointUnlocked(id, 'kot kaydırma'); } catch (e) { r.kilitli++; continue; }
+      const hist = (p.history || []).concat([{ at: p.updatedAt, source: p.source, E: p.E, N: p.N, H: p.H, by: p.updatedBy, kotKaydirma: d }]);
+      const patch = { H: r4(p.H + d), history: hist };
+      if (p.h != null) patch.h = r4(p.h + d);
+      await this.ds.update('points', id, patch, { reason: why });
+      r.kaydirilan++; r.ids.push(id);
+    }
+    if (r.kaydirilan) await this._after('points', 'Kot kaydırıldı (' + r.kaydirilan + ' nokta)');
+    return r;
+  }
   async updatePoint(pointId, patch, reason) {
     // Konum, kot ve numara kilitli kaydın metrajını / kimliğini değiştirir; öteki alanlar (kritik işareti, not) serbest
     if (Object.keys(patch || {}).some((k) => POINT_LOCKED_KEYS.has(k))) this._assertPointUnlocked(pointId, 'nokta düzenleme');
@@ -408,6 +434,57 @@ export class ProjectService {
     return this._after(['lines', 'equipment', 'points'], reason);
   }
   async removeLine(id, reason) { this._assertUnlocked(this.lineById(id), 'hat silme'); await this.ds.remove('lines', id, { reason }); return this._after('lines', 'Hat silindi'); }
+  /**
+   * Direk / nokta silme etkisi (14.11.2026, saha isteği): noktadaki ekipmanlar, malzeme satırları, noktayı kullanan hatlar
+   * ve bu hatlardan tek düğüme (ya da hiç düğüme) düşüp silinecek olanlar. keep: silinmeyecek hat (çizilmekte olan).
+   */
+  pointDeleteImpact(pointId, keep = null) {
+    const eqs = this.eqAt(pointId).filter((e) => e.status !== 'deleted');
+    const eqIds = new Set(eqs.map((e) => e.id));
+    const mats = (this.data.materials || []).filter((m) => m.status !== 'deleted' && m.ownerType !== 'line' && eqIds.has(m.ownerId));
+    const lines = (this.data.lines || []).filter((l) => l.status !== 'deleted' && (l.nodes || []).includes(pointId));
+    const dropLines = lines.filter((l) => l.id !== keep && l.nodes.filter((n) => n !== pointId).length < 2);
+    return { eqs, mats, lines, dropLines };
+  }
+  /**
+   * Direği / noktayı sil: noktadaki ekipmanlar ve malzemeleri, hatlardaki düğümü, tek düğüme düşen hatlar (keep hariç)
+   * ve nokta. Önce bütün kilit denetimi, sonra değişiklik (yarım kalmaz). Kayıtlar denetim kaydında silinmiş olarak durur.
+   */
+  async deletePoint(pointId, reason, { keep = null, defer = false } = {}) {
+    const p = this.pointById(pointId);
+    if (!p) throw new Error('Nokta yok');
+    const why = String(reason || '').trim() || 'Silindi';
+    this._assertPointUnlocked(pointId, 'silme');
+    const im = this.pointDeleteImpact(pointId, keep);
+    for (const l of im.lines) {
+      if (im.dropLines.includes(l)) await this.ds.remove('lines', l.id, { reason: why + ' (' + p.pointNo + ' silindi, hat tek direğe düştü)' });
+      else await this.ds.update('lines', l.id, { nodes: l.nodes.filter((n) => n !== pointId) }, { reason: 'Düğüm çıkarıldı: ' + p.pointNo + ' (silindi)' });
+    }
+    for (const m of im.mats) await this.ds.remove('materials', m.id, { reason: why });
+    for (const e of im.eqs) await this.ds.remove('equipment', e.id, { reason: why });
+    await this.ds.remove('points', pointId, { reason: why });
+    // defer: toplu silmede her nokta sonrası yalnız listeler tazelenir, hesap en sonda bir kez (deleteMany)
+    if (defer) { for (const s of ['lines', 'materials', 'equipment', 'points']) await this.reload(s); }
+    else await this._after(['lines', 'materials', 'equipment', 'points'], (im.eqs[0] ? im.eqs[0].no : p.pointNo) + ' silindi');
+    return im;
+  }
+  /**
+   * Toplu silme (14.11.2026; Nokta listesi › Seç › Seçilenleri sil): noktalar (direk / ekipman noktası ya da tek nokta)
+   * deletePoint kuralıyla, hatlar removeLine kuralıyla. Önce bütün kilit denetimi: biri kilitliyse hiçbiri silinmez.
+   * Tek yeniden hesap. Döner: { nokta, hat, dusenHat }.
+   */
+  async deleteMany({ pointIds = [], lineIds = [] }, reason, { keep = null } = {}) {
+    const why = String(reason || '').trim() || 'Toplu silindi';
+    const pids = [...new Set(pointIds)].filter((id) => this.pointById(id));
+    const lids = [...new Set(lineIds)].filter((id) => this.lineById(id) && id !== keep);
+    for (const id of pids) this._assertPointUnlocked(id, 'toplu silme');
+    for (const id of lids) this._assertUnlocked(this.lineById(id), 'toplu silme');
+    const r = { nokta: 0, hat: 0, dusenHat: 0 };
+    for (const id of pids) { if (!this.pointById(id)) continue; const im = await this.deletePoint(id, why, { keep, defer: true }); r.nokta++; r.dusenHat += im.dropLines.length; }
+    for (const id of lids) { if (!this.lineById(id)) continue; await this.ds.remove('lines', id, { reason: why }); r.hat++; }
+    await this._after(['lines', 'materials', 'equipment', 'points'], 'Toplu silme: ' + r.nokta + ' nokta, ' + (r.hat + r.dusenHat) + ' hat');
+    return r;
+  }
 
   // ---------------- Obje bazlı hakediş durumu ----------------
   // type: 'equipment' | 'line'. Durum "tamamlandı" ve sonrası ise obje metraj/hakediş kümülatifine girer (iş tarihi yoksa bugün).

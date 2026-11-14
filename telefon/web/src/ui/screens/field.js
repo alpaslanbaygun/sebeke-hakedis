@@ -132,7 +132,8 @@ export async function renumberDialog(lineId) {
 // ---------------- Toplu malzeme (13.11.2026) ----------------
 // AutoCAD'deki Toplu malzeme ve Eksik malzeme › Bulunanlara malzeme ekle ile aynı iş: Saha objeleri listesinde süzülen
 // (ya da işaretlenen) ekipmanların her birine aynı malzemeler eklenir. Malzemelere dokunmak işaretler / kaldırır.
-function TopluMalzemeForm({ close, n, baslangic }) {
+// ad: tek obje için (haritada direğe dokununca, 14.11.2026) başlık ve düğme yazısı o objeye göre
+export function TopluMalzemeForm({ close, n, baslangic, ad }) {
   const ps = app.ps, cat = ps.cat;
   const auto = autoRecipeOn(ps.p);
   const [q, setQ] = useState('');
@@ -144,15 +145,32 @@ function TopluMalzemeForm({ close, n, baslangic }) {
   const toggle = (s) => setSec((l) => (l.some((x) => x.servis === s) ? l.filter((x) => x.servis !== s) : l.concat({ servis: s, qty: 1 })));
   const setQty = (s, v) => setSec((l) => l.map((x) => (x.servis === s ? { servis: s, qty: v } : x)));
   const hazir = sec.length > 0 && sec.every((x) => x.qty > 0) && (!auto || why.trim());
-  return html`<div class="mh"><h3>Toplu malzeme · ${n} obje</h3></div><div class="mb">
-    <div class="note">Malzemelere dokunun: işaretlenen her malzeme ${n} objenin her birine eklenir. Bir daha dokunmak çıkarır.</div>
+  const tek = n === 1 && ad;
+  return html`<div class="mh"><h3>${tek ? 'Malzeme ekle · ' + ad : 'Toplu malzeme · ' + n + ' obje'}</h3></div><div class="mb">
+    <div class="note">${tek ? 'Malzemelere dokunun, miktarı yazın. Bir daha dokunmak çıkarır.' : 'Malzemelere dokunun: işaretlenen her malzeme ' + n + ' objenin her birine eklenir. Bir daha dokunmak çıkarır.'}</div>
     <input class="inp" value=${q} placeholder="Ara: topraklama, izolatör, 011.04…" onInput=${(e) => setQ(e.target.value)} />
     <div class="card tight list" style="max-height:32vh;overflow:auto">${hits.map((x) => html`<button class="li" style="width:100%;text-align:left;color:inherit;background:none;border:0" onClick=${() => toggle(x.servis)}><${Isaret} on=${on(x.servis)} /><div class="grow"><div style="font-size:14px;font-weight:600">${x.name}</div><div class="m">${x.servis} · ${x.unit}</div></div></button>`)}
       ${!hits.length ? html`<div class="empty">Sonuç yok</div>` : null}</div>
     ${sec.length ? html`<div class="sect">Eklenecek (${sec.length})</div><div class="card tight list">${sec.map((x) => { const pz = cat.poz(x.servis) || {}; return html`<div class="li"><div class="grow"><div style="font-size:13px;font-weight:600">${pz.name || x.servis}</div><div class="m">${x.servis}</div></div><${SayiGirdi} canli style="width:84px;text-align:right" value=${x.qty} onSave=${(v) => setQty(x.servis, v)} /><span class="note" style="width:28px">${pz.unit || ''}</span><button class="btn xs" aria-label="Çıkar" onClick=${() => toggle(x.servis)}><${Icon} n="x" s=${16} /></button></div>`; })}</div>` : null}
     <div class="row card" style="padding:8px 10px"><span class="grow" style="font-size:13px">Objede zaten olan malzemeyi ekleme</span><${Toggle} on=${varsaAtla} onChange=${setVarsaAtla} label="Olanı atla" /></div>
     ${auto ? html`<div class="fld"><label>Gerekçe (sahada ilave · onay bekler) *</label><input class="inp" value=${why} placeholder="ör. topraklama eksikti" onInput=${(e) => setWhy(e.target.value)} /></div>` : null}
-  </div><div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn pri grow" disabled=${!hazir} onClick=${() => close({ kalemler: sec, varsaAtla, reason: why })}>${sec.length ? n + ' OBJEYE ' + sec.length + ' MALZEME' : 'MALZEME SEÇİN'}</button></div>`;
+  </div><div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn pri grow" disabled=${!hazir} onClick=${() => close({ kalemler: sec, varsaAtla, reason: why })}>${!sec.length ? 'MALZEME SEÇİN' : tek ? sec.length + ' MALZEME EKLE' : n + ' OBJEYE ' + sec.length + ' MALZEME'}</button></div>`;
+}
+
+// Kot farkı penceresi: yön (yükselt / alçalt) + miktar (m; virgül ya da nokta). Yön ayrı: bazı Android sayı
+// klavyelerinde eksi işareti yok.
+function KotForm({ close, n, kotsuz }) {
+  const [yon, setYon] = useState(1);
+  const [m, setM] = useState(null);
+  const a = m != null && Number.isFinite(m) ? Math.abs(m) : null;
+  const dz = a != null ? yon * a : null;
+  const ok = dz != null && a > 1e-9 && a <= 1000;
+  return html`<div class="mh"><h3>Kot kaydır · ${n} nokta</h3></div><div class="mb">
+    <${Seg} value=${yon} options=${[[1, '▲ Yükselt (+)'], [-1, '▼ Alçalt (−)']]} onChange=${(v) => setYon(+v)} />
+    <div class="fld"><label>Miktar (m)</label><${SayiGirdi} canli value=${m} placeholder="1,5" onSave=${setM} /></div>
+    <div class="row wrap" style="gap:6px">${[0.5, 1, 1.5, 2].map((x) => html`<button class=${'chip' + (a === x ? ' on' : '')} onClick=${() => setM(x)}>${trn(x, 1)} m</button>`)}</div>
+    <div class="note">Her noktanın kotuna aynı fark eklenir; koordinat değişmez. Hat uzunlukları (3B), açıklıklar ve metraj yeniden hesaplanır. Geri almak için listede "Geri al".${kotsuz ? ' Kotu bilinmeyen ' + kotsuz + ' nokta atlanır.' : ''}</div>
+  </div><div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn pri grow" disabled=${!ok} onClick=${() => close(dz)}>${ok ? 'KAYDIR ' + (dz > 0 ? '+' : '−') + trn(a, 2) + ' m' : 'MİKTAR YAZIN'}</button></div>`;
 }
 
 function MalzemeSecForm({ close }) {
@@ -175,6 +193,7 @@ export function ObjectsScreen() {
   const [mz, setMz] = useState({ servis: '', kapsam: 'yok' });   // malzeme süzgeci: olmayanlar / olanlar
   const [secMod, setSecMod] = useState(false);
   const [secim, setSecim] = useState(() => new Set());
+  const [gun, setGun] = useState('');   // alım günü süzgeci (YYYY-AA-GG; 14.11.2026)
   const low = (s) => String(s || '').toLocaleLowerCase('tr-TR');
   const photos = new Map();
   for (const ph of ps.data.photos) photos.set(ph.ownerId, (photos.get(ph.ownerId) || 0) + 1);
@@ -184,7 +203,12 @@ export function ObjectsScreen() {
   const eqPts = new Set(ps.data.equipment.map((e) => e.pointId));
   for (const p of ps.data.points) if (!eqPts.has(p.id)) rows.push({ id: p.id, type: 'point', no: p.pointNo, kind: 'point', kindLabel: p.cls === 'HAT' ? 'Hat köşe noktası' : p.cls === 'TASARIM' ? 'Tasarım noktası' : 'Detay noktası', sub: p.note || '', p, hak: null, si: sourceInfo(p), rec: p, photos: photos.get(p.id) || 0 });
   const kinds = [...new Map(rows.map((r) => [r.kind, r.kindLabel])).entries()];
-  const list = rows.filter((r) => (!kind || r.kind === kind) && (!hak || r.hak === hak) && (!src || (r.si && r.si.code === src)) && (!q || low(r.no + ' ' + r.kindLabel + ' ' + r.sub).includes(low(q)))
+  // Alım günü: noktanın ölçüm / kayıt günü, hatta hattın kayıt günü (yerel saat)
+  const gunOf = (r) => { const t = r.p ? r.p.measuredAt || r.p.createdAt : r.rec.createdAt; if (!t) return ''; const d = new Date(t); return isNaN(d) ? '' : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  for (const r of rows) r.gun = gunOf(r);
+  const gunler = [...new Map(rows.filter((r) => r.gun).map((r) => [r.gun, 0])).keys()].sort();
+  const gunCount = (g) => rows.filter((r) => r.gun === g).length;
+  const list = rows.filter((r) => (!gun || r.gun === gun) && (!kind || r.kind === kind) && (!hak || r.hak === hak) && (!src || (r.si && r.si.code === src)) && (!q || low(r.no + ' ' + r.kindLabel + ' ' + r.sub).includes(low(q)))
     && (!mz.servis || (r.type === 'equipment' && ps.hasMaterial(r.id, mz.servis) === (mz.kapsam === 'var')))).sort((a, b) => String(a.no).localeCompare(String(b.no), 'tr', { numeric: true }));
   const ekipmanlar = list.filter((r) => r.type === 'equipment');
   const hedef = secMod && secim.size ? ekipmanlar.filter((r) => secim.has(r.id)) : ekipmanlar;
@@ -202,6 +226,47 @@ export function ObjectsScreen() {
       setSecim(new Set());
     } catch (err) { app.toast(err.message, 'err', 6000); }
   };
+  // Kot kaydır (14.11.2026; AutoCAD'deki Kot Kaydır ile aynı): işaretlenen (yoksa listedeki) direk / nokta kotlarına ± fark
+  const noktalar = list.filter((r) => (r.type === 'equipment' || r.type === 'point') && r.p);
+  const kotHedef = secMod && secim.size ? noktalar.filter((r) => secim.has(r.id)) : noktalar;
+  const kotKaydir = async () => {
+    const ids = [...new Set(kotHedef.map((r) => r.p.id))];
+    if (!ids.length) return;
+    const dz = await app.modal((close) => html`<${KotForm} close=${close} n=${ids.length} kotsuz=${ids.filter((id) => { const p = ps.pointById(id); return !p || p.H == null || p.zUnknown; }).length} />`);
+    if (dz == null) return;
+    try {
+      const o = await ps.shiftHeights(ids, dz);
+      if (o.kaydirilan) app.state.sonKot = { ids: o.ids, dz, pid: ps.p.id };
+      const ek = [o.kotsuz ? o.kotsuz + ' noktanın kotu yok' : '', o.kilitli ? o.kilitli + ' nokta kilitli' : ''].filter(Boolean);
+      app.toast(o.kaydirilan + ' noktanın kotu ' + (dz > 0 ? '+' : '') + trn(dz, 2) + ' m kaydırıldı · hat uzunlukları ve metraj yenilendi' + (ek.length ? ' · ' + ek.join(' · ') : ''), o.kaydirilan ? 'ok' : 'warn', 6000);
+      setSecim(new Set());
+    } catch (err) { app.toast(err.message, 'err', 6000); }
+  };
+  const sonKot = app.state.sonKot && ps.p && app.state.sonKot.pid === ps.p.id ? app.state.sonKot : null;
+  const kotGeriAl = async () => {
+    if (!sonKot) return;
+    try { const o = await ps.shiftHeights(sonKot.ids, -sonKot.dz, 'Kot kaydırma geri alındı'); app.state.sonKot = null; app.toast(o.kaydirilan + ' noktanın kotu eski haline döndü', 'warn', 4000); } catch (err) { app.toast(err.message, 'err', 6000); }
+  };
+  // Seçilenleri sil (14.11.2026): yalnız işaretlenenler (hepsi seçeneği yok); direk / nokta + bağlı malzeme, hatlar
+  const secili = list.filter((r) => secim.has(r.id));
+  const tumunuIsaretle = () => setSecim(new Set(list.map((r) => r.id)));
+  const seciliSil = async () => {
+    if (!secili.length) return;
+    const pointIds = secili.filter((r) => r.type !== 'line').map((r) => (r.type === 'equipment' ? r.rec.pointId : r.id));
+    const lineIds = secili.filter((r) => r.type === 'line').map((r) => r.id);
+    const ad = secili.slice(0, 8).map((r) => r.no).join(', ') + (secili.length > 8 ? ' … +' + (secili.length - 8) : '');
+    const why = await app.modal((close) => { let v = ''; return html`<div class="mh"><h3 class="he">${secili.length} kayıt silinsin mi?</h3></div><div class="mb">
+      <div class="note" style="font-size:14px">${ad}</div>
+      <div class="note">${pointIds.length} direk / nokta (malzemeleriyle) ve ${lineIds.length} hat silinir. Silinen direkler başka hatlardan düğüm olarak çıkar; tek direğe düşen hat da silinir. Kayıtlar denetim kaydında kalır.</div>
+      <div class="fld"><label>Gerekçe (isteğe bağlı)</label><input class="inp" placeholder="ör. başka projeden kalmış deneme alımı" onInput=${(ev) => { v = ev.target.value; }} /></div></div>
+      <div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn dang grow" onClick=${() => close(v.trim() || 'Toplu silindi')}><${Icon} n="trash" s=${18} />Sil</button></div>`; });
+    if (why == null) return;
+    try {
+      const o = await ps.deleteMany({ pointIds, lineIds }, why, { keep: app.state.activeLineId || null });
+      app.toast(o.nokta + ' direk / nokta ve ' + (o.hat + o.dusenHat) + ' hat silindi', 'warn', 5000);
+      setSecim(new Set()); setSecMod(false);
+    } catch (err) { app.toast(err.message, 'err', 7000); }
+  };
   const counts = ps.hakCounts();
   const open = (r) => { if (r.type === 'equipment') app.nav.go('equipment', { id: r.id }); else if (r.type === 'line') app.nav.go('line', { id: r.id }); else app.nav.go('point', { id: r.id }); };
   const show = (r) => { app.state.sel = r.type === 'line' ? { type: 'line', id: r.id, seg: 0 } : { type: 'point', id: r.type === 'equipment' ? r.rec.pointId : r.id }; app.state.follow = false; const p = r.p || (r.type === 'line' ? ps.pointById(r.rec.nodes[0]) : null); if (p && p.E != null) app.state.view = { cE: p.E, cN: p.N, res: Math.min((app.state.view || {}).res || 0.3, 0.3) }; app.nav.tab('map'); };
@@ -209,14 +274,19 @@ export function ObjectsScreen() {
     <div class="hakrow">${HAK_ORDER.map((k) => html`<button class=${hak === k ? 'on' : ''} style=${'--c:' + HAK_STATUSES[k].color} onClick=${() => setHak(hak === k ? '' : k)}><i></i>${HAK_STATUSES[k].short} ${counts[k] || 0}</button>`)}</div>
     <input class="inp" placeholder="Ara: D-017, trafo, armatür…" value=${q} onInput=${(e) => setQ(e.target.value)} />
     <div class="grid2"><${Sel} value=${kind} options=${[['', 'Tüm türler'], ...kinds]} onChange=${setKind} /><${Sel} value=${src} options=${[['', 'Tüm kaynaklar'], ...SRC_CODES.map((c) => [c, '[' + SRC[c].tag + ']'])]} onChange=${setSrc} /></div>
+    ${gunler.length > 1 || gun ? html`<${Sel} value=${gun} options=${[['', 'Tüm günler'], ...gunler.map((g) => [g, 'Alım günü ' + g.slice(8, 10) + '.' + g.slice(5, 7) + '.' + g.slice(0, 4) + ' (' + gunCount(g) + ')'])]} onChange=${setGun} />` : null}
     <div class="row wrap" style="gap:6px"><button class="btn sm" style="max-width:100%;overflow:hidden" onClick=${malzemeSuz}><${Icon} n="search" s=${16} /><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${mzPoz ? mzPoz.name : 'Malzeme süzgeci (eksik malzeme bul)'}</span></button>
       ${mz.servis ? html`<${Seg} value=${mz.kapsam} options=${[['yok', 'Olmayanlar'], ['var', 'Olanlar']]} onChange=${(v) => setMz({ servis: mz.servis, kapsam: v })} /><button class="btn xs" aria-label="Süzgeci kaldır" onClick=${() => setMz({ servis: '', kapsam: 'yok' })}><${Icon} n="x" s=${16} /></button>` : null}</div>
     <div class="note">${list.length} kayıt${hak || kind || src || q || mz.servis ? ' (süzülmüş)' : ''}${mz.servis ? ' · ' + (mz.kapsam === 'yok' ? 'bu malzemesi olmayan' : 'bu malzemesi olan') + ' ekipmanlar' : ''}</div>
     <div class="row" style="gap:6px"><button class=${'btn' + (secMod ? ' on' : '')} onClick=${() => { setSecMod(!secMod); setSecim(new Set()); }}><${Icon} n=${secMod ? 'x' : 'check'} s=${18} />${secMod ? 'Seçimi kapat' : 'Seç'}</button>
       <button class="btn pri grow" disabled=${!hedef.length} onClick=${topluMalzeme}><${Icon} n="plus" s=${18} c="#0b1326" />Toplu malzeme · ${hedef.length} obje${secMod && !secim.size ? ' (hepsi)' : ''}</button></div>
+    <div class="row" style="gap:6px"><button class="btn grow" disabled=${!kotHedef.length} onClick=${kotKaydir}><${Icon} n="up" s=${18} />Kot kaydır · ${kotHedef.length} nokta${secMod && !secim.size ? ' (hepsi)' : ''}</button>
+      ${sonKot ? html`<button class="btn warn" onClick=${kotGeriAl}><${Icon} n="undo" s=${18} />Geri al (${(sonKot.dz > 0 ? '+' : '') + trn(sonKot.dz, 2)} m)</button>` : null}</div>
+    ${secMod ? html`<div class="row" style="gap:6px"><button class="btn grow" onClick=${secim.size === list.length ? () => setSecim(new Set()) : tumunuIsaretle}><${Icon} n="check" s=${18} />${secim.size === list.length && list.length ? 'İşaretleri kaldır' : 'Listedekilerin hepsini işaretle (' + list.length + ')'}</button>
+      <button class="btn dang" disabled=${!secili.length} onClick=${seciliSil}><${Icon} n="trash" s=${18} />Sil (${secili.length})</button></div>` : null}
     <div class="card tight list">${list.slice(0, 300).map((r) => html`<div class="li" style="align-items:flex-start">
-      ${secMod && r.type === 'equipment' ? html`<button style="background:none;border:0;padding:4px 6px 0 0" aria-label="İşaretle" onClick=${() => isaretle(r.id)}><${Isaret} on=${secim.has(r.id)} /></button>` : null}
-      <button class="grow" style="background:none;border:0;text-align:left;color:inherit;padding:0" onClick=${() => (secMod && r.type === 'equipment' ? isaretle(r.id) : open(r))}>
+      ${secMod ? html`<button style="background:none;border:0;padding:4px 6px 0 0" aria-label="İşaretle" onClick=${() => isaretle(r.id)}><${Isaret} on=${secim.has(r.id)} /></button>` : null}
+      <button class="grow" style="background:none;border:0;text-align:left;color:inherit;padding:0" onClick=${() => (secMod ? isaretle(r.id) : open(r))}>
         <div class="row wrap" style="gap:6px"><b style="font-size:14px">${r.no}</b><span class="note">${r.kindLabel}</span>${r.si ? html`<span class="srctag" style=${'color:' + r.si.color}>[${r.si.tag}]</span>` : null}${r.hak ? html`<span class="srctag" style=${'color:' + HAK_STATUSES[r.hak].color}>● ${HAK_STATUSES[r.hak].short}</span>` : null}</div>
         <div class="s">${r.sub}${r.p && r.p.E != null ? ' · Y ' + fmt(r.p.E, 2) + ' X ' + fmt(r.p.N, 2) + (r.p.H != null ? ' Z ' + fmt(r.p.H, 2) : ' Z ?') : ''}${r.photos ? ' · ' + r.photos + ' foto' : ''}</div>
       </button>

@@ -135,7 +135,7 @@ export function ChecksScreen() {
   const ps = app.ps;
   const [f, setF] = useState('all');
   const all = ps.result.issues;
-  const codes = ['UYUMSUZ', 'EKSİK VERİ', 'ÖLÇÜ KABUL EDİLMEDİ', 'MALZEME EKSİK', 'UYARI'];
+  const codes = ['UYUMSUZ', 'EKSİK VERİ', 'ÖLÇÜ KABUL EDİLMEDİ', 'MALZEME EKSİK', 'UYARI'].concat(all.some((i) => i.code === 'UZAK GRUP') ? ['UZAK GRUP'] : []);
   const list = f === 'all' ? all : all.filter((i) => i.code === f);
   const open = (i) => {
     if (ps.eqById(i.entityId)) app.nav.go('equipment', { id: i.entityId });

@@ -115,5 +115,5 @@ export function Empty({ children }) { return html`<div class="empty">${children}
 
 export const fmt = (v, d = 3) => (v === null || v === undefined || !Number.isFinite(+v) ? '—' : (+v).toFixed(d));
 export const trn = (v, d = 2) => (v === null || v === undefined || !Number.isFinite(+v) ? '—' : (+v).toLocaleString('tr-TR', { minimumFractionDigits: d, maximumFractionDigits: d }));
-export const CODE_KIND = { 'UYUMSUZ': 'err', 'EKSİK VERİ': 'warn', 'ÖLÇÜ KABUL EDİLMEDİ': 'err', 'MALZEME EKSİK': 'warn', 'UYARI': 'mut' };
+export const CODE_KIND = { 'UYUMSUZ': 'err', 'EKSİK VERİ': 'warn', 'ÖLÇÜ KABUL EDİLMEDİ': 'err', 'MALZEME EKSİK': 'warn', 'UYARI': 'mut', 'UZAK GRUP': 'warn' };
 export const FIXCOL = { FIX: '#10b981', FLOAT: '#f59e0b', SINGLE: '#ef4444', DGPS: '#f97316', NONE: '#475569', PHONE: '#38bdf8', SBAS: '#ef4444' };

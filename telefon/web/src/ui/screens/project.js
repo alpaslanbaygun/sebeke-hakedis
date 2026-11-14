@@ -32,13 +32,15 @@ export async function autocadDosyasiAl(file, projectId) {
   } catch (e) { app.toast('Alınamadı: ' + e.message, 'err', 8000); return null; }
 }
 
-export function ProjectsScreen() {
+export function ProjectsScreen({ yeni } = {}) {
   useBus(['project:open', 'project:computed', 'project:deleted']);
   const [list, setList] = useState(null);
   const [form, setForm] = useState(null);
   const [stds, setStds] = useState([]);
   const load = async () => setList(await app.ps.listProjects());
-  useEffect(() => { load(); listStandards(app.ds).then(setStds); }, []);
+  const yeniForm = (st) => ({ name: '', code: '', location: '', client: '', contractor: '', stdId: (st.find((s) => s.status === 'active') || st[0] || {}).id, datum: 'TUREF', cm: 39, heightSystem: 'ortometrik', enhZone: 'II', mode: 'asbuilt' });
+  // yeni: Proje bilgilerinde "Yeni proje aç" denince form doğrudan açılır
+  useEffect(() => { load(); listStandards(app.ds).then((st) => { setStds(st); if (yeni) setForm(yeniForm(st)); }); }, []);
   const open = async (p) => { await app.ps.open(p.id); app.nav.tab('map'); };
   // Proje silme: ad yazılarak onaylanır; geri alınamaz
   const removeProject = async (p) => {
@@ -82,7 +84,7 @@ export function ProjectsScreen() {
   }
   return html`<div class="brandrow"><img src="assets/sebeke-m-simge.png" alt="" /><div><b>Şebeke-M Hakediş</b><span>Elektrik Dağıtım Projesi</span></div></div>
     <div class="title"><div class="grow"><h1>Projeler</h1><div class="sub" style="font-family:Inter">${app.ps.p ? 'Açık: ' + app.ps.p.name : 'Proje seçin veya oluşturun'}</div></div>${app.ps.p ? html`<button class="btn sm" onClick=${() => app.nav.go('hub')}>Proje merkezi</button>` : null}</div>
-    <button class="btn pri blk" style="height:56px" onClick=${() => setForm({ name: '', code: '', location: '', client: '', contractor: '', stdId: (stds.find((s) => s.status === 'active') || stds[0] || {}).id, datum: 'TUREF', cm: 39, heightSystem: 'ortometrik', enhZone: 'II', mode: 'asbuilt' })}><${Icon} n="plus" s=${20} c="#0b1326" />Yeni proje</button>
+    <button class="btn pri blk" style="height:56px" onClick=${() => setForm(yeniForm(stds))}><${Icon} n="plus" s=${20} c="#0b1326" />Yeni proje</button>
     <label class="btn blk" style="height:56px"><${Icon} n="down" s=${20} />AutoCAD dosyasından proje al (.sebeke.json)<input type="file" accept=".json,application/json" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) autocadDosyasiAl(f, null).then((oz) => { if (oz) { app.nav.tab('map'); } load(); }); }} /></label>
     <div class="note">AutoCAD'de ŞEBEKE-M ARAÇLAR › Telefona Gönder ile kaydedilen dosyayı (Drive'dan) seçin. Direkler, hatlar, kanallar ve malzemeler projeye gelir; sahada değiştirip Dışa Aktar › "AutoCAD proje dosyası" ile geri gönderirsiniz.</div>
     ${app.web ? html`<label class="btn blk" style="height:56px"><${Icon} n="sync" s=${20} />Telefondan proje al (.vsync dosyası)<input type="file" accept=".vsync,.json" style="display:none" onChange=${(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) fromPhone(f); }} /></label>
@@ -140,7 +142,23 @@ export function ProjectEditScreen() {
   const ps = app.ps;
   const [d, setD] = useState({ name: ps.p.name, code: ps.p.code, client: ps.p.client, contractor: ps.p.contractor, location: ps.p.location, mode: ps.p.mode, cornerThresholdDeg: ps.p.cornerThresholdDeg ?? 3, conductorPayPct: ps.p.conductorPayPct ?? 0, landClass: ps.p.landClass || 'arazi', autoRecipe: autoRecipeOn(ps.p) });
   const set = (x) => setD(Object.assign({}, d, x));
-  const save = async () => { const out = Object.assign({}, d); if (ps.p.autoRecipe === undefined && out.autoRecipe === autoRecipeOn(ps.p)) delete out.autoRecipe; /* dokunulmadıysa eski proje sorusu geçerli kalır */ await ps.updateProject(out, 'Proje bilgileri'); app.toast('Kaydedildi'); app.nav.back(); };
+  const save = async () => {
+    const out = Object.assign({}, d); if (ps.p.autoRecipe === undefined && out.autoRecipe === autoRecipeOn(ps.p)) delete out.autoRecipe; /* dokunulmadıysa eski proje sorusu geçerli kalır */
+    // Dolu projenin adı değişiyorsa uyar (14.11.2026, saha bildirimi): eski projenin adı değiştirilip yeni işe geçilince
+    // eski alımlar yeni projede kalıyor, AutoCAD'e de gidiyordu. Yeni iş için yeni proje açılmalı.
+    const yeniAd = String(out.name || '').trim(), eskiAd = String(ps.p.name || '').trim();
+    const n = ps.data.equipment.length + ps.data.points.length + ps.data.lines.length;
+    if (yeniAd && yeniAd !== eskiAd && n > 0) {
+      const ilk = ps.data.points.map((x) => x.measuredAt || x.createdAt).filter(Boolean).sort()[0];
+      const r = await app.modal((close) => html`<div class="mh"><h3 class="hw">Projenin adı değişiyor</h3></div><div class="mb">
+        <div class="alert warn">"${eskiAd}" projesinde ${ps.data.equipment.length} obje, ${ps.data.lines.length} hat var${ilk ? ' (ilk alım ' + new Date(ilk).toLocaleDateString('tr-TR') + ')' : ''}. Ad değişince bu kayıtların hepsi "${yeniAd}" projesinde kalır ve dışa aktarımla (AutoCAD dosyası, rapor) birlikte gider.</div>
+        <div class="note" style="font-size:14px">Yeni bir iş için ayrı proje açın. Yalnız yazım düzeltmesiyse adı değiştirin.</div></div>
+        <div class="mf" style="flex-wrap:wrap"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn grow" onClick=${() => close('ad')}>Yine de adı değiştir</button><button class="btn pri grow" style="flex-basis:100%" onClick=${() => close('yeni')}><${Icon} n="plus" s=${18} c="#0b1326" />Yeni proje aç</button></div>`);
+      if (!r) return;
+      if (r === 'yeni') { app.nav.tab('projects', { yeni: true }); return; }
+    }
+    await ps.updateProject(out, 'Proje bilgileri'); app.toast('Kaydedildi'); app.nav.back();
+  };
   return html`<${Title} title="Proje bilgileri" sub=${'Standart: ' + ps.cat.std.name + ' (sabit)'} />
     <div class="card stack">${[['name', 'Proje adı'], ['code', 'Kod'], ['client', 'İdare'], ['contractor', 'Yüklenici'], ['location', 'Yer']].map(([k, l]) => html`<div class="fld"><label>${l}</label><input class="inp" value=${d[k] || ''} onInput=${(e) => set({ [k]: e.target.value })} /></div>`)}
       <div class="fld"><label>Çalışma modu</label><${Seg} value=${d.mode} options=${[['asbuilt', 'Uygulama'], ['tasarim', 'Tasarım']]} onChange=${(v) => set({ mode: v })} /></div>
