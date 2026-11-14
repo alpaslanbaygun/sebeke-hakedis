@@ -1,0 +1,24 @@
+Sürüm: 0.1.120
+İşlem: 219d52eba6964a9c487fbcce7aaede6dc4fd54b8
+Tarih: 2026-11-14T03:54:43
+TEST: geçti
+PENCERE: geçti
+DERLEME: geçti
+İMZA: yok (kod imzalama sertifikası tanımlı değil; kurulum güvenilir klasöre) · imza adımı geçici sertifikayla denendi: geçti
+
+FullName                                                                                                               Length
+--------                                                                                                               ------
+D:\a\sebeke-hakedis\sebeke-hakedis\paket\SebekeHakedis-0.1.120\SebekeHakedis.bundle                                    
+D:\a\sebeke-hakedis\sebeke-hakedis\paket\SebekeHakedis-0.1.120\KALDIR.bat                                              1679
+D:\a\sebeke-hakedis\sebeke-hakedis\paket\SebekeHakedis-0.1.120\KUR.bat                                                 3885
+D:\a\sebeke-hakedis\sebeke-hakedis\paket\SebekeHakedis-0.1.120\OKUBENI.txt                                             4272
+D:\a\sebeke-hakedis\sebeke-hakedis\paket\SebekeHakedis-0.1.120\SebekeHakedis.bundle\Contents                           
+D:\a\sebeke-hakedis\sebeke-hakedis\paket\SebekeHakedis-0.1.120\SebekeHakedis.bundle\PackageContents.xml                1516
+D:\a\sebeke-hakedis\sebeke-hakedis\paket\SebekeHakedis-0.1.120\SebekeHakedis.bundle\Contents\R20-R24                   
+D:\a\sebeke-hakedis\sebeke-hakedis\paket\SebekeHakedis-0.1.120\SebekeHakedis.bundle\Contents\R25                       
+D:\a\sebeke-hakedis\sebeke-hakedis\paket\SebekeHakedis-0.1.120\SebekeHakedis.bundle\Contents\R20-R24\SebekeHakedis.dll 3319296
+D:\a\sebeke-hakedis\sebeke-hakedis\paket\SebekeHakedis-0.1.120\SebekeHakedis.bundle\Contents\R25\SebekeHakedis.dll     3322368
+
+
+PAKET: cikti/SebekeHakedis-0.1.120.zip
+KURULUM DENEMESİ: geçti (güvenilir klasöre kuruldu, eski kopya temizlendi, kaldırıldı)
