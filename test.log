@@ -1,0 +1,1244 @@
+D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Cekirdek\CizimAyarlari.cs(188,18): warning CS0219: The variable 'yuvarlamaOkundu' is assigned but its value is never used [D:\a\sebeke-hakedis\sebeke-hakedis\autocad\test\CekirdekTest\CekirdekTest.csproj]
+Örnek döküm: D:\a\sebeke-hakedis\sebeke-hakedis\autocad\test\CekirdekTest\bin\Release\net8.0\ornek-dokum.json
+  ✓ simge: AG beton direk montaj
+  ✓ simge: AG ağaç direk malzeme+montaj
+  ✓ simge: AG demir direk mevcut
+  ✓ simge: AG demir direk demontaj
+  ✓ simge: cinsi bilinmeyen AG direk (daire, boş)
+  ✓ simge: müşterek demir direk sök-tak
+  ✓ simge: ENH beton direk
+  ✓ simge: ENH cıvatalı demir direk
+  ✓ simge: aydınlatma direği (galvaniz olsa da daire)
+  ✓ simge: trafo direği
+  ✓ simge: beton köşk
+  ✓ simge: trafo binası (KM → AutoCAD'deki gibi yeni)
+  ✓ simge: mutabakat eksiği → yeni
+  ✓ simge: diğer › armatür
+  ✓ simge: diğer › menhol
+  ✓ hat etiketi: KM → /tip\ (metraj ve tanıtıcı yok)
+  ✓ hat etiketi: ENH → {tip}
+  ✓ hat etiketi: M → ^ tip
+  ✓ hat etiketi: DM → >tip<
+  ✓ hat etiketi: MEVCUT → (tip)
+  ✓ hat etiketi: DM+M → [tip]
+  ✓ hat etiketi: M+M → * tip
+  ✓ simge: box → SDK
+  ✓ simge: pano
+  ✓ simge: ek mufu
+  ✓ simge: kofre
+  ✓ simge: diğer
+  ✓ simge: SH_ bloğu eklentinin
+  ✓ simge: AutoCAD bloğu eklentinin değil
+  ✓ simge: AG demir direk demontaj kesik
+  ✓ simge: AG beton direk demontaj sökük
+  ✓ simge: küçük harfle sökük
+  ✓ simge: türü yazılmamış demontaj
+  ✓ simge: sök-tak kesik olsa da yarım dolu
+  ✓ simge: montajda demontaj türü yok sayılır
+  ✓ simge: elemanın demontaj türü
+  ✓ simge: demontaj varyantları
+  ✓ simge: DIREK_AG altı durumu birbirinden farklı
+  ✓ simge: KAFES_AG altı durumu birbirinden farklı
+  ✓ simge: DIREK_OG altı durumu birbirinden farklı
+  ✓ simge: KAFES_OG altı durumu birbirinden farklı
+  ✓ simge: DIREK_AYD altı durumu birbirinden farklı
+  ✓ simge: TRAFO_DIREK altı durumu birbirinden farklı
+  ✓ simge: TRAFO_BINA altı durumu birbirinden farklı
+  ✓ simge: TRAFO_KOSK altı durumu birbirinden farklı
+  ✓ simge: SDK altı durumu birbirinden farklı
+  ✓ simge: PANO altı durumu birbirinden farklı
+  ✓ simge: MUFU altı durumu birbirinden farklı
+  ✓ simge: KOFRE altı durumu birbirinden farklı
+  ✓ simge: MENHOL altı durumu birbirinden farklı
+  ✓ simge: ABONE altı durumu birbirinden farklı
+  ✓ simge: ARMATUR altı durumu birbirinden farklı
+  ✓ simge: DIGER altı durumu birbirinden farklı
+  ✓ simge: SM_DIREK_AG altı durumu birbirinden farklı
+  ✓ simge: SM_KAFES_AG altı durumu birbirinden farklı
+  ✓ simge: SM_DIREK_OG altı durumu birbirinden farklı
+  ✓ simge: SM_KAFES_OG altı durumu birbirinden farklı
+  ✓ simge: SM_DIREK_ENH altı durumu birbirinden farklı
+  ✓ simge: SM_DIREK_AYD altı durumu birbirinden farklı
+  ✓ simge: SM_TRAFO_DIREK altı durumu birbirinden farklı
+  ✓ simge: SM_TRAFO_DIREK_OZEL altı durumu birbirinden farklı
+  ✓ simge: SM_INDIRICI_MERKEZ altı durumu birbirinden farklı
+  ✓ simge: SM_KOSK_KULE altı durumu birbirinden farklı
+  ✓ simge: SM_KOSK_KULE_CIKIS altı durumu birbirinden farklı
+  ✓ simge: SM_KOSK_KULESIZ_OZEL altı durumu birbirinden farklı
+  ✓ simge: SM_KOSK_KULE_OZEL altı durumu birbirinden farklı
+  ✓ simge: SM_KOSK_KCIKIS_OZEL altı durumu birbirinden farklı
+  ✓ simge: SM_KOSK_MODULER altı durumu birbirinden farklı
+  ✓ simge: SM_TRAFO_BINA altı durumu birbirinden farklı
+  ✓ simge: SM_BOX altı durumu birbirinden farklı
+  ✓ simge: SM_SDK_AG altı durumu birbirinden farklı
+  ✓ simge: SM_SDK_AYD altı durumu birbirinden farklı
+  ✓ simge: SM_ARMATUR_CIVA altı durumu birbirinden farklı
+  ✓ simge: SM_ARMATUR_SODYUM altı durumu birbirinden farklı
+  ✓ simge: SM_ARMATUR_LED altı durumu birbirinden farklı
+  ✓ simge: SM_ARMATUR_FLORESAN altı durumu birbirinden farklı
+  ✓ simge: her aile için 6 varyant var (yeni, mevcut, DMM, DM, kesik, sökük)
+  ✓ simge: mevcut kafes direkte simgeden taşan çizgi yok
+  ✓ simge: demontaj kafes direkte taşan çapraz (mevcuttan ayrılır)
+  ✓ simge: ailenin kapsamı demontaj işaretini içerir
+  ✓ simge: geometrisi boş sembol yok
+  ✓ simge: KAFES_OG yarı genişliği 3 m
+  ✓ simge: eski SH_DIREK adı tabloda yok (eklenti basit daire çizer)
+  ✓ Şebeke-M: 23 aile
+  ✓ Şebeke-M: klasik takımın 16 ailesi değişmedi
+  ✓ Şebeke-M: 39 aile × 6 durum = 234 sembol
+  ✓ Şebeke-M: klasik simgelerde yazı, zıt renk ya da kesikli çizgi yok
+  ✓ Şebeke-M: yeni direk dolu, iç çizgiler zıt renk
+  ✓ Şebeke-M: mevcut direk kontur (zıt renk yok)
+  ✓ Şebeke-M: sök-tak sol yarısı dolu
+  ✓ Şebeke-M: demontajda DM yazısı
+  ✓ Şebeke-M: türü bilinmeyen demontajda harf yok
+  ✓ Şebeke-M: kesik demontajda K harfi
+  ✓ Şebeke-M: sökük demontajda S harfi
+  ✓ Şebeke-M: sökükte DM yazısı da var
+  ✓ Şebeke-M: demontaj çift kontur (iki daire)
+  ✓ Şebeke-M: trafo binası kesikli kontur
+  ✓ Şebeke-M: SDK simgesinde AG yazısı
+  ✓ Şebeke-M: yarı genişlikler klasikle aynı (hatlar aynı yere yapışır)
+  ✓ takım: klasikte tip simgeyi değiştirmez
+  ✓ takım SM: AG beton direk yeni
+  ✓ takım SM: AG demir direk kesik
+  ✓ takım SM: müşterek demir direk sök-tak
+  ✓ takım SM: ENH direği demir de olsa ENH simgesi
+  ✓ takım SM: aydınlatma direği
+  ✓ takım SM: direk tipi trafo
+  ✓ takım SM: özel direk tipi trafo
+  ✓ takım SM: tipi yazılmamış köşk → modüler
+  ✓ takım SM: kule çıkışlı köşk
+  ✓ takım SM: özel kule çıkışlı köşk
+  ✓ semboller: bütün blok adları R12 sınırında (≤ 31, A–Z 0–9 _ $ -)
+  ✓ semboller: eski uzun adlı blok yeni ada eşlenir (çizimde yeniden adlandırılır)
+  ✓ semboller: 33 karakterlik ad R12 dışı
+  ✓ takım SM: kuleli köşk
+  ✓ takım SM: kulesiz özel köşk
+  ✓ takım SM: trafo binası cinsten tanınır
+  ✓ takım SM: indirici merkez
+  ✓ takım SM: box → SDK AG
+  ✓ takım SM: aydınlatma yazılı box → SDK AYD
+  ✓ takım SM: pano → box
+  ✓ takım SM: LED armatür
+  ✓ takım SM: cıva buharlı armatür
+  ✓ takım SM: tipi yazılmamış armatür → sodyum
+  ✓ takım SM: takımda olmayan aile (ek mufu) klasik kalır
+  ✓ takım SM: menhol klasik kalır
+  ✓ takım SM: elemandan blok adı
+  ✓ takım SM: seçilen blok tabloda var
+  ✓ takım: klasiğe dönünce eski blok adı
+  ✓ takım: bilinmeyen takım adı klasik sayılır
+  ✓ takım: küçük harfle sm
+  ✓ Türkçe ondalık
+  ✓ ',00' sıfırdır
+  ✓ noktalı ondalık
+  ✓ kanal kodu 12 = OG + AG
+  ✓ kanal kodu 7 = AG + AYD + REK
+  ✓ kanal OG tarifesi
+  ✓ kanal AG tarifesi
+  ✓ bölge sayısı
+  ✓ GPS noktası
+  ✓ eleman sayısı
+  ✓ hat sayısı
+  ✓ kanal sayısı
+  ✓ sondaj sayısı
+  ✓ katman ön eki
+  ✓ en büyük hakediş
+  ✓ direk türü
+  ✓ direk bölgesi (iki bölgenin kesişiminde küçük olan)
+  ✓ direk kalemleri
+  ✓ travers kg
+  ✓ bölge dışındaki direk en yakın bölgeye
+  ✓ demontaj durumu
+  ✓ proje dosyası gidip gelince aynı kalır
+  ✓ OG+AG kanal iki satıra bölünür
+  ✓ kanal hacmi korunur
+  ✓ OG payı %50
+  ✓ 4P+R iki tel türüne açılır
+  ✓ ROSE metre (1 tel × 100 m)
+  ✓ ROSE kg
+  ✓ PANSY metre (4 tel × 100 m)
+  ✓ kanalın kendi satırı rapora girmez
+  ✓ DM DRM sütunu
+  ✓ Excel dosyası yazıldı
+Proje özeti:
+  ✓ proje özeti: ilk satır tüm projeler
+  ✓ proje özeti: her bölge bir proje (bölgesiz nesne yok)
+  ✓ proje özeti: eleman sayıları projelere dağılır
+  ✓ proje özeti: tüm projeler sayıları
+  ✓ proje özeti: hat, kanal, sondaj sayıları projelere dağılır
+  ✓ proje özeti: SC77'nin bölgesi listede
+  ✓ proje özeti: tüm projelerin toplamı ÖZET toplamına eşit
+  ✓ proje özeti: tüm projelerde projeler birleşir
+  ✓ proje özeti: seçilen projenin listesi yalnız o projenin satırları
+  ✓ proje özeti: proje bazında liste ÖZET satırlarıyla aynı
+  ✓ proje özeti: hakediş ve durum listeleri dolu
+  ✓ proje özeti: hakediş süzgeci
+  ✓ proje özeti: durum süzgeci (DM)
+  ✓ proje özeti: arama büyük/küçük harf ve İ/I farkı gözetmez
+  ✓ proje özeti: bulunamayan arama boş liste
+  ✓ proje özeti: süzgeç yazısı
+  ✓ proje özeti: Excel yazıldı (tüm projeler)
+  ✓ proje özeti: Excel sayfaları (projeler, malzeme listesi, proje bazında)
+  ✓ proje özeti: tek projede proje bazında sayfası yok
+Koordinat ve KML:
+  ✓ koordinat: TM39 → enlem/boylam telefonla aynı
+  ✓ koordinat: enlem/boylam → TM39 telefonla aynı
+  ✓ koordinat: orta meridyende boylam = DOM
+  ✓ koordinat: gidip gelince aynı (0,1 mm)
+  ✓ koordinat: boylamın dilimi
+  ✓ koordinat: TM dilimi denetimi
+  ✓ KML: geçerli XML
+  ✓ KML: her nesne bir yer işareti (malzeme satırları hariç)
+  ✓ KML: bütün elemanlar (direk, trafo, SDK, pano, diğer)
+  ✓ CBS: direkler DIREK katmanında
+  ✓ CBS: bütün malzeme satırları MALZEME tablosunda
+  ✓ KML: her proje bir klasör
+  ✓ KML: elemanın tipi öznitelikte
+  ✓ KML: hat köşeleri
+  ✓ KML: hakediş ve proje kodu öznitelikleri
+  ✓ KML: çizgi biçimleri
+  ✓ KML: DOM yoksa yazılmaz
+  ✓ KMZ: içinde doc.kml
+MIF / MID:
+  ✓ MIF BOLGE: nesne sayısı
+  ✓ MIF BOLGE: sütunlar
+  ✓ MIF BOLGE: TM koordinat sistemi
+  ✓ MIF BOLGE: uyarı yok
+  ✓ MIF BOLGE: koordinatlar 1 mm içinde aynı
+  ✓ MIF BOLGE: değerler aynı (Türkçe harfler dâhil)
+  ✓ MIF DIREK: nesne sayısı
+  ✓ MIF DIREK: sütunlar
+  ✓ MIF DIREK: TM koordinat sistemi
+  ✓ MIF DIREK: uyarı yok
+  ✓ MIF DIREK: koordinatlar 1 mm içinde aynı
+  ✓ MIF DIREK: değerler aynı (Türkçe harfler dâhil)
+  ✓ MIF HAT: nesne sayısı
+  ✓ MIF HAT: sütunlar
+  ✓ MIF HAT: TM koordinat sistemi
+  ✓ MIF HAT: uyarı yok
+  ✓ MIF HAT: koordinatlar 1 mm içinde aynı
+  ✓ MIF HAT: değerler aynı (Türkçe harfler dâhil)
+  ✓ MIF KANAL: nesne sayısı
+  ✓ MIF KANAL: sütunlar
+  ✓ MIF KANAL: TM koordinat sistemi
+  ✓ MIF KANAL: uyarı yok
+  ✓ MIF KANAL: koordinatlar 1 mm içinde aynı
+  ✓ MIF KANAL: değerler aynı (Türkçe harfler dâhil)
+  ✓ MIF SONDAJ: nesne sayısı
+  ✓ MIF SONDAJ: sütunlar
+  ✓ MIF SONDAJ: TM koordinat sistemi
+  ✓ MIF SONDAJ: uyarı yok
+  ✓ MIF SONDAJ: koordinatlar 1 mm içinde aynı
+  ✓ MIF SONDAJ: değerler aynı (Türkçe harfler dâhil)
+  ✓ MIF NOKTA: nesne sayısı
+  ✓ MIF NOKTA: sütunlar
+  ✓ MIF NOKTA: TM koordinat sistemi
+  ✓ MIF NOKTA: uyarı yok
+  ✓ MIF NOKTA: koordinatlar 1 mm içinde aynı
+  ✓ MIF NOKTA: değerler aynı (Türkçe harfler dâhil)
+  ✓ MIF MALZEME: nesne sayısı
+  ✓ MIF MALZEME: haritada yeri yok (None)
+  ✓ MIF MALZEME: sütunlar
+  ✓ MIF MALZEME: TM koordinat sistemi
+  ✓ MIF MALZEME: uyarı yok
+  ✓ MIF MALZEME: koordinatlar 1 mm içinde aynı
+  ✓ MIF MALZEME: değerler aynı (Türkçe harfler dâhil)
+  ✓ MIF dış: 11 nesne
+  ✓ MIF dış: atlanan yok
+  ✓ MIF dış: nesne türleri
+  ✓ MIF dış: çoklu çizgi iki parça
+  ✓ MIF dış: iki halkalı alan
+  ✓ MIF dış: halkanın tekrarlanan son köşesi atılır
+  ✓ MIF dış: simge rengi
+  ✓ MIF dış: kalem rengi
+  ✓ MIF dış: yazı (iç tırnaklı)
+  ✓ MIF dış: yazı rengi
+  ✓ MIF dış: yazı açısı
+  ✓ MID: tırnak içinde ayırıcı
+  ✓ MID: iç tırnak
+  ✓ MID: tırnaksız değer
+  ✓ MID: boş değerli satır
+  ✓ MIF dış: çoklu nokta
+  ✓ MIF dış: topluluk (ilk parçanın türü)
+  ✓ MIF dış: coğrafi koordinat çizim dilimine çevrilir
+  ✓ MIF dış: yazı yüksekliği metreye çevrilir
+  ✓ MIF: TM42 → TM39 (1 mm)
+  ✓ MIF: UTM 37 → TM39 (1 mm)
+  ✓ MIF: ITRF96 / WGS84 olmayan datumda uyarı
+  ✓ MIF: düz koordinat olduğu gibi
+  ✓ MIF: CoordSys yoksa metre koordinat olduğu gibi
+  ✓ MID: Türkçe Windows kod sayfası
+  ✓ MID: Charset'siz UTF-8
+Harita altlığı:
+  ✓ altlık: Bing karo anahtarı (belgedeki örnek)
+  ✓ altlık: 0°,0° → dünyanın ortası
+  ✓ altlık: Yandex (elipsoidal) karoları kuzeyde daha aşağıda
+  ✓ altlık: karo adresi
+  ✓ altlık: sağlayıcılar
+  ✓ altlık: 1 km alan, 0,5 m → zoom 18
+  ✓ altlık: karo sayısı ve piksel boyu
+  ✓ altlık: resim boyu
+  ✓ altlık: 20 km alanda zoom düşer, sınırlar aşılmaz
+  ✓ altlık: çıktı boyu
+  ✓ altlık: TM'ye çevrilen resimde her piksel kendi yerinin rengini alır (398 örnek)
+  ✓ altlık: sınır doğru yerde (±5 piksel)
+  ✓ altlık: Google oturumu ve Bing adresi
+Malzeme yazımı:
+  ✓ malzeme yazımı: ortak örnek dosyası okundu (56)
+  ✓ malzeme yazımı: örnekler
+  ✓ malzeme yazımı: bütün katalogda ikinci uygulama değiştirmez (2994 ad)
+  ✓ malzeme yazımı: boşalan / bozulan ad yok
+Gidiş-dönüş: ornek-dokum
+  ✓ eleman sayısı
+  ✓ hat sayısı
+  ✓ kanal sayısı
+  ✓ sondaj sayısı
+  ✓ nokta sayısı
+  ✓ bölge sayısı
+  ✓ okuma uyarısı yok
+  ✓ rapor satır sayısı
+  ✓ rapor satırları aynı
+  ✓ hat etiketi okunur
+  ✓ telefon projesi okundu
+Gidiş-dönüş: telefon-proje
+  ✓ eleman sayısı
+  ✓ hat sayısı
+  ✓ kanal sayısı
+  ✓ sondaj sayısı
+  ✓ nokta sayısı
+  ✓ bölge sayısı
+  ✓ okuma uyarısı yok
+  ✓ rapor satır sayısı
+  ✓ rapor satırları aynı
+  ✓ hat etiketi okunur
+  ✓ telefonId dosyaya yazılır
+  ✓ telefonId dosyadan okunur (eleman)
+  ✓ telefonId dosyadan okunur (hat)
+  ✓ telefonId yoksa boş
+  ✓ telefon dosyası tanınır
+  ✓ AutoCAD dosyası telefon dosyası sayılmaz
+  ✓ telefon dosyasından eleman sayısı
+  ✓ telefon dosyasından hat sayısı
+  ✓ telefon dosyasında telefonId
+  ✓ iki biçimden aynı Durum Tespit raporu
+  ✓ eski telefon dosyasında anlaşılır hata
+  ✓ varsayılan boyutlar dosyaya yazılmaz
+  ✓ boyutlar dosyadan okunur (simge 1,5 kat · kablo tipi 2 m · metraj 1,6 m · eleman yazısı 2,2 m · hat kalınlığı 1 kat)
+  ✓ boyutlar telefon dosyasında da
+  ✓ aralık dışı boyut varsayılana döner, eksik alan varsayılan
+  ✓ yeni çizimde boyutlar varsayılan
+  ✓ ayarlara alınan boyutlar
+  ✓ boyutlar çizimin ayarlarında saklanır
+VOLT-EDAŞ Saha dosyası:
+  ✓ telefon dosyası: 10 eleman
+  ✓ telefon dosyası: 3 hat
+  ✓ telefon dosyası: 1 kanal
+  ✓ telefon dosyası: OG direk ENH_DIREK
+  ✓ telefon dosyası: direk tipi AutoCAD yazımıyla
+  ✓ telefon dosyası: telefonId dolu
+  ✓ telefon dosyası: OG demir direk simgesi
+  ✓ telefon dosyası: direk kg
+  ✓ telefon dosyası: OG hattı tel tel açılır
+  ✓ telefon dosyası: kanal paylaştırılır
+Proje: OG-03 Hat Yenileme · bölge 1, nokta 0, eleman 10, hat 3, kanal 1, sondaj 0
+1. aktarım: yeni 15 · güncelle 0 · uyarı 0
+  ✓ okuma uyarısı yok
+  ✓ rapor satır sayısı aynı
+  ✓ rapor toplamı aynı
+2. aktarım: yeni 0 · güncelle 0 · aynı 15
+  ✓ ikinci aktarım iş çıkarmaz
+  ✓ katman: hakediş (Türkçe karaktersiz)
+  ✓ katman: müşterek direk MUSDIR
+  ✓ katman: müşterek hat MUSTEREK_HAT
+  ✓ katman: önekteki Türkçe harf de çevrilir
+  ✓ katman: çizimdeki eski adlı katman yeni adıyla yazılır
+  ✓ katman adı: ASCII çevirisi
+  ✓ katman türü: eski ad yeni ada
+  ✓ şebeke katmanı: hakediş, özel ve CBS katmanları çevrilir
+  ✓ kullanıcının kendi katmanına dokunulmaz
+  ✓ eski ve yeni müşterek hat katmanı aynı türde okunur
+  ✓ katman: demontaj
+  ✓ katman: kofre
+  ✓ katman: OG yeraltı
+  ✓ Türkçe ondalık yazımı
+  ✓ fiyat yazımı
+Çizim araçları
+  ✓ GIS: direkler ortak sıra
+  ✓ GIS: aydınlatma direği de aynı sırada
+  ✓ GIS: box
+  ✓ GIS: pano en az iki hane
+  ✓ GIS: trafo
+  ✓ GIS: OG ek mufu
+  ✓ GIS: kofrede numara yok
+  ✓ GIS: boş projede 1'den
+  ✓ metraj yukarı yuvarlanır
+  ✓ metraj: kayan nokta kırıntısı yuvarlatmaz
+  ✓ metraj: en yakına yuvarla + ek pay
+  ✓ metraj: yuvarlama yok (2 hane), 45,25 kalır
+  ✓ metraj: yuvarlama yok + ek pay
+  ✓ metraj: yukarı tam metre
+  ✓ metraj: en yakın tam metre
+  ✓ ayar: yuvarlama varsayılanı yok
+  ✓ ayar: eski varsayılan (yukarı) yeni varsayılana döner
+  ✓ ayar: eski 'yukarı yuvarlama' hayır da yuvarlama yok olur (14.11.2026)
+  ✓ ayar: 13.11 sürümünün çevirdiği 'en yakın' (sürüm 2) yuvarlama yok olur
+  ✓ ayar: sürüm 3'te seçilen 'en yakın' korunur
+  ✓ ayar: yeni anahtar eskisinden önce gelir
+  ✓ metraj yazımı ondalıklı
+  ✓ metraj yazımı tam
+  ✓ kanal hacmi
+  ✓ ayar: katman ön eki
+  ✓ ayar: hakediş
+  ✓ ayar: DOM
+  ✓ ayar: sembol ölçeği
+  ✓ ayar: yuvarlama
+  ✓ ayar: ek pay
+  ✓ ayar: son seçim
+  ✓ ayar ile hat metrajı (en yakına + ek pay)
+  ✓ simge: yeni direk SH_ simgesiyle
+  ✓ simge: başka bloklu direk SH_ simgesine geçer
+  ✓ simge: demontaja çevrilen direk
+  ✓ simge: trafo direği
+  ✓ simge: adsız blok korunur
+  ✓ simge: duruma göre yeniden seçilir
+  ✓ simge: SH_ bloğu korunur
+  ✓ katalog okundu (tam liste)
+  ✓ cins kodu: AG_ALİMİNYUM_KABLO katalogdaki gibi çevrilir
+  ✓ cins kodu: OG_ALİMİNYUM_KABLO katalogdaki gibi çevrilir
+  ✓ cins kodu: REKORTMAN_ALİMİNYUM katalogdaki gibi çevrilir
+  ✓ cins kodu: ALİMİNYUM_BAĞ_TELİ katalogdaki gibi çevrilir
+  ✓ cins kodu: TECHİZAT_MONTAJ_DEMİRİ katalogdaki gibi çevrilir
+  ✓ cins kodu: KOFRA katalogdaki gibi çevrilir
+  ✓ cins kodu: eklentinin tablosu katalogdaki eskiCinsler ile aynı
+  ✓ katalogda eski (yazım hatalı) cins kodu yok
+  ✓ cins adlarında bozuk harf yok (i̇)
+  ✓ cins adı Türkçe yazımla, sözcük başları büyük
+  ✓ cins adı: AG Galvaniz Demir Direk (kullanıcının örneği)
+  ✓ cins adı: eski kodla da bulunur
+  ✓ cins adı: katalogda olmayan kod okunur ada çevrilir
+  ✓ okunur ad: 've' küçük, kısaltma büyük
+  ✓ okunur ad: İ/ı Türkçe kuralıyla
+  ✓ katalogdaki bütün cins adlarında sözcük başları büyük (ve / ile dışında)
+  ✓ katalog: LED armatür sınıfları S1…S17
+  ✓ katalog: yeni LED sınıfı aydınlatma direğinin malzeme listesinde
+  ✓ katalog: eski kodla aranan kalem yeni koduyla gelir
+  ✓ çizimdeki eski kodlu hat kalemi yeni kodla okunur
+  ✓ çizimdeki KOFRA malzemesi KOFRE okunur
+  ✓ eleman türü: eski ve yeni kofre kodu
+  ✓ hat türü: yeni alüminyum kablo kodu
+  ✓ eski proje dosyasındaki kodlar yeni kodla okunur
+  ✓ katalog: armatür kalemi
+  ✓ katalog: ALPEK 3x50, 3x70 ve NYY kabloları
+  ✓ hat değiştir: aynı türde metraj korunur
+  ✓ hat değiştir: satır sayısı aynı, diğer malzemelere dokunulmaz
+  ✓ hat değiştir: yeni iletken eski satırın yerinde, sıra numarası korunur
+  ✓ hat değiştir: ana kesit
+  ✓ hat değiştir: tür aynıysa katman korunur
+  ✓ hat değiştir: kablo tipi yazısı yeni iletkenle (^ 3x70/16+95 ALPEK)
+  ✓ hat değiştir: tür değişince yeni türün metrajı; adet × metraj, durum, hakediş
+  ✓ hat değiştir: tür değişince katman yeniden belirlenir
+  ✓ hat değiştir: yeni katman yeni hakedişte (SC_2.HAK.AG_YER_HAT)
+  ✓ hat değiştir: iki iletken iki satır (eski sıra, sonra yeni sıra numarası)
+  ✓ hat değiştir: fazla satıra yeni sıra numarası (7001)
+  ✓ hat değiştir kilidi: hattın ana hakedişi (1) açık
+  ✓ hat değiştir kilidi: onaylı 2. dönem satırı varken hat değiştirilemez
+  ✓ hat değiştir kilidi: onay yoksa serbest
+  ✓ hat değiştir kilidi: onaylı satırı olmayan hat serbest
+  ✓ hat değiştir kilidi: yeni satırlar onaylı hakedişe yazılamaz
+  ✓ hat değiştir kilidi: ana hakedişi onaylı hat (eski denetim) yine kilitli
+  ✓ hat değiştir: kilitli satırda işlem reddedilir
+  ✓ hat değiştir: reddedilince model kısmen değişmiş kalmaz (satırlar, tür, ana kesit aynı)
+  ✓ hat değiştir: onaylı 2. dönem satırı yerinde
+  ✓ hat değiştir: onay yokken satırlar değişir
+  ✓ armatür: malzemesi yoksa simge yok
+  ✓ armatür: direğin yanında armatür simgesi
+  ✓ armatür: yarı genişliği direğin yarısından küçük (0,6)
+  ✓ armatür: demontaj işaretiyle bile direk simgesinden küçük (1,75)
+  ✓ armatür: aydınlatma direğinin de yarısından küçük
+  ✓ armatür: direğin sol üstünde, simgeye değmeden (dx=-3,75, dy=1,3)
+  ✓ armatür: direğe yakın (eski uzaklık 5,15 idi)
+  ✓ armatür: demontaj armatür simgesi
+  ✓ armatür: direk olmayan elemanda simge çizilmez
+  ✓ blok: M → DM+M sök-tak simgesi
+  ✓ blok: başka blok yerine uygulamanın simgesi
+  ✓ blok: demontaja sökük yazılınca sökük simgesi
+  ✓ hafıza: son direğin iki malzemesi
+  ✓ hafıza: miktar korunur
+  ✓ hafıza: direğinkiyle aynı durumdaki malzeme yeni direğin durumunu alır
+  ✓ hafıza: farklı durumdaki malzeme aynen kalır
+  ✓ hafıza: yeni direğin hakedişi
+  ✓ hafıza: yeni sıra numaralı malzeme satırları
+  ✓ hafıza: o tip için kayıt yoksa aynı türün son direği
+  ✓ hafıza: başka türe eklenmez
+  ✓ hafıza: kaydedilip okununca aynı
+  ✓ hafıza: hangi direkten olduğu
+Telefondan alma
+  ✓ değişmemiş proje: iş yok
+  ✓ değişmemiş proje: hepsi aynı
+  ✓ değişmemiş proje: silinen yok
+  ✓ değişen proje: 2 yeni
+  ✓ değişen proje: 3 güncelleme (taşınan, metrajı değişen, demontaja çevrilen)
+  ✓ değişen proje: telefonda silinen kanal sorulur
+  ✓ yeni nesneye telefon kimliği yazılır
+  ✓ yeni direk hakediş katmanında
+  ✓ demontaja çevrilen direk demontaj katmanına geçer
+  ✓ adsız bloklu direğin bloğu korunur
+  ✓ metrajı değişen hat güncellenir (metraj yazıları yeniden yazılır)
+  ✓ hat etiketinde metraj ve tanıtıcı yok
+  ✓ uygulandıktan sonra okuma uyarısı yok
+  ✓ uygulandıktan sonra eleman sayısı
+  ✓ silinen kanal çizimden kalktı
+  ✓ taşınan direğin yeni yeri
+  ✓ uygulandıktan sonra rapor satır sayısı
+  ✓ ikinci alma: iş yok
+  ✓ ikinci alma: yeni nesneler kimlikle eşleşti
+  ✓ ikinci alma: silinen yok
+  ✓ bölünen hat: ilk parça eski hattı günceller
+  ✓ bölünen hat: ikinci parça yeni nesne
+  ✓ bölünen hat: tanıtıcı korunur
+  ✓ bölünen hat: silme sorulmaz
+  ✓ bölünen hat: ikinci alma iş yok
+  ✓ ilk parça kökü
+  ✓ ikinci parçanın kökü yok
+  ✓ boş çizime: hepsi yeni
+  ✓ boş çizime: rapor satır sayısı aynı
+  ✓ boş çizime: rapor toplamı aynı
+  ✓ boş çizime ikinci alma: iş yok
+  ✓ boş çizime ikinci alma: hepsi aynı
+AutoCAD uyumu
+  ✓ bölge grup kodu okunur
+  ✓ pano çıkış şeması (CON) okunur
+  ✓ grup kodu FULLREG'e yazılır
+  ✓ pano çıkış şeması aynen geri yazılır
+  ✓ grup kodu proje dosyasında taşınır
+  ✓ ANA verisi proje dosyasında taşınır
+  ✓ grup kodu ve ek veriyle gidip gelen proje: iş yok
+  ✓ ek verisi dosyada olmayan eleman değişmiş sayılmaz
+  ✓ taşınan elemanın pano çıkış şeması korunur
+  ✓ eksik malzeme: olanlarda malzeme satırı (büyük/küçük harf farkı yok)
+  ✓ eksik malzeme: olanlarda hep malzeme var
+  ✓ eksik malzeme: malzemesi olan direk eksiklerde yok
+  ✓ eksik malzeme: her eksik eleman bir satır
+  ✓ eksik malzeme: eksik satırında malzeme sütunları boş
+  ✓ DETAY: her ara malzeme bir satır, malzemesiz eleman bir satır
+  ✓ eksik malzeme: ana cins süzgeci
+  ✓ eksik malzeme: hakediş süzgeci
+  ✓ süzgeç: Türkçe İ/i farkı yok sayılır
+  ✓ süzgeç: sondaki boşluklar yok sayılır
+  ✓ DETAY satırı başlık sayısı kadar
+  ✓ raporda DETAY sayfası var
+  ✓ eksik malzeme sorgusu Excel'e yazılır
+Hakediş onayı
+  ✓ onay sırası: hakediş onayı kontrolü de işaretler
+  ✓ onay sırası: GIS onayı hepsini işaretler
+  ✓ hakediş onayı verilen hakediş kilitli
+  ✓ yalnız kontrol onayı kilitlemez
+  ✓ birleştirme: telefondaki hakediş onayı kontrolü de getirir
+  ✓ birleştirme: GIS onayı sıradakileri de getirir
+  ✓ birleştirme: çizimdeki onay kalır
+  ✓ onaylar proje dosyasında taşınır (1)
+  ✓ onaylar proje dosyasında taşınır (2)
+  ✓ onaylı projede değişiklik yoksa iş yok
+  ✓ kilit: onaylı hakedişteki direğin taşınması aktarılmaz
+  ✓ kilit: onaysız hakedişte aynı değişiklik aktarılır
+  ✓ kilit: onaylı direğe açık hakedişte malzeme eklenebilir
+  ✓ kilit: onaylı hakedişteki satırın miktarı değişmez
+  ✓ kilit: onaylı hakedişe yeni nesne aktarılmaz
+  ✓ kilit: onaylı hakedişteki nesne telefonda silinse de silinmez
+  ✓ kilit: açık hakedişe yeni nesne aktarılır
+Kullanıcılar ve roller
+  ✓ roller: telefonla aynı sıra
+  ✓ AutoCAD Kontrol onayı: kontrol mühendisi
+  ✓ AutoCAD Hakediş onayı: onay yetkilisi
+  ✓ AutoCAD GIS onayı: onay yetkilisi
+  ✓ tanımsız işlem yalnız Yönetici
+  ✓ ortak: şifre özeti telefonla aynı (tuz T1)
+  ✓ ortak: geçerli şifre 1234
+  ✓ ortak: şifre özeti telefonla aynı (tuz 01K8Z3M4N5P6Q7R8S9T0VWXYZ1)
+  ✓ ortak: geçerli şifre 98765432
+  ✓ ortak: şifre özeti telefonla aynı (tuz çğüşİ)
+  ✓ ortak: geçerli şifre 0000
+  ✓ ortak: geçersiz şifre ""
+  ✓ ortak: geçersiz şifre "123"
+  ✓ ortak: geçersiz şifre "123456789"
+  ✓ ortak: geçersiz şifre "12a4"
+  ✓ ortak: geçersiz şifre " 1234"
+  ✓ ortak: geçersiz şifre "12 34"
+  ✓ ortak: geçersiz şifre "١٢٣٤"
+  ✓ şifre: satır sonu kabul edilmez
+  ✓ ortak birleştirme: gelen dosyadaki yeni kullanıcı eklenir; iki tarafta olan kullanıcıda güncelleme zamanı yeni olan kazanır; eşitse yerel kalır
+  ✓ ortak birleştirme: onay açık mı · gelen dosyadaki yeni kullanıcı eklenir; iki tarafta olan kullanıcıda güncelleme zamanı yeni olan kazanır; eşitse yerel kalır
+  ✓ ortak birleştirme: yerel boş: gelen kullanıcılar olduğu gibi alınır; yöneticisi pasifse onay mekanizması kapalı sayılır
+  ✓ ortak birleştirme: onay açık mı · yerel boş: gelen kullanıcılar olduğu gibi alınır; yöneticisi pasifse onay mekanizması kapalı sayılır
+  ✓ ortak onay ayarı: yeni olan kazanır; kapalı hakedişler sıralanır, tekrarlar ve geçersizler düşer
+  ✓ ortak onay ayarı: gelen eskiyse yerel kalır
+  ✓ ortak onay ayarı: yerel yoksa gelen (eksik alanlar varsayılan)
+  ✓ onay kapalı: oturumsuz her aşama serbest (eski davranış)
+  ✓ onay açık: oturumsuz onay verilemez
+  ✓ kontrol mühendisi Kontrol onayı verir
+  ✓ kontrol mühendisi Hakediş onayı veremez
+  ✓ onay yetkilisi Hakediş ve GIS onayı verir
+  ✓ onay yetkilisi Kontrol aşamasını atlayamaz (sıra kuralı Kontrol'ü de işaretler)
+  ✓ saha operatörü onay veremez
+  ✓ kontrol mühendisi Hakediş onayını kaldıramaz
+  ✓ yönetici her aşamayı verir
+  ✓ değişiklik yoksa yetki sorulmaz
+  ✓ hakediş yetkisini yalnız yönetici belirler
+  ✓ şifre denetimi
+  ✓ etkin yönetici kalmayınca onay mekanizması kapalı
+  ✓ kapalı hakediş kilitli, öteki açık
+  ✓ kilit sözlüğü: kapalı hakedişe Hakediş biti
+  ✓ kilit sözlüğü onayları değiştirmez
+  ✓ Hat Değiştir: yazmaya kapalı hakedişteki satır da korunur
+  ✓ dosyada şifre düz yazıyla yok
+  ✓ dosya: kullanıcılar gidip gelir
+  ✓ dosya: onay ayarı gidip gelir
+  ✓ dosya: onayAyari kullanicilar'ın ardından (telefonla aynı sıra)
+  ✓ eski dosya: kullanıcı yok, onay ayarı yok (kısıtsız)
+  ✓ pencere: onay kapalıyken hakediş yetkisi verilemez
+  ✓ pencere: ilk kullanıcı Yönetici olmalı
+  ✓ pencere: kısa şifre reddedilir
+  ✓ pencere: ilk Yönetici tanımlanır
+  ✓ pencere: ilk Yönetici oturuma alınır
+  ✓ pencere: şifre özetle saklanır, tuz rastgele
+  ✓ pencere: Yönetici kullanıcı ekler
+  ✓ pencere: aynı ad (büyük / küçük harf) eklenmez
+  ✓ pencere: saha kullanıcısı
+  ✓ pencere: Yönetici 2. hakedişi yazmaya kapatır
+  ✓ pencere: kapalı hakediş listesi
+  ✓ pencere: son Yönetici rolünü bırakamaz
+  ✓ pencere: Yönetici olmayan kullanıcı ekleyemez
+  ✓ pencere: Yönetici olmayan hakediş yetkisi veremez
+  ✓ pencere: başkasının şifresini değiştiremez
+  ✓ pencere: kendi şifresini değiştirir
+  ✓ pencere: yeni şifre geçerli, güncelleme zamanı ilerler
+  ✓ pencere: Yönetici kullanıcıyı pasif yapar
+  ✓ pencere: onay mekanizmasını kapatır
+  ✓ pencere: herkes pasif, oturum kapalı, liste saklanır
+Kanal zemini ve kanal listesi
+  ✓ ortak: katalog adı çözülür · TUVENAN
+  ✓ ortak: katalog adı yeniden kurulur · TUVENAN
+  ✓ ortak: katalog adı çözülür · TUVENAN (BARİYERLİ)
+  ✓ ortak: katalog adı yeniden kurulur · TUVENAN (BARİYERLİ)
+  ✓ ortak: katalog adı çözülür · TUVENAN (ASFALT KAPLAMALI)
+  ✓ ortak: katalog adı yeniden kurulur · TUVENAN (ASFALT KAPLAMALI)
+  ✓ ortak: katalog adı çözülür · PARKE TUVENAN
+  ✓ ortak: katalog adı yeniden kurulur · PARKE TUVENAN
+  ✓ ortak: katalog adı çözülür · PARKE TUVENAN (BARİYERLİ)
+  ✓ ortak: katalog adı yeniden kurulur · PARKE TUVENAN (BARİYERLİ)
+  ✓ ortak: katalog adı çözülür · TOPRAK
+  ✓ ortak: katalog adı yeniden kurulur · TOPRAK
+  ✓ ortak: katalog adı çözülür · TOPRAK (BARİYERLİ)
+  ✓ ortak: katalog adı yeniden kurulur · TOPRAK (BARİYERLİ)
+  ✓ ortak: katalog adı çözülür · PARKE TOPRAK
+  ✓ ortak: katalog adı yeniden kurulur · PARKE TOPRAK
+  ✓ ortak: katalog adı çözülür · PARKE TOPRAK (BARİYERLİ)
+  ✓ ortak: katalog adı yeniden kurulur · PARKE TOPRAK (BARİYERLİ)
+  ✓ ortak: katalog adı çözülür · TRENCHER TOPRAK
+  ✓ ortak: katalog adı yeniden kurulur · TRENCHER TOPRAK
+  ✓ ortak: katalog adı çözülür · TRENCHER TUVENAN
+  ✓ ortak: katalog adı yeniden kurulur · TRENCHER TUVENAN
+  ✓ ortak: katalog adı çözülür · TRENCHER MICIR
+  ✓ ortak: katalog adı yeniden kurulur · TRENCHER MICIR
+  ✓ ortak: katalog adı çözülür · MICIRLI
+  ✓ ortak: katalog adı yeniden kurulur · MICIRLI
+  ✓ ortak: katalog adı çözülür · MICIRLI (BARİYERLİ)
+  ✓ ortak: katalog adı yeniden kurulur · MICIRLI (BARİYERLİ)
+  ✓ ortak: katalog adı çözülür · MICIR (ASFALT KAPLAMALI)
+  ✓ ortak: katalog adı yeniden kurulur · MICIR (ASFALT KAPLAMALI)
+  ✓ ortak: katalog adı çözülür · PARKE MICIR
+  ✓ ortak: katalog adı yeniden kurulur · PARKE MICIR
+  ✓ ortak: katalog adı çözülür · PARKE MICIR (BARİYERLİ)
+  ✓ ortak: katalog adı yeniden kurulur · PARKE MICIR (BARİYERLİ)
+  ✓ ortak: katalog adı çözülür · KANAL (KABLO DEMONTAJ)
+  ✓ ortak: katalog adı yeniden kurulur · KANAL (KABLO DEMONTAJ)
+  ✓ ortak: katalog adı çözülür · BRANŞMAN KANAL
+  ✓ ortak: katalog adı yeniden kurulur · BRANŞMAN KANAL
+  ✓ ortak: katalogdaki kanal adı sayısı
+  ✓ ortak: kalem adı · TOPRAK
+  ✓ ortak: okunur yazı · TOPRAK
+  ✓ ortak: kalem adı · TOPRAK (ASFALT KAPLAMALI)
+  ✓ ortak: okunur yazı · TOPRAK (ASFALT KAPLAMALI)
+  ✓ ortak: kalem adı · TOPRAK (BETON KAPLAMALI) (BARİYERLİ)
+  ✓ ortak: okunur yazı · TOPRAK (BETON KAPLAMALI) (BARİYERLİ)
+  ✓ ortak: kalem adı · TUVENAN (ASFALT KAPLAMALI) (BARİYERLİ)
+  ✓ ortak: okunur yazı · TUVENAN (ASFALT KAPLAMALI) (BARİYERLİ)
+  ✓ ortak: kalem adı · PARKE TUVENAN (BARİYERLİ)
+  ✓ ortak: okunur yazı · PARKE TUVENAN (BARİYERLİ)
+  ✓ ortak: kalem adı · MICIRLI
+  ✓ ortak: okunur yazı · MICIRLI
+  ✓ ortak: kalem adı · MICIR (BETON KAPLAMALI)
+  ✓ ortak: okunur yazı · MICIR (BETON KAPLAMALI)
+  ✓ ortak: kalem adı · TRENCHER MICIR
+  ✓ ortak: okunur yazı · TRENCHER MICIR
+  ✓ ortak: kalem adı · TRENCHER PARKE TOPRAK
+  ✓ ortak: okunur yazı · TRENCHER PARKE TOPRAK
+  ✓ ortak: kalem adı · TRENCHER TUVENAN (ASFALT KAPLAMALI)
+  ✓ ortak: okunur yazı · TRENCHER TUVENAN (ASFALT KAPLAMALI)
+  ✓ ortak: kalem adı · BRANŞMAN KANAL
+  ✓ ortak: okunur yazı · BRANŞMAN KANAL
+  ✓ ortak: kalem adı · KANAL (KABLO DEMONTAJ)
+  ✓ ortak: okunur yazı · KANAL (KABLO DEMONTAJ)
+  ✓ ortak: çözüm · tüvenan (bariyerli)
+  ✓ ortak: çözüm ·   Parke   Mıcır 
+  ✓ ortak: çözüm · PARKE TRENCHER TOPRAK
+  ✓ ortak: çözüm · Branşman Kanal
+  ✓ ortak: kural dışı ad · ""
+  ✓ ortak: kural dışı ad · "ASFALT"
+  ✓ ortak: kural dışı ad · "BETON"
+  ✓ ortak: kural dışı ad · "PARKE"
+  ✓ ortak: kural dışı ad · "TOPRAK X"
+  ✓ ortak: kural dışı ad · "PARKE TOPRAK (ASFALT KAPLAMALI)"
+  ✓ ortak: kural dışı ad · "KUM"
+  ✓ bütün birleşimler: 3 cins × 4 kaplama × bariyer × trencher + 2 özel
+  ✓ katalog: 50 kanal zemini kalemi
+  ✓ katalog: eski programın 19 adı kendi kalemiyle
+  ✓ katalog: katalogda olmayan birleşim kuralla kurulur
+  ✓ katalog: kurulan kalemin tarifesi topraktaki gibi
+  ✓ metraj: elemansız köşelerde tek açıklık (her iki nokta arasına yazılmaz)
+  ✓ metraj: arada eleman (muf, box) varsa iki açıklık
+  ✓ bütün birleşimlerin adları ayrı
+  ✓ ortak kanal listesi: satirlar
+  ✓ ortak kanal listesi: projeler
+  ✓ ortak kanal listesi: ozet
+  ✓ kanal listesi: tek proje süzgeci
+  ✓ kanal listesi: tek hakediş süzgeci
+  ✓ kanal tablosu: satır sayısı
+  ✓ kanal tablosu: sütunlar tablonun genişliğini doldurur
+  ✓ kanal tablosu: yükseklik (başlık 2,4h, satırlar 1,8h)
+  ✓ kanal tablosu: yazılar tablonun içinde
+  ✓ kanal tablosu: proje başlığı ve sağa yaslı toplam hacim
+  ✓ kanal tablosu: kaplama hücresi
+  ✓ kanal listesi: Excel yazılır
+DWG 2000 onarımı (değersiz genişletilmiş veri bölümü)
+  ✓ onarım: dosya okunur
+  ✓ onarım: nesne haritası
+  ✓ onarım: yalnız değersiz bölümü olan nesne
+  ✓ onarım: dosya boyu aynı (nesne yerinde, haritaya dokunulmaz)
+  ✓ onarım: onarılmış dosyada iş kalmaz
+  ✓ onarım: nesnenin CRC'si yeni
+  ✓ onarım: tür
+  ✓ onarım: tanıtıcı
+  ✓ onarım: GIS bölümü (7 bayt)
+  ✓ onarım: GIS uygulaması
+  ✓ onarım: değersiz bölüm yok, bitiş
+  ✓ onarım: gövde aynen (grafik yok)
+  ✓ onarım: gövde aynen
+  ✓ onarım: bit boyu tanıtıcı akışının başı
+  ✓ onarım: tanıtıcı akışı (katman) yerinde
+  ✓ onarım: 2018 biçiminde açıklama
+Hesap Merkezi:
+  ✓ iletken anahtarı: 3xSW
+  ✓ iletken anahtarı: 3xSwallow
+  ✓ iletken anahtarı: çift devre 2(3xSW)
+  ✓ iletken anahtarı: 3x1\0 = Raven
+  ✓ iletken anahtarı: 2(3x3/0) = Pigeon
+  ✓ iletken anahtarı: ALPEK
+  ✓ iletken anahtarı: AER (telefon yazımı)
+  ✓ iletken anahtarı: Nyy Alm.
+  ✓ iletken anahtarı: NAYY
+  ✓ iletken anahtarı: XLPE Alm.
+  ✓ iletken anahtarı: 3P+R
+  ✓ iletken anahtarı: direk tipi iletken değil
+  ✓ güncellik: dizi yolu
+  ✓ güncellik: yol bulundu
+  ✓ güncellik: olmayan dizin bulunamadı
+  ✓ güncellik: uzunluk, iletken yazımı ve silinen trafo fark (aynı platform)
+  ✓ güncellik: platformlar arası iletken yazımı fark sayılmaz
+  ✓ güncellik: silinen bilgi işaretlenir
+  ✓ güncellik: yeni değer
+  ✓ kayıt: kimlik üretimi
+  ✓ kayıt: ISO UTC tarih
+  ✓ kayıt: kimlik gidip gelir
+  ✓ kayıt: trafo çıkışı (hatId) gidip gelir
+  ✓ kayıt: parçalar gidip gelir
+  ✓ kayıt: modül durumu metin olarak gidip gelir
+  ✓ kayıt: telefon kimliği
+  ✓ kayıt: rapor satırı
+  ✓ kayıt: hedef anahtarı
+  ✓ kayıt: aynı trafo ve çıkış
+  ✓ kayıt: aynı trafo, çıkışsız = ayrı kayıt
+  ✓ kayıt: hattın başka parçasından açılan hesap aynı hat
+  ✓ proje dosyası: hesap kaydı yazılır ve okunur
+  ✓ proje dosyası: modül
+  ✓ proje dosyası: kullanılan değerler
+  ✓ telefon dosyası (.volt.json): hesap kaydı taşınır
+  ✓ bağlam: direk numarası hedefe yazılır
+  ✓ bağlam: direk tipi
+  ✓ bağlam: direk malzemesi
+  ✓ bağlam: iki kollu düz direk taşıyıcı
+  ✓ bağlam: direğin iki kolu
+  ✓ bağlam: kol açıklığı 39,5 m
+  ✓ bağlam: kol iletkeni
+  ✓ bağlam: buz bölgesi ayarlardan
+  ✓ bağlam: direğin üzerindeki hat
+  ✓ bağlam: hat zinciri trafodan son direğe parçalardan kurulur (dallanma noktasından düz geçer)
+  ✓ bağlam: zincir trafodan başlar
+  ✓ bağlam: her parça bir açıklık
+  ✓ bağlam: toplam uzunluk
+  ✓ bağlam: eşdeğer açıklık
+  ✓ bağlam: hat türü
+  ✓ bağlam: hattın başındaki trafo
+  ✓ bağlam: zincir (gerilim düşümü / kısa devre için)
+  ✓ bağlam: ilk açıklığın bitişi SC101
+  ✓ okuyucu: boş NIT bölümlü GPS noktası nokta kalır
+  ✓ okuyucu: boş bölümler eleman sayısını değiştirmez
+  ✓ okuyucu: boş bölümler hat sayısını değiştirmez
+  ✓ bağlam: GPS noktalı çizimde zincir düğümü direk (SC101)
+  ✓ bağlam: hat hedefi var
+  ✓ bağlam: silinmiş hedef
+  ✓ bağlam: trafonun AG havai çıkışı
+  ✓ bağlam: trafonun AG yeraltı çıkışı
+  ✓ bağlam: trafo numarası
+  ✓ bağlam: trafo bilgisi
+  ✓ bağlam: seçilen çıkış hattı
+  ✓ bağlam: hat adı uç elemanlardan (dallanmada düz devam)
+  ✓ bağlam: dallanan kol (numarasız direğe kadar)
+  ✓ bağlam: kanal uzunluğu
+  ✓ bağlam: kanal zemini
+  ✓ bağlam: proje geneli
+  ✓ bağlam: proje genelinde bütün direkler
+  ✓ bağlam: bölgeler
+  ✓ bağlam: direğin cinsi (AG_DEMİR_GLV)
+  ✓ bağlam: direğin malzemeleri (ana poz hariç)
+  ✓ bağlam: direğin koordinatları
+  ✓ bağlam: direğin bölgesi (proje adı)
+  ✓ bağlam: hatlar zincir zincir (parçadan az): 11 / 32
+  ✓ bağlam: her hat parçası tam bir zincirde
+  ✓ bağlam: liste.direkler
+  ✓ bağlam: liste imzası 8 haneli onaltılık
+  ✓ FNV-1a: telefondaki kurallar.mjs ile aynı (a)
+  ✓ FNV-1a: Türkçe karakterli örnek telefonla aynı
+  ✓ bağlam: imza kararlı
+  ✓ güncellik: silinmiş hedef
+  ✓ güncellik: trafo hedefi var
+  ✓ güncellik: telefon kaydı AutoCAD bağlamıyla güncel (yazım farkı sayılmaz)
+  ✓ güncellik: değişen açıklık fark
+  ✓ rapor: HESAPLAR sayfası var
+  ✓ rapor: hesap satırı özet ve güncellik
+  ✓ sunucu: 128 bit anahtar
+  ✓ sunucu: kök adres
+  ✓ sunucu: sayfa 200
+  ✓ sunucu: sayfa içeriği
+  ✓ sunucu: içerik türü
+  ✓ sunucu: kök → merkez.html
+  ✓ sunucu: betik türü
+  ✓ sunucu: olmayan dosya 404
+  ✓ sunucu: yanlış anahtar 404
+  ✓ sunucu: anahtar kökü → yönlendirme
+  ✓ sunucu: api 200
+  ✓ sunucu: api yanıtı
+  ✓ sunucu: api gövdesi iletilir
+  ✓ sunucu: api GET 405
+  ✓ sunucu: bilinmeyen api 404
+  ✓ sunucu: yabancı köken 403
+  ✓ sunucu: yabancı Host 403 (DNS yeniden bağlama)
+  ✓ sunucu: doğru Host 200
+  ✓ sunucu: yol kaçışı 404
+  ✓ sunucu: ters bölü 404
+  ✓ sunucu: istek okuma yöntem
+  ✓ sunucu: istek gövdesi
+Çizim görünümü
+  ✓ yazı tipi Tahoma
+  ✓ yazı stili
+  ✓ renk: OG havai kırmızı
+  ✓ renk: AG havai yeşil
+  ✓ renk: abone turuncu
+  ✓ renk: müşterek mor
+  ✓ renk: AG yer altı mavi
+  ✓ renk: OG yer altı pembe
+  ✓ renk: demontaj sarı
+  ✓ renk: OG_HAVAI başka hatla aynı değil
+  ✓ renk: AG_HAVAI başka hatla aynı değil
+  ✓ renk: AYDINLATMA başka hatla aynı değil
+  ✓ renk: REKORTMAN başka hatla aynı değil
+  ✓ renk: MUSTEREK başka hatla aynı değil
+  ✓ renk: AG_YERALTI başka hatla aynı değil
+  ✓ renk: OG_YERALTI başka hatla aynı değil
+  ✓ renk: KANAL hatlardan ayrı
+  ✓ renk: SONDAJ hatlardan ayrı
+  ✓ renk: HAT_ENH hatlardan ayrı
+  ✓ katman: OG yer altı kendi stilinde
+  ✓ katman: AG yer altı
+  ✓ kanal ekseni eksen çizgisi
+  ✓ eksen çizgisi deseni tanımlı
+  ✓ kanal kenarı gri
+  ✓ kanal kenarı varsayılan genişlik
+  ✓ kanal genişliği: üst genişlik (cm → m)
+  ✓ kanal genişliği: üst yoksa alt
+  ✓ kanal genişliği: ölçü yoksa varsayılan
+  ✓ kanal tarifi kenar genişliğini taşır
+  ✓ hatta kenar yok
+  ✓ açıklık: elemansız köşelerde tek açıklık
+  ✓ açıklık yazısı var
+  ✓ açıklık metrajı tüm parçaların toplamı
+  ✓ yazı en uzun parçada (30→40)
+  ✓ açıklık: elemanlı köşede bölünür
+  ✓ açıklık sınırları
+  ✓ ikinci açıklık metrajı
+  ✓ açıklık sınırı: direk, SDK, trafo
+  ✓ açıklık sınırı değil: ek mufu, menhol
+  ✓ yazı yeri: yatay hatta metraj 0,8 m üstte
+  ✓ yazı yeri: ters çizilmiş yatay hatta da aynı (yazı ters dönmez)
+  ✓ yazı yeri: dik hatta metraj çizginin solunda
+  ✓ yazı yeri: dik hatta etiket çizginin sağında (üst kenarı 0,7 m ötede)
+  ✓ yazı yeri: boyunca kaydırma parça doğrultusunda
+  ✓ kazı metrajı ile kablo metrajı arası boşluk
+  ✓ metraj çizginin üst yanında, etiket alt yanında
+  ✓ yazı genişliği harf tablosundan
+  ✓ sığan yazı olduğu gibi kalır
+  ✓ biraz uzun yazı daraltılır (genişlik katsayısı 0,8)
+  ✓ çok uzun yazı en dar (0,6) ve en küçük (%60) ölçüde
+  ✓ daraltma yetmezse yükseklik küçülür (0,48 = 0,6 × 0,8)
+  ✓ etiket en uzun parçada (30→40)
+  ✓ dik hatta etiket ortalı: parçanın ortası, çizginin sağında
+  ✓ harf tablosu: ortak stilde de aynı sayıda harf
+  ✓ harf tablosu: ortak stildeki genişliklerle aynı
+  ✓ sığdırma sınırları ortak stildekiyle aynı
+  ✓ kanal metrajı kazı metrajı
+  ✓ sondaj metrajı kazı metrajı
+  ✓ hat metrajı kazı metrajı değil
+  ✓ metraj yazısı: iletkensiz hatta çizim uzunluğu (0)
+  ✓ metraj yazısı: iletken metrajı ÷ adet (304,2 / 3)
+  ✓ metraj yazısı: Malzemeler'de değişen metraj yazıya gider
+  ✓ metraj yazısı: kanalda kendi pozunun metrajı
+  ✓ metraj yazısı: pozu olmayan sondajda çizim uzunluğu
+CBS: telefonla ortak deneme (ortak/deneme/cbs)
+  ✓ CBS ortak: KML ve bütün katmanların MIF / MID'i (11 katman)
+  ✓ CBS ortak: deneme.kml
+  ✓ CBS ortak: deneme_BOLGE.mid
+  ✓ CBS ortak: deneme_BOLGE.mif
+  ✓ CBS ortak: deneme_DIREK.mid
+  ✓ CBS ortak: deneme_DIREK.mif
+  ✓ CBS ortak: deneme_ELEMAN.mid
+  ✓ CBS ortak: deneme_ELEMAN.mif
+  ✓ CBS ortak: deneme_HAT.mid
+  ✓ CBS ortak: deneme_HAT.mif
+  ✓ CBS ortak: deneme_KANAL.mid
+  ✓ CBS ortak: deneme_KANAL.mif
+  ✓ CBS ortak: deneme_MALZEME.mid
+  ✓ CBS ortak: deneme_MALZEME.mif
+  ✓ CBS ortak: deneme_NOKTA.mid
+  ✓ CBS ortak: deneme_NOKTA.mif
+  ✓ CBS ortak: deneme_PANO.mid
+  ✓ CBS ortak: deneme_PANO.mif
+  ✓ CBS ortak: deneme_SDK.mid
+  ✓ CBS ortak: deneme_SDK.mif
+  ✓ CBS ortak: deneme_SONDAJ.mid
+  ✓ CBS ortak: deneme_SONDAJ.mif
+  ✓ CBS ortak: deneme_TRAFO.mid
+  ✓ CBS ortak: deneme_TRAFO.mif
+CBS'den alma (MIF → şebeke nesnesi):
+  ✓ CBS al: ayırıcısı yazılmamış MIF'te virgüllü MID
+  ✓ CBS al: ayırıcısı yazılmamış MIF'te sekmeli MID (değerde virgül)
+  ✓ CBS al: BOLGE dosyası tanınır
+  ✓ CBS al: DIREK dosyası tanınır
+  ✓ CBS al: TRAFO dosyası tanınır
+  ✓ CBS al: SDK dosyası tanınır
+  ✓ CBS al: PANO dosyası tanınır
+  ✓ CBS al: ELEMAN dosyası tanınır
+  ✓ CBS al: HAT dosyası tanınır
+  ✓ CBS al: KANAL dosyası tanınır
+  ✓ CBS al: SONDAJ dosyası tanınır
+  ✓ CBS al: NOKTA dosyası tanınır
+  ✓ CBS al: MALZEME dosyası tanınır
+  ✓ CBS al: bütün nesneler geri gelir (eleman, hat, kanal, sondaj, bölge, nokta)
+  ✓ CBS al: elemanların türü, GIS no, durumu, hakedişi, yeri, gücü ve malzeme satırları aynı
+  ✓ CBS al: hattın türü, malzemeleri ve iletkeni aynı (malzeme tablosundan)
+  ✓ CBS al: Durum Tespit raporu aynı (malzeme satırları, miktarlar)
+  ✓ CBS al: aynı çizime geri alınca elemanlar tanıtıcısıyla eşleşir
+  ✓ CBS al (dış): adından direk dosyası; OBJECTID, DIREK_NO, DIREK_TIPI, DURUMU sütunları eşlenir
+  ✓ CBS al (dış): GIS no, tür, durum (işletmede → mevcut), kalıcı kimlik
+  ✓ CBS al (dış): 34,5 kV direk ENH direği, sökülecek → demontaj
+  ✓ CBS al (dış): direğin kendi malzemesi (katalogdan ya da tipinden)
+  ✓ CBS al (dış): kablo hattı katalogdaki kabloyla, yer altı AG, metraj çizim uzunluğundan
+  ✓ CBS al: durum yazıları
+  ✓ CBS al: kanal kablo yazısı → kod
+Malzeme yazısı ve hat kalınlığı
+  ✓ ortak: malzeme satırları · E1
+  ✓ ortak: malzeme satırları · E2
+  ✓ ortak: malzeme satırları · E3
+  ✓ ortak: tek satır · GT-60=1 (M)
+  ✓ ortak: tek satır · N80 İZOLATÖR=2 (MEVCUT)
+  ✓ ortak: tek satır · ABONE ÇELİK HALAT=23 mt (M+M)
+  ✓ ortak: tek satır · KABLO=0,5 kg
+  ✓ MLZ_12 malzeme satırı
+  ✓ MLZ_, MLZ_0 ve TİP malzeme satırı değil
+  ✓ eleman tarifinde 5 malzeme satırı
+  ✓ malzeme yazısı öznitelikleri karşılaştırılmaz
+  ✓ hat kalınlığı: OG havai 0,5
+  ✓ hat kalınlığı: AG havai 0,35
+  ✓ hat kalınlığı: OG yeraltı 0,5
+  ✓ hat kalınlığı: abone 0,25
+  ✓ hat kalınlığı: AG yeraltı 1,5 kat = 0,52 (0,35 × 1,5 kayan noktada 0,52499…)
+  ✓ hat kalınlığı: 0 kat ince çizgi
+  ✓ hat tarifinde stildeki kalınlık
+  ✓ elemanda hat kalınlığı yok
+  ✓ boyutlar: varsayılan
+  ✓ boyutlar: kalınlık ve malzeme yazısı değişince varsayılan değil
+  ✓ boyutlar: proje dosyasında gidiş-dönüş (simge 1 kat · kablo tipi 1,8 m · metraj 1,44 m · eleman yazısı 1,8 m · hat kalınlığı 1,5 kat · malzemeler yazılı)
+  ✓ boyutlar: aralık dışı kalınlık varsayılana döner
+  ✓ çizim ayarları: kalınlık ve malzeme yazısı saklanır
+  ✓ çizim ayarları: boyutlar aynı
+  ✓ simge takımı: varsayılan klasik
+  ✓ simge takımı: Şebeke-M seçilince boyutlar varsayılan değil
+  ✓ simge takımı: proje dosyasına simgeTakimi yazılır
+  ✓ simge takımı: klasikte dosyaya yazılmaz
+  ✓ simge takımı: dosyadan okunur
+  ✓ simge takımı: karşılaştırmada sayılır
+  ✓ simge takımı: bilinmeyen ad klasiğe döner
+  ✓ simge takımı: çizim ayarlarında saklanır
+  ✓ ayar yazısı: kalınlıklar mm ile
+  ✓ AG konsol / travers katalogda: GT-60 3,02 kg
+  ✓ AG konsol / travers katalogda: GT-80 (UNP 65) 5,43 kg
+  ✓ AG konsol / travers katalogda: GD-80 6,83 kg
+  ✓ AG konsol / travers katalogda: T-AG-1 26 kg
+  ✓ AG konsol / travers katalogda: D-AG-3 97 kg
+  ✓ AG konsol / travers katalogda: MN-2 137 kg
+  ✓ AG konsol / travers katalogda: GTR-200 (2x8U-200) 37 kg
+  ✓ AG konsol / travers katalogda: gT-240 12m Müş. Tepe Travers 46 kg
+  ✓ AG galvaniz travers ve konsol sayısı
+  ✓ izolatör demiri katalogda: B 95
+  ✓ izolatör demiri katalogda: D 80
+  ✓ izolatör demiri katalogda: D 95
+  ✓ izolatör demiri katalogda: A 80
+  ✓ izolatör demiri katalogda: B 80
+  ✓ 2 × GD-80 = 13,66 kg (rapor birimi kg)
+  ✓ çizimde: GD-80=2 (M)
+Eklenti kaynağı: yazmaya açma denetimi
+  ✓ genişletilmiş veri yazan yerler bulundu (12)
+  ✓ yalnız okunur nesneye yazma yok
+Birleşik Metraj: telefonla ortak deneme (ortak/deneme/birlesik-metraj)
+    şablon okundu: 1071 ms, 410 KOD sütunu
+  ✓ Birleşik Metraj ortak: şablon tanımı telefonla aynı
+  ✓ Birleşik Metraj: şablonda 410 KOD sütunu
+  ✓ Birleşik Metraj: MALZ. LİSTESİ'nde 40 EK satırı
+  ✓ Birleşik Metraj: DİREK sabit sütunu 'Yeni Direk' = C
+  ✓ Birleşik Metraj: İLETKEN durum sütunu = Q
+  ✓ Birleşik Metraj: iletken kodu listesi formülden türetilir (7 kod)
+    plan: 970 ms; 0 uyarı; 17 yeni sütun
+  ✓ Birleşik Metraj ortak: doldurma planı telefonla aynı
+  ✓ Birleşik Metraj: 12 eleman satırı (öteki bölge ve İLERİDE dışarıda)
+  ✓ Birleşik Metraj: temsil edilmeyen 3 cins için kopya sayfa (AG beton, ENH cıvatalı, ENH kaynaklı raven)
+  ✓ Birleşik Metraj: kopya sayfa adı cinsin okunur adıyla
+  ✓ Birleşik Metraj: ENH kopyası iletken ekiyle ayrılır (SW ana sayfada)
+  ✓ Birleşik Metraj: 6 açıklık satırı (sök-tak iki satır)
+  ✓ Birleşik Metraj: yeni direk tipi sütunu şablonun KOD dizisiyle (EK kodu yok)
+  ✓ Birleşik Metraj: beton direğin tipi kopya sayfada açılır
+  ✓ Birleşik Metraj: MALZ. LİSTESİ'ne 6 bölüm başlığı + 17 kalem satırı
+  ✓ Birleşik Metraj: uyarı yok
+    dosyaya yazma: 1855 ms, 874520 bayt
+  ✓ Birleşik Metraj yazma: direk no
+  ✓ Birleşik Metraj yazma: yeni direk tipi
+  ✓ Birleşik Metraj yazma: demontaj direk tipi (Kesik)
+  ✓ Birleşik Metraj yazma: demontajdan montaj tipi şablonun yazımıyla (iki kesme)
+  ✓ Birleşik Metraj yazma: yeni sütuna box adedi
+  ✓ Birleşik Metraj yazma: yeni sütunun KOD'u
+  ✓ Birleşik Metraj yazma: yeni sütunun TİP'i
+  ✓ Birleşik Metraj yazma: yeni direk sütununa veri formülü örnekten kaydırılır
+  ✓ Birleşik Metraj yazma: yeni sütunun toplam formülü
+  ✓ Birleşik Metraj yazma: yeni sütunun gizleme bayrağı
+  ✓ Birleşik Metraj yazma: yazılmayan satırlar gizli, yazılanlar ve iki yedek satır açık
+  ✓ Birleşik Metraj yazma: İLETKEN'de yeni tel sütunu (DM bloğu)
+  ✓ Birleşik Metraj yazma: yeni sütunun DURUM satırı
+  ✓ Birleşik Metraj yazma: İLETKEN veri formülü yeni sütuna kaydırılır
+  ✓ Birleşik Metraj yazma: İLETKEN alt satır formülleri (MALZ. LİSTESİNE AKTARILAN)
+  ✓ Birleşik Metraj yazma: MALZ. LİSTESİ bölüm başlığı sayfa adıyla (EK KALEMLER yerine)
+  ✓ Birleşik Metraj yazma: MALZ. LİSTESİ kalem satırının kodu yeni sütunla aynı
+  ✓ Birleşik Metraj yazma: İLETKEN satırı MALZ satırından okur
+  ✓ Birleşik Metraj yazma: kopya sayfanın kalemi açık aralıkla okunur
+  ✓ Birleşik Metraj yazma: AKTARIM sütununun kodu listede
+  ✓ Birleşik Metraj yazma: kopya sayfada beton direk
+  ✓ Birleşik Metraj yazma: kopya sayfada yeni direk tipi
+  ✓ Birleşik Metraj yazma: kopya sayfanın ilk sütunu şablonun KOD dizisinden
+  ✓ Birleşik Metraj yazma: kopya sayfada kaynağın KOD sütunları boş
+  ✓ Birleşik Metraj yazma: kopya sayfada veri formülü ana sayfanın örneğinden
+  ✓ Birleşik Metraj yazma: kopya sayfada başlık (il)
+  ✓ Birleşik Metraj yazma: kopya sayfanın direk tipi KATSAYILAR listesine eklenir
+  ✓ Birleşik Metraj yazma: DM bloğundaki yeni tel iletken kodu listesine eklenir
+  ✓ Birleşik Metraj yazma: box cinsi listeye eklenir
+  ✓ Birleşik Metraj yazma: makro korunur, calcChain silinir, açılışta yeniden hesap
+Önerilen malzeme: telefonla ortak deneme (ortak/deneme/onerilen-malzeme)
+  ✓ önerilen malzeme: kurallar ve parametreler okundu (42 / 11)
+  ✓ önerilen malzeme ortak: durum sayısı
+  ✓ önerilen malzeme ortak: Şehir içi AG taşıyıcı, çıplak AG hat
+  ✓ önerilen malzeme ortak: Şehir içi AG durdurucu, demetli (ALPEK) hat
+  ✓ önerilen malzeme ortak: Müşterek taşıyıcı, çıplak AG
+  ✓ önerilen malzeme ortak: Müşterek köşe, demetli AG
+  ✓ önerilen malzeme ortak: ENH kaynaklı (bahh) nihayet, swallow
+  ✓ önerilen malzeme ortak: ENH kaynaklı (bahh) köşe, çift devre
+  ✓ önerilen malzeme ortak: ENH cıvatalı (civ) taşıyıcı, 477 MCM
+  ✓ önerilen malzeme ortak: ENH cıvatalı (civ) durdurucu, swallow
+  ✓ önerilen malzeme ortak: AG beton durdurucu, çıplak AG
+  ✓ önerilen malzeme ortak: OG beton (5.6.2) taşıyıcı
+  ✓ önerilen malzeme ortak: Ağaç nihayet, demetli AG
+  ✓ önerilen malzeme ortak: Aydınlatma direği
+  ✓ önerilen malzeme ortak: Trafo direği (G-T)
+  ✓ önerilen malzeme: direk kurallarının bütün servis kodları eşlemede
+  ✓ önerilen malzeme: eşlemedeki kalemlerin hepsi katalogda (yeni kalem açılmadı)
+  ✓ önerilen malzeme: VHD 35 mesnet izolatörü katalog kalemi
+  ✓ önerilen malzeme: AG galvaniz direk şehir içi grubunda
+  ✓ önerilen malzeme: rol dört değerden biri (Z: Sapma açısı 90,0° > 3°)
+  ✓ önerilen malzeme: cıvatalı ENH direk civ grubunda
+  ✓ önerilen malzeme: AG beton direk beton grubunda
+  ✓ önerilen malzeme: direk olmayan cinsin grubu yok
+  ✓ önerilen malzeme: iletken sınıfı tipin parantezinden
+  ✓ önerilen malzeme: 2x477 → büyük ve çift devre
+  ✓ önerilen malzeme: hat bağlantısı olmayan direk taşıyıcı sayılır
+  ✓ önerilen malzeme: şehir içi taşıyıcı çıplak AG → 3 öneri
+  ✓ önerilen malzeme: ilk öneri GT-70 travers
+  ✓ önerilen malzeme: AG mesnet izolatörü N-80 × 4 (agMesnetT)
+  ✓ önerilen malzeme: durdurucuda 8 mesnet (agMesnetD)
+  ✓ önerilen malzeme: parametre üstüne yazılır
+Lisans: telefonla ortak deneme (ortak/deneme/lisans)
+  ✓ lisans: cihaz kodu PC
+  ✓ lisans: cihaz kodu TL
+  ✓ lisans: cihaz kodu WB
+  ✓ lisans: süreli geçerli · tür
+  ✓ lisans: süreli geçerli · kullanılabilir
+  ✓ lisans: süreli geçerli · kalan gün
+  ✓ lisans: süreli geçerli · uyarı
+  ✓ lisans: süreli geçerli · hata kodu
+  ✓ lisans: süreli geçerli · saat geri
+  ✓ lisans: süresiz · tür
+  ✓ lisans: süresiz · kullanılabilir
+  ✓ lisans: süresiz · kalan gün
+  ✓ lisans: süresiz · uyarı
+  ✓ lisans: süresiz · hata kodu
+  ✓ lisans: süresiz · saat geri
+  ✓ lisans: 15 gün kala uyarı · tür
+  ✓ lisans: 15 gün kala uyarı · kullanılabilir
+  ✓ lisans: 15 gün kala uyarı · kalan gün
+  ✓ lisans: 15 gün kala uyarı · uyarı
+  ✓ lisans: 15 gün kala uyarı · hata kodu
+  ✓ lisans: 15 gün kala uyarı · saat geri
+  ✓ lisans: bitiş günü hâlâ geçerli · tür
+  ✓ lisans: bitiş günü hâlâ geçerli · kullanılabilir
+  ✓ lisans: bitiş günü hâlâ geçerli · kalan gün
+  ✓ lisans: bitiş günü hâlâ geçerli · uyarı
+  ✓ lisans: bitiş günü hâlâ geçerli · hata kodu
+  ✓ lisans: bitiş günü hâlâ geçerli · saat geri
+  ✓ lisans: süresi dolmuş, deneme de bitmiş · tür
+  ✓ lisans: süresi dolmuş, deneme de bitmiş · kullanılabilir
+  ✓ lisans: süresi dolmuş, deneme de bitmiş · kalan gün
+  ✓ lisans: süresi dolmuş, deneme de bitmiş · uyarı
+  ✓ lisans: süresi dolmuş, deneme de bitmiş · hata kodu
+  ✓ lisans: süresi dolmuş, deneme de bitmiş · saat geri
+  ✓ lisans: süresi dolmuş, deneme sürüyor · tür
+  ✓ lisans: süresi dolmuş, deneme sürüyor · kullanılabilir
+  ✓ lisans: süresi dolmuş, deneme sürüyor · kalan gün
+  ✓ lisans: süresi dolmuş, deneme sürüyor · uyarı
+  ✓ lisans: süresi dolmuş, deneme sürüyor · hata kodu
+  ✓ lisans: süresi dolmuş, deneme sürüyor · saat geri
+  ✓ lisans: başka cihaz · tür
+  ✓ lisans: başka cihaz · kullanılabilir
+  ✓ lisans: başka cihaz · kalan gün
+  ✓ lisans: başka cihaz · uyarı
+  ✓ lisans: başka cihaz · hata kodu
+  ✓ lisans: başka cihaz · saat geri
+  ✓ lisans: başka anahtarla imzalı · tür
+  ✓ lisans: başka anahtarla imzalı · kullanılabilir
+  ✓ lisans: başka anahtarla imzalı · kalan gün
+  ✓ lisans: başka anahtarla imzalı · uyarı
+  ✓ lisans: başka anahtarla imzalı · hata kodu
+  ✓ lisans: başka anahtarla imzalı · saat geri
+  ✓ lisans: yükü değiştirilmiş (bitiş uzatılmış) · tür
+  ✓ lisans: yükü değiştirilmiş (bitiş uzatılmış) · kullanılabilir
+  ✓ lisans: yükü değiştirilmiş (bitiş uzatılmış) · kalan gün
+  ✓ lisans: yükü değiştirilmiş (bitiş uzatılmış) · uyarı
+  ✓ lisans: yükü değiştirilmiş (bitiş uzatılmış) · hata kodu
+  ✓ lisans: yükü değiştirilmiş (bitiş uzatılmış) · saat geri
+  ✓ lisans: bozuk metin · tür
+  ✓ lisans: bozuk metin · kullanılabilir
+  ✓ lisans: bozuk metin · kalan gün
+  ✓ lisans: bozuk metin · uyarı
+  ✓ lisans: bozuk metin · hata kodu
+  ✓ lisans: bozuk metin · saat geri
+  ✓ lisans: başka ürün (telefon lisansı eklentide) · tür
+  ✓ lisans: başka ürün (telefon lisansı eklentide) · kullanılabilir
+  ✓ lisans: başka ürün (telefon lisansı eklentide) · kalan gün
+  ✓ lisans: başka ürün (telefon lisansı eklentide) · uyarı
+  ✓ lisans: başka ürün (telefon lisansı eklentide) · hata kodu
+  ✓ lisans: başka ürün (telefon lisansı eklentide) · saat geri
+  ✓ lisans: "hepsi" lisansı telefonda · tür
+  ✓ lisans: "hepsi" lisansı telefonda · kullanılabilir
+  ✓ lisans: "hepsi" lisansı telefonda · kalan gün
+  ✓ lisans: "hepsi" lisansı telefonda · uyarı
+  ✓ lisans: "hepsi" lisansı telefonda · hata kodu
+  ✓ lisans: "hepsi" lisansı telefonda · saat geri
+  ✓ lisans: lisanssız ilk gün · tür
+  ✓ lisans: lisanssız ilk gün · kullanılabilir
+  ✓ lisans: lisanssız ilk gün · kalan gün
+  ✓ lisans: lisanssız ilk gün · uyarı
+  ✓ lisans: lisanssız ilk gün · hata kodu
+  ✓ lisans: lisanssız ilk gün · saat geri
+  ✓ lisans: lisanssız son gün · tür
+  ✓ lisans: lisanssız son gün · kullanılabilir
+  ✓ lisans: lisanssız son gün · kalan gün
+  ✓ lisans: lisanssız son gün · uyarı
+  ✓ lisans: lisanssız son gün · hata kodu
+  ✓ lisans: lisanssız son gün · saat geri
+  ✓ lisans: lisanssız 8. gün kapanır · tür
+  ✓ lisans: lisanssız 8. gün kapanır · kullanılabilir
+  ✓ lisans: lisanssız 8. gün kapanır · kalan gün
+  ✓ lisans: lisanssız 8. gün kapanır · uyarı
+  ✓ lisans: lisanssız 8. gün kapanır · hata kodu
+  ✓ lisans: lisanssız 8. gün kapanır · saat geri
+  ✓ lisans: saat geri alınmış (deneme son görülmeden sayılır) · tür
+  ✓ lisans: saat geri alınmış (deneme son görülmeden sayılır) · kullanılabilir
+  ✓ lisans: saat geri alınmış (deneme son görülmeden sayılır) · kalan gün
+  ✓ lisans: saat geri alınmış (deneme son görülmeden sayılır) · uyarı
+  ✓ lisans: saat geri alınmış (deneme son görülmeden sayılır) · hata kodu
+  ✓ lisans: saat geri alınmış (deneme son görülmeden sayılır) · saat geri
+  ✓ lisans: saat geri alınmış (süresi geçmiş lisans geçmez) · tür
+  ✓ lisans: saat geri alınmış (süresi geçmiş lisans geçmez) · kullanılabilir
+  ✓ lisans: saat geri alınmış (süresi geçmiş lisans geçmez) · kalan gün
+  ✓ lisans: saat geri alınmış (süresi geçmiş lisans geçmez) · uyarı
+  ✓ lisans: saat geri alınmış (süresi geçmiş lisans geçmez) · hata kodu
+  ✓ lisans: saat geri alınmış (süresi geçmiş lisans geçmez) · saat geri
+  ✓ lisans: .lisans dosyası (açıklama satırları, satır sonları) · tür
+  ✓ lisans: .lisans dosyası (açıklama satırları, satır sonları) · kullanılabilir
+  ✓ lisans: .lisans dosyası (açıklama satırları, satır sonları) · kalan gün
+  ✓ lisans: .lisans dosyası (açıklama satırları, satır sonları) · uyarı
+  ✓ lisans: .lisans dosyası (açıklama satırları, satır sonları) · hata kodu
+  ✓ lisans: .lisans dosyası (açıklama satırları, satır sonları) · saat geri
+  ✓ lisans: cihaz kodu küçük harf ve boşluklu girilmiş · tür
+  ✓ lisans: cihaz kodu küçük harf ve boşluklu girilmiş · kullanılabilir
+  ✓ lisans: cihaz kodu küçük harf ve boşluklu girilmiş · kalan gün
+  ✓ lisans: cihaz kodu küçük harf ve boşluklu girilmiş · uyarı
+  ✓ lisans: cihaz kodu küçük harf ve boşluklu girilmiş · hata kodu
+  ✓ lisans: cihaz kodu küçük harf ve boşluklu girilmiş · saat geri
+  ✓ lisans: gerçek açık anahtar 2048 bit
+  ✓ lisans: deneme anahtarının lisansı gerçek anahtarla geçmez
+  ✓ lisans: deneme anahtarıyla doğru
+  ✓ lisans: ortak durum sayısı 19
+Uzak grup: telefonla ortak deneme (ortak/deneme/uzak-grup)
+  ✓ uzak grup: iki küme, 13 km arayla (adı değiştirilen proje)
+  ✓ uzak grup: 1500 m arayla zincir: tek grup
+  ✓ uzak grup: tam 2000 m: aynı grup; 2000,5 m: ayrı
+  ✓ uzak grup: iki uzak kümeyi bağlayan uzun hat: tek grup
+  ✓ uzak grup: eşit büyüklük: ilk nesnenin grubu ana
+  ✓ uzak grup: üç grup: büyüklüğe göre sıra; köşesiz nesne ana grupta
+  ✓ uzak grup: negatif ve hücre sınırı koordinatları
+  ✓ uzak grup: dosyada 3 eleman + 1 hat uzak
+  ✓ uzak grup: özet adları ve uzaklığı yazar: 3 eleman, 1 hat (A-00, A-01, A-02) · ana gruptan 14,8 km uzakta
+  ✓ uzak grup: uzaktakiler çıkarıldı
+  ✓ uzak grup: tek grupta uyarı yok
+Yazı çakışması: telefonla ortak deneme (ortak/deneme/yazi-cakisma)
+  ✓ yazı çakışması: eksene paralel, üst üste
+  ✓ yazı çakışması: eksene paralel, değiyor (çakışma sayılmaz)
+  ✓ yazı çakışması: eksene paralel, ayrı
+  ✓ yazı çakışması: 45° dönük, köşe boşlukta
+  ✓ yazı çakışması: 45° dönük, köşe içeride
+  ✓ yazı çakışması: iki dönük yazı, paralel ve yan yana
+  ✓ yazı çakışması: iki dönük yazı, kesişiyor
+  ✓ eleman yazısı adayları: sağ üstteki yazı
+  ✓ eleman yazısı adayları: tam üstteki yazı
+  ✓ hat yazısı adayları: yatay parça, yazı üstte ortada
+  ✓ hat yazısı adayları: dönük parça, yazı altta
+  ✓ hat yazısı adayları: kısa parça: kaydırma sığmaz
+  ✓ yazı yerleştirme: iki yakın direk ve aradaki metraj
+  ✓ yazı yerleştirme: yer yok: en az çakışan aday
+SONUÇ: tüm denetimler geçti

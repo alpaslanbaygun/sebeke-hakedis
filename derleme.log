@@ -1,0 +1,15 @@
+  Determining projects to restore...
+  Restored D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Eklenti\Eklenti.csproj (in 4.03 sec).
+D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Cekirdek\CizimAyarlari.cs(188,18): warning CS0219: The variable 'yuvarlamaOkundu' is assigned but its value is never used [D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Eklenti\Eklenti.csproj::TargetFramework=net46]
+  Eklenti -> D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Eklenti\bin\Release\net46\SebekeHakedis.dll
+D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Cekirdek\CizimAyarlari.cs(188,18): warning CS0219: The variable 'yuvarlamaOkundu' is assigned but its value is never used [D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Eklenti\Eklenti.csproj::TargetFramework=net8.0-windows]
+  Eklenti -> D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Eklenti\bin\Release\net8.0-windows\SebekeHakedis.dll
+
+Build succeeded.
+
+D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Cekirdek\CizimAyarlari.cs(188,18): warning CS0219: The variable 'yuvarlamaOkundu' is assigned but its value is never used [D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Eklenti\Eklenti.csproj::TargetFramework=net46]
+D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Cekirdek\CizimAyarlari.cs(188,18): warning CS0219: The variable 'yuvarlamaOkundu' is assigned but its value is never used [D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Eklenti\Eklenti.csproj::TargetFramework=net8.0-windows]
+    2 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:10.69

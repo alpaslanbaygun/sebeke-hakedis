@@ -1,0 +1,372 @@
+D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Cekirdek\CizimAyarlari.cs(188,18): warning CS0219: The variable 'yuvarlamaOkundu' is assigned but its value is never used [D:\a\sebeke-hakedis\sebeke-hakedis\autocad\test\PencereTest\PencereTest.csproj]
+D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Eklenti\Pencereler.cs(112,21): warning CS0649: Field 'AktarimOzeti.BaskaCizim' is never assigned to, and will always have its default value false [D:\a\sebeke-hakedis\sebeke-hakedis\autocad\test\PencereTest\PencereTest.csproj]
+D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Eklenti\Pencereler.cs(113,32): warning CS0649: Field 'AktarimOzeti.CizimdeSilinmis' is never assigned to, and will always have its default value 0 [D:\a\sebeke-hakedis\sebeke-hakedis\autocad\test\PencereTest\PencereTest.csproj]
+D:\a\sebeke-hakedis\sebeke-hakedis\autocad\src\Eklenti\KoyuTema.cs(80,34): warning CS0649: Field 'Tema.AutoCadAcikMi' is never assigned to, and will always have its default value null [D:\a\sebeke-hakedis\sebeke-hakedis\autocad\test\PencereTest\PencereTest.csproj]
+01-eleman
+    resim: 01-eleman.png (920×600)
+  ✓ eleman: tip seçili döner
+  ✓ eleman: varsayılan tür AG direk
+  ✓ eleman: GIS elle girilmediyse kendiliğinden
+01b-eleman-kilitli
+    resim: 01b-eleman-kilitli.png (920×600)
+  ✓ kilitli hakediş: Çiz kapalı, seçim dönmez
+02-eleman-pano
+    resim: 02-eleman-pano.png (920×600)
+  ✓ eleman: pano için GIS önerisi SCP01
+    resim: 02-eleman-pano-sonra.png (920×600)
+  ✓ eleman: tür değişir
+  ✓ eleman: pano tipi seçildi
+03-hat
+    resim: 03-hat.png (920×660)
+  ✓ hat: kesit seçili döner
+  ✓ hat: varsayılan tür AG havai
+01c-eleman-beton-kesik
+    resim: 01c-eleman-beton-kesik.png (920×600)
+  ✓ eleman: AG direkte 5 cins düğmesi (hepsi, galvanizli demir, demir, beton, ağaç)
+  ✓ eleman: listede yalnız beton direkler
+    resim: 01c-eleman-beton-kesik-sonra.png (920×600)
+  ✓ eleman: cins düğmesiyle beton direk
+  ✓ eleman: durum demontaj
+  ✓ eleman: demontaj türü kesik
+  ✓ eleman: kesik beton direğin simgesi
+03d-hat-degistir
+    resim: 03d-hat-degistir.png (920×660)
+  ✓ hat değiştir: pencere başlığı
+  ✓ hat değiştir: Değiştir düğmesi
+  ✓ hat değiştir: hattın şimdiki iletkeniyle açılır
+03b-hat-musterek
+    resim: 03b-hat-musterek.png (920×660)
+  ✓ müşterek hat: iki iletken
+  ✓ müşterek hat: biri OG, biri AG
+03c-hat-adet
+    resim: 03c-hat-adet.png (920×660)
+    resim: 03c-hat-adet-sonra.png (920×660)
+  ✓ hat: ALPEK seçildi
+  ✓ hat: 3 adet
+  ✓ hat: yazımı 3x(…)
+04-kanal
+    resim: 04-kanal.png (820×560)
+  ✓ kanal: 5 cins (toprak, tüvenan, mıcır, branşman, demontaj)
+  ✓ kanal: kalem adı katalogdaki gibi (uyarı yok)
+    resim: 04-kanal-zemin.png (820×560)
+  ✓ kanal: katalogda olmayan birleşim uyarılı
+  ✓ kanal: döner
+  ✓ kanal: varsayılan kablo AG
+  ✓ kanal: alt genişlik varsayılanı
+  ✓ kanal: cins + kaplama + bariyer → kalem adı
+05-sondaj
+    resim: 05-sondaj.png (740×540)
+  ✓ sondaj: tip seçili döner
+06-bolge
+    resim: 06-bolge.png (540×330)
+  ✓ bölge: Tamam
+  ✓ bölge: ad
+  ✓ bölge: kod
+  ✓ bölge: grup kodu
+07-ayarlar
+    resim: 07-ayarlar.png (660×600)
+  ✓ ayarlar: hat kalınlığı seçenekleri
+  ✓ ayarlar: hat kalınlığı varsayılanı Normal
+  ✓ ayarlar: hat kalınlığı Kalın seçildi
+  ✓ ayarlar: simge takımı seçenekleri (Klasik, Şebeke-M)
+  ✓ ayarlar: simge takımı varsayılanı Klasik
+  ✓ ayarlar: simge takımı Şebeke-M seçildi
+  ✓ ayarlar: arayüz teması seçenekleri (Otomatik, Koyu, Açık)
+    resim: 07-ayarlar-proje.png (660×600)
+    resim: 07-ayarlar-tarife.png (660×600)
+    resim: 07-ayarlar-gorunum.png (660×600)
+    resim: 07-ayarlar-metraj.png (660×600)
+  ✓ ayarlar: Tamam
+  ✓ ayarlar: DOM seçildi
+  ✓ ayarlar: Varsayılana dön simgeyi 1 kata getirdi
+  ✓ ayarlar: eleman yazısı yüksekliği
+  ✓ ayarlar: hat etiketi (kablo tipi) yüksekliği
+  ✓ ayarlar: metraj yazısı yüksekliği
+  ✓ ayarlar: hat kalınlığı (Kalın = 1,5 kat)
+  ✓ ayarlar: malzemeleri çizimde göster
+  ✓ ayarlar: simge takımı Şebeke-M seçildi
+08-malzeme-direk
+    resim: 08-malzeme-direk.png (960×620)
+    resim: 08-malzeme-direk-ic1.png (720×580)
+    resim: 08-malzeme-direk-sonra.png (960×620)
+  ✓ malzeme: Kaydet
+  ✓ malzeme: katalogdan eklenen satır nesneye yazıldı
+  ✓ malzeme: yeni satırın miktarı düzenlendi
+  ✓ malzeme: toplam = miktar × katsayı
+08b-malzeme-durum-geri
+    resim: 08b-malzeme-durum-geri.png (960×620)
+  ✓ durum geri: direğin kendi satırı listede
+  ✓ durum geri: durum açılır liste düzenlemede
+  ✓ durum geri: durum listede 'DM' var
+  ✓ durum geri: durum seçilince düzenleme kapandı
+  ✓ durum geri: M → DM yazıldı
+  ✓ durum geri: DM durumu açılır liste düzenlemede
+  ✓ durum geri: DM durumu listede 'KESİK' var
+  ✓ durum geri: DM durumu seçilince düzenleme kapandı
+  ✓ durum geri: DM durumu KESİK
+    resim: 08b-malzeme-durum-geri-dm.png (960×620)
+  ✓ durum geri: durum açılır liste düzenlemede
+  ✓ durum geri: durum listede 'M' var
+  ✓ durum geri: durum seçilince düzenleme kapandı
+  ✓ durum geri: DM → M yazıldı
+  ✓ durum geri: hücrede M görünür
+  ✓ durum geri: M'ye dönünce KESİK kendiliğinden kalktı
+  ✓ durum geri: DM durumu hücresi boş
+  ✓ durum geri: durum açılır liste düzenlemede
+  ✓ durum geri: durum listede 'DM+M' var
+  ✓ durum geri: durum seçilince düzenleme kapandı
+  ✓ durum geri: üçüncü değişiklik de yazıldı
+  ✓ durum geri: durum açılır liste düzenlemede
+  ✓ durum geri: durum listede 'M' var
+  ✓ durum geri: durum seçilince düzenleme kapandı
+  ✓ durum geri: yeniden M
+    resim: 08b-malzeme-durum-geri-sonra.png (960×620)
+  ✓ durum geri: Kaydet
+  ✓ durum geri: direğin durumu yeniden M
+  ✓ durum geri: DM durumu temizlendi
+  ✓ durum geri: direğin kendi pozunun durumu M
+  ✓ durum geri: deneme sonunda direk eski durumunda
+08c-malzeme-tip-degistir
+    resim: 08c-malzeme-tip-degistir.png (960×620)
+  ✓ tip değiştir: düğme var
+  ✓ tip değiştir: başlıkta eski tip
+    resim: 08c-malzeme-tip-degistir-ic1.png (720×580)
+  ✓ tip değiştir: başlık yeni tiple
+  ✓ tip değiştir: ilk satırda yeni tip
+    resim: 08c-malzeme-tip-degistir-sonra.png (960×620)
+  ✓ tip değiştir: Kaydet
+  ✓ tip değiştir: direğin kendi pozu seçilen tip
+  ✓ tip değiştir: cins de seçilenden
+  ✓ tip değiştir: katsayı (kg) yeni tipten
+  ✓ tip değiştir: elemanın tipi
+  ✓ tip değiştir: elemanın cinsi
+  ✓ tip değiştir: durum değişmedi
+  ✓ tip değiştir: malzemeler kaldı
+08d-malzeme-onerilen
+    resim: 08d-malzeme-onerilen.png (960×620)
+  ✓ önerilen: düğme var
+  ✓ önerilen: düğme eksik öneri sayısını gösterir
+    resim: 08d-malzeme-onerilen-ic1.png (860×560)
+  ✓ önerilen: eklenince sayı düşer
+  ✓ önerilen: tabloda yeni satır
+    resim: 08d-malzeme-onerilen-sonra.png (960×620)
+  ✓ önerilen: Kaydet
+  ✓ önerilen: işaretli öneri kalem olarak eklendi
+  ✓ önerilen: GT-70 travers, 1 adet, direğin durumuyla
+09-malzeme-hat
+    resim: 09-malzeme-hat.png (960×620)
+  ✓ malzeme (hat): Kaydet
+  ✓ malzeme (hat): hat satırının durumu hattın durumu olur
+10-malzeme-kanal
+    resim: 10-malzeme-kanal.png (960×620)
+    resim: 10-malzeme-kanal-sonra.png (960×620)
+  ✓ malzeme (kanal): Kaydet
+  ✓ malzeme (kanal): alt genişlik değişti
+  ✓ malzeme (kanal): hacim yeniden hesaplandı
+  ✓ malzeme (kanal): zemin cins + kaplamadan
+  ✓ malzeme (kanal): kanal kaleminin adı da
+11-malzeme-sondaj
+    resim: 11-malzeme-sondaj.png (960×620)
+  ✓ malzeme (sondaj): Kaydet
+12-katalog-sec
+    resim: 12-katalog-sec.png (720×580)
+  ✓ katalog: seçim döner
+13-eleman-telefon-projesi
+    resim: 13-eleman-telefon-projesi.png (920×600)
+  ✓ eleman (telefon projesi): döner
+13b-eleman-suzgecli
+    resim: 13b-eleman-suzgecli.png (920×600)
+  ✓ süzgeçli pencere: listede yalnız AG ek mufuları
+  ✓ süzgeçli pencere: yalnız AG ek mufu tipi
+  ✓ süzgeçli pencere: süzgeç seçimde kalır
+18-eksik-malzeme
+    resim: 18-eksik-malzeme.png (900×680)
+  ✓ eksik malzeme: ana cinsler çizimden dolu
+  ✓ eksik malzeme: tip listesi aranan cinsin tipleriyle dolar
+  ✓ eksik malzeme: bulunanlara malzeme ekle düğmesi
+    resim: 18-eksik-malzeme-sonra.png (900×680)
+  ✓ eksik malzeme: Çizimde seç
+  ✓ eksik malzeme: aranan cins döner
+  ✓ eksik malzeme: seçilen gösterim (olanlar) döner
+  ✓ eksik malzeme: (hepsi) süzgeç sayılmaz
+  ✓ eksik malzeme: bulunan satırlar döner (malzemesi olanlar)
+19-hakedis-onayi
+    resim: 19-hakedis-onayi.png (680×700)
+  ✓ onay: kayıtlı onay işaretli gelir
+    resim: 19-hakedis-onayi-sonra.png (680×700)
+  ✓ onay: Kaydet
+  ✓ onay: GIS işaretlenince kontrol ve hakediş de işaretlenir
+  ✓ onay: kontrol kaldırılınca sonraki aşamalar da kalkar
+19b-hakedis-onayi-rol
+    resim: 19b-hakedis-onayi-rol.png (680×700)
+  ✓ rol: yalnız Kontrol kutuları açık
+  ✓ rol: yazmaya kapalı hakediş satırda yazılı
+  ✓ rol: oturum ve izinli aşamalar yazılı
+    resim: 19b-hakedis-onayi-rol-sonra.png (680×700)
+  ✓ rol: Kaydet
+  ✓ rol: kontrol mühendisi 3. hakedişe Kontrol onayı verir
+  ✓ rol: Hakediş onayı kutusu kapalı, değişmedi
+19c-kullanicilar
+    resim: 19c-kullanicilar.png (700×728)
+  ✓ kullanıcılar: Yönetici hakediş yetkisini değiştirebilir
+  ✓ kullanıcılar: kayıtlı kapalı hakediş işaretli
+  ✓ kullanıcılar: liste
+    resim: 19c-kullanicilar-sonra.png (700×728)
+  ✓ kullanıcılar: Kaydet
+  ✓ kullanıcılar: 2. hakediş yazmaya kapandı
+  ✓ kullanıcılar: değişiklik kaydedilecek
+19d-kullanicilar-oturumsuz
+    resim: 19d-kullanicilar-oturumsuz.png (700×728)
+  ✓ oturumsuz: hakediş yetkisi kapalı
+  ✓ oturumsuz: Oturum aç düğmesi
+  ✓ oturumsuz: değişiklik yok
+19e-ilk-yonetici
+    resim: 19e-ilk-yonetici.png (460×478)
+  ✓ form: şifre gizli
+    resim: 19e-ilk-yonetici-sonra.png (460×478)
+  ✓ form: ilk yönetici adı, rolü, şifresi
+19f-oturum-ac
+    resim: 19f-oturum-ac.png (420×300)
+    resim: 19f-oturum-ac-sonra.png (420×300)
+  ✓ oturum: giriş
+  ✓ oturum: seçili kullanıcı ve şifre denendi
+20-malzeme-kilitli
+    resim: 20-malzeme-kilitli.png (960×620)
+  ✓ kilitli: onaylı hakedişin satırı salt okunur
+    [mesaj] 2. hakediş onaylı (kilitli): bu hakedişe yeni nesne çizilemez, bu hakedişteki satırlar değiştirilemez. Açık bir hakediş seçin; kilidi kaldırmak için Hakediş Onayı (SH_ONAY). Bu satır silinemez.
+  ✓ kilitli: silme düğmesi kilitli satırı silmez
+  ✓ kilitli: Kaydet
+  ✓ kilitli: onaylı hakedişin satırı silinmedi
+23-toplu-malzeme
+    resim: 23-toplu-malzeme.png (980×640)
+  ✓ toplu malzeme: listeye eklendi
+  ✓ toplu malzeme: listedeki malzeme ikinci kez eklenmez
+  ✓ toplu malzeme: katalog işaret kutulu
+  ✓ toplu malzeme: tıklanan ikinci malzeme eklendi
+  ✓ toplu malzeme: eklenen malzeme işaretli görünür
+  ✓ toplu malzeme: ikinci tıklama malzemeyi çıkarır
+  ✓ toplu malzeme: üç malzeme
+    resim: 23-toplu-malzeme-sonra.png (980×640)
+  ✓ toplu malzeme: üç satır döner (birden çok malzeme)
+  ✓ toplu malzeme: miktar düzenlendi
+  ✓ toplu malzeme: elemanda olanı ekleme (varsayılan açık)
+21-telefondan-al
+    resim: 21-telefondan-al.png (800×587)
+  ✓ telefondan al: Çizime aktar
+22-ileti
+    resim: 22-ileti.png (541×195)
+  ✓ ileti: varsayılan düğme Hayır
+  ✓ marka: logo ve simgeler gömülü
+  ✓ marka: hakkında metni gömülü (ortak/marka/hakkinda.json)
+24-hakkinda
+    resim: 24-hakkinda.png (780×680)
+  ✓ hakkında: komut listesi yazılır
+  ✓ hakkında: komutlar gruplu listelenir
+  ✓ hakkında: amaç ve yapabildikler metni
+  ✓ hakkında: önce Hakkında sekmesi
+    resim: 24-hakkinda-komutlar.png (780×680)
+25-proje-ozeti
+    resim: 25-proje-ozeti.png (1040×680)
+  ✓ proje özeti: proje listesi
+  ✓ proje özeti: tüm projelerin malzeme listesi
+  ✓ proje özeti: seçilen projenin malzeme listesi
+  ✓ proje özeti: durum süzgeci
+    resim: 25-proje-ozeti-sonra.png (1040×680)
+  ✓ proje özeti: kanal listesi (proje başlıkları + satırlar + proje toplamları + genel toplam)
+  ✓ proje özeti: kanal listesinde proje başlık satırı
+  ✓ proje özeti: kanal sekmesinde 'Çizime tablo olarak koy'
+    resim: 25-proje-ozeti-kanal.png (1040×680)
+  ✓ proje özeti: Excel'e aktar seçili projeyi verir
+  ✓ proje özeti: süzgeç Excel'e gider
+25b-kanal-tablosu
+    resim: 25b-kanal-tablosu.png (1040×680)
+  ✓ proje özeti: kanal tablosu istenir
+25c-birlesik-metraj-iste
+    resim: 25c-birlesik-metraj-iste.png (1040×680)
+  ✓ proje özeti: Birleşik Metraj seçili projeyle istenir
+30-birlesik-metraj
+    resim: 30-birlesik-metraj.png (640×470)
+    resim: 30-birlesik-metraj-sonra.png (640×470)
+  ✓ birleşik metraj: Oluştur
+  ✓ birleşik metraj: hakediş no görünen hakedişten
+  ✓ birleşik metraj: il saklanır
+  ✓ birleşik metraj: gömülü şablon varsayılan
+30b-birlesik-metraj-sonuc
+    resim: 30b-birlesik-metraj-sonuc.png (720×520)
+  ✓ birleşik metraj sonucu: direk sayfaları, sütunlar, fazlalar ve uyarılar listelenir
+    resim: 30b-birlesik-metraj-sonuc-sonra.png (720×520)
+26-koordinat-dilimi
+    resim: 26-koordinat-dilimi.png (560×330)
+    resim: 26-koordinat-dilimi-sonra.png (560×330)
+  ✓ dilim: seçilen dilim döner
+27-cbs-bilgisi
+    resim: 27-cbs-bilgisi.png (620×384)
+29-cbs-al
+    resim: 29-cbs-al.png (980×640)
+  ✓ cbs al: tanınmayan alan dosyası altlık gelir
+    resim: 29-cbs-al-bolge.png (980×640)
+  ✓ cbs al: Al
+  ✓ cbs al: direk dosyası direk olarak alınır
+  ✓ cbs al: DIREK_NO sütunu GIS no
+  ✓ cbs al: bina dosyası pencerede bölgeye çevrildi
+  ✓ cbs al: varsayılan durum mevcut
+28-harita-altligi
+    resim: 28-harita-altligi.png (880×620)
+  ✓ altlık: varsayılan Esri (anahtarsız)
+    resim: 28-harita-altligi-sonra.png (880×620)
+  ✓ altlık: Altlığı getir
+  ✓ altlık: seçilen sağlayıcı
+  ✓ altlık: anahtar saklanır
+  ✓ altlık: ayrıntı yüksek
+45-lisans
+    resim: 45-lisans.png (640×560)
+  ✓ lisans: boşken Kaydet kapalı
+  ✓ lisans: bozuk lisansta Kaydet kapalı
+    resim: 45-lisans-bozuk.png (640×560)
+  ✓ lisans: geçerli lisansta Kaydet açık
+    resim: 45-lisans-gecerli.png (640×560)
+  ✓ lisans: geçerli lisans kaydedildi
+45b-lisans-kilitli
+    resim: 45b-lisans-kilitli.png (640×560)
+  ✓ lisans: süre dolmuşken boş bırakılırsa kaydedilmez
+  ✓ açık tema: zemin açık, yazı koyu
+  ✓ açık tema: açık çizim rengi (AYD camgöbeği) koyulaşır
+40-acik-eleman
+    resim: 40-acik-eleman.png (920×600)
+40b-acik-ayarlar
+    resim: 40b-acik-ayarlar.png (660×600)
+40c-acik-malzeme
+    resim: 40c-acik-malzeme.png (960×620)
+40d-acik-proje-ozeti
+    resim: 40d-acik-proje-ozeti.png (1040×680)
+40e-acik-ileti
+    resim: 40e-acik-ileti.png (396×186)
+40f-acik-hakkinda
+    resim: 40f-acik-hakkinda.png (780×680)
+40g-acik-lisans
+    resim: 40g-acik-lisans.png (640×560)
+  ✓ açık tema: değişken kalkınca seçim (otomatik → AutoCAD yok → koyu)
+14-serit
+    [şerit önizleme] 14-serit-01-AG_HAVAI.png (1672×146)
+    [şerit önizleme] 14-serit-02-AG_YERALTI.png (1798×146)
+    [şerit önizleme] 14-serit-03-OG_HAVAI.png (1625×146)
+    [şerit önizleme] 14-serit-04-OG_YERALTI.png (1998×146)
+    [şerit önizleme] 14-serit-05-MUSTEREK.png (1682×146)
+    [şerit önizleme] 14-serit-06-AYDINLATMA.png (1647×146)
+    [şerit önizleme] 14-serit-07-TRAFO.png (1617×146)
+    [şerit önizleme] 14-serit-08-ABONE.png (1814×146)
+    [şerit önizleme] 14-serit-09-KAZI.png (1555×146)
+    [şerit önizleme] 14-serit-10-PROJE.png (1692×146)
+    [şerit önizleme] 15-serit-demontaj.png (1672×146)
+    [şerit önizleme] 16-serit-AG-direk-beton.png (1672×146)
+    [şerit önizleme] 16-serit-tip-listesi-AG-direk-beton.png (323×1365)
+    [şerit önizleme] 16-serit-durum-simgeleri-beton.png (329×273)
+    [şerit önizleme] 16-serit-durum-simgeleri-demir.png (329×273)
+    [şerit önizleme] 17-serit-tip-listesi-AG-hat-ALPEK.png (323×681)
+    [şerit önizleme] 17-serit-tip-listesi-OG-hat.png (323×681)
+    [şerit önizleme] 18-serit-musterek-hat.png (1941×146)
+    [şerit önizleme] 14-serit-araclar.png (1189×146)
+  ✓ şerit: AG Havai → AG Direk, AG Hat
+  ✓ şerit: AG Direk kısa tip listesi yalnız AG direkleri
+  ✓ şerit: OG Hat tipleri yalnız OG iletken
+SONUÇ: tüm pencere denetimleri geçti
