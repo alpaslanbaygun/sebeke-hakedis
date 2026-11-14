@@ -228,6 +228,9 @@ table.t td.n,table.t th.n{text-align:right;font-family:var(--mono);font-weight:6
 .hl{color:var(--ok2)}.hw{color:var(--warn3)}.he{color:var(--err2)}.hc{color:var(--cy)}
 
 .btn.take:disabled{opacity:.9}
+/* 14.11.2026: ölçülürken TAMAM (beklemeden bitir) */
+.btn.take.olcum{justify-content:space-between;gap:8px}
+.btn.take .tamam-pill{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;background:#ecfdf5;color:#0b1326;border-radius:8px;padding:6px 10px;font-size:16px;font-weight:900;letter-spacing:.03em;overflow:visible}
 
 /* v2.2: veri kaynağı, hakediş durumu */
 .dock-take .srcbtn{flex:0 0 62px;height:66px;border-radius:10px;border:2px solid var(--c);background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--tx);padding:0 2px}
@@ -373,3 +376,10 @@ html.web .tabbar button span{white-space:nowrap}
 /* Açık tema: vurgu rengiyle yazılan seçili düğme yazıları açık zeminde koyulaştırılır (--c koyu zemine göre seçilmiş) */
 :root[data-tema="acik"] .chip.on{color:color-mix(in srgb,var(--c,var(--ok)) 62%,#000)}
 :root[data-tema="acik"] .lchip.on b,:root[data-tema="acik"] .dock-take .srcbtn b{color:color-mix(in srgb,var(--c) 62%,#000)}
+/* 14.11.2026: dokunarak hat çizme şeridi (haritanın üstünde, iki düğme sütununun arasında) */
+.dokunserit{position:absolute;top:12px;left:70px;right:70px;z-index:6;display:flex;align-items:center;gap:6px;padding:6px 6px 6px 10px;border-radius:12px;background:var(--glass3,var(--panel));border:2px solid var(--c,var(--ok));box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.dokunserit b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dokunserit small{display:block;font-size:11.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dokunserit button{flex:0 0 auto;height:42px;min-width:42px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--tx);display:flex;align-items:center;justify-content:center}
+.dokunserit button.bitir{padding:0 12px;background:var(--ok);border-color:var(--ok);color:#0b1326;font-weight:900;letter-spacing:.03em}
+.dokunserit button:disabled{opacity:.4}

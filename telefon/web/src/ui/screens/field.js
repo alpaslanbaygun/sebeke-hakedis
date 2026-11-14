@@ -132,7 +132,8 @@ export async function renumberDialog(lineId) {
 // ---------------- Toplu malzeme (13.11.2026) ----------------
 // AutoCAD'deki Toplu malzeme ve Eksik malzeme › Bulunanlara malzeme ekle ile aynı iş: Saha objeleri listesinde süzülen
 // (ya da işaretlenen) ekipmanların her birine aynı malzemeler eklenir. Malzemelere dokunmak işaretler / kaldırır.
-function TopluMalzemeForm({ close, n, baslangic }) {
+// ad: tek obje için (haritada direğe dokununca, 14.11.2026) başlık ve düğme yazısı o objeye göre
+export function TopluMalzemeForm({ close, n, baslangic, ad }) {
   const ps = app.ps, cat = ps.cat;
   const auto = autoRecipeOn(ps.p);
   const [q, setQ] = useState('');
@@ -144,15 +145,16 @@ function TopluMalzemeForm({ close, n, baslangic }) {
   const toggle = (s) => setSec((l) => (l.some((x) => x.servis === s) ? l.filter((x) => x.servis !== s) : l.concat({ servis: s, qty: 1 })));
   const setQty = (s, v) => setSec((l) => l.map((x) => (x.servis === s ? { servis: s, qty: v } : x)));
   const hazir = sec.length > 0 && sec.every((x) => x.qty > 0) && (!auto || why.trim());
-  return html`<div class="mh"><h3>Toplu malzeme · ${n} obje</h3></div><div class="mb">
-    <div class="note">Malzemelere dokunun: işaretlenen her malzeme ${n} objenin her birine eklenir. Bir daha dokunmak çıkarır.</div>
+  const tek = n === 1 && ad;
+  return html`<div class="mh"><h3>${tek ? 'Malzeme ekle · ' + ad : 'Toplu malzeme · ' + n + ' obje'}</h3></div><div class="mb">
+    <div class="note">${tek ? 'Malzemelere dokunun, miktarı yazın. Bir daha dokunmak çıkarır.' : 'Malzemelere dokunun: işaretlenen her malzeme ' + n + ' objenin her birine eklenir. Bir daha dokunmak çıkarır.'}</div>
     <input class="inp" value=${q} placeholder="Ara: topraklama, izolatör, 011.04…" onInput=${(e) => setQ(e.target.value)} />
     <div class="card tight list" style="max-height:32vh;overflow:auto">${hits.map((x) => html`<button class="li" style="width:100%;text-align:left;color:inherit;background:none;border:0" onClick=${() => toggle(x.servis)}><${Isaret} on=${on(x.servis)} /><div class="grow"><div style="font-size:14px;font-weight:600">${x.name}</div><div class="m">${x.servis} · ${x.unit}</div></div></button>`)}
       ${!hits.length ? html`<div class="empty">Sonuç yok</div>` : null}</div>
     ${sec.length ? html`<div class="sect">Eklenecek (${sec.length})</div><div class="card tight list">${sec.map((x) => { const pz = cat.poz(x.servis) || {}; return html`<div class="li"><div class="grow"><div style="font-size:13px;font-weight:600">${pz.name || x.servis}</div><div class="m">${x.servis}</div></div><${SayiGirdi} canli style="width:84px;text-align:right" value=${x.qty} onSave=${(v) => setQty(x.servis, v)} /><span class="note" style="width:28px">${pz.unit || ''}</span><button class="btn xs" aria-label="Çıkar" onClick=${() => toggle(x.servis)}><${Icon} n="x" s=${16} /></button></div>`; })}</div>` : null}
     <div class="row card" style="padding:8px 10px"><span class="grow" style="font-size:13px">Objede zaten olan malzemeyi ekleme</span><${Toggle} on=${varsaAtla} onChange=${setVarsaAtla} label="Olanı atla" /></div>
     ${auto ? html`<div class="fld"><label>Gerekçe (sahada ilave · onay bekler) *</label><input class="inp" value=${why} placeholder="ör. topraklama eksikti" onInput=${(e) => setWhy(e.target.value)} /></div>` : null}
-  </div><div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn pri grow" disabled=${!hazir} onClick=${() => close({ kalemler: sec, varsaAtla, reason: why })}>${sec.length ? n + ' OBJEYE ' + sec.length + ' MALZEME' : 'MALZEME SEÇİN'}</button></div>`;
+  </div><div class="mf"><button class="btn grow" onClick=${() => close(null)}>Vazgeç</button><button class="btn pri grow" disabled=${!hazir} onClick=${() => close({ kalemler: sec, varsaAtla, reason: why })}>${!sec.length ? 'MALZEME SEÇİN' : tek ? sec.length + ' MALZEME EKLE' : n + ' OBJEYE ' + sec.length + ' MALZEME'}</button></div>`;
 }
 
 function MalzemeSecForm({ close }) {

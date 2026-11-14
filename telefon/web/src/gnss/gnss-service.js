@@ -250,20 +250,27 @@ export class GnssService {
       const got = [];
       const q0 = this.quality({ critical, allowTest });
       if (!q0.ok) { const e = new Error('ÖLÇÜ KABUL EDİLMEDİ: ' + q0.reasons.join(' · ')); e.code = 'REJECTED'; e.reasons = q0.reasons; return reject(e); }
+      // Erken bitir (14.11.2026, saha isteği): kullanıcı "TAMAM" derse o ana kadar gelen epoklarla (en az 1) ölçüm biter;
+      // henüz epok yoksa ilk epokta biter. Kayıtta kaç epok ortalandığı (epochs) ve erken bitirildiği (erken) yazılır.
+      let erken = false, sonQ = q0;
+      const bitir = () => { off(); clearTimeout(to); this._erkenBitir = null; resolve(Object.assign(this.buildObservation(got, sonQ), override ? { override: true, overrideReasons, cls: 'UYARILI' } : {}, got.length < need ? { erken: true, epochsNeed: need } : {})); };
       const off = this.bus.on('gnss:epoch', (ep) => {
         const q = this.quality({ critical, allowTest });
-        if (!q.ok) { off(); clearTimeout(to); const e = new Error('ÖLÇÜ KABUL EDİLMEDİ: ölçüm sırasında ' + q.reasons.join(' · ')); e.code = 'REJECTED'; e.reasons = q.reasons; return reject(e); }
-        got.push(ep);
+        if (!q.ok) { off(); clearTimeout(to); this._erkenBitir = null; const e = new Error('ÖLÇÜ KABUL EDİLMEDİ: ölçüm sırasında ' + q.reasons.join(' · ')); e.code = 'REJECTED'; e.reasons = q.reasons; return reject(e); }
+        got.push(ep); sonQ = q;
         if (this.bus) this.bus.emit('gnss:observeProgress', { n: got.length, need });
-        if (got.length >= need) { off(); clearTimeout(to); resolve(Object.assign(this.buildObservation(got, q), override ? { override: true, overrideReasons, cls: 'UYARILI' } : {})); }
+        if (got.length >= need || erken) bitir();
       });
-      const to = setTimeout(() => { off(); reject(new Error('Ölçüm zaman aşımı (' + got.length + '/' + need + ' epok)')); }, timeoutMs);
+      this._erkenBitir = () => { erken = true; if (got.length) bitir(); };
+      const to = setTimeout(() => { off(); this._erkenBitir = null; reject(new Error('Ölçüm zaman aşımı (' + got.length + '/' + need + ' epok)')); }, timeoutMs);
       if (this.state.source === 'phone' && !this.bridge.isNative()) {
         // tarayıcı konum servisi seyrek günceller: mevcut konumu epok say
         for (let i = 0; i < need; i++) this.bus.emit('gnss:epoch', Object.assign(this.epoch(), { t: this.now() + i }));
       }
     });
   }
+  /** Süren ölçümü hemen bitirir (gelen epoklarla; hiç epok yoksa ilk epokta). Ölçüm yoksa false. */
+  olcumuBitir() { if (!this._erkenBitir) return false; this._erkenBitir(); return true; }
   buildObservation(eps, q) {
     const a = averageEpochs(eps);
     const s = this.state;
