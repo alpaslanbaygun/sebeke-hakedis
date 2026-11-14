@@ -363,7 +363,7 @@ Büyük düğmenin yazısı ve rengi o anki durumu söyler.
 | `ÖLÇÜLÜYOR 3/5` · `TAMAM` | Dolan çubuk | Ölçülerin ortalaması alınıyor; jalonu oynatmayın |
 
 Ölçülürken düğmeye yeniden basarsanız (`TAMAM`) geri sayım beklenmez: o ana kadar gelen ölçülerle (en az 1) nokta
-hemen alınır (başlatırken yanlışlıkla çift dokunuş sayılmasın diye ilk yarım saniyedeki dokunuş yok sayılır). Kayıtta
+hemen alınır (başlatırken yanlışlıkla çift dokunuş sayılmasın diye ilk 0,8 saniyedeki dokunuş yok sayılır). Kayıtta
 kaç ölçünün ortalandığı yazar.
 
 Kayıt bitince telefon titrer ve "D-017 kaydedildi" yazısı çıkar. Bir hat çiziyorsanız obje o hatta kendiliğinden bağlanır.
