@@ -1,0 +1,31 @@
+GEÇTİ  deneme projesi: 8 hat
+GEÇTİ  AG havai yeşil (#7ee08a)
+GEÇTİ  müşterek mor (#c084fc)
+GEÇTİ  abone turuncu (#fb923c)
+GEÇTİ  AG kablo mavi (#60a5fa)
+GEÇTİ  demontaj sarı
+GEÇTİ  kanal gri (#9ca3af)
+GEÇTİ  sondaj sarı-turuncu (#fbbf24)
+GEÇTİ  harita: Basit mod alt paneli (tek satır seçim + büyük AL)
+GEÇTİ  Katmanlar: "Kanal kenarı ve sondaj" satırı
+GEÇTİ  lejant: ortak stilin hat türleri
+GEÇTİ  hat kaydı: iletken listesi telefondaki ve AutoCAD'deki tipler: [["Telefondaki tipler", 32], ["AutoCAD'deki tipler", 21]]
+GEÇTİ  seçili AutoCAD tipinin notu (tel açılımı): AutoCAD'deki tip · AG İletken · 1× Rose + 4× Pansy
+GEÇTİ  kaydedildi; metraj tel tel (kg): ["@AG_İLETKEN|4P+R", 2]
+GEÇTİ  aplikasyon: hedef A-01, konum yokken İŞARETLE kapalı
+GEÇTİ  aplikasyon: kalan mesafe 4,266m, ileri / sağ-sol yönleri
+GEÇTİ  aplikasyon: tolerans içinde İŞARETLE açıldı: KALAN MESAFE / 0,017m / 0,02 / m ileri / 0 / m sola / TOLERANS İÇİ / FIX
+GEÇTİ  aplikasyon kaydı: [["A-01", true, "kazik"]]
+GEÇTİ  aplikasyon haritası: hedefsizken ipucu ve en yakın noktalar
+GEÇTİ  aplikasyon haritası: noktaya dokununca kart
+GEÇTİ  aplikasyon haritası: dokunulan nokta hedef oldu
+GEÇTİ  aplikasyon haritası: ileri / sağa: ↑ 5,83 m ileri / ← 1,5 cm sola
+GEÇTİ  aplikasyon haritası: yakında hedef halkaları, tolerans içinde İŞARETLE açık
+GEÇTİ  aplikasyon haritası: kayıt düştü
+GEÇTİ  ayarlar menüsü gruplu: Ölçüm | Düzeltme kaynağı | Hassasiyet eşikleri | Koordinat sistemi | Harita | Veri ve kullanıcılar | Deneme ve eğitim | Lisans | Hakkında
+GEÇTİ  altlık: Esri ArcGIS, Bing, Azure ve anahtar kutuları
+GEÇTİ  Azure anahtarı kaydedildi (yalnız cihazda)
+GEÇTİ  hakkında: amaç, yapabildikler; kurum yazısı yok
+GEÇTİ  dışa aktarım: [["DNM-ES.kmz", 4187], ["DNM-ES_cbs_mif.zip", 6607]]
+GEÇTİ  sayfa hatası yok
+SONUÇ: hepsi geçti (30)

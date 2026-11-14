@@ -1,0 +1,30 @@
+GEÇTİ  deneme projesi: 5 direk ["A-01", "A-02", "A-03", "A-04", "A-05"]
+GEÇTİ  harita: sol üstte Nokta listesi düğmesi
+GEÇTİ  Nokta listesi açıldı, direkler listede
+GEÇTİ  direğe dokununca: "Buradan hat çiz" düğmesi
+GEÇTİ  hat başladı: üstte "direğe dokunun" şeridi
+GEÇTİ  üç dokunuşla hat 4 direk: ["H-01", 4]
+GEÇTİ  şerit direk sayısını gösterir: H-01 · 4 direk · son A-04 · direğe dokun · BİTİR
+GEÇTİ  son direği çıkar: 3 direk
+GEÇTİ  aynı direğe ikinci dokunuş eklemez: 4
+GEÇTİ  BİTİR: hat kapandı, şerit gitti
+GEÇTİ  listede "Kot kaydır · 2 nokta"
+GEÇTİ  kot +1,5: A-02, A-03 1051,5; A-01 değişmedi; 3B uzunluk 120.157 → 120.213
+GEÇTİ  Geri al: kot ve uzunluk eski haline döndü
+GEÇTİ  seçim penceresi: Malzeme ekle ve Direği sil
+GEÇTİ  malzeme penceresi direğin adıyla
+GEÇTİ  direğe 1 malzeme eklendi (liste 1 → 2)
+GEÇTİ  mevcut direk: malzeme penceresi açılmaz, uyarı
+GEÇTİ  silme penceresi etkisini yazar
+GEÇTİ  D4 silindi; hat 3 direkle sürer: [false, 0, [3]]
+GEÇTİ  hat tek direğe düşecekse ve elle malzeme varsa söylenir
+GEÇTİ  hat ve malzeme de silindi (hat, ekipman, malzeme): [0, 2, 0]
+GEÇTİ  denetim kaydında silme (gerekçe boşsa "Sahada silindi"): ["Sahada silindi"]
+GEÇTİ  toplu silme penceresi
+GEÇTİ  Seçilenleri sil: A-01 silindi
+GEÇTİ  dolu projenin adı değişirken uyarı
+GEÇTİ  ad değişmedi; Yeni proje formu açıldı
+GEÇTİ  ölçülürken düğme TAMAM gösterir: ÖLÇÜLÜYOR 2/30 TAMAM
+GEÇTİ  TAMAM: 0.0 s içinde 2 epokla alındı (erken, 30 istendi)
+GEÇTİ  sayfa hatası yok
+SONUÇ: hepsi geçti (29)

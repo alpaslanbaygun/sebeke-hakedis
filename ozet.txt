@@ -1,0 +1,12 @@
+Sürüm: 2.5.91 (kod 1091)
+İşlem: 849d20ba7dea0cf9e7a8574d035ecd2737580f7f
+Dal: main
+Tarih: 2026-11-14T04:03:08+00:00
+android:versionCode="1091"
+android:versionName="2.5.91"
+JS TEST: geçti (# pass 216)
+APK: Sebeke-M-2.5.91.apk (1883527 bayt)
+ARAYÜZ (düzeltme): SONUÇ: hepsi geçti (15)
+ARAYÜZ (eşitleme): SONUÇ: hepsi geçti (30)
+ARAYÜZ (lisans): SONUÇ: hepsi geçti (10)
+ARAYÜZ (saha): SONUÇ: hepsi geçti (29)

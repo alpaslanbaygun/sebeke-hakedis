@@ -1,0 +1,16 @@
+GEÇTİ  hazır profiller: TUSAGA-Aktif | Sabit istasyon | Yerel CORS ağı | + Profil ekle
+GEÇTİ  TUSAGA-Aktif sunucusu hazır: 212.156.70.42
+GEÇTİ  bağlantı noktaları: seçin | VRSRTCM31 · RTCM 3.1 · VRS · 4,2 km | VRSCMRP · CMR+ · VRS · 4,2 km | FKP_RTCM31 · RTCM 3.1 · VRS · 570 km
+GEÇTİ  TUSAGA-Aktif: kullanıcı adı boşken deneme yapılmadı
+GEÇTİ  akış denemesi: Bağlantı tamam. 12 mesaj geldi (ilk veri 0,6 s). / Referans istasyonu 2003 · 12 km uzakta / 1005 · Referans istasyonu ARP · 1077 · GPS MSM7 · 1087 · GLONASS MSM7
+GEÇTİ  denemede yaklaşık GGA gitti (projenin / telefonun konumu): $GNGGA,040438.05,3840.2000000,
+GEÇTİ  doğrudan IP: kullanıcı / şifre / bağlantı noktası alanı yok
+GEÇTİ  metinden alındı: [4, "caster.ornek.com · BASE1", "caster.ornek.com", "BASE1", "saha1", "ntrip"]
+GEÇTİ  alıcı bağlanınca kendiliğinden bağlandı: [["caster.ornek.com", "BASE1", "ntrip"]]
+GEÇTİ  durum: bağlı, istasyon ve uzaklık görünüyor
+GEÇTİ  yazarken ekran yenilense de metin kalıyor: saha-yeni → saha-yeni
+GEÇTİ  paylaşılan dosya şifresiz: Sebeke-M-GNSS-baglanti.json
+GEÇTİ  alıcı ayar rehberi açıldı
+GEÇTİ  kapalı sunucu: Olmadı: Sunucuya bağlanılamadı (adres / port kapalı)
+GEÇTİ  sayfa hatası yok
+SONUÇ: hepsi geçti (15)
