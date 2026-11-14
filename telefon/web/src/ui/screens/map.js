@@ -109,7 +109,7 @@ export function MapScreen() {
     const off1 = app.bus.on('gnss:state', () => { const G = app.gnss.state; if (G.E != null && (app.state.follow || first)) { e.center(G.E, G.N, first ? 0.4 : undefined); first = false; } e.invalidate(); });
     const off5 = app.bus.on('data:change', (c) => { if (c.store === 'points' && c.op === 'create' && c.after && c.after.E != null && !e.inView(c.after.E, c.after.N, 30)) e.center(c.after.E, c.after.N); });
     const off2 = app.bus.on('project:computed', () => e.invalidate());
-    const off3 = app.bus.on('ui:measuring', (m) => setMeasuring(m));
+    const off3 = app.bus.on('ui:measuring', (m) => setMeasuring(m ? Object.assign({ t0: Date.now() }, m) : null));
     const off4 = app.bus.on('ui:measureProgress', (p) => setMeasuring((m) => (m ? Object.assign({}, m, p) : m)));
     return () => { off1(); off2(); off3(); off4(); off5(); off6(); if (ro) ro.disconnect(); if (app.web) window.removeEventListener('resize', syncPad); e.destroy(); };
   }, []);
@@ -639,7 +639,8 @@ function TakeBtn({ label, onTake, disabled, measuring, busy, mode = 'gnss' }) {
     const pct = Math.round(100 * Math.min(1, (measuring.n || 0) / (measuring.need || 1)));
     style = 'background:linear-gradient(90deg,#10b981 ' + pct + '%,#0f5c46 ' + pct + '%);border-color:#10b981;color:#0b1326';
     text = 'ÖLÇÜLÜYOR ' + (measuring.n || 0) + '/' + measuring.need;
-    const bitir = () => { if (app.gnss.olcumuBitir()) app.toast('Ölçüm bitiriliyor · ' + Math.max(1, measuring.n || 0) + ' epok', 'ok', 1500); };
+    // Başlatırken yanlışlıkla çift dokunuş ölçümü bitirmesin: ilk 0,8 saniyede TAMAM sayılmaz
+    const bitir = () => { if (measuring.t0 && Date.now() - measuring.t0 < 800) return; if (app.gnss.olcumuBitir()) app.toast('Ölçüm bitiriliyor · ' + Math.max(1, measuring.n || 0) + ' epok', 'ok', 1500); };
     return html`<button class="btn huge take olcum" style=${style} onClick=${bitir} title="Beklemeden bitir"><span class="grow" style="text-align:left">${text}</span><span class="tamam-pill"><${Icon} n="check" s=${20} c="#0b1326" w=${2.6} />TAMAM</span></button>`;
   }
   return html`<button class="btn huge take" style=${style} disabled=${disabled || busy} onClick=${onTake}><${Icon} n=${b.ic || 'cross'} s=${22} c=${b.fg} w=${2.4} /><span>${text}</span></button>`;
