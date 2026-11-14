@@ -1,0 +1,1516 @@
+TAP version 13
+# Subtest: L1 · Bing karo anahtarı (quadkey) eklentiyle aynı
+ok 1 - L1 · Bing karo anahtarı (quadkey) eklentiyle aynı
+  ---
+  duration_ms: 1.471172
+  type: 'test'
+  ...
+# Subtest: L2 · eklentinin bütün altlıkları telefonda da var; düz karo adresleri ve atıfları aynı
+ok 2 - L2 · eklentinin bütün altlıkları telefonda da var; düz karo adresleri ve atıfları aynı
+  ---
+  duration_ms: 1.240606
+  type: 'test'
+  ...
+# Subtest: L3 · karo adresleri: ArcGIS anahtarı, Azure anahtarı, Bing meta verisi, özel adreste {q}
+ok 3 - L3 · karo adresleri: ArcGIS anahtarı, Azure anahtarı, Bing meta verisi, özel adreste {q}
+  ---
+  duration_ms: 4.293948
+  type: 'test'
+  ...
+# Subtest: AM1 · varsayılanlar, seçim ve kayıt
+ok 4 - AM1 · varsayılanlar, seçim ve kayıt
+  ---
+  duration_ms: 1.156349
+  type: 'test'
+  ...
+# Subtest: AM2 · Basit mod ekranları: harita alt paneli, seçim penceresi, haritalı aplikasyon; yalnız tema değişkenleri
+ok 5 - AM2 · Basit mod ekranları: harita alt paneli, seçim penceresi, haritalı aplikasyon; yalnız tema değişkenleri
+  ---
+  duration_ms: 2.511477
+  type: 'test'
+  ...
+# Subtest: BM1 · xlsm: sütun harfleri, formül kaydırma (metin ve işlev adları dokunulmaz)
+ok 6 - BM1 · xlsm: sütun harfleri, formül kaydırma (metin ve işlev adları dokunulmaz)
+  ---
+  duration_ms: 1.607378
+  type: 'test'
+  ...
+# Subtest: BM2 · ad normalleştirme ve durum → blok eklentiyle aynı kural
+ok 7 - BM2 · ad normalleştirme ve durum → blok eklentiyle aynı kural
+  ---
+  duration_ms: 1.810042
+  type: 'test'
+  ...
+# Subtest: BM3 · kanal üstü uzunluk: çizgi kanalın üstünden gittiği kadar (0,25 m örnekleme, 0,6 m yanal pay)
+ok 8 - BM3 · kanal üstü uzunluk: çizgi kanalın üstünden gittiği kadar (0,25 m örnekleme, 0,6 m yanal pay)
+  ---
+  duration_ms: 0.820344
+  type: 'test'
+  ...
+# Subtest: BM4 · gömülü şablonun tanımı ortak dosyayla aynı (sablon.json)
+ok 9 - BM4 · gömülü şablonun tanımı ortak dosyayla aynı (sablon.json)
+  ---
+  duration_ms: 335.903022
+  type: 'test'
+  ...
+# Subtest: BM5 · şablon temiz: proje verisi, kişi adı, bilgisayar yolu, eklenti kaydı yok
+ok 10 - BM5 · şablon temiz: proje verisi, kişi adı, bilgisayar yolu, eklenti kaydı yok
+  ---
+  duration_ms: 206.860502
+  type: 'test'
+  ...
+# Subtest: BM6 · doldurma planı ortak dosyayla aynı (beklenen-plan.json)
+ok 11 - BM6 · doldurma planı ortak dosyayla aynı (beklenen-plan.json)
+  ---
+  duration_ms: 261.847395
+  type: 'test'
+  ...
+# Subtest: BM7 · plan dosyaya yazılır ve geri okunur: değerler, yeni sütun formülleri, gizli satırlar, makro
+ok 12 - BM7 · plan dosyaya yazılır ve geri okunur: değerler, yeni sütun formülleri, gizli satırlar, makro
+  ---
+  duration_ms: 956.475146
+  type: 'test'
+  ...
+# Subtest: BM8 · aile kuralı: ana sayfada temsil edilen cins ana sayfada (yeni sütun), listedeki aile de; MALZ bölümü yoksa uyarı
+ok 13 - BM8 · aile kuralı: ana sayfada temsil edilen cins ana sayfada (yeni sütun), listedeki aile de; MALZ bölümü yoksa uyarı
+  ---
+  duration_ms: 179.184291
+  type: 'test'
+  ...
+# Subtest: BM9 · bölge süzgeci ve sığmayan proje
+ok 14 - BM9 · bölge süzgeci ve sığmayan proje
+  ---
+  duration_ms: 153.721671
+  type: 'test'
+  ...
+# Subtest: BM10 · telefon projesi → Dışa Aktarım "metraj": OG hattın direkleri ve açıklıkları şablona yazılır
+ok 15 - BM10 · telefon projesi → Dışa Aktarım "metraj": OG hattın direkleri ve açıklıkları şablona yazılır
+  ---
+  duration_ms: 507.552175
+  type: 'test'
+  ...
+# Subtest: altın: katalog tabloları özgün araçla aynı (referans dosya yok)
+ok 16 - altın: katalog tabloları özgün araçla aynı (referans dosya yok) # SKIP
+  ---
+  duration_ms: 1.448308
+  type: 'test'
+  ...
+# Subtest: altın: mono MB-2550 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 17 - altın: mono MB-2550 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.142264
+  type: 'test'
+  ...
+# Subtest: altın: mono MB-3200 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 18 - altın: mono MB-3200 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.06015
+  type: 'test'
+  ...
+# Subtest: altın: mono MB-3800 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 19 - altın: mono MB-3800 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.05316
+  type: 'test'
+  ...
+# Subtest: altın: mono MB-4350 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 20 - altın: mono MB-4350 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.063426
+  type: 'test'
+  ...
+# Subtest: altın: mono MB-4800 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 21 - altın: mono MB-4800 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.059911
+  type: 'test'
+  ...
+# Subtest: altın: mono MB-5450 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 22 - altın: mono MB-5450 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.050356
+  type: 'test'
+  ...
+# Subtest: altın: mono MB-6000 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 23 - altın: mono MB-6000 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.05343
+  type: 'test'
+  ...
+# Subtest: altın: mono MB-6500 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 24 - altın: mono MB-6500 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.222455
+  type: 'test'
+  ...
+# Subtest: altın: mono MB-7500 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 25 - altın: mono MB-7500 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.257417
+  type: 'test'
+  ...
+# Subtest: altın: pref PBK-1A — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 26 - altın: pref PBK-1A — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.105168
+  type: 'test'
+  ...
+# Subtest: altın: pref PBK-1B — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 27 - altın: pref PBK-1B — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.046951
+  type: 'test'
+  ...
+# Subtest: altın: pref PBK-1C — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 28 - altın: pref PBK-1C — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.036735
+  type: 'test'
+  ...
+# Subtest: altın: bina MOD-5 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 29 - altın: bina MOD-5 — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.028233
+  type: 'test'
+  ...
+# Subtest: altın: bina MOD-5A — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 30 - altın: bina MOD-5A — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.02672
+  type: 'test'
+  ...
+# Subtest: altın: bina MOD-5B — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok)
+ok 31 - altın: bina MOD-5B — yerleşim, hücre konumları, kapılar, kanallar, kontroller, ağırlıklar (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.028883
+  type: 'test'
+  ...
+# Subtest: altın: kontrol dalları kapsanıyor (ok / warn / bad her sınıfta görülür) (referans dosya yok)
+ok 32 - altın: kontrol dalları kapsanıyor (ok / warn / bad her sınıfta görülür) (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.029865
+  type: 'test'
+  ...
+# Subtest: altın: sınıf varsayılanları (varsayilanKabin, ölçüler) özgün sınıf geçişiyle aynı (referans dosya yok)
+ok 33 - altın: sınıf varsayılanları (varsayilanKabin, ölçüler) özgün sınıf geçişiyle aynı (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.02659
+  type: 'test'
+  ...
+# Subtest: altın: hücre ekleme — reddedilene kadar (ileti eşitliği), kopyalama, taşıma, silme, tip değiştirme (referans dosya yok)
+ok 34 - altın: hücre ekleme — reddedilene kadar (ileti eşitliği), kopyalama, taşıma, silme, tip değiştirme (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.026209
+  type: 'test'
+  ...
+# Subtest: altın: sınıf / tip / varyant geçişleri — hücre listesi özgün araçtaki gibi korunur ya da değişir (referans dosya yok)
+ok 35 - altın: sınıf / tip / varyant geçişleri — hücre listesi özgün araçtaki gibi korunur ya da değişir (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.025579
+  type: 'test'
+  ...
+# Subtest: sabit: MB-4800 / 1000 varsayılan — kullan, kalan, koridor, bölümler, kapılar
+ok 36 - sabit: MB-4800 / 1000 varsayılan — kullan, kalan, koridor, bölümler, kapılar
+  ---
+  duration_ms: 2.914293
+  type: 'test'
+  ...
+# Subtest: sabit: MOD-5 varsayılan — hücre sırası 7500 mm ve üç kanal
+ok 37 - sabit: MOD-5 varsayılan — hücre sırası 7500 mm ve üç kanal
+  ---
+  duration_ms: 1.826006
+  type: 'test'
+  ...
+# Subtest: sabit: PBK-1C kapasiteleri 7860 + 3800, PBK-1A / 1B pano hizası sınırları
+ok 38 - sabit: PBK-1C kapasiteleri 7860 + 3800, PBK-1A / 1B pano hizası sınırları
+  ---
+  duration_ms: 1.671895
+  type: 'test'
+  ...
+# Subtest: sabit: tip listeleri, varsayılan varyant ve güç listesi
+ok 39 - sabit: tip listeleri, varsayılan varyant ve güç listesi
+  ---
+  duration_ms: 1.048597
+  type: 'test'
+  ...
+# Subtest: sabit: hücre kataloğu ve işlev sınıfları
+ok 40 - sabit: hücre kataloğu ve işlev sınıfları
+  ---
+  duration_ms: 0.517788
+  type: 'test'
+  ...
+# Subtest: sabit: düzenleme yardımcıları saf çalışır ve özgün ret iletilerini verir
+ok 41 - sabit: düzenleme yardımcıları saf çalışır ve özgün ret iletilerini verir
+  ---
+  duration_ms: 1.003098
+  type: 'test'
+  ...
+# Subtest: sabit: kabinDegistir — sınıf/tip/varyant geçişleri ve otomatik düzeltmeler
+ok 42 - sabit: kabinDegistir — sınıf/tip/varyant geçişleri ve otomatik düzeltmeler
+  ---
+  duration_ms: 0.568155
+  type: 'test'
+  ...
+# Subtest: sabit: kullanıcı kanalları ve plan şekilleri
+ok 43 - sabit: kullanıcı kanalları ve plan şekilleri
+  ---
+  duration_ms: 5.429485
+  type: 'test'
+  ...
+# Subtest: sabit: modül saf ve DOM'suz — kaynakta tarayıcı/global erişimi ya da yasak ad yok
+ok 44 - sabit: modül saf ve DOM'suz — kaynakta tarayıcı/global erişimi ya da yasak ad yok
+  ---
+  duration_ms: 1.504443
+  type: 'test'
+  ...
+# Subtest: DXF: temel nesneler, tabaka renkleri, kapalı/donuk tabaka, sınır kutusu, dilim
+ok 45 - DXF: temel nesneler, tabaka renkleri, kapalı/donuk tabaka, sınır kutusu, dilim
+  ---
+  duration_ms: 4.211644
+  type: 'test'
+  ...
+# Subtest: DXF: LWPOLYLINE bulge + kapalı bayrağı, eski POLYLINE/VERTEX bulge + kapalı
+ok 46 - DXF: LWPOLYLINE bulge + kapalı bayrağı, eski POLYLINE/VERTEX bulge + kapalı
+  ---
+  duration_ms: 0.844871
+  type: 'test'
+  ...
+# Subtest: DXF: TEXT (\\U+ kaçışları, %%d %%c %%p, hizalama), MTEXT biçim kodları, ATTRIB
+ok 47 - DXF: TEXT (\\U+ kaçışları, %%d %%c %%p, hizalama), MTEXT biçim kodları, ATTRIB
+  ---
+  duration_ms: 0.922297
+  type: 'test'
+  ...
+# Subtest: DXF: blok patlatma — taban noktası, dönme/ölçek, ayna, iç içe blok, renk kalıtımı
+ok 48 - DXF: blok patlatma — taban noktası, dönme/ölçek, ayna, iç içe blok, renk kalıtımı
+  ---
+  duration_ms: 2.778889
+  type: 'test'
+  ...
+# Subtest: DXF: ELLIPSE, SPLINE, SOLID, HATCH, halka (donut), 3DFACE
+ok 49 - DXF: ELLIPSE, SPLINE, SOLID, HATCH, halka (donut), 3DFACE
+  ---
+  duration_ms: 1.832977
+  type: 'test'
+  ...
+# Subtest: DXF: windows-1254 geri dönüşü, latin1 yedeği, ikili DXF ve parseCad hataları
+ok 50 - DXF: windows-1254 geri dönüşü, latin1 yedeği, ikili DXF ve parseCad hataları
+  ---
+  duration_ms: 2.76935
+  type: 'test'
+  ...
+# Subtest: ACI: tablo ve koyu zeminde görünürlük
+ok 51 - ACI: tablo ve koyu zeminde görünürlük
+  ---
+  duration_ms: 0.376276
+  type: 'test'
+  ...
+# Subtest: NCZ: gömülü küçük dosya — nesneler, tabakalar, Türkçe yazı, nokta, sembol, yay sezgisi
+ok 52 - NCZ: gömülü küçük dosya — nesneler, tabakalar, Türkçe yazı, nokta, sembol, yay sezgisi
+  ---
+  duration_ms: 1.685956
+  type: 'test'
+  ...
+# Subtest: NCZ: yay açısı sezgisi (nczArcAngles) ve yay sınır kutusu
+ok 53 - NCZ: yay açısı sezgisi (nczArcAngles) ve yay sınır kutusu
+  ---
+  duration_ms: 0.588956
+  type: 'test'
+  ...
+# Subtest: NCZ: özgün yazıcının çıktısı port ile okunur (koordinat, tabaka, yazı, nokta, sembol) (referans dosya yok)
+ok 54 - NCZ: özgün yazıcının çıktısı port ile okunur (koordinat, tabaka, yazı, nokta, sembol) (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.389436
+  type: 'test'
+  ...
+# Subtest: NCZ: port ile özgün okuyucu aynı baytlarda aynı nesneleri verir (bilinçli farklar dışında) (referans dosya yok)
+ok 55 - NCZ: port ile özgün okuyucu aynı baytlarda aynı nesneleri verir (bilinçli farklar dışında) (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.1661
+  type: 'test'
+  ...
+# Subtest: NCZ: aykırı değer filtresi ve dilim (Central_Meridian) araması özgün okuyucuyla aynı (referans dosya yok)
+ok 56 - NCZ: aykırı değer filtresi ve dilim (Central_Meridian) araması özgün okuyucuyla aynı (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.077727
+  type: 'test'
+  ...
+# Subtest: DXF: özgün yazıcının ürettiği DXF port ile özgün DXF okuyucuda aynı nesneleri verir (referans dosya yok)
+ok 57 - DXF: özgün yazıcının ürettiği DXF port ile özgün DXF okuyucuda aynı nesneleri verir (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.063766
+  type: 'test'
+  ...
+# Subtest: armsAt: T kavşağı (üç doğru), kesintisiz geçen hat (through), tolerans, tekrarların birleşmesi
+ok 58 - armsAt: T kavşağı (üç doğru), kesintisiz geçen hat (through), tolerans, tekrarların birleşmesi
+  ---
+  duration_ms: 0.938451
+  type: 'test'
+  ...
+# Subtest: armsAt: çoklu doğru köşesi, uç köşe, kapalı çoklu doğruda başa sarma
+ok 59 - armsAt: çoklu doğru köşesi, uç köşe, kapalı çoklu doğruda başa sarma
+  ---
+  duration_ms: 0.211848
+  type: 'test'
+  ...
+# Subtest: nearestSnap / snapCandidates: türler, en büyük uzaklık, gizli tabakalar, önbellek
+ok 60 - nearestSnap / snapCandidates: türler, en büyük uzaklık, gizli tabakalar, önbellek
+  ---
+  duration_ms: 66.656693
+  type: 'test'
+  ...
+# Subtest: Başarım: 50.000 doğrulu DXF < 3 sn; nearestSnap ilk çağrıdan sonra < 5 ms
+ok 61 - Başarım: 50.000 doğrulu DXF < 3 sn; nearestSnap ilk çağrıdan sonra < 5 ms
+  ---
+  duration_ms: 486.974714
+  type: 'test'
+  ...
+# Subtest: C1 · .NET sayı yazımı ve yuvarlama eklentiyle aynı
+ok 62 - C1 · .NET sayı yazımı ve yuvarlama eklentiyle aynı
+  ---
+  duration_ms: 1.238602
+  type: 'test'
+  ...
+# Subtest: C2 · ortak deneme: telefonun KML ve MIF / MID metinleri eklentininkiyle birebir aynı
+ok 63 - C2 · ortak deneme: telefonun KML ve MIF / MID metinleri eklentininkiyle birebir aynı
+  ---
+  duration_ms: 13.995578
+  type: 'test'
+  ...
+# Subtest: C3 · nesneler: katmanlar, bölgesiz nesne, kısa sınır, Türkçe kod sayfası
+ok 64 - C3 · nesneler: katmanlar, bölgesiz nesne, kısa sınır, Türkçe kod sayfası
+  ---
+  duration_ms: 2.972009
+  type: 'test'
+  ...
+# Subtest: C4 · CoordSys: UTM, ED50, coğrafi ve yerel sistem
+ok 65 - C4 · CoordSys: UTM, ED50, coğrafi ve yerel sistem
+  ---
+  duration_ms: 0.447132
+  type: 'test'
+  ...
+# Subtest: C5 · başka koordinat sistemine çevirme: köşeler, SAGA / YUKARI, çizim uzunluğu ve alan yeni sistemde; metraj aynı
+ok 66 - C5 · başka koordinat sistemine çevirme: köşeler, SAGA / YUKARI, çizim uzunluğu ve alan yeni sistemde; metraj aynı
+  ---
+  duration_ms: 1.614298
+  type: 'test'
+  ...
+# Subtest: KMZ 3B klasörü: direkler zemine oturur (relativeToGround; mutlak kot Google Earth arazisinden farklıydı, 13.11.2026)
+ok 67 - KMZ 3B klasörü: direkler zemine oturur (relativeToGround; mutlak kot Google Earth arazisinden farklıydı, 13.11.2026)
+  ---
+  duration_ms: 1.241898
+  type: 'test'
+  ...
+# Subtest: DO1 · düz AG hat: taşıyıcıda kopma yok → 9-H; durdurucuda tek yanlı çekme (kopma) → K1
+ok 68 - DO1 · düz AG hat: taşıyıcıda kopma yok → 9-H; durdurucuda tek yanlı çekme (kopma) → K1
+  ---
+  duration_ms: 1.114476
+  type: 'test'
+  ...
+# Subtest: DO2 · köşe direği: enine kuvvet tabloyu belirler; müşterek tablo ayrı; potans yükü en kötü senaryoya eklenir
+ok 69 - DO2 · köşe direği: enine kuvvet tabloyu belirler; müşterek tablo ayrı; potans yükü en kötü senaryoya eklenir
+  ---
+  duration_ms: 0.506181
+  type: 'test'
+  ...
+# Subtest: DO3 · projedeki tip tabloya göre yeterli mi; tablo olmayan direk (ENH) için tip yok
+ok 70 - DO3 · projedeki tip tabloya göre yeterli mi; tablo olmayan direk (ENH) için tip yok
+  ---
+  duration_ms: 1.31668
+  type: 'test'
+  ...
+# Subtest: D1 · açıklık metrajı: elemansız kırılma köşesinde bölünmez, elemanlı köşede bölünür; yazı en uzun parçada
+ok 71 - D1 · açıklık metrajı: elemansız kırılma köşesinde bölünmez, elemanlı köşede bölünür; yazı en uzun parçada
+  ---
+  duration_ms: 1.337482
+  type: 'test'
+  ...
+# Subtest: D2 · DXF: hat türüne göre renk, yazılar hattın renginde, Tahoma, kırılma köşesinde metraj yok
+ok 72 - D2 · DXF: hat türüne göre renk, yazılar hattın renginde, Tahoma, kırılma köşesinde metraj yok
+  ---
+  duration_ms: 21.304789
+  type: 'test'
+  ...
+# Subtest: D3 · yazı yeri parçanın ekseninde: dik hatta metraj bir yanda, etiket öbür yanda; kanal metrajı bir satır yukarıda
+ok 73 - D3 · yazı yeri parçanın ekseninde: dik hatta metraj bir yanda, etiket öbür yanda; kanal metrajı bir satır yukarıda
+  ---
+  duration_ms: 20.774883
+  type: 'test'
+  ...
+# Subtest: D4 · yazı sığdırma ve boyutlar: eklentideki YaziDuzeni ile aynı sonuçlar; simge ve yazı boyutları projeden
+ok 74 - D4 · yazı sığdırma ve boyutlar: eklentideki YaziDuzeni ile aynı sonuçlar; simge ve yazı boyutları projeden
+  ---
+  duration_ms: 15.691801
+  type: 'test'
+  ...
+# Subtest: D5 · kanal kenarları: eksenin iki yanında genişliğin yarısı kadar, sürekli çizgi, kanalın renginde; sondajda ve havai hatta yok
+ok 75 - D5 · kanal kenarları: eksenin iki yanında genişliğin yarısı kadar, sürekli çizgi, kanalın renginde; sondajda ve havai hatta yok
+  ---
+  duration_ms: 17.305547
+  type: 'test'
+  ...
+# Subtest: D6 · malzeme yazısı satır satır TEXT (R12: MTEXT yok), havai açıklık metrajı iletken metrajı (3B × ek pay), yer altında çizim uzunluğu
+ok 76 - D6 · malzeme yazısı satır satır TEXT (R12: MTEXT yok), havai açıklık metrajı iletken metrajı (3B × ek pay), yer altında çizim uzunluğu
+  ---
+  duration_ms: 16.187705
+  type: 'test'
+  ...
+# Subtest: G1 · Hazır profiller bir kez eklenir; TUSAGA-Aktif sunucusu dolar; kullanıcının profiline dokunulmaz
+ok 77 - G1 · Hazır profiller bir kez eklenir; TUSAGA-Aktif sunucusu dolar; kullanıcının profiline dokunulmaz
+  ---
+  duration_ms: 1.787319
+  type: 'test'
+  ...
+# Subtest: G2 · Profil işlemleri ayarları (kendiliğinden bağlan, hazır sürümü) korur; türler ve eksikler
+ok 78 - G2 · Profil işlemleri ayarları (kendiliğinden bağlan, hazır sürümü) korur; türler ve eksikler
+  ---
+  duration_ms: 0.822007
+  type: 'test'
+  ...
+# Subtest: G3 · Bağlantı bilgisi dosyası: şifresiz / şifreli paylaşım, geri alma ve birleştirme
+ok 79 - G3 · Bağlantı bilgisi dosyası: şifresiz / şifreli paylaşım, geri alma ve birleştirme
+  ---
+  duration_ms: 1.190231
+  type: 'test'
+  ...
+# Subtest: G4 · Metinden bağlantı bilgisi: adres satırları ve "Sunucu / Port / Bağlantı noktası" metni
+ok 80 - G4 · Metinden bağlantı bilgisi: adres satırları ve "Sunucu / Port / Bağlantı noktası" metni
+  ---
+  duration_ms: 3.188968
+  type: 'test'
+  ...
+# Subtest: G4b · Metinden alma: adres + ayrı kullanıcı satırları birleşir, web adresi karışmaz, "%" içeren şifre, posta adresi
+ok 81 - G4b · Metinden alma: adres + ayrı kullanıcı satırları birleşir, web adresi karışmaz, "%" içeren şifre, posta adresi
+  ---
+  duration_ms: 1.155879
+  type: 'test'
+  ...
+# Subtest: G5 · İstasyon konumu (RTCM 1005) → enlem / boylam ve uzaklık
+ok 82 - G5 · İstasyon konumu (RTCM 1005) → enlem / boylam ve uzaklık
+  ---
+  duration_ms: 0.350608
+  type: 'test'
+  ...
+# Subtest: G6 · GNSS servisi: yaklaşık GGA, bağlanma hatası, istasyon uzaklığı, alıcı bağlanınca kendiliğinden bağlanma
+ok 83 - G6 · GNSS servisi: yaklaşık GGA, bağlanma hatası, istasyon uzaklığı, alıcı bağlanınca kendiliğinden bağlanma
+  ---
+  duration_ms: 5105.196628
+  type: 'test'
+  ...
+# Subtest: G7 · Bilinmeyen GNSS yüksekliği sıfıra dönüşmez: telefon konumu kotsuz gelince h / H null; epok ortalaması da null; kısmi eksik ve gerçek sıfır kot
+ok 84 - G7 · Bilinmeyen GNSS yüksekliği sıfıra dönüşmez: telefon konumu kotsuz gelince h / H null; epok ortalaması da null; kısmi eksik ve gerçek sıfır kot
+  ---
+  duration_ms: 1.28282
+  type: 'test'
+  ...
+# Subtest: H1 · onaylı dönemin fiyatı, tutarı ve sözleşme miktarı onay anında dondurulur; yeni iş programı yalnız açık dönemi etkiler
+ok 85 - H1 · onaylı dönemin fiyatı, tutarı ve sözleşme miktarı onay anında dondurulur; yeni iş programı yalnız açık dönemi etkiler
+  ---
+  duration_ms: 68.742055
+  type: 'test'
+  ...
+# Subtest: H2 · eski (fiyatsız) anlık görüntü: fiyat güncel iş programından okunur ama tablo "eski görüntü" olarak işaretlenir ve onay anındaki toplam korunur
+ok 86 - H2 · eski (fiyatsız) anlık görüntü: fiyat güncel iş programından okunur ama tablo "eski görüntü" olarak işaretlenir ve onay anındaki toplam korunur
+  ---
+  duration_ms: 38.446925
+  type: 'test'
+  ...
+# Subtest: KZ1 · ortak deneme: katalogdaki 19 kanal adı çözülüp yeniden kurulunca aynı yazı (eklentiyle aynı kural)
+ok 87 - KZ1 · ortak deneme: katalogdaki 19 kanal adı çözülüp yeniden kurulunca aynı yazı (eklentiyle aynı kural)
+  ---
+  duration_ms: 1.324713
+  type: 'test'
+  ...
+# Subtest: KZ2 · ortak deneme: cins + kaplama + bariyer + trencher → kalem adı ve okunur yazı; çözüm ve kural dışı adlar
+ok 88 - KZ2 · ortak deneme: cins + kaplama + bariyer + trencher → kalem adı ve okunur yazı; çözüm ve kural dışı adlar
+  ---
+  duration_ms: 1.033395
+  type: 'test'
+  ...
+# Subtest: KL1 · ortak deneme: proje bazında kanal listesi (satırlar, proje toplamları, proje × zemin × durum özeti)
+ok 89 - KL1 · ortak deneme: proje bazında kanal listesi (satırlar, proje toplamları, proje × zemin × durum özeti)
+  ---
+  duration_ms: 7.070769
+  type: 'test'
+  ...
+# Subtest: KZ3 · telefon kanal zemini: cins + kaplama + bariyer + trencher AutoCAD dosyasına kalem adıyla gider, geri alınınca aynı seçim
+ok 90 - KZ3 · telefon kanal zemini: cins + kaplama + bariyer + trencher AutoCAD dosyasına kalem adıyla gider, geri alınınca aynı seçim
+  ---
+  duration_ms: 0.946103
+  type: 'test'
+  ...
+# Subtest: KL2 · telefon projesi: yeraltı kanalı cins + kaplamayla AutoCAD dosyasına gider, kanal listesi ve Excel sayfaları çıkar; geri alınca aynı seçim
+ok 91 - KL2 · telefon projesi: yeraltı kanalı cins + kaplamayla AutoCAD dosyasına gider, kanal listesi ve Excel sayfaları çıkar; geri alınca aynı seçim
+  ---
+  duration_ms: 761.240661
+  type: 'test'
+  ...
+# Subtest: K1 · kilitli ekipman: tip değişikliği gibi malzeme miktarı, malzeme silme / ekleme ve ekipmanı silme de reddedilir; veri değişmez
+ok 92 - K1 · kilitli ekipman: tip değişikliği gibi malzeme miktarı, malzeme silme / ekleme ve ekipmanı silme de reddedilir; veri değişmez
+  ---
+  duration_ms: 84.154068
+  type: 'test'
+  ...
+# Subtest: K2 · kilitli ekipmanın noktası: taşıma, yeniden ölçüm, kot / numara değişikliği reddedilir; serbest nokta taşınır
+ok 93 - K2 · kilitli ekipmanın noktası: taşıma, yeniden ölçüm, kot / numara değişikliği reddedilir; serbest nokta taşınır
+  ---
+  duration_ms: 46.818981
+  type: 'test'
+  ...
+# Subtest: K3 · kilitli hat: silme, bölme, birleştirme, düğüm ekleme / çıkarma, son alımı geri alma ve düğüm noktasını taşıma reddedilir; hiçbir şey kısmen değişmez
+ok 94 - K3 · kilitli hat: silme, bölme, birleştirme, düğüm ekleme / çıkarma, son alımı geri alma ve düğüm noktasını taşıma reddedilir; hiçbir şey kısmen değişmez
+  ---
+  duration_ms: 45.961151
+  type: 'test'
+  ...
+# Subtest: K4 · kilitli direk yeniden numaralanamaz (hiçbiri değişmez); kilit kapatılınca ve yönetici oturumunda işlemler serbest
+ok 95 - K4 · kilitli direk yeniden numaralanamaz (hiçbiri değişmez); kilit kapatılınca ve yönetici oturumunda işlemler serbest
+  ---
+  duration_ms: 46.913809
+  type: 'test'
+  ...
+# Subtest: K1 · eşlemedeki her kalem iki katalogda da var; travers / konsolda kg aynı
+ok 96 - K1 · eşlemedeki her kalem iki katalogda da var; travers / konsolda kg aynı
+  ---
+  duration_ms: 0.974386
+  type: 'test'
+  ...
+# Subtest: K2 · telefon projesi: GT-60 ve D 80 AutoCAD dosyasına katalogdaki adla gider, geri alınınca aynı poz
+ok 97 - K2 · telefon projesi: GT-60 ve D 80 AutoCAD dosyasına katalogdaki adla gider, geri alınınca aynı poz
+  ---
+  duration_ms: 117.958964
+  type: 'test'
+  ...
+# Subtest: K3 · katalog güncellemesi 25 → 27: yeni travers / konsol, izolatör ve LED armatür pozları kurulu kataloğa eklenir
+ok 98 - K3 · katalog güncellemesi 25 → 27: yeni travers / konsol, izolatör ve LED armatür pozları kurulu kataloğa eklenir
+  ---
+  duration_ms: 46.685611
+  type: 'test'
+  ...
+# Subtest: K4 · LED armatür sınıfları 1–17 (8.11.2026): telefonun armatür listesinde, eklenti kataloğunda ve eşlemede
+ok 99 - K4 · LED armatür sınıfları 1–17 (8.11.2026): telefonun armatür listesinde, eklenti kataloğunda ve eşlemede
+  ---
+  duration_ms: 27.66274
+  type: 'test'
+  ...
+# Subtest: R1 · ortak deneme: şifre özeti, geçersiz şifreler, kullanıcı ve onay ayarı birleştirme (eklentiyle aynı sonuç)
+ok 100 - R1 · ortak deneme: şifre özeti, geçersiz şifreler, kullanıcı ve onay ayarı birleştirme (eklentiyle aynı sonuç)
+  ---
+  duration_ms: 35.823679
+  type: 'test'
+  ...
+# Subtest: R2 · roller ve işlem yetkileri ortak tablodan: telefonun rolleri, AutoCAD onay aşamaları, hakediş yetkisi
+ok 101 - R2 · roller ve işlem yetkileri ortak tablodan: telefonun rolleri, AutoCAD onay aşamaları, hakediş yetkisi
+  ---
+  duration_ms: 0.653003
+  type: 'test'
+  ...
+# Subtest: R3 · kullanıcılar ve hakediş yetkisi AutoCAD dosyasıyla taşınır: başka telefonda aynı şifreyle oturum, yeni olan kazanır
+ok 102 - R3 · kullanıcılar ve hakediş yetkisi AutoCAD dosyasıyla taşınır: başka telefonda aynı şifreyle oturum, yeni olan kazanır
+  ---
+  duration_ms: 153.809984
+  type: 'test'
+  ...
+# Subtest: R4 · yazmaya kapalı hakediş: obje değiştirilemez, yeni obje eklenemez; Yönetici ve AutoCAD'den gelen obje hariç; açılınca serbest
+ok 103 - R4 · yazmaya kapalı hakediş: obje değiştirilemez, yeni obje eklenemez; Yönetici ve AutoCAD'den gelen obje hariç; açılınca serbest
+  ---
+  duration_ms: 70.14113
+  type: 'test'
+  ...
+# Subtest: R5 · onay mekanizması kapalıyken (kullanıcı yok) hakediş yetkisi uygulanmaz ve ayarlanamaz
+ok 104 - R5 · onay mekanizması kapalıyken (kullanıcı yok) hakediş yetkisi uygulanmaz ve ayarlanamaz
+  ---
+  duration_ms: 29.249968
+  type: 'test'
+  ...
+# Subtest: LS1 · SHA-256 Node ile aynı
+ok 105 - LS1 · SHA-256 Node ile aynı
+  ---
+  duration_ms: 3.009047
+  type: 'test'
+  ...
+# Subtest: LS2 · cihaz kodları
+ok 106 - LS2 · cihaz kodları
+  ---
+  duration_ms: 0.504629
+  type: 'test'
+  ...
+# Subtest: LS3 · ortak durumlar
+ok 107 - LS3 · ortak durumlar
+  ---
+  duration_ms: 6.756115
+  type: 'test'
+  ...
+# Subtest: LS4 · gerçek açık anahtar biçimi; deneme anahtarıyla imzalı lisans gerçek anahtarla geçmez
+ok 108 - LS4 · gerçek açık anahtar biçimi; deneme anahtarıyla imzalı lisans gerçek anahtarla geçmez
+  ---
+  duration_ms: 1.233475
+  type: 'test'
+  ...
+# Subtest: LS5 · telefon lisans servisi: ilk açılış yazılır, 8. gün kilit, geçerli lisans kaydedilir, geçersiz kaydedilmez, saat geri alınamaz
+ok 109 - LS5 · telefon lisans servisi: ilk açılış yazılır, 8. gün kilit, geçerli lisans kaydedilir, geçersiz kaydedilmez, saat geri alınamaz
+  ---
+  duration_ms: 3.14374
+  type: 'test'
+  ...
+# Subtest: ME1 · ortak deneme: elemanın malzeme satırları ve tek satır yazımı (eklentiyle aynı kural)
+ok 110 - ME1 · ortak deneme: elemanın malzeme satırları ve tek satır yazımı (eklentiyle aynı kural)
+  ---
+  duration_ms: 4.802766
+  type: 'test'
+  ...
+# Subtest: ME2 · hat kalınlığı: stildeki kalınlık × kat, eklentiyle aynı yuvarlama; kanal ve sondaj ince
+ok 111 - ME2 · hat kalınlığı: stildeki kalınlık × kat, eklentiyle aynı yuvarlama; kanal ve sondaj ince
+  ---
+  duration_ms: 0.23955
+  type: 'test'
+  ...
+# Subtest: ME3 · DXF: kalın hat genişlikli çoklu çizgi, ince çizgide eski LINE; malzeme satırları eleman yazısının altında
+ok 112 - ME3 · DXF: kalın hat genişlikli çoklu çizgi, ince çizgide eski LINE; malzeme satırları eleman yazısının altında
+  ---
+  duration_ms: 34.758976
+  type: 'test'
+  ...
+# Subtest: ME4 · telefon projesi: malzeme yazısı açıkken DXF eklentinin kuralıyla satırları yazar
+ok 113 - ME4 · telefon projesi: malzeme yazısı açıkken DXF eklentinin kuralıyla satırları yazar
+  ---
+  duration_ms: 113.067845
+  type: 'test'
+  ...
+# Subtest: Y1 · ortak örnekler: eklentiyle aynı görünen yazım
+ok 114 - Y1 · ortak örnekler: eklentiyle aynı görünen yazım
+  ---
+  duration_ms: 4.49327
+  type: 'test'
+  ...
+# Subtest: Y2 · bütün katalog: ikinci uygulama değiştirmez, ad boşalmaz
+ok 115 - Y2 · bütün katalog: ikinci uygulama değiştirmez, ad boşalmaz
+  ---
+  duration_ms: 79.55947
+  type: 'test'
+  ...
+# Subtest: Y3 · hat etiketi yeni yazımla: durum işareti + düzeltilmiş kesit
+ok 116 - Y3 · hat etiketi yeni yazımla: durum işareti + düzeltilmiş kesit
+  ---
+  duration_ms: 0.263817
+  type: 'test'
+  ...
+# Subtest: M1 · eski programın ve dağıtım şirketinin adı depoda geçmez
+ok 117 - M1 · eski programın ve dağıtım şirketinin adı depoda geçmez
+  ---
+  duration_ms: 41.91951
+  type: 'test'
+  ...
+# Subtest: M2 · ürün adı Şebeke-M Hakediş: eklenti, paket, Android uygulaması ve Hakkında metni
+ok 118 - M2 · ürün adı Şebeke-M Hakediş: eklenti, paket, Android uygulaması ve Hakkında metni
+  ---
+  duration_ms: 0.413212
+  type: 'test'
+  ...
+# Subtest: M3 · cins adları: alt çizgisiz, sözcük başları büyük (AG Galvaniz Demir Direk); katalogda olmayan kod aynı kuralla
+ok 119 - M3 · cins adları: alt çizgisiz, sözcük başları büyük (AG Galvaniz Demir Direk); katalogda olmayan kod aynı kuralla
+  ---
+  duration_ms: 36.295689
+  type: 'test'
+  ...
+# Subtest: OM1 · tohumdaki kurallar ve parametreler ortak dosyanın çevirisidir
+ok 120 - OM1 · tohumdaki kurallar ve parametreler ortak dosyanın çevirisidir
+  ---
+  duration_ms: 1.704314
+  type: 'test'
+  ...
+# Subtest: OM2 · ortak dosya: her kuralın nesnesi, koşulu ve kalemleri geçerli; servis kodları volt-eslesme ile AutoCAD kalemine gider (direk kuralları)
+ok 121 - OM2 · ortak dosya: her kuralın nesnesi, koşulu ve kalemleri geçerli; servis kodları volt-eslesme ile AutoCAD kalemine gider (direk kuralları)
+  ---
+  duration_ms: 0.718562
+  type: 'test'
+  ...
+# Subtest: OM3 · ortak deneme: direk bağlamlarından beklenen listeler (beklenen.json)
+ok 122 - OM3 · ortak deneme: direk bağlamlarından beklenen listeler (beklenen.json)
+  ---
+  duration_ms: 2.424899
+  type: 'test'
+  ...
+# Subtest: SG1 · sayiOku: virgül ve nokta, boş → null, bozuk → undefined
+ok 123 - SG1 · sayiOku: virgül ve nokta, boş → null, bozuk → undefined
+  ---
+  duration_ms: 2.172008
+  type: 'test'
+  ...
+# Subtest: SG2 · Kanal derinliği: yazı alanı + tek dokunuşla seçilen derinlikler; ondalık alanlarda type="number" kalmadı
+ok 124 - SG2 · Kanal derinliği: yazı alanı + tek dokunuşla seçilen derinlikler; ondalık alanlarda type="number" kalmadı
+  ---
+  duration_ms: 2.865661
+  type: 'test'
+  ...
+# Subtest: 01 · OG havai hat (BAHH + 3xSwallow): açıklık, rol, köşe açısı, reçete, Kg metraj
+ok 125 - 01 · OG havai hat (BAHH + 3xSwallow): açıklık, rol, köşe açısı, reçete, Kg metraj
+  ---
+  duration_ms: 62.963807
+  type: 'test'
+  ...
+# Subtest: 02 · AG havai hat (şehir içi, çıplak 3P+R): AG mesnet izolatörü ve iletken kg
+ok 126 - 02 · AG havai hat (şehir içi, çıplak 3P+R): AG mesnet izolatörü ve iletken kg
+  ---
+  duration_ms: 33.465816
+  type: 'test'
+  ...
+# Subtest: 03 · AG+OG müşterek hat: müşterek tepe traversi, iki devre metrajı, OG hatta AG iletkeni reddi
+ok 127 - 03 · AG+OG müşterek hat: müşterek tepe traversi, iki devre metrajı, OG hatta AG iletkeni reddi
+  ---
+  duration_ms: 34.554229
+  type: 'test'
+  ...
+# Subtest: 04 · Abone hattı (tek faz havai, 2x16+25 AER): abone malzemeleri otomatik
+ok 128 - 04 · Abone hattı (tek faz havai, 2x16+25 AER): abone malzemeleri otomatik
+  ---
+  duration_ms: 27.89527
+  type: 'test'
+  ...
+# Subtest: 05 · OG yeraltı kablo (3x(1x95/16) YE3SV): kanal + iniş + trafo payı + muf + rezerv, toprak kanal servisi
+ok 129 - 05 · OG yeraltı kablo (3x(1x95/16) YE3SV): kanal + iniş + trafo payı + muf + rezerv, toprak kanal servisi
+  ---
+  duration_ms: 29.638853
+  type: 'test'
+  ...
+# Subtest: 06 · AG yeraltı kablo (NYY 3x50+25): kanal derinliği yoksa EKSİK VERİ, girilince temiz
+ok 130 - 06 · AG yeraltı kablo (NYY 3x50+25): kanal derinliği yoksa EKSİK VERİ, girilince temiz
+  ---
+  duration_ms: 25.624933
+  type: 'test'
+  ...
+# Subtest: 07 · Direk tipi trafo (250 kVA, G-T25): trafo, pano, parafudr; 400 kVA → UYUMSUZ
+ok 131 - 07 · Direk tipi trafo (250 kVA, G-T25): trafo, pano, parafudr; 400 kVA → UYUMSUZ
+  ---
+  duration_ms: 25.167501
+  type: 'test'
+  ...
+# Subtest: 08 · Köşk tipi trafo (TİP-1C 400 kVA): köşk kalemi; köşk/kVA uyuşmazlığı UYUMSUZ
+ok 132 - 08 · Köşk tipi trafo (TİP-1C 400 kVA): köşk kalemi; köşk/kVA uyuşmazlığı UYUMSUZ
+  ---
+  duration_ms: 25.107095
+  type: 'test'
+  ...
+# Subtest: 09 · SDK: ekipman olarak modellenir; beslemesiz uyarısı, AG bağlanınca kalkar
+ok 133 - 09 · SDK: ekipman olarak modellenir; beslemesiz uyarısı, AG bağlanınca kalkar
+  ---
+  duration_ms: 24.606512
+  type: 'test'
+  ...
+# Subtest: 10 · Aydınlatma: poligon direkler + aydınlatma hattı, kg grubu
+ok 134 - 10 · Aydınlatma: poligon direkler + aydınlatma hattı, kg grubu
+  ---
+  duration_ms: 25.227927
+  type: 'test'
+  ...
+# Subtest: 11 · ENH: sehim-gerilme, direk yükleri, zemin açıklığı (geçiş özelliği kaldırıldı)
+ok 135 - 11 · ENH: sehim-gerilme, direk yükleri, zemin açıklığı (geçiş özelliği kaldırıldı)
+  ---
+  duration_ms: 26.814975
+  type: 'test'
+  ...
+# Subtest: 12 · Montaj: yeni direk → servis öneki 0, Yeşil Defter montaj sayfası
+ok 136 - 12 · Montaj: yeni direk → servis öneki 0, Yeşil Defter montaj sayfası
+  ---
+  duration_ms: 27.657002
+  type: 'test'
+  ...
+# Subtest: 13 · Demontaj: servis öneki 1, topraklama geri alınmaz, sayfada olmayan kalem işaretlenir
+ok 137 - 13 · Demontaj: servis öneki 1, topraklama geri alınmaz, sayfada olmayan kalem işaretlenir
+  ---
+  duration_ms: 26.706266
+  type: 'test'
+  ...
+# Subtest: 14 · DMM (BYSK): servis öneki 2, montaj/demontaj ile karışmaz
+ok 138 - 14 · DMM (BYSK): servis öneki 2, montaj/demontaj ile karışmaz
+  ---
+  duration_ms: 23.808801
+  type: 'test'
+  ...
+# Subtest: 15 · Revizyon: direk yeniden ölçülünce HARİTA→HAT→AÇIKLIK→METRAJ→HAKEDİŞ→DXF zinciri güncellenir
+ok 139 - 15 · Revizyon: direk yeniden ölçülünce HARİTA→HAT→AÇIKLIK→METRAJ→HAKEDİŞ→DXF zinciri güncellenir
+  ---
+  duration_ms: 56.325494
+  type: 'test'
+  ...
+# Subtest: 16 · Telefon GPS test noktası: TEST sınıfı, kritik noktada ÖLÇÜ KABUL EDİLMEDİ
+ok 140 - 16 · Telefon GPS test noktası: TEST sınıfı, kritik noktada ÖLÇÜ KABUL EDİLMEDİ
+  ---
+  duration_ms: 25.252673
+  type: 'test'
+  ...
+# Subtest: 17 · RTK FLOAT reddi: kritik noktada ölçüm reddedilir, gerekçeli
+ok 141 - 17 · RTK FLOAT reddi: kritik noktada ölçüm reddedilir, gerekçeli
+  ---
+  duration_ms: 2.224868
+  type: 'test'
+  ...
+# Subtest: 18 · RTK FIX kabulü: min FIX süresi + σ eşikleri sağlanınca epok ortalamalı gözlem
+ok 142 - 18 · RTK FIX kabulü: min FIX süresi + σ eşikleri sağlanınca epok ortalamalı gözlem
+  ---
+  duration_ms: 1.828872
+  type: 'test'
+  ...
+# Subtest: 19 · Offline ölçüm: IndexedDB (fake) kalıcılık, kapat-aç, senkron kuyruğu
+ok 143 - 19 · Offline ölçüm: IndexedDB (fake) kalıcılık, kapat-aç, senkron kuyruğu
+  ---
+  duration_ms: 159.739745
+  type: 'test'
+  ...
+# Subtest: 20 · Senkronizasyon: iki cihaz, değişiklik aktarımı ve çakışma çözümü
+ok 144 - 20 · Senkronizasyon: iki cihaz, değişiklik aktarımı ve çakışma çözümü
+  ---
+  duration_ms: 56.121447
+  type: 'test'
+  ...
+# Subtest: 20b · Tek proje eşitlemesi (hata 9): başka projenin kaydı çıkmaz, kuyruğu "gönderildi" olmaz; ortak katalog kalemi yine gider
+ok 145 - 20b · Tek proje eşitlemesi (hata 9): başka projenin kaydı çıkmaz, kuyruğu "gönderildi" olmaz; ortak katalog kalemi yine gider
+  ---
+  duration_ms: 33.732602
+  type: 'test'
+  ...
+# Subtest: 21 · DXF üretimi: katman/ACI/blok/yazı, Türkçe kodlama
+ok 146 - 21 · DXF üretimi: katman/ACI/blok/yazı, Türkçe kodlama
+  ---
+  duration_ms: 68.581053
+  type: 'test'
+  ...
+# Subtest: 22 · SHP + GeoJSON üretimi: geometri ve öznitelik dosyaları, WGS84/proje CRS
+ok 147 - 22 · SHP + GeoJSON üretimi: geometri ve öznitelik dosyaları, WGS84/proje CRS
+  ---
+  duration_ms: 84.881188
+  type: 'test'
+  ...
+# Subtest: 23 · Yeşil Defter: Kg grubu = Σ(alt kalem × kg/Ad), montaj/demontaj/DMM sayfaları ayrı
+ok 148 - 23 · Yeşil Defter: Kg grubu = Σ(alt kalem × kg/Ad), montaj/demontaj/DMM sayfaları ayrı
+  ---
+  duration_ms: 109.790835
+  type: 'test'
+  ...
+# Subtest: 24 · Hakediş: iş programı → dönem → önceki / bu dönem / kümülatif / kalan, kaynaklar
+ok 149 - 24 · Hakediş: iş programı → dönem → önceki / bu dönem / kümülatif / kalan, kaynaklar
+  ---
+  duration_ms: 41.569773
+  type: 'test'
+  ...
+# Subtest: 25 · Yeniden ölçülen nokta: telefon GPS noktası RTK ile revize, aynı Point ID, geçmiş korunur
+ok 150 - 25 · Yeniden ölçülen nokta: telefon GPS noktası RTK ile revize, aynı Point ID, geçmiş korunur
+  ---
+  duration_ms: 26.588183
+  type: 'test'
+  ...
+# Subtest: 26 · Teslim paketi: tüm dosyalar + SHA-256 manifest
+ok 151 - 26 · Teslim paketi: tüm dosyalar + SHA-256 manifest
+  ---
+  duration_ms: 135.87147
+  type: 'test'
+  ...
+# Subtest: 27 · Veri kaynağı: GNSS_RTK / GNSS_FLOAT / TELEFON_GPS / MANUEL / EXCEL / HARITADAN_SECILDI etiketleri ve dışa aktarım
+ok 152 - 27 · Veri kaynağı: GNSS_RTK / GNSS_FLOAT / TELEFON_GPS / MANUEL / EXCEL / HARITADAN_SECILDI etiketleri ve dışa aktarım
+  ---
+  duration_ms: 37.572128
+  type: 'test'
+  ...
+# Subtest: 28 · Manuel koordinat ve koordinat sistemi: proje CRS, eksen düzeltme, ED50, enlem/boylam, uyumsuzluk
+ok 153 - 28 · Manuel koordinat ve koordinat sistemi: proje CRS, eksen düzeltme, ED50, enlem/boylam, uyumsuzluk
+  ---
+  duration_ms: 28.821578
+  type: 'test'
+  ...
+# Subtest: 29 · Excel: şablonlar, 124 kayıtlık dosya, doğrulama (118 uygun / 6 hatalı), önizleme ve toplu aktarım
+ok 154 - 29 · Excel: şablonlar, 124 kayıtlık dosya, doğrulama (118 uygun / 6 hatalı), önizleme ve toplu aktarım
+  ---
+  duration_ms: 275.051327
+  type: 'test'
+  ...
+# Subtest: 30 · Obje bazlı hakediş durumu: 6 durum, metraja etkisi, dönem açılınca / onaylanınca otomatik ilerleme
+ok 155 - 30 · Obje bazlı hakediş durumu: 6 durum, metraja etkisi, dönem açılınca / onaylanınca otomatik ilerleme
+  ---
+  duration_ms: 42.013651
+  type: 'test'
+  ...
+# Subtest: 31 · GEÇİŞ kaldırıldı: eski kayıtlar detay noktasına dönüştürülür ya da arşivlenir; menü ve katalogda yok
+ok 156 - 31 · GEÇİŞ kaldırıldı: eski kayıtlar detay noktasına dönüştürülür ya da arşivlenir; menü ve katalogda yok
+  ---
+  duration_ms: 34.039153
+  type: 'test'
+  ...
+# Subtest: 32 · Fotoğraf: {ObjeNo}_{Sıra}.jpg, tür/obje klasörü, görüntü üstü satırlar, EXIF GPS, teslim paketinde klasör yapısı
+ok 157 - 32 · Fotoğraf: {ObjeNo}_{Sıra}.jpg, tür/obje klasörü, görüntü üstü satırlar, EXIF GPS, teslim paketinde klasör yapısı
+  ---
+  duration_ms: 82.089487
+  type: 'test'
+  ...
+# Subtest: 33 · Yeni obje türleri: pano, armatür, menhol, diğer, kanal — poz, kontrol ve klasör; Sabit Base + Rover ölçüm kaydı
+ok 158 - 33 · Yeni obje türleri: pano, armatür, menhol, diğer, kanal — poz, kontrol ve klasör; Sabit Base + Rover ölçüm kaydı
+  ---
+  duration_ms: 64.511195
+  type: 'test'
+  ...
+# Subtest: A1 · ad ve tip yazımları iki yönde çevrilir
+ok 159 - A1 · ad ve tip yazımları iki yönde çevrilir
+  ---
+  duration_ms: 2.153239
+  type: 'test'
+  ...
+# Subtest: A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Durum Tespit kg toplamı telefonun kg toplamıyla aynı
+ok 160 - A2 · telefon projesi AutoCAD dosyasına: direkler, trafo, hat, kanal; Durum Tespit kg toplamı telefonun kg toplamıyla aynı
+  ---
+  duration_ms: 106.007729
+  type: 'test'
+  ...
+# Subtest: A2b · hat metrajının yuvarlanması: varsayılan 2 hane; AutoCAD çiziminin ayarı (yukarı / en yakın tam metre) dosyayla gelir ve geri yazımda uygulanır
+ok 161 - A2b · hat metrajının yuvarlanması: varsayılan 2 hane; AutoCAD çiziminin ayarı (yukarı / en yakın tam metre) dosyayla gelir ve geri yazımda uygulanır
+  ---
+  duration_ms: 76.098313
+  type: 'test'
+  ...
+# Subtest: A3 · "ileride" objeler yazılmaz, demontaj / sök-tak durumları çevrilir, tedarik Y olan pozda M+M
+ok 162 - A3 · "ileride" objeler yazılmaz, demontaj / sök-tak durumları çevrilir, tedarik Y olan pozda M+M
+  ---
+  duration_ms: 50.771372
+  type: 'test'
+  ...
+# Subtest: A3b · çizim durum kodu korunur: KM / ME / M+M seçimi ve demontaj türü (KESİK) dışa aktarımda döner, durum değişince düşer
+ok 163 - A3b · çizim durum kodu korunur: KM / ME / M+M seçimi ve demontaj türü (KESİK) dışa aktarımda döner, durum değişince düşer
+  ---
+  duration_ms: 69.660197
+  type: 'test'
+  ...
+# Subtest: A3c · parçalı hat gidiş-dönüş: parçalar telefonda tek hat olur, parça kimlikleri korunur, eklentide çizilen parçalar zincirlenir
+ok 164 - A3c · parçalı hat gidiş-dönüş: parçalar telefonda tek hat olur, parça kimlikleri korunur, eklentide çizilen parçalar zincirlenir
+  ---
+  duration_ms: 171.261135
+  type: 'test'
+  ...
+# Subtest: A4 · AutoCAD örnek dosyası telefona alınır: direk tipleri katalogdan bulunur, hatlar uçlara bağlanır, kanal ve sondaj gelir; geri yazınca aynı kalır
+ok 165 - A4 · AutoCAD örnek dosyası telefona alınır: direk tipleri katalogdan bulunur, hatlar uçlara bağlanır, kanal ve sondaj gelir; geri yazınca aynı kalır
+  ---
+  duration_ms: 68.294823
+  type: 'test'
+  ...
+# Subtest: A4b · AutoCAD'in telefonda düzenlenmeyen verileri gidip gelir: bölge grup kodu, pano çıkış şeması (ekVeri)
+ok 166 - A4b · AutoCAD'in telefonda düzenlenmeyen verileri gidip gelir: bölge grup kodu, pano çıkış şeması (ekVeri)
+  ---
+  duration_ms: 40.374535
+  type: 'test'
+  ...
+# Subtest: A4c · AutoCAD kalemlerinin INDEX sırası, hakedişi ve KONTROL işareti telefondan aynen döner; hakediş onayları gidip gelir
+ok 167 - A4c · AutoCAD kalemlerinin INDEX sırası, hakedişi ve KONTROL işareti telefondan aynen döner; hakediş onayları gidip gelir
+  ---
+  duration_ms: 43.76081
+  type: 'test'
+  ...
+# Subtest: A5 · telefonun tam proje dosyası (volt-project/3) AutoCAD bölümünü taşır ve geri okunur
+ok 168 - A5 · telefonun tam proje dosyası (volt-project/3) AutoCAD bölümünü taşır ve geri okunur
+  ---
+  duration_ms: 34.2793
+  type: 'test'
+  ...
+# Subtest: A6 · katalog eşleme yardımcıları
+ok 169 - A6 · katalog eşleme yardımcıları
+  ---
+  duration_ms: 30.067147
+  type: 'test'
+  ...
+# Subtest: A7 · telefon projesi → AutoCAD dosyası → başka telefon → AutoCAD dosyası: nesneler, kimlikler, kanal ve rapor korunur
+ok 170 - A7 · telefon projesi → AutoCAD dosyası → başka telefon → AutoCAD dosyası: nesneler, kimlikler, kanal ve rapor korunur
+  ---
+  duration_ms: 83.025931
+  type: 'test'
+  ...
+# Subtest: A8 · çok iletkenli hat: müşterekte OG + AG iki kalem ve birleşik ana kesit; 3 adet ALPEK ×3 ve "3x(…)"; geri alınınca devreler aynı
+ok 171 - A8 · çok iletkenli hat: müşterekte OG + AG iki kalem ve birleşik ana kesit; 3 adet ALPEK ×3 ve "3x(…)"; geri alınınca devreler aynı
+  ---
+  duration_ms: 96.006701
+  type: 'test'
+  ...
+# Subtest: A8b · eklentinin kataloğundaki her iletken / kablo telefonda bir devre olur; dokunulmayan hat aynı kalem ve metrajla, telefonda değişen hat yeni metrajla döner
+ok 172 - A8b · eklentinin kataloğundaki her iletken / kablo telefonda bir devre olur; dokunulmayan hat aynı kalem ve metrajla, telefonda değişen hat yeni metrajla döner
+  ---
+  duration_ms: 661.144136
+  type: 'test'
+  ...
+# Subtest: A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef kimlikleri, trafo çıkışı, daha yeni kayıt kazanır
+ok 173 - A9 · teknik hesap kayıtları (Hesap Merkezi) dosyayla gidip gelir: hedef kimlikleri, trafo çıkışı, daha yeni kayıt kazanır
+  ---
+  duration_ms: 134.711955
+  type: 'test'
+  ...
+# Subtest: A9b · proje geneli bağlamı (direk listeleri, 8.11.2026): bütün direkler malzemeleriyle, kayıtlı cer hesabı, hat zincirleri, imza
+ok 174 - A9b · proje geneli bağlamı (direk listeleri, 8.11.2026): bütün direkler malzemeleriyle, kayıtlı cer hesabı, hat zincirleri, imza
+  ---
+  duration_ms: 44.15253
+  type: 'test'
+  ...
+# Subtest: A10 · katalogda olmayan AutoCAD hattı (rekortman): hesap bağlamında iletken ve hat türü AutoCAD'deki gibi
+ok 175 - A10 · katalogda olmayan AutoCAD hattı (rekortman): hesap bağlamında iletken ve hat türü AutoCAD'deki gibi
+  ---
+  duration_ms: 130.689718
+  type: 'test'
+  ...
+# Subtest: A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosyasıyla aynı içerik, Türkçe kod sayfası, koordinat seçimi
+ok 176 - A20 · Google Earth ve MapInfo (CBS) telefon projesinden: eklentinin dosyasıyla aynı içerik, Türkçe kod sayfası, koordinat seçimi
+  ---
+  duration_ms: 235.887118
+  type: 'test'
+  ...
+# Subtest: A30 · (hata 1) UTM projesi AutoCAD dosyasına: eleman, hat, kanal, nokta ve bölge koordinatları dosyanın 3° TM sistemine çevrilir, kot korunur
+ok 177 - A30 · (hata 1) UTM projesi AutoCAD dosyasına: eleman, hat, kanal, nokta ve bölge koordinatları dosyanın 3° TM sistemine çevrilir, kot korunur
+  ---
+  duration_ms: 37.325713
+  type: 'test'
+  ...
+# Subtest: A31 · (hata 2) ED50 dosyası yeni proje olarak alınınca datum korunur; var olan TUREF projesine alınınca koordinatlar dönüştürülür; datumsuz eski dosya TUREF sayılır
+ok 178 - A31 · (hata 2) ED50 dosyası yeni proje olarak alınınca datum korunur; var olan TUREF projesine alınınca koordinatlar dönüştürülür; datumsuz eski dosya TUREF sayılır
+  ---
+  duration_ms: 133.54865
+  type: 'test'
+  ...
+# Subtest: A32 · (hata 7) yeniden içe alma: var olan elemanın kotu ve bağımsız noktanın konumu / kotu dosyadan güncellenir, kopya üretilmez, kilitli kayıt korunur
+ok 179 - A32 · (hata 7) yeniden içe alma: var olan elemanın kotu ve bağımsız noktanın konumu / kotu dosyadan güncellenir, kopya üretilmez, kilitli kayıt korunur
+  ---
+  duration_ms: 53.901487
+  type: 'test'
+  ...
+# Subtest: S1 · telefondaki ortak tablolar (src/ortak/*.js) depodaki ortak/katalog/*.json ile birebir aynı
+ok 180 - S1 · telefondaki ortak tablolar (src/ortak/*.js) depodaki ortak/katalog/*.json ile birebir aynı
+  ---
+  duration_ms: 21.286036
+  type: 'test'
+  ...
+# Subtest: S2 · her aile için YENI · MEVCUT · DMM · DM · KESIK · SOKUK varyantları var ve geometrisi boş değil
+ok 181 - S2 · her aile için YENI · MEVCUT · DMM · DM · KESIK · SOKUK varyantları var ve geometrisi boş değil
+  ---
+  duration_ms: 1.096139
+  type: 'test'
+  ...
+# Subtest: S3 · blok adları eklentiyle aynı kurala göre seçilir (SH_<aile>_<varyant>)
+ok 182 - S3 · blok adları eklentiyle aynı kurala göre seçilir (SH_<aile>_<varyant>)
+  ---
+  duration_ms: 0.456687
+  type: 'test'
+  ...
+# Subtest: S4 · Şebeke-M takımı (SM_*): 23 aile, tasarım kuralı (dolu / yarı dolu / kontur / çift kontur + DM, kesik K · sökük S), blok adları
+ok 183 - S4 · Şebeke-M takımı (SM_*): 23 aile, tasarım kuralı (dolu / yarı dolu / kontur / çift kontur + DM, kesik K · sökük S), blok adları
+  ---
+  duration_ms: 0.682166
+  type: 'test'
+  ...
+# Subtest: S5 · DXF: projenin simge takımı Şebeke-M ise SH_SM_ blokları konur (yazı, zıt renk, kesikli çizgi); klasikte eski bloklar
+ok 184 - S5 · DXF: projenin simge takımı Şebeke-M ise SH_SM_ blokları konur (yazı, zıt renk, kesikli çizgi); klasikte eski bloklar
+  ---
+  duration_ms: 107.295786
+  type: 'test'
+  ...
+# Subtest: S6 · DXF R12 kuralı: bütün blok adları 31 karakteri aşmaz, R12 varlıkları ve adları (iki takım, malzeme yazısı açık)
+ok 185 - S6 · DXF R12 kuralı: bütün blok adları 31 karakteri aşmaz, R12 varlıkları ve adları (iki takım, malzeme yazısı açık)
+  ---
+  duration_ms: 113.473491
+  type: 'test'
+  ...
+# Subtest: tepe · modül saf ve kurallara uygun: yasak metin yok, DOM/depolama erişimi yok, tablolar dondurulmuş
+ok 186 - tepe · modül saf ve kurallara uygun: yasak metin yok, DOM/depolama erişimi yok, tablolar dondurulmuş
+  ---
+  duration_ms: 4.63966
+  type: 'test'
+  ...
+# Subtest: tepe · tertip listeleri: AG 42, müşterek 257 anahtar; sıra ve gruplar
+ok 187 - tepe · tertip listeleri: AG 42, müşterek 257 anahtar; sıra ve gruplar
+  ---
+  duration_ms: 0.580884
+  type: 'test'
+  ...
+# Subtest: tepe · tablo ve yardımcılar: sabit değerler
+ok 188 - tepe · tablo ve yardımcılar: sabit değerler
+  ---
+  duration_ms: 0.384168
+  type: 'test'
+  ...
+# Subtest: tepe · özgün aracın varsayılan girdileriyle sabit sonuçlar (AG)
+ok 189 - tepe · özgün aracın varsayılan girdileriyle sabit sonuçlar (AG)
+  ---
+  duration_ms: 1.138893
+  type: 'test'
+  ...
+# Subtest: tepe · KD ve G varsayılan girdileriyle sabit sonuçlar (AG)
+ok 190 - tepe · KD ve G varsayılan girdileriyle sabit sonuçlar (AG)
+  ---
+  duration_ms: 1.095558
+  type: 'test'
+  ...
+# Subtest: tepe · müşterek hâller ve özgün tuhaflıklar: sabit sonuçlar
+ok 191 - tepe · müşterek hâller ve özgün tuhaflıklar: sabit sonuçlar
+  ---
+  duration_ms: 1.309089
+  type: 'test'
+  ...
+# Subtest: tepe · hata ve elle direk tahkiki
+ok 192 - tepe · hata ve elle direk tahkiki
+  ---
+  duration_ms: 0.705011
+  type: 'test'
+  ...
+# Subtest: tepe · gorevOner: kol düzenine göre hesap türü
+ok 193 - tepe · gorevOner: kol düzenine göre hesap türü
+  ---
+  duration_ms: 0.213371
+  type: 'test'
+  ...
+# Subtest: tepe/ref · veri tabloları ve sabitler özgünle birebir (referans dosya yok)
+ok 194 - tepe/ref · veri tabloları ve sabitler özgünle birebir (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.649558
+  type: 'test'
+  ...
+# Subtest: tepe/ref · tertip listeleri (anahtar, etiket, grup, sıra) özgün açılır listeyle aynı (referans dosya yok)
+ok 195 - tepe/ref · tertip listeleri (anahtar, etiket, grup, sıra) özgün açılır listeyle aynı (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.384358
+  type: 'test'
+  ...
+# Subtest: tepe/ref · tmax / pwAl / iletkenSay / betonVarMi: her tertip × her bölge × iki şebeke tipi (referans dosya yok)
+ok 196 - tepe/ref · tmax / pwAl / iletkenSay / betonVarMi: her tertip × her bölge × iki şebeke tipi (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.111648
+  type: 'test'
+  ...
+# Subtest: tepe/ref · direk seçimi: secATip / secKafes / secBeton ızgarası (referans dosya yok)
+ok 197 - tepe/ref · direk seçimi: secATip / secKafes / secBeton ızgarası (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.045929
+  type: 'test'
+  ...
+# Subtest: tepe/ref · hesapT: her tertip × açıklık sınırları + rastgele (referans dosya yok)
+ok 198 - tepe/ref · hesapT: her tertip × açıklık sınırları + rastgele (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.031978
+  type: 'test'
+  ...
+# Subtest: tepe/ref · hesapKT: her tertip + rastgele (açı sınırları dahil) (referans dosya yok)
+ok 199 - tepe/ref · hesapKT: her tertip + rastgele (açı sınırları dahil) (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.030386
+  type: 'test'
+  ...
+# Subtest: tepe/ref · hesapD: AG (aynı tip / tip değişiyor) tüm çiftler + müşterek rastgele (referans dosya yok)
+ok 200 - tepe/ref · hesapD: AG (aynı tip / tip değişiyor) tüm çiftler + müşterek rastgele (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.027762
+  type: 'test'
+  ...
+# Subtest: tepe/ref · hesapKD: üç hâl × açı sınırları (120/140/178/180) + rastgele (referans dosya yok)
+ok 201 - tepe/ref · hesapKD: üç hâl × açı sınırları (120/140/178/180) + rastgele (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.026199
+  type: 'test'
+  ...
+# Subtest: tepe/ref · hesapN: her tertip × her bölge × hâller + rastgele (referans dosya yok)
+ok 202 - tepe/ref · hesapN: her tertip × her bölge × hâller + rastgele (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.02671
+  type: 'test'
+  ...
+# Subtest: tepe/ref · hesapG: branşman / tevzi / elle — rastgele kol düzenleri, rüzgâr, eksen seçenekleri (referans dosya yok)
+ok 203 - tepe/ref · hesapG: branşman / tevzi / elle — rastgele kol düzenleri, rüzgâr, eksen seçenekleri (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.025428
+  type: 'test'
+  ...
+# Subtest: tepe/ref · özgün aracın varsayılan girdileri (sabit değerli testlerin kaynağı) (referans dosya yok)
+ok 204 - tepe/ref · özgün aracın varsayılan girdileri (sabit değerli testlerin kaynağı) (referans dosya yok) # SKIP
+  ---
+  duration_ms: 0.024767
+  type: 'test'
+  ...
+# Subtest: TM1 · birden çok malzeme her direğe; objede olan atlanır; mevcut obje atlanır; tek yeniden hesap
+ok 205 - TM1 · birden çok malzeme her direğe; objede olan atlanır; mevcut obje atlanır; tek yeniden hesap
+  ---
+  duration_ms: 74.371535
+  type: 'test'
+  ...
+# Subtest: TM2 · otomatik reçete açık: sahada ilave (gerekçe zorunlu, onay bekler); süzgeç için hasMaterial
+ok 206 - TM2 · otomatik reçete açık: sahada ilave (gerekçe zorunlu, onay bekler); süzgeç için hasMaterial
+  ---
+  duration_ms: 45.533287
+  type: 'test'
+  ...
+# Subtest: U1 · cins kodlarındaki yazım hataları: telefonun tablosu ortak katalogdakiyle aynı, katalogda eski kod yok
+ok 207 - U1 · cins kodlarındaki yazım hataları: telefonun tablosu ortak katalogdakiyle aynı, katalogda eski kod yok
+  ---
+  duration_ms: 1.85395
+  type: 'test'
+  ...
+# Subtest: U2 · katman adları Türkçe karaktersiz; eski kodlu / eski katmanlı dosya okunup yeniden yazılınca düzelir
+ok 208 - U2 · katman adları Türkçe karaktersiz; eski kodlu / eski katmanlı dosya okunup yeniden yazılınca düzelir
+  ---
+  duration_ms: 1.745556
+  type: 'test'
+  ...
+# Subtest: U3 · simge ve yazı boyutları proje dosyasında (proje.boyutlar): eklentiyle aynı alanlar, varsayılan yazılmaz
+ok 209 - U3 · simge ve yazı boyutları proje dosyasında (proje.boyutlar): eklentiyle aynı alanlar, varsayılan yazılmaz
+  ---
+  duration_ms: 0.877881
+  type: 'test'
+  ...
+# Subtest: UG1 ortak vektörler: eklentiyle aynı gruplar
+ok 210 - UG1 ortak vektörler: eklentiyle aynı gruplar
+  ---
+  duration_ms: 2.471729
+  type: 'test'
+  ...
+# Subtest: UG2 proje verisi: adı değiştirilen projenin eski alımları uzak grup
+ok 211 - UG2 proje verisi: adı değiştirilen projenin eski alımları uzak grup
+  ---
+  duration_ms: 0.748566
+  type: 'test'
+  ...
+# Subtest: V1 · Spectra: $PASHR,POS ve $PTNL,GGK konum cümleleri okunur, kurulum komutları doğru
+ok 212 - V1 · Spectra: $PASHR,POS ve $PTNL,GGK konum cümleleri okunur, kurulum komutları doğru
+  ---
+  duration_ms: 2.143695
+  type: 'test'
+  ...
+# Subtest: V2 · Yandex altlığı elipsoidal Mercator kullanır: karo satırı Google/OSM'den farklı, gidiş-dönüş tutarlı
+ok 213 - V2 · Yandex altlığı elipsoidal Mercator kullanır: karo satırı Google/OSM'den farklı, gidiş-dönüş tutarlı
+  ---
+  duration_ms: 0.447673
+  type: 'test'
+  ...
+# Subtest: V3 · Katalog güncelleme: eski sürümden açılan veride yeni kalemler eklenir, kullanıcının değiştirdiği satır korunur
+ok 214 - V3 · Katalog güncelleme: eski sürümden açılan veride yeni kalemler eklenir, kullanıcının değiştirdiği satır korunur
+  ---
+  duration_ms: 105.721123
+  type: 'test'
+  ...
+# Subtest: V4 · Malzeme listesi: LED dahil armatürler, hava yalıtımlı hücreler ve kofre katalogda
+ok 215 - V4 · Malzeme listesi: LED dahil armatürler, hava yalıtımlı hücreler ve kofre katalogda
+  ---
+  duration_ms: 40.249357
+  type: 'test'
+  ...
+# Subtest: V5 · Beton köşk: köşkün kendisi tipine göre ayrı kalem; kabin kurulunca hücreler ve kablo kanalı keşfe gelir
+ok 216 - V5 · Beton köşk: köşkün kendisi tipine göre ayrı kalem; kabin kurulunca hücreler ve kablo kanalı keşfe gelir
+  ---
+  duration_ms: 43.387569
+  type: 'test'
+  ...
+# Subtest: V6 · Abone kofresi: seçilince faz sayısına göre kalem gelir, seçilmezse gelmez
+ok 217 - V6 · Abone kofresi: seçilince faz sayısına göre kalem gelir, seçilmezse gelmez
+  ---
+  duration_ms: 28.977729
+  type: 'test'
+  ...
+# Subtest: V7 · Enerji kontrolü: OG kaynağından trafoya, trafodan AG'ye yayılır; kopuk ve açık hatlar enerjisiz kalır
+ok 218 - V7 · Enerji kontrolü: OG kaynağından trafoya, trafodan AG'ye yayılır; kopuk ve açık hatlar enerjisiz kalır
+  ---
+  duration_ms: 1.499797
+  type: 'test'
+  ...
+# Subtest: V8 · Otomatik numara: hat güzergâhına göre sıralar, eski numarayı saklar, nokta numarasını da günceller, çakışmayı engeller
+ok 219 - V8 · Otomatik numara: hat güzergâhına göre sıralar, eski numarayı saklar, nokta numarasını da günceller, çakışmayı engeller
+  ---
+  duration_ms: 38.183218
+  type: 'test'
+  ...
+# Subtest: V9 · Çizim katmanı: DXF projeye eklenir, uçlara yapışır, birleşen kollardan tepe kuvveti hesaplanır
+ok 220 - V9 · Çizim katmanı: DXF projeye eklenir, uçlara yapışır, birleşen kollardan tepe kuvveti hesaplanır
+  ---
+  duration_ms: 31.319481
+  type: 'test'
+  ...
+# Subtest: V10 · Şifre özeti: SHA-256 doğru, şifre 4–8 rakam, aynı şifre farklı kullanıcıda farklı saklanır
+ok 221 - V10 · Şifre özeti: SHA-256 doğru, şifre 4–8 rakam, aynı şifre farklı kullanıcıda farklı saklanır
+  ---
+  duration_ms: 26.389193
+  type: 'test'
+  ...
+# Subtest: V11 · Rol kuralları: her rol yalnız kendi adımını atar
+ok 222 - V11 · Rol kuralları: her rol yalnız kendi adımını atar
+  ---
+  duration_ms: 0.600754
+  type: 'test'
+  ...
+# Subtest: V12 · Hakediş onay akışı: saha tamamlar → kontrol onaylar → hakediş dönemi → onay; yetkisiz adımlar reddedilir
+ok 223 - V12 · Hakediş onay akışı: saha tamamlar → kontrol onaylar → hakediş dönemi → onay; yetkisiz adımlar reddedilir
+  ---
+  duration_ms: 145.989498
+  type: 'test'
+  ...
+# Subtest: Y1 · Otomatik reçete varsayılan kapalı: objede yalnız seçilen kalemler gelir
+ok 224 - Y1 · Otomatik reçete varsayılan kapalı: objede yalnız seçilen kalemler gelir
+  ---
+  duration_ms: 73.023918
+  type: 'test'
+  ...
+# Subtest: Y2 · Elle malzeme: ekipmana ve hatta eklenir, miktarı değişir, kaldırılır, metraja girer
+ok 225 - Y2 · Elle malzeme: ekipmana ve hatta eklenir, miktarı değişir, kaldırılır, metraja girer
+  ---
+  duration_ms: 39.453399
+  type: 'test'
+  ...
+# Subtest: Y3 · Direkte armatür: seçilen tip ve adet direğin malzemesi olarak gelir
+ok 226 - Y3 · Direkte armatür: seçilen tip ve adet direğin malzemesi olarak gelir
+  ---
+  duration_ms: 32.41483
+  type: 'test'
+  ...
+# Subtest: Y4 · Kanal hesabı: kaplamaya göre kalem (m³), borulu geçişte boru, yatay sondajda yalnız sondaj boyu
+ok 227 - Y4 · Kanal hesabı: kaplamaya göre kalem (m³), borulu geçişte boru, yatay sondajda yalnız sondaj boyu
+  ---
+  duration_ms: 33.623398
+  type: 'test'
+  ...
+# Subtest: Y5 · Kanal modeli: eski kayıtlar okunur; otomatik reçete açıkken yardımcı malzeme yine gelir
+ok 228 - Y5 · Kanal modeli: eski kayıtlar okunur; otomatik reçete açıkken yardımcı malzeme yine gelir
+  ---
+  duration_ms: 31.158489
+  type: 'test'
+  ...
+# Subtest: Y6 · Köşk: prefabrikte PB tipleri, hücre kendiliğinden gelmez, elle eklenen hücre keşfe gelir
+ok 229 - Y6 · Köşk: prefabrikte PB tipleri, hücre kendiliğinden gelmez, elle eklenen hücre keşfe gelir
+  ---
+  duration_ms: 34.718445
+  type: 'test'
+  ...
+# Subtest: Y7 · Proje silme: yalnız o projenin kayıtları silinir; onay açıksa yalnız Yönetici
+ok 230 - Y7 · Proje silme: yalnız o projenin kayıtları silinir; onay açıksa yalnız Yönetici
+  ---
+  duration_ms: 78.721679
+  type: 'test'
+  ...
+# Subtest: Y8 · Kayıtlı NTRIP profilleri: eski tek ayar taşınır, profil eklenir, seçilir, silinir
+ok 231 - Y8 · Kayıtlı NTRIP profilleri: eski tek ayar taşınır, profil eklenir, seçilir, silinir
+  ---
+  duration_ms: 0.685412
+  type: 'test'
+  ...
+# Subtest: Y9 · Katalog güncelleme 23 → 24: kaplamalı kanal kalemleri ve kanal tablosu eklenir
+ok 232 - Y9 · Katalog güncelleme 23 → 24: kaplamalı kanal kalemleri ve kanal tablosu eklenir
+  ---
+  duration_ms: 53.447417
+  type: 'test'
+  ...
+# Subtest: Y9b · Katalog güncelleme 24 → 25: katalog başlığından kurum ve kitap sürümü yazıları kalkar (ad, kod, kitap yenilenir)
+ok 233 - Y9b · Katalog güncelleme 24 → 25: katalog başlığından kurum ve kitap sürümü yazıları kalkar (ad, kod, kitap yenilenir)
+  ---
+  duration_ms: 41.086498
+  type: 'test'
+  ...
+# Subtest: Y10 · Önceki sürümde oluşturulmuş proje: seçim yapılana kadar metraj değişmez, kapatılınca yardımcı kalemler çıkar
+ok 234 - Y10 · Önceki sürümde oluşturulmuş proje: seçim yapılana kadar metraj değişmez, kapatılınca yardımcı kalemler çıkar
+  ---
+  duration_ms: 32.9048
+  type: 'test'
+  ...
+# Subtest: W1 · Bulut kaydı: proje, direkler, hat buluta yazılır; başka bilgisayarda aynı veri açılır
+ok 235 - W1 · Bulut kaydı: proje, direkler, hat buluta yazılır; başka bilgisayarda aynı veri açılır
+  ---
+  duration_ms: 131.973309
+  type: 'test'
+  ...
+# Subtest: W2 · Büyük veri: kova 256 KiB sınırını aşmadan bölünür; yeniden açılışta kayıt kaybı olmaz
+ok 236 - W2 · Büyük veri: kova 256 KiB sınırını aşmadan bölünür; yeniden açılışta kayıt kaybı olmaz
+  ---
+  duration_ms: 95.344044
+  type: 'test'
+  ...
+# Subtest: W3 · Zaman sıralı tablolar (denetim, senkron kuyruğu) pencerelere ayrılır; eski pencereler yeniden yazılmaz
+ok 237 - W3 · Zaman sıralı tablolar (denetim, senkron kuyruğu) pencerelere ayrılır; eski pencereler yeniden yazılmaz
+  ---
+  duration_ms: 1.304844
+  type: 'test'
+  ...
+# Subtest: W4 · İki bilgisayar açıkken: birinde yapılan değişiklik diğerine gelir; yankı (sonsuz yazma) olmaz
+ok 238 - W4 · İki bilgisayar açıkken: birinde yapılan değişiklik diğerine gelir; yankı (sonsuz yazma) olmaz
+  ---
+  duration_ms: 168.382799
+  type: 'test'
+  ...
+# Subtest: W5 · Telefon ↔ web: telefondaki proje dosyayla web'e alınır, web'deki düzeltme telefona çakışmasız döner
+ok 239 - W5 · Telefon ↔ web: telefondaki proje dosyayla web'e alınır, web'deki düzeltme telefona çakışmasız döner
+  ---
+  duration_ms: 97.702065
+  type: 'test'
+  ...
+# Subtest: W6 · Salt okunur ve geçici hata: yazılamazsa durum bildirilir, veri kuyruğunda kalır, sonra yazılır
+ok 240 - W6 · Salt okunur ve geçici hata: yazılamazsa durum bildirilir, veri kuyruğunda kalır, sonra yazılır
+  ---
+  duration_ms: 3.995105
+  type: 'test'
+  ...
+# Subtest: W7 · Revizyon anlık görüntüsü (büyük metin) buluta parça parça yazılır ve başka bilgisayarda okunur
+ok 241 - W7 · Revizyon anlık görüntüsü (büyük metin) buluta parça parça yazılır ve başka bilgisayarda okunur
+  ---
+  duration_ms: 9.342125
+  type: 'test'
+  ...
+# Subtest: W8 · İndirme: izinli uzantı olduğu gibi, diğerleri zip içinde, .vsync → .json
+ok 242 - W8 · İndirme: izinli uzantı olduğu gibi, diğerleri zip içinde, .vsync → .json
+  ---
+  duration_ms: 0.669218
+  type: 'test'
+  ...
+# Subtest: W9 · Açılışta geçici okuma hatası yeniden denenir; bulut hiç okunamazsa hata verilir (yerel kopyaya sessizce geçilmez)
+ok 243 - W9 · Açılışta geçici okuma hatası yeniden denenir; bulut hiç okunamazsa hata verilir (yerel kopyaya sessizce geçilmez)
+  ---
+  duration_ms: 28.237362
+  type: 'test'
+  ...
+# Subtest: W10 · Çizim (CAD) web bulutunda: büyük çizim parçalara bölünür, başka bilgisayarda aynı çizim açılır
+ok 244 - W10 · Çizim (CAD) web bulutunda: büyük çizim parçalara bölünür, başka bilgisayarda aynı çizim açılır
+  ---
+  duration_ms: 112.791804
+  type: 'test'
+  ...
+# Subtest: W11 · (hata 4) eşzamanlı kayıt: iki bilgisayar aynı tabloya ayrı kayıt ekleyip art arda kaydedince ikisi de kalır; üçüncü bilgisayar ikisini de görür
+ok 245 - W11 · (hata 4) eşzamanlı kayıt: iki bilgisayar aynı tabloya ayrı kayıt ekleyip art arda kaydedince ikisi de kalır; üçüncü bilgisayar ikisini de görür
+  ---
+  duration_ms: 2207.788109
+  type: 'test'
+  ...
+# Subtest: W12 · (hata 4) aynı kaydın eşzamanlı değiştirilmesi ve silinmesi: kayıt bazında birleştirme, sonuç kaydetme sırasından bağımsız ve her bilgisayarda aynı
+ok 246 - W12 · (hata 4) aynı kaydın eşzamanlı değiştirilmesi ve silinmesi: kayıt bazında birleştirme, sonuç kaydetme sırasından bağımsız ve her bilgisayarda aynı
+  ---
+  duration_ms: 3267.460831
+  type: 'test'
+  ...
+# Subtest: W13 · (hata 4) sunucu kilidi (acquire) olmayan eski ortamda da sürüm denetimi ve kayıt bazında birleştirme art arda kaydetmede kaybı önler
+ok 247 - W13 · (hata 4) sunucu kilidi (acquire) olmayan eski ortamda da sürüm denetimi ve kayıt bazında birleştirme art arda kaydetmede kaybı önler
+  ---
+  duration_ms: 127.628586
+  type: 'test'
+  ...
+# Subtest: YC1 ortak vektörler: çakışma sınaması
+ok 248 - YC1 ortak vektörler: çakışma sınaması
+  ---
+  duration_ms: 1.439287
+  type: 'test'
+  ...
+# Subtest: YC2 ortak vektörler: eleman ve hat yazısı aday yerleri
+ok 249 - YC2 ortak vektörler: eleman ve hat yazısı aday yerleri
+  ---
+  duration_ms: 0.616899
+  type: 'test'
+  ...
+# Subtest: YC3 ortak vektörler: yerleştirme
+ok 250 - YC3 ortak vektörler: yerleştirme
+  ---
+  duration_ms: 0.748918
+  type: 'test'
+  ...
+# Subtest: YC4 DXF: yakın direklerin yazıları ve metrajı çakışmaz (Yazı çakışmalarını düzelt)
+ok 251 - YC4 DXF: yakın direklerin yazıları ve metrajı çakışmaz (Yazı çakışmalarını düzelt)
+  ---
+  duration_ms: 56.967979
+  type: 'test'
+  ...
+1..251
+# tests 251
+# suites 0
+# pass 216
+# fail 0
+# cancelled 0
+# skipped 35
+# todo 0
+# duration_ms 60114.585403

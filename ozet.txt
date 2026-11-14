@@ -1,0 +1,12 @@
+Sürüm: 2.5.90 (kod 1090)
+İşlem: 3fb1fca36497da7cfc077fe28554b3c269f9ee41
+Dal: saha-istekleri-14-11
+Tarih: 2026-11-14T03:59:03+00:00
+android:versionCode="1090"
+android:versionName="2.5.90"
+JS TEST: geçti (# pass 216)
+APK: Sebeke-M-2.5.90.apk (1883527 bayt)
+ARAYÜZ (düzeltme): SONUÇ: hepsi geçti (15)
+ARAYÜZ (eşitleme): SONUÇ: hepsi geçti (30)
+ARAYÜZ (lisans): SONUÇ: hepsi geçti (10)
+ARAYÜZ (saha): SONUÇ: hepsi geçti (29)

@@ -1,0 +1,17 @@
+1/6 web paketi
+www: app.js 1558 KB · app.css 32 KB · seed 1380 KB · hesap 4 sayfa
+2/6 kaynaklar (aapt2)
+3/6 Java (ecj, Java 8 hedef)
+   34 sınıf
+4/6 dex (d8)
+5/6 paketleme + hizalama
+packed /home/runner/work/sebeke-hakedis/sebeke-hakedis/telefon/build/unsigned.apk 41 entries 1872293 bytes
+6/6 imzalama (v2+v3)
+Signer #1 certificate DN: CN=VOLT-EDAS Saha, L=Elazig, C=TR
+Signer #1 certificate SHA-256 digest: 81060a342ccff28b450e0f8fe298ed07e5e480cf6e7289c4c5acc8b574258f82
+Signer #1 certificate SHA-1 digest: 360d788164a36c4bc13c13591dfdec5add73825f
+Signer #1 certificate MD5 digest: c60e3885971576347be464af86c18094
+package: name='tr.voltedas.saha' versionCode='1090' versionName='2.5.90' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'
+minSdkVersion:'26'
+targetSdkVersion:'34'
+-rw-r--r-- 1 runner runner 1883527 Nov 14 04:00 /home/runner/work/sebeke-hakedis/sebeke-hakedis/telefon/dist/Sebeke-M-2.5.90.apk
